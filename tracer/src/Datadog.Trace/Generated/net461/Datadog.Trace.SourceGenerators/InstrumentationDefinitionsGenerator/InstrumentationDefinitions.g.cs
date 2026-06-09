@@ -75,7 +75,10 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.AsyncCommandIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.SyncCommandIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Aerospike,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.HttpModule_Integration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_XmlDictionaryWriter_Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_XmlWriter_Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.HttpModule_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ThreadContext_AssociateWithCurrentThread_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ThreadContext_DisassociateFromCurrentThread_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNet,
@@ -83,10 +86,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles.DirectoryBrowserExtensionsUseDirectoryBrowserIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.StaticFiles.DirectoryBrowserExtensionsUseDirectoryBrowserIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNetCore,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_XmlDictionaryWriter_Integration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_XmlWriter_Integration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_Integration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_BeginInvokeAction_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.AsyncControllerActionInvoker_EndInvokeAction_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ControllerActionInvoker_InvokeAction_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.AspNetMvc,
