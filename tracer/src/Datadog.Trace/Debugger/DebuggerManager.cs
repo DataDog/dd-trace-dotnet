@@ -228,6 +228,7 @@ namespace Datadog.Trace.Debugger
             {
                 try
                 {
+                    OneTimeSetup(tracerSettings);
                     InitForSnapshotExploration();
                 }
                 catch (Exception e)
