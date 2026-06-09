@@ -165,13 +165,14 @@ partial class Build
 
                 foreach (var scope in processedScopes)
                 {
-                    if (scope["ScopeType"].ToString() != "Class")
+                    if (!scope.TryGetValue("ScopeType", out var scopeType) || scopeType.ToString() != "Class")
                     {
                         continue;
                     }
 
-                    var typeName = scope["Name"].ToString();
-                    ProcessNestedScopes((List<IDictionary<string, object>>)scope["Scopes"], typeName, probes);
+                    var typeName = scope.TryGetValue("Name", out var typeNameValue) ? typeNameValue.ToString() : null;
+                    scope.TryGetValue("Scopes", out var nestedScopes);
+                    ProcessNestedScopes(nestedScopes as List<IDictionary<string, object>>, typeName, probes);
                 }
             }
 
@@ -194,9 +195,14 @@ partial class Build
 
             foreach (var scope in scopes)
             {
-                if (scope["ScopeType"].ToString() == "Closure")
+                if (!scope.TryGetValue("ScopeType", out var scopeType))
                 {
-                    var closureName = scope["Name"].ToString();
+                    continue;
+                }
+
+                if (scopeType.ToString() == "Closure")
+                {
+                    var closureName = scope.TryGetValue("Name", out var closureNameValue) ? closureNameValue.ToString() : null;
                     if (!string.IsNullOrEmpty(closureName))
                     {
                         Logger.Debug($"Skipping closure: {closureName}");
@@ -205,17 +211,17 @@ partial class Build
                     continue;
                 }
 
-                if (scope["ScopeType"].ToString() == "Method")
+                if (scopeType.ToString() == "Method")
                 {
                     var isStatic = false;
-                    var ls = scope["LanguageSpecifics"];
+                    scope.TryGetValue("LanguageSpecifics", out var ls);
                     if (ls?.GetType().GetProperty("Annotations")?.GetValue(ls) is IList<string> annotations)
                     {
                         // Check for static flag (0x0010) in method attributes
                         isStatic = (int.Parse(annotations[0], NumberStyles.HexNumber) & 0x0010) > 0;
                     }
 
-                    var methodName = scope["Name"].ToString();
+                    var methodName = scope.TryGetValue("Name", out var methodNameValue) ? methodNameValue.ToString() : null;
                     if (string.IsNullOrEmpty(methodName))
                     {
                         continue;
@@ -228,7 +234,8 @@ partial class Build
                     }
 
                     var returnType = ls?.GetType().GetProperty("ReturnType", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(ls)?.ToString();
-                    if (TryCreateSnapshotExplorationProbe(typeName, methodName, returnType, (List<IDictionary<string, object>>)scope["Symbols"], isStatic, out var probe))
+                    scope.TryGetValue("Symbols", out var symbols);
+                    if (TryCreateSnapshotExplorationProbe(typeName, methodName, returnType, symbols as List<IDictionary<string, object>>, isStatic, out var probe))
                     {
                         probes.Add(probe);
                     }
