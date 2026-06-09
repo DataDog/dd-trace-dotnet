@@ -512,11 +512,11 @@ public class DataStreamsManagerTests
         var dsm = GetDataStreamManager(true, out _);
         var key = new EventBridgeEdgeTagCacheKey("event-bus-1", "detail-type-1");
 
-        var first = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.EventBusName}:{k.DetailType}", "type:eventbridge"]);
-        var second = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"topic:{k.EventBusName}:{k.DetailType}", "type:eventbridge"]);
+        var first = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"exchange:{k.EventBusName}", $"topic:{k.DetailType}", "type:eventbridge"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"exchange:{k.EventBusName}", $"topic:{k.DetailType}", "type:eventbridge"]);
 
         second.Should().BeSameAs(first);
-        first.Should().Equal("direction:out", "topic:event-bus-1:detail-type-1", "type:eventbridge");
+        first.Should().Equal("direction:out", "exchange:event-bus-1", "topic:detail-type-1", "type:eventbridge");
     }
 
     [Fact]
