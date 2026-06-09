@@ -7,7 +7,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
