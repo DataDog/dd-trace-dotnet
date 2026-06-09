@@ -5,8 +5,10 @@
 
 #define _GNU_SOURCE
 #include <dlfcn.h>
+#include <fcntl.h>
 #include <link.h>
 #include <pthread.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -56,6 +58,15 @@ INSTANTIATE_TEST_SUITE_P(
         (void*)::connect,
         (void*)::send,
         (void*)::sendto,
-        (void*)::sendmsg));
+        (void*)::sendmsg,
+        (void*)::open,
+        (void*)::openat,
+        (void*)::read,
+        (void*)::write,
+        (void*)::pread,
+        (void*)::pwrite,
+        (void*)::stat,
+        (void*)::lstat,
+        (void*)::fstatat));
 
 } // namespace WrappedFunctionsTest
