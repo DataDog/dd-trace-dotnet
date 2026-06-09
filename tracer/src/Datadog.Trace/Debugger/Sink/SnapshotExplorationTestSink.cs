@@ -55,7 +55,7 @@ namespace Datadog.Trace.Debugger.Sink
 
         private sealed class ProbeReportWriter : IDisposable
         {
-            private const string _fileName = "SnapshotExplorationTestReport.csv";
+            private const string FileName = "SnapshotExplorationTestReport.csv";
             private static readonly char[] CsvEscapeCharacters = { ',', '"', '\n', '\r' };
             private readonly string _fullPath;
             private readonly HashSet<string> _probesIds;
@@ -71,9 +71,9 @@ namespace Datadog.Trace.Debugger.Sink
                 }
 
 #if NET6_0_OR_GREATER
-                var fileName = Environment.ProcessId + "_" + _fileName;
+                var fileName = Environment.ProcessId + "_" + FileName;
 #else
-                var fileName = Process.GetCurrentProcess().Id + "_" + _fileName;
+                var fileName = Process.GetCurrentProcess().Id + "_" + FileName;
 #endif
                 Directory.CreateDirectory(folderPath);
                 _fullPath = Path.Combine(folderPath, fileName);
