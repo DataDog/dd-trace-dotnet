@@ -476,7 +476,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             bool serializedValue;
             if (Redaction.Instance.ShouldRedact(key as string, valueType, out var redactionReason))
             {
-                WriteRedactedValue(jsonWriter, valueType, variableName: null, redactionReason);
+                WriteRedactedValue(jsonWriter, valueType, variableName: null, redactionReason: redactionReason);
                 serializedValue = true;
             }
             else
