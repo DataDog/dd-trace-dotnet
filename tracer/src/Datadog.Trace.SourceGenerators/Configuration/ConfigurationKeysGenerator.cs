@@ -130,7 +130,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
             {
                 foreach (var scopeValue in entry.Scope)
                 {
-                    if (!ValidScopeValues.Any(v => string.Equals(v, scopeValue, StringComparison.OrdinalIgnoreCase)))
+                    if (scopeValue is not "managed" or "native")
                     {
                         diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Invalid scope", $"Configuration key '{kvp.Key}' has unrecognized scope value '{scopeValue}'. Valid values: managed, native.", DiagnosticSeverity.Error));
                     }
