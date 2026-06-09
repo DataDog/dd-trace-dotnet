@@ -129,8 +129,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 
             var busName = AwsEventBridgeCommon.GetEventBusNameOrDefault(eventBusName);
             var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
-                new EventBridgeEdgeTagCacheKey(detailType ?? string.Empty, busName),
-                static k => ["direction:out", $"topic:{k.DetailType}", $"type:eventbridge:{k.EventBusName}"]);
+                new EventBridgeEdgeTagCacheKey(busName, detailType ?? string.Empty),
+                static k => ["direction:out", $"topic:{k.EventBusName}:{k.DetailType}", "type:eventbridge"]);
 
             scope.Span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, payloadSizeBytes, timeInQueueMs: 0);
             return scope.Span.Context.PathwayContext;

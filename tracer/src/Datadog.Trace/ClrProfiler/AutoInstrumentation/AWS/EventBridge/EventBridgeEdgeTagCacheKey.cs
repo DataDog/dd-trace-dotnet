@@ -11,4 +11,4 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
 /// Value-type cache key for EventBridge produce edge tags. Using a named struct avoids boxing and
 /// is compatible with all supported target frameworks.
 /// </summary>
-internal readonly record struct EventBridgeEdgeTagCacheKey(string DetailType, string EventBusName);
+internal readonly record struct EventBridgeEdgeTagCacheKey(string EventBusName, string DetailType);
