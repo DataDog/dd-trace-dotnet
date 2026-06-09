@@ -69,6 +69,17 @@ WRAPPED_FUNCTION(int, lstat, (const char*, pathname)(struct stat*, buf))
 WRAPPED_FUNCTION(int, fstatat, (int, dirfd)(const char*, pathname)(struct stat*, buf)(int, flags))
 
 /*
+ * On glibc < 2.33 (e.g. CentOS 7), stat/lstat/fstatat are inline functions
+ * in the header that call __xstat/__lxstat/__fxstatat with a version argument.
+ * Applications compiled against older glibc will call __xstat, not stat.
+ * We wrap both unconditionally since this is a universal binary used on both
+ * glibc and musl. On musl, these symbols are never called (apps use stat directly).
+ */
+WRAPPED_FUNCTION(int, __xstat, (int, ver)(const char*, pathname)(struct stat*, buf))
+WRAPPED_FUNCTION(int, __lxstat, (int, ver)(const char*, pathname)(struct stat*, buf))
+WRAPPED_FUNCTION(int, __fxstatat, (int, ver)(int, dirfd)(const char*, pathname)(struct stat*, buf)(int, flags))
+
+/*
  * open/openat are variadic (optional mode_t argument when O_CREAT or O_TMPFILE
  * is set). The WRAPPED_FUNCTION macro cannot handle variadic functions, so we
  * implement the same pattern manually.

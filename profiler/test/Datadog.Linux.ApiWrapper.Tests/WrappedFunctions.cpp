@@ -65,8 +65,14 @@ INSTANTIATE_TEST_SUITE_P(
         (void*)::write,
         (void*)::pread,
         (void*)::pwrite,
-        (void*)::stat,
-        (void*)::lstat,
-        (void*)::fstatat));
+        // Use dlsym instead of (void*)::symbol because on glibc < 2.33,
+        // stat/lstat/fstatat are inline functions (calling __xstat etc.),
+        // so (void*)::stat would resolve to a local inline, not our wrapper.
+        dlsym(RTLD_DEFAULT, "stat"),
+        dlsym(RTLD_DEFAULT, "lstat"),
+        dlsym(RTLD_DEFAULT, "fstatat"),
+        dlsym(RTLD_DEFAULT, "__xstat"),
+        dlsym(RTLD_DEFAULT, "__lxstat"),
+        dlsym(RTLD_DEFAULT, "__fxstatat")));
 
 } // namespace WrappedFunctionsTest
