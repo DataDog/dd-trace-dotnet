@@ -26,7 +26,6 @@ namespace Datadog.Trace.Security.Unit.Tests
             nameof(TestVarietyPoco.UIntPtrValue),
             nameof(TestVarietyPoco.CharValue),
             nameof(TestVarietyPoco.GuidValue),
-            nameof(TestVarietyPoco.EnumValue),
             nameof(TestVarietyPoco.DateTimeValue),
             nameof(TestVarietyPoco.DateTimeOffsetValue),
             nameof(TestVarietyPoco.TimeSpanValue),
@@ -47,7 +46,12 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             foreach (var prop in target.GetType().GetProperties())
             {
-                Assert.Equal(_fieldsAsStrings.Contains(prop.Name) ? prop.GetValue(target).ToString() : prop.GetValue(target), result[prop.Name]);
+                var value = prop.GetValue(target);
+                // Enums are now extracted as their underlying numeric value (long/ulong), not their name.
+                object expectedValue = prop.PropertyType.IsEnum
+                    ? Convert.ToInt64(value)
+                    : _fieldsAsStrings.Contains(prop.Name) ? value.ToString() : value;
+                Assert.Equal(expectedValue, result[prop.Name]);
             }
         }
 
@@ -85,7 +89,10 @@ namespace Datadog.Trace.Security.Unit.Tests
             foreach (var prop in target.GetType().GetProperties())
             {
                 var value = prop.GetValue(target);
-                var expectedValue = _fieldsAsStrings.Contains(prop.Name) ? value.ToString() : value;
+                // Enums are now extracted as their underlying numeric value (long/ulong), not their name.
+                object expectedValue = prop.PropertyType.IsEnum
+                    ? Convert.ToInt64(value)
+                    : _fieldsAsStrings.Contains(prop.Name) ? value.ToString() : value;
                 Assert.Equal(expectedValue, result[prop.Name]);
             }
         }
@@ -567,6 +574,38 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
+        public void TestEnumMember_ExtractedAsNumeric_DefaultPath()
+        {
+            // Default Extract path: int-backed enum should be returned as long, not as its name string.
+            var target = new TestEnumPoco { Status = TestStatusEnum.Active }; // = 2
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            result![nameof(TestEnumPoco.Status)].Should().Be(2L);
+        }
+
+        [Fact]
+        public void TestEnumMember_ExtractedAsNumeric_DataContractPath()
+        {
+            // DataContractJsonSerializer emits enum members as their numeric value; ExtractDataContract
+            // must match.
+            var target = new TestDataContractEnumPoco { Status = TestStatusEnum.Active }; // = 2
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            result!["status"].Should().Be(2L);
+        }
+
+        [Fact]
+        public void TestByteBackedEnum_ExtractedAsULong_PreservesLargeValues()
+        {
+            // byte-backed enums with value > 127 would be silently dropped (encoded as empty string)
+            // by the modern WAF encoder if returned as a boxed byte. Widening to ulong preserves them.
+            var target = new TestByteEnumPoco { Level = TestByteEnum.High }; // = 200
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            result![nameof(TestByteEnumPoco.Level)].Should().Be(200UL);
+        }
+
+        [Fact]
         public void TestCollectionOfTPoco_ExtractedAsArray()
         {
             // Collection<T> should produce a List<object>, not an empty dict
@@ -913,5 +952,40 @@ namespace Datadog.Trace.Security.Unit.Tests
     {
         [DataMember(Name = "items")]
         public HashSet<int> Items { get; set; }
+    }
+
+    public enum TestStatusEnum
+    {
+#pragma warning disable SA1602 // Enumeration items should be documented
+        Unknown = 0,
+        Inactive = 1,
+        Active = 2,
+        Deleted = 3
+#pragma warning restore SA1602
+    }
+
+    public class TestEnumPoco
+    {
+        public TestStatusEnum Status { get; set; }
+    }
+
+    [DataContract]
+    public class TestDataContractEnumPoco
+    {
+        [DataMember(Name = "status")]
+        public TestStatusEnum Status { get; set; }
+    }
+
+    public enum TestByteEnum : byte
+    {
+#pragma warning disable SA1602 // Enumeration items should be documented
+        Low = 0,
+        High = 200
+#pragma warning restore SA1602
+    }
+
+    public class TestByteEnumPoco
+    {
+        public TestByteEnum Level { get; set; }
     }
 }

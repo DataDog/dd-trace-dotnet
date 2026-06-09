@@ -419,7 +419,19 @@ namespace Datadog.Trace.AppSec
                 return value;
             }
 
-            var unhandledType = itemType.IsEnum || itemType == typeof(Guid) || itemType == typeof(DateTime) || itemType == typeof(DateTimeOffset) || itemType == typeof(TimeSpan) || itemType.IsPrimitive;
+            if (itemType.IsEnum)
+            {
+                // JSON serializers (DataContractJsonSerializer, JSON.NET, System.Text.Json) emit enums as
+                // their underlying numeric value, not the name. Widen to long/ulong because the WAF encoder
+                // only handles int/uint/long/ulong as numerics — smaller types (byte/short/ushort/sbyte)
+                // would be silently dropped (encoded as an empty string) by the modern WAF encoder.
+                var underlying = Enum.GetUnderlyingType(itemType);
+                return underlying == typeof(byte) || underlying == typeof(ushort) || underlying == typeof(uint) || underlying == typeof(ulong)
+                    ? (object)Convert.ToUInt64(value)
+                    : (object)Convert.ToInt64(value);
+            }
+
+            var unhandledType = itemType == typeof(Guid) || itemType == typeof(DateTime) || itemType == typeof(DateTimeOffset) || itemType == typeof(TimeSpan) || itemType.IsPrimitive;
 #if NET6_0_OR_GREATER
             unhandledType = unhandledType || itemType == typeof(DateOnly) || itemType == typeof(TimeOnly);
 #endif
