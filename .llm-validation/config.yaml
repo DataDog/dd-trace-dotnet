@@ -1,0 +1,8 @@
+# LLM Validation Platform — dd-trace-dotnet config
+model: claude-opus-4-8
+runs: 3
+
+policy:
+  noise_threshold: 1.0
+  pairwise_win_floor: 0.45
+  high_severity_loss_confidence: 0.35
