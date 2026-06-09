@@ -1031,14 +1031,8 @@ partial class Build
 
         var reportInfo = new List<ProbeReportInfo>();
 
-        foreach (var file in Directory.EnumerateFiles(reportFolderPath))
+        foreach (var file in Directory.EnumerateFiles(reportFolderPath, "*_SnapshotExplorationTestReport.csv"))
         {
-            // Skip the metrics file - it has a different format
-            if (Path.GetFileName(file) == "exploration_test_metrics.csv")
-            {
-                continue;
-            }
-
             reportInfo.AddRange(
             File.ReadLines(file)
                 .Skip(1) // Skip the header row
