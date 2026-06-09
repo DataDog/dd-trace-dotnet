@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -213,14 +212,6 @@ partial class Build
 
                 if (scopeType.ToString() == "Method")
                 {
-                    var isStatic = false;
-                    scope.TryGetValue("LanguageSpecifics", out var ls);
-                    if (ls?.GetType().GetProperty("Annotations")?.GetValue(ls) is IList<string> annotations)
-                    {
-                        // Check for static flag (0x0010) in method attributes
-                        isStatic = (int.Parse(annotations[0], NumberStyles.HexNumber) & 0x0010) > 0;
-                    }
-
                     var methodName = scope.TryGetValue("Name", out var methodNameValue) ? methodNameValue.ToString() : null;
                     if (string.IsNullOrEmpty(methodName))
                     {
@@ -233,9 +224,10 @@ partial class Build
                         continue;
                     }
 
+                    scope.TryGetValue("LanguageSpecifics", out var ls);
                     var returnType = ls?.GetType().GetProperty("ReturnType", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(ls)?.ToString();
                     scope.TryGetValue("Symbols", out var symbols);
-                    if (TryCreateSnapshotExplorationProbe(typeName, methodName, returnType, symbols as List<IDictionary<string, object>>, isStatic, out var probe))
+                    if (TryCreateSnapshotExplorationProbe(typeName, methodName, returnType, symbols as List<IDictionary<string, object>>, out var probe))
                     {
                         probes.Add(probe);
                     }
@@ -248,7 +240,7 @@ partial class Build
         }
     }
 
-    bool TryCreateSnapshotExplorationProbe(string type, string method, string? returnType, List<IDictionary<string, object>>? methodParameters, bool isStatic, [NotNullWhen(true)] out SnapshotExplorationProbeDefinition? probe)
+    bool TryCreateSnapshotExplorationProbe(string type, string method, string? returnType, List<IDictionary<string, object>>? methodParameters, [NotNullWhen(true)] out SnapshotExplorationProbeDefinition? probe)
     {
         probe = null;
         try
@@ -269,7 +261,7 @@ partial class Build
             // Used to disambiguate overloaded methods: This,Param1,Param2,etc
             var methodSignature = GetMethodSignature(methodParameters);
 
-            var isInstanceMethod = !isStatic;
+            var isInstanceMethod = HasThisParameter(methodParameters);
             probe = new SnapshotExplorationProbeDefinition(Guid.NewGuid().ToString(), typeName, methodName, methodSignature, isInstanceMethod);
             return true;
         }
@@ -279,6 +271,13 @@ partial class Build
         }
 
         static string? SanitiseName(string? name) => name?.Replace(',', SpecialSeparator);
+
+        static bool HasThisParameter(List<IDictionary<string, object>>? symbols)
+            => symbols?.Any(symbol =>
+                   symbol.TryGetValue("SymbolType", out var symbolType) &&
+                   symbolType.ToString() == "Arg" &&
+                   symbol.TryGetValue("Name", out var symbolName) &&
+                   symbolName.ToString() == "this") == true;
 
         string GetMethodSignature(List<IDictionary<string, object>>? symbols)
         {
@@ -1071,42 +1070,42 @@ partial class Build
 
         var isValid = bool.TryParse(parts[3].Trim(), out var parsedIsValid) && parsedIsValid;
         return new ProbeReportInfo(parts[0].Trim(), parts[1].Trim() + "." + parts[2].Trim(), isValid, false);
+    }
 
-        static string[] ParseCsvFields(string csvLine)
+    static string[] ParseCsvFields(string csvLine)
+    {
+        var fields = new List<string>();
+        var field = new StringBuilder();
+        var inQuotes = false;
+
+        for (var i = 0; i < csvLine.Length; i++)
         {
-            var fields = new List<string>();
-            var field = new StringBuilder();
-            var inQuotes = false;
-
-            for (var i = 0; i < csvLine.Length; i++)
+            var current = csvLine[i];
+            if (current == '"')
             {
-                var current = csvLine[i];
-                if (current == '"')
+                if (inQuotes && i + 1 < csvLine.Length && csvLine[i + 1] == '"')
                 {
-                    if (inQuotes && i + 1 < csvLine.Length && csvLine[i + 1] == '"')
-                    {
-                        field.Append('"');
-                        i++;
-                    }
-                    else
-                    {
-                        inQuotes = !inQuotes;
-                    }
-                }
-                else if (current == ',' && !inQuotes)
-                {
-                    fields.Add(field.ToString());
-                    field.Clear();
+                    field.Append('"');
+                    i++;
                 }
                 else
                 {
-                    field.Append(current);
+                    inQuotes = !inQuotes;
                 }
             }
-
-            fields.Add(field.ToString());
-            return fields.ToArray();
+            else if (current == ',' && !inQuotes)
+            {
+                fields.Add(field.ToString());
+                field.Clear();
+            }
+            else
+            {
+                field.Append(current);
+            }
         }
+
+        fields.Add(field.ToString());
+        return fields.ToArray();
     }
 
     /// <summary>
@@ -1177,7 +1176,7 @@ partial class Build
 
             foreach (var line in lines.Skip(1))
             {
-                var parts = line.Split(',');
+                var parts = ParseCsvFields(line);
                 if (parts.Length < 2)
                 {
                     continue;
