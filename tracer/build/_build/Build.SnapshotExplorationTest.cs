@@ -1051,7 +1051,7 @@ partial class Build
         {
             var probeId = parts.Length > 0 ? parts[0].Trim() : "missing id";
             var type = parts.Length > 1 ? parts[1].Trim() : "missing type";
-            var method = parts.Length > 1 ? parts[2].Trim() : "missing method";
+            var method = parts.Length > 2 ? parts[2].Trim() : "missing method";
             return new ProbeReportInfo(probeId, type + "." + method, false, true);
         }
 
