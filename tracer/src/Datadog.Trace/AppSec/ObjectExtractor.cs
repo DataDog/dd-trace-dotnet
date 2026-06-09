@@ -405,6 +405,15 @@ namespace Datadog.Trace.AppSec
                 return ExtractDictionary(value, iDictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
             }
 
+            // DataContractJsonSerializer and other JSON serializers emit Collection<T>, ObservableCollection<T>,
+            // HashSet<T>, ISet<T>, IList<T>, and similar collection types as JSON arrays. Strings are handled
+            // above; dictionaries are handled above (and they also implement IEnumerable, so this check MUST
+            // follow the dictionary branches to avoid mis-routing them).
+            if (value is IEnumerable)
+            {
+                return ExtractListOrArray(value, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
+            }
+
             if (WafProcessableTypes.Contains(itemType))
             {
                 return value;
@@ -549,11 +558,18 @@ namespace Datadog.Trace.AppSec
                 return [];
             }
 
-            var sourceList = (ICollection)value;
-            var listSize = Math.Min(WafConstants.MaxContainerSize, sourceList.Count);
-            var items = new List<object?>(listSize);
+            if (value is not IEnumerable source)
+            {
+                return [];
+            }
 
-            foreach (var item in sourceList)
+            // Use ICollection for pre-sizing when available. Some types (e.g. HashSet<T>) implement
+            // ICollection<T> but not the non-generic ICollection, so fall back to default capacity.
+            var items = value is ICollection sourceColl
+                ? new List<object?>(Math.Min(WafConstants.MaxContainerSize, sourceColl.Count))
+                : new List<object?>();
+
+            foreach (var item in source)
             {
                 if (item is null)
                 {
