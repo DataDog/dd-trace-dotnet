@@ -76,8 +76,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike.SyncCommandIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Aerospike,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_XmlDictionaryWriter_Integration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_XmlWriter_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_XmlWriter_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.HttpModule_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ThreadContext_AssociateWithCurrentThread_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.ThreadContext_DisassociateFromCurrentThread_Integration"
