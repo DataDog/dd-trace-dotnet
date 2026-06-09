@@ -151,7 +151,12 @@ partial class Build
                 }
 
                 var symbolExtractor = createMethod?.Invoke(null, new object[] { assembly });
-                if (getClassSymbols?.Invoke(symbolExtractor, null) is not IEnumerable classSymbols)
+                if (symbolExtractor is null || getClassSymbols is null)
+                {
+                    continue;
+                }
+
+                if (getClassSymbols.Invoke(symbolExtractor, null) is not IEnumerable classSymbols)
                 {
                     continue;
                 }
