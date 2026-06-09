@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         ParameterTypeNames = new[] { "System.Xml.XmlDictionaryWriter", ClrNames.Object },
         MinimumVersion = "4",
         MaximumVersion = "4",
-        IntegrationName = nameof(IntegrationId.AspNetMvc),
+        IntegrationName = nameof(IntegrationId.AspNet),
         InstrumentationCategory = InstrumentationCategory.AppSec,
         CallTargetIntegrationKind = CallTargetKind.Default)]
     // ReSharper disable once InconsistentNaming
