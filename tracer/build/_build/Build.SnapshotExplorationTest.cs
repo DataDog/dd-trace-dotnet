@@ -1050,7 +1050,7 @@ partial class Build
 
     ProbeReportInfo ParseCsvLine(string line)
     {
-        var parts = line.Split(',');
+        var parts = ParseCsvFields(line);
 
         if (parts.Length != 4 || parts.Any(string.IsNullOrWhiteSpace))
         {
@@ -1062,6 +1062,42 @@ partial class Build
 
         var isValid = bool.TryParse(parts[3].Trim(), out var parsedIsValid) && parsedIsValid;
         return new ProbeReportInfo(parts[0].Trim(), parts[1].Trim() + "." + parts[2].Trim(), isValid, false);
+
+        static string[] ParseCsvFields(string csvLine)
+        {
+            var fields = new List<string>();
+            var field = new StringBuilder();
+            var inQuotes = false;
+
+            for (var i = 0; i < csvLine.Length; i++)
+            {
+                var current = csvLine[i];
+                if (current == '"')
+                {
+                    if (inQuotes && i + 1 < csvLine.Length && csvLine[i + 1] == '"')
+                    {
+                        field.Append('"');
+                        i++;
+                    }
+                    else
+                    {
+                        inQuotes = !inQuotes;
+                    }
+                }
+                else if (current == ',' && !inQuotes)
+                {
+                    fields.Add(field.ToString());
+                    field.Clear();
+                }
+                else
+                {
+                    field.Append(current);
+                }
+            }
+
+            fields.Add(field.ToString());
+            return fields.ToArray();
+        }
     }
 
     /// <summary>

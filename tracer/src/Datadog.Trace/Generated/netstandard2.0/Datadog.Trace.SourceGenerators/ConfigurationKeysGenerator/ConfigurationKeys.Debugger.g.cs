@@ -139,7 +139,7 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// Internal configuration key for the snapshot exploration test root path.
-        /// The tracer derives the probes CSV path and report output folder from this root.
+        /// The tracer derives the probe-definition JSON path and report output folder from this root.
         /// </summary>
         public const string SnapshotExplorationTestRootPath = "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ROOT_PATH";
 

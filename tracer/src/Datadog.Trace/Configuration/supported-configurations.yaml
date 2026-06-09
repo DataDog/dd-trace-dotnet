@@ -1333,7 +1333,7 @@ supportedConfigurations:
     const_name: SnapshotExplorationTestRootPath
     documentation: |-
       Internal configuration key for the snapshot exploration test root path.
-      The tracer derives the probes CSV path and report output folder from this root.
+      The tracer derives the probe-definition JSON path and report output folder from this root.
   DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH:
   - implementation: A
     scope: managed
