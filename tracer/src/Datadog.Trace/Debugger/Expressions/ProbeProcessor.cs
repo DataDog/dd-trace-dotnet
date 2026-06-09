@@ -180,11 +180,14 @@ namespace Datadog.Trace.Debugger.Expressions
                         {
                             AddAsyncMethodArguments(snapshotCreator, ref info);
                             snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
-                            evaluationResult = Evaluate(state, probeInfo, snapshotCreator, out var shouldStopCapture, probeData.Sampler);
-                            if (shouldStopCapture)
+                            if (state.ShouldEvaluateExpressions)
                             {
-                                snapshotCreator.Stop();
-                                return false;
+                                evaluationResult = Evaluate(state, probeInfo, snapshotCreator, out var shouldStopCapture, probeData.Sampler);
+                                if (shouldStopCapture)
+                                {
+                                    snapshotCreator.Stop();
+                                    return false;
+                                }
                             }
 
                             break;
@@ -246,11 +249,14 @@ namespace Datadog.Trace.Debugger.Expressions
                                         }
 
                                         snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
-                                        evaluationResult = Evaluate(state, probeInfo, snapshotCreator, out var shouldStopCapture, probeData.Sampler);
-                                        if (shouldStopCapture)
+                                        if (state.ShouldEvaluateExpressions)
                                         {
-                                            snapshotCreator.Stop();
-                                            return false;
+                                            evaluationResult = Evaluate(state, probeInfo, snapshotCreator, out var shouldStopCapture, probeData.Sampler);
+                                            if (shouldStopCapture)
+                                            {
+                                                snapshotCreator.Stop();
+                                                return false;
+                                            }
                                         }
 
                                         break;
@@ -748,6 +754,13 @@ namespace Datadog.Trace.Debugger.Expressions
                 HasCondition = condition.HasValue;
                 IsMetricCountWithoutExpression = probeInfo.ProbeType == ProbeType.Metric && (metric?.Json == null) && probeInfo.MetricKind == MetricKind.COUNT;
                 ShouldCaptureExpressions = !probeInfo.IsFullSnapshot && captureExpressions is { Length: > 0 };
+                ShouldEvaluateExpressions =
+                    HasCondition ||
+                    templates is { Length: > 0 } ||
+                    metric.HasValue ||
+                    spanDecorations is { Length: > 0 } ||
+                    IsMetricCountWithoutExpression ||
+                    ShouldCaptureExpressions;
             }
 
             internal ProbeInfo ProbeInfo { get; }
@@ -767,6 +780,8 @@ namespace Datadog.Trace.Debugger.Expressions
             internal bool IsMetricCountWithoutExpression { get; }
 
             internal bool ShouldCaptureExpressions { get; }
+
+            internal bool ShouldEvaluateExpressions { get; }
 
             internal static ProbeProcessorState Create(ProbeDefinition probe)
             {
