@@ -36,6 +36,7 @@ partial class Build
             envVars.Add("DD_TRACE_ENABLED", "0");
             var testRootPath = description.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
             var snapshotExplorationRootPath = GetSnapshotExplorationRootPath(testRootPath, framework);
+            envVars["DD_TRACE_LOG_DIRECTORY"] = GetSnapshotExplorationLogFolderPath(description, framework);
             envVars.Add(SnapshotExplorationRootPathKey, snapshotExplorationRootPath);
             envVars.Add("DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE", GetSnapshotExplorationProbesFilePath(snapshotExplorationRootPath));
         }

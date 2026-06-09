@@ -46,6 +46,9 @@ partial class Build
     static string GetSnapshotExplorationReportFolderPath(string snapshotExplorationRootPath)
         => Path.Combine(snapshotExplorationRootPath, SnapshotExplorationTestReportFolderName);
 
+    string GetSnapshotExplorationLogFolderPath(ExplorationTestDescription testDescription, TargetFramework framework)
+        => Path.Combine(TestLogsDirectory, "snapshot-exploration", testDescription.Name.ToString(), framework.ToString());
+
     void RunSnapshotExplorationTestsInternal()
     {
         if (ExplorationTestName.HasValue)
@@ -87,7 +90,9 @@ partial class Build
             var envVariables = GetEnvironmentVariables(testDescription, framework);
             var testRootPath = testDescription.GetTestTargetPath(ExplorationTestsDirectory, framework, BuildConfiguration);
             var snapshotExplorationRootPath = GetSnapshotExplorationRootPath(testRootPath, framework);
+            var logFolderPath = GetSnapshotExplorationLogFolderPath(testDescription, framework);
             FileSystemTasks.EnsureCleanDirectory(GetSnapshotExplorationReportFolderPath(snapshotExplorationRootPath));
+            FileSystemTasks.EnsureCleanDirectory(logFolderPath);
 
             var testStopwatch = Stopwatch.StartNew();
             Test(testDescription, framework, envVariables);
@@ -96,6 +101,7 @@ partial class Build
             VerifySnapshotExplorationTestResults(
                 GetSnapshotExplorationProbesFilePath(snapshotExplorationRootPath),
                 GetSnapshotExplorationReportFolderPath(snapshotExplorationRootPath),
+                logFolderPath,
                 testStopwatch.Elapsed);
         }
     }
@@ -379,7 +385,7 @@ partial class Build
 
     private sealed record SnapshotExplorationProbeDefinition(string ProbeId, string TypeName, string MethodName, string Signature, bool IsInstanceMethod);
 
-    public void VerifySnapshotExplorationTestResults(string probesFilePath, string reportFolderPath, TimeSpan testDuration)
+    public void VerifySnapshotExplorationTestResults(string probesFilePath, string reportFolderPath, string logFolderPath, TimeSpan testDuration)
     {
         var analysisStopwatch = Stopwatch.StartNew();
         var timings = new Dictionary<string, TimeSpan>();
@@ -404,11 +410,11 @@ partial class Build
         }
 
         stepWatch.Restart();
-        var skippedProbes = ReadSkippedProbesFromNativeLogs();
+        var skippedProbes = ReadSkippedProbesFromNativeLogs(logFolderPath);
         timings["ReadNativeLogs(skipped)"] = stepWatch.Elapsed;
 
         stepWatch.Restart();
-        var nativeRewriterFailures = ReadNativeRewriterFailuresFromLogs();
+        var nativeRewriterFailures = ReadNativeRewriterFailuresFromLogs(logFolderPath);
         timings["ReadNativeLogs(rewriter)"] = stepWatch.Elapsed;
 
         // Native rewriter log parsing currently returns a mix of:
@@ -424,7 +430,7 @@ partial class Build
             .ToList();
 
         // Check for potential log rolling that could cause incomplete data
-        var logRollingWarning = CheckForLogRolling();
+        var logRollingWarning = CheckForLogRolling(logFolderPath);
 
         stepWatch.Restart();
         var probesReport = ReadReportedSnapshotProbesIds(reportFolderPath, out var snapshotReportFileCount);
@@ -436,7 +442,7 @@ partial class Build
 
         // Read managed log errors (expression evaluation, serialization, etc.)
         stepWatch.Restart();
-        var managedErrors = ReadErrorsFromManagedLogs(out var managedLogBytes);
+        var managedErrors = ReadErrorsFromManagedLogs(logFolderPath, out var managedLogBytes);
         timings["ReadManagedLogs"] = stepWatch.Elapsed;
         fileSizes["ManagedLogs"] = managedLogBytes;
 
@@ -939,7 +945,7 @@ partial class Build
         // Output paths for detailed investigation
         Logger.Information("");
         Logger.Information("Log locations for detailed investigation:");
-        Logger.Information($"  Logs: {BuildDataDirectory / "logs"}");
+        Logger.Information($"  Logs: {logFolderPath}");
         Logger.Information($"  Report folder: {reportFolderPath}");
     }
 
@@ -1112,9 +1118,8 @@ partial class Build
     /// Checks if log files might have been rolled during test execution.
     /// Returns a warning message if rolled log files are detected, or null if logs appear complete.
     /// </summary>
-    private string? CheckForLogRolling()
+    private string? CheckForLogRolling(string logDirectory)
     {
-        var logDirectory = BuildDataDirectory / "logs";
         if (!Directory.Exists(logDirectory))
         {
             return null;
@@ -1208,10 +1213,9 @@ partial class Build
     /// Reads optional debug-level native signature mismatch diagnostics.
     /// Format in logs: "* Skipping MethodName: reason"
     /// </summary>
-    private Dictionary<string, string> ReadSkippedProbesFromNativeLogs()
+    private Dictionary<string, string> ReadSkippedProbesFromNativeLogs(string logDirectory)
     {
         var result = new Dictionary<string, string>();
-        var logDirectory = BuildDataDirectory / "logs";
 
         if (!Directory.Exists(logDirectory))
         {
@@ -1267,10 +1271,9 @@ partial class Build
     ///   - "Failed to determine if argument/local index = ... is By-Ref like." (line ~108)
     ///   - "because it's a pinned local." (line ~125)
     /// </summary>
-    private List<NativeRewriterError> ReadNativeRewriterFailuresFromLogs()
+    private List<NativeRewriterError> ReadNativeRewriterFailuresFromLogs(string logDirectory)
     {
         var result = new List<NativeRewriterError>();
-        var logDirectory = BuildDataDirectory / "logs";
 
         if (!Directory.Exists(logDirectory))
         {
@@ -1400,10 +1403,9 @@ partial class Build
     ///   - "Failed to evaluate expression" (line ~342)
     /// - Any managed log with "[ERR]" and a probeId in context
     /// </summary>
-    private List<ManagedLogError> ReadErrorsFromManagedLogs(out long totalBytesRead)
+    private List<ManagedLogError> ReadErrorsFromManagedLogs(string logDirectory, out long totalBytesRead)
     {
         var result = new List<ManagedLogError>();
-        var logDirectory = BuildDataDirectory / "logs";
         totalBytesRead = 0;
 
         if (!Directory.Exists(logDirectory))
