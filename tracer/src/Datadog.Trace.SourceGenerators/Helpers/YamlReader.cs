@@ -367,8 +367,8 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                 Product = product;
                 Documentation = documentation;
                 ConstName = constName;
-                Scope = scope;
-                Aliases = aliases;
+                Scope = scope is null ? default : new EquatableArray<string>(scope);
+                Aliases = aliases is null ? default : new EquatableArray<string>(aliases);
             }
 
             public string Key { get; }
@@ -379,71 +379,21 @@ namespace Datadog.Trace.SourceGenerators.Helpers
 
             public string? ConstName { get; }
 
-            public string[]? Scope { get; }
+            public EquatableArray<string> Scope { get; }
 
-            public string[]? Aliases { get; }
+            public EquatableArray<string> Aliases { get; }
 
             public bool Equals(ConfigurationEntry other)
-            {
-                if (Key != other.Key || Product != other.Product || Documentation != other.Documentation || ConstName != other.ConstName)
-                {
-                    return false;
-                }
-
-                if (!ArraysEqual(Scope, other.Scope) || !ArraysEqual(Aliases, other.Aliases))
-                {
-                    return false;
-                }
-
-                return true;
-            }
-
-            private static bool ArraysEqual(string[]? a, string[]? b)
-            {
-                if (ReferenceEquals(a, b))
-                {
-                    return true;
-                }
-
-                if (a is null || b is null || a.Length != b.Length)
-                {
-                    return a is null && b is null;
-                }
-
-                for (var i = 0; i < a.Length; i++)
-                {
-                    if (a[i] != b[i])
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
+                => Key == other.Key
+                && Product == other.Product
+                && Documentation == other.Documentation
+                && ConstName == other.ConstName
+                && Scope == other.Scope
+                && Aliases == other.Aliases;
 
             public override bool Equals(object? obj) => obj is ConfigurationEntry other && Equals(other);
 
-            public override int GetHashCode()
-            {
-                var hash = HashCode.Combine(Key, Product, Documentation, ConstName);
-                if (Scope is not null)
-                {
-                    foreach (var s in Scope)
-                    {
-                        hash = HashCode.Combine(hash, s);
-                    }
-                }
-
-                if (Aliases is not null)
-                {
-                    foreach (var alias in Aliases)
-                    {
-                        hash = HashCode.Combine(hash, alias);
-                    }
-                }
-
-                return hash;
-            }
+            public override int GetHashCode() => HashCode.Combine(Key, Product, Documentation, ConstName, Scope, Aliases);
         }
 
         /// <summary>

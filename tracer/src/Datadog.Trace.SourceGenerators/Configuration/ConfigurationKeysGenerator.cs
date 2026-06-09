@@ -25,7 +25,6 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
     private const string SupportedConfigurationsFileName = "supported-configurations.yaml";
     private const string GeneratedClassName = "ConfigurationKeys";
     private const string Namespace = "Datadog.Trace.Configuration";
-    private static readonly string[] ValidScopeValues = ["managed", "native"];
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -122,15 +121,15 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
             var entry = kvp.Value;
 
             // Scope is required, non-empty, and must contain only recognized tokens.
-            if (entry.Scope is null || entry.Scope.Length == 0)
+            if (entry.Scope.Count == 0)
             {
                 diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Missing scope", $"Configuration key '{kvp.Key}' is missing a 'scope' field in supported-configurations.yaml. Use: managed, native, or managed, native.", DiagnosticSeverity.Error));
             }
             else
             {
-                foreach (var scopeValue in entry.Scope)
+                foreach (var scopeValue in entry.Scope.AsSpan())
                 {
-                    if (scopeValue is not "managed" or "native")
+                    if (scopeValue is not ("managed" or "native"))
                     {
                         diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Invalid scope", $"Configuration key '{kvp.Key}' has unrecognized scope value '{scopeValue}'. Valid values: managed, native.", DiagnosticSeverity.Error));
                     }
@@ -150,7 +149,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         foreach (var kvp in parsedData.Configurations)
         {
             var entry = kvp.Value;
-            if (entry.Scope is null || !entry.Scope.Any(s => string.Equals(s, "managed", StringComparison.OrdinalIgnoreCase)))
+            if (!ScopeContains(entry.Scope, "managed"))
             {
                 continue;
             }
@@ -169,6 +168,21 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         }
 
         return new Result<ConfigurationData>(new ConfigurationData(configurations), new EquatableArray<DiagnosticInfo>(diagnostics.ToArray()));
+    }
+
+    // Allocation-free, case-sensitive membership check over a scope array. Avoids LINQ since the
+    // generator runs on every compilation (including IDE keystrokes).
+    private static bool ScopeContains(EquatableArray<string> scope, string value)
+    {
+        foreach (var s in scope.AsSpan())
+        {
+            if (s == value)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string GenerateProductPartialClass(string product, List<KeyValuePair<string, ConfigEntry>> entries)
