@@ -52,13 +52,10 @@ namespace Datadog.Trace.Debugger.Sink
             _snapshotSink.Add(probeId, snapshot);
         }
 
-        protected override void Dispose(bool disposing)
+        public override void Dispose()
         {
-            base.Dispose(disposing);
-            if (disposing)
-            {
-                _snapshotSink.Dispose();
-            }
+            base.Dispose();
+            _snapshotSink.Dispose();
         }
     }
 }
