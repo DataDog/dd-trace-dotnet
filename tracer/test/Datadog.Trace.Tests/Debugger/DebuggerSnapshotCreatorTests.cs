@@ -252,6 +252,37 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ObjectStructure_DictionaryEntryValue_WithRedactedKey_IsRedacted()
+        {
+            object[] dictionaries =
+            [
+                new Dictionary<string, object> { { "password", "DD_SECRET_LEAK" }, { "name", "value" } },
+                new Dictionary<object, object> { { "password", "DD_SECRET_LEAK" }, { "name", "value" } }
+            ];
+
+            foreach (var dictionary in dictionaries)
+            {
+                var local = GetLocalToken(dictionary);
+
+                Assert.Equal("Dictionary`2", local["type"]?.Value<string>());
+                Assert.Equal(2, local["size"]?.Value<int>());
+                Assert.Null(local["elements"]);
+
+                var entries = local["entries"] as JArray;
+                Assert.NotNull(entries);
+                Assert.Equal(2, entries!.Count);
+                Assert.Contains(entries, entry =>
+                    entry[0]?["value"]?.Value<string>() == "password" &&
+                    entry[1]?["type"]?.Value<string>() == "String" &&
+                    entry[1]?["notCapturedReason"]?.Value<string>() == "redactedIdent" &&
+                    entry[1]?["value"] is null);
+                Assert.Contains(entries, entry =>
+                    entry[0]?["value"]?.Value<string>() == "name" &&
+                    entry[1]?["value"]?.Value<string>() == "value");
+            }
+        }
+
+        [Fact]
         public void ObjectStructure_SortedList_IsSerializedAsDictionary()
         {
             var local = GetLocalToken(new SortedList { { "one", 1 }, { "two", 2 } });
