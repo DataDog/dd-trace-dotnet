@@ -1955,8 +1955,15 @@ partial class Build
                         { } targets => targets.Contains(Framework),
                         _ => true,
                     };
-                });
-
+                })
+                // On CI the "isolated" samples are built by the build_samples stage and downloaded
+                // (steps/download-samples.yml), so we must not rebuild them here. The "in-process"
+                // samples are excluded from the samples solution build (no Build.0 entry in
+                // Datadog.Trace.Samples.g.sln), so they're never in that artifact and must always be
+                // built here. They are exactly the samples whose path contains "InProcess" (verified
+                // against the solution Build.0 flags); this assumes that naming convention holds.
+                // Locally nothing is downloaded, so we build everything.
+                .Where(path => IsLocalBuild || path.ToString().Contains("InProcess", StringComparison.OrdinalIgnoreCase));
 
             DotnetBuild(projects, noRestore: false);
         });
