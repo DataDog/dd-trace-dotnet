@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.Runtime.Serialization",
-        TypeName = "System.Runtime.Serialization.Json.DataContractJsonSerializer",
+        TypeName = "System.Runtime.Serialization.XmlObjectSerializer",
         MethodName = "WriteObject",
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { "System.Xml.XmlWriter", ClrNames.Object },
@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MaximumVersion = "4",
         IntegrationName = nameof(IntegrationId.AspNet),
         InstrumentationCategory = InstrumentationCategory.AppSec,
-        CallTargetIntegrationKind = CallTargetKind.Default)]
+        CallTargetIntegrationKind = CallTargetKind.Derived)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
