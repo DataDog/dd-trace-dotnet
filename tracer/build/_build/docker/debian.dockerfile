@@ -118,9 +118,8 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && rm dotnet-install.sh
 
 ARG AZURE_FUNCTIONS_CORE_TOOLS_VERSION=4.11.0
-ARG INSTALL_AZURE_FUNCTIONS_CORE_TOOLS=false
 
-RUN if [ "$INSTALL_AZURE_FUNCTIONS_CORE_TOOLS" = "true" ] && [ "$(uname -m)" = "x86_64" ]; \
+RUN if [ "$(uname -m)" = "x86_64" ]; \
     then curl -fsSL "https://github.com/Azure/azure-functions-core-tools/releases/download/${AZURE_FUNCTIONS_CORE_TOOLS_VERSION}/Azure.Functions.Cli.linux-x64.${AZURE_FUNCTIONS_CORE_TOOLS_VERSION}.zip" --output azure-functions-core-tools.zip \
         && mkdir -p /opt/azure-functions-core-tools \
         && unzip -q azure-functions-core-tools.zip -d /opt/azure-functions-core-tools \

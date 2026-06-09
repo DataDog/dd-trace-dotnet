@@ -2392,16 +2392,6 @@ stages:
         echo "##vso[task.setvariable variable=IntegrationTestFilter]$newFilter"
       displayName: "Calculate IntegrationTestFilter"
 
-    - bash: |
-        installAzureFunctionsCoreTools=false
-
-        if [ "$(baseImage)" = "debian" ] && [ "$(dockerGroup)" = "2" ]; then
-          installAzureFunctionsCoreTools=true
-        fi
-
-        echo "##vso[task.setvariable variable=installAzureFunctionsCoreTools]$installAzureFunctionsCoreTools"
-      displayName: "Calculate installAzureFunctionsCoreTools"
-
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
     - template: steps/run-in-docker.yml
@@ -2426,7 +2416,6 @@ stages:
         SampleName: $(IntegrationTestSampleName)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         COMPOSE_PROFILES: group$(dockerGroup)
-        INSTALL_AZURE_FUNCTIONS_CORE_TOOLS: $(installAzureFunctionsCoreTools)
       displayName: docker-compose build IntegrationTests and run StartDependencies (Group $(dockerGroup))
       retryCountOnTaskFailure: 5
 
