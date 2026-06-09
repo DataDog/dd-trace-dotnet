@@ -1921,8 +1921,10 @@ partial class Build
         var areaFilter = $"(Area={Area})";
 
         // CiVisibility tests carry both Area=Tracer (assembly-level) and Area=CiVisibility (class-level).
-        // Exclude them from the Tracer job so they only run in the dedicated CiVisibility job.
-        if (Area == TracerArea)
+        // On Linux they run in a dedicated CiVisibility job, so exclude them from the Tracer job there.
+        // On Windows there is no dedicated CiVisibility job (almost all CiVisibility tests are Linux-only),
+        // so the Windows Tracer job keeps running them (e.g. IpcSampleTest).
+        if (Area == TracerArea && !IsWin)
         {
             areaFilter += $"&(Area!={CiVisibilityArea})";
         }

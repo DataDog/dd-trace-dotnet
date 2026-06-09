@@ -214,7 +214,10 @@ partial class Build : NukeBuild
             {
                 var targetFrameworks = GetTestingFrameworks(PlatformFamily.Windows);
                 var targetPlatforms = new[] { "x86", "x64" };
-                var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
+                // CiVisibility is not split out on Windows: almost all CiVisibility tests are Linux-only,
+                // so a dedicated Windows job would spin up per framework/platform just to run the single
+                // IpcSampleTest. Keep those tests in the Windows Tracer job instead (see AddAreaFilter).
+                var areas = new[] { TracerArea, AsmArea };
                 var matrix = new Dictionary<string, object>();
 
                 foreach (var framework in targetFrameworks)
