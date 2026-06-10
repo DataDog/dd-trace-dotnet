@@ -33,18 +33,22 @@ The job is **manual** during bring-up (it's a paid LLM run) and skips `master`; 
 
 ## Prerequisites / open items (must confirm before first run)
 
-1. **Image (`LLMVAL_IMAGE`)** defaults to `mcr.microsoft.com/dotnet/sdk:8.0` (Debian, amd64 — the family the
-   repo's Linux Dockerfiles use). If ddbuild CI can't pull external `mcr`, point it at the registry.ddbuild.io
-   mirror. `run.sh` self-provisions the rest on that Debian base: `apt-get` git/curl/jq, install **node** +
-   the **Claude Code CLI** (the agent under test — no .NET Claude Agent SDK exists), download `authanywhere`.
-   **PR comments:** `pr-commenter` lives only in the `benchmarking-platform-tools` image, so on a .NET image
-   the report posts as a **log + artifact** (not a PR comment) until we fetch `pr-commenter` or post via the
-   GitHub API — add once v1 works.
-2. **AI Gateway entitlement — CONFIRMED (2026-06).** The manual **"llm gateway check"** job minted a
+1. **Image must be an approved `registry.ddbuild.io` image.** The k8s runners enforce a registry allowlist
+   (`ValidatingAdmissionPolicy 'third-party-registry'`); external images (`mcr.microsoft.com/...`, dockerhub)
+   are **denied**. `LLMVAL_IMAGE` is set to `registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest`
+   — proven approved (the gateway-check ran on it) and it has `pr-commenter`/git/jq/curl (so PR comments work).
+   On that base `run.sh` installs **.NET 8 SDK** (dotnet-install.sh), **node** + the **Claude Code CLI**
+   (agent under test — no .NET Agent SDK), and downloads `authanywhere`.
+2. **Runtime egress for those installs is the next unknown.** Internal calls work (authanywhere/binaries,
+   AI gateway, the gitlab.ddbuild.io clone), but the .NET installer (`dot.net`), NodeSource/npm, and NuGet
+   (`api.nuget.org`) are external. If the runner blocks them, **bake a custom approved image**
+   (`FROM benchmarking-platform-tools-ubuntu` + .NET 8 + node + `@anthropic-ai/claude-code`, pushed to
+   registry.ddbuild.io) so the job makes only internal calls. The first run's log shows exactly which install fails.
+3. **AI Gateway entitlement — CONFIRMED (2026-06).** The manual **"llm gateway check"** job minted a
    `rapid-ai-platform` token in CI and got **HTTP 200** from `ai-gateway.us1.ddbuild.io` (Bedrock-backed;
    bare model id `claude-opus-4-8` works). `gateway-check.{yml,sh}` remain for re-checking if auth changes.
-3. **Merge-base availability.** `run.sh` fetches the target branch so `git show $CI_MERGE_REQUEST_DIFF_BASE_SHA:AGENTS.md`
-   resolves; if `GIT_DEPTH` is very shallow you may need a deeper fetch.
+4. **Merge-base availability.** `run.sh` resolves baseline = `git merge-base origin/master HEAD` after a
+   `--depth 200` fetch of `master`; if history is too shallow it falls back to comparing against `origin/master`.
 
 ## Cost / tuning
 

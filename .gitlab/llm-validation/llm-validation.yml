@@ -22,9 +22,11 @@
     - when: manual
       allow_failure: true
   variables:
-    # Debian-based .NET 8 SDK (amd64) — same family the repo's Linux Dockerfiles use. If ddbuild CI can't
-    # pull external mcr, swap to the registry.ddbuild.io mirror (e.g. registry.ddbuild.io/images/mirror/dotnet/sdk:8.0).
-    LLMVAL_IMAGE: "mcr.microsoft.com/dotnet/sdk:8.0"
+    # Must be an approved (registry.ddbuild.io) image — the k8s runners enforce a registry allowlist (VAP).
+    # benchmarking-platform-tools-ubuntu is proven-approved (the gateway-check ran on it) and has
+    # pr-commenter/git/jq/curl; run.sh installs .NET 8 + node + claude on top. If runtime egress for those
+    # installs is blocked, bake a custom approved image instead (see README).
+    LLMVAL_IMAGE: "registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest"
     LLMVAL_PLATFORM_REF: "main"   # ref of DataDog/llm-validation-platform to build the CLI from
     LLMVAL_RUNS: "3"              # repeats per case (more = tighter win-rate CI)
     LLMVAL_MAX_CASES: "1"         # cheap first run; raise / remove once it's working

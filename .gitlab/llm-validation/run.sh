@@ -43,6 +43,16 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 npm i -g @anthropic-ai/claude-code >/dev/null
 
+echo "=== LLM Validation: ensure .NET 8 SDK ==="
+if ! command -v dotnet >/dev/null 2>&1; then
+  echo "dotnet not found — installing .NET 8 SDK..."
+  curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
+    && bash /tmp/dotnet-install.sh --channel 8.0 --install-dir /usr/local/dotnet --no-path \
+    || { echo "ERROR: could not install .NET (egress to dot.net blocked?). Use a baked image — see README."; exit 1; }
+  export PATH="/usr/local/dotnet:$PATH"
+fi
+dotnet --version || true
+
 echo "=== LLM Validation: fetch + build platform CLI ($PLATFORM_REF) ==="
 BTI_TOKEN="$(authanywhere --audience rapid-devex-ci)"
 GITLAB_TOKEN="$(curl -fsSL -H "$BTI_TOKEN" -H 'Content-Type: application/vnd.api+json' \
