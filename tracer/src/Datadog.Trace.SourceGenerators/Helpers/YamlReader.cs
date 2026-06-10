@@ -242,10 +242,18 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                                     break;
                                 case "scope":
                                     // Comma-separated scope values: managed | native | managed, native
-                                    currentScope = propValue.Split(',')
-                                                            .Select(s => s.Trim())
-                                                            .Where(s => !string.IsNullOrEmpty(s))
-                                                            .ToArray();
+                                    var scopeParts = propValue.Split(',');
+                                    var scopeValues = new List<string>(scopeParts.Length);
+                                    foreach (var part in scopeParts)
+                                    {
+                                        var trimmed = part.Trim();
+                                        if (trimmed.Length > 0)
+                                        {
+                                            scopeValues.Add(trimmed);
+                                        }
+                                    }
+
+                                    currentScope = scopeValues.ToArray();
                                     break;
                                 case "aliases":
                                     inAliases = true;
