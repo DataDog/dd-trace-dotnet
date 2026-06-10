@@ -41,8 +41,6 @@ struct FootprintTracker;
 
 class LibrariesInfoCache : public ServiceBase
 {
-    friend struct FootprintTracker;
-
 public:
     LibrariesInfoCache(IConfiguration* configuration, shared::pmr::memory_resource* resource, MetricsRegistry& metricsRegistry);
     ~LibrariesInfoCache();

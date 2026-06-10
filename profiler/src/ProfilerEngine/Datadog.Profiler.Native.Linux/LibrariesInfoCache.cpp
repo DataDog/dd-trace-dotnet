@@ -95,6 +95,12 @@ struct FootprintTracker
     std::uint32_t reloadCount{0};
     std::uint64_t totalCpuNs{0};
 
+    std::atomic<uint32_t> libCount{0};
+#ifdef ARM64
+    std::atomic<uint32_t> moduleRegionCount{0};
+    std::atomic<uint32_t> symbolCount{0};
+#endif
+
     std::shared_ptr<ProxyMetric> libCountMetric;
     std::shared_ptr<ProxyMetric> memoryFootprintMetric;
 #ifdef ARM64
@@ -110,7 +116,7 @@ struct FootprintTracker
     {
     }
 
-    void RegisterMetrics(MetricsRegistry& registry, LibrariesInfoCache* cache);
+    void RegisterMetrics(MetricsRegistry& registry);
     void LogStats(std::size_t libCount);
     void RecordReload(std::chrono::steady_clock::duration reloadDuration,
                       std::chrono::steady_clock::duration lockDuration,
@@ -141,7 +147,7 @@ LibrariesInfoCache::LibrariesInfoCache(IConfiguration* configuration, shared::pm
 {
     if (_tracker)
     {
-        _tracker->RegisterMetrics(metricsRegistry, this);
+        _tracker->RegisterMetrics(metricsRegistry);
     }
 }
 
@@ -354,6 +360,14 @@ void LibrariesInfoCache::UpdateCache()
         _moduleRegions.swap(_newRegions);
         _symbols.swap(_newSymbols);
 #endif
+        if (_tracker)
+        {
+            _tracker->libCount.store(static_cast<uint32_t>(_librariesInfo.size()), std::memory_order_relaxed);
+#ifdef ARM64
+            _tracker->moduleRegionCount.store(static_cast<uint32_t>(_moduleRegions.size()), std::memory_order_relaxed);
+            _tracker->symbolCount.store(static_cast<uint32_t>(_symbols.size()), std::memory_order_relaxed);
+#endif
+        }
     }
     std::chrono::steady_clock::time_point lockEnd;
     if (_tracker)
@@ -618,20 +632,20 @@ void* LibrariesInfoCache::GetLocalAddressSpace()
 // FootprintTracker method implementations
 // --------------------------------------------------------------------------
 
-void FootprintTracker::RegisterMetrics(MetricsRegistry& registry, LibrariesInfoCache* cache)
+void FootprintTracker::RegisterMetrics(MetricsRegistry& registry)
 {
-    libCountMetric = registry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_count", [cache]() {
-        return static_cast<double_t>(cache->_librariesInfo.size());
+    libCountMetric = registry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_count", [this]() {
+        return static_cast<double_t>(libCount.load(std::memory_order_relaxed));
     });
     memoryFootprintMetric = registry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_libs_cache", [this]() {
         return static_cast<double_t>(trackingResource.GetCurrentUsage());
     });
 #ifdef ARM64
-    moduleCountMetric = registry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_module_regions", [cache]() {
-        return static_cast<double_t>(cache->_moduleRegions.size());
+    moduleCountMetric = registry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_module_regions", [this]() {
+        return static_cast<double_t>(moduleRegionCount.load(std::memory_order_relaxed));
     });
-    symbolCountMetric = registry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_symbols", [cache]() {
-        return static_cast<double_t>(cache->_symbols.size());
+    symbolCountMetric = registry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_symbols", [this]() {
+        return static_cast<double_t>(symbolCount.load(std::memory_order_relaxed));
     });
 #endif
     updateCpuMetric = registry.GetOrRegister<MeanMaxMetric>("dotnet_libs_cache_update_cpu_ns");
@@ -645,6 +659,10 @@ void FootprintTracker::LogStats(std::size_t libCount)
     Log::Info("  Cache reloads: ", reloadCount);
     Log::Info("  Total CPU (worker): ", totalCpuNs / 1'000'000, " ms");
     Log::Info("  Libraries in cache: ", libCount);
+#ifdef ARM64
+    Log::Info("  Module regions: ", moduleRegionCount.load(std::memory_order_relaxed));
+    Log::Info("  Symbol entries: ", symbolCount.load(std::memory_order_relaxed));
+#endif
     Log::Info("  Memory current: ", trackingResource.GetCurrentUsage(), " bytes");
 }
 
