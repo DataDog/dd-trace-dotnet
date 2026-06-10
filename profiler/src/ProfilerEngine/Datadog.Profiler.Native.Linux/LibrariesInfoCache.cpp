@@ -17,16 +17,12 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <signal.h>
-#include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
 
 using namespace std::chrono_literals;
 
 namespace {
-
-constexpr auto CpuTimerInterval = 10ms;
 
 struct ScopedMmap
 {
@@ -48,16 +44,6 @@ struct ScopedMmap
     explicit operator bool() const { return data != MAP_FAILED; }
 };
 
-std::atomic<std::uint64_t>* s_cpuTicksPtr = nullptr;
-
-void CpuTickSignalHandler(int /*sig*/)
-{
-    auto* ptr = s_cpuTicksPtr;
-    if (ptr != nullptr)
-    {
-        ptr->fetch_add(1, std::memory_order_relaxed);
-    }
-}
 } // anonymous namespace
 
 // --------------------------------------------------------------------------
@@ -73,39 +59,17 @@ public:
     }
 
     std::size_t GetCurrentUsage() const { return _currentUsage.load(std::memory_order_relaxed); }
-    std::size_t GetPeakUsage() const { return _peakUsage.load(std::memory_order_relaxed); }
-    std::size_t GetTotalAllocated() const { return _totalAllocated.load(std::memory_order_relaxed); }
-    std::size_t GetTotalDeallocated() const { return _totalDeallocated.load(std::memory_order_relaxed); }
-    std::size_t GetAllocationCount() const { return _allocationCount.load(std::memory_order_relaxed); }
-
-    void ResetPerReloadStats()
-    {
-        _reloadAllocations.store(0, std::memory_order_relaxed);
-        _reloadBytes.store(0, std::memory_order_relaxed);
-    }
-
-    std::size_t GetReloadAllocations() const { return _reloadAllocations.load(std::memory_order_relaxed); }
-    std::size_t GetReloadBytes() const { return _reloadBytes.load(std::memory_order_relaxed); }
 
 protected:
     void* do_allocate(std::size_t bytes, std::size_t alignment) override
     {
-        _reloadAllocations.fetch_add(1, std::memory_order_relaxed);
-        _reloadBytes.fetch_add(bytes, std::memory_order_relaxed);
-        _allocationCount.fetch_add(1, std::memory_order_relaxed);
-        _totalAllocated.fetch_add(bytes, std::memory_order_relaxed);
-        auto current = _currentUsage.fetch_add(bytes, std::memory_order_relaxed) + bytes;
-        auto peak = _peakUsage.load(std::memory_order_relaxed);
-        while (current > peak && !_peakUsage.compare_exchange_weak(peak, current, std::memory_order_relaxed))
-        {
-        }
+        _currentUsage.fetch_add(bytes, std::memory_order_relaxed);
         return _upstream->allocate(bytes, alignment);
     }
 
     void do_deallocate(void* p, std::size_t bytes, std::size_t alignment) override
     {
         _currentUsage.fetch_sub(bytes, std::memory_order_relaxed);
-        _totalDeallocated.fetch_add(bytes, std::memory_order_relaxed);
         _upstream->deallocate(p, bytes, alignment);
     }
 
@@ -117,12 +81,6 @@ protected:
 private:
     shared::pmr::memory_resource* _upstream;
     std::atomic<std::size_t> _currentUsage{0};
-    std::atomic<std::size_t> _peakUsage{0};
-    std::atomic<std::size_t> _totalAllocated{0};
-    std::atomic<std::size_t> _totalDeallocated{0};
-    std::atomic<std::size_t> _allocationCount{0};
-    std::atomic<std::size_t> _reloadAllocations{0};
-    std::atomic<std::size_t> _reloadBytes{0};
 };
 
 // --------------------------------------------------------------------------
@@ -134,21 +92,11 @@ struct FootprintTracker
 {
     TrackingMemoryResource trackingResource;
 
-    std::atomic<std::uint64_t> cpuTicks{0};
-    timer_t cpuTimerId{};
-    bool cpuTimerCreated{false};
-
     std::uint32_t reloadCount{0};
-    std::uint32_t notificationCount{0};
-    std::chrono::steady_clock::duration totalReloadDuration{0};
-    std::chrono::steady_clock::duration maxReloadDuration{0};
-    std::chrono::steady_clock::duration totalLockHoldDuration{0};
-    std::chrono::steady_clock::duration maxLockHoldDuration{0};
+    std::uint64_t totalCpuNs{0};
 
     std::shared_ptr<ProxyMetric> libCountMetric;
     std::shared_ptr<ProxyMetric> memoryFootprintMetric;
-    std::shared_ptr<ProxyMetric> memoryPeakMetric;
-    std::shared_ptr<ProxyMetric> cpuTicksMetric;
 #ifdef ARM64
     std::shared_ptr<ProxyMetric> moduleCountMetric;
     std::shared_ptr<ProxyMetric> symbolCountMetric;
@@ -156,7 +104,6 @@ struct FootprintTracker
     std::shared_ptr<MeanMaxMetric> updateCpuMetric;
     std::shared_ptr<MeanMaxMetric> reloadDurationMetric;
     std::shared_ptr<MeanMaxMetric> lockHoldDurationMetric;
-    std::shared_ptr<MeanMaxMetric> reloadAllocationsMetric;
 
     explicit FootprintTracker(shared::pmr::memory_resource* upstream) :
         trackingResource{upstream}
@@ -164,8 +111,6 @@ struct FootprintTracker
     }
 
     void RegisterMetrics(MetricsRegistry& registry, LibrariesInfoCache* cache);
-    void SetupCpuTimer();
-    void TeardownCpuTimer();
     void LogStats(std::size_t libCount);
     void RecordReload(std::chrono::steady_clock::duration reloadDuration,
                       std::chrono::steady_clock::duration lockDuration,
@@ -312,11 +257,6 @@ void LibrariesInfoCache::Work(std::shared_ptr<AutoResetEvent> startEvent)
 {
     OpSysTools::SetNativeThreadName(WStr("DD_LibsCache"));
 
-    if (_tracker)
-    {
-        _tracker->SetupCpuTimer();
-    }
-
     auto timeout = InfiniteTimeout;
     if (&dd_notify_libraries_cache_update != nullptr) [[likely]]
     {
@@ -356,11 +296,6 @@ void LibrariesInfoCache::Work(std::shared_ptr<AutoResetEvent> startEvent)
     {
         dd_notify_libraries_cache_update = nullptr;
     }
-
-    if (_tracker)
-    {
-        _tracker->TeardownCpuTimer();
-    }
 }
 
 void LibrariesInfoCache::UpdateCache()
@@ -378,7 +313,6 @@ void LibrariesInfoCache::UpdateCache()
     if (_tracker)
     {
         _tracker->reloadCount++;
-        _tracker->trackingResource.ResetPerReloadStats();
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpuStart);
         reloadStart = std::chrono::steady_clock::now();
     }
@@ -670,10 +604,6 @@ void LibrariesInfoCache::NotifyCacheUpdate()
 
 void LibrariesInfoCache::NotifyCacheUpdateImpl()
 {
-    if (_tracker)
-    {
-        _tracker->notificationCount++;
-    }
     _event.Set();
 }
 
@@ -696,12 +626,6 @@ void FootprintTracker::RegisterMetrics(MetricsRegistry& registry, LibrariesInfoC
     memoryFootprintMetric = registry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_libs_cache", [this]() {
         return static_cast<double_t>(trackingResource.GetCurrentUsage());
     });
-    memoryPeakMetric = registry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_memory_peak", [this]() {
-        return static_cast<double_t>(trackingResource.GetPeakUsage());
-    });
-    cpuTicksMetric = registry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_cpu_ticks", [this]() {
-        return static_cast<double_t>(cpuTicks.load(std::memory_order_relaxed));
-    });
 #ifdef ARM64
     moduleCountMetric = registry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_module_regions", [cache]() {
         return static_cast<double_t>(cache->_moduleRegions.size());
@@ -713,117 +637,29 @@ void FootprintTracker::RegisterMetrics(MetricsRegistry& registry, LibrariesInfoC
     updateCpuMetric = registry.GetOrRegister<MeanMaxMetric>("dotnet_libs_cache_update_cpu_ns");
     reloadDurationMetric = registry.GetOrRegister<MeanMaxMetric>("dotnet_libs_cache_reload_duration_ns");
     lockHoldDurationMetric = registry.GetOrRegister<MeanMaxMetric>("dotnet_libs_cache_lock_hold_duration_ns");
-    reloadAllocationsMetric = registry.GetOrRegister<MeanMaxMetric>("dotnet_libs_cache_reload_allocations");
-}
-
-void FootprintTracker::SetupCpuTimer()
-{
-    const int cpuTimerSignal = SIGRTMIN + 10;
-
-    struct sigaction sa = {};
-    sa.sa_handler = CpuTickSignalHandler;
-    sa.sa_flags = SA_RESTART;
-    sigemptyset(&sa.sa_mask);
-    if (sigaction(cpuTimerSignal, &sa, nullptr) != 0)
-    {
-        Log::Warn("LibrariesInfoCache: Failed to install signal handler (signal=", cpuTimerSignal, ") for CPU measurement: ", strerror(errno));
-        return;
-    }
-
-    s_cpuTicksPtr = &cpuTicks;
-
-    auto tid = static_cast<int>(syscall(SYS_gettid));
-
-    struct sigevent sev = {};
-    sev.sigev_signo = cpuTimerSignal;
-    sev.sigev_notify = SIGEV_THREAD_ID;
-    ((int*)&sev.sigev_notify)[1] = tid;
-
-    clockid_t clock = ((~tid) << 3) | 6; // CPUCLOCK_SCHED | CPUCLOCK_PERTHREAD_MASK
-    if (syscall(__NR_timer_create, clock, &sev, &cpuTimerId) < 0)
-    {
-        Log::Warn("LibrariesInfoCache: Failed to create CPU timer: ", strerror(errno));
-        s_cpuTicksPtr = nullptr;
-        return;
-    }
-
-    cpuTimerCreated = true;
-
-    struct itimerspec its = {};
-
-    constexpr auto cpuTimerIntervalNs = std::chrono::duration_cast<std::chrono::nanoseconds>(CpuTimerInterval).count();
-    its.it_interval = {0, cpuTimerIntervalNs};
-    its.it_value = {0, cpuTimerIntervalNs};
-    if (syscall(__NR_timer_settime, cpuTimerId, 0, &its, nullptr) < 0)
-    {
-        Log::Warn("LibrariesInfoCache: Failed to arm CPU timer: ", strerror(errno));
-        syscall(__NR_timer_delete, cpuTimerId);
-        cpuTimerCreated = false;
-        s_cpuTicksPtr = nullptr;
-        return;
-    }
-
-    Log::Info("LibrariesInfoCache: CPU timer armed on worker thread (tid=", tid, ")");
-}
-
-void FootprintTracker::TeardownCpuTimer()
-{
-    if (cpuTimerCreated)
-    {
-        syscall(__NR_timer_delete, cpuTimerId);
-        cpuTimerCreated = false;
-    }
-    s_cpuTicksPtr = nullptr;
 }
 
 void FootprintTracker::LogStats(std::size_t libCount)
 {
-    auto cpuTime = CpuTimerInterval * cpuTicks.load(std::memory_order_relaxed);
-    auto avgReloadDuration = reloadCount > 0
-        ? std::chrono::duration_cast<std::chrono::microseconds>(totalReloadDuration) / reloadCount
-        : std::chrono::microseconds{0};
-    auto maxReload = std::chrono::duration_cast<std::chrono::microseconds>(maxReloadDuration);
-    auto avgLockDuration = reloadCount > 0
-        ? std::chrono::duration_cast<std::chrono::microseconds>(totalLockHoldDuration) / reloadCount
-        : std::chrono::microseconds{0};
-    auto maxLock = std::chrono::duration_cast<std::chrono::microseconds>(maxLockHoldDuration);
-
     Log::Info("LibrariesInfoCache stats:");
-    Log::Info("  CPU time (worker thread): ", cpuTime);
-    Log::Info("  Notifications received: ", notificationCount);
     Log::Info("  Cache reloads: ", reloadCount);
-    Log::Info("  Reload duration avg: ", avgReloadDuration, ", max: ", maxReload);
-    Log::Info("  Lock hold duration avg: ", avgLockDuration, ", max: ", maxLock);
+    Log::Info("  Total CPU (worker): ", totalCpuNs / 1'000'000, " ms");
     Log::Info("  Libraries in cache: ", libCount);
     Log::Info("  Memory current: ", trackingResource.GetCurrentUsage(), " bytes");
-    Log::Info("  Memory peak: ", trackingResource.GetPeakUsage(), " bytes");
-    Log::Info("  Memory total allocated: ", trackingResource.GetTotalAllocated(), " bytes");
-    Log::Info("  Memory total deallocated: ", trackingResource.GetTotalDeallocated(), " bytes");
-    Log::Info("  Memory allocation count: ", trackingResource.GetAllocationCount());
 }
 
 void FootprintTracker::RecordReload(std::chrono::steady_clock::duration reloadDuration,
                                     std::chrono::steady_clock::duration lockDuration,
                                     struct timespec cpuStart, struct timespec cpuEnd)
 {
-    totalReloadDuration += reloadDuration;
-    totalLockHoldDuration += lockDuration;
-    if (reloadDuration > maxReloadDuration)
-    {
-        maxReloadDuration = reloadDuration;
-    }
-    if (lockDuration > maxLockHoldDuration)
-    {
-        maxLockHoldDuration = lockDuration;
-    }
-
     auto cpuNs = static_cast<double_t>(
         (cpuEnd.tv_sec - cpuStart.tv_sec) * 1'000'000'000LL + (cpuEnd.tv_nsec - cpuStart.tv_nsec));
+
+    totalCpuNs += static_cast<std::uint64_t>(cpuNs);
 
     updateCpuMetric->Add(cpuNs);
     reloadDurationMetric->Add(static_cast<double_t>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(reloadDuration).count()));
     lockHoldDurationMetric->Add(static_cast<double_t>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(lockDuration).count()));
-    reloadAllocationsMetric->Add(static_cast<double_t>(trackingResource.GetReloadAllocations()));
 }
