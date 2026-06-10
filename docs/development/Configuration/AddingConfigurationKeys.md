@@ -45,14 +45,18 @@ ConfigurationKeys.ProductName.cs. Without a product name, the keys will go in th
 **Required fields (mandatory):**
 - `implementation`: The implementation identifier
   - `A` being the default one, it needs to match the registry implementation with the same type and default values
+- `scope`: Declares which runtime components read this variable. Valid values:
+  - `managed` — read only by managed (C#) code; a `ConfigurationKeys.*` constant is generated
+  - `native` — read only by native (C++) code; **no C# constant is generated**, but the entry is required in this registry for coverage tracking
+  - `managed, native` — read by both; a C# constant is generated
 - `type`: The type of the configuration value (for example `string`, `boolean`, `int`, `decimal`)
 - `default`: The default value applied by the tracer when the env var is not set. Use `null` if there is no default.
+- `documentation`: XML documentation for the key (supports `<see>`, `<seealso>`, `<c>` tags; do **not** include `<summary>` tags). Required for all entries — the source generator emits a build error (DDSG0008) when missing.
 
 **Optional fields:**
 - `product`: Groups the key into a product-specific partial class (e.g., `OpenTelemetry`)
 - `aliases`: A list of fallback environment variable names checked in order when the primary key is not found
-- `const_name`: Overrides the auto-generated PascalCase constant name (useful for backward compatibility)
-- `documentation`: XML documentation for the key (supports `<see>`, `<seealso>`, `<c>` tags; do **not** include `<summary>` tags)
+- `const_name`: Overrides the auto-generated constant name (useful for backward compatibility). For `managed`, the default is PascalCase.
 
 These fields are mandatory to keep the configuration registry complete and to ensure consistent behavior and documentation across products.
 
@@ -62,6 +66,7 @@ version: '2'
 supportedConfigurations:
   DD_TRACE_SAMPLE_RATE:
   - implementation: A
+    scope: managed
     type: decimal
     default: null
     documentation: |-
@@ -69,6 +74,7 @@ supportedConfigurations:
       Value should be between 0.0 and 1.0.
   OTEL_EXPORTER_OTLP_TIMEOUT:
   - implementation: A
+    scope: managed
     type: int
     default: null
     product: OpenTelemetry
@@ -89,6 +95,7 @@ Configuration keys can have **aliases** that are checked in order of appearance 
 supportedConfigurations:
   OTEL_EXPORTER_OTLP_LOGS_TIMEOUT:
   - implementation: A
+    scope: managed
     type: int
     default: null
     product: OpenTelemetry
@@ -125,6 +132,7 @@ If you need to explicitly control the constant name (e.g., for backward compatib
 supportedConfigurations:
   DD_YOUR_CUSTOM_KEY:
   - implementation: A
+    scope: managed
     type: string
     default: null
     const_name: YourPreferredConstantName
@@ -236,6 +244,7 @@ Use the `product` field to organize related keys into nested classes:
 supportedConfigurations:
   OTEL_EXPORTER_OTLP_ENDPOINT:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: OpenTelemetry
@@ -265,6 +274,7 @@ Generates: `ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint`
 supportedConfigurations:
   DD_TRACE_SAMPLE_RATE:
   - implementation: A
+    scope: managed
     type: decimal
     default: null
     documentation: |-
@@ -286,6 +296,7 @@ var rate = source.GetDouble(ConfigurationKeys.GlobalSamplingRate);
 supportedConfigurations:
   OTEL_EXPORTER_OTLP_LOGS_TIMEOUT:
   - implementation: A
+    scope: managed
     type: int
     default: null
     product: OpenTelemetry
@@ -298,6 +309,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.OtlpLogsTimeoutMs"/>
   OTEL_EXPORTER_OTLP_TIMEOUT:
   - implementation: A
+    scope: managed
     type: int
     default: null
     product: OpenTelemetry
@@ -320,6 +332,7 @@ var timeout = source.GetInt32(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTi
 supportedConfigurations:
   DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: FeatureFlags
