@@ -64,6 +64,37 @@ public class DebuggerGlobalRateLimiterTests
     }
 
     [Fact]
+    public void SetUnlimitedRate_DisablesSamplingWithoutCreatingNewSampler()
+    {
+        var factory = new RecordingSamplerFactory();
+        var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
+        factory.Samplers[0].SetResults(false);
+
+        limiter.SetUnlimitedRate();
+
+        Assert.True(limiter.ShouldSampleSnapshot("snapshot-1"));
+        Assert.Equal(
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
+            factory.RequestedRates);
+        Assert.Equal(1, factory.Samplers[0].DisposeCallCount);
+        Assert.Equal(0, factory.Samplers[0].SampleCallCount);
+    }
+
+    [Fact]
+    public void ResetRate_AfterUnlimitedRate_RestoresFallbackRates()
+    {
+        var factory = new RecordingSamplerFactory();
+        var limiter = new DebuggerGlobalRateLimiter(factory.Create, new NullLogRateLimiter());
+
+        limiter.SetUnlimitedRate();
+        limiter.ResetRate();
+
+        Assert.Equal(
+            [DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond, DebuggerGlobalRateLimiter.DefaultSnapshotSamplesPerSecond],
+            factory.RequestedRates);
+    }
+
+    [Fact]
     public void Dispose_DisposesCurrentSamplers()
     {
         var factory = new RecordingSamplerFactory();

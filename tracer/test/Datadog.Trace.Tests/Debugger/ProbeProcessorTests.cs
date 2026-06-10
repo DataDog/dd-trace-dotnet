@@ -757,6 +757,10 @@ public class ProbeProcessorTests
         {
         }
 
+        public void SetUnlimitedRate()
+        {
+        }
+
         public void ResetRate()
         {
         }
