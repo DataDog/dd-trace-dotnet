@@ -1,50 +1,5 @@
 #include "ProfilerMockedInterface.h"
 
-std::tuple<std::unique_ptr<IConfiguration>, MockConfiguration&> CreateConfiguration()
-{
-    std::unique_ptr<IConfiguration> configuration = std::make_unique<MockConfiguration>();
-    auto configurationPtr = static_cast<MockConfiguration*>(configuration.get());
-
-    return {std::move(configuration), *configurationPtr};
-}
-
-std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamplesProvider()
-{
-    std::shared_ptr<ISamplesProvider> samplesProvider = std::make_shared<MockSampleProvider>();
-    auto samplesProviderPtr = static_cast<MockSampleProvider*>(samplesProvider.get());
-    return {samplesProvider, *samplesProviderPtr};
-}
-
-std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter()
-{
-    std::unique_ptr<IExporter> exporter = std::make_unique<MockExporter>();
-    auto exporterPtr = static_cast<MockExporter*>(exporter.get());
-
-    return {std::move(exporter), *exporterPtr};
-}
-
-std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector()
-{
-    std::unique_ptr<ISamplesCollector> collector = std::make_unique<MockSamplesCollector>();
-    auto collectorPtr = static_cast<MockSamplesCollector*>(collector.get());
-
-    return {std::move(collector), *collectorPtr};
-}
-
-std::tuple<std::unique_ptr<ISsiManager>, MockSsiManager&> CreateSsiManager()
-{
-    std::unique_ptr<ISsiManager> manager = std::make_unique<MockSsiManager>();
-    auto managerPtr = static_cast<MockSsiManager*>(manager.get());
-    return {std::move(manager), *managerPtr};
-}
-
-std::tuple<std::unique_ptr<IMetadataProvider>, MockMetadataProvider&> CreateMetadataProvider()
-{
-    std::unique_ptr<IMetadataProvider> provider = std::make_unique<MockMetadataProvider>();
-    auto providerPtr = static_cast<MockMetadataProvider*>(provider.get());
-    return {std::move(provider), *providerPtr};
-}
-
 std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth)
 {
     std::vector<std::pair<std::string, std::string>> result;

@@ -32,7 +32,7 @@ std::string ComputeExpectedFilePrefix(const std::string& applicationName)
 
 TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
 #ifdef LINUX
     fs::path pprofTempDir = fs::temp_directory_path() / tmpnam(nullptr);
@@ -76,7 +76,7 @@ TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
 
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
     std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
@@ -149,7 +149,7 @@ TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     // Export them to disk
     // Then delete them
     //
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
 #ifdef LINUX
     fs::path pprofTempDir = fs::temp_directory_path() / tmpnam(nullptr);
@@ -192,7 +192,7 @@ TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
 
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
     std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
     MetricsRegistry metricsRegistry;
@@ -259,7 +259,7 @@ TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
 
 TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
 #ifdef LINUX
     fs::path pprofTempDir = fs::temp_directory_path() / tmpnam(nullptr);
@@ -302,7 +302,7 @@ TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
 
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
     std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
     MetricsRegistry metricsRegistry;
@@ -371,7 +371,7 @@ TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
 
 TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
 {
-    auto [configuration, mockConfiguration] = CreateMockForUniquePtr<IConfiguration, MockConfiguration>();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     std::string agentUrl = "http://host::port";
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
@@ -396,7 +396,7 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
 
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
     std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
     MetricsRegistry metricsRegistry;
@@ -410,7 +410,7 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
 
 TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
 {
-    auto [configuration, mockConfiguration] = CreateMockForUniquePtr<IConfiguration, MockConfiguration>();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     std::string agentUrl = "";
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
@@ -443,7 +443,7 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
 
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
     std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
     MetricsRegistry metricsRegistry;
@@ -457,7 +457,7 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
 
 TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(true));
     std::string site = "test_site";
@@ -483,7 +483,7 @@ TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
 
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
     std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
     MetricsRegistry metricsRegistry;
@@ -497,7 +497,7 @@ TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
 
 TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(true));
     std::string site = "test_site";
@@ -523,7 +523,7 @@ TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
 
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
     std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
     MetricsRegistry metricsRegistry;
@@ -543,7 +543,7 @@ TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
 
 TEST(ProfileExporterTest, MakeSureNoCrashForReallyLongCallstack)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     fs::path pprofTempDir;
     EXPECT_CALL(mockConfiguration, GetProfilesOutputDirectory()).WillRepeatedly(ReturnRef(pprofTempDir));
@@ -570,7 +570,7 @@ TEST(ProfileExporterTest, MakeSureNoCrashForReallyLongCallstack)
     auto applicationStore = MockApplicationStore();
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
     std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
     MetricsRegistry metricsRegistry;
@@ -591,7 +591,7 @@ TEST(ProfileExporterTest, MakeSureNoCrashForReallyLongCallstack)
 
 TEST(ProfileExporterTest, CheckNoEnabledProfilers)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -599,7 +599,7 @@ TEST(ProfileExporterTest, CheckNoEnabledProfilers)
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(0).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(0).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).Times(0).WillOnce(Return(false));
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -608,14 +608,14 @@ TEST(ProfileExporterTest, CheckNoEnabledProfilers)
 
 TEST(ProfileExporterTest, CheckAllEnabledProfilers)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(true));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(true));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(true));
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(true));
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(1).WillOnce(Return(true));
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(1).WillOnce(Return(true));
-    EnabledProfilers enabledProfilers(configuration.get(), true, true);
+    EnabledProfilers enabledProfilers(&mockConfiguration, true, true);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -630,12 +630,12 @@ TEST(ProfileExporterTest, CheckAllEnabledProfilers)
 
 TEST(ProfileExporterTest, CheckCpuIsEnabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(true));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(false));
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -644,12 +644,12 @@ TEST(ProfileExporterTest, CheckCpuIsEnabled)
 
 TEST(ProfileExporterTest, CheckWalltimeIsEnabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(true));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(false));
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -658,12 +658,12 @@ TEST(ProfileExporterTest, CheckWalltimeIsEnabled)
 
 TEST(ProfileExporterTest, CheckExceptionIsEnabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(true));
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(false));
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -672,12 +672,12 @@ TEST(ProfileExporterTest, CheckExceptionIsEnabled)
 
 TEST(ProfileExporterTest, CheckAllocationIsEnabledWhenEvents)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(true));
-    EnabledProfilers enabledProfilers(configuration.get(), true, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, true, false);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -686,12 +686,12 @@ TEST(ProfileExporterTest, CheckAllocationIsEnabledWhenEvents)
 
 TEST(ProfileExporterTest, CheckAllocationIsDisabledWhenNoEvents)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(true));
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -700,12 +700,12 @@ TEST(ProfileExporterTest, CheckAllocationIsDisabledWhenNoEvents)
 
 TEST(ProfileExporterTest, CheckLockContentionIsEnabledWhenEvents)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(1).WillOnce(Return(true));
-    EnabledProfilers enabledProfilers(configuration.get(), true, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, true, false);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -714,12 +714,12 @@ TEST(ProfileExporterTest, CheckLockContentionIsEnabledWhenEvents)
 
 TEST(ProfileExporterTest, CheckLockContentionIsDisabledWhenNoEvents)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(0).WillOnce(Return(true));
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -728,12 +728,12 @@ TEST(ProfileExporterTest, CheckLockContentionIsDisabledWhenNoEvents)
 
 TEST(ProfileExporterTest, CheckGarbageCollectionIsEnabledWhenEvents)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(1).WillOnce(Return(true));
-    EnabledProfilers enabledProfilers(configuration.get(), true, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, true, false);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -742,12 +742,12 @@ TEST(ProfileExporterTest, CheckGarbageCollectionIsEnabledWhenEvents)
 
 TEST(ProfileExporterTest, CheckGarbageCollectionIsDisabledWhenNoEvents)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(0).WillOnce(Return(true));
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -756,11 +756,11 @@ TEST(ProfileExporterTest, CheckGarbageCollectionIsDisabledWhenNoEvents)
 
 TEST(ProfileExporterTest, CheckHeapIsEnabledWhenEvents)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
-    EnabledProfilers enabledProfilers(configuration.get(), true, true);
+    EnabledProfilers enabledProfilers(&mockConfiguration, true, true);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -769,11 +769,11 @@ TEST(ProfileExporterTest, CheckHeapIsEnabledWhenEvents)
 
 TEST(ProfileExporterTest, CheckHeapIsDisabledWhenNoEvents)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
-    EnabledProfilers enabledProfilers(configuration.get(), false, true); // this should never happen but test it anyway
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, true); // this should never happen but test it anyway
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -782,11 +782,11 @@ TEST(ProfileExporterTest, CheckHeapIsDisabledWhenNoEvents)
 
 TEST(ProfileExporterTest, CheckHeapIsDisabledWhenHeapIsNotEnabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(false));
-    EnabledProfilers enabledProfilers(configuration.get(), true, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, true, false);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -795,11 +795,11 @@ TEST(ProfileExporterTest, CheckHeapIsDisabledWhenHeapIsNotEnabled)
 
 TEST(ProfileExporterTest, CheckAllocationIsEnabledWhenHeapIsEnabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(false));
-    EnabledProfilers enabledProfilers(configuration.get(), true, true);
+    EnabledProfilers enabledProfilers(&mockConfiguration, true, true);
 
     std::string tag = ProfileExporter::GetEnabledProfilers(&enabledProfilers);
 
@@ -809,7 +809,7 @@ TEST(ProfileExporterTest, CheckAllocationIsEnabledWhenHeapIsEnabled)
 
 TEST(ProfileExporterTest, CheckNoCrashWhenProfileCreationFails)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     fs::path pprofTempDir;
     EXPECT_CALL(mockConfiguration, GetProfilesOutputDirectory()).WillRepeatedly(ReturnRef(pprofTempDir));
@@ -841,7 +841,7 @@ TEST(ProfileExporterTest, CheckNoCrashWhenProfileCreationFails)
 
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
 
     // Empty sample type definitions will cause Profile::Create to return nullptr
     std::vector<SampleValueType> sampleTypeDefinitions;
@@ -867,17 +867,17 @@ TEST(ProfileExporterTest, CheckNoCrashWhenProfileCreationFails)
 
 struct InfoJsonTestComponents
 {
-    std::unique_ptr<IConfiguration> configuration;
-    MockConfiguration* mockConfiguration = nullptr;
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     MockApplicationStore applicationStore;
     std::unique_ptr<RuntimeInfoHelper> runtimeInfoHelper;
     std::unique_ptr<EnabledProfilers> enabledProfilers;
     MetricsRegistry metricsRegistry;
-    std::unique_ptr<IMetadataProvider> metadataProvider;
-    MockMetadataProvider* mockMetadataProvider = nullptr;
-    std::unique_ptr<ISsiManager> ssiManager;
-    MockSsiManager* mockSsiManager = nullptr;
+    testing::NiceMock<MockMetadataProvider> mockMetadataProvider;
+    testing::NiceMock<MockSsiManager> mockSsiManager;
     MockGcSettingsProvider gcSettingsProvider;
+
+    bool hasSsiManager = false;
+    bool hasMetadataProvider = false;
 
     fs::path pprofDir;
     std::string agentUrl = "http://localhost:8126";
@@ -888,40 +888,28 @@ struct InfoJsonTestComponents
 std::unique_ptr<InfoJsonTestComponents> CreateInfoJsonTestComponents(bool withSsiManager, bool withMetadataProvider)
 {
     auto c = std::make_unique<InfoJsonTestComponents>();
+    c->hasSsiManager = withSsiManager;
+    c->hasMetadataProvider = withMetadataProvider;
 
-    auto [config, mockConfig] = CreateConfiguration();
-    c->configuration = std::move(config);
-    c->mockConfiguration = &mockConfig;
+    EXPECT_CALL(c->mockConfiguration, GetProfilesOutputDirectory()).WillRepeatedly(ReturnRef(c->pprofDir));
+    EXPECT_CALL(c->mockConfiguration, GetAgentUrl()).WillRepeatedly(ReturnRef(c->agentUrl));
+    EXPECT_CALL(c->mockConfiguration, GetHostname()).WillRepeatedly(ReturnRef(c->host));
+    EXPECT_CALL(c->mockConfiguration, IsAgentless()).WillRepeatedly(Return(false));
+    EXPECT_CALL(c->mockConfiguration, GetUserTags()).WillRepeatedly(ReturnRef(c->tags));
 
-    EXPECT_CALL(mockConfig, GetProfilesOutputDirectory()).WillRepeatedly(ReturnRef(c->pprofDir));
-    EXPECT_CALL(mockConfig, GetAgentUrl()).WillRepeatedly(ReturnRef(c->agentUrl));
-    EXPECT_CALL(mockConfig, GetHostname()).WillRepeatedly(ReturnRef(c->host));
-    EXPECT_CALL(mockConfig, IsAgentless()).WillRepeatedly(Return(false));
-    EXPECT_CALL(mockConfig, GetUserTags()).WillRepeatedly(ReturnRef(c->tags));
-
-    EXPECT_CALL(mockConfig, IsWallTimeProfilingEnabled()).WillRepeatedly(Return(true));
-    EXPECT_CALL(mockConfig, IsCpuProfilingEnabled()).WillRepeatedly(Return(false));
-    EXPECT_CALL(mockConfig, IsExceptionProfilingEnabled()).WillRepeatedly(Return(false));
-    EXPECT_CALL(mockConfig, IsGcThreadsCpuTimeEnabled()).WillRepeatedly(Return(false));
-    EXPECT_CALL(mockConfig, IsThreadLifetimeEnabled()).WillRepeatedly(Return(false));
-    EXPECT_CALL(mockConfig, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::Auto));
+    EXPECT_CALL(c->mockConfiguration, IsWallTimeProfilingEnabled()).WillRepeatedly(Return(true));
+    EXPECT_CALL(c->mockConfiguration, IsCpuProfilingEnabled()).WillRepeatedly(Return(false));
+    EXPECT_CALL(c->mockConfiguration, IsExceptionProfilingEnabled()).WillRepeatedly(Return(false));
+    EXPECT_CALL(c->mockConfiguration, IsGcThreadsCpuTimeEnabled()).WillRepeatedly(Return(false));
+    EXPECT_CALL(c->mockConfiguration, IsThreadLifetimeEnabled()).WillRepeatedly(Return(false));
+    EXPECT_CALL(c->mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::Auto));
 
     c->runtimeInfoHelper = std::make_unique<RuntimeInfoHelper>(4, 8, true);
-    c->enabledProfilers = std::make_unique<EnabledProfilers>(c->configuration.get(), false, false);
+    c->enabledProfilers = std::make_unique<EnabledProfilers>(&c->mockConfiguration, false, false);
 
     if (withSsiManager)
     {
-        auto [ssi, mockSsi] = CreateSsiManager();
-        c->ssiManager = std::move(ssi);
-        c->mockSsiManager = &mockSsi;
-        EXPECT_CALL(mockSsi, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
-    }
-
-    if (withMetadataProvider)
-    {
-        auto [mp, mockMp] = CreateMetadataProvider();
-        c->metadataProvider = std::move(mp);
-        c->mockMetadataProvider = &mockMp;
+        EXPECT_CALL(c->mockSsiManager, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     }
 
     EXPECT_CALL(c->gcSettingsProvider, GetMode()).WillRepeatedly(Return(GCMode::Workstation));
@@ -934,13 +922,13 @@ std::unique_ptr<ProfileExporter> CreateExporterForInfoJsonTest(InfoJsonTestCompo
     std::vector<SampleValueType> sampleTypeDefinitions({{"walltime", "nanoseconds"}});
     auto exporter = std::make_unique<ProfileExporter>(
         std::move(sampleTypeDefinitions),
-        c.mockConfiguration,
+        &c.mockConfiguration,
         &c.applicationStore,
         c.runtimeInfoHelper->GetRuntimeInfo(),
         c.enabledProfilers.get(),
         c.metricsRegistry,
-        c.metadataProvider.get(),
-        c.ssiManager.get(),
+        c.hasMetadataProvider ? &c.mockMetadataProvider : nullptr,
+        c.hasSsiManager ? &c.mockSsiManager : nullptr,
         nullptr,
         nullptr);
     exporter->RegisterGcSettingsProvider(&c.gcSettingsProvider);
@@ -974,7 +962,7 @@ TEST(ProfileExporterTest, InfoJsonIsEmptyWhenMetadataIsEmpty)
     auto c = CreateInfoJsonTestComponents(true, true);
 
     IMetadataProvider::metadata_t emptyMetadata;
-    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(emptyMetadata));
+    EXPECT_CALL(c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(emptyMetadata));
 
     auto exporter = CreateExporterForInfoJsonTest(*c);
 
@@ -991,7 +979,7 @@ TEST(ProfileExporterTest, InfoJsonHasNoTrailingCommaWhenNoEnvVarsSection)
     IMetadataProvider::metadata_t metadata = {
         {"Unknown Section", {{"key1", "value1"}}}
     };
-    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
+    EXPECT_CALL(c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
 
     auto exporter = CreateExporterForInfoJsonTest(*c);
 
@@ -1010,7 +998,7 @@ TEST(ProfileExporterTest, InfoJsonHasNoTrailingCommaWhenOnlyRuntimeSettings)
     IMetadataProvider::metadata_t metadata = {
         {MetadataProvider::SectionRuntimeSettings, {{"Start Time", "2026-05-05T17:18:21Z"}}}
     };
-    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
+    EXPECT_CALL(c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
 
     auto exporter = CreateExporterForInfoJsonTest(*c);
 
@@ -1030,7 +1018,7 @@ TEST(ProfileExporterTest, InfoJsonContainsSystemPropertiesWhenEnvVarsExist)
     IMetadataProvider::metadata_t metadata = {
         {MetadataProvider::SectionEnvVars, {{"DD_TRACE_DEBUG", "1"}}}
     };
-    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
+    EXPECT_CALL(c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
 
     auto exporter = CreateExporterForInfoJsonTest(*c);
 
@@ -1049,7 +1037,7 @@ TEST(ProfileExporterTest, InfoJsonContainsSystemOverridesWhenOverridesExist)
     IMetadataProvider::metadata_t metadata = {
         {MetadataProvider::SectionOverrides, {{"DD_PROFILING_ENABLED", "true"}}}
     };
-    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
+    EXPECT_CALL(c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
 
     auto exporter = CreateExporterForInfoJsonTest(*c);
 
@@ -1069,7 +1057,7 @@ TEST(ProfileExporterTest, InfoJsonContainsBothSectionsWhenBothExist)
         {MetadataProvider::SectionEnvVars, {{"DD_TRACE_DEBUG", "1"}}},
         {MetadataProvider::SectionOverrides, {{"DD_PROFILING_ENABLED", "true"}}}
     };
-    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
+    EXPECT_CALL(c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
 
     auto exporter = CreateExporterForInfoJsonTest(*c);
 
@@ -1092,7 +1080,7 @@ TEST(ProfileExporterTest, InfoJsonHandlesEmptyKeyValueList)
     IMetadataProvider::metadata_t metadata = {
         {MetadataProvider::SectionEnvVars, {}}
     };
-    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
+    EXPECT_CALL(c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
 
     auto exporter = CreateExporterForInfoJsonTest(*c);
 

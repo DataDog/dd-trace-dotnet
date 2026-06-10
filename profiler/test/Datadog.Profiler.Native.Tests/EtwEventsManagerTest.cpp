@@ -26,16 +26,16 @@ using namespace std::chrono_literals;
 
 TEST(EtwEventsManagerTest, ContentionEventWithoutCallstack)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     EXPECT_CALL(mockConfiguration, IsEtwLoggingEnabled()).WillRepeatedly(Return(false));
     std::string replayEndpoint = "not empty to simulate replay";
     EXPECT_CALL(mockConfiguration, GetEtwReplayEndpoint()).WillRepeatedly(ReturnRef(replayEndpoint));
 
-    auto [contentionListener, mockContentionListener] = CreateMockForUniquePtr<IContentionListener, MockContentionListener>();
+    testing::NiceMock<MockContentionListener> mockContentionListener;
     //                                                 epoch timestamp    , tid, duration, stack
     EXPECT_CALL(mockContentionListener, OnContention(1601910785587000000ns, 2  , 14300ns , IsEmpty()));
-    auto manager = EtwEventsManager(nullptr, contentionListener.get(), nullptr, configuration.get());
+    auto manager = EtwEventsManager(nullptr, &mockContentionListener, nullptr, &mockConfiguration);
 
     manager.OnEvent(etw_timestamp(132463843855875757), 2, 1, KEYWORD_CONTENTION, 1, EVENT_CONTENTION_START, 0, nullptr);
     manager.OnEvent(etw_timestamp(132463843855875900), 2, 1, KEYWORD_CONTENTION, 1, EVENT_CONTENTION_STOP, 0, nullptr);
@@ -43,17 +43,17 @@ TEST(EtwEventsManagerTest, ContentionEventWithoutCallstack)
 
 TEST(EtwEventsManagerTest, ContentionEventWithCallstack)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     EXPECT_CALL(mockConfiguration, IsEtwLoggingEnabled()).WillRepeatedly(Return(false));
     std::string replayEndpoint = "not empty to simulate replay";
     EXPECT_CALL(mockConfiguration, GetEtwReplayEndpoint()).WillRepeatedly(ReturnRef(replayEndpoint));
 
-    auto [contentionListener, mockContentionListener] = CreateMockForUniquePtr<IContentionListener, MockContentionListener>();
+    testing::NiceMock<MockContentionListener> mockContentionListener;
 
     //                                               epoch timestamp      , tid, duration, stack
     EXPECT_CALL(mockContentionListener, OnContention(1601910785587000000ns, 2  , 14300ns , ElementsAre(FrameStore::FakeLockContentionIP)));
-    auto manager = EtwEventsManager(nullptr, contentionListener.get(), nullptr, configuration.get());
+    auto manager = EtwEventsManager(nullptr, &mockContentionListener, nullptr, &mockConfiguration);
 
     manager.OnEvent(etw_timestamp(132463843855875757), 2, 1, KEYWORD_CONTENTION, 1, EVENT_CONTENTION_START, 0, nullptr);
     manager.OnEvent(etw_timestamp(132463843855875800), 2, 1, KEYWORD_STACKWALK, 1, -1, 0, nullptr);
@@ -62,15 +62,15 @@ TEST(EtwEventsManagerTest, ContentionEventWithCallstack)
 
 TEST(EtwEventsManagerTest, AllocationTickEventWithCallstack)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     EXPECT_CALL(mockConfiguration, IsEtwLoggingEnabled()).WillRepeatedly(Return(false));
     std::string replayEndpoint = "not empty to simulate replay";
     EXPECT_CALL(mockConfiguration, GetEtwReplayEndpoint()).WillRepeatedly(ReturnRef(replayEndpoint));
 
-    auto [allocationListener, mockAllocationListener] = CreateMockForUniquePtr<IAllocationsListener, MockAllocationListener>();
+    testing::NiceMock<MockAllocationListener> mockAllocationListener;
 
-    auto manager = EtwEventsManager(allocationListener.get(), nullptr, nullptr, configuration.get());
+    auto manager = EtwEventsManager(&mockAllocationListener, nullptr, nullptr, &mockConfiguration);
 
     constexpr auto typeName = WStr("MyType");
     constexpr auto typeNbBytes = std::char_traits<WCHAR>::length(typeName) * sizeof(WCHAR);
@@ -101,15 +101,15 @@ TEST(EtwEventsManagerTest, AllocationTickEventWithCallstack)
 
 TEST(EtwEventsManagerTest, AllocationTickEventWithoutCallstack)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     EXPECT_CALL(mockConfiguration, IsEtwLoggingEnabled()).WillRepeatedly(Return(false));
     std::string replayEndpoint = "not empty to simulate replay";
     EXPECT_CALL(mockConfiguration, GetEtwReplayEndpoint()).WillRepeatedly(ReturnRef(replayEndpoint));
 
-    auto [allocationListener, mockAllocationListener] = CreateMockForUniquePtr<IAllocationsListener, MockAllocationListener>();
+    testing::NiceMock<MockAllocationListener> mockAllocationListener;
 
-    auto manager = EtwEventsManager(allocationListener.get(), nullptr, nullptr, configuration.get());
+    auto manager = EtwEventsManager(&mockAllocationListener, nullptr, nullptr, &mockConfiguration);
 
     constexpr auto typeName = WStr("MyType");
     constexpr auto typeNbBytes = std::char_traits<WCHAR>::length(typeName) * sizeof(WCHAR);

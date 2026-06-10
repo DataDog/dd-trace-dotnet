@@ -8,17 +8,17 @@
 
 namespace libdatadog {
 
-std::unique_ptr<Profile> CreateProfile(std::unique_ptr<IConfiguration> const& configuration)
+std::unique_ptr<Profile> CreateProfile(IConfiguration* configuration)
 {
-    auto p = Profile::Create(configuration.get(), {{"cpu", "nanosecond"}}, "RealTime", "Nanoseconds", "my app");
+    auto p = Profile::Create(configuration, {{"cpu", "nanosecond"}}, "RealTime", "Nanoseconds", "my app");
     EXPECT_NE(p, nullptr);
     return p;
 }
 
 TEST(ProfileTest, CheckProfileName)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
+    testing::NiceMock<MockConfiguration> configuration;
+    auto p = CreateProfile(&configuration);
     ASSERT_NE(p, nullptr);
 
     ASSERT_EQ("my app", p->GetApplicationName());
@@ -26,8 +26,8 @@ TEST(ProfileTest, CheckProfileName)
 
 TEST(ProfileTest, AddSample)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
+    testing::NiceMock<MockConfiguration> configuration;
+    auto p = CreateProfile(&configuration);
     ASSERT_NE(p, nullptr);
 
     Sample::ValuesCount = 1;
@@ -41,8 +41,8 @@ TEST(ProfileTest, AddSample)
 
 TEST(ProfileTest, AddUpscalingRule)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
+    testing::NiceMock<MockConfiguration> configuration;
+    auto p = CreateProfile(&configuration);
     ASSERT_NE(p, nullptr);
 
     std::vector<SampleValueTypeProvider::Offset> offsets = {0};
@@ -52,8 +52,8 @@ TEST(ProfileTest, AddUpscalingRule)
 
 TEST(ProfileTest, SetEndpoint)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
+    testing::NiceMock<MockConfiguration> configuration;
+    auto p = CreateProfile(&configuration);
     ASSERT_NE(p, nullptr);
 
     EXPECT_NO_THROW(p->SetEndpoint(42, "my_endpoint"));
@@ -61,8 +61,8 @@ TEST(ProfileTest, SetEndpoint)
 
 TEST(ProfileTest, AddEndpointCount)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
+    testing::NiceMock<MockConfiguration> configuration;
+    auto p = CreateProfile(&configuration);
     ASSERT_NE(p, nullptr);
 
     EXPECT_NO_THROW(p->AddEndpointCount("my_endpoint", 1));
@@ -70,8 +70,8 @@ TEST(ProfileTest, AddEndpointCount)
 
 TEST(ProfileTest, EnsureAddFailIfWrongNumberOfValues)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
+    testing::NiceMock<MockConfiguration> configuration;
+    auto p = CreateProfile(&configuration);
     ASSERT_NE(p, nullptr);
 
     // change number of values to fail the Add
@@ -87,8 +87,8 @@ TEST(ProfileTest, EnsureAddFailIfWrongNumberOfValues)
 // Test is mainly meant for memory leak detection (unit tests are run with ASAN)
 TEST(ProfileTest, EnsureAddUpscalingRuleFailIfMissingFields)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = CreateProfile(configuration);
+    testing::NiceMock<MockConfiguration> configuration;
+    auto p = CreateProfile(&configuration);
     ASSERT_NE(p, nullptr);
 
     std::vector<SampleValueTypeProvider::Offset> offsets;
@@ -98,8 +98,8 @@ TEST(ProfileTest, EnsureAddUpscalingRuleFailIfMissingFields)
 
 TEST(ProfileTest, CreateProfileReturnsNullOnEmptyValueTypes)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-    auto p = Profile::Create(configuration.get(), {}, "RealTime", "Nanoseconds", "my app");
+    testing::NiceMock<MockConfiguration> configuration;
+    auto p = Profile::Create(&configuration, {}, "RealTime", "Nanoseconds", "my app");
     ASSERT_EQ(p, nullptr);
 }
 

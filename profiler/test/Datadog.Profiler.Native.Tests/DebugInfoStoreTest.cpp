@@ -88,7 +88,7 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_SymPdbParser)
     }
 
     // Create a minimal mock configuration
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsDebugInfoEnabled()).WillRepeatedly(Return(true));
 
     // Initialize COM
@@ -266,10 +266,10 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetCorePortable)
 
     ModuleDebugInfo moduleInfo;
 
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, IsDebugInfoEnabled()).WillRepeatedly(Return(true));
 
-    DebugInfoStore debugInfoStore(nullptr, configuration.get());
+    DebugInfoStore debugInfoStore(nullptr, &mockConfiguration);
 
     // For Portable PDB, we don't need IMetaDataImport, so pass 0 as moduleId
     debugInfoStore.ParseModuleDebugInfo(0, pdbPath.string(), modulePath.string(), moduleInfo);
