@@ -564,7 +564,7 @@ namespace Datadog.Trace.Debugger
                 return;
             }
 
-            if (!tracerSettings.IsRemoteConfigurationAvailable)
+            if (!tracerSettings.IsRemoteConfigurationAvailable && !debuggerSettings.IsDynamicInstrumentationAgentlessLocalMode)
             {
                 if (debuggerSettings.DynamicInstrumentationEnabled)
                 {
@@ -711,7 +711,13 @@ namespace Datadog.Trace.Debugger
                     DebuggerSettings,
                     tracerManager.GitMetadataTagsProvider);
 
-                if (!_isDebuggerEndpointAvailable)
+                if (di is null)
+                {
+                    Volatile.Write(ref _diState, 0);
+                    return;
+                }
+
+                if (!_isDebuggerEndpointAvailable && !DebuggerSettings.IsDynamicInstrumentationAgentlessLocalMode)
                 {
                     var isDiscoverySuccessful = await WaitForDebuggerEndpointAsync(discoveryService, _processExit.Task).ConfigureAwait(false);
                     if (!isDiscoverySuccessful)
