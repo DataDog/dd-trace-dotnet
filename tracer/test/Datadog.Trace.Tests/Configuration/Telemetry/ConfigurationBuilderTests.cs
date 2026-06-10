@@ -1299,4 +1299,49 @@ public class ConfigurationBuilderTests
                  || (Error?.GetType() == other.Error?.GetType()));
         }
     }
+
+    // Verifies that the generated ConfigurationKeys.SensitiveKeys set drives telemetry
+    // redaction, independent of whether the call site used AsString or AsRedactedString.
+    public class SensitiveKeyDrivenRedactionTests
+    {
+        private const string Sentinel = "do-not-record-this-value";
+
+        [Fact]
+        public void SensitiveKeyIsRedactedEvenWhenReadWithPlainAsString()
+        {
+            // Pick a key the generator flagged sensitive in supported-configurations.yaml.
+            var sensitiveKey = ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders;
+            ConfigurationKeys.SensitiveKeys.Should().Contain(sensitiveKey);
+
+            var telemetry = new ConfigurationTelemetry();
+            var source = new NameValueConfigurationSource(new NameValueCollection { { sensitiveKey, Sentinel } });
+
+            // Plain AsString => recordValue: true. The gate must still redact it.
+            new ConfigurationBuilder(source, telemetry)
+               .WithKeys(sensitiveKey)
+               .AsString();
+
+            var entry = telemetry.GetQueueForTesting().Single(x => x.Key == sensitiveKey);
+            entry.Type.Should().Be(ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted);
+            entry.StringValue.Should().BeNull();
+        }
+
+        [Fact]
+        public void NonSensitiveKeyStillRecordsItsValue()
+        {
+            const string nonSensitiveKey = ConfigurationKeys.ServiceName;
+            ConfigurationKeys.SensitiveKeys.Should().NotContain(nonSensitiveKey);
+
+            var telemetry = new ConfigurationTelemetry();
+            var source = new NameValueConfigurationSource(new NameValueCollection { { nonSensitiveKey, Sentinel } });
+
+            new ConfigurationBuilder(source, telemetry)
+               .WithKeys(nonSensitiveKey)
+               .AsString();
+
+            var entry = telemetry.GetQueueForTesting().Single(x => x.Key == nonSensitiveKey);
+            entry.Type.Should().Be(ConfigurationTelemetry.ConfigurationTelemetryEntryType.String);
+            entry.StringValue.Should().Be(Sentinel);
+        }
+    }
 }

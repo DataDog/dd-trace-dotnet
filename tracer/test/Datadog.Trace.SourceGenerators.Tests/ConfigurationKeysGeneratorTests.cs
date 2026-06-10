@@ -100,7 +100,9 @@ public class ConfigurationKeysGeneratorTests
 
         using var s = new AssertionScope();
         diagnostics.Should().BeEmpty();
-        outputs.Should().HaveCount(3);
+
+        // 3 product partial classes + the always-emitted SensitiveKeys partial class
+        outputs.Should().HaveCount(4);
         var appSecOutput = outputs.First(o => o.Contains("AppSec"));
         var tracerOutput = outputs.First(o => o.Contains("Tracer"));
         var telemOutput = outputs.First(o => o.Contains("OpenTelemetry"));
@@ -431,6 +433,51 @@ public class ConfigurationKeysGeneratorTests
         mainOutput.Should().Contain("public const string MaxTracesPerSecond = \"DD_MAX_TRACES_PER_SECOND\";");
         mainOutput.Should().Contain("/// Configuration key for the maximum number of traces to submit per second.");
         mainOutput.Should().Contain("public const string TraceEnabled = \"DD_TRACE_ENABLED\";");
+    }
+
+    [Fact]
+    public void EmitsSensitiveKeysSetIncludingAliases()
+    {
+        const string supportedConfigYaml = """
+                                           version: '2'
+                                           supportedConfigurations:
+                                             OTEL_EXPORTER_OTLP_HEADERS:
+                                             - implementation: A
+                                               product: OpenTelemetry
+                                               sensitive: true
+                                               documentation: Sensitive OTLP headers.
+                                             OTEL_EXPORTER_OTLP_TRACES_HEADERS:
+                                             - implementation: A
+                                               product: OpenTelemetry
+                                               aliases:
+                                               - OTEL_EXPORTER_OTLP_HEADERS
+                                               sensitive: true
+                                               documentation: Sensitive OTLP traces headers.
+                                             DD_TRACE_ENABLED:
+                                             - implementation: A
+                                               product: Tracer
+                                               documentation: Enables the tracer.
+                                           """;
+
+        var (diagnostics, outputs) = TestHelpers.GetGeneratedTrees<ConfigurationKeysGenerator>(
+            [],
+            [],
+            [("supported-configurations.yaml", supportedConfigYaml)],
+            assertOutput: false);
+
+        using var s = new AssertionScope();
+        diagnostics.Should().BeEmpty();
+
+        var sensitiveOutput = outputs.FirstOrDefault(o => o.Contains("SensitiveKeys"));
+        sensitiveOutput.Should().NotBeNullOrEmpty();
+        sensitiveOutput.Should().Contain("public static readonly HashSet<string> SensitiveKeys = new()");
+
+        // Both sensitive keys and the alias are included
+        sensitiveOutput.Should().Contain("\"OTEL_EXPORTER_OTLP_HEADERS\",");
+        sensitiveOutput.Should().Contain("\"OTEL_EXPORTER_OTLP_TRACES_HEADERS\",");
+
+        // Non-sensitive key is not in the set
+        sensitiveOutput.Should().NotContain("\"DD_TRACE_ENABLED\",");
     }
 
     [Fact]

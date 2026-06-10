@@ -28,6 +28,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
             string? currentProduct = null;
             string? currentDocumentation = null;
             string? currentConstName = null;
+            var currentSensitive = false;
             var currentAliases = new List<string>();
             var inDocumentation = false;
             var inAliases = false;
@@ -62,7 +63,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                     if (currentConfigKey != null)
                     {
                         var doc = inDocumentation ? documentationBuilder.ToString().TrimEnd() : currentDocumentation;
-                        configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
+                        configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentAliases.Count > 0 ? currentAliases.ToArray() : null, currentSensitive);
                     }
 
                     inSupportedConfigurations = false;
@@ -115,13 +116,14 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                             if (currentConfigKey != null)
                             {
                                 var doc = inDocumentation ? documentationBuilder.ToString().TrimEnd() : currentDocumentation;
-                                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
+                                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentAliases.Count > 0 ? currentAliases.ToArray() : null, currentSensitive);
                             }
 
                             currentConfigKey = potentialKey;
                             currentProduct = null;
                             currentDocumentation = null;
                             currentConstName = null;
+                            currentSensitive = false;
                             currentAliases.Clear();
                             inDocumentation = false;
                             inAliases = false;
@@ -238,6 +240,9 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                                 case "const_name":
                                     currentConstName = propValue;
                                     break;
+                                case "sensitive":
+                                    currentSensitive = propValue.Equals("true", StringComparison.OrdinalIgnoreCase);
+                                    break;
                                 case "aliases":
                                     inAliases = true;
                                     break;
@@ -284,7 +289,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
             if (currentConfigKey != null)
             {
                 var doc = inDocumentation ? documentationBuilder.ToString().TrimEnd() : currentDocumentation;
-                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentAliases.Count > 0 ? currentAliases.ToArray() : null);
+                configurations[currentConfigKey] = new ConfigurationEntry(currentConfigKey, currentProduct ?? string.Empty, doc, currentConstName, currentAliases.Count > 0 ? currentAliases.ToArray() : null, currentSensitive);
             }
 
             return new ParsedConfigurationData(configurations, deprecations);
@@ -352,13 +357,14 @@ namespace Datadog.Trace.SourceGenerators.Helpers
         /// </summary>
         internal readonly struct ConfigurationEntry : IEquatable<ConfigurationEntry>
         {
-            public ConfigurationEntry(string key, string? product, string? documentation, string? constName, string[]? aliases = null)
+            public ConfigurationEntry(string key, string? product, string? documentation, string? constName, string[]? aliases = null, bool sensitive = false)
             {
                 Key = key;
                 Product = product;
                 Documentation = documentation;
                 ConstName = constName;
                 Aliases = aliases;
+                Sensitive = sensitive;
             }
 
             public string Key { get; }
@@ -371,9 +377,11 @@ namespace Datadog.Trace.SourceGenerators.Helpers
 
             public string[]? Aliases { get; }
 
+            public bool Sensitive { get; }
+
             public bool Equals(ConfigurationEntry other)
             {
-                if (Key != other.Key || Product != other.Product || Documentation != other.Documentation || ConstName != other.ConstName)
+                if (Key != other.Key || Product != other.Product || Documentation != other.Documentation || ConstName != other.ConstName || Sensitive != other.Sensitive)
                 {
                     return false;
                 }
@@ -403,7 +411,7 @@ namespace Datadog.Trace.SourceGenerators.Helpers
 
             public override int GetHashCode()
             {
-                var hash = HashCode.Combine(Key, Product, Documentation, ConstName);
+                var hash = HashCode.Combine(Key, Product, Documentation, ConstName, Sensitive);
                 if (Aliases is not null)
                 {
                     foreach (var alias in Aliases)
