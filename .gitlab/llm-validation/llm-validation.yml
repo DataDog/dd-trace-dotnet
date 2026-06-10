@@ -7,6 +7,7 @@
 
 "llm validation":
   stage: .post
+  needs: []   # independent of the rest of the pipeline — playable immediately, no waiting for .post
   # Reuse a Linux .NET 8 image from the dotnet pipeline; run.sh installs node + the claude CLI.
   # The report is always printed to the log + uploaded as an artifact (the #17900 model); posting to
   # the PR is optional (run.sh uses pr-commenter only if it's on PATH).
