@@ -95,7 +95,13 @@ namespace Datadog.Trace.Debugger
             _instrumentProbes = instrumentProbes ?? DebuggerNativeMethods.InstrumentProbes;
             _unboundProbes = new List<ProbeDefinition>();
             _lastReportedUnboundProbeErrors = new Dictionary<string, LineProbeResolveErrorKey>();
-            (globalRateLimiter ?? DebuggerGlobalRateLimiter.Instance).Initialize();
+            var effectiveGlobalRateLimiter = globalRateLimiter ?? DebuggerGlobalRateLimiter.Instance;
+            effectiveGlobalRateLimiter.Initialize();
+            if (_settings.IsSnapshotExplorationTestEnabled)
+            {
+                effectiveGlobalRateLimiter.SetUnlimitedRate();
+            }
+
             _subscription = new Subscription(
                 (updates, removals) =>
                 {
