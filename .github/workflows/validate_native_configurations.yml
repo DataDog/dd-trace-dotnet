@@ -1,0 +1,35 @@
+name: Validate native configuration registry
+
+# A failure here means a DD_* environment variable read by native C++ code is not
+# registered in supported-configurations.yaml (or lacks native scope). The fix is to
+# update the registry — distinct from the source-generator verification job, which is
+# fixed by re-running the generator. Hence its own workflow.
+
+on:
+  pull_request:
+    paths:
+      - 'tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml'
+      - 'tracer/src/Datadog.Tracer.Native/**'
+      - 'shared/src/**'
+      - 'profiler/src/**'
+      - 'tracer/src/Datadog.Trace.Tools.NativeConfigValidator/**'
+      - '.github/workflows/validate_native_configurations.yml'
+  workflow_dispatch:
+
+jobs:
+  validate_native_configurations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
+        with:
+          global-json-file: global.json
+
+      - name: "Validate native configurations are registered"
+        run: dotnet run -c Release --project tracer/src/Datadog.Trace.Tools.NativeConfigValidator/Datadog.Trace.Tools.NativeConfigValidator.csproj -- "${{ github.workspace }}"
