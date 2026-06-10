@@ -58,8 +58,20 @@ BTI_TOKEN="$(authanywhere --audience rapid-devex-ci)"
 GITLAB_TOKEN="$(curl -fsSL -H "$BTI_TOKEN" -H 'Content-Type: application/vnd.api+json' \
   "https://bti-ci-api.us1.ddbuild.io/internal/ci/gitlab/token?owner=DataDog&repository=llm-validation-platform" \
   | jq -r '.token // empty')"
+[ -n "$GITLAB_TOKEN" ] || echo "WARN: empty GitLab token from BTI (repo may not be a known ddbuild GitLab project)."
 git clone --depth 1 --branch "$PLATFORM_REF" \
   "https://gitlab-ci-token:${GITLAB_TOKEN}@gitlab.ddbuild.io/DataDog/llm-validation-platform.git" /tmp/llmval
+
+echo "--- cloned ref=$PLATFORM_REF; what did we get? ---"
+git -C /tmp/llmval log --oneline -5 2>/dev/null || true
+ls -la /tmp/llmval
+if [ ! -f /tmp/llmval/Datadog.LlmValidation.slnx ]; then
+  echo "ERROR: cloned repo (ref=$PLATFORM_REF) has no Datadog.LlmValidation.slnx."
+  echo "       Likely the gitlab.ddbuild.io mirror of llm-validation-platform is empty/stale or this ref"
+  echo "       isn't mirrored. Remote branches:"
+  git -C /tmp/llmval branch -a 2>/dev/null || true
+  exit 1
+fi
 ( cd /tmp/llmval && dotnet build -c Release Datadog.LlmValidation.slnx )
 CLI_DLL="/tmp/llmval/src/Datadog.LlmValidation.Cli/bin/Release/net8.0/Datadog.LlmValidation.Cli.dll"
 
