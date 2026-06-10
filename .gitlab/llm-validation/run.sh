@@ -43,14 +43,16 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 npm i -g @anthropic-ai/claude-code >/dev/null
 
-echo "=== LLM Validation: ensure .NET 8 SDK ==="
+echo "=== LLM Validation: ensure .NET 10 SDK ==="
 if ! command -v dotnet >/dev/null 2>&1; then
-  echo "dotnet not found — installing .NET 8 SDK..."
+  echo "dotnet not found — installing .NET 10 SDK (supports the .slnx solution format)..."
   curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
-    && bash /tmp/dotnet-install.sh --channel 8.0 --install-dir /usr/local/dotnet --no-path \
+    && bash /tmp/dotnet-install.sh --channel 10.0 --install-dir /usr/local/dotnet --no-path \
     || { echo "ERROR: could not install .NET (egress to dot.net blocked?). Use a baked image — see README."; exit 1; }
   export PATH="/usr/local/dotnet:$PATH"
 fi
+# Projects target net8.0; let that output run on the .NET 10 runtime that ships with the SDK.
+export DOTNET_ROLL_FORWARD=Major
 dotnet --version || true
 
 echo "=== LLM Validation: fetch + build platform CLI ($PLATFORM_REF) ==="
@@ -66,7 +68,7 @@ echo "--- cloned ref=$PLATFORM_REF; what did we get? ---"
 git -C /tmp/llmval log --oneline -5 2>/dev/null || true
 ls -la /tmp/llmval
 if [ ! -f /tmp/llmval/Datadog.LlmValidation.slnx ]; then
-  echo "ERROR: cloned repo (ref=$PLATFORM_REF) has no Datadog.LlmValidation.slnx."
+  echo "ERROR: cloned repo (ref=$PLATFORM_REF) is missing Datadog.LlmValidation.slnx."
   echo "       Likely the gitlab.ddbuild.io mirror of llm-validation-platform is empty/stale or this ref"
   echo "       isn't mirrored. Remote branches:"
   git -C /tmp/llmval branch -a 2>/dev/null || true
