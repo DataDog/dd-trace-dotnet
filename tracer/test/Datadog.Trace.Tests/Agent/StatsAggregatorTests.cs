@@ -371,8 +371,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task ExcludesSpanWithPartialVersionZero_TS014()
         {
             // A span with _dd.partial_version=0 must be excluded from stats (spec §7: partial_version >= 0 means excluded)
-            const int millisecondsToNanoseconds = 1_000_000;
-            const long expectedTotalDuration = 100 * millisecondsToNanoseconds;
+            var expectedTotalDuration = TimeSpan.FromMilliseconds(100).ToNanoseconds();
 
             var start = DateTimeOffset.UtcNow;
 
