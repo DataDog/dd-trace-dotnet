@@ -422,6 +422,13 @@ public abstract class AzureFunctionsTests : TestHelper
             SetEnvironmentVariable("DD_TEST_APIM_ENABLED", "1");
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
+            // The sample's APIM timer polls the host's status endpoint before issuing the traced call
+            // (see WaitForHostReady in AllTriggers.cs). The host instruments that request as an
+            // azure_functions.invoke span; drop it at the agent so it is neither counted while waiting
+            // for spans nor included in the assertions/snapshot.
+            agent.SpanFilters.Add(s => !s.Resource.Contains("/admin/host/status"));
+
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 // 6 spans: Timer TriggerAllTimer, http.request, azure.apim, host span (GET /api/simple),
