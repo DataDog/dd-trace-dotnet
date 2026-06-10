@@ -368,6 +368,43 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public async Task ExcludesSpanWithPartialVersionZero_TS014()
+        {
+            // A span with _dd.partial_version=0 must be excluded from stats (spec §7: partial_version >= 0 means excluded)
+            const int millisecondsToNanoseconds = 1_000_000;
+            const long expectedTotalDuration = 100 * millisecondsToNanoseconds;
+
+            var start = DateTimeOffset.UtcNow;
+
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            try
+            {
+                var normalSpan = CreateTopLevelSpan(start, "service");
+                normalSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                // partialVersionZeroSpan should be excluded because _dd.partial_version=0 (>= 0)
+                var partialVersionZeroSpan = CreateTopLevelSpan(start, "service");
+                partialVersionZeroSpan.SetMetric(Tags.PartialSnapshot, 0.0);
+                partialVersionZeroSpan.SetDuration(TimeSpan.FromMilliseconds(200));
+
+                aggregator.Add(normalSpan, partialVersionZeroSpan);
+
+                var buffer = aggregator.CurrentBuffer;
+
+                buffer.Buckets.Should().HaveCount(1);
+                var bucket = buffer.Buckets.Values.Single();
+
+                bucket.Hits.Should().Be(1);
+                bucket.Duration.Should().Be(expectedTotalDuration);
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
         public async Task RecordsSuccessesAndErrorsSeparately_TS006()
         {
             const int millisecondsToNanoseconds = 1_000_000;
