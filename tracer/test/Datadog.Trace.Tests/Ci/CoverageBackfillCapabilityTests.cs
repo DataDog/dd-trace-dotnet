@@ -1115,6 +1115,43 @@ public class CoverageBackfillCapabilityTests : SettingsTestsBase
     }
 
     [Fact]
+    public void CoverletMsBuildProjectTargetAfterBlameHangDumpTypeSelectsCoverageReportSource()
+    {
+        var workingDirectory = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(workingDirectory);
+            var projectXml =
+                """
+                <Project>
+                  <PropertyGroup>
+                    <CollectCoverage>true</CollectCoverage>
+                  </PropertyGroup>
+                  <ItemGroup>
+                    <PackageReference Include="coverlet.msbuild" Version="6.0.4" />
+                  </ItemGroup>
+                </Project>
+                """;
+            File.WriteAllText(Path.Combine(workingDirectory, "Sample.Tests.csproj"), projectXml);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, workingDirectory);
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test --blame-hang-dump-type full Sample.Tests.csproj");
+            var settings = CreateSettings();
+
+            CoverageBackfillCapability.IsCoverageBackfillRequired(settings).Should().BeTrue();
+            CoverageBackfillCapability.ShouldWaitForCoverageIpc(settings).Should().BeTrue();
+            CoverageBackfillCapability.IsActiveCoverageModeBackfillable(settings, out var reason).Should().BeTrue();
+            reason.Should().BeEmpty();
+        }
+        finally
+        {
+            if (Directory.Exists(workingDirectory))
+            {
+                Directory.Delete(workingDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void CoverletMsBuildDirectoryBuildPropsPropertySelectsCoverageReportSource()
     {
         var workingDirectory = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-{Guid.NewGuid():N}");

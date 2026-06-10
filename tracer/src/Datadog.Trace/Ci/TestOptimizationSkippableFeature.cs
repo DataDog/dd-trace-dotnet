@@ -265,6 +265,13 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             return false;
         }
 
+        if (TryGetCoverageBackfillDictionary(moduleName, out var skippableTestsBySuiteAndName) &&
+            !IsDictionaryCoverageBackfillSafe(skippableTestsBySuiteAndName))
+        {
+            reason = "backend coverage data is unavailable or unsafe";
+            return false;
+        }
+
         return true;
     }
 
@@ -396,6 +403,34 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     private static string GetModuleScopeOrEmpty(SkippableTest candidate)
     {
         return candidate.TryGetModuleScope(out var moduleScope) ? moduleScope : string.Empty;
+    }
+
+    /// <summary>
+    /// Gets the skippable-tests response that owns the current backfill skip decision without turning request failures into skip denials.
+    /// </summary>
+    /// <param name="moduleName">Local test module or bundle name for the currently executing test.</param>
+    /// <param name="skippableTestsBySuiteAndName">The completed response dictionary, when one is available.</param>
+    /// <returns><c>true</c> when a response dictionary was retrieved; otherwise, <c>false</c>.</returns>
+    private bool TryGetCoverageBackfillDictionary(string? moduleName, out SkippableTestsDictionary skippableTestsBySuiteAndName)
+    {
+        var skippableTestsTask = GetSkippableTestsTask(moduleName);
+        if (skippableTestsTask is null)
+        {
+            skippableTestsBySuiteAndName = null!;
+            return false;
+        }
+
+        try
+        {
+            skippableTestsBySuiteAndName = skippableTestsTask.SafeGetResult();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "TestOptimizationSkippableFeature: Error waiting for skippable tests task to finish.");
+            skippableTestsBySuiteAndName = null!;
+            return false;
+        }
     }
 
     /// <summary>

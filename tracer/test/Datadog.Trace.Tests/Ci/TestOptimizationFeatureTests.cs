@@ -235,7 +235,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     [Fact]
-    public void CoverageBackfillSkipGateAllowsSkipWhenBackendCoverageIsMissing()
+    public void CoverageBackfillSkipGateFailsClosedWhenBackendCoverageIsMissing()
     {
         ClearCoverageBackfillEnvironment();
         var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-skippable-feature-{Guid.NewGuid():N}");
@@ -256,9 +256,9 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             var skippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client, testOptimization.Object);
 
             skippableFeature.GetSkippableTestsFromSuiteAndName("Samples.XUnitTests.TestSuite", "SimplePassTest", "Samples.XUnitTests").Should().ContainSingle();
-            skippableFeature.CanSkipWithCoverageBackfill(candidate, "Samples.XUnitTests", out var reason).Should().BeTrue();
+            skippableFeature.CanSkipWithCoverageBackfill(candidate, "Samples.XUnitTests", out var reason).Should().BeFalse();
 
-            reason.Should().BeEmpty();
+            reason.Should().Contain("coverage data");
             skippableFeature.IsCoverageBackfillSafe().Should().BeFalse();
             skippableFeature.GetCoverageBackfillData().IsPresent.Should().BeFalse();
             CoverageBackfillDataStore.HasActualItrSkip(testOptimization.Object).Should().BeFalse();

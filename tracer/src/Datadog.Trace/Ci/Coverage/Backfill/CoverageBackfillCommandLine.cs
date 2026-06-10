@@ -115,6 +115,7 @@ internal readonly struct CoverageBackfillCommandLine
         "--environment", "-e",
         "--artifacts-path",
         "--blame-hang-timeout",
+        "--blame-hang-dump-type",
         "--blame-crash-dump-type"
     ];
 
