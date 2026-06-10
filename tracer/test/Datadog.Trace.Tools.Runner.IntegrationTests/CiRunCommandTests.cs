@@ -2500,10 +2500,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         /// <summary>
-        /// Verifies that backend coverage data is merged when test skipping is enabled, even without an actual-skip marker.
+        /// Verifies that backend coverage data is ignored when test skipping is enabled but no test was skipped by ITR.
         /// </summary>
         [Fact]
-        public void CoverletCollectorXmlCoverageBackfillsWithoutActualItrSkip()
+        public void CoverletCollectorXmlCoverageDoesNotBackfillWithoutActualItrSkip()
         {
             var result = RunCoverletCollectorXmlCoverageScenario(
                 () =>
@@ -2515,10 +2515,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             using var scopeAssertions = new AssertionScope();
 
-            result.FinalXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="1" />""");
-            result.FinalXml.Should().Contain("lines-covered=\"1\"");
-            result.TestSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 100));
-            result.TestSession.Meta.Should().Contain(CodeCoverageTags.Backfilled, "true");
+            result.FinalXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="0" />""");
+            result.FinalXml.Should().Contain("lines-covered=\"0\"");
+            result.TestSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 0));
+            result.TestSession.Meta.Should().NotContainKey(CodeCoverageTags.Backfilled);
         }
 
         /// <summary>
