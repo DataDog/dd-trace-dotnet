@@ -59,6 +59,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
                 return;
             }
 
+            var shouldPoll = false;
             lock (_locker)
             {
                 if (_isDisposed)
@@ -67,9 +68,14 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
                 }
 
                 _probes.UnionWith(newProbes);
+                shouldPoll = newProbes.Any(p => p.ShouldFetch());
             }
 
             EmitKnownStatuses(newProbes);
+            if (shouldPoll)
+            {
+                PollProbeStatuses();
+            }
         }
 
         public void RemoveProbes(string[] removedProbes)
