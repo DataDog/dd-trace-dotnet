@@ -10,7 +10,8 @@ candidate vs baseline pairwise, and posting a pass/warn/fail report to the GitHu
 
 ## Enable it
 
-Add to the repo's top-level `.gitlab-ci.yml`:
+Set `LLMVAL_IMAGE` (in `llm-validation.yml`) to a Linux .NET 8 image, then add to the repo's top-level
+`.gitlab-ci.yml`:
 
 ```yaml
 include:
@@ -19,24 +20,24 @@ include:
 
 ## How it works
 
-`run.sh`: `authanywhere --audience rapid-ai-platform` → AI Gateway env (`ANTHROPIC_BASE_URL` +
-`ANTHROPIC_CUSTOM_HEADERS`); install the `claude` CLI; clone + `dotnet build` the platform CLI; run
-`llm-validate run --base-sha $CI_MERGE_REQUEST_DIFF_BASE_SHA …`; `pr-commenter --header 'LLM Validation'
---on-duplicate=replace` to the GitHub PR. Artifacts: `results.json`, `report.md`, `details.json`.
+**Single job** (`run.sh`): `authanywhere --audience rapid-ai-platform` → AI Gateway env; ensure node + install
+the `claude` CLI; clone + `dotnet build` the platform CLI; run
+`llm-validate run --base-sha $CI_MERGE_REQUEST_DIFF_BASE_SHA …`; **print `report.md` to the log + upload it as
+an artifact** (the dd-trace-py #17900 model). Posting to the GitHub PR is **optional** — `run.sh` runs
+`pr-commenter --header 'LLM Validation' --on-duplicate=replace` only if `pr-commenter` is on `PATH`.
+Artifacts: `results.json`, `report.md`, `details.json`.
 
 ## Prerequisites / open items (must confirm before first run)
 
-1. **Image must provide `dotnet` 8 SDK + `node`/`npm`.** `dotnet` builds/runs the platform CLI; `node`/`npm`
-   are needed to install and run the **Claude Code CLI** (`@anthropic-ai/claude-code`) — the agent under
-   test (there is no .NET Claude Agent SDK). `authanywhere` is a standalone binary and needs neither. The
-   `benchmarking-platform-tools-ubuntu` image has `pr-commenter`/`git`/`jq`/`curl` but likely **not** .NET
-   or node — switch image, install them at job start, or bake a dedicated image. This is the main blocker.
-2. **AI Gateway entitlement.** This repo's CI identity must be allowed the `rapid-ai-platform` audience
-   (the repo already uses `authanywhere --audience rapid-devex-ci`, but the AI audience is unverified).
-   **Confirm it cheaply first** with the one-off check job: `include` `gateway-check.yml` and run the
-   manual **"llm gateway check"** job — it mints the token and pings the gateway using only curl/jq (no
-   .NET/node). HTTP 200 = entitled (proceed to build the image); 401/403 = request the `rapid-ai-platform`
-   grant for dd-trace-dotnet CI from the AI-gateway / dd-source owners.
+1. **Set `LLMVAL_IMAGE` to a Linux .NET 8 image** (reuse one from the dotnet pipeline). `dotnet` builds/runs
+   the platform CLI; `run.sh` installs **node** (the only gap) to get the **Claude Code CLI** — the agent
+   under test (there is no .NET Claude Agent SDK). The image also needs `git`/`curl`/`jq` (jq parses the BTI
+   token). `authanywhere` is downloaded at runtime. **PR comments:** `pr-commenter` lives only in the
+   `benchmarking-platform-tools` image, so on a .NET image the report posts as a **log + artifact** (not a PR
+   comment) until we either fetch `pr-commenter` or post via the GitHub API — add that once v1 is working.
+2. **AI Gateway entitlement — CONFIRMED (2026-06).** The manual **"llm gateway check"** job minted a
+   `rapid-ai-platform` token in CI and got **HTTP 200** from `ai-gateway.us1.ddbuild.io` (Bedrock-backed;
+   bare model id `claude-opus-4-8` works). `gateway-check.{yml,sh}` remain for re-checking if auth changes.
 3. **Merge-base availability.** `run.sh` fetches the target branch so `git show $CI_MERGE_REQUEST_DIFF_BASE_SHA:AGENTS.md`
    resolves; if `GIT_DEPTH` is very shallow you may need a deeper fetch.
 

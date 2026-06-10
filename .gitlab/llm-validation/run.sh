@@ -26,7 +26,13 @@ provider: anthropic
 claude-code: true
 ${AI_BEARER}"
 
-echo "=== LLM Validation: install claude CLI ==="
+echo "=== LLM Validation: ensure node + claude CLI ==="
+if ! command -v node >/dev/null 2>&1; then
+  echo "node not found — installing via NodeSource (assumes a Debian/Ubuntu base)..."
+  curl -fsSL https://deb.nodesource.com/setup_22.x | bash - >/dev/null 2>&1 \
+    && apt-get install -y nodejs >/dev/null 2>&1 \
+    || { echo "ERROR: could not install node. Point LLMVAL_IMAGE at an image that already has node/npm."; exit 1; }
+fi
 npm i -g @anthropic-ai/claude-code >/dev/null
 
 echo "=== LLM Validation: fetch + build platform CLI ($PLATFORM_REF) ==="
@@ -58,13 +64,20 @@ GATE_EXIT=$?
 set -e
 echo "gate exit code: $GATE_EXIT"
 
-echo "=== LLM Validation: post PR comment ==="
-if [ "${CI_COMMIT_REF_NAME:-}" != "master" ] && [ -f report.md ]; then
+# The report is always available in the job log + as an artifact (the #17900 model).
+echo "=== LLM Validation: report ==="
+[ -f report.md ] && cat report.md
+
+# Posting to the PR is optional and additive: do it only if pr-commenter is available.
+echo "=== LLM Validation: PR comment (optional) ==="
+if command -v pr-commenter >/dev/null 2>&1 && [ "${CI_COMMIT_REF_NAME:-}" != "master" ] && [ -f report.md ]; then
   cat report.md | pr-commenter \
     --for-repo="$CI_PROJECT_NAME" \
     --for-pr="$CI_COMMIT_REF_NAME" \
     --header='LLM Validation' \
     --on-duplicate=replace || echo "WARN: pr-commenter failed (non-fatal)"
+else
+  echo "pr-commenter not on PATH (or master branch) — see report.md in the log above / job artifacts."
 fi
 
 # Advisory during the POC: surface the verdict but don't fail the pipeline.

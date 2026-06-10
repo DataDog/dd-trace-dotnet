@@ -7,7 +7,10 @@
 
 "llm validation":
   stage: .post
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest  # provides pr-commenter, git, jq, curl
+  # Reuse a Linux .NET 8 image from the dotnet pipeline; run.sh installs node + the claude CLI.
+  # The report is always printed to the log + uploaded as an artifact (the #17900 model); posting to
+  # the PR is optional (run.sh uses pr-commenter only if it's on PATH).
+  image: "$LLMVAL_IMAGE"
   tags: ["arch:amd64"]
   rules:
     # Only on merge requests that touch AI-behavior files. Advisory for now (allow_failure).
@@ -19,9 +22,10 @@
       allow_failure: true
     - when: never
   variables:
+    LLMVAL_IMAGE: "registry.ddbuild.io/SET-ME-to-a-linux-dotnet8-image:latest"  # TODO: the repo's Linux .NET 8 image
     LLMVAL_PLATFORM_REF: "main"   # ref of DataDog/llm-validation-platform to build the CLI from
     LLMVAL_RUNS: "3"              # repeats per case (more = tighter win-rate CI)
-    # LLMVAL_MAX_CASES: "4"      # optional: cap cases during rollout to control cost
+    LLMVAL_MAX_CASES: "1"         # cheap first run; raise / remove once it's working
   script:
     - bash .gitlab/llm-validation/run.sh
   artifacts:
