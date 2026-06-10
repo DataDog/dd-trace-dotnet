@@ -79,7 +79,7 @@ public sealed class CoverageGetCoverageResultIntegration
                         return new CallTargetReturn<TReturn>(returnValue);
                     }
 
-                    if (DotnetCommon.TryGetCoverageBackfillDataForCurrentProcess(sessionSpanId, out var backfillData))
+                    if (DotnetCommon.TryGetCoverageBackfillDataForCurrentProcess(sessionSpanId, out var backfillData, out var unavailableAfterActualItrSkip))
                     {
                         var applyResult = CoverletCoverageBackfill.TryApplyForCurrentResult(modules, backfillData, CIEnvironmentValues.Instance, out var updatedLines, out backfillValidation, out rollback);
                         if (applyResult == CoverletCoverageBackfillApplyResult.Failed)
@@ -102,6 +102,13 @@ public sealed class CoverageGetCoverageResultIntegration
                             backfillValidation = null;
                             DotnetCommon.Log.Debug("CoverageGetCoverageResult: Backend coverage did not apply to this Coverlet result.");
                         }
+                    }
+                    else if (unavailableAfterActualItrSkip)
+                    {
+                        DotnetCommon.Log.Warning("CoverageGetCoverageResult: ITR skipped tests but backend coverage backfill data is unavailable, so no stale coverage percentage will be sent.");
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                        RecordCoverletCoverageIpcFailure();
+                        return new CallTargetReturn<TReturn>(returnValue);
                     }
 
                     var coverageSummary = Activator.CreateInstance(coverageSummaryType).DuckCast<ICoverageSummaryProxy>();

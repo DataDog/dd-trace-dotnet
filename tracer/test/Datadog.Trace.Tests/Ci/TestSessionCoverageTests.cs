@@ -1567,7 +1567,7 @@ public class TestSessionCoverageTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void FinalizeSessionHandlesLocalCoverletResultWhenBackfillIsUnavailableAfterActualItrSkip(bool writeBrokenCoverageReport)
+    public void FinalizeSessionSuppressesLocalCoverletResultWhenBackfillIsUnavailableAfterActualItrSkip(bool writeBrokenCoverageReport)
     {
         var runFolderBaseDirectory = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-coverlet-xml-{Guid.NewGuid():N}");
         var resultsDirectory = Path.Combine(runFolderBaseDirectory, "TestResults");
@@ -1611,15 +1611,7 @@ public class TestSessionCoverageTests
 
             DotnetCommon.FinalizeSession(session, 0, null);
 
-            if (writeBrokenCoverageReport)
-            {
-                session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().BeNull();
-            }
-            else
-            {
-                session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(0);
-            }
-
+            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().BeNull();
             session.Tags.GetTag(CodeCoverageTags.Backfilled).Should().BeNull();
         }
         finally
@@ -1645,7 +1637,7 @@ public class TestSessionCoverageTests
     }
 
     [Fact]
-    public async Task FinalizeSessionPublishesRawCoverageWhenBackfillIsUnavailableAfterActualItrSkip()
+    public async Task FinalizeSessionDoesNotPublishRawCoverageWhenBackfillIsUnavailableAfterActualItrSkip()
     {
         var runFolderBaseDirectory = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-coverlet-xml-{Guid.NewGuid():N}");
         var resultsDirectory = Path.Combine(runFolderBaseDirectory, "TestResults");
@@ -1678,9 +1670,9 @@ public class TestSessionCoverageTests
             DotnetCommon.FinalizeSession(session, 0, null);
             collector.AggregateMetrics();
 
-            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(0);
+            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().BeNull();
             session.Tags.GetTag(CodeCoverageTags.Backfilled).Should().BeNull();
-            collector.GetMetrics().Metrics.Should().NotContain(metric => metric.Metric == "code_coverage.errors" && metric.Namespace == "civisibility");
+            collector.GetMetrics().Metrics.Should().Contain(metric => metric.Metric == "code_coverage.errors" && metric.Namespace == "civisibility");
         }
         finally
         {
@@ -1707,6 +1699,50 @@ public class TestSessionCoverageTests
                     Directory.Delete(runFolderBaseDirectory, recursive: true);
                 }
             }
+        }
+    }
+
+    [Fact]
+    public void TryProcessCoverageXmlDoesNotBackfillWhenNoTestWasSkippedByItr()
+    {
+        var coveragePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-no-skip-{Guid.NewGuid():N}.xml");
+        var coverageXml =
+            """
+            <coverage>
+              <packages>
+                <package>
+                  <classes>
+                    <class filename="src/Calculator.cs">
+                      <lines>
+                        <line number="1" hits="0" />
+                      </lines>
+                    </class>
+                  </classes>
+                </package>
+              </packages>
+            </coverage>
+            """;
+        var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
+        skippableFeature.Setup(x => x.Enabled).Returns(true);
+        skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
+        skippableFeature.Setup(x => x.IsCoverageBackfillSafe()).Returns(true);
+        skippableFeature.Setup(x => x.GetCoverageBackfillData()).Returns(BackfillForLineMap(new Dictionary<string, int> { ["src/Calculator.cs"] = 1 }));
+        skippableFeature.Setup(x => x.HasSkippedTestsByItr(It.IsAny<ulong>())).Returns(false);
+        var session = CreateSessionWithSkippableFeature(skippableFeature.Object, command: "dotnet test --collect \"XPlat Code Coverage\"");
+        try
+        {
+            File.WriteAllText(coveragePath, coverageXml);
+
+            DotnetCommon.TryProcessCoverageXml(coveragePath, session, out var result).Should().BeTrue();
+
+            result.Percentage.Should().Be(0);
+            result.Backfilled.Should().BeFalse();
+            File.ReadAllText(coveragePath).Should().Contain("""<line number="1" hits="0" />""");
+        }
+        finally
+        {
+            CloseAndReset(session);
+            File.Delete(coveragePath);
         }
     }
 

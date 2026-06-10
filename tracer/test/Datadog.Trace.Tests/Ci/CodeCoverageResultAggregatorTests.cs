@@ -241,7 +241,7 @@ public class CodeCoverageResultAggregatorTests
         aggregator.Add(CodeCoverageReportSource.Coverlet, percentage: 50, backfilled: true, executableLines: 2, coveredLines: 1, diagnostic: "partial-a", backfillValidation: firstValidation);
         aggregator.SuppressUnvalidated(CodeCoverageReportSource.Coverlet);
 
-        aggregator.HasResult(CodeCoverageReportSource.Coverlet).Should().BeTrue();
+        aggregator.HasResult(CodeCoverageReportSource.Coverlet).Should().BeFalse();
 
         aggregator.Add(CodeCoverageReportSource.Coverlet, percentage: 100, backfilled: true, executableLines: 1, coveredLines: 1, diagnostic: "partial-b", backfillValidation: secondValidation);
 

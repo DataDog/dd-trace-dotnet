@@ -539,9 +539,9 @@ public class CoverletCoverageBackfillTests
         firstLineHits[1].Should().Be(1);
         secondLineHits[2].Should().Be(1);
         firstValidation.Should().NotBeNull();
-        firstValidation!.CanPublish().Should().BeTrue();
+        firstValidation!.CanPublish().Should().BeFalse();
         secondValidation.Should().NotBeNull();
-        secondValidation!.CanPublish().Should().BeTrue();
+        secondValidation!.CanPublish().Should().BeFalse();
         mergedValidation.Should().NotBeNull();
         mergedValidation!.CanPublish().Should().BeTrue();
     }
@@ -574,14 +574,14 @@ public class CoverletCoverageBackfillTests
         updatedLines.Should().Be(1);
         lineHits[1].Should().Be(1);
         validation.Should().NotBeNull();
-        validation!.CanPublish().Should().BeTrue();
+        validation!.CanPublish().Should().BeFalse();
         rollback.Should().NotBeNull();
         rollback!.TryRollback().Should().BeTrue();
         lineHits[1].Should().Be(0);
     }
 
     [Fact]
-    public void MergedPartialCoverletValidationAllowsDifferentBackendSets()
+    public void MergedPartialCoverletValidationRequiresAllBackendLinesFromDifferentBackendSets()
     {
         var firstLineHits = new Dictionary<int, int>
         {
@@ -629,11 +629,11 @@ public class CoverletCoverageBackfillTests
         firstUpdatedLines.Should().Be(1);
         secondUpdatedLines.Should().Be(1);
         firstValidation.Should().NotBeNull();
-        firstValidation!.CanPublish().Should().BeTrue();
+        firstValidation!.CanPublish().Should().BeFalse();
         secondValidation.Should().NotBeNull();
-        secondValidation!.CanPublish().Should().BeTrue();
+        secondValidation!.CanPublish().Should().BeFalse();
         mergedValidation.Should().NotBeNull();
-        mergedValidation!.CanPublish().Should().BeTrue();
+        mergedValidation!.CanPublish().Should().BeFalse();
     }
 
     [Fact]
@@ -686,7 +686,7 @@ public class CoverletCoverageBackfillTests
     }
 
     [Fact]
-    public void AppliesRepresentableMatchedCoverletLinesAndIgnoresMissingBackendLines()
+    public void AppliesRepresentableMatchedCoverletLinesAndRejectsPublicationWhenBackendLinesAreMissing()
     {
         var lineHits = new Dictionary<int, int>
         {
@@ -712,7 +712,7 @@ public class CoverletCoverageBackfillTests
 
         updatedLines.Should().Be(1);
         validation.Should().NotBeNull();
-        validation!.CanPublish().Should().BeTrue();
+        validation!.CanPublish().Should().BeFalse();
         lineHits[1].Should().Be(1);
     }
 

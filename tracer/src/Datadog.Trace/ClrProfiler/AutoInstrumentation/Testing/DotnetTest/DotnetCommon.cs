@@ -81,7 +81,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         private enum CoverageBackfillAvailability
         {
             NotRequired,
-            Available
+            Available,
+            Unavailable
         }
 
         internal enum CoverletCollectorXmlProcessingResult
@@ -435,6 +436,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 return new CoverageBackfillResult(coverageDataEvaluated: false, matchedFiles: 0, updatedFiles: 0);
             }
 
+            if (availability == CoverageBackfillAvailability.Unavailable)
+            {
+                return new CoverageBackfillResult(coverageDataEvaluated: false, matchedFiles: 0, updatedFiles: 0, canPublishCoverage: false);
+            }
+
             var result = CoverageBackfillApplicator.ApplyToGlobalCoverage(globalCoverage, backfillData, CIEnvironmentValues.Instance);
             if (result.Applied)
             {
@@ -473,7 +479,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 return;
             }
 
-            if (coverletXmlProcessingResult == CoverletCollectorXmlProcessingResult.FailedClosed)
+            if (coverletXmlProcessingResult is CoverletCollectorXmlProcessingResult.FailedClosed or CoverletCollectorXmlProcessingResult.NotApplicable)
             {
                 session.SuppressUnvalidatedCodeCoverageResult(CodeCoverageReportSource.MicrosoftCodeCoverage);
                 session.SuppressUnvalidatedCodeCoverageResult(CodeCoverageReportSource.Coverlet);
@@ -508,6 +514,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             var availability = GetCoverageBackfillDataForSession(session, out backfillData);
+            if (availability == CoverageBackfillAvailability.Unavailable)
+            {
+                result = default;
+                return false;
+            }
+
             return ExternalCoverageXmlBackfill.TryProcess(filePath, backfillData, availability == CoverageBackfillAvailability.Available, out result);
         }
 
@@ -520,6 +532,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             }
 
             var availability = GetCoverageBackfillDataForSession(session, out backfillData);
+            if (availability == CoverageBackfillAvailability.Unavailable)
+            {
+                result = default;
+                return false;
+            }
+
             return TryProcessCoverletCollectorXml(filePath, format, backfillData, availability == CoverageBackfillAvailability.Available, validationState, out result);
         }
 
@@ -977,6 +995,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         private static bool TryProcessCoverletCollectorXmlForCurrentProcess(ulong sessionId, CoverletCollectorXmlReport coverageReport, ExternalCoverageXmlBackfill.CoverageBackfillValidationState validationState, out ExternalCoverageXmlResult result)
         {
             var availability = GetCoverageBackfillDataForCurrentProcess(sessionId, out var backfillData);
+            if (availability == CoverageBackfillAvailability.Unavailable)
+            {
+                result = default;
+                return false;
+            }
+
             return TryProcessCoverletCollectorXml(coverageReport.FilePath, coverageReport.Format, backfillData, availability == CoverageBackfillAvailability.Available, validationState, out result);
         }
 
@@ -2077,21 +2101,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             return GetCoverageBackfillDataForCurrentProcess(sessionId, out backfillData) == CoverageBackfillAvailability.Available;
         }
 
+        internal static bool TryGetCoverageBackfillDataForCurrentProcess(ulong sessionId, out CoverageBackfillData backfillData, out bool unavailableAfterActualItrSkip)
+        {
+            var availability = GetCoverageBackfillDataForCurrentProcess(sessionId, out backfillData);
+            unavailableAfterActualItrSkip = availability == CoverageBackfillAvailability.Unavailable;
+            return availability == CoverageBackfillAvailability.Available;
+        }
+
         private static CoverageBackfillAvailability GetCoverageBackfillDataForCurrentProcess(out CoverageBackfillData backfillData)
             => GetCoverageBackfillDataForCurrentProcess(sessionId: 0, out backfillData);
 
         private static CoverageBackfillAvailability GetCoverageBackfillDataForCurrentProcess(ulong sessionId, out CoverageBackfillData backfillData)
         {
             backfillData = CoverageBackfillData.Missing;
-            var skippableFeature = TestOptimization.Instance.SkippableFeature;
-            var coverageBackfillRequired = skippableFeature?.IsCoverageBackfillRequired() ??
-                                           CoverageBackfillCapability.IsCoverageBackfillRequired(TestOptimization.Instance.Settings);
-            if (!coverageBackfillRequired &&
-                !HasActualItrSkipsForCurrentProcess(sessionId))
+            if (!HasActualItrSkipsForCurrentProcess(sessionId))
             {
                 return CoverageBackfillAvailability.NotRequired;
             }
 
+            var skippableFeature = TestOptimization.Instance.SkippableFeature;
             if (skippableFeature?.IsCoverageBackfillSafe() == true)
             {
                 backfillData = skippableFeature.GetCoverageBackfillData();
@@ -2106,7 +2134,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                              CoverageBackfillDataStore.TryLoad(TestOptimization.Instance, sessionId, out backfillData);
             return loaded ?
                        CoverageBackfillAvailability.Available :
-                       CoverageBackfillAvailability.NotRequired;
+                       CoverageBackfillAvailability.Unavailable;
         }
 
         private static bool HasActualItrSkipsForCurrentProcess(ulong sessionId)
@@ -2148,15 +2176,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         private static CoverageBackfillAvailability GetCoverageBackfillDataForSession(TestSession session, out CoverageBackfillData backfillData)
         {
             backfillData = CoverageBackfillData.Missing;
-            var skippableFeature = TestOptimization.Instance.SkippableFeature;
-            var coverageBackfillRequired = skippableFeature?.IsCoverageBackfillRequired() ??
-                                           CoverageBackfillCapability.IsCoverageBackfillRequired(TestOptimization.Instance.Settings);
-            if (!coverageBackfillRequired &&
-                !HasActualItrSkips(session))
+            if (!HasActualItrSkips(session))
             {
                 return CoverageBackfillAvailability.NotRequired;
             }
 
+            var skippableFeature = TestOptimization.Instance.SkippableFeature;
             if (skippableFeature?.IsCoverageBackfillSafe() == true)
             {
                 backfillData = skippableFeature.GetCoverageBackfillData();
@@ -2168,7 +2193,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
             return CoverageBackfillDataStore.TryLoad(TestOptimization.Instance, session.Tags.SessionId, out backfillData) ?
                        CoverageBackfillAvailability.Available :
-                       CoverageBackfillAvailability.NotRequired;
+                       CoverageBackfillAvailability.Unavailable;
         }
 
         internal static bool TryGetCoveragePercentageFromXml(string filePath, out double percentage)

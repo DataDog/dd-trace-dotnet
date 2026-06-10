@@ -215,7 +215,7 @@ internal static class CoverletCoverageBackfill
         }
 
         backfillValidation = CodeCoverageBackfillValidation.Create(activeBackendFileCount, expectedCoveredLineCounts, representedBackendLines, localCandidateByBackendPath, requiredBackendLinesByBackendPath: requiredBackendLines);
-        if (!backfillValidation.CanPublish())
+        if (backfillValidation.UnsafePathMatch)
         {
             backfillValidation = null;
             return CoverletCoverageBackfillApplyResult.Failed;

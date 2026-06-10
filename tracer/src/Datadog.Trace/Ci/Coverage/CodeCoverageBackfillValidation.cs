@@ -189,11 +189,94 @@ internal sealed class CodeCoverageBackfillValidation
            UnsafePathMatch;
 
     /// <summary>
-    /// Gets whether matched backend coverage was applied without path ambiguity.
+    /// Gets whether matched backend coverage was applied without path ambiguity and represents every required backend-covered line.
     /// </summary>
     /// <returns>True when this snapshot can validate publishing this source after ITR skipped tests.</returns>
     internal bool CanPublish()
-        => !UnsafePathMatch;
+    {
+        return !UnsafePathMatch &&
+               HasCompleteRequiredBackendLineCoverage(this) &&
+               HasCompleteRequiredBackendPathCoverage(this) &&
+               HasExpectedCoveredLineCounts(this) &&
+               HasRequiredBackendFileCount(this);
+    }
+
+    private static bool HasCompleteRequiredBackendLineCoverage(CodeCoverageBackfillValidation validation)
+    {
+        foreach (var item in validation.RequiredBackendLinesByBackendPath)
+        {
+            if (!validation.RepresentedBackendLinesByBackendPath.TryGetValue(item.Key, out var representedLines) ||
+                representedLines.Length == 0)
+            {
+                return false;
+            }
+
+            foreach (var requiredLine in item.Value)
+            {
+                if (Array.BinarySearch(representedLines, requiredLine) < 0)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static bool HasCompleteRequiredBackendPathCoverage(CodeCoverageBackfillValidation validation)
+    {
+        foreach (var backendPath in validation.RequiredBackendPathsWithCoverage)
+        {
+            if (!HasRepresentedLines(validation, backendPath))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool HasExpectedCoveredLineCounts(CodeCoverageBackfillValidation validation)
+    {
+        foreach (var item in validation.ExpectedCoveredLinesByBackendPath)
+        {
+            if (item.Value <= 0)
+            {
+                continue;
+            }
+
+            if (!validation.RepresentedBackendLinesByBackendPath.TryGetValue(item.Key, out var representedLines) ||
+                representedLines.Length < item.Value)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool HasRequiredBackendFileCount(CodeCoverageBackfillValidation validation)
+    {
+        if (validation.RequiredBackendFilesWithCoverage <= 0)
+        {
+            return true;
+        }
+
+        var representedBackendFilesWithCoverage = 0;
+        foreach (var item in validation.RepresentedBackendLinesByBackendPath)
+        {
+            if (item.Value.Length > 0)
+            {
+                representedBackendFilesWithCoverage++;
+            }
+        }
+
+        return representedBackendFilesWithCoverage >= validation.RequiredBackendFilesWithCoverage;
+    }
+
+    private static bool HasRepresentedLines(CodeCoverageBackfillValidation validation, string backendPath)
+        => validation.RepresentedBackendLinesByBackendPath.TryGetValue(backendPath, out var representedLines) &&
+           representedLines.Length > 0;
 
     private static Dictionary<string, int> CopyExpectedLines(CodeCoverageBackfillValidation validation)
     {
