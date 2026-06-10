@@ -23,7 +23,7 @@ std::pair<struct dl_phdr_info*, std::size_t> DlPhdrInfoWrapper::Get()
 }
 
 template <class T, typename _Naked_T = std::remove_cv_t<T>>
-std::unique_ptr<_Naked_T[], DlPhdrInfoWrapper::PmrDeleter> DuplicateWithPmr(
+std::unique_ptr<_Naked_T[], DlPhdrInfoWrapper::PmrDeleter> Duplicate(
     shared::pmr::memory_resource* allocator, T* src, std::size_t count)
 {
     // Static assertions to that T does not need special treatment (ex:. calling ctor or dtor)
@@ -48,11 +48,11 @@ void DlPhdrInfoWrapper::DeepCopy(struct dl_phdr_info& destination, struct dl_phd
     // first copy all fields
     destination = *source;
     // then update the pointer-ones
-    _name = DuplicateWithPmr(_allocator, source->dlpi_name, strlen(source->dlpi_name) + 1);
+    _name = Duplicate(_allocator, source->dlpi_name, strlen(source->dlpi_name) + 1);
     destination.dlpi_name = _name.get();
 
     // copy header
-    _phdr = DuplicateWithPmr(_allocator, source->dlpi_phdr, source->dlpi_phnum);
+    _phdr = Duplicate(_allocator, source->dlpi_phdr, source->dlpi_phnum);
     destination.dlpi_phdr = _phdr.get();
 
     // Those fields appeared in glibc 2.4 (with two others).
