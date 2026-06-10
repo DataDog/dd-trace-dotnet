@@ -27,7 +27,7 @@
     # pr-commenter/git/jq/curl; run.sh installs .NET 8 + node + claude on top. If runtime egress for those
     # installs is blocked, bake a custom approved image instead (see README).
     LLMVAL_IMAGE: "registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest"
-    LLMVAL_PLATFORM_REF: "main"   # ref of DataDog/llm-validation-platform to build the CLI from
+    LLMVAL_PLATFORM_REF: "nacho/initialImplementation"  # TODO: switch to "main" once the code is merged there
     LLMVAL_RUNS: "3"              # repeats per case (more = tighter win-rate CI)
     LLMVAL_MAX_CASES: "1"         # cheap first run; raise / remove once it's working
   script:
