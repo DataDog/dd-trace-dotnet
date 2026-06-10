@@ -11,8 +11,10 @@ stages:
 
 include:
   - local: .gitlab/one-pipeline.locked.yml
-  # LLM Validation: one-off manual entitlement probe (remove once the gate job is wired in).
+  # LLM Validation: one-off manual entitlement probe (kept for re-checks; harmless — it's manual).
   - local: .gitlab/llm-validation/gateway-check.yml
+  # LLM Validation gate: runs on MRs that change AGENTS.md.
+  - local: .gitlab/llm-validation/llm-validation.yml
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
   # so we cannot parameterize this group path the way we do for trigger jobs

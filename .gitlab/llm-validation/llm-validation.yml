@@ -22,7 +22,9 @@
       allow_failure: true
     - when: never
   variables:
-    LLMVAL_IMAGE: "registry.ddbuild.io/SET-ME-to-a-linux-dotnet8-image:latest"  # TODO: the repo's Linux .NET 8 image
+    # Debian-based .NET 8 SDK (amd64) — same family the repo's Linux Dockerfiles use. If ddbuild CI can't
+    # pull external mcr, swap to the registry.ddbuild.io mirror (e.g. registry.ddbuild.io/images/mirror/dotnet/sdk:8.0).
+    LLMVAL_IMAGE: "mcr.microsoft.com/dotnet/sdk:8.0"
     LLMVAL_PLATFORM_REF: "main"   # ref of DataDog/llm-validation-platform to build the CLI from
     LLMVAL_RUNS: "3"              # repeats per case (more = tighter win-rate CI)
     LLMVAL_MAX_CASES: "1"         # cheap first run; raise / remove once it's working

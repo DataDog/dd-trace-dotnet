@@ -29,12 +29,13 @@ Artifacts: `results.json`, `report.md`, `details.json`.
 
 ## Prerequisites / open items (must confirm before first run)
 
-1. **Set `LLMVAL_IMAGE` to a Linux .NET 8 image** (reuse one from the dotnet pipeline). `dotnet` builds/runs
-   the platform CLI; `run.sh` installs **node** (the only gap) to get the **Claude Code CLI** — the agent
-   under test (there is no .NET Claude Agent SDK). The image also needs `git`/`curl`/`jq` (jq parses the BTI
-   token). `authanywhere` is downloaded at runtime. **PR comments:** `pr-commenter` lives only in the
-   `benchmarking-platform-tools` image, so on a .NET image the report posts as a **log + artifact** (not a PR
-   comment) until we either fetch `pr-commenter` or post via the GitHub API — add that once v1 is working.
+1. **Image (`LLMVAL_IMAGE`)** defaults to `mcr.microsoft.com/dotnet/sdk:8.0` (Debian, amd64 — the family the
+   repo's Linux Dockerfiles use). If ddbuild CI can't pull external `mcr`, point it at the registry.ddbuild.io
+   mirror. `run.sh` self-provisions the rest on that Debian base: `apt-get` git/curl/jq, install **node** +
+   the **Claude Code CLI** (the agent under test — no .NET Claude Agent SDK exists), download `authanywhere`.
+   **PR comments:** `pr-commenter` lives only in the `benchmarking-platform-tools` image, so on a .NET image
+   the report posts as a **log + artifact** (not a PR comment) until we fetch `pr-commenter` or post via the
+   GitHub API — add once v1 works.
 2. **AI Gateway entitlement — CONFIRMED (2026-06).** The manual **"llm gateway check"** job minted a
    `rapid-ai-platform` token in CI and got **HTTP 200** from `ai-gateway.us1.ddbuild.io` (Bedrock-backed;
    bare model id `claude-opus-4-8` works). `gateway-check.{yml,sh}` remain for re-checking if auth changes.

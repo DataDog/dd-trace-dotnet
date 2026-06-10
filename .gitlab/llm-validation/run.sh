@@ -12,6 +12,14 @@ set -euo pipefail
 PLATFORM_REF="${LLMVAL_PLATFORM_REF:-main}"
 RUNS="${LLMVAL_RUNS:-3}"
 
+echo "=== LLM Validation: ensure base tools (git, curl, jq) ==="
+# The .NET SDK image (Debian) is fairly bare — install the small tools run.sh needs.
+if ! { command -v git && command -v curl && command -v jq; } >/dev/null 2>&1; then
+  apt-get update >/dev/null 2>&1 \
+    && apt-get install -y --no-install-recommends git curl jq ca-certificates >/dev/null 2>&1 \
+    || echo "WARN: could not apt-get base tools; assuming they are present."
+fi
+
 echo "=== LLM Validation: gateway auth (rapid-ai-platform) ==="
 curl -fsSL -o /usr/local/bin/authanywhere \
   "https://binaries.ddbuild.io/dd-source/authanywhere/LATEST/authanywhere-linux-amd64"
