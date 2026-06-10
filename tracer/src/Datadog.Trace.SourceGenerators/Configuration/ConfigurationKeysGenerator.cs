@@ -123,7 +123,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
             // Scope is required, non-empty, and must contain only recognized tokens.
             if (entry.Scope.Count == 0)
             {
-                diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Missing scope", $"Configuration key '{kvp.Key}' is missing a 'scope' field in supported-configurations.yaml. Use: managed, native, or managed, native.", DiagnosticSeverity.Error));
+                diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Missing scope", $"Configuration key '{kvp.Key}' is missing a 'scope' field in supported-configurations.yaml. Use: managed and/or native.", DiagnosticSeverity.Error));
             }
             else
             {
