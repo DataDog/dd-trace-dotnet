@@ -400,7 +400,12 @@ void LibrariesInfoCache::BuildSymbolCache(
     std::vector<ModuleRegion, shared::pmr::polymorphic_allocator<ModuleRegion>>& outRegions,
     std::vector<FuncEntry, shared::pmr::polymorphic_allocator<FuncEntry>>& outSymbols)
 {
-    std::vector<FuncEntry> moduleSymbols;
+    struct AbsFuncEntry
+    {
+        unw_word_t start_ip;
+        unw_word_t end_ip;
+    };
+    std::vector<AbsFuncEntry> moduleSymbols;
 
     for (auto& wrapper : phdrCache)
     {
@@ -498,13 +503,12 @@ void LibrariesInfoCache::BuildSymbolCache(
             continue;
 
         std::sort(moduleSymbols.begin(), moduleSymbols.end(),
-                  [](const FuncEntry& a, const FuncEntry& b) {
+                  [](const AbsFuncEntry& a, const AbsFuncEntry& b) {
                       return a.start_ip < b.start_ip || (a.start_ip == b.start_ip && a.end_ip < b.end_ip);
                   });
 
-        // Remove duplicates
         auto last = std::unique(moduleSymbols.begin(), moduleSymbols.end(),
-                                [](const FuncEntry& a, const FuncEntry& b) {
+                                [](const AbsFuncEntry& a, const AbsFuncEntry& b) {
                                     return a.start_ip == b.start_ip && a.end_ip == b.end_ip;
                                 });
         moduleSymbols.erase(last, moduleSymbols.end());
@@ -512,7 +516,13 @@ void LibrariesInfoCache::BuildSymbolCache(
         auto symOffset = static_cast<uint32_t>(outSymbols.size());
         auto symCount = static_cast<uint32_t>(moduleSymbols.size());
         outRegions.push_back({segLow, segHigh, symOffset, symCount});
-        outSymbols.insert(outSymbols.end(), moduleSymbols.begin(), moduleSymbols.end());
+
+        for (const auto& abs : moduleSymbols)
+        {
+            outSymbols.push_back({
+                static_cast<uint32_t>(abs.start_ip - segLow),
+                static_cast<uint32_t>(abs.end_ip - abs.start_ip)});
+        }
     }
 
     std::sort(outRegions.begin(), outRegions.end(),
@@ -537,19 +547,23 @@ int LibrariesInfoCache::FindFunctionStart(unw_word_t ip, unw_word_t* func_start)
 
     const FuncEntry* symBegin = _symbols.data() + regionIt->sym_offset;
     const FuncEntry* symEnd = symBegin + regionIt->sym_count;
+    unw_word_t baseLow = regionIt->addr_low;
 
     auto symIt = std::upper_bound(
         symBegin, symEnd, ip,
-        [](unw_word_t addr, const FuncEntry& entry) { return addr < entry.start_ip; });
+        [baseLow](unw_word_t addr, const FuncEntry& entry) {
+            return addr < baseLow + entry.offset;
+        });
 
     if (symIt == symBegin)
         return -UNW_ENOINFO;
 
     --symIt;
-    if (ip >= symIt->end_ip)
+    unw_word_t startIp = baseLow + symIt->offset;
+    if (ip >= startIp + symIt->size)
         return -UNW_ENOINFO;
 
-    *func_start = symIt->start_ip;
+    *func_start = startIp;
     return 0;
 }
 
