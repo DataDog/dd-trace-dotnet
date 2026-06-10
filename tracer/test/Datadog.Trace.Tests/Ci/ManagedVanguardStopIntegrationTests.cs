@@ -156,6 +156,56 @@ public class ManagedVanguardStopIntegrationTests
     }
 
     [Fact]
+    public void FailsClosedWhenActualSkipMarkerExistsButBackfillDataIsMissing()
+    {
+        var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-vanguard-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(workspacePath);
+        var reportPath = Path.Combine(workspacePath, "coverage.xml");
+        var previousCurrentDirectory = Environment.CurrentDirectory;
+        TestSession? session = null;
+        const string CoverageXml =
+            """
+            <report>
+              <file path="src/Calculator.cs">
+                <line number="1" hits="0" />
+              </file>
+            </report>
+            """;
+
+        try
+        {
+            Directory.SetCurrentDirectory(workspacePath);
+            TestOptimization.Instance.Reset();
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, Path.Combine(Environment.CurrentDirectory, ".dd", TestOptimization.Instance.RunId));
+            File.WriteAllText(reportPath, CoverageXml);
+            session = TestSession.GetOrCreate("dotnet test", workingDirectory: workspacePath, framework: null, startDate: null, propagateEnvironmentVariables: true);
+            CoverageBackfillDataStore.RecordActualItrSkip(session.Tags.SessionId);
+            var proxy = new ManagedVanguardProxy([reportPath]);
+
+            ManagedVanguardStopIntegration.OnMethodEnd(proxy, exception: null, default(CallTargetState));
+
+            File.ReadAllText(reportPath).Should().Be(CoverageXml);
+            CoverageBackfillDataStore.TryReadCoverageIpcResults(session.Tags.SessionId, out _).Should().BeFalse();
+            CoverageBackfillDataStore.TryReadCoverageIpcFailure(session.Tags.SessionId, out var reason).Should().BeTrue();
+            reason.Should().Contain(nameof(CodeCoverageReportSource.MicrosoftCodeCoverage));
+        }
+        finally
+        {
+            try
+            {
+                session?.Close(TestStatus.Pass);
+                TestOptimization.Instance.Close();
+                TestOptimization.Instance.Reset();
+            }
+            finally
+            {
+                Directory.SetCurrentDirectory(previousCurrentDirectory);
+                DeleteWorkspacePath(workspacePath);
+            }
+        }
+    }
+
+    [Fact]
     public void DoesNotBackfillMicrosoftLineXmlFromAnotherSessionActualSkipMarker()
     {
         var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-vanguard-{Guid.NewGuid():N}");
@@ -678,7 +728,7 @@ public class ManagedVanguardStopIntegrationTests
     }
 
     [Fact]
-    public void BackfillRequiredRestoresReportsWhenCrossReportPathMatchIsUnsafe()
+    public void BackfillRequiredFailsClosedWhenCrossReportPathMatchIsUnsafe()
     {
         var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-vanguard-{Guid.NewGuid():N}");
         Directory.CreateDirectory(workspacePath);
@@ -719,15 +769,9 @@ public class ManagedVanguardStopIntegrationTests
 
             File.ReadAllText(firstReportPath).Should().Be(FirstReportXml);
             File.ReadAllText(secondReportPath).Should().Be(SecondReportXml);
-            CoverageBackfillDataStore.TryReadCoverageIpcResults(session.Tags.SessionId, out var results).Should().BeTrue();
-            var result = results.Should().ContainSingle().Subject;
-            result.Source.Should().Be(CodeCoverageReportSource.MicrosoftCodeCoverage);
-            result.Percentage.Should().Be(0);
-            result.ExecutableLines.Should().Be(2);
-            result.CoveredLines.Should().Be(0);
-            result.Backfilled.Should().BeFalse();
-            result.BackfillValidated.Should().BeTrue();
-            CoverageBackfillDataStore.TryReadCoverageIpcFailure(session.Tags.SessionId, out _).Should().BeFalse();
+            CoverageBackfillDataStore.TryReadCoverageIpcResults(session.Tags.SessionId, out _).Should().BeFalse();
+            CoverageBackfillDataStore.TryReadCoverageIpcFailure(session.Tags.SessionId, out var reason).Should().BeTrue();
+            reason.Should().Contain(nameof(CodeCoverageReportSource.MicrosoftCodeCoverage));
         }
         finally
         {

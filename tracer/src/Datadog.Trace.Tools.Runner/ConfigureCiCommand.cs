@@ -62,9 +62,11 @@ namespace Datadog.Trace.Tools.Runner
             return false;
         }
 
-        private static void RemoveRunScopedBackfillEnvironmentVariables(Dictionary<string, string> environmentVariables)
+        private static void RemoveRunScopedEnvironmentVariables(Dictionary<string, string> environmentVariables)
         {
             environmentVariables.Remove(ConfigurationKeys.CIVisibility.TestOptimizationRunId);
+            environmentVariables.Remove(ConfigurationKeys.CIVisibility.TestSessionCommand);
+            environmentVariables.Remove(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory);
             environmentVariables.Remove(ConfigurationKeys.CIVisibilityItrCoverageBackfillActualSkip);
             environmentVariables.Remove(ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand);
             environmentVariables.Remove(ConfigurationKeys.CIVisibilityItrCoverageBackfillPath);
@@ -91,7 +93,7 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             AnsiConsole.WriteLine("Setting up the environment variables.");
-            RemoveRunScopedBackfillEnvironmentVariables(initResults.ProfilerEnvironmentVariables);
+            RemoveRunScopedEnvironmentVariables(initResults.ProfilerEnvironmentVariables);
 
             if (!CIConfiguration.SetupCIEnvironmentVariables(initResults.ProfilerEnvironmentVariables, ciName))
             {

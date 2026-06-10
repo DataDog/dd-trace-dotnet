@@ -2250,11 +2250,48 @@ internal static class ExternalCoverageXmlBackfill
             return matchedBackendPaths.Count == 0;
         }
 
-        foreach (var backendPath in matchedBackendPaths)
+        var backendFileCount = 0;
+        foreach (var item in backfillData.ExecutedLinesByRelativePath)
         {
-            if (!backfillData.ExecutedLinesByRelativePath.ContainsKey(backendPath))
+            if (!HasActiveBits(item.Value))
+            {
+                continue;
+            }
+
+            backendFileCount++;
+            if (!matchedBackendPaths.Contains(item.Key) ||
+                !representedBackendLines.TryGetValue(item.Key, out var representedLines) ||
+                !RepresentsAllActiveBackendLines(item.Value, representedLines))
             {
                 return false;
+            }
+        }
+
+        return backendFileCount == matchedBackendPaths.Count;
+    }
+
+    private static bool RepresentsAllActiveBackendLines(byte[] bitmap, HashSet<int> representedLines)
+    {
+        for (var byteIndex = 0; byteIndex < bitmap.Length; byteIndex++)
+        {
+            var value = bitmap[byteIndex];
+            if (value == 0)
+            {
+                continue;
+            }
+
+            for (var bitIndex = 0; bitIndex < 8; bitIndex++)
+            {
+                if ((value & (128 >> bitIndex)) == 0)
+                {
+                    continue;
+                }
+
+                var line = (byteIndex * 8) + bitIndex + 1;
+                if (!representedLines.Contains(line))
+                {
+                    return false;
+                }
             }
         }
 
@@ -3406,6 +3443,17 @@ internal static class ExternalCoverageXmlBackfill
                 !_duplicateRepresentedBackendLine &&
                 !_unsupportedBackfill &&
                 CanPublishBackfilledCoverage(_backfillData, _matchedBackendPaths, _representedBackendLines));
+
+        /// <summary>
+        /// Gets whether this report set can be kept after local XML backfill when it will not be used for coverage publication.
+        /// </summary>
+        /// <returns>True when backfill either was not attempted or represented at least one backend line without unsafe matches.</returns>
+        internal bool CanKeepUnpublishedBackfill()
+            => !_backfillAttempted ||
+               (!_unsafePathMatch &&
+                !_duplicateRepresentedBackendLine &&
+                !_unsupportedBackfill &&
+                RepresentedBackendLineCount > 0);
 
         internal void MarkBackfillAttempted(CoverageBackfillData backfillData)
         {

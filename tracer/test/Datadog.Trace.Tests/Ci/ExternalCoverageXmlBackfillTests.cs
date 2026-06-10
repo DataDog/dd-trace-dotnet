@@ -204,7 +204,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void CoberturaBackfillIgnoresNonExactBackendKeyThatMatchesMultipleLocalFiles()
+    public void CoberturaBackfillFailsClosedWhenNonExactBackendKeyMatchesMultipleLocalFiles()
     {
         var originalContents =
             """
@@ -233,9 +233,8 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("src/Calculator.cs", line: 1);
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
@@ -245,7 +244,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void CoberturaBackfillIgnoresLocalPathThatOnlyMatchesMultipleActiveBackendKeysBySuffix()
+    public void CoberturaBackfillFailsClosedWhenLocalPathOnlyMatchesMultipleActiveBackendKeysBySuffix()
     {
         var originalContents =
             """
@@ -274,9 +273,8 @@ public class ExternalCoverageXmlBackfillTests
                     ["common/Calculator.cs"] = Convert.ToBase64String([0b_1000_0000])
                 });
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
@@ -286,7 +284,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void CoberturaBackfillIgnoresInactiveBackendSuffixThatIsMoreSpecificThanActiveSuffix()
+    public void CoberturaBackfillFailsClosedWhenActiveBackendPathOnlyMatchesBySuffix()
     {
         var originalContents =
             """
@@ -315,9 +313,8 @@ public class ExternalCoverageXmlBackfillTests
                     ["service-a/src/Calculator.cs"] = Convert.ToBase64String([0b_0000_0000])
                 });
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
@@ -1143,7 +1140,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void OpenCoverBackfillIgnoresSequencePointWhenEndLineIsMalformed()
+    public void OpenCoverBackfillFailsClosedWhenSequencePointEndLineIsMalformed()
     {
         const string CoverageXml =
             """
@@ -1177,9 +1174,8 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("src/Calculator.cs", line: 10);
 
-            ExternalCoverageXmlBackfill.TryProcessOpenCover(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcessOpenCover(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(CoverageXml);
         }
         finally
@@ -1189,7 +1185,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void CoberturaBackfillIgnoresBackendPathThatDoesNotMatchReport()
+    public void CoberturaBackfillFailsClosedWhenBackendPathDoesNotMatchReport()
     {
         var filePath = WriteTempCoverageFile(
             """
@@ -1213,12 +1209,8 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("src/Other.cs", line: 2);
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            result.Percentage.Should().Be(50);
-            result.ExecutableLines.Should().Be(2);
-            result.CoveredLines.Should().Be(1);
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Contain("""<line number="2" hits="0" />""");
         }
         finally
@@ -1228,7 +1220,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void CoberturaBackfillIgnoresRelativeFilenameThatWouldOnlyMatchBackendPathBySuffix()
+    public void CoberturaBackfillFailsClosedWhenRelativeFilenameOnlyMatchesBackendPathBySuffix()
     {
         var originalContents =
             """
@@ -1252,9 +1244,8 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("integrations/Samples.XUnitTests/TestSuite.cs", line: 23);
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
@@ -1306,7 +1297,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void MicrosoftLineBackfillIgnoresRelativeFilePathThatWouldOnlyMatchBackendPathBySuffix()
+    public void MicrosoftLineBackfillFailsClosedWhenRelativeFilePathOnlyMatchesBackendPathBySuffix()
     {
         var originalContents =
             """
@@ -1322,9 +1313,8 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("src/Calculator.cs", line: 1);
 
-            ExternalCoverageXmlBackfill.TryProcessMicrosoft(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcessMicrosoft(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
@@ -1334,7 +1324,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void CoberturaBackfillIgnoresRelativeFilenameThatWouldOnlyMatchBackendPathWithAdditionalPrefix()
+    public void CoberturaBackfillFailsClosedWhenRelativeFilenameOnlyMatchesBackendPathWithAdditionalPrefix()
     {
         var filePath = WriteTempCoverageFile(
             """
@@ -1357,8 +1347,7 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("ProjectB/src/Calculator.cs", line: 1);
 
-            ExternalCoverageXmlBackfill.TryProcessCobertura(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
-            AssertProcessedWithoutBackfill(result);
+            ExternalCoverageXmlBackfill.TryProcessCobertura(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
             File.ReadAllText(filePath).Should().Contain("""<line number="1" hits="0" />""");
         }
         finally
@@ -1873,7 +1862,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void CoberturaBackfillIgnoresUnixRootedFilenameThatWouldOnlyMatchBySuffix()
+    public void CoberturaBackfillFailsClosedWhenUnixRootedFilenameOnlyMatchesBySuffix()
     {
         var originalContents =
             """
@@ -1900,9 +1889,8 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("src/Calculator.cs", line: 1);
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
@@ -1912,7 +1900,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void CoberturaBackfillIgnoresWindowsRootedFilenameThatWouldOnlyMatchBySuffix()
+    public void CoberturaBackfillFailsClosedWhenWindowsRootedFilenameOnlyMatchesBySuffix()
     {
         var originalContents =
             """
@@ -1939,9 +1927,8 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("src/Calculator.cs", line: 1);
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
@@ -2322,7 +2309,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void ValidationStateAllowsReportsWhenBackendPathOnlyMatchesDifferentLocalCandidatesBySuffix()
+    public void ValidationStateBlocksPublishWhenBackendPathOnlyMatchesDifferentLocalCandidatesBySuffix()
     {
         var firstFilePath = WriteTempCoverageFile(
             """
@@ -2369,7 +2356,7 @@ public class ExternalCoverageXmlBackfillTests
             mergedValidationState.Merge(firstValidationState);
             mergedValidationState.Merge(secondValidationState);
 
-            mergedValidationState.CanPublish().Should().BeTrue();
+            mergedValidationState.CanPublish().Should().BeFalse();
             AssertProcessedWithoutBackfill(firstResult);
             AssertProcessedWithoutBackfill(secondResult);
         }
@@ -2381,7 +2368,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void ValidationStateAllowsReportRelativeSuffixMatchesFromDifferentAttachmentDirectoriesWhenNoSafeMatchExists()
+    public void ValidationStateBlocksPublishWhenReportRelativeSuffixMatchesHaveNoSafeMatch()
     {
         var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-{Guid.NewGuid():N}");
         var firstReportDirectory = Path.Combine(workspacePath, "first", "src");
@@ -2437,7 +2424,7 @@ public class ExternalCoverageXmlBackfillTests
             mergedValidationState.Merge(firstValidationState);
             mergedValidationState.Merge(secondValidationState);
 
-            mergedValidationState.CanPublish().Should().BeTrue();
+            mergedValidationState.CanPublish().Should().BeFalse();
             firstResult.Backfilled.Should().BeFalse();
             secondResult.Backfilled.Should().BeFalse();
         }
@@ -3494,7 +3481,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void MicrosoftCoverageXmlBackfillIgnoresBackendLineOutsideCoverageDsPrivRange()
+    public void MicrosoftCoverageXmlBackfillFailsClosedWhenBackendLineIsOutsideCoverageDsPrivRange()
     {
         const string CoverageXml =
             """
@@ -3528,9 +3515,8 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("src/Calculator.cs", line: 13);
 
-            ExternalCoverageXmlBackfill.TryProcessMicrosoft(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcessMicrosoft(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(CoverageXml);
         }
         finally
@@ -3757,7 +3743,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void MicrosoftLineBackfillIgnoresRootedSourceRootPathThatWouldOnlyMatchBySuffix()
+    public void MicrosoftLineBackfillFailsClosedWhenRootedSourceRootPathOnlyMatchesBySuffix()
     {
         lock (SourceRootOverrideLock)
         {
@@ -3780,9 +3766,8 @@ public class ExternalCoverageXmlBackfillTests
 
                 var backfill = BackfillForLine("src/Calculator.cs", line: 1);
 
-                ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+                ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-                AssertProcessedWithoutBackfill(result);
                 File.ReadAllText(filePath).Should().Be(originalContents);
             }
             finally
@@ -4478,7 +4463,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void CoberturaBackfillAppliesMatchedCoverageAndIgnoresBackendOnlyFiles()
+    public void CoberturaBackfillFailsClosedWhenBackendOnlyFileIsActive()
     {
         var originalContents =
             """
@@ -4507,14 +4492,9 @@ public class ExternalCoverageXmlBackfillTests
                     ["src/Other.cs"] = Convert.ToBase64String([0b_1000_0000])
                 });
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            result.Percentage.Should().Be(100);
-            result.ExecutableLines.Should().Be(1);
-            result.CoveredLines.Should().Be(1);
-            result.Backfilled.Should().BeTrue();
-            result.Rewritten.Should().BeTrue();
-            File.ReadAllText(filePath).Should().Contain("""<line number="1" hits="1" />""");
+            File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
         {
@@ -4523,7 +4503,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void CoberturaBackfillAppliesRepresentableLinesWhenMatchedReportPathMissesBackendLines()
+    public void CoberturaBackfillFailsClosedWhenMatchedReportPathMissesBackendLines()
     {
         var originalContents =
             """
@@ -4547,14 +4527,9 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLines("src/Calculator.cs", 1, 2);
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            result.Percentage.Should().Be(100);
-            result.ExecutableLines.Should().Be(1);
-            result.CoveredLines.Should().Be(1);
-            result.Backfilled.Should().BeTrue();
-            result.Rewritten.Should().BeTrue();
-            File.ReadAllText(filePath).Should().Contain("""<line number="1" hits="1" />""");
+            File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
         {
@@ -4563,7 +4538,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void CoberturaBackfillIgnoresBackendLineThatOnlyExistsInMethodLines()
+    public void CoberturaBackfillFailsClosedWhenBackendLineOnlyExistsInMethodLines()
     {
         var originalContents =
             """
@@ -4594,9 +4569,8 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("src/Calculator.cs", line: 2);
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
@@ -4606,7 +4580,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void CoberturaBackfillIgnoresRequiredLineWhenHitsAttributeIsMalformed()
+    public void CoberturaBackfillFailsClosedWhenRequiredLineHitsAttributeIsMalformed()
     {
         var originalContents =
             """
@@ -4630,9 +4604,8 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("src/Calculator.cs", line: 2);
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
@@ -4642,7 +4615,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void OpenCoverBackfillAppliesRepresentableLinesWhenMatchedReportPathMissesBackendLines()
+    public void OpenCoverBackfillFailsClosedWhenMatchedReportPathMissesBackendLines()
     {
         var originalContents =
             """
@@ -4676,14 +4649,9 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLines("src/Calculator.cs", 1, 2);
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            result.Percentage.Should().Be(100);
-            result.ExecutableLines.Should().Be(1);
-            result.CoveredLines.Should().Be(1);
-            result.Backfilled.Should().BeTrue();
-            result.Rewritten.Should().BeTrue();
-            File.ReadAllText(filePath).Should().Contain("""<SequencePoint vc="1" sl="1" fileid="1" />""");
+            File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
         {
@@ -4692,7 +4660,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void OpenCoverBackfillIgnoresRequiredLineWhenVisitAttributeIsMalformed()
+    public void OpenCoverBackfillFailsClosedWhenRequiredLineVisitAttributeIsMalformed()
     {
         var originalContents =
             """
@@ -4726,9 +4694,8 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("src/Calculator.cs", line: 2);
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
@@ -4738,7 +4705,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void MicrosoftLineBackfillAppliesRepresentableLinesWhenMatchedReportPathMissesBackendLines()
+    public void MicrosoftLineBackfillFailsClosedWhenMatchedReportPathMissesBackendLines()
     {
         var originalContents =
             """
@@ -4754,14 +4721,9 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLines("src/Calculator.cs", 1, 2);
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            result.Percentage.Should().Be(100);
-            result.ExecutableLines.Should().Be(1);
-            result.CoveredLines.Should().Be(1);
-            result.Backfilled.Should().BeTrue();
-            result.Rewritten.Should().BeTrue();
-            File.ReadAllText(filePath).Should().Contain("""<line number="1" hits="1" />""");
+            File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
         {
@@ -4942,7 +4904,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void CoberturaLineWithoutNumberDoesNotRepresentRequiredBackendLine()
+    public void CoberturaBackfillFailsClosedWhenRequiredLineHasNoNumber()
     {
         var originalContents =
             """
@@ -4967,9 +4929,8 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("src/Calculator.cs", line: 2);
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally
@@ -5026,7 +4987,7 @@ public class ExternalCoverageXmlBackfillTests
     }
 
     [Fact]
-    public void MicrosoftLineWithoutHitAttributeDoesNotRepresentRequiredBackendLine()
+    public void MicrosoftLineBackfillFailsClosedWhenRequiredLineHasNoHitAttribute()
     {
         var originalContents =
             """
@@ -5046,9 +5007,8 @@ public class ExternalCoverageXmlBackfillTests
         {
             var backfill = BackfillForLine("src/Calculator.cs", line: 2);
 
-            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out var result).Should().BeTrue();
+            ExternalCoverageXmlBackfill.TryProcess(filePath, backfill, applyBackfill: true, out _).Should().BeFalse();
 
-            AssertProcessedWithoutBackfill(result);
             File.ReadAllText(filePath).Should().Be(originalContents);
         }
         finally

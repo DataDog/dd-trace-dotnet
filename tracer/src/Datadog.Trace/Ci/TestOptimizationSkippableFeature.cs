@@ -34,6 +34,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     private readonly Dictionary<string, ActualSkippedDictionaryState> _actualSkippedDictionaries = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<ulong, byte> _itrSkippedSessions = new();
     private readonly bool _coverageBackfillRequiresScopedRequests;
+    private readonly string _coverageBackfillUnsupportedReason;
     // Keeps scoped tasks in insertion order so shutdown can wait for them without allocating array snapshots.
     private List<Task<SkippableTestsDictionary>>? _scopedSkippableTestsTaskList;
 
@@ -48,6 +49,10 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         }
 
         _coverageBackfillRequiresScopedRequests = CoverageBackfillCapability.IsCoverageBackfillRequired(settings);
+        _coverageBackfillUnsupportedReason = _coverageBackfillRequiresScopedRequests &&
+                                             !CoverageBackfillCapability.IsActiveCoverageModeBackfillable(settings, out var unsupportedReason) ?
+                                                 unsupportedReason :
+                                                 string.Empty;
         if (settings.TestsSkippingEnabled == true)
         {
             Log.Information("TestOptimizationSkippableFeature: Test skipping is enabled.");
@@ -226,8 +231,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     {
         if (_coverageBackfillRequiresScopedRequests)
         {
-            var completedScopedBackfillData = GetCompletedScopedCoverageBackfillData();
-            return completedScopedBackfillData.IsPresent ? completedScopedBackfillData : GetActualSkippedCoverageBackfillData();
+            return GetActualSkippedCoverageBackfillData();
         }
 
         return TryGetUnscopedSkippableTests(out var skippableTestsBySuiteAndName) ? skippableTestsBySuiteAndName.BackfillData : CoverageBackfillData.Missing;
@@ -244,7 +248,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     {
         if (_coverageBackfillRequiresScopedRequests)
         {
-            return AreCompletedScopedDictionariesCoverageBackfillSafe() || AreActualSkippedDictionariesCoverageBackfillSafe();
+            return AreActualSkippedDictionariesCoverageBackfillSafe();
         }
 
         return TryGetUnscopedSkippableTests(out var skippableTestsBySuiteAndName) && IsDictionaryCoverageBackfillSafe(skippableTestsBySuiteAndName);
@@ -259,16 +263,15 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             return true;
         }
 
-        if (skippableTest.MissingLineCodeCoverage == true)
+        if (!StringUtil.IsNullOrEmpty(_coverageBackfillUnsupportedReason))
         {
-            reason = "backend marked the test as missing line coverage";
+            reason = _coverageBackfillUnsupportedReason;
             return false;
         }
 
-        if (TryGetCoverageBackfillDictionary(moduleName, out var skippableTestsBySuiteAndName) &&
-            !IsDictionaryCoverageBackfillSafe(skippableTestsBySuiteAndName))
+        if (skippableTest.MissingLineCodeCoverage == true)
         {
-            reason = "backend coverage data is unavailable or unsafe";
+            reason = "backend marked the test as missing line coverage";
             return false;
         }
 
@@ -488,57 +491,6 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             foreach (var task in scopedTasks)
             {
                 if (task.Status == TaskStatus.RanToCompletion && task.Result.Count > 0)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Gets merged backend coverage from completed scoped skippable responses without requiring actual skip state.
-    /// </summary>
-    /// <returns>The merged coverage backfill data, or missing coverage data when no completed scoped response has usable coverage.</returns>
-    private CoverageBackfillData GetCompletedScopedCoverageBackfillData()
-    {
-        lock (_scopedSkippableTestsTasks)
-        {
-            if (_scopedSkippableTestsTaskList is not { Count: > 0 } scopedTasks)
-            {
-                return CoverageBackfillData.Missing;
-            }
-
-            var coverageMaps = new List<CoverageBackfillData>(scopedTasks.Count);
-            foreach (var task in scopedTasks)
-            {
-                if (task.Status == TaskStatus.RanToCompletion && IsDictionaryCoverageBackfillSafe(task.Result))
-                {
-                    coverageMaps.Add(task.Result.BackfillData);
-                }
-            }
-
-            return coverageMaps.Count == 0 ? CoverageBackfillData.Missing : CoverageBackfillData.Merge(coverageMaps);
-        }
-    }
-
-    /// <summary>
-    /// Checks completed scoped skippable responses for usable backend coverage without requiring actual skip state.
-    /// </summary>
-    /// <returns><c>true</c> when any completed scoped response has usable backend coverage; otherwise, <c>false</c>.</returns>
-    private bool AreCompletedScopedDictionariesCoverageBackfillSafe()
-    {
-        lock (_scopedSkippableTestsTasks)
-        {
-            if (_scopedSkippableTestsTaskList is not { Count: > 0 } scopedTasks)
-            {
-                return false;
-            }
-
-            foreach (var task in scopedTasks)
-            {
-                if (task.Status == TaskStatus.RanToCompletion && IsDictionaryCoverageBackfillSafe(task.Result))
                 {
                     return true;
                 }

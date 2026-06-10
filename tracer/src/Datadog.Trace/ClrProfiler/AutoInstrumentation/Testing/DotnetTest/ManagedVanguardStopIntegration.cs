@@ -71,7 +71,14 @@ public sealed class ManagedVanguardStopIntegration
             }
 
             var backfillData = CoverageBackfillData.Missing;
-            var shouldBackfill = DotnetCommon.TryGetCoverageBackfillDataForCurrentProcess(parentSessionSpanId, out backfillData);
+            var shouldBackfill = DotnetCommon.TryGetCoverageBackfillDataForCurrentProcess(parentSessionSpanId, out backfillData, out var unavailableAfterActualItrSkip);
+            if (!shouldBackfill && unavailableAfterActualItrSkip)
+            {
+                DotnetCommon.Log.Warning("MicrosoftCodeCoverage: ITR skipped tests but backend coverage backfill data is unavailable, so no stale coverage percentage will be sent.");
+                RecordMicrosoftCoverageIpcFailure(parentSessionSpanId);
+                return CallTargetReturn.GetDefault();
+            }
+
             var coverageResults = new List<ExternalCoverageXmlResult>(coverageFiles.Count);
             var processedCoverageFiles = new List<string>(coverageFiles.Count);
             var coverageReportBackups = shouldBackfill ? new List<CoverageXmlReportBackup>(coverageFiles.Count) : null;

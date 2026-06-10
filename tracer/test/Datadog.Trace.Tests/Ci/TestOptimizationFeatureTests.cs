@@ -235,7 +235,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     [Fact]
-    public void CoverageBackfillSkipGateFailsClosedWhenBackendCoverageIsMissing()
+    public void CoverageBackfillSkipGateAllowsSkipWhenBackendCoverageIsMissing()
     {
         ClearCoverageBackfillEnvironment();
         var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-skippable-feature-{Guid.NewGuid():N}");
@@ -256,11 +256,48 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             var skippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client, testOptimization.Object);
 
             skippableFeature.GetSkippableTestsFromSuiteAndName("Samples.XUnitTests.TestSuite", "SimplePassTest", "Samples.XUnitTests").Should().ContainSingle();
-            skippableFeature.CanSkipWithCoverageBackfill(candidate, "Samples.XUnitTests", out var reason).Should().BeFalse();
+            skippableFeature.CanSkipWithCoverageBackfill(candidate, "Samples.XUnitTests", out var reason).Should().BeTrue();
 
-            reason.Should().Contain("coverage data");
+            reason.Should().BeEmpty();
             skippableFeature.IsCoverageBackfillSafe().Should().BeFalse();
             skippableFeature.GetCoverageBackfillData().IsPresent.Should().BeFalse();
+            CoverageBackfillDataStore.HasActualItrSkip(testOptimization.Object).Should().BeFalse();
+        }
+        finally
+        {
+            ClearCoverageBackfillEnvironment();
+            if (Directory.Exists(workspacePath))
+            {
+                Directory.Delete(workspacePath, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void CoverageBackfillSkipGateFailsClosedWhenCoverageModeIsNotBackfillable()
+    {
+        ClearCoverageBackfillEnvironment();
+        var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-skippable-feature-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(workspacePath);
+        try
+        {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet-coverage collect \"dotnet test\"");
+            var settings = CreateSettings();
+            var remoteSettings = CreateRemoteSettingsResponse(testsSkippingEnabled: true);
+            var candidate = new SkippableTest("SimplePassTest", "Samples.XUnitTests.TestSuite", parameters: null, configurations: null, missingLineCodeCoverage: false);
+            var response = new TestOptimizationClient.SkippableTestsResponse(
+                correlationId: "correlation-id",
+                tests: [candidate],
+                CoverageBackfillData.FromBackendCoverage(new Dictionary<string, string> { ["src/Calculator.cs"] = "wA==" }),
+                isCoverageBackfillSafe: true);
+            var client = new TestOptimizationClientStub(skippableTestsResponse: response);
+            var testOptimization = CreateTestOptimization(settings, workspacePath, runId: "injected-run");
+            var skippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client, testOptimization.Object);
+
+            skippableFeature.GetSkippableTestsFromSuiteAndName("Samples.XUnitTests.TestSuite", "SimplePassTest", "Samples.XUnitTests").Should().ContainSingle();
+            skippableFeature.CanSkipWithCoverageBackfill(candidate, "Samples.XUnitTests", out var reason).Should().BeFalse();
+
+            reason.Should().Contain("supported external XML report path");
             CoverageBackfillDataStore.HasActualItrSkip(testOptimization.Object).Should().BeFalse();
         }
         finally
@@ -1527,6 +1564,50 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             CoverageBackfillDataStore.TryLoad(testOptimization.Object, out var coverageBackfillData).Should().BeTrue();
             coverageBackfillData.IsPresent.Should().BeTrue();
             coverageBackfillData.ExecutedLinesByRelativePath.Should().ContainKey("src/Calculator.cs");
+        }
+        finally
+        {
+            ClearCoverageBackfillEnvironment();
+            if (Directory.Exists(workspacePath))
+            {
+                Directory.Delete(workspacePath, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void CoverageBackfillStateOnlyUsesScopesWithActualSkips()
+    {
+        ClearCoverageBackfillEnvironment();
+        var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-skippable-feature-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(workspacePath);
+        try
+        {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test --collect \"XPlat Code Coverage\"");
+            var settings = CreateSettings();
+            var remoteSettings = CreateRemoteSettingsResponse(testsSkippingEnabled: true);
+            var client = new TestOptimizationClientStub(
+                skippableTestsResponseFactory: scope =>
+                {
+                    var backendPath = scope.TestBundle == "Skipped.Tests" ? "src/Skipped.cs" : "src/OnlyRan.cs";
+                    return new TestOptimizationClient.SkippableTestsResponse(
+                        correlationId: $"{scope.TestBundle}-correlation-id",
+                        tests: [new SkippableTest("SimplePassTest", $"{scope.TestBundle}.TestSuite", parameters: null, configurations: null)],
+                        CoverageBackfillData.FromBackendCoverage(new Dictionary<string, string> { [backendPath] = "gA==" }),
+                        isCoverageBackfillSafe: true);
+                });
+            var testOptimization = CreateTestOptimization(settings, workspacePath, runId: "injected-run");
+            var skippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client, testOptimization.Object);
+
+            var skippedCandidate = skippableFeature.GetSkippableTestsFromSuiteAndName("Skipped.Tests.TestSuite", "SimplePassTest", "Skipped.Tests").Should().ContainSingle().Subject;
+            skippableFeature.GetSkippableTestsFromSuiteAndName("OnlyRan.Tests.TestSuite", "SimplePassTest", "OnlyRan.Tests").Should().ContainSingle();
+            skippableFeature.RecordTestSkipCoverageBackfill(skippedCandidate, "Skipped.Tests");
+
+            skippableFeature.IsCoverageBackfillSafe().Should().BeTrue();
+            var featureBackfillData = skippableFeature.GetCoverageBackfillData();
+            featureBackfillData.IsPresent.Should().BeTrue();
+            featureBackfillData.ExecutedLinesByRelativePath.Should().ContainKey("src/Skipped.cs");
+            featureBackfillData.ExecutedLinesByRelativePath.Should().NotContainKey("src/OnlyRan.cs");
         }
         finally
         {

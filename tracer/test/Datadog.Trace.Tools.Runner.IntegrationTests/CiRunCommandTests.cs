@@ -2452,10 +2452,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         /// <summary>
-        /// Verifies that Datadog internal coverage ignores backend-only files and still publishes local coverage.
+        /// Verifies that Datadog internal coverage fails closed when backend coverage cannot be matched to local coverage.
         /// </summary>
         [Fact]
-        public void DatadogInternalCoverageIgnoresBackendPathThatDoesNotMatch()
+        public void DatadogInternalCoverageFailsClosedWhenBackendPathDoesNotMatch()
         {
             PrepareRunnerSettingsInputs();
             TestOptimization.Instance.Reset();
@@ -2486,9 +2486,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 session = TestSession.GetOrCreate("dotnet test", workingDirectory: Environment.CurrentDirectory, framework: null, startDate: null);
                 DotnetCommon.FinalizeSession(session, 0, null);
 
-                session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(0);
+                session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().BeNull();
                 session.Tags.GetTag(CodeCoverageTags.Backfilled).Should().BeNull();
-                Directory.GetFiles(coverageDirectory.RootPath, "session-coverage-*.json").Should().ContainSingle();
+                Directory.GetFiles(coverageDirectory.RootPath, "session-coverage-*.json").Should().BeEmpty();
             }
             finally
             {
@@ -2522,10 +2522,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         /// <summary>
-        /// Verifies that the runner ignores backend-only coverage when it cannot be matched to the Coverlet XML source path.
+        /// Verifies that the runner fails closed when backend coverage cannot be matched to the Coverlet XML source path.
         /// </summary>
         [Fact]
-        public void CoverletCollectorXmlCoverageIgnoresBackendPathThatDoesNotMatch()
+        public void CoverletCollectorXmlCoverageFailsClosedWhenBackendPathDoesNotMatch()
         {
             var result = RunCoverletCollectorXmlCoverageScenario(
                 () =>
@@ -2541,7 +2541,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             result.FinalXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="0" />""");
             result.FinalXml.Should().Contain("lines-covered=\"0\"");
-            result.TestSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 0));
+            result.TestSession.Metrics.Should().NotContainKey(CodeCoverageTags.PercentageOfTotalLines);
             result.TestSession.Meta.Should().NotContainKey(CodeCoverageTags.Backfilled);
         }
 
@@ -2811,10 +2811,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         /// <summary>
-        /// Verifies that selected Coverlet collector XML reports keep local coverage when backend coverage matches unsafe local candidates.
+        /// Verifies that selected Coverlet collector XML reports fail closed when backend coverage matches unsafe local candidates.
         /// </summary>
         [Fact]
-        public void CoverletCollectorXmlCoveragePublishesLocalCoverageWhenSelectedReportsMatchSameBackendPathThroughDifferentLocalCandidates()
+        public void CoverletCollectorXmlCoverageFailsClosedWhenSelectedReportsMatchSameBackendPathThroughDifferentLocalCandidates()
         {
             const string BackendSuffixPath = "test-applications/integrations/Samples.XUnitTests/TestSuite.cs";
             var result = RunCoverletCollectorXmlCoverageScenario(
@@ -2837,7 +2837,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
 
             result.FinalXml.Should().Contain($"""<line number="{SimplePassTestCoveredLine}" hits="0" />""");
-            result.TestSession.Metrics.Should().Contain(new KeyValuePair<string, double>(CodeCoverageTags.PercentageOfTotalLines, 0));
+            result.TestSession.Metrics.Should().NotContainKey(CodeCoverageTags.PercentageOfTotalLines);
             result.TestSession.Meta.Should().NotContainKey(CodeCoverageTags.Backfilled);
         }
 

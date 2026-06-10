@@ -827,7 +827,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     validationState.Merge(reportValidationState);
                 }
 
-                if (!validationState.CanPublish())
+                if (!validationState.CanKeepUnpublishedBackfill())
                 {
                     TryRestoreCoverageXmlReports(backups);
                     Log.Debug("RunCiCommand: Unselected Coverlet collector XML report set could not be safely backfilled, so it was restored.");

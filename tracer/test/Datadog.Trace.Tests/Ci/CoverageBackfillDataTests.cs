@@ -447,7 +447,7 @@ public class CoverageBackfillDataTests
         else
         {
             result.MatchedFiles.Should().Be(0);
-            result.CanPublishCoverage.Should().BeTrue();
+            result.CanPublishCoverage.Should().BeFalse();
             result.UpdatedFiles.Should().Be(0);
             globalCoverage.Components[0].Files[0].ExecutedBitmap.Should().Equal([0b_0000_0000]);
         }
@@ -487,7 +487,7 @@ public class CoverageBackfillDataTests
 
         result.Applied.Should().BeTrue();
         result.HasBackendCoverage.Should().BeTrue();
-        result.CanPublishCoverage.Should().BeTrue();
+        result.CanPublishCoverage.Should().BeFalse();
         result.Backfilled.Should().BeFalse();
         result.MatchedFiles.Should().Be(0);
         result.UpdatedFiles.Should().Be(0);
@@ -526,7 +526,7 @@ public class CoverageBackfillDataTests
 
         result.Applied.Should().BeTrue();
         result.HasBackendCoverage.Should().BeTrue();
-        result.CanPublishCoverage.Should().BeTrue();
+        result.CanPublishCoverage.Should().BeFalse();
         result.Backfilled.Should().BeFalse();
         result.MatchedFiles.Should().Be(0);
         result.UpdatedFiles.Should().Be(0);
@@ -567,7 +567,7 @@ public class CoverageBackfillDataTests
 
         result.Applied.Should().BeTrue();
         result.HasBackendCoverage.Should().BeTrue();
-        result.CanPublishCoverage.Should().BeTrue();
+        result.CanPublishCoverage.Should().BeFalse();
         result.Backfilled.Should().BeFalse();
         result.MatchedFiles.Should().Be(0);
         result.UpdatedFiles.Should().Be(0);
@@ -609,7 +609,7 @@ public class CoverageBackfillDataTests
 
         result.Applied.Should().BeTrue();
         result.HasBackendCoverage.Should().BeTrue();
-        result.CanPublishCoverage.Should().BeTrue();
+        result.CanPublishCoverage.Should().BeFalse();
         result.Backfilled.Should().BeFalse();
         result.MatchedFiles.Should().Be(0);
         result.UpdatedFiles.Should().Be(0);
@@ -652,7 +652,7 @@ public class CoverageBackfillDataTests
 
         result.Applied.Should().BeTrue();
         result.HasBackendCoverage.Should().BeTrue();
-        result.CanPublishCoverage.Should().BeTrue();
+        result.CanPublishCoverage.Should().BeFalse();
         result.Backfilled.Should().BeFalse();
         result.MatchedFiles.Should().Be(0);
         result.UpdatedFiles.Should().Be(0);
@@ -817,7 +817,7 @@ public class CoverageBackfillDataTests
 
         result.Applied.Should().BeTrue();
         result.HasBackendCoverage.Should().BeTrue();
-        result.CanPublishCoverage.Should().BeTrue();
+        result.CanPublishCoverage.Should().BeFalse();
         result.Backfilled.Should().BeFalse();
         result.MatchedFiles.Should().Be(0);
         result.UpdatedFiles.Should().Be(0);
@@ -907,7 +907,7 @@ public class CoverageBackfillDataTests
     }
 
     [Fact]
-    public void GlobalCoverageBackfillIgnoresBackendOnlyFiles()
+    public void GlobalCoverageBackfillBlocksPublishWhenBackendOnlyFilesAreActive()
     {
         var globalCoverage = new GlobalCoverageInfo
         {
@@ -936,14 +936,15 @@ public class CoverageBackfillDataTests
 
         result.Applied.Should().BeTrue();
         result.HasBackendCoverage.Should().BeTrue();
-        result.CanPublishCoverage.Should().BeTrue();
+        result.CanPublishCoverage.Should().BeFalse();
+        result.Backfilled.Should().BeFalse();
         result.MatchedFiles.Should().Be(0);
         result.UpdatedFiles.Should().Be(0);
         globalCoverage.GetTotalPercentage().Should().Be(100);
     }
 
     [Fact]
-    public void GlobalCoverageBackfillAppliesMatchedBackendCoverageAndIgnoresBackendOnlyFiles()
+    public void GlobalCoverageBackfillBlocksPublishWhenAnyBackendActiveFileIsMissing()
     {
         var globalCoverage = new GlobalCoverageInfo
         {
@@ -973,15 +974,15 @@ public class CoverageBackfillDataTests
 
         result.Applied.Should().BeTrue();
         result.HasBackendCoverage.Should().BeTrue();
-        result.CanPublishCoverage.Should().BeTrue();
-        result.Backfilled.Should().BeTrue();
+        result.CanPublishCoverage.Should().BeFalse();
+        result.Backfilled.Should().BeFalse();
         result.MatchedFiles.Should().Be(1);
         result.UpdatedFiles.Should().Be(1);
         globalCoverage.Components[0].Files[0].ExecutedBitmap.Should().Equal([0b_1000_0000]);
     }
 
     [Fact]
-    public void GlobalCoverageBackfillCreatesExecutedBitmapForMatchedCoverageAndIgnoresBackendOnlyFiles()
+    public void GlobalCoverageBackfillCreatesExecutedBitmapForMatchedCoverage()
     {
         var globalCoverage = new GlobalCoverageInfo
         {
@@ -1003,8 +1004,7 @@ public class CoverageBackfillDataTests
         var backfill = CoverageBackfillData.FromBackendCoverage(
             new Dictionary<string, string>
             {
-                ["src/Calculator.cs"] = Convert.ToBase64String([0b_1000_0000]),
-                ["src/Other.cs"] = Convert.ToBase64String([0b_1000_0000])
+                ["src/Calculator.cs"] = Convert.ToBase64String([0b_1000_0000])
             });
 
         var result = CoverageBackfillApplicator.ApplyToGlobalCoverage(globalCoverage, backfill, CIEnvironmentValues.Instance);

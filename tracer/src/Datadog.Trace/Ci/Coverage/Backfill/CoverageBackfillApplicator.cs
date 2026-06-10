@@ -68,11 +68,13 @@ internal static class CoverageBackfillApplicator
 
         var backendFileCount = CountBackendFilesWithCoverage(backfillData);
         var matchedFiles = 0;
+        var publishableBackendKeys = new HashSet<string>(StringComparer.Ordinal);
         foreach (var backendKey in matchedBackendKeys)
         {
             if (!unsafeBackendKeys.Contains(backendKey))
             {
                 matchedFiles++;
+                publishableBackendKeys.Add(backendKey);
             }
         }
 
@@ -98,7 +100,21 @@ internal static class CoverageBackfillApplicator
             matchedFiles,
             updatedFiles,
             hasBackendCoverage: backendFileCount > 0,
-            canPublishCoverage: true);
+            canPublishCoverage: CanPublishBackfilledCoverage(backfillData, publishableBackendKeys));
+    }
+
+    private static bool CanPublishBackfilledCoverage(CoverageBackfillData backfillData, HashSet<string> publishableBackendKeys)
+    {
+        foreach (var item in backfillData.ExecutedLinesByRelativePath)
+        {
+            if (HasActiveBits(item.Value) &&
+                !publishableBackendKeys.Contains(item.Key))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool TryGetMergedExecutedBitmap(FileCoverageInfo file, byte[] backendExecutedBitmap, out byte[] mergedBitmap)
