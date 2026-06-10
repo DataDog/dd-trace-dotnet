@@ -1,0 +1,33 @@
+# LLM Validation gate — compares the MR's AGENTS.md against the target branch and posts a
+# pass/warn/fail report to the GitHub PR. See README.md in this directory for setup + assumptions.
+#
+# Wire it in by adding to the repo's top-level .gitlab-ci.yml:
+#   include:
+#     - local: .gitlab/llm-validation/llm-validation.yml
+
+"llm validation":
+  stage: .post
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest  # provides pr-commenter, git, jq, curl
+  tags: ["arch:amd64"]
+  rules:
+    # Only on merge requests that touch AI-behavior files. Advisory for now (allow_failure).
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - AGENTS.md
+        - "**/AGENTS.md"
+        - ".llm-validation/**/*"
+      allow_failure: true
+    - when: never
+  variables:
+    LLMVAL_PLATFORM_REF: "main"   # ref of DataDog/llm-validation-platform to build the CLI from
+    LLMVAL_RUNS: "3"              # repeats per case (more = tighter win-rate CI)
+    # LLMVAL_MAX_CASES: "4"      # optional: cap cases during rollout to control cost
+  script:
+    - bash .gitlab/llm-validation/run.sh
+  artifacts:
+    when: always
+    paths:
+      - results.json
+      - report.md
+      - details.json
+    expire_in: 1 month

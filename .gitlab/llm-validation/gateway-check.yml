@@ -1,0 +1,17 @@
+# One-off entitlement check. Run this MANUALLY to confirm dd-trace-dotnet's CI identity can mint a
+# rapid-ai-platform token and reach the AI gateway — BEFORE investing in the full .NET+node image.
+#
+# Wire in (temporarily) by adding to the top-level .gitlab-ci.yml:
+#   include:
+#     - local: .gitlab/llm-validation/gateway-check.yml
+# then trigger the "llm gateway check" job by hand from the pipeline UI.
+
+"llm gateway check":
+  stage: .pre
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest  # has curl + jq
+  tags: ["arch:amd64"]
+  rules:
+    - when: manual
+      allow_failure: true
+  script:
+    - bash .gitlab/llm-validation/gateway-check.sh
