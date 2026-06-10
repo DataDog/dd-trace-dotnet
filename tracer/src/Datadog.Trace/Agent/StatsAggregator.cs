@@ -64,7 +64,7 @@ namespace Datadog.Trace.Agent
         private List<PeerTagKey> _peerTagKeys = [];
         private int _computeStatsState;
 
-        private int _numberOfBucketsContainingAdditionalTags;
+        private int _numberOfHitBucketsContainingAdditionalTags;
         private int _additionalTagsBlockLoggedThisBucket;
 
         internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
@@ -645,7 +645,7 @@ namespace Datadog.Trace.Agent
                     _currentBuffer = (_currentBuffer + 1) % BufferCount;
 
                     // Reset per-flush values
-                    _numberOfBucketsContainingAdditionalTags = 0;
+                    _numberOfHitBucketsContainingAdditionalTags = 0;
                     _additionalTagsBlockLoggedThisBucket = 0;
                 }
 
@@ -703,51 +703,58 @@ namespace Datadog.Trace.Agent
             var peerTagKeys = Volatile.Read(ref _peerTagKeys);
             var key = BuildKey(span, peerTagKeys, out var peerTagResults, out var additionalTagResults);
 
-            if (!buffer.Buckets.TryGetValue(key, out var bucket))
-            {
-                // New MetricKey. Spans whose full key already exists merge above regardless of the cap,
-                // so values admitted earlier in this bucket keep accurate per-value attribution.
-                var hasAdditionalTags = additionalTagResults.TagCount > 0;
+            // Buckets that contain additional tags are "blocked" once we exceed the threshold number of buckets.
+            // This includes net-new buckets, as well as buckets that were retained in the previous Reset(), which are
+            // now receiving their first hit.
+            var hasAdditionalTags = additionalTagResults.TagCount > 0;
+            var isNewBucketBlocked = hasAdditionalTags && _numberOfHitBucketsContainingAdditionalTags >= _additionalTagsBucketCountLimit;
 
-                if (!hasAdditionalTags || _numberOfBucketsContainingAdditionalTags < _additionalTagsBucketCountLimit)
+            if (buffer.Buckets.TryGetValue(key, out var bucket) && (bucket.Hits != 0 || !isNewBucketBlocked))
+            {
+                if (hasAdditionalTags && bucket.Hits == 0)
                 {
-                    // Cold path: encode the peer tags and span-derived primary tags for storage in the new bucket
+                    // Bucket that was retained during Reset() that now has hits
+                    _numberOfHitBucketsContainingAdditionalTags++;
+                }
+            }
+            else if (bucket is null && !isNewBucketBlocked)
+            {
+                // Cold path: encode the peer tags and span-derived primary tags for storage in the new bucket
+                bucket = new StatsBucket(
+                    key,
+                    GetEncodedPeerTags(span, peerTagKeys, in peerTagResults),
+                    GetEncodedAdditionalTags(span, in additionalTagResults, forceBlocked: false));
+                buffer.Buckets.Add(key, bucket);
+
+                if (hasAdditionalTags)
+                {
+                    _numberOfHitBucketsContainingAdditionalTags++;
+                }
+
+                // A per-value length block also counts as a block event for observability.
+                if (additionalTagResults.FirstBlockedTagName is not null)
+                {
+                    OnAdditionalTagsBlocked(additionalTagResults.FirstBlockedTagName);
+                }
+            }
+            else
+            {
+                // Maximum number of buckets containing additional tag values is reached.
+                // Collapse into a single "blocked" bucket whose values. Only additional tags
+                // are blocked, the other properties are still added normally
+                key = key.WithAdditionalMetricTagsHash(ComputeBlockedAdditionalMetricTagsHash(span));
+
+                if (!buffer.Buckets.TryGetValue(key, out bucket))
+                {
+                    // The blocked bucket is itself the overflow sink, so it doesn't count against the cap.
                     bucket = new StatsBucket(
                         key,
                         GetEncodedPeerTags(span, peerTagKeys, in peerTagResults),
-                        GetEncodedAdditionalTags(span, in additionalTagResults, forceBlocked: false));
+                        GetEncodedAdditionalTags(span, in additionalTagResults, forceBlocked: true));
                     buffer.Buckets.Add(key, bucket);
-
-                    if (hasAdditionalTags)
-                    {
-                        _numberOfBucketsContainingAdditionalTags++;
-                    }
-
-                    // A per-value length block also counts as a block event for observability.
-                    if (additionalTagResults.FirstBlockedTagName is not null)
-                    {
-                        OnAdditionalTagsBlocked(additionalTagResults.FirstBlockedTagName);
-                    }
                 }
-                else
-                {
-                    // Maximum number of buckets containing additional tag values is reached.
-                    // Collapse into a single "blocked" bucket whose values. Only additional tags
-                    // are blocked, the other properties are still added normally
-                    key = key.WithAdditionalMetricTagsHash(ComputeBlockedAdditionalMetricTagsHash(span));
 
-                    if (!buffer.Buckets.TryGetValue(key, out bucket))
-                    {
-                        // The blocked bucket is itself the overflow sink, so it doesn't count against the cap.
-                        bucket = new StatsBucket(
-                            key,
-                            GetEncodedPeerTags(span, peerTagKeys, in peerTagResults),
-                            GetEncodedAdditionalTags(span, in additionalTagResults, forceBlocked: true));
-                        buffer.Buckets.Add(key, bucket);
-                    }
-
-                    OnAdditionalTagsBlocked(additionalTagResults.FirstPresentTagName);
-                }
+                OnAdditionalTagsBlocked(additionalTagResults.FirstPresentTagName);
             }
 
             bucket.Hits++;

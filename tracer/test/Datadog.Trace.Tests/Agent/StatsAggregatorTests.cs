@@ -1550,6 +1550,46 @@ namespace Datadog.Trace.Tests.Agent
                 .Should().Equal("region:c");
         }
 
+        [Fact]
+        public async Task AdditionalTags_RetainedBucketIsGatedByCapWhenReactivated()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), new StubDiscoveryService(), isOtlp: false);
+
+            // Dispose so the background flush completes and explicit Flush() runs synchronously without delay.
+            await aggregator.DisposeAsync();
+
+            // Admit one real additional-tag bucket, then rotate two flushes back to the same buffer. region=a
+            // had hits, so it is retained (with Hits == 0) and the per-flush budget is reset to 0.
+            aggregator.Add(MakeRegion("a"));
+            var retainingBuffer = aggregator.CurrentBuffer;
+            await aggregator.Flush();
+            await aggregator.Flush();
+            aggregator.CurrentBuffer.Should().BeSameAs(retainingBuffer);
+
+            // In the new interval, activate two distinct additional-tag values. The first consumes the budget of
+            // 1; re-activating the retained region=a is over budget, so it is masked into the blocked sink rather
+            // than serializing its retained real bucket. This is the hard cap holding across the rotation.
+            aggregator.Add(MakeRegion("b")); // new, admitted real (budget now full)
+            aggregator.Add(MakeRegion("a")); // retained, first hit this interval, over budget => masked
+
+            var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
+
+            // Exactly one real additional-tag bucket has hits this interval; region=a's retained real bucket got none.
+            buckets.Count(b => b.AdditionalMetricTags.Count > 0 && b.Hits > 0 && DecodeTags(b.AdditionalMetricTags)[0] != "region:blocked_by_tracer")
+                   .Should().Be(1);
+            buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:b" })).Hits.Should().Be(1);
+            buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:a" })).Hits.Should().Be(0);
+            buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:blocked_by_tracer" })).Hits.Should().Be(1);
+
+            Span MakeRegion(string region)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("region", region);
+                return span;
+            }
+        }
+
         private static List<string> DecodeTags(List<byte[]> encoded)
             => encoded.Select(bytes => System.Text.Encoding.UTF8.GetString(bytes)).ToList();
 
