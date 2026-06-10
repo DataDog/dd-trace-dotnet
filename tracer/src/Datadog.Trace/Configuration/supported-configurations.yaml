@@ -1724,7 +1724,7 @@ supportedConfigurations:
     product: Tracer
     documentation: |-
       Determines if the Fault-Tolerant Instrumentation mechanism is enabled.
-      When enabled, instrumentation failures are caught and retried without the failing rewrite. Default is true.
+      When enabled, instrumentation failures are caught and retried without the failing rewrite. Default is false.
   DD_INTERNAL_NATIVE_LOADER_PATH:
   - implementation: A
     scope: native
@@ -1801,7 +1801,7 @@ supportedConfigurations:
     product: Tracer
     documentation: |-
       Enables or disables the skip method body feature, which omits method body rewriting for certain methods.
-      Default is false.
+      Default is true.
   DD_INTERNAL_SYSTEM_CALLS_SHIELD_ENABLED:
   - implementation: A
     scope: native
@@ -1845,7 +1845,7 @@ supportedConfigurations:
     product: Tracer
     documentation: |-
       Enables compatibility mode for interoperability with other versions of the Datadog .NET tracer.
-      Default is false.
+      Default is true.
   DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION:
   - implementation: A
     scope: native
