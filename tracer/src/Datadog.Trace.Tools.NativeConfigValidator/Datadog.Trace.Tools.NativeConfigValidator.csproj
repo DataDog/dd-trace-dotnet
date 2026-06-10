@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Override the tracer/src multi-TFM default (net461;netstandard2.0;netcoreapp3.1;net6.0).
+         This is a CI-only tool, so it single-targets the current SDK. -->
+    <TargetFrameworks></TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <!-- Override IsPackable=true from tracer/src/Directory.Build.props: this tool never ships. -->
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <RootNamespace>Datadog.Trace.Tools.NativeConfigValidator</RootNamespace>
+    <AssemblyName>Datadog.Trace.Tools.NativeConfigValidator</AssemblyName>
+  </PropertyGroup>
+
+  <!--
+    Reuse the source generator's YAML parser so this validator and the
+    ConfigurationKeys generator can never drift out of sync. The files are
+    source-linked (not project-referenced) because YamlReader is internal to
+    the generator assembly, and so this tool stays dependency-free. This works
+    here (unlike in the Nuke _build project) because this is a normal src
+    project built from a full checkout, not the isolated Docker _build context.
+  -->
+  <ItemGroup>
+    <Compile Include="..\Datadog.Trace.SourceGenerators\Helpers\YamlReader.cs" Link="Shared\YamlReader.cs" />
+    <Compile Include="..\Datadog.Trace.SourceGenerators\Helpers\EquatableArray.cs" Link="Shared\EquatableArray.cs" />
+  </ItemGroup>
+
+</Project>
