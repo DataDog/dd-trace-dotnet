@@ -26,10 +26,15 @@ internal sealed partial class ConfigurationTelemetry : IConfigurationTelemetry
     }
 
     public void Record(string key, string? value, bool recordValue, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-        => _entries.Enqueue(
+    {
+        // The sensitive registry flag is authoritative: never record the value of a key
+        // marked sensitive in supported-configurations.yaml, regardless of the call site.
+        recordValue = recordValue && !ConfigurationKeys.SensitiveKeys.Contains(key);
+        _entries.Enqueue(
             recordValue
                 ? ConfigurationTelemetryEntry.String(key, value, origin, error)
                 : ConfigurationTelemetryEntry.Redacted(key, origin, error));
+    }
 
     public void Record(string key, bool value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
         => _entries.Enqueue(ConfigurationTelemetryEntry.Bool(key, value, origin, error));
