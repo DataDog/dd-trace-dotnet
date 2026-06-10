@@ -182,7 +182,7 @@ void CorProfilerCallback::InitializeServices()
     // Like the SystemCallsShield, this service must be started before any profiler.
     // For now we asked for a memory resource that will have maximum 100 blocks of 1KiB per block.
     // (before it uses the default memory resource a.k.a new/delete for allocation)
-    RegisterService<LibrariesInfoCache>(_memoryResourceManager.GetSynchronizedPool(100, 1024), _metricsRegistry);
+    RegisterService<LibrariesInfoCache>(_pConfiguration.get(), _memoryResourceManager.GetSynchronizedPool(100, 1024), _metricsRegistry);
 #endif
 
     _pFrameStore = std::make_unique<FrameStore>(

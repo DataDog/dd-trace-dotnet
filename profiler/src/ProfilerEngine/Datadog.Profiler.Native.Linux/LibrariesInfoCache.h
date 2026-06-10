@@ -8,21 +8,15 @@
 #include "DlPhdrInfoWrapper.h"
 
 #include "AutoResetEvent.h"
-#include "MeanMaxMetric.h"
-#include "MemoryResourceManager.h"
-#include "MetricsRegistry.h"
-#include "ProxyMetric.h"
 #include "ServiceBase.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
 #include <atomic>
-#include <chrono>
 #include <link.h>
 #include <memory>
 #include <shared_mutex>
 #include <thread>
-#include <time.h>
 #include <vector>
 
 #ifdef ARM64
@@ -41,71 +35,16 @@ struct ModuleRegion
 };
 #endif
 
-class TrackingMemoryResource : public shared::pmr::memory_resource
-{
-public:
-    explicit TrackingMemoryResource(shared::pmr::memory_resource* upstream) :
-        _upstream{upstream}
-    {
-    }
-
-    std::size_t GetCurrentUsage() const { return _currentUsage.load(std::memory_order_relaxed); }
-    std::size_t GetPeakUsage() const { return _peakUsage.load(std::memory_order_relaxed); }
-    std::size_t GetTotalAllocated() const { return _totalAllocated.load(std::memory_order_relaxed); }
-    std::size_t GetTotalDeallocated() const { return _totalDeallocated.load(std::memory_order_relaxed); }
-    std::size_t GetAllocationCount() const { return _allocationCount.load(std::memory_order_relaxed); }
-
-    void ResetPerReloadStats()
-    {
-        _reloadAllocations.store(0, std::memory_order_relaxed);
-        _reloadBytes.store(0, std::memory_order_relaxed);
-    }
-
-    std::size_t GetReloadAllocations() const { return _reloadAllocations.load(std::memory_order_relaxed); }
-    std::size_t GetReloadBytes() const { return _reloadBytes.load(std::memory_order_relaxed); }
-
-protected:
-    void* do_allocate(std::size_t bytes, std::size_t alignment) override
-    {
-        _reloadAllocations.fetch_add(1, std::memory_order_relaxed);
-        _reloadBytes.fetch_add(bytes, std::memory_order_relaxed);
-        _allocationCount.fetch_add(1, std::memory_order_relaxed);
-        _totalAllocated.fetch_add(bytes, std::memory_order_relaxed);
-        auto current = _currentUsage.fetch_add(bytes, std::memory_order_relaxed) + bytes;
-        auto peak = _peakUsage.load(std::memory_order_relaxed);
-        while (current > peak && !_peakUsage.compare_exchange_weak(peak, current, std::memory_order_relaxed))
-        {
-        }
-        return _upstream->allocate(bytes, alignment);
-    }
-
-    void do_deallocate(void* p, std::size_t bytes, std::size_t alignment) override
-    {
-        _currentUsage.fetch_sub(bytes, std::memory_order_relaxed);
-        _totalDeallocated.fetch_add(bytes, std::memory_order_relaxed);
-        _upstream->deallocate(p, bytes, alignment);
-    }
-
-    bool do_is_equal(const memory_resource& other) const noexcept override
-    {
-        return this == &other;
-    }
-
-private:
-    shared::pmr::memory_resource* _upstream;
-    std::atomic<std::size_t> _currentUsage{0};
-    std::atomic<std::size_t> _peakUsage{0};
-    std::atomic<std::size_t> _totalAllocated{0};
-    std::atomic<std::size_t> _totalDeallocated{0};
-    std::atomic<std::size_t> _allocationCount{0};
-    std::atomic<std::size_t> _reloadAllocations{0};
-    std::atomic<std::size_t> _reloadBytes{0};
-};
+class IConfiguration;
+class MetricsRegistry;
+struct FootprintTracker;
 
 class LibrariesInfoCache : public ServiceBase
 {
+    friend struct FootprintTracker;
+
 public:
-    LibrariesInfoCache(shared::pmr::memory_resource* resource, MetricsRegistry& metricsRegistry);
+    LibrariesInfoCache(IConfiguration* configuration, shared::pmr::memory_resource* resource, MetricsRegistry& metricsRegistry);
     ~LibrariesInfoCache();
 
     LibrariesInfoCache(LibrariesInfoCache const&) = delete;
@@ -156,13 +95,10 @@ private:
 #endif
     int DlIteratePhdrImpl(unw_iterate_phdr_callback_t callback, void* data);
     void Work(std::shared_ptr<AutoResetEvent> startEvent);
-    void LogStats();
-    void SetupCpuTimer();
-    void TeardownCpuTimer();
 
     static std::atomic<LibrariesInfoCache*> s_instance;
 
-    TrackingMemoryResource _trackingResource;
+    std::unique_ptr<FootprintTracker> _tracker;
     shared::pmr::memory_resource* _wrappersAllocator;
 
     std::shared_mutex _cacheLock;
@@ -188,29 +124,4 @@ private:
     std::thread _worker;
     std::atomic<bool> _stopRequested;
     AutoResetEvent _event;
-
-    // Stats
-    std::atomic<std::uint64_t> _cpuTicks{0};
-    std::uint32_t _reloadCount{0};
-    std::uint32_t _notificationCount{0};
-    std::chrono::steady_clock::duration _totalReloadDuration{0};
-    std::chrono::steady_clock::duration _maxReloadDuration{0};
-    std::chrono::steady_clock::duration _totalLockHoldDuration{0};
-    std::chrono::steady_clock::duration _maxLockHoldDuration{0};
-    timer_t _cpuTimerId{};
-    bool _cpuTimerCreated{false};
-
-    // Metrics (emitted via DogStatsD)
-    std::shared_ptr<ProxyMetric> _libCountMetric;
-    std::shared_ptr<ProxyMetric> _memoryFootprintMetric;
-    std::shared_ptr<ProxyMetric> _memoryPeakMetric;
-    std::shared_ptr<ProxyMetric> _cpuTicksMetric;
-#ifdef ARM64
-    std::shared_ptr<ProxyMetric> _moduleCountMetric;
-    std::shared_ptr<ProxyMetric> _symbolCountMetric;
-#endif
-    std::shared_ptr<MeanMaxMetric> _updateCpuMetric;
-    std::shared_ptr<MeanMaxMetric> _reloadDurationMetric;
-    std::shared_ptr<MeanMaxMetric> _lockHoldDurationMetric;
-    std::shared_ptr<MeanMaxMetric> _reloadAllocationsMetric;
 };
