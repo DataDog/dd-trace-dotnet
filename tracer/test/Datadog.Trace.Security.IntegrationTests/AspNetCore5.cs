@@ -179,5 +179,45 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
     }
+
+    public class AspNetCore5TestsResponseStatusBodyCombined : AspNetCoreWithExternalRulesFileBase
+    {
+        private const string CombinedRuleFile = "ruleset.response-status-body.json";
+
+        public AspNetCore5TestsResponseStatusBodyCombined(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+            : base("AspNetCore5", fixture, outputHelper, "/shutdown", enableSecurity: true, ruleFile: CombinedRuleFile, testName: "AspNetCore5.ResponseStatusBodyCombined")
+        {
+            Fixture.SetOutput(outputHelper);
+        }
+
+        // Regression test for: server.response.status seeded as stale "200" at begin-request would
+        // prevent a combined body+status WAF rule from ever firing.
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestResponseBodyAndStatusCombinedRuleFires()
+        {
+            await TryStartApp();
+            var agent = Fixture.Agent;
+
+            const string url = "/status/404/body";
+            var minDateTime = DateTime.UtcNow;
+
+            // The endpoint returns StatusCode(404, { message = "waf_sentinel_response_body" }).
+            // The combined rule requires server.response.status == "404" AND server.response.body
+            // contains "waf_sentinel_response_body". With the stale-200 bug, this rule could never fire.
+            var (statusCode, _) = await SubmitRequest(url, body: null, contentType: null);
+            ((int)statusCode).Should().Be((int)HttpStatusCode.Forbidden, "WAF should block the response when body+status combined rule fires");
+
+            var spans = await WaitForSpansAsync(agent, 1, string.Empty, minDateTime, url);
+            var appsecSpan = spans.FirstOrDefault(s => s.Tags.ContainsKey("appsec.event"));
+            appsecSpan.Should().NotBeNull("a WAF event span must be produced");
+            appsecSpan!.Tags.Should().ContainKey("appsec.blocked").WhoseValue.Should().Be("true");
+
+            var appsecJson = appsecSpan.Tags[Tags.AppSecJson];
+            appsecJson.Should().Contain("test-response-status-body-001", "the combined body+status rule must have fired");
+            appsecJson.Should().Contain("server.response.status", "the status condition must appear in the WAF match");
+            appsecJson.Should().Contain("server.response.body", "the body condition must appear in the WAF match");
+        }
+    }
 }
 #endif
