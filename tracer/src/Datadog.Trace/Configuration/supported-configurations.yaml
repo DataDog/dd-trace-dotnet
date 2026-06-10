@@ -756,6 +756,15 @@ supportedConfigurations:
     documentation: |-
       Configuration key for enabling or disabling Dynamic Instrumentation.
       Default value is false (disabled).
+  DD_DYNAMIC_INSTRUMENTATION_AGENTLESS_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'false'
+    product: Debugger
+    documentation: |-
+      Configuration key for enabling or disabling agentless Dynamic Instrumentation uploads.
+      Default value is false.
   DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE:
   - implementation: B
     scope: managed

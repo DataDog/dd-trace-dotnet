@@ -28,17 +28,22 @@ internal sealed class DebuggerFactory
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerFactory));
 
-    internal static DynamicInstrumentation CreateDynamicInstrumentation(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, Func<string> serviceNameProvider, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    internal static DynamicInstrumentation? CreateDynamicInstrumentation(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, Func<string> serviceNameProvider, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
         var globalRateLimiter = DebuggerGlobalRateLimiter.Instance;
         var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
         var snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
         var logSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
         var diagnosticsSink = DiagnosticsSink.Create(serviceNameProvider, debuggerSettings);
+        var transportInfo = DebuggerTransportFactory.CreateForDynamicInstrumentation(tracerSettings, debuggerSettings, discoveryService);
+        if (transportInfo is null)
+        {
+            return null;
+        }
 
-        var snapshotUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), snapshotSink);
-        var logUploader = CreateLogUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), logSink);
-        var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
+        var snapshotUploader = CreateSnapshotUploader(debuggerSettings, gitMetadataTagsProvider, transportInfo.Value, snapshotSink);
+        var logUploader = CreateLogUploader(debuggerSettings, gitMetadataTagsProvider, transportInfo.Value, logSink);
+        var diagnosticsUploader = CreateDiagnosticsUploader(debuggerSettings, gitMetadataTagsProvider, transportInfo.Value, diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion, debuggerSettings.MaxProbesPerType, globalRateLimiter);
@@ -83,9 +88,9 @@ internal sealed class DebuggerFactory
         return statsd;
     }
 
-    private static SnapshotUploader CreateSnapshotUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotSink)
+    private static SnapshotUploader CreateSnapshotUploader(DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, DebuggerTransportInfo transportInfo, SnapshotSink snapshotSink)
     {
-        var snapshotBatchUploadApi = DebuggerUploadApiFactory.CreateSnapshotUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
+        var snapshotBatchUploadApi = DebuggerUploadApiFactory.CreateSnapshotUploadApi(transportInfo.ApiRequestFactory, transportInfo.DiscoveryService, gitMetadataTagsProvider, transportInfo.StaticEndpoint);
         var snapshotBatchUploader = BatchUploader.Create(snapshotBatchUploadApi);
 
         var debuggerSink = SnapshotUploader.Create(snapshotSink, snapshotBatchUploader, debuggerSettings);
@@ -93,9 +98,9 @@ internal sealed class DebuggerFactory
         return debuggerSink;
     }
 
-    private static SnapshotUploader CreateLogUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotSink)
+    private static SnapshotUploader CreateLogUploader(DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, DebuggerTransportInfo transportInfo, SnapshotSink snapshotSink)
     {
-        var logUploaderApi = DebuggerUploadApiFactory.CreateLogUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
+        var logUploaderApi = DebuggerUploadApiFactory.CreateLogUploadApi(transportInfo.ApiRequestFactory, transportInfo.DiscoveryService, gitMetadataTagsProvider, transportInfo.StaticEndpoint);
         var logBatchUploader = BatchUploader.Create(logUploaderApi);
 
         var debuggerSink = SnapshotUploader.Create(snapshotSink, logBatchUploader, debuggerSettings);
@@ -103,9 +108,9 @@ internal sealed class DebuggerFactory
         return debuggerSink;
     }
 
-    private static DiagnosticsUploader CreateDiagnosticsUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, DiagnosticsSink diagnosticsSink)
+    private static DiagnosticsUploader CreateDiagnosticsUploader(DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, DebuggerTransportInfo transportInfo, DiagnosticsSink diagnosticsSink)
     {
-        var diagnosticsBatchUploadApi = DebuggerUploadApiFactory.CreateDiagnosticsUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
+        var diagnosticsBatchUploadApi = DebuggerUploadApiFactory.CreateDiagnosticsUploadApi(transportInfo.ApiRequestFactory, transportInfo.DiscoveryService, gitMetadataTagsProvider, transportInfo.StaticEndpoint);
         var diagnosticsBatchUploader = BatchUploader.Create(diagnosticsBatchUploadApi);
 
         var debuggerSink = DiagnosticsUploader.Create(diagnosticsSink, diagnosticsBatchUploader: diagnosticsBatchUploader, debuggerSettings);
@@ -115,12 +120,12 @@ internal sealed class DebuggerFactory
 
     internal static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, Func<string> serviceNameProvider, TracerSettings tracerSettings, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
-        var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, settings.SymbolDatabaseCompressionEnabled);
+        var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings), discoveryService, gitMetadataTagsProvider, settings.SymbolDatabaseCompressionEnabled);
         var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, tracerSettings, settings, serviceNameProvider);
         return symbolsUploader;
     }
 
-    private static IApiRequestFactory GetApiFactory(TracerSettings tracerSettings, bool isMultipart)
+    private static IApiRequestFactory GetApiFactory(TracerSettings tracerSettings)
     {
         // TODO: we need to be able to update the tracer settings dynamically
         return AgentTransportStrategy.Get(
