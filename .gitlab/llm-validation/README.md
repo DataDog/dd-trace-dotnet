@@ -21,11 +21,15 @@ include:
 ## How it works
 
 **Single job** (`run.sh`): `authanywhere --audience rapid-ai-platform` → AI Gateway env; ensure node + install
-the `claude` CLI; clone + `dotnet build` the platform CLI; run
-`llm-validate run --base-sha $CI_MERGE_REQUEST_DIFF_BASE_SHA …`; **print `report.md` to the log + upload it as
-an artifact** (the dd-trace-py #17900 model). Posting to the GitHub PR is **optional** — `run.sh` runs
-`pr-commenter --header 'LLM Validation' --on-duplicate=replace` only if `pr-commenter` is on `PATH`.
+the `claude` CLI; clone + `dotnet build` the platform CLI; run `llm-validate run` with **baseline =
+merge-base with `master`** (dd-trace-dotnet's GitLab runs *branch* pipelines, not `merge_request_event`, so
+there are no MR vars — we key off the branch like the BP jobs do); **print `report.md` to the log + upload it
+as an artifact** (the dd-trace-py #17900 model). Posting to the GitHub PR is **optional** — `run.sh` runs
+`pr-commenter --for-pr=$CI_COMMIT_REF_NAME --on-duplicate=replace` only if `pr-commenter` is on `PATH`.
 Artifacts: `results.json`, `report.md`, `details.json`.
+
+The job is **manual** during bring-up (it's a paid LLM run) and skips `master`; `run.sh` also self-skips if
+`AGENTS.md` is unchanged vs `master`. Flip the rule to `when: on_success` to run it automatically per branch.
 
 ## Prerequisites / open items (must confirm before first run)
 

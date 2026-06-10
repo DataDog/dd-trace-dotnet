@@ -13,14 +13,13 @@
   image: "$LLMVAL_IMAGE"
   tags: ["arch:amd64"]
   rules:
-    # Only on merge requests that touch AI-behavior files. Advisory for now (allow_failure).
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      changes:
-        - AGENTS.md
-        - "**/AGENTS.md"
-        - ".llm-validation/**/*"
+    # dd-trace-dotnet GitLab pipelines are branch pipelines (no merge_request_event), like the BP jobs.
+    # Manual during bring-up (it's a paid LLM run); run.sh self-skips if AGENTS.md is unchanged vs master.
+    # To automate later: replace the manual rule with `when: on_success`.
+    - if: '$CI_COMMIT_REF_NAME == "master"'
+      when: never
+    - when: manual
       allow_failure: true
-    - when: never
   variables:
     # Debian-based .NET 8 SDK (amd64) — same family the repo's Linux Dockerfiles use. If ddbuild CI can't
     # pull external mcr, swap to the registry.ddbuild.io mirror (e.g. registry.ddbuild.io/images/mirror/dotnet/sdk:8.0).

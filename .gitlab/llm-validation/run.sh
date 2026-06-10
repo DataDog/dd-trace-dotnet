@@ -53,17 +53,27 @@ git clone --depth 1 --branch "$PLATFORM_REF" \
 ( cd /tmp/llmval && dotnet build -c Release Datadog.LlmValidation.slnx )
 CLI_DLL="/tmp/llmval/src/Datadog.LlmValidation.Cli/bin/Release/net8.0/Datadog.LlmValidation.Cli.dll"
 
-echo "=== LLM Validation: ensure the merge-base commit is present ==="
-# The CLI reads `git show <base-sha>:AGENTS.md`; make sure the target branch is fetched.
-git -C "$CI_PROJECT_DIR" fetch --depth 50 origin "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-master}" || true
+echo "=== LLM Validation: resolve baseline ==="
+# dd-trace-dotnet GitLab pipelines are branch pipelines (no MR vars), so baseline = merge-base with the
+# target branch (default master). The CLI reads `git show <base-sha>:AGENTS.md`.
+BASE_REF="${LLMVAL_BASE_REF:-master}"
+git -C "$CI_PROJECT_DIR" fetch --depth 200 origin "$BASE_REF" || true
+BASE_SHA="$(git -C "$CI_PROJECT_DIR" merge-base "origin/$BASE_REF" HEAD 2>/dev/null || echo "origin/$BASE_REF")"
+echo "baseline = $BASE_SHA (vs $BASE_REF)"
 
-echo "=== LLM Validation: run gate (baseline=$CI_MERGE_REQUEST_DIFF_BASE_SHA, runs=$RUNS) ==="
+# Nothing to validate if AGENTS.md is unchanged vs the baseline.
+if git -C "$CI_PROJECT_DIR" diff --quiet "$BASE_SHA" HEAD -- AGENTS.md 2>/dev/null; then
+  echo "AGENTS.md unchanged vs $BASE_REF — nothing to validate. Exiting 0."
+  exit 0
+fi
+
+echo "=== LLM Validation: run gate (baseline=$BASE_SHA, runs=$RUNS) ==="
 EXTRA=()
 [ -n "${LLMVAL_MAX_CASES:-}" ] && EXTRA+=(--max-cases "$LLMVAL_MAX_CASES")
 set +e
 dotnet "$CLI_DLL" run \
   --repo "$CI_PROJECT_DIR" \
-  --base-sha "$CI_MERGE_REQUEST_DIFF_BASE_SHA" \
+  --base-sha "$BASE_SHA" \
   --runs "$RUNS" \
   --evaluators /tmp/llmval/evaluators \
   --out results.json --report report.md --details details.json \
