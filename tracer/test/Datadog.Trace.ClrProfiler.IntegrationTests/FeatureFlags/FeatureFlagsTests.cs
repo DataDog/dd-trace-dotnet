@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -40,6 +41,49 @@ public class OpenFeatureFeatureFlagsTests : FeatureFlagsTestsBase
     public OpenFeatureFeatureFlagsTests(ITestOutputHelper output)
         : base("OpenFeature", output)
     {
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task ProviderReadyWaitsForInitialConfig()
+    {
+        using var agent = EnvironmentHelper.GetMockAgent();
+        var outputTask = RunTest(agent, enabled: true);
+
+        await WaitForRemoteConfigRequest(agent);
+        agent.SetupRcm(
+            Output,
+            [
+                ((object)new ServerConfiguration
+                {
+                    Flags = FeatureFlagsHelpers.CreateAllFlags(),
+                },
+                RcmProducts.FfeFlags,
+                nameof(ProviderReadyWaitsForInitialConfig))
+            ]);
+
+        var output = await outputTask;
+
+        Assert.NotNull(output);
+        Assert.DoesNotContain("PROVIDER_NOT_READY", output);
+        Assert.DoesNotContain("Waiting for RC...", output);
+        Assert.Contains("Exit. OK", output);
+    }
+
+    private static async Task WaitForRemoteConfigRequest(MockTracerAgent agent)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (DateTime.UtcNow < deadline)
+        {
+            if (!agent.RemoteConfigRequests.IsEmpty)
+            {
+                return;
+            }
+
+            await Task.Delay(200);
+        }
+
+        throw new TimeoutException("Timed out waiting for the first remote configuration request.");
     }
 }
 
@@ -103,7 +147,7 @@ public abstract class FeatureFlagsTestsBase : TestHelper
         Assert.Contains("FeatureFlagsSdk is disabled", output);
     }
 
-    private async Task<string> RunTest(MockTracerAgent agent, bool enabled = true, bool usePublishWithRID = false)
+    protected async Task<string> RunTest(MockTracerAgent agent, bool enabled = true, bool usePublishWithRID = false)
     {
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.5");
         SetEnvironmentVariable("DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED", enabled ? "1" : "0");
