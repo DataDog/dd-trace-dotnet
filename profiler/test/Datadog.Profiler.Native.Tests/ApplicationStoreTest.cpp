@@ -14,7 +14,7 @@ using ::testing::Return;
 
 TEST(ApplicationStoreTest, GetDefaultName)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     const std::string expectedServiceName = "DefaultServiceName";
     const std::string expectedVersion = "DefaultVersion";
@@ -28,11 +28,11 @@ TEST(ApplicationStoreTest, GetDefaultName)
     EXPECT_CALL(mockConfiguration, GetGitRepositoryUrl()).WillRepeatedly(ReturnRef(expectedGitRepository));
     EXPECT_CALL(mockConfiguration, GetGitCommitSha()).WillRepeatedly(ReturnRef(expectedGitCommitSha));
 
-    auto [ssiManager, mockSsiManager] = CreateSsiManager();
+    testing::NiceMock<MockSsiManager> mockSsiManager;
     EXPECT_CALL(mockSsiManager, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::Manual));
     RuntimeInfoHelper helper(6, 0, false);
 
-    ApplicationStore applicationStore(configuration.get(), helper.GetRuntimeInfo());
+    ApplicationStore applicationStore(&mockConfiguration, helper.GetRuntimeInfo());
 
     const auto& info = applicationStore.GetApplicationInfo("{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}");
 
@@ -46,17 +46,17 @@ TEST(ApplicationStoreTest, GetDefaultName)
 
 TEST(ApplicationStoreTest, CheckGitMetadataIfSetGitMetadataIsNotCalled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     std::string expectedGitRepositoryUrl = "ExpectedGitRepositoryUrl";
     std::string expectedGitCommitSha = "ExpectedGitCommitSha";
     EXPECT_CALL(mockConfiguration, GetGitRepositoryUrl()).WillRepeatedly(ReturnRef(expectedGitRepositoryUrl));
     EXPECT_CALL(mockConfiguration, GetGitCommitSha()).WillRepeatedly(ReturnRef(expectedGitCommitSha));
 
-    auto [ssiManager, mockSsiManager] = CreateSsiManager();
+    testing::NiceMock<MockSsiManager> mockSsiManager;
     EXPECT_CALL(mockSsiManager, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::Manual));
     RuntimeInfoHelper helper(6, 0, false);
 
-    ApplicationStore applicationStore(configuration.get(), helper.GetRuntimeInfo());
+    ApplicationStore applicationStore(&mockConfiguration, helper.GetRuntimeInfo());
 
     const auto runtimeId = "{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}";
 
@@ -86,18 +86,18 @@ TEST(ApplicationStoreTest, CheckGitMetadataIfSetGitMetadataIsNotCalled)
 
 TEST(ApplicationStoreTest, MakeSureCallToSetGitMetadataOverrideThePreviousValue)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     std::string randomRepoUrl = "RandomRepoUrl";
     std::string randomCommitSha = "RandomCommitSha";
     EXPECT_CALL(mockConfiguration, GetGitRepositoryUrl()).WillRepeatedly(ReturnRef(randomRepoUrl));
     EXPECT_CALL(mockConfiguration, GetGitCommitSha()).WillRepeatedly(ReturnRef(randomCommitSha));
 
-    auto [ssiManager, mockSsiManager] = CreateSsiManager();
+    testing::NiceMock<MockSsiManager> mockSsiManager;
     EXPECT_CALL(mockSsiManager, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::Manual));
     RuntimeInfoHelper helper(6, 0, false);
 
-    ApplicationStore applicationStore(configuration.get(), helper.GetRuntimeInfo());
+    ApplicationStore applicationStore(&mockConfiguration, helper.GetRuntimeInfo());
 
     const auto runtimeId = "{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}";
 
@@ -143,18 +143,18 @@ TEST(ApplicationStoreTest, MakeSureCallToSetGitMetadataOverrideThePreviousValue)
 
 TEST(ApplicationStoreTest, SetApplicationInfoWithProcessTags)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     std::string randomRepoUrl = "RandomRepoUrl";
     std::string randomCommitSha = "RandomCommitSha";
     EXPECT_CALL(mockConfiguration, GetGitRepositoryUrl()).WillRepeatedly(ReturnRef(randomRepoUrl));
     EXPECT_CALL(mockConfiguration, GetGitCommitSha()).WillRepeatedly(ReturnRef(randomCommitSha));
 
-    auto [ssiManager, mockSsiManager] = CreateSsiManager();
+    testing::NiceMock<MockSsiManager> mockSsiManager;
     EXPECT_CALL(mockSsiManager, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::Manual));
     RuntimeInfoHelper helper(6, 0, false);
 
-    ApplicationStore applicationStore(configuration.get(), helper.GetRuntimeInfo());
+    ApplicationStore applicationStore(&mockConfiguration, helper.GetRuntimeInfo());
 
     const auto runtimeId = "{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}";
     const std::string expectedProcessTags = "entrypoint.basedir:app,entrypoint.workdir:work";
@@ -179,18 +179,18 @@ TEST(ApplicationStoreTest, SetApplicationInfoWithProcessTags)
 
 TEST(ApplicationStoreTest, SetApplicationInfoPreservesExistingProcessTags)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     std::string randomRepoUrl = "RandomRepoUrl";
     std::string randomCommitSha = "RandomCommitSha";
     EXPECT_CALL(mockConfiguration, GetGitRepositoryUrl()).WillRepeatedly(ReturnRef(randomRepoUrl));
     EXPECT_CALL(mockConfiguration, GetGitCommitSha()).WillRepeatedly(ReturnRef(randomCommitSha));
 
-    auto [ssiManager, mockSsiManager] = CreateSsiManager();
+    testing::NiceMock<MockSsiManager> mockSsiManager;
     EXPECT_CALL(mockSsiManager, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::Manual));
     RuntimeInfoHelper helper(6, 0, false);
 
-    ApplicationStore applicationStore(configuration.get(), helper.GetRuntimeInfo());
+    ApplicationStore applicationStore(&mockConfiguration, helper.GetRuntimeInfo());
 
     const auto runtimeId = "{82F18E9B-138D-4202-8D21-7BE1AF82EC8B}";
     const std::string expectedProcessTags = "entrypoint.basedir:app,entrypoint.workdir:work";

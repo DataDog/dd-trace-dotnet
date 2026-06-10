@@ -64,8 +64,8 @@ testing::Matcher<const CharT*> GenericStrEq(const CharT* str)
 
 TEST(ClrEventsParserTest, ContentionStopV1)
 {
-    auto [contentionListener, mockContentionListener] = CreateMockForUniquePtr<IContentionListener, MockContentionListener>();
-    auto parser = ClrEventsParser(nullptr, contentionListener.get(), nullptr, nullptr);
+    testing::NiceMock<MockContentionListener> mockContentionListener;
+    auto parser = ClrEventsParser(nullptr, &mockContentionListener, nullptr, nullptr);
 
     auto expectedDuration = 21ns;
     ContentionStopV1Payload payload{0};
@@ -80,8 +80,8 @@ TEST(ClrEventsParserTest, ContentionStopV1)
 
 TEST(ClrEventsParserTest, DoNothingForContentionStartV1)
 {
-    auto [contentionListener, mockContentionListener] = CreateMockForUniquePtr<IContentionListener, MockContentionListener>();
-    auto parser = ClrEventsParser(nullptr, contentionListener.get(), nullptr, nullptr);
+    testing::NiceMock<MockContentionListener> mockContentionListener;
+    auto parser = ClrEventsParser(nullptr, &mockContentionListener, nullptr, nullptr);
 
     EXPECT_CALL(mockContentionListener, SetBlockingThread(_)).Times(0);
 
@@ -90,8 +90,8 @@ TEST(ClrEventsParserTest, DoNothingForContentionStartV1)
 
 TEST(ClrEventsParserTest, ContentionStartV2)
 {
-    auto [contentionListener, mockContentionListener] = CreateMockForUniquePtr<IContentionListener, MockContentionListener>();
-    auto parser = ClrEventsParser(nullptr, contentionListener.get(), nullptr, nullptr);
+    testing::NiceMock<MockContentionListener> mockContentionListener;
+    auto parser = ClrEventsParser(nullptr, &mockContentionListener, nullptr, nullptr);
 
     std::uint64_t expectedOwnerThreadId = 43;
 
@@ -154,8 +154,8 @@ std::pair<std::unique_ptr<std::uint8_t[]>, std::size_t> CreateAllocationTickEven
 
 TEST(ClrEventsParserTest, AllocationTickV4)
 {
-    auto [allocationListener, mockAllocationListener] = CreateMockForUniquePtr<IAllocationsListener, MockAllocationListener>();
-    auto parser = ClrEventsParser(allocationListener.get(), nullptr, nullptr, nullptr);
+    testing::NiceMock<MockAllocationListener> mockAllocationListener;
+    auto parser = ClrEventsParser(&mockAllocationListener, nullptr, nullptr, nullptr);
 
     auto typeName = WStr("MyType");
     auto [buffer, eventSize] = CreateAllocationTickEvent(typeName, 0x0, 42, 12, 123456789, 999);

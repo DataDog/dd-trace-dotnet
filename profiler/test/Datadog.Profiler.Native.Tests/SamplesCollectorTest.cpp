@@ -17,7 +17,6 @@
 
 #include <chrono>
 #include <list>
-#include <tuple>
 
 using ::testing::_;
 using ::testing::AtLeast;
@@ -31,20 +30,20 @@ using namespace std::chrono_literals;
 
 std::unique_ptr<IExporter> CreateTransparentExporter(std::list<std::shared_ptr<Sample>>& pendingSamples, std::list<std::shared_ptr<Sample>>& exportedSamples)
 {
-    auto [exporter, mockExporter] = CreateExporter();
+    auto exporter = std::make_unique<testing::NiceMock<MockExporter>>();
 
-    EXPECT_CALL(mockExporter, Add(_))
+    EXPECT_CALL(*exporter, Add(_))
         .WillRepeatedly(Invoke([&pendingSamples](std::shared_ptr<Sample> const& sample) {
             pendingSamples.push_back(sample);
         }));
 
-    EXPECT_CALL(mockExporter, Export(_))
+    EXPECT_CALL(*exporter, Export(_))
         .WillRepeatedly(Invoke([&pendingSamples, &exportedSamples] {
             exportedSamples.splice(exportedSamples.end(), std::move(pendingSamples));
             return true;
         }));
 
-    return std::move(exporter);
+    return exporter;
 }
 
 template <typename T>
@@ -113,7 +112,7 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromTwoProviders)
 
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1000s));
 
     std::list<std::shared_ptr<Sample>> pendingSamples;
@@ -122,7 +121,7 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromTwoProviders)
     auto exporter = CreateTransparentExporter(pendingSamples, exportedSamples);
     auto metricsSender = MockMetricsSender();
 
-    auto collector = SamplesCollector(configuration.get(), &threadsCpuManagerHelper, exporter.get(), &metricsSender);
+    auto collector = SamplesCollector(&mockConfiguration, &threadsCpuManagerHelper, exporter.get(), &metricsSender);
     collector.Register(&samplesProvider);
     collector.Register(&samplesProvider2);
 
@@ -178,7 +177,7 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
 
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1000s));
 
     std::list<std::shared_ptr<Sample>> pendingSamples;
@@ -187,7 +186,7 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromProviderAndBatchedProvider)
     auto exporter = CreateTransparentExporter(pendingSamples, exportedSamples);
     auto metricsSender = MockMetricsSender();
 
-    auto collector = SamplesCollector(configuration.get(), &threadsCpuManagerHelper, exporter.get(), &metricsSender);
+    auto collector = SamplesCollector(&mockConfiguration, &threadsCpuManagerHelper, exporter.get(), &metricsSender);
     collector.Register(&samplesProvider);
     collector.RegisterBatchedProvider(&batchedSamplesProvider);
 
@@ -241,13 +240,13 @@ TEST(SamplesCollectorTest, MustStopCollectingSamples)
 
     auto threadsCpuManagerHelper = ThreadsCpuManagerHelper();
 
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1000s));
 
-    auto [exporter, mockExporter] = CreateExporter();
+    testing::NiceMock<MockExporter> mockExporter;
     auto metricsSender = MockMetricsSender();
 
-    auto collector = SamplesCollector(configuration.get(), &threadsCpuManagerHelper, exporter.get(), &metricsSender);
+    auto collector = SamplesCollector(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
     collector.Register(&samplesProvider);
 
     collector.Start();
@@ -269,10 +268,10 @@ TEST(SamplesCollectorTest, MustStopCollectingSamples)
 
 TEST(SamplesCollectorTest, MustNotFailWhenSendingProfileThrows)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1s));
 
-    auto [exporter, mockExporter] = CreateExporter();
+    testing::NiceMock<MockExporter> mockExporter;
     EXPECT_CALL(mockExporter, Add(_)).Times(AtLeast(1));
     EXPECT_CALL(mockExporter, Export(_)).Times(AtLeast(1)).WillRepeatedly(Throw(std::exception()));
 
@@ -296,10 +295,10 @@ TEST(SamplesCollectorTest, MustNotFailWhenSendingProfileThrows)
 
 TEST(SamplesCollectorTest, MustExportAfterStop)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(2s));
 
-    auto [exporter, mockExporter] = CreateExporter();
+    testing::NiceMock<MockExporter> mockExporter;
 
     // the provider and exporter are supposed to be called once AFTER Stop()
     EXPECT_CALL(mockExporter, Add(_)).Times(2);
@@ -330,10 +329,10 @@ TEST(SamplesCollectorTest, MustNotFailWhenAddingSampleThrows)
     const std::string runtimeId = "MyRid";
     FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
 
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1s));
 
-    auto [exporter, mockExporter] = CreateExporter();
+    testing::NiceMock<MockExporter> mockExporter;
     EXPECT_CALL(mockExporter, Add(_)).Times(AtLeast(3)).WillOnce(Return()).WillRepeatedly(Throw(std::exception()));
     EXPECT_CALL(mockExporter, Export(_)).Times(1); // Called once when stopping
 
@@ -353,12 +352,12 @@ TEST(SamplesCollectorTest, MustNotFailWhenAddingSampleThrows)
 
 TEST(SamplesCollectorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(10s));
 
     std::string runtimeId = "MyRid";
 
-    auto [samplesProvider, mockSamplesProvider] = CreateSamplesProvider();
+    testing::NiceMock<MockSampleProvider> mockSamplesProvider;
 
     EXPECT_CALL(mockSamplesProvider, GetSamples())
         .Times(AtLeast(1))
@@ -374,7 +373,7 @@ TEST(SamplesCollectorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
             return "MockedProvider";
         }));
 
-    auto [exporter, mockExporter] = CreateExporter();
+    testing::NiceMock<MockExporter> mockExporter;
     EXPECT_CALL(mockExporter, Add(_)).Times(0);
 
     auto metricsSender = MockMetricsSender();
@@ -382,7 +381,7 @@ TEST(SamplesCollectorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
 
     auto collector = SamplesCollector(&mockConfiguration, &threadsCpuManagerHelper, &mockExporter, &metricsSender);
 
-    collector.Register(samplesProvider.get());
+    collector.Register(&mockSamplesProvider);
 
     collector.Start();
     std::this_thread::sleep_for(100ms);

@@ -93,7 +93,7 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     auto threadscpuManager = ThreadsCpuManagerHelper();
     auto valueTypeProvider = SampleValueTypeProvider();
     MockRuntimeIdStore runtimeIdStore;
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> configuration;
 
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
@@ -120,7 +120,7 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     // Note: thread labels cannot be checked because ThreadInfo is nullptr
     auto frameStore = FrameStoreHelper(true, "Frame", 1);
     auto appDomainStore = AppDomainStoreHelper(2);
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> configuration;
     auto threadscpuManager = ThreadsCpuManagerHelper();
     auto valueTypeProvider = SampleValueTypeProvider();
     MockRuntimeIdStore runtimeIdStore;
@@ -214,7 +214,7 @@ TEST(WallTimeProviderTest, CheckFrames)
     // add samples and check their frames
     auto frameStore = FrameStoreHelper(true, "Frame", 4);
     auto appDomainStore = AppDomainStoreHelper(1);
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> configuration;
     auto threadscpuManager = ThreadsCpuManagerHelper();
     auto valueTypeProvider = SampleValueTypeProvider();
     MockRuntimeIdStore runtimeIdStore;
@@ -276,7 +276,7 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
     // add samples and check their frames
     auto frameStore = FrameStoreHelper(true, "Frame", 1);
     auto appDomainStore = AppDomainStoreHelper(1);
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> configuration;
     auto threadscpuManager = ThreadsCpuManagerHelper();
     auto valueTypeProvider = SampleValueTypeProvider();
     MockRuntimeIdStore runtimeIdStore;
@@ -327,7 +327,7 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
     auto threadscpuManager = ThreadsCpuManagerHelper();
     auto valueTypeProvider = SampleValueTypeProvider();
     RuntimeIdStoreHelper runtimeIdStore;
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> configuration;
 
     RawSampleTransformer rawSampleTransformer{&frameStore, &appDomainStore, &runtimeIdStore};
     CpuTimeProvider provider(valueTypeProvider, &rawSampleTransformer, shared::pmr::get_default_resource());

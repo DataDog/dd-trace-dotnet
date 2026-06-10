@@ -25,7 +25,7 @@ using namespace std::chrono_literals;
 //
 TEST(SsiManagerTest, Should_NotSendProfile_When_ShortLived)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(200'000ms)); // simulate shortlive
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::ManuallyDisabled));
@@ -33,7 +33,7 @@ TEST(SsiManagerTest, Should_NotSendProfile_When_ShortLived)
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
     manager.ProcessStart();
     manager.OnSpanCreated();
     manager.ProcessEnd();
@@ -43,7 +43,7 @@ TEST(SsiManagerTest, Should_NotSendProfile_When_ShortLived)
 
 TEST(SsiManagerTest, Should_NotSendProfile_When_NoSpan_And_Auto_Enabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(1ms)); // simulate long lived
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).WillRepeatedly(Return(10s));
@@ -51,7 +51,7 @@ TEST(SsiManagerTest, Should_NotSendProfile_When_NoSpan_And_Auto_Enabled)
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
     // but no span created
     manager.ProcessStart();
     manager.ProcessEnd();
@@ -63,13 +63,13 @@ TEST(SsiManagerTest, Should_NotSendProfile_When_NoSpan_And_Auto_Enabled)
 
 TEST(SsiManagerTest, Should_StartAsSSI_When_DeployedAsSSI)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(1ms)); // simulate long lived
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
     manager.ProcessStart();
 
     // wait for the timer to finish
@@ -80,7 +80,7 @@ TEST(SsiManagerTest, Should_StartAsSSI_When_DeployedAsSSI)
 
 TEST(SsiManagerTest, Should_StartAsSSI_When_DeployedAsSSI_WithStableConfiguration)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(1ms)); // simulate long lived
 
@@ -88,7 +88,7 @@ TEST(SsiManagerTest, Should_StartAsSSI_When_DeployedAsSSI_WithStableConfiguratio
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
     manager.ProcessStart();
 
     // wait for the timer to finish
@@ -100,14 +100,14 @@ TEST(SsiManagerTest, Should_StartAsSSI_When_DeployedAsSSI_WithStableConfiguratio
 
 TEST(SsiManagerTest, Should_StartAsManual_When_NotDeployedAsSSI)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::Manual));
     EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(1ms)); // simulate long lived
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::ManuallyEnabled));
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
     manager.ProcessStart();
 
     ASSERT_EQ(manager.IsProfilerEnabled(), true);
@@ -116,13 +116,13 @@ TEST(SsiManagerTest, Should_StartAsManual_When_NotDeployedAsSSI)
 
 TEST(SsiManagerTest, Should_NotStart_When_NotDeployAsSSI_WithStableConfiguration)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::Manual));
     // with Stable Configuration (which is default)
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::Standby));
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
     manager.ProcessStart();
 
     ASSERT_EQ(manager.IsProfilerEnabled(), false);
@@ -131,52 +131,52 @@ TEST(SsiManagerTest, Should_NotStart_When_NotDeployAsSSI_WithStableConfiguration
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_NotDeployedAsSSI)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::Manual));
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::ManuallyDisabled));
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerStarted(), false);
 }
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSI)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::NotSet));
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerStarted(), false);
 }
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSI_WithStableConfiguration)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::Standby));
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerStarted(), false);
 }
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndDisabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::ManuallyDisabled));
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerStarted(), false);
 }
@@ -267,14 +267,14 @@ TEST(SsiManagerTest, Should_ProfilerBeNotActivated_When_NotDeployedAsSSIAndEnabl
 
 TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndSpanAndLongLived_AndAutoEnabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::Auto));
     EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(1ms));  // simulate long lived
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
     manager.OnSpanCreated();
     manager.ProcessStart();
 
@@ -287,7 +287,7 @@ TEST(SsiManagerTest, Should_ProfilerBeActivated_When_DeployedAsSSIAndSpanAndLong
 
 TEST(SsiManagerTest, Should_ProfilerBeNotActivated_When_DeployedAsSSIAndSpanAndLongLived_AndAutoEnabled_WithStableConfiguration)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     // with Stable Configuration should be in Standby mode
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::Standby));
@@ -295,7 +295,7 @@ TEST(SsiManagerTest, Should_ProfilerBeNotActivated_When_DeployedAsSSIAndSpanAndL
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
     manager.OnSpanCreated();
     manager.ProcessStart();
 
@@ -308,14 +308,14 @@ TEST(SsiManagerTest, Should_ProfilerBeNotActivated_When_DeployedAsSSIAndSpanAndL
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndSpanOnly)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::Auto));
     EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(200'000ms));
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
     manager.ProcessStart();
     manager.OnSpanCreated();
 
@@ -325,14 +325,14 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndSpanOnly
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndSpanOnly_WithStableConfiguration)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::Standby));
     EXPECT_CALL(mockConfiguration, GetSsiLongLivedThreshold()).WillRepeatedly(Return(200'000ms));
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
     manager.ProcessStart();
     manager.OnSpanCreated();
 
@@ -342,7 +342,7 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndSpanOnly
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndLongLivedOnly)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::Auto));
     // long lived
@@ -350,14 +350,14 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndLongLive
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerStarted(), false);
 }
 
 TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndLongLivedOnly_WithStableConfiguration)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
     EXPECT_CALL(mockConfiguration, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
     EXPECT_CALL(mockConfiguration, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::Standby));
     // long lived
@@ -365,7 +365,7 @@ TEST(SsiManagerTest, Should_ProfilerNotBeActivated_When_DeployedAsSSIAndLongLive
 
     SsiLifetimeForTest lifetime;
 
-    SsiManager manager(configuration.get(), &lifetime);
+    SsiManager manager(&mockConfiguration, &lifetime);
 
     ASSERT_EQ(manager.IsProfilerStarted(), false);
 }

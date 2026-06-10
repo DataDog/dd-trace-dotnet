@@ -277,23 +277,6 @@ public:
                               uint64_t allocationByteOffset), (override));
 };
 
-template <typename T, typename U, typename... Args>
-std::pair<std::unique_ptr<T>, U&> CreateMockForUniquePtr(Args... args)
-{
-    std::unique_ptr<T> interf = std::make_unique<U>(args...);
-    auto mock = static_cast<U*>(interf.get());
-    return {std::move(interf), *mock};
-}
-
-std::tuple<std::unique_ptr<IConfiguration>, MockConfiguration&> CreateConfiguration();
-
-std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamplesProvider();
-
-std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
-std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector();
-std::tuple<std::unique_ptr<ISsiManager>, MockSsiManager&> CreateSsiManager();
-std::tuple<std::unique_ptr<IMetadataProvider>, MockMetadataProvider&> CreateMetadataProvider();
-
 std::shared_ptr<Sample> CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, std::string>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value);
 
 std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth);

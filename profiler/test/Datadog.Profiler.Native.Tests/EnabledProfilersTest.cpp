@@ -15,7 +15,7 @@ using ::testing::Return;
 
 TEST(EnabledProfilersTest, CheckWhenNothingIsEnabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).WillRepeatedly(Return(false));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).WillRepeatedly(Return(false));
@@ -29,7 +29,7 @@ TEST(EnabledProfilersTest, CheckWhenNothingIsEnabled)
     EXPECT_CALL(mockConfiguration, IsThreadLifetimeEnabled()).WillRepeatedly(Return(false));
     EXPECT_CALL(mockConfiguration, IsHeapSnapshotEnabled()).WillRepeatedly(Return(false));
 
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+    EnabledProfilers enabledProfilers(&mockConfiguration, false, false);
 
     ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::WallTime));
     ASSERT_FALSE(enabledProfilers.IsEnabled(RuntimeProfiler::Cpu));
@@ -46,7 +46,7 @@ TEST(EnabledProfilersTest, CheckWhenNothingIsEnabled)
 
 TEST(EnabledProfilersTest, CheckWhenEverythingIsEnabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).WillRepeatedly(Return(true));
@@ -60,7 +60,7 @@ TEST(EnabledProfilersTest, CheckWhenEverythingIsEnabled)
     EXPECT_CALL(mockConfiguration, IsThreadLifetimeEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsHeapSnapshotEnabled()).WillRepeatedly(Return(true));
 
-    EnabledProfilers enabledProfilers(configuration.get(), true, true);
+    EnabledProfilers enabledProfilers(&mockConfiguration, true, true);
 
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::WallTime));
     ASSERT_TRUE(enabledProfilers.IsEnabled(RuntimeProfiler::Cpu));
@@ -77,7 +77,7 @@ TEST(EnabledProfilersTest, CheckWhenEverythingIsEnabled)
 
 TEST(EnabledProfilersTest, CheckWhenSomeAreDisabled)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).WillRepeatedly(Return(true));
@@ -88,7 +88,7 @@ TEST(EnabledProfilersTest, CheckWhenSomeAreDisabled)
     EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsHttpProfilingEnabled()).WillRepeatedly(Return(true));
 
-    EnabledProfilers enabledProfilers(configuration.get(), true, true);
+    EnabledProfilers enabledProfilers(&mockConfiguration, true, true);
     enabledProfilers.Disable(RuntimeProfiler::Cpu);
     enabledProfilers.Disable(RuntimeProfiler::Exceptions);
 
@@ -107,7 +107,7 @@ TEST(EnabledProfilersTest, CheckWhenSomeAreDisabled)
 
 TEST(EnabledProfilersTest, CheckWhenDoubleDisable)
 {
-    auto [configuration, mockConfiguration] = CreateConfiguration();
+    testing::NiceMock<MockConfiguration> mockConfiguration;
 
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsCpuProfilingEnabled()).WillRepeatedly(Return(true));
@@ -118,7 +118,7 @@ TEST(EnabledProfilersTest, CheckWhenDoubleDisable)
     EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).WillRepeatedly(Return(true));
     EXPECT_CALL(mockConfiguration, IsHttpProfilingEnabled()).WillRepeatedly(Return(true));
 
-    EnabledProfilers enabledProfilers(configuration.get(), true, true);
+    EnabledProfilers enabledProfilers(&mockConfiguration, true, true);
     enabledProfilers.Disable(RuntimeProfiler::Cpu);
     enabledProfilers.Disable(RuntimeProfiler::Cpu);
 
