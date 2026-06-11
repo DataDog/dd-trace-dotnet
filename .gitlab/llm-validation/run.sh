@@ -99,7 +99,8 @@ EXTRA=()
 [ -n "${LLMVAL_LEVEL:-}" ] && EXTRA+=(--level "$LLMVAL_LEVEL")
 [ -n "${LLMVAL_CASES:-}" ] && EXTRA+=(--case "$LLMVAL_CASES")          # override: target specific case id(s)
 [ -n "${LLMVAL_MAX_CASES:-}" ] && EXTRA+=(--max-cases "$LLMVAL_MAX_CASES")
-[ -n "${LLMVAL_RUNS:-}" ] && EXTRA+=(--runs "$LLMVAL_RUNS")            # override: repeats per case
+[ -n "${LLMVAL_RUNS:-}" ] && EXTRA+=(--runs "$LLMVAL_RUNS")                  # override: repeats per case
+[ -n "${LLMVAL_CONCURRENCY:-}" ] && EXTRA+=(--concurrency "$LLMVAL_CONCURRENCY")  # override: max parallel calls (default 4)
 set +e
 dotnet "$CLI_DLL" run \
   --repo "$CI_PROJECT_DIR" \
