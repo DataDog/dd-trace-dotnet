@@ -231,36 +231,42 @@ namespace Samples.Console_
         {
             var setup = AppDomain.CurrentDomain.SetupInformation;
 
+            AppDomain CreateConfiguredDomain(string name, string serviceName)
+            {
+                var domain = AppDomain.CreateDomain(name, null, setup);
+                domain.SetData("DD_SERVICE", serviceName);
+                domain.SetData("DD_RUNTIME_ID", Guid.NewGuid().ToString());
+                domain.DoCallBack(AppDomainCrasher.ConfigureTracer);
+                return domain;
+            }
+
             switch (scenario)
             {
                 case "crash-appdomain-single":
                 {
-                    Environment.SetEnvironmentVariable("DD_SERVICE", "web-app-a");
-                    var domain = AppDomain.CreateDomain("AppA", null, setup);
+                    var domain = CreateConfiguredDomain("AppA", "web-app-a");
                     domain.DoCallBack(AppDomainCrasher.CrashManaged);
-                    break;
-                }
-
-                case "crash-appdomain-single-native":
-                {
-                    Environment.SetEnvironmentVariable("DD_SERVICE", "web-app-a");
-                    var domain = AppDomain.CreateDomain("AppA", null, setup);
-                    domain.DoCallBack(AppDomainCrasher.CrashNative);
                     break;
                 }
 
                 case "crash-appdomain-multi":
                 {
-                    Environment.SetEnvironmentVariable("DD_SERVICE", "web-app-a");
-                    AppDomain.CreateDomain("AppA", null, setup);
-
-                    Environment.SetEnvironmentVariable("DD_SERVICE", "web-app-b");
-                    var domainB = AppDomain.CreateDomain("AppB", null, setup);
-
-                    Environment.SetEnvironmentVariable("DD_SERVICE", "web-app-c");
-                    AppDomain.CreateDomain("AppC", null, setup);
-
+                    CreateConfiguredDomain("AppA", "web-app-a");
+                    var domainB = CreateConfiguredDomain("AppB", "web-app-b");
+                    CreateConfiguredDomain("AppC", "web-app-c");
                     domainB.DoCallBack(AppDomainCrasher.CrashManaged);
+                    break;
+                }
+
+                case "crash-appdomain-multi-native":
+                {
+                    CreateConfiguredDomain("AppA", "web-app-a");
+                    var domainB = CreateConfiguredDomain("AppB", "web-app-b");
+                    CreateConfiguredDomain("AppC", "web-app-c");
+
+                    // CrashProcess spawns a native thread (no AppDomain) — crash reporter
+                    // can't attribute it to any domain and must enumerate all.
+                    NativeCrash();
                     break;
                 }
             }
@@ -282,16 +288,30 @@ namespace Samples.Console_
 #if NETFRAMEWORK
         private static class AppDomainCrasher
         {
+            public static void ConfigureTracer()
+            {
+                // Simulate IIS behavior: in w3wp.exe the native loader generates a unique
+                // runtime ID per AppDomain. In non-IIS processes it returns the same ID for all.
+                // Pre-set RuntimeId._runtimeId via reflection before Tracer.Configure runs,
+                // so LazyInitializer.EnsureInitialized sees it as non-null and skips the native call.
+                var runtimeId = (string)AppDomain.CurrentDomain.GetData("DD_RUNTIME_ID");
+                if (runtimeId is not null)
+                {
+                    var runtimeIdType = Type.GetType("Datadog.Trace.Util.RuntimeId, Datadog.Trace", throwOnError: true);
+                    var field = runtimeIdType.GetField("_runtimeId", BindingFlags.NonPublic | BindingFlags.Static);
+                    field.SetValue(null, runtimeId);
+                }
+
+                var serviceName = (string)AppDomain.CurrentDomain.GetData("DD_SERVICE");
+                var settings = new Datadog.Trace.Configuration.TracerSettings { ServiceName = serviceName };
+                Datadog.Trace.Tracer.Configure(settings);
+            }
+
             public static void CrashManaged()
             {
                 var thread = new Thread(() => throw new BadImageFormatException("Expected"));
                 thread.Start();
                 Thread.Sleep(Timeout.Infinite);
-            }
-
-            public static void CrashNative()
-            {
-                NativeCrash();
             }
         }
 #endif
