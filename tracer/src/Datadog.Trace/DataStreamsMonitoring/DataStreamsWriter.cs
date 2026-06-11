@@ -103,7 +103,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
                 return;
             }
 
-            _processTask = Task.Factory.StartNew(ProcessQueueLoop, TaskCreationOptions.LongRunning);
+            _processTask = Task.Factory.StartNew(ProcessQueueLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
 
             _flushTask = Task.Run(FlushTaskLoopAsync);

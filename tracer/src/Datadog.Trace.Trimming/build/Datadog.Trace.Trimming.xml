@@ -941,6 +941,7 @@
       <type fullname="System.RuntimeMethodHandle" />
       <type fullname="System.RuntimeTypeHandle" />
       <type fullname="System.SByte" />
+      <type fullname="System.Security.Principal.TokenImpersonationLevel" />
       <type fullname="System.Security.SecurityCriticalAttribute" />
       <type fullname="System.Security.SecurityException" />
       <type fullname="System.Security.SecurityRuleSet" />
@@ -1137,6 +1138,9 @@
       <type fullname="System.Security.Cryptography.CryptoStreamMode" />
       <type fullname="System.Security.Cryptography.HashAlgorithm" />
       <type fullname="System.Security.Cryptography.ICryptoTransform" />
+   </assembly>
+   <assembly fullname="System.Security.Principal">
+      <type fullname="System.Security.Principal.TokenImpersonationLevel" />
    </assembly>
    <assembly fullname="System.Text.Encoding.Extensions">
       <type fullname="System.Text.UnicodeEncoding" />

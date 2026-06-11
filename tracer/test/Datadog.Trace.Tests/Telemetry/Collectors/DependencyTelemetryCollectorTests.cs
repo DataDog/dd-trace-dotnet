@@ -257,6 +257,24 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.HasChanges().Should().BeTrue($"{name} should not be filtered as it doesn't match dynamicclasses pattern");
         }
 
+        [Theory]
+        [InlineData("InMemoryAssembly")]
+        [InlineData("inmemoryassembly")]
+        [InlineData("INMEMORYASSEMBLY")]
+        public void DoesNotHaveChangesWhenAssemblyVersionIsZeroAndNameIsInMemoryAssembly(string name)
+        {
+            var ignoredName = CreateAssemblyName(new Version(0, 0, 0, 0), name: name);
+
+            var collector = new DependencyTelemetryCollector();
+            collector.AssemblyLoaded(ignoredName, "some-guid");
+
+            collector.HasChanges().Should().BeFalse($"{name} has a zero version and matches InMemoryAssembly");
+
+            var nonIgnoredName = CreateAssemblyName(new Version(1, 0, 0, 0), name: name);
+            collector.AssemblyLoaded(nonIgnoredName, "some-guid");
+            collector.HasChanges().Should().BeTrue($"{nonIgnoredName} has a non-zero version");
+        }
+
         [Fact]
         public void HasChangesWhenAddingSameAssemblyWithDifferentVersion()
         {
