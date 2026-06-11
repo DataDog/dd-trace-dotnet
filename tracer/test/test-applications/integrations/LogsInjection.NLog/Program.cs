@@ -70,12 +70,6 @@ namespace LogsInjection.NLog
             // Disabling the startup log at the process level should prevent this.
             Environment.SetEnvironmentVariable("DD_TRACE_STARTUP_LOGS", "0");
 
-            // var env = SampleHelpers.GetDatadogEnvironmentVariables();
-            // foreach(var kvp in env)
-            // {
-            //     Console.WriteLine($"{kvp.Key}: {kvp.Value}");
-            // }
-
             bool isAttached = SampleHelpers.IsProfilerAttached();
             Console.WriteLine(" * Checking if the profiler is attached: {0}", isAttached);
 
