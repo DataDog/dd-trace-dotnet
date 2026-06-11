@@ -88,12 +88,12 @@ Other modules under `tracer/src`:
 
 ## Logging Guidelines
 
-`Profiler` is ambiguous (the .NET profiling APIs vs. the Continuous Profiler product). Use clear, customer-facing terms in high-level logs:
+Keep logs short and consistent — prefer the single word **Profiler** for everything Datadog-related so messages stay terse:
 
-- **Datadog SDK** — the whole product (e.g. `"The Datadog SDK has been disabled"`).
-- **Instrumentation** / **Instrumentation component** — native tracer auto-instrumentation.
-- **Continuous Profiler** — always the full name for the profiling product.
-- **Datadog.Trace.dll** — the managed tracer assembly (avoid "managed profiler").
+- **Profiler** — the whole product. When it's turned off at startup, log `"The Profiler has been disabled"`.
+- **managed profiler** — the managed tracer assembly (`Datadog.Trace.dll`); call it the "managed profiler" in user-facing logs.
+- **profiler** — fine as shorthand for the Continuous Profiler product too; no need to spell out the full name.
+- Avoid "Datadog SDK" and "Instrumentation component" — they're too vague/wordy for customers.
 
 Internal/technical naming still valid: Native loader/tracer, Managed tracer loader, Managed tracer, Libdatadog, `CorProfiler`/`ICorProfiler`/`COR Profiler`.
 
