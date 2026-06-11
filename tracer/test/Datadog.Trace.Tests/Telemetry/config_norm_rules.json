@@ -512,6 +512,7 @@
   "DD_DEBUGGER_UPLOAD_BATCH_SIZE": "dynamic_instrumentation_upload_batch_size",
   "DD_DEBUGGER_DIAGNOSTICS_INTERVAL": "dynamic_instrumentation_diagnostics_interval",
   "DD_DEBUGGER_UPLOAD_FLUSH_INTERVAL": "dynamic_instrumentation_upload_interval",
+  "DD_DYNAMIC_INSTRUMENTATION_AGENTLESS_ENABLED": "dynamic_instrumentation_agentless_enabled",
   "DD_DYNAMIC_INSTRUMENTATION_MAX_DEPTH_TO_SERIALIZE": "dynamic_instrumentation_serialization_max_depth",
   "DD_DYNAMIC_INSTRUMENTATION_MAX_TIME_TO_SERIALIZE": "dynamic_instrumentation_serialization_max_duration",
   "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_BATCH_SIZE": "dynamic_instrumentation_upload_batch_size",

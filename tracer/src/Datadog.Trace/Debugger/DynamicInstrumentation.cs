@@ -139,7 +139,9 @@ namespace Datadog.Trace.Debugger
             {
                 // Start loading probes from file and checking RCM availability in parallel
                 var fileProbesTask = ProbeConfigurationFileLoader.LoadAsync(_settings.ProbeFile);
-                var rcmAvailabilityTask = WaitForRcmAvailabilityAsync();
+                var rcmAvailabilityTask = _settings.IsDynamicInstrumentationAgentlessLocalMode
+                                              ? Task.FromResult(false)
+                                              : WaitForRcmAvailabilityAsync();
 
                 var hasFileProbes = false;
 
@@ -147,6 +149,11 @@ namespace Datadog.Trace.Debugger
                 var probeConfiguration = await fileProbesTask.ConfigureAwait(false);
                 if (probeConfiguration != null)
                 {
+                    if (_settings.IsDynamicInstrumentationAgentlessLocalMode)
+                    {
+                        probeConfiguration = FilterAgentlessLocalProbeConfiguration(probeConfiguration);
+                    }
+
                     hasFileProbes = _configurationUpdater.HasAnyEffectiveProbeForFile(probeConfiguration);
                     if (hasFileProbes)
                     {
@@ -186,6 +193,41 @@ namespace Datadog.Trace.Debugger
             {
                 Interlocked.CompareExchange(ref _initializationState, 0, 1);
             }
+        }
+
+        private ProbeConfiguration FilterAgentlessLocalProbeConfiguration(ProbeConfiguration probeConfiguration)
+        {
+            var logProbes = probeConfiguration.LogProbes.Where(IsSupportedAgentlessLocalProbe).ToArray();
+            var filteredCount =
+                (probeConfiguration.LogProbes.Length - logProbes.Length) +
+                probeConfiguration.MetricProbes.Length +
+                probeConfiguration.SpanProbes.Length +
+                probeConfiguration.SpanDecorationProbes.Length;
+
+            if (filteredCount != 0)
+            {
+                Log.Information<int>("Dynamic Instrumentation agentless local mode ignored {Count} unsupported probe definition(s). Only method log probes are supported.", filteredCount);
+            }
+
+            return new ProbeConfiguration
+            {
+                ServiceConfiguration = probeConfiguration.ServiceConfiguration,
+                LogProbes = logProbes,
+                MetricProbes = [],
+                SpanProbes = [],
+                SpanDecorationProbes = []
+            };
+        }
+
+        private bool IsSupportedAgentlessLocalProbe(LogProbe probe)
+        {
+            if (probe.Where?.MethodName is { Length: > 0 })
+            {
+                return true;
+            }
+
+            Log.Information("Dynamic Instrumentation agentless local mode ignored line probe {ProbeId}. Line probes require PDB/source resolution and are not supported in this mode yet.", probe.Id);
+            return false;
         }
 
         /// <summary>
