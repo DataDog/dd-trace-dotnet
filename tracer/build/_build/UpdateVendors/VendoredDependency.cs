@@ -63,7 +63,7 @@ namespace UpdateVendors
                 version: "6.0.0",
                 downloadUrl: "https://github.com/DataDog/dogstatsd-csharp-client/archive/6.0.0.zip",
                 pathToSrc: new[] { "dogstatsd-csharp-client-6.0.0", "src", "StatsdClient" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient", AddAnonymousImpersonationToStatsdNamedPipe));
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "StatsdClient", ApplyStatsdClientTweaks));
 
             Add(
                 libraryName: "MessagePack",
@@ -529,18 +529,25 @@ namespace UpdateVendors
             return content;
         }
 
-        private static string AddAnonymousImpersonationToStatsdNamedPipe(string filePath, string content)
+        private static string ApplyStatsdClientTweaks(string filePath, string content)
         {
-            if (!filePath.Replace('\\', '/').EndsWith("Transport/NamedPipeTransport.cs", StringComparison.OrdinalIgnoreCase))
+            var normalizedPath = filePath.Replace('\\', '/');
+
+            if (normalizedPath.EndsWith("Transport/NamedPipeTransport.cs", StringComparison.OrdinalIgnoreCase))
             {
-                return content;
+                // The agent does not authenticate clients on the named pipe, so request Anonymous
+                // impersonation so the listener cannot identify or impersonate the calling process.
+                content = content.Replace(
+                    "_namedPipe = new NamedPipeClientStream(\".\", pipeName, PipeDirection.Out, PipeOptions.Asynchronous);",
+                    "_namedPipe = new NamedPipeClientStream(\".\", pipeName, PipeDirection.Out, PipeOptions.Asynchronous, System.Security.Principal.TokenImpersonationLevel.Anonymous);");
             }
 
-            // The agent does not authenticate clients on the named pipe, so request Anonymous
-            // impersonation so the listener cannot identify or impersonate the calling process.
-            content = content.Replace(
-                "_namedPipe = new NamedPipeClientStream(\".\", pipeName, PipeDirection.Out, PipeOptions.Asynchronous);",
-                "_namedPipe = new NamedPipeClientStream(\".\", pipeName, PipeDirection.Out, PipeOptions.Asynchronous, System.Security.Principal.TokenImpersonationLevel.Anonymous);");
+            if (normalizedPath.EndsWith("Worker/AsynchronousWorker.cs", StringComparison.OrdinalIgnoreCase))
+            {
+                content = content.Replace(
+                    "Task.Factory.StartNew(() => Dequeue(), TaskCreationOptions.LongRunning)",
+                    "Task.Factory.StartNew(() => Dequeue(), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)");
+            }
 
             return content;
         }
