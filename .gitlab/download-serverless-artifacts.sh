@@ -43,21 +43,8 @@ buildId=$(curl -sS "$allBuildsUrl" | jq -r --arg version "$CI_COMMIT_SHA" '
   | ( map(select(.reason != "schedule")) + map(select(.reason == "schedule")) )
   | .[0].id // empty')
 
-# Fallback: original branch-keyed lookup (PR builds first, then standalone branch builds).
 if [ -z "${buildId}" ]; then
-  echo "No build matched commit '$CI_COMMIT_SHA' directly; falling back to branch '$branchName' lookup..."
-  allBuildsForPrUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=100&queryOrder=queueTimeDescending&reasonFilter=pullRequest"
-  buildId=$(curl -sS $allBuildsForPrUrl | jq --arg version $CI_COMMIT_SHA --arg branch $CI_COMMIT_BRANCH '.value[] | select(.triggerInfo["pr.sourceBranch"] == $branch and .triggerInfo["pr.sourceSha"] == $version)  | .id' | head -n 1)
-fi
-
-if [ -z "${buildId}" ]; then
-  echo "No PR builds found for commit '$CI_COMMIT_SHA' on branch '$branchName'. Checking for standalone builds..."
-  allBuildsForBranchUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=10&queryOrder=queueTimeDescending&branchName=$branchName&reasonFilter=manual,individualCI"
-  buildId=$(curl -sS $allBuildsForBranchUrl | jq --arg version $CI_COMMIT_SHA '.value[] | select(.sourceVersion == $version and .reason != "schedule")  | .id' | head -n 1)
-fi
-
-if [ -z "${buildId}" ]; then
-  echo "No build found for commit '$CI_COMMIT_SHA' on branch '$branchName' (including PRs)"
+  echo "No build found carrying commit '$CI_COMMIT_SHA' (branch '$branchName') in the recent build history"
   exit 1
 fi
 
