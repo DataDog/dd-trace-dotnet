@@ -42,7 +42,7 @@ internal static class ProbeExpressionParserHelper
             }
             else
             {
-                method = parametersTypes == null ?
+                method = methodIdentifier.Parameters == null ?
                              methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags) :
                              methodIdentifier.Type.GetMethod(methodIdentifier.MethodName, bindingFlags, null, methodIdentifier.Parameters, null);
             }
@@ -58,12 +58,15 @@ internal static class ProbeExpressionParserHelper
 
     internal readonly struct ReflectionMethodIdentifier : IEquatable<ReflectionMethodIdentifier>
     {
+        private readonly int _hashCode;
+
         internal ReflectionMethodIdentifier(Type type, string methodName, Type[] parameters, Type[] genericArguments)
         {
             Type = type;
             MethodName = methodName;
-            Parameters = parameters;
-            GenericArguments = genericArguments;
+            Parameters = parameters?.ToArray();
+            GenericArguments = genericArguments?.ToArray();
+            _hashCode = CalculateHashCode(Type, MethodName, Parameters, GenericArguments);
         }
 
         internal Type Type { get; }
@@ -89,12 +92,17 @@ internal static class ProbeExpressionParserHelper
 
         public override int GetHashCode()
         {
+            return _hashCode;
+        }
+
+        private static int CalculateHashCode(Type type, string methodName, Type[] parameters, Type[] genericArguments)
+        {
             unchecked
             {
-                var hashCode = Type?.GetHashCode() ?? 0;
-                hashCode = (hashCode * 397) ^ (MethodName?.GetHashCode() ?? 0);
-                hashCode = (hashCode * 397) ^ GetTypesHashCode(Parameters);
-                hashCode = (hashCode * 397) ^ GetTypesHashCode(GenericArguments);
+                var hashCode = type?.GetHashCode() ?? 0;
+                hashCode = (hashCode * 397) ^ (methodName?.GetHashCode() ?? 0);
+                hashCode = (hashCode * 397) ^ GetTypesHashCode(parameters);
+                hashCode = (hashCode * 397) ^ GetTypesHashCode(genericArguments);
                 return hashCode;
             }
         }

@@ -162,6 +162,19 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void Limits_BoundedCaptureCollectionResultCanceledBeforeVisitingAllItems_SetsTimeoutReason()
+        {
+            using var cts = new CancellationTokenSource();
+            var result = new BoundedCaptureCollectionResult<object>([1, 2], wasTruncated: true, isDictionary: false);
+
+            var collectionJson = SerializeCollection(new CancelingCollection([1, 2], cancelAfterVisitedItems: 1, cts), maxCollectionSize: 10, collectionCount: result.Count, wasTruncated: result.WasTruncated, cts: cts);
+
+            Assert.Equal(2, collectionJson["size"]?.Value<int>());
+            Assert.Equal(1, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Equal("timeout", collectionJson["notCapturedReason"]?.Value<string>());
+        }
+
+        [Fact]
         public void Limits_BoundedCaptureCollectionResultWithoutTruncation_DoesNotSetCollectionSizeReason()
         {
             var result = new BoundedCaptureCollectionResult<object>([1], wasTruncated: false, isDictionary: false);
