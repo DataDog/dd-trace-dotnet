@@ -756,6 +756,21 @@ internal static partial class ConfigurationKeys
     public const string StartupDiagnosticLogEnabled = "DD_TRACE_STARTUP_LOGS";
 
     /// <summary>
+    /// Configuration key for a comma-separated list of span-tag keys to extract and
+    /// include as additional aggregation dimensions for client-side stats.
+    /// Requires <see cref="ConfigurationKeys.ExperimentalFeaturesEnabled"/> to include
+    /// "DD_TRACE_STATS_ADDITIONAL_TAGS". A maximum of 4 keys are allowed; any excess keys are dropped.
+    /// </summary>
+    public const string StatsAdditionalTags = "DD_TRACE_STATS_ADDITIONAL_TAGS";
+
+    /// <summary>
+    /// Configuration key for the maximum number of distinct stat entries with additional
+    /// tags allowed per flush interval. New entries beyond the cap have their additional
+    /// tag values replaced with "blocked_by_tracer".
+    /// </summary>
+    public const string StatsAdditionalTagsCardinalityLimit = "DD_TRACE_STATS_ADDITIONAL_TAGS_CARDINALITY_LIMIT";
+
+    /// <summary>
     /// Configuration key for enabling computation of stats (aka trace metrics) on the tracer side
     /// </summary>
     public const string StatsComputationEnabled = "DD_TRACE_STATS_COMPUTATION_ENABLED";

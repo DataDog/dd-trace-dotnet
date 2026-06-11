@@ -26,6 +26,7 @@ namespace Datadog.Trace.Agent
         public readonly string GrpcStatusCode;
         public readonly string ServiceSource;
         public readonly ulong PeerTagsHash;
+        public readonly ulong AdditionalMetricTagsHash;
 
         // Constructs a StatsAgregationKey that represents the aggregation key used by Datadog,
         // which does not include IsError and IsTopLevel, since these should be part of the same timeseries
@@ -44,7 +45,8 @@ namespace Datadog.Trace.Agent
             string httpEndpoint,
             string grpcStatusCode,
             string serviceSource,
-            ulong peerTagsHash)
+            ulong peerTagsHash,
+            ulong additionalMetricTagsHash)
         {
             Resource = resource;
             Service = service;
@@ -61,7 +63,32 @@ namespace Datadog.Trace.Agent
             GrpcStatusCode = grpcStatusCode;
             ServiceSource = serviceSource;
             PeerTagsHash = peerTagsHash;
+            AdditionalMetricTagsHash = additionalMetricTagsHash;
         }
+
+        /// <summary>
+        /// Returns a copy of this key with a different <see cref="AdditionalMetricTagsHash"/>.
+        /// Used by the per-flush-bucket cardinality cap to redirect a span into the "blocked" bucket
+        /// (same dimensions, masked additional-tag values).
+        /// </summary>
+        public StatsAggregationKey WithAdditionalMetricTagsHash(ulong additionalMetricTagsHash)
+            => new(
+                Resource,
+                Service,
+                OperationName,
+                Type,
+                HttpStatusCode,
+                IsSyntheticsRequest,
+                SpanKind,
+                IsError,
+                IsTopLevel,
+                IsTraceRoot,
+                HttpMethod,
+                HttpEndpoint,
+                GrpcStatusCode,
+                ServiceSource,
+                PeerTagsHash,
+                additionalMetricTagsHash);
 
         public bool Equals(StatsAggregationKey other)
         {
@@ -80,7 +107,8 @@ namespace Datadog.Trace.Agent
                 && HttpEndpoint == other.HttpEndpoint
                 && GrpcStatusCode == other.GrpcStatusCode
                 && ServiceSource == other.ServiceSource
-                && PeerTagsHash == other.PeerTagsHash;
+                && PeerTagsHash == other.PeerTagsHash
+                && AdditionalMetricTagsHash == other.AdditionalMetricTagsHash;
         }
 
         public override bool Equals(object? obj)
@@ -106,6 +134,7 @@ namespace Datadog.Trace.Agent
             hashCode.Add(GrpcStatusCode);
             hashCode.Add(ServiceSource);
             hashCode.Add(PeerTagsHash);
+            hashCode.Add(AdditionalMetricTagsHash);
             return hashCode.ToHashCode();
         }
     }

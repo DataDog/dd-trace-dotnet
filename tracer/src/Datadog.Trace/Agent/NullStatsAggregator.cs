@@ -51,7 +51,8 @@ namespace Datadog.Trace.Agent
                 httpEndpoint: string.Empty,
                 grpcStatusCode: string.Empty,
                 serviceSource: string.Empty,
-                peerTagsHash: 0);
+                peerTagsHash: 0,
+                additionalMetricTagsHash: 0);
         }
     }
 }
