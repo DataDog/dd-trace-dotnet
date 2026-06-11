@@ -2732,22 +2732,10 @@
                         "arrayValue": {
                           "values": [
                             {
-                              "arrayValue": {
-                                "values": [
-                                  {
-                                    "stringValue": "arr1_val1"
-                                  }
-                                ]
-                              }
+                              "stringValue": "System.String[]"
                             },
                             {
-                              "arrayValue": {
-                                "values": [
-                                  {
-                                    "stringValue": "arr2_val1"
-                                  }
-                                ]
-                              }
+                              "stringValue": "System.String[]"
                             }
                           ]
                         }
@@ -2831,22 +2819,10 @@
                         "arrayValue": {
                           "values": [
                             {
-                              "arrayValue": {
-                                "values": [
-                                  {
-                                    "stringValue": "arr1_val1"
-                                  }
-                                ]
-                              }
+                              "stringValue": "System.String[]"
                             },
                             {
-                              "arrayValue": {
-                                "values": [
-                                  {
-                                    "stringValue": "arr2_val1"
-                                  }
-                                ]
-                              }
+                              "stringValue": "System.String[]"
                             }
                           ]
                         }

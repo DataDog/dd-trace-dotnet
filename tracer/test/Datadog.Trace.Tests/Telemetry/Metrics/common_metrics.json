@@ -1,4 +1,59 @@
 ﻿{
+  "live_debugger": {
+    "memory_pressure.transitions": {
+      "tags": [
+        "state",
+        "trigger"
+      ],
+      "metric_type": "count",
+      "data_type": "transitions",
+      "description": "The number of Dynamic Instrumentation memory-pressure state transitions, tagged by state (`state:enter` or `state:exit`) and the signal that triggered entry (`trigger:none`, `trigger:memory`, `trigger:gc`, or `trigger:both`)",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "memory_pressure.disabled": {
+      "tags": [
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "occurrences",
+      "description": "The number of times the Dynamic Instrumentation memory-pressure monitor disabled itself, tagged by reason (`reason:no_signals` or `reason:error`)",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "memory_pressure.memory_usage_pct": {
+      "tags": [
+        "state",
+        "bucket"
+      ],
+      "metric_type": "count",
+      "data_type": "occurrences",
+      "description": "Count of Dynamic Instrumentation memory-pressure transitions, tagged by state (`state:enter` or `state:exit`) and memory load percent bucket at the transition (`bucket:lt_70`, `bucket:70_80`, `bucket:80_85`, `bucket:85_90`, or `bucket:gte_90`). Range buckets are lower-bound inclusive and upper-bound exclusive, so `bucket:80_85` means 80% <= usage < 85%",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "memory_pressure.gc_activity": {
+      "tags": [
+        "state",
+        "bucket"
+      ],
+      "metric_type": "count",
+      "data_type": "occurrences",
+      "description": "Count of Dynamic Instrumentation memory-pressure transitions, tagged by state (`state:enter` or `state:exit`) and GC activity bucket at the transition (`bucket:lt_1`, `bucket:1_2`, `bucket:2_5`, or `bucket:gte_5`). In .NET this is Gen2 collections per second. Range buckets are lower-bound inclusive and upper-bound exclusive, so `bucket:2_5` means 2 <= collections/sec < 5",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "memory_pressure.duration": {
+      "tags": [
+        "bucket"
+      ],
+      "metric_type": "count",
+      "data_type": "occurrences",
+      "description": "Count of Dynamic Instrumentation high-memory-pressure episodes, incremented once on exit and tagged by duration bucket (`bucket:lt_1s`, `bucket:1_5s`, `bucket:5_30s`, or `bucket:gte_30s`). Range buckets are lower-bound inclusive and upper-bound exclusive, so `bucket:1_5s` means 1s <= duration < 5s",
+      "send_to_user": false,
+      "user_tags": []
+    }
+  },
   "general": {
     "init_time": {
       "tags": [
@@ -940,14 +995,14 @@
       "user_tags": []
     },
     "suppressed.vulnerabilities": {
-        "tags": [
-            "vulnerability_type"
-        ],
-        "metric_type": "count",
-        "data_type": "event",
-        "description": "Number of vulnerabilities suppressed",
-        "send_to_user": false,
-        "user_tags":[]
+      "tags": [
+        "vulnerability_type"
+      ],
+      "metric_type": "count",
+      "data_type": "event",
+      "description": "Number of vulnerabilities suppressed",
+      "send_to_user": false,
+      "user_tags": []
     },
     "metastruct.tag.size.exceeded": {
       "tags": [],

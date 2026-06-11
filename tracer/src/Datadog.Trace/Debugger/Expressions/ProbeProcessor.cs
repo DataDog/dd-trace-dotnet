@@ -26,6 +26,9 @@ namespace Datadog.Trace.Debugger.Expressions
     internal sealed class ProbeProcessor : IProbeProcessor
     {
         private const string DynamicPrefix = "_dd.di.";
+        internal const int EvaluationErrorSnapshotRateLimitSeconds = 5 * 60;
+
+        private static readonly long EvaluationErrorSnapshotRateLimitTicks = Stopwatch.Frequency * EvaluationErrorSnapshotRateLimitSeconds;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
 
         private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
@@ -103,6 +106,16 @@ namespace Datadog.Trace.Debugger.Expressions
             return result.Count == 0 ? null : result.ToArray();
         }
 
+        private static bool ShouldRefreshMemoryPressureBeforeCapture(MethodState methodState)
+        {
+            return methodState is MethodState.BeginLine
+                or MethodState.BeginLineAsync
+                or MethodState.EntryStart
+                or MethodState.EntryAsync
+                or MethodState.ExitStart
+                or MethodState.ExitStartAsync;
+        }
+
         public bool TryBeginProcess(in ProbeData probeData, [NotNullWhen(true)] out IDebuggerSnapshotCreator? snapshotCreator)
         {
             var state = _state;
@@ -135,8 +148,13 @@ namespace Datadog.Trace.Debugger.Expressions
             }
 
             var probeInfo = state.ProbeInfo;
+            var dynamicInstrumentation = DebuggerManager.Instance.DynamicInstrumentation;
+            if (dynamicInstrumentation is not null && ShouldRefreshMemoryPressureBeforeCapture(info.MethodState))
+            {
+                dynamicInstrumentation.RefreshMemoryPressureIfStale();
+            }
 
-            if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false)
+            if (dynamicInstrumentation?.IsInitialized == false)
             {
                 Log.Debug("Stop processing probe {ID} because Dynamic Instrumentation has not initialized yet or has been disabled, probably dynamically through Remote Config", probeData.ProbeId);
                 snapshotCreator.Stop();
@@ -162,11 +180,14 @@ namespace Datadog.Trace.Debugger.Expressions
                         {
                             AddAsyncMethodArguments(snapshotCreator, ref info);
                             snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
-                            evaluationResult = Evaluate(state, probeInfo, snapshotCreator, out var shouldStopCapture, probeData.Sampler);
-                            if (shouldStopCapture)
+                            if (state.ShouldEvaluateExpressions)
                             {
-                                snapshotCreator.Stop();
-                                return false;
+                                evaluationResult = Evaluate(state, probeInfo, snapshotCreator, out var shouldStopCapture, probeData.Sampler);
+                                if (shouldStopCapture)
+                                {
+                                    snapshotCreator.Stop();
+                                    return false;
+                                }
                             }
 
                             break;
@@ -228,11 +249,14 @@ namespace Datadog.Trace.Debugger.Expressions
                                         }
 
                                         snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
-                                        evaluationResult = Evaluate(state, probeInfo, snapshotCreator, out var shouldStopCapture, probeData.Sampler);
-                                        if (shouldStopCapture)
+                                        if (state.ShouldEvaluateExpressions)
                                         {
-                                            snapshotCreator.Stop();
-                                            return false;
+                                            evaluationResult = Evaluate(state, probeInfo, snapshotCreator, out var shouldStopCapture, probeData.Sampler);
+                                            if (shouldStopCapture)
+                                            {
+                                                snapshotCreator.Stop();
+                                                return false;
+                                            }
                                         }
 
                                         break;
@@ -372,14 +396,14 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.HasError)
             {
-                // Probes with conditions defer sampling until after the condition is evaluated,
-                // so evaluation errors must honor that same sampler before emitting a snapshot.
-                if (probeInfo.HasCondition && !SamplePayload(in probeInfo, sampler))
+                // Condition evaluation errors bypass the per-probe sampler and global limiter.
+                // A hard one-per-5-min cap guarantees at least one diagnostic snapshot per window without flooding.
+                if (probeInfo.HasCondition && !state.ShouldSampleEvaluationErrorSnapshot())
                 {
                     shouldStopCapture = true;
                 }
 
-                if (!shouldStopCapture)
+                if (!shouldStopCapture && !evaluationResult.HasConditionError)
                 {
                     EvaluateCaptureExpressionsIfNeeded(state, snapshotCreator, cacheEntry, ref evaluator, ref evaluationResult, ref captureExpressionsEvaluated);
                 }
@@ -711,6 +735,7 @@ namespace Datadog.Trace.Debugger.Expressions
         internal sealed class ProbeProcessorState
         {
             private ProbeExpressionEvaluator? _evaluator;
+            private long _lastEvaluationErrorSnapshotTimestamp = -EvaluationErrorSnapshotRateLimitTicks;
 
             private ProbeProcessorState(
                 ProbeInfo probeInfo,
@@ -729,6 +754,13 @@ namespace Datadog.Trace.Debugger.Expressions
                 HasCondition = condition.HasValue;
                 IsMetricCountWithoutExpression = probeInfo.ProbeType == ProbeType.Metric && (metric?.Json == null) && probeInfo.MetricKind == MetricKind.COUNT;
                 ShouldCaptureExpressions = !probeInfo.IsFullSnapshot && captureExpressions is { Length: > 0 };
+                ShouldEvaluateExpressions =
+                    HasCondition ||
+                    templates is { Length: > 0 } ||
+                    metric.HasValue ||
+                    spanDecorations is { Length: > 0 } ||
+                    IsMetricCountWithoutExpression ||
+                    ShouldCaptureExpressions;
             }
 
             internal ProbeInfo ProbeInfo { get; }
@@ -748,6 +780,8 @@ namespace Datadog.Trace.Debugger.Expressions
             internal bool IsMetricCountWithoutExpression { get; }
 
             internal bool ShouldCaptureExpressions { get; }
+
+            internal bool ShouldEvaluateExpressions { get; }
 
             internal static ProbeProcessorState Create(ProbeDefinition probe)
             {
@@ -842,6 +876,18 @@ namespace Datadog.Trace.Debugger.Expressions
                 var newEvaluator = new ProbeExpressionEvaluator(Templates, Condition, Metric, SpanDecorations, CaptureExpressions);
                 var previousEvaluator = Interlocked.CompareExchange(ref _evaluator, newEvaluator, null);
                 return previousEvaluator ?? newEvaluator;
+            }
+
+            internal bool ShouldSampleEvaluationErrorSnapshot()
+            {
+                var timestamp = Stopwatch.GetTimestamp();
+                var lastTimestamp = Volatile.Read(ref _lastEvaluationErrorSnapshotTimestamp);
+                if (timestamp - lastTimestamp < EvaluationErrorSnapshotRateLimitTicks)
+                {
+                    return false;
+                }
+
+                return Interlocked.CompareExchange(ref _lastEvaluationErrorSnapshotTimestamp, timestamp, lastTimestamp) == lastTimestamp;
             }
 
             internal void LogEvaluationState(MethodScopeMembers methodScopeMembers)

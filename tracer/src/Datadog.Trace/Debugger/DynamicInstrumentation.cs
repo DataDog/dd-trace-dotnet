@@ -40,7 +40,9 @@ namespace Datadog.Trace.Debugger
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
 
-        private readonly TaskCompletionSource<bool> _processExit;
+        // Completed when this DI instance is being disposed (runtime disable via remote config, or process shutdown).
+        // Used to abort in-flight initialization waits promptly.
+        private readonly TaskCompletionSource<bool> _disposalSignal;
         private readonly IDiscoveryService _discoveryService;
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ISubscription _subscription;
@@ -53,6 +55,7 @@ namespace Datadog.Trace.Debugger
         private readonly IProbeStatusPoller _probeStatusPoller;
         private readonly ConfigurationUpdater _configurationUpdater;
         private readonly IDogStatsd _dogStats;
+        private readonly MemoryPressureMonitor _memoryPressureMonitor;
         private readonly DebuggerSettings _settings;
         private readonly NativeProbeInstrumentationRequester _instrumentProbes;
         private readonly object _instanceLock = new();
@@ -72,11 +75,12 @@ namespace Datadog.Trace.Debugger
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats,
             IDebuggerGlobalRateLimiter? globalRateLimiter = null,
+            MemoryPressureMonitor? memoryPressureMonitor = null,
             NativeProbeInstrumentationRequester? instrumentProbes = null)
         {
             Log.Information("Initializing Dynamic Instrumentation");
             _settings = settings;
-            _processExit = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _disposalSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             _discoveryService = discoveryService;
             _lineProbeResolver = lineProbeResolver;
             _snapshotUploader = snapshotUploader;
@@ -87,6 +91,7 @@ namespace Datadog.Trace.Debugger
             _configurationUpdater = configurationUpdater;
             _configurationUpdater.SetProbeInstrumentationHandlers(UpdateAddedProbeInstrumentations, UpdateRemovedProbeInstrumentations);
             _dogStats = dogStats;
+            _memoryPressureMonitor = memoryPressureMonitor ?? new MemoryPressureMonitor(MemoryPressureConfig.Default);
             _instrumentProbes = instrumentProbes ?? DebuggerNativeMethods.InstrumentProbes;
             _unboundProbes = new List<ProbeDefinition>();
             _lastReportedUnboundProbeErrors = new Dictionary<string, LineProbeResolveErrorKey>();
@@ -145,7 +150,7 @@ namespace Datadog.Trace.Debugger
                     hasFileProbes = _configurationUpdater.HasAnyEffectiveProbeForFile(probeConfiguration);
                     if (hasFileProbes)
                     {
-                        StartRuntimeIfNeeded();
+                        StartRuntimeIfNeeded(subscribeToRcm: false);
                     }
 
                     _configurationUpdater.AcceptFile(probeConfiguration);
@@ -154,8 +159,7 @@ namespace Datadog.Trace.Debugger
                 var isRcmAvailable = await rcmAvailabilityTask.ConfigureAwait(false);
                 if (isRcmAvailable)
                 {
-                    StartRuntimeIfNeeded();
-                    _subscriptionManager.SubscribeToChanges(_subscription);
+                    StartRuntimeIfNeeded(subscribeToRcm: true);
                 }
 
                 // Start background processing and register the assembly load callback if either:
@@ -184,16 +188,55 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void StartRuntimeIfNeeded()
+        /// <summary>
+        /// Starts the runtime (background processing + assembly-load callback) exactly once, and optionally
+        /// subscribes to RCM. Idempotent and safe to call from both the file-probe path (<paramref name="subscribeToRcm"/>
+        /// false) and the RCM-available path (<paramref name="subscribeToRcm"/> true).
+        /// </summary>
+        private void StartRuntimeIfNeeded(bool subscribeToRcm)
         {
-            if (IsInitialized || IsDisposed)
+            if (IsDisposed || (IsInitialized && !subscribeToRcm))
             {
                 return;
             }
 
-            AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
-            StartBackgroundProcess();
-            Volatile.Write(ref _initializationState, 2);
+            lock (_instanceLock)
+            {
+                if (IsDisposed)
+                {
+                    return;
+                }
+
+                // Start the runtime exactly once.
+                if (!IsInitialized)
+                {
+                    var assemblyLoadSubscribed = false;
+                    try
+                    {
+                        AppDomain.CurrentDomain.AssemblyLoad += CheckUnboundProbes;
+                        assemblyLoadSubscribed = true;
+                        StartBackgroundProcess();
+                        Volatile.Write(ref _initializationState, 2);
+                    }
+                    catch
+                    {
+                        if (assemblyLoadSubscribed)
+                        {
+                            AppDomain.CurrentDomain.AssemblyLoad -= CheckUnboundProbes;
+                        }
+
+                        throw;
+                    }
+                }
+
+                // Subscribe only on the RCM path, and only if a disable hasn't landed in the meantime.
+                // Best-effort: correctness against a leaked subscription is guaranteed by Dispose's Unsubscribe
+                // running under this same lock.
+                if (subscribeToRcm && !IsDisposed)
+                {
+                    _subscriptionManager.SubscribeToChanges(_subscription);
+                }
+            }
         }
 
         private void StartBackgroundProcess()
@@ -836,6 +879,16 @@ namespace Datadog.Trace.Debugger
             SetProbeStatusToEmitting(probe);
         }
 
+        internal void RefreshMemoryPressureIfStale()
+        {
+            if (IsDisposed)
+            {
+                return;
+            }
+
+            _memoryPressureMonitor.RefreshIfStale();
+        }
+
         internal void SetProbeStatusToEmitting(ProbeInfo probe)
         {
             if (IsDisposed)
@@ -899,7 +952,7 @@ namespace Datadog.Trace.Debugger
                 var rcmTimeout = TimeSpan.FromMinutes(5);
                 var timeoutTask = Task.Delay(rcmTimeout);
 
-                var completedTask = await Task.WhenAny(rcmAvailabilityTcs.Task, timeoutTask, _processExit.Task).ConfigureAwait(false);
+                var completedTask = await Task.WhenAny(rcmAvailabilityTcs.Task, timeoutTask, _disposalSignal.Task).ConfigureAwait(false);
                 if (completedTask == timeoutTask)
                 {
                     Log.Warning("Dynamic Instrumentation could not be enabled because Remote Configuration Management is not available after waiting {Timeout} seconds. Please note that Dynamic Instrumentation is not supported in all environments (e.g. AAS). Ensure that you are using datadog-agent version 7.41.1 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.", rcmTimeout.TotalSeconds);
@@ -930,34 +983,34 @@ namespace Datadog.Trace.Debugger
 
         public void Dispose()
         {
-            // Already disposed
             if (Interlocked.CompareExchange(ref _disposeState, 1, 0) != 0)
             {
                 return;
             }
 
-            if (_processExit.Task.IsCompleted)
-            {
-                return;
-            }
+            _disposalSignal.TrySetResult(true);
 
-            _processExit.TrySetResult(true);
-            AppDomain.CurrentDomain.AssemblyLoad -= CheckUnboundProbes;
             lock (_instanceLock)
             {
+                // Must stay under the lock: StartRuntimeIfNeeded subscribes AssemblyLoad under the same
+                // lock, so unsubscribing here is what prevents a subscribe-after-dispose handler leak.
+                AppDomain.CurrentDomain.AssemblyLoad -= CheckUnboundProbes;
+
                 SafeDisposal.New()
                             .Execute(() => _subscriptionManager.Unsubscribe(_subscription), "unsubscribing from RCM")
                             .Add(_snapshotUploader)
                             .Add(_logUploader)
                             .Add(_diagnosticsUploader)
                             .Add(_probeStatusPoller)
+                            .Add(_memoryPressureMonitor)
                             .DisposeAll();
             }
 
-            // Cannot await here because Dispose() is synchronous and callers hold locks.
-            // On master, _dogStats was disposed via SafeDisposal.Add() which called sync
-            // Dispose() — itself fire-and-forget internally via Task.Run().
-            _dogStats?.DisposeAsync().ContinueWith(t => Log.Error(t.Exception, "Error waiting for StatsD disposal"), TaskContinuationOptions.OnlyOnFaulted);
+            _dogStats?.DisposeAsync().ContinueWith(
+                t => Log.Error(t.Exception, "Error waiting for StatsD disposal"),
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default);
         }
     }
 }

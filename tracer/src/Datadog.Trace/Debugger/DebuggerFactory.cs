@@ -42,6 +42,7 @@ internal sealed class DebuggerFactory
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion, debuggerSettings.MaxProbesPerType, globalRateLimiter);
+        var memoryPressureMonitor = new MemoryPressureMonitor(MemoryPressureConfig.Default);
 
         var statsd = GetDogStatsd(tracerSettings);
 
@@ -56,7 +57,8 @@ internal sealed class DebuggerFactory
             probeStatusPoller: probeStatusPoller,
             configurationUpdater: configurationUpdater,
             dogStats: statsd,
-            globalRateLimiter: globalRateLimiter);
+            globalRateLimiter: globalRateLimiter,
+            memoryPressureMonitor: memoryPressureMonitor);
     }
 
     private static IDogStatsd GetDogStatsd(TracerSettings tracerSettings)

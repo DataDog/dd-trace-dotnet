@@ -413,7 +413,7 @@ services:
       - SYS_PTRACE
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
@@ -465,7 +465,7 @@ services:
       - SYS_PTRACE
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
       - Filter=${Filter:- } #optional
       - SampleName=${SampleName:- } #optional
@@ -546,7 +546,7 @@ services:
       - SYS_PTRACE
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
       - targetplatform=${targetplatform:-x64}
@@ -599,7 +599,7 @@ services:
       - SYS_PTRACE
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-net6.0}
       - baseImage=${baseImage:-default}
       - Filter=${Filter:-Category=Lambda}
@@ -657,7 +657,7 @@ services:
       - SYS_PTRACE
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
       - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
       - explorationTestUseCase=${explorationTestUseCase:-debugger}
@@ -746,7 +746,7 @@ services:
       - SYS_PTRACE
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
       - Filter=${Filter:-} #optional
       - SampleName=${SampleName:- } #optional
@@ -851,7 +851,7 @@ services:
       - SYS_PTRACE
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-debian}
       - targetplatform=${targetplatform:-x64}

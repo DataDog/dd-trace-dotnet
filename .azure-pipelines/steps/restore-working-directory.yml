@@ -7,6 +7,5 @@ steps:
 - template: download-artifact.yml
   parameters:
     artifact: ${{ parameters.artifact }}
-    patterns: "**/@(bin|obj|packages|artifacts)/**"
     path: $(System.DefaultWorkingDirectory)
     retryCountOnTaskFailure: 5
