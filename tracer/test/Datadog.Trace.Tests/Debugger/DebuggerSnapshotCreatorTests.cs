@@ -150,6 +150,30 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void Limits_BoundedCaptureCollectionResultWithTruncation_SetsCollectionSizeReason()
+        {
+            var result = new BoundedCaptureCollectionResult<object>([1], wasTruncated: true, isDictionary: false);
+
+            var collectionJson = SerializeCollection(result, maxCollectionSize: 10, collectionCount: result.Count, wasTruncated: result.WasTruncated);
+
+            Assert.Equal(1, collectionJson["size"]?.Value<int>());
+            Assert.Equal(1, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Equal("collectionSize", collectionJson["notCapturedReason"]?.Value<string>());
+        }
+
+        [Fact]
+        public void Limits_BoundedCaptureCollectionResultWithoutTruncation_DoesNotSetCollectionSizeReason()
+        {
+            var result = new BoundedCaptureCollectionResult<object>([1], wasTruncated: false, isDictionary: false);
+
+            var collectionJson = SerializeCollection(result, maxCollectionSize: 10, collectionCount: result.Count, wasTruncated: result.WasTruncated);
+
+            Assert.Equal(1, collectionJson["size"]?.Value<int>());
+            Assert.Equal(1, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Null(collectionJson["notCapturedReason"]);
+        }
+
+        [Fact]
         public void Limits_CollectionCanceledBeforeVisitingAllItems_SetsTimeoutReason()
         {
             using var cts = new CancellationTokenSource();
@@ -617,6 +641,11 @@ namespace Datadog.Trace.Tests.Debugger
 
         private static JObject SerializeCollection(ICollection collection, int maxCollectionSize, CancellationTokenSource cts = null)
         {
+            return SerializeCollection(collection, maxCollectionSize, collection.Count, wasTruncated: false, cts);
+        }
+
+        private static JObject SerializeCollection(IEnumerable collection, int maxCollectionSize, int collectionCount, bool wasTruncated, CancellationTokenSource cts = null)
+        {
             var ownsCancellationTokenSource = cts is null;
             cts ??= new CancellationTokenSource();
 
@@ -626,9 +655,9 @@ namespace Datadog.Trace.Tests.Debugger
                 Assert.NotNull(serializeEnumerable);
                 var enumerableInfoType = typeof(DebuggerSnapshotSerializer).GetNestedType("SupportedEnumerableInfo", BindingFlags.NonPublic);
                 Assert.NotNull(enumerableInfoType);
-                var enumerableInfoConstructor = enumerableInfoType!.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, binder: null, types: [typeof(int), typeof(bool)], modifiers: null);
+                var enumerableInfoConstructor = enumerableInfoType!.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, binder: null, types: [typeof(int), typeof(bool), typeof(bool)], modifiers: null);
                 Assert.NotNull(enumerableInfoConstructor);
-                var enumerableInfo = enumerableInfoConstructor!.Invoke([collection.Count, false]);
+                var enumerableInfo = enumerableInfoConstructor!.Invoke([collectionCount, false, wasTruncated]);
 
                 var limitInfo = new CaptureLimitInfo(
                     MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,

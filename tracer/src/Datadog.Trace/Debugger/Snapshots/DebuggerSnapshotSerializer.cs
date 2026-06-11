@@ -409,7 +409,11 @@ namespace Datadog.Trace.Debugger.Snapshots
                 }
 
                 // Track the reason but don't write yet if we're still inside the array.
-                if (stoppedByTimeout && enumeratedItemCount < collectionCount)
+                if (enumerableInfo.WasTruncated)
+                {
+                    notCapturedReason = NotCapturedReason.collectionSize;
+                }
+                else if (stoppedByTimeout && enumeratedItemCount < collectionCount)
                 {
                     notCapturedReason = NotCapturedReason.timeout;
                 }

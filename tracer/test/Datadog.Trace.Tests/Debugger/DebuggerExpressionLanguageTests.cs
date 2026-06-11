@@ -324,6 +324,183 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionEvaluator_CaptureExpressionRootFilter_StopsAfterCaptureLimitAndOneExtraMatch()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("FilteredCollectionLocal", typeof(List<string>), new List<string> { "hello", "world", "again" }, ScopeMemberKind.Local));
+            var captureLimitInfo = new CaptureLimitInfo(
+                MaxReferenceDepth: 5,
+                MaxCollectionSize: 1,
+                MaxLength: 255,
+                MaxFieldCount: 20);
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions:
+                [
+                    new CaptureExpressionDefinition(
+                        "filtered",
+                        new DebuggerExpression(string.Empty, @"{""filter"":[{""ref"":""FilteredCollectionLocal""},{""gt"":[{""len"":""@it""},0]}]}", null),
+                        captureLimitInfo)
+                ]);
+
+            ExpressionEvaluationResult result = default;
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+
+            result.CaptureExpressionCount.Should().Be(1);
+            result.CaptureExpressions[0].Value.Should().BeAssignableTo<IBoundedCaptureCollectionResult>();
+            var filtered = (IBoundedCaptureCollectionResult)result.CaptureExpressions[0].Value;
+            filtered.Count.Should().Be(1);
+            filtered.WasTruncated.Should().BeTrue();
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_CaptureExpressionRootFilter_UnderCaptureLimitDoesNotTruncate()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("FilteredCollectionLocal", typeof(List<string>), new List<string> { "hello", "moon", "cat" }, ScopeMemberKind.Local));
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions:
+                [
+                    new CaptureExpressionDefinition(
+                        "filtered",
+                        new DebuggerExpression(string.Empty, @"{""filter"":[{""ref"":""FilteredCollectionLocal""},{""gt"":[{""len"":""@it""},4]}]}", null),
+                        new CaptureLimitInfo(MaxReferenceDepth: 5, MaxCollectionSize: 2, MaxLength: 255, MaxFieldCount: 20))
+                ]);
+
+            ExpressionEvaluationResult result = default;
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+
+            result.CaptureExpressionCount.Should().Be(1);
+            result.CaptureExpressions[0].Value.Should().BeAssignableTo<IBoundedCaptureCollectionResult>();
+            var filtered = (IBoundedCaptureCollectionResult)result.CaptureExpressions[0].Value;
+            filtered.Count.Should().Be(1);
+            filtered.WasTruncated.Should().BeFalse();
+            ((IEnumerable<string>)result.CaptureExpressions[0].Value).Should().ContainSingle().Which.Should().Be("hello");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_CaptureExpressionRootDictionaryFilter_KeepsDictionaryMetadata()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember(
+                "FilteredDictionaryLocal",
+                typeof(Dictionary<string, string>),
+                new Dictionary<string, string>
+                {
+                    { "one", "first" },
+                    { "two", "second" },
+                    { "three", "third" },
+                },
+                ScopeMemberKind.Local));
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions:
+                [
+                    new CaptureExpressionDefinition(
+                        "filtered",
+                        new DebuggerExpression(string.Empty, @"{""filter"":[{""ref"":""FilteredDictionaryLocal""},{""contains"":[""@value"",""i""]}]}", null),
+                        new CaptureLimitInfo(MaxReferenceDepth: 5, MaxCollectionSize: 1, MaxLength: 255, MaxFieldCount: 20))
+                ]);
+
+            ExpressionEvaluationResult result = default;
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+
+            result.CaptureExpressionCount.Should().Be(1);
+            result.CaptureExpressions[0].Value.Should().BeAssignableTo<IBoundedCaptureCollectionResult>();
+            var filtered = (IBoundedCaptureCollectionResult)result.CaptureExpressions[0].Value;
+            filtered.Count.Should().Be(1);
+            filtered.WasTruncated.Should().BeTrue();
+            filtered.IsDictionary.Should().BeTrue();
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_CaptureExpressionRootFilterChain_StopsAfterCaptureLimitAndOneExtraMatch()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("FilterChainCollectionLocal", typeof(List<string>), new List<string> { "a", "bb", "ccc", "dddd", "ddddd" }, ScopeMemberKind.Local));
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions:
+                [
+                    new CaptureExpressionDefinition(
+                        "filtered",
+                        new DebuggerExpression(
+                            string.Empty,
+                            @"{""filter"":[{""filter"":[{""ref"":""FilterChainCollectionLocal""},{""gt"":[{""len"":""@it""},1]}]},{""startsWith"":[""@it"",""d""]}]}",
+                            null),
+                        new CaptureLimitInfo(MaxReferenceDepth: 5, MaxCollectionSize: 1, MaxLength: 255, MaxFieldCount: 20))
+                ]);
+
+            ExpressionEvaluationResult result = default;
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+
+            result.CaptureExpressionCount.Should().Be(1);
+            result.CaptureExpressions[0].Value.Should().BeAssignableTo<IBoundedCaptureCollectionResult>();
+            var filtered = (IBoundedCaptureCollectionResult)result.CaptureExpressions[0].Value;
+            filtered.Count.Should().Be(1);
+            filtered.WasTruncated.Should().BeTrue();
+            ((IEnumerable<string>)result.CaptureExpressions[0].Value).Should().ContainSingle().Which.Should().Be("dddd");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void FilterEvaluationHelpers_FilterForCapture_StopsAfterLimitAndOneExtraMatch()
+        {
+            var collection = new CountingEnumerable<string>(["hello", "world", "again"]);
+
+            var result = FilterEvaluationHelpers.FilterForCapture(collection, static value => value.Length > 0, maxCollectionSize: 1, isDictionary: false);
+
+            result.Count.Should().Be(1);
+            result.WasTruncated.Should().BeTrue();
+            collection.VisitedItems.Should().Be(2);
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_LenOfFilter_KeepsExactSemantics()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions:
+                [
+                    new CaptureExpressionDefinition(
+                        "filteredLength",
+                        new DebuggerExpression(string.Empty, @"{""len"":{""filter"":[{""ref"":""CollectionLocal""},{""gt"":[{""len"":""@it""},4]}]}}", null),
+                        new CaptureLimitInfo(
+                            MaxReferenceDepth: 5,
+                            MaxCollectionSize: 1,
+                            MaxLength: 255,
+                            MaxFieldCount: 20))
+                ]);
+
+            ExpressionEvaluationResult result = default;
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+
+            result.CaptureExpressionCount.Should().Be(1);
+            result.CaptureExpressions[0].Value.Should().Be(4);
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
         public void ProbeExpressionEvaluator_CaptureExpressions_DoesNotCaptureParseFailures()
         {
             var scopeMembers = CreateScopeMembers();
@@ -1528,6 +1705,29 @@ namespace Datadog.Trace.Tests.Debugger
             where T : class
         {
             public IEnumerable<T> Collection { get; set; }
+        }
+
+        internal sealed class CountingEnumerable<T> : IEnumerable<T>
+        {
+            private readonly List<T> _items;
+
+            internal CountingEnumerable(IEnumerable<T> items)
+            {
+                _items = new List<T>(items);
+            }
+
+            internal int VisitedItems { get; private set; }
+
+            public IEnumerator<T> GetEnumerator()
+            {
+                foreach (var item in _items)
+                {
+                    VisitedItems++;
+                    yield return item;
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
         internal class GenericValueTypeTarget<T>

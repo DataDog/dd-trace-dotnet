@@ -38,6 +38,8 @@ internal partial class ProbeExpressionParser<T>
 
     private List<EvaluationError> _errors;
     private int _arrayStack;
+    private ParserContext _parserContext;
+    private CaptureLimitInfo? _captureLimitInfo;
 
     static ProbeExpressionParser()
     {
@@ -65,6 +67,12 @@ internal partial class ProbeExpressionParser<T>
         ParameterExpression itParameter = null)
     {
         var readerValue = reader.Value?.ToString();
+        if (_parserContext == ParserContext.CaptureExpression && readerValue == "filter")
+        {
+            _isBoundedFilterCapture = true;
+            _boundedFilterMaxCollectionSize = _captureLimitInfo.GetValueOrDefault().MaxCollectionSize;
+        }
+
         switch (reader.TokenType)
         {
             case JsonToken.PropertyName:
@@ -678,7 +686,32 @@ internal partial class ProbeExpressionParser<T>
 
     internal static CompiledExpression<T> ParseExpression(string expressionJson, MethodScopeMembers scopeMembers, Type thisTypeOverride)
     {
+        return ParseExpression(expressionJson, scopeMembers, thisTypeOverride, ParserContext.Default, captureLimitInfo: null);
+    }
+
+    internal static CompiledExpression<T> ParseCaptureExpression(string expressionJson, MethodScopeMembers scopeMembers, CaptureLimitInfo captureLimitInfo)
+    {
+        if (typeof(T) != typeof(object))
+        {
+            throw new InvalidOperationException("Capture expressions must be compiled with an object return type.");
+        }
+
+        // Extract thisType here to ensure consistency - use runtime type over declared type
+        var thisType = scopeMembers.InvocationTarget.Value?.GetType() ?? scopeMembers.InvocationTarget.Type ?? typeof(object);
+        return ParseExpression(expressionJson, scopeMembers, thisType, ParserContext.CaptureExpression, captureLimitInfo);
+    }
+
+    private static CompiledExpression<T> ParseExpression(
+        string expressionJson,
+        MethodScopeMembers scopeMembers,
+        Type thisTypeOverride,
+        ParserContext parserContext,
+        CaptureLimitInfo? captureLimitInfo)
+    {
         var parser = new ProbeExpressionParser<T>();
+        parser._parserContext = parserContext;
+        parser._captureLimitInfo = captureLimitInfo;
+
         ExpressionBodyAndParameters parsedExpression = default;
         try
         {
