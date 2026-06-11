@@ -444,6 +444,94 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
+        [Theory]
+        [InlineData("any")]
+        [InlineData("all")]
+        public void ProbeExpressionParser_PredicateWithUndefinedSource_DoesNotAddSecondaryCollectionError(string operation)
+        {
+            var scopeMembers = CreateScopeMembers();
+            var json = $$"""
+                         {
+                           "{{operation}}": [
+                             { "ref": "MissingCollectionLocal" },
+                             true
+                           ]
+                         }
+                         """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(result);
+            compiled.Errors.Should().ContainSingle();
+            compiled.Errors[0].Message.Should().Contain("The property or field does not exist");
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_FilterWithUndefinedSource_DoesNotAddSecondaryCollectionError()
+        {
+            var scopeMembers = CreateScopeMembers();
+            const string json = """
+                                {
+                                  "filter": [
+                                    { "ref": "MissingCollectionLocal" },
+                                    true
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Same(UndefinedValue.Instance, result);
+            compiled.Errors.Should().ContainSingle();
+            compiled.Errors[0].Message.Should().Contain("The property or field does not exist");
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_NestedFilterWithUndefinedSource_DoesNotAddSecondaryCollectionError()
+        {
+            var scopeMembers = CreateScopeMembers();
+            const string json = """
+                                {
+                                  "filter": [
+                                    {
+                                      "filter": [
+                                        { "ref": "MissingCollectionLocal" },
+                                        true
+                                      ]
+                                    },
+                                    true
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseCaptureExpression(
+                json,
+                scopeMembers,
+                new CaptureLimitInfo(MaxReferenceDepth: 5, MaxCollectionSize: 2, MaxLength: 255, MaxFieldCount: 20));
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Same(UndefinedValue.Instance, result);
+            compiled.Errors.Should().ContainSingle();
+            compiled.Errors[0].Message.Should().Contain("The property or field does not exist");
+        }
+
         [Fact]
         public void ProbeExpressionEvaluator_CaptureExpressionRootDictionaryFilter_KeepsDictionaryMetadata()
         {

@@ -71,14 +71,19 @@ internal partial class ProbeExpressionParser<T>
     {
         var shouldDefer = _deferredFilterSourceArrayStack == _arrayStack;
         var filterExpression = ParseFilter(reader, parameters, shouldDefer);
-        if (shouldDefer)
+        if (filterExpression is not FilterExpression parsedFilterExpression)
         {
             return filterExpression;
         }
 
+        if (shouldDefer)
+        {
+            return parsedFilterExpression;
+        }
+
         return _isBoundedFilterCapture
-                   ? BoundedFilterExpression(filterExpression, _boundedFilterMaxCollectionSize)
-                   : MaterializeFilterExpression(filterExpression);
+                   ? BoundedFilterExpression(parsedFilterExpression, _boundedFilterMaxCollectionSize)
+                   : MaterializeFilterExpression(parsedFilterExpression);
     }
 
     private Expression Predicate(JsonTextReader reader, List<ParameterExpression> parameters, MethodInfo predicateMethod, ParameterExpression outerItParameter)
@@ -88,9 +93,14 @@ internal partial class ProbeExpressionParser<T>
         try
         {
             source = ParseTree(reader, parameters, outerItParameter);
+            if (source is GotoExpression)
+            {
+                return source;
+            }
+
             if (source.Type == ProbeExpressionParserHelper.UndefinedValueType)
             {
-                ReturnDefaultValueExpression();
+                return ReturnDefaultValueExpression();
             }
 
             if (!IsSafeCollection(source.Type) && !IsSafeNonGenericDictionary(source.Type))
@@ -126,7 +136,7 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    private FilterExpression ParseFilter(JsonTextReader reader, List<ParameterExpression> parameters, bool isDeferredFilterSource = false)
+    private Expression ParseFilter(JsonTextReader reader, List<ParameterExpression> parameters, bool isDeferredFilterSource = false)
     {
         Expression source = null;
         try
@@ -147,9 +157,14 @@ internal partial class ProbeExpressionParser<T>
                 _deferredFilterSourceArrayStack = previousDeferredFilterSourceArrayStack;
             }
 
+            if (source is GotoExpression)
+            {
+                return source;
+            }
+
             if (source.Type == ProbeExpressionParserHelper.UndefinedValueType)
             {
-                ReturnDefaultValueExpression();
+                return ReturnDefaultValueExpression();
             }
 
             if (source is not FilterExpression && !IsSafeCollection(source.Type) && !IsSafeNonGenericDictionary(source.Type))
@@ -185,7 +200,7 @@ internal partial class ProbeExpressionParser<T>
         catch (Exception e)
         {
             AddError($"{source?.ToString() ?? "N/A"}[filter]", e.Message);
-            return new FilterExpression(ReturnDefaultValueExpression(), Expression.Lambda(Expression.Constant(false), Expression.Parameter(typeof(object))), typeof(object), isDictionary: false);
+            return ReturnDefaultValueExpression();
         }
     }
 
