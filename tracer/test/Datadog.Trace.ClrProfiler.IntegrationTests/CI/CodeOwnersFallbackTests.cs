@@ -14,6 +14,7 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CiVisibility")]
     public class CodeOwnersFallbackTests
     {
         private const string CommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";

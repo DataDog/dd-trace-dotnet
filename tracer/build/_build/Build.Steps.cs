@@ -1927,12 +1927,18 @@ partial class Build
             return filter;
         }
 
-        if (string.IsNullOrWhiteSpace(filter))
+        var areaFilter = $"(Area={Area})";
+
+        // CiVisibility tests carry both Area=Tracer (assembly-level) and Area=CiVisibility (class-level).
+        // On Linux they run in a dedicated CiVisibility job, so exclude them from the Tracer job there.
+        // On Windows there is no dedicated CiVisibility job (almost all CiVisibility tests are Linux-only),
+        // so the Windows Tracer job keeps running them (e.g. IpcSampleTest).
+        if (Area == TracerArea && !IsWin)
         {
-            return $"(Area={Area})";
+            areaFilter += $"&(Area!={CiVisibilityArea})";
         }
 
-        return filter + $"&(Area={Area})";
+        return string.IsNullOrWhiteSpace(filter) ? areaFilter : filter + $"&{areaFilter}";
     }
 
     Target CompileAzureFunctionsSamplesWindows => _ => _

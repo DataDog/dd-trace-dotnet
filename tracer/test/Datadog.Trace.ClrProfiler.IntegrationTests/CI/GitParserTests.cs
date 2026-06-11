@@ -13,6 +13,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CiVisibility")]
     public class GitParserTests
     {
         public static IEnumerable<object[]> GetData()

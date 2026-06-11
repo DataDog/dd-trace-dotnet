@@ -13,6 +13,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 [Collection(nameof(TransportTestsCollection))]
+[Trait("Area", "CiVisibility")]
 public class XUnitRetriesTestsV3 : TestingFrameworkRetriesTests
 {
     public XUnitRetriesTestsV3(ITestOutputHelper output)
