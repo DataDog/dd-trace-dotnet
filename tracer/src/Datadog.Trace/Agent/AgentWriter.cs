@@ -112,7 +112,9 @@ namespace Datadog.Trace.Agent
             _traceMetricsEnabled = initialTracerMetricsEnabled;
             _statsd.SetRequired(StatsdConsumer.AgentWriter, initialTracerMetricsEnabled);
 
-            _serializationTask = automaticFlush ? Task.Factory.StartNew(SerializeTracesLoop, TaskCreationOptions.LongRunning) : Task.CompletedTask;
+            _serializationTask = automaticFlush
+                                     ? Task.Factory.StartNew(SerializeTracesLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)
+                                     : Task.CompletedTask;
             _serializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
 
             _flushTask = automaticFlush ? Task.Run(FlushBuffersTaskLoopAsync) : Task.CompletedTask;
