@@ -4,4 +4,8 @@
     <RootNamespace>Samples.Console_</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" />
+  </ItemGroup>
 </Project>

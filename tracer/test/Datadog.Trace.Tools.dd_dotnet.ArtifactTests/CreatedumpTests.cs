@@ -733,7 +733,6 @@ public class CreatedumpTests : ConsoleTestHelper
 #if NETFRAMEWORK
     [SkippableTheory]
     [InlineData("crash-appdomain-single", "web-app-a")]
-    [InlineData("crash-appdomain-single-native", "web-app-a")]
     [InlineData("crash-appdomain-multi", "web-app-b")]
     public async Task ServiceNameInCrashReportFrameworkAppDomains(string crashArg, string expectedService)
     {
@@ -765,6 +764,54 @@ public class CreatedumpTests : ConsoleTestHelper
         var runtimeIdTag = GetTagValue(metadataTags, "runtime_id:");
         runtimeIdTag.Should().NotBeNullOrEmpty();
         Guid.TryParse(runtimeIdTag, out _).Should().BeTrue($"runtime_id should be a valid GUID, got: {runtimeIdTag}");
+    }
+
+    [SkippableFact]
+    public async Task ServiceNameInCrashReportFrameworkMultiNative()
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
+
+        using var reportFile = new TemporaryFile();
+
+        using var helper = await StartConsoleWithArgs(
+                               "crash-appdomain-multi-native",
+                               enableProfiler: true,
+                               [CrashReportConfig(reportFile)]);
+
+        await helper.Task;
+
+        using var assertionScope = new AssertionScope();
+        assertionScope.AddReportable("stdout", helper.StandardOutput);
+        assertionScope.AddReportable("stderr", helper.ErrorOutput);
+
+        File.Exists(reportFile.Path).Should().BeTrue();
+
+        assertionScope.AddReportable("Report", reportFile.GetContent());
+        var report = JObject.Parse(reportFile.GetContent());
+        var metadataTags = (JArray)(report["metadata"]!["tags"]!);
+
+        // Native crash on a thread with no AppDomain — crash reporter enumerates all domains
+        // and finds multiple services, so it falls back to process name.
+        var serviceTag = GetTagValue(metadataTags, "service:");
+        serviceTag.Should().Be("Samples.Console");
+
+        // Multiple services should be reported (at least the 3 child AppDomains)
+        var servicesTag = GetTagValue(metadataTags, "services:");
+        servicesTag.Should().NotBeNullOrEmpty();
+        servicesTag.Should().Contain("web-app-a");
+        servicesTag.Should().Contain("web-app-b");
+        servicesTag.Should().Contain("web-app-c");
+
+        // Multiple runtime IDs should be reported
+        var runtimeIdsTag = GetTagValue(metadataTags, "runtime_ids:");
+        runtimeIdsTag.Should().NotBeNullOrEmpty();
+        var runtimeIds = runtimeIdsTag.Split(',');
+        runtimeIds.Should().HaveCountGreaterOrEqualTo(3);
+        foreach (var id in runtimeIds)
+        {
+            Guid.TryParse(id, out _).Should().BeTrue($"runtime_ids should contain valid GUIDs, got: {id}");
+        }
     }
 #endif
 
