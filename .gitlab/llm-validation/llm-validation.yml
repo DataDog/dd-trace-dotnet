@@ -13,6 +13,7 @@
   # the PR is optional (run.sh uses pr-commenter only if it's on PATH).
   image: "$LLMVAL_IMAGE"
   tags: ["arch:amd64"]
+  timeout: 2h   # agent runs are slow in CI (~15 min/case); avoid the default 1h timeout for multi-case runs
   rules:
     # dd-trace-dotnet GitLab pipelines are branch pipelines (no merge_request_event), like the BP jobs.
     # Manual during bring-up (it's a paid LLM run); run.sh self-skips if AGENTS.md is unchanged vs master.
@@ -29,7 +30,9 @@
     LLMVAL_IMAGE: "registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest"
     LLMVAL_PLATFORM_REF: "nacho/initialImplementation"  # TODO: switch to "main" once the code is merged there
     LLMVAL_RUNS: "3"              # repeats per case (more = tighter win-rate CI)
-    LLMVAL_MAX_CASES: "1"         # cheap first run; raise / remove once it's working
+    LLMVAL_MAX_CASES: "4"         # first 4 cases include logging-terminology-004 (the expected regression);
+                                  # remove to run the whole suite, or set LLMVAL_CASES to target specific ids
+    # LLMVAL_CASES: "dotnet-tracer-logging-terminology-004"  # e.g. target just the regression
   script:
     - bash .gitlab/llm-validation/run.sh
   artifacts:

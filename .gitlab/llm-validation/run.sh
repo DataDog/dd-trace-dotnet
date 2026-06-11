@@ -93,6 +93,7 @@ fi
 
 echo "=== LLM Validation: run gate (baseline=$BASE_SHA, runs=$RUNS) ==="
 EXTRA=()
+[ -n "${LLMVAL_CASES:-}" ] && EXTRA+=(--case "$LLMVAL_CASES")          # optional: target specific case id(s)
 [ -n "${LLMVAL_MAX_CASES:-}" ] && EXTRA+=(--max-cases "$LLMVAL_MAX_CASES")
 set +e
 dotnet "$CLI_DLL" run \
