@@ -44,7 +44,7 @@ buildId=$(curl -sS "$allBuildsUrl" | jq -r --arg version "$CI_COMMIT_SHA" '
   | .[0].id // empty')
 
 if [ -z "${buildId}" ]; then
-  echo "No build found carrying commit '$CI_COMMIT_SHA' (branch '$branchName') in the recent build history"
+  echo "No build found for commit '$CI_COMMIT_SHA' (branch '$branchName') in the recent build history"
   exit 1
 fi
 
