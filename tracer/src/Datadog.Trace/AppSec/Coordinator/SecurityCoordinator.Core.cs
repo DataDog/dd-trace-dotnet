@@ -140,7 +140,6 @@ internal readonly partial struct SecurityCoordinator
         var addressesDictionary = new Dictionary<string, object>
         {
             { AddressesConstants.RequestMethod, request.Method },
-            { AddressesConstants.ResponseStatus, request.HttpContext.Response.StatusCode.ToString() },
             { AddressesConstants.RequestUriRaw, request.GetUrlForWaf() },
             { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) ?? _localRootSpan.GetTag(Tags.NetworkClientIp) }
         };

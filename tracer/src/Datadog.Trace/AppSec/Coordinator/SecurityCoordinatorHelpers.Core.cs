@@ -19,6 +19,8 @@ namespace Datadog.Trace.AppSec.Coordinator;
 
 internal static class SecurityCoordinatorHelpers
 {
+    internal const string ResponseBodyItemKey = "DD_AppSec_ResponseBody";
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SecurityCoordinatorHelpers));
 
     internal static readonly Type? SessionFeature = Assembly.GetAssembly(typeof(IHeaderDictionary))?.GetType("Microsoft.AspNetCore.Http.Features.ISessionFeature", throwOnError: false);
@@ -52,6 +54,11 @@ internal static class SecurityCoordinatorHelpers
                     {
                         { AddressesConstants.ResponseStatus, httpContext.Response.StatusCode.ToString() },
                     };
+
+                    if (httpContext.Items.TryGetValue(ResponseBodyItemKey, out var responseBody) && responseBody is not null)
+                    {
+                        args.Add(AddressesConstants.ResponseBody, responseBody);
+                    }
 
                     var extractedHeaders = SecurityCoordinator.ExtractHeadersFromRequest(headers);
                     if (extractedHeaders is not null)

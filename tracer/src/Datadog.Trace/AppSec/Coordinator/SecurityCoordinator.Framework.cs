@@ -452,7 +452,6 @@ internal readonly partial struct SecurityCoordinator
         var dict = new Dictionary<string, object>(capacity: 7)
         {
             { AddressesConstants.RequestMethod, request.HttpMethod },
-            { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
             { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) ?? _localRootSpan.GetTag(Tags.NetworkClientIp) }
         };
 
