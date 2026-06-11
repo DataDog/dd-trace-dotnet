@@ -28,9 +28,9 @@ internal static class ProbeExpressionParserHelper
         MethodInfo GetMethodByReflectionInternal(ReflectionMethodIdentifier methodIdentifier)
         {
             MethodInfo method = null;
-            if (genericArguments != null)
+            if (methodIdentifier.GenericArguments != null)
             {
-                method = methodIdentifier.Type.GetMethods().
+                method = methodIdentifier.Type.GetMethods(bindingFlags).
                                           Where(m =>
                                                     m.Name == methodIdentifier.MethodName &&
                                                     m.GetParameters().Length == methodIdentifier.Parameters.Length &&
@@ -56,7 +56,7 @@ internal static class ProbeExpressionParserHelper
         }
     }
 
-    internal readonly record struct ReflectionMethodIdentifier
+    internal readonly struct ReflectionMethodIdentifier : IEquatable<ReflectionMethodIdentifier>
     {
         internal ReflectionMethodIdentifier(Type type, string methodName, Type[] parameters, Type[] genericArguments)
         {
@@ -73,6 +73,73 @@ internal static class ProbeExpressionParserHelper
         internal Type[] Parameters { get; }
 
         internal Type[] GenericArguments { get; }
+
+        public bool Equals(ReflectionMethodIdentifier other)
+        {
+            return Type == other.Type &&
+                   MethodName == other.MethodName &&
+                   TypeArraysEqual(Parameters, other.Parameters) &&
+                   TypeArraysEqual(GenericArguments, other.GenericArguments);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is ReflectionMethodIdentifier other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = Type?.GetHashCode() ?? 0;
+                hashCode = (hashCode * 397) ^ (MethodName?.GetHashCode() ?? 0);
+                hashCode = (hashCode * 397) ^ GetTypesHashCode(Parameters);
+                hashCode = (hashCode * 397) ^ GetTypesHashCode(GenericArguments);
+                return hashCode;
+            }
+        }
+
+        private static bool TypeArraysEqual(Type[] left, Type[] right)
+        {
+            if (ReferenceEquals(left, right))
+            {
+                return true;
+            }
+
+            if (left == null || right == null || left.Length != right.Length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < left.Length; i++)
+            {
+                if (left[i] != right[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static int GetTypesHashCode(Type[] types)
+        {
+            if (types == null)
+            {
+                return 0;
+            }
+
+            unchecked
+            {
+                var hashCode = 17;
+                foreach (var type in types)
+                {
+                    hashCode = (hashCode * 397) ^ (type?.GetHashCode() ?? 0);
+                }
+
+                return hashCode;
+            }
+        }
     }
 
     internal readonly ref struct ExpressionBodyAndParameters

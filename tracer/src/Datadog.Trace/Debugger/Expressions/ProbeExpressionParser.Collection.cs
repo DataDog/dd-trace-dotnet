@@ -203,7 +203,11 @@ internal partial class ProbeExpressionParser<T>
 
     private MethodCallExpression BoundedFilterExpression(FilterExpression filterExpression, int maxCollectionSize)
     {
-        var helperMethod = GetFilterHelperMethod(nameof(FilterEvaluationHelpers.FilterForCapture), parameterCount: 4, filterExpression.IteratorType);
+        var helperMethod = ProbeExpressionParserHelper.GetMethodByReflection(
+            typeof(FilterEvaluationHelpers),
+            nameof(FilterEvaluationHelpers.FilterForCapture),
+            [typeof(IEnumerable<>), typeof(Func<,>), typeof(int), typeof(bool)],
+            [filterExpression.IteratorType]);
         var source = FlattenFilterChain(filterExpression, out var predicate);
 
         return Expression.Call(
@@ -346,14 +350,6 @@ internal partial class ProbeExpressionParser<T>
             AddError($"{source?.ToString() ?? "N/A"}.Count", e.Message);
             return ReturnDefaultValueExpression();
         }
-    }
-
-    private MethodInfo GetFilterHelperMethod(string methodName, int parameterCount, Type iteratorType)
-    {
-        return typeof(FilterEvaluationHelpers)
-              .GetMethods(BindingFlags.NonPublic | BindingFlags.Static)
-              .Single(m => m.Name == methodName && m.GetParameters().Length == parameterCount)
-              .MakeGenericMethod(iteratorType);
     }
 
     private ConstantExpression CompiledPredicateConstant(LambdaExpression predicate, Type iteratorType)
