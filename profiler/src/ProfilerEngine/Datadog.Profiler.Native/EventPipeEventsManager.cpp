@@ -5,6 +5,7 @@
 
 #include "EventsParserHelper.h"
 #include "IAllocationsListener.h"
+#include "IConfiguration.h"
 #include "IContentionListener.h"
 #include "IGCDumpListener.h"
 #include "IGCSuspensionsListener.h"
@@ -18,6 +19,7 @@ EventPipeEventsManager::EventPipeEventsManager(
     IContentionListener* pContentionListener,
     IGCSuspensionsListener* pGCSuspensionsListener,
     INetworkListener* pNetworkListener,
+    IConfiguration* pConfiguration,
     IGCDumpListener* pGCDumpListener)
     :
     _pCorProfilerInfo{pCorProfilerInfo}
@@ -26,6 +28,7 @@ EventPipeEventsManager::EventPipeEventsManager(
         pAllocationListener,
         pContentionListener,
         pGCSuspensionsListener,
+        pConfiguration,
         pGCDumpListener);
     _bclParser = std::make_unique<BclEventsParser>(pNetworkListener);
 }

@@ -20,6 +20,7 @@
 #include "IGarbageCollectionsListener.h"
 #include "IGCSuspensionsListener.h"
 #include "IGCDumpListener.h"
+#include "IConfiguration.h"
 
 #include "../../../../shared/src/native-src/string.h"
 #include "assert.h"
@@ -297,6 +298,7 @@ public:
         IAllocationsListener* pAllocationListener,
         IContentionListener* pContentionListener,
         IGCSuspensionsListener* pGCSuspensionsListener,
+        IConfiguration* pConfiguration,
         IGCDumpListener* pGCDumpListener
         );
 
@@ -361,6 +363,7 @@ private:
     IGCSuspensionsListener* _pGCSuspensionsListener = nullptr;
     std::vector<IGarbageCollectionsListener*> _pGarbageCollectionsListeners;
     IGCDumpListener* _pGCDumpListener = nullptr;
+    bool _skipReferenceChain = false;
 
     template <typename... Args>
     void LogGcEvent(Args const&... args);

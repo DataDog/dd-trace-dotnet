@@ -464,11 +464,6 @@ void CorProfilerCallback::InitializeServices()
         }
 
         IGCDumpListener* pGCDumpListener = _pHeapSnapshotManager;
-        if (_pConfiguration->IsHeapSnapshotSkipTraversal())
-        {
-            Log::Info("Heap snapshot skip-traversal is enabled: BulkXxx events will not be processed");
-            pGCDumpListener = nullptr;
-        }
 
         // TODO: add new CLR events-based providers to the event parser
         _pEventPipeEventsManager = std::make_unique<EventPipeEventsManager>(
@@ -477,6 +472,7 @@ void CorProfilerCallback::InitializeServices()
             _pContentionProvider,
             _pStopTheWorldProvider,
             _pNetworkProvider,
+            _pConfiguration.get(),
             pGCDumpListener
         );
 

@@ -42,6 +42,7 @@ ClrEventsParser::ClrEventsParser(
     IAllocationsListener* pAllocationListener,
     IContentionListener* pContentionListener,
     IGCSuspensionsListener* pGCSuspensionsListener,
+    IConfiguration* pConfiguration,
     IGCDumpListener* pGCDumpListener)
     :
     _pAllocationListener{pAllocationListener},
@@ -49,6 +50,8 @@ ClrEventsParser::ClrEventsParser(
     _pGCSuspensionsListener{pGCSuspensionsListener},
     _pGCDumpListener{pGCDumpListener}
 {
+    _skipReferenceChain = pConfiguration->IsHeapSnapshotSkipTraversal();
+
     ResetGC(_gcInProgress);
     ResetGC(_currentBGC);
 }
@@ -292,6 +295,11 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
         // get the list of root edges (stack, handles, etc.)
         LogGcEvent("OnGCBulkRootEdge");
 
+        if (_skipReferenceChain)
+        {
+            return;
+        }
+
         if (_pGCDumpListener != nullptr)
         {
             GCBulkRootEdgePayload payload{0};
@@ -315,6 +323,11 @@ ClrEventsParser::ParseGcEvent(std::chrono::nanoseconds timestamp, DWORD id, DWOR
     {
         // get the list of static variable roots
         LogGcEvent("OnGCBulkRootStaticVar");
+
+        if (_skipReferenceChain)
+        {
+            return;
+        }
 
         if (_pGCDumpListener != nullptr)
         {

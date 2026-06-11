@@ -124,7 +124,7 @@ Configuration::Configuration()
     _isHeapSnapshotSkipTraversal = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotSkipTraversal, false);
     _heapSnapshotInterval = ExtractHeapSnapshotInterval();
     _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
-    _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 85);
+    _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 50);
     _testHeapSnapshotInterval = ExtractTestHeapSnapshotInterval();
     _heapHandleLimit = ExtractHeapHandleLimit();
     bool defaultUseManagedCodeCache =
