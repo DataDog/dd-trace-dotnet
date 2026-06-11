@@ -3,20 +3,27 @@
 
 #include "LibrariesInfoCache.h"
 
+#include "IConfiguration.h"
 #include "Log.h"
+#include "MeanMaxMetric.h"
+#include "MetricsRegistry.h"
 #include "OpSysTools.h"
+#include "ProxyMetric.h"
 
 #include <algorithm>
+#include <chrono>
 #include <elf.h>
 #include <fcntl.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <unistd.h>
 
 using namespace std::chrono_literals;
 
 namespace {
+
 struct ScopedMmap
 {
     void* data;
@@ -36,17 +43,112 @@ struct ScopedMmap
 
     explicit operator bool() const { return data != MAP_FAILED; }
 };
+
 } // anonymous namespace
+
+// --------------------------------------------------------------------------
+// TrackingMemoryResource: wraps an upstream allocator to track memory usage.
+// --------------------------------------------------------------------------
+
+class TrackingMemoryResource : public shared::pmr::memory_resource
+{
+public:
+    explicit TrackingMemoryResource(shared::pmr::memory_resource* upstream) :
+        _upstream{upstream}
+    {
+    }
+
+    std::size_t GetCurrentUsage() const { return _currentUsage.load(std::memory_order_relaxed); }
+
+protected:
+    void* do_allocate(std::size_t bytes, std::size_t alignment) override
+    {
+        _currentUsage.fetch_add(bytes, std::memory_order_relaxed);
+        return _upstream->allocate(bytes, alignment);
+    }
+
+    void do_deallocate(void* p, std::size_t bytes, std::size_t alignment) override
+    {
+        _currentUsage.fetch_sub(bytes, std::memory_order_relaxed);
+        _upstream->deallocate(p, bytes, alignment);
+    }
+
+    bool do_is_equal(const memory_resource& other) const noexcept override
+    {
+        return this == &other;
+    }
+
+private:
+    shared::pmr::memory_resource* _upstream;
+    std::atomic<std::size_t> _currentUsage{0};
+};
+
+// --------------------------------------------------------------------------
+// FootprintTracker: encapsulates all memory/CPU tracking and metrics.
+// Only instantiated when IsMemoryFootprintEnabled() is true.
+// --------------------------------------------------------------------------
+
+struct FootprintTracker
+{
+    TrackingMemoryResource trackingResource;
+
+    std::uint32_t reloadCount{0};
+    std::uint64_t totalCpuNs{0};
+
+    std::atomic<uint32_t> libCount{0};
+#ifdef ARM64
+    std::atomic<uint32_t> moduleRegionCount{0};
+    std::atomic<uint32_t> symbolCount{0};
+#endif
+
+    std::shared_ptr<ProxyMetric> libCountMetric;
+    std::shared_ptr<ProxyMetric> memoryFootprintMetric;
+#ifdef ARM64
+    std::shared_ptr<ProxyMetric> moduleCountMetric;
+    std::shared_ptr<ProxyMetric> symbolCountMetric;
+#endif
+    std::shared_ptr<MeanMaxMetric> updateCpuMetric;
+    std::shared_ptr<MeanMaxMetric> reloadDurationMetric;
+    std::shared_ptr<MeanMaxMetric> lockHoldDurationMetric;
+
+    explicit FootprintTracker(shared::pmr::memory_resource* upstream) :
+        trackingResource{upstream}
+    {
+    }
+
+    void RegisterMetrics(MetricsRegistry& registry);
+    void LogStats(std::size_t libCount);
+    void RecordReload(std::chrono::steady_clock::duration reloadDuration,
+                      std::chrono::steady_clock::duration lockDuration,
+                      struct timespec cpuStart, struct timespec cpuEnd);
+};
+
+// --------------------------------------------------------------------------
+// LibrariesInfoCache
+// --------------------------------------------------------------------------
 
 std::atomic<LibrariesInfoCache*> LibrariesInfoCache::s_instance{nullptr};
 
 extern "C" void (*volatile dd_notify_libraries_cache_update)() __attribute__((weak));
 
-LibrariesInfoCache::LibrariesInfoCache(shared::pmr::memory_resource* resource) :
+LibrariesInfoCache::LibrariesInfoCache(IConfiguration* configuration, shared::pmr::memory_resource* resource, MetricsRegistry& metricsRegistry) :
+    _tracker{configuration->IsMemoryFootprintEnabled() ? std::make_unique<FootprintTracker>(resource) : nullptr},
+    _wrappersAllocator{_tracker ? &_tracker->trackingResource : resource},
+    _librariesInfo{_wrappersAllocator},
+    _newCache{_wrappersAllocator},
+#ifdef ARM64
+    _moduleRegions{_wrappersAllocator},
+    _symbols{_wrappersAllocator},
+    _newRegions{_wrappersAllocator},
+    _newSymbols{_wrappersAllocator},
+#endif
     _stopRequested{false},
-    _event(true), // set the event to force updating the cache the first time Wait is called
-    _wrappersAllocator{resource}
+    _event(true)
 {
+    if (_tracker)
+    {
+        _tracker->RegisterMetrics(metricsRegistry);
+    }
 }
 
 LibrariesInfoCache::~LibrariesInfoCache() = default;
@@ -142,6 +244,12 @@ bool LibrariesInfoCache::StopImpl()
     NotifyCacheUpdateImpl();
     Log::Debug("Notification to stop the worker has been sent.");
     _worker.join();
+
+    if (_tracker)
+    {
+        _tracker->LogStats(_librariesInfo.size());
+    }
+
     _librariesInfo.clear();
 #ifdef ARM64
     _moduleRegions.clear();
@@ -206,19 +314,25 @@ void LibrariesInfoCache::UpdateCache()
     // But the Cache Thread is blocked (T1 owns the malloc lock)
     // T1 is blocked when libwunding calls DlIteratePhdr.
 
-    // OPTIM: make it static to reuse buffer overtime
-    // Safe to make it static to the function, this variable is accessed only by one thread.
-    static std::vector<DlPhdrInfoWrapper> newCache;
-    newCache.reserve(_librariesInfo.capacity());
+    struct timespec cpuStart = {};
+    std::chrono::steady_clock::time_point reloadStart;
+    if (_tracker)
+    {
+        _tracker->reloadCount++;
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpuStart);
+        reloadStart = std::chrono::steady_clock::now();
+    }
+
+    _newCache.reserve(_librariesInfo.capacity());
 
     struct Data
     {
     public:
-        std::vector<DlPhdrInfoWrapper>* Cache;
+        std::vector<DlPhdrInfoWrapper, shared::pmr::polymorphic_allocator<DlPhdrInfoWrapper>>* Cache;
         shared::pmr::memory_resource* Allocator;
     };
 
-    auto data = Data{.Cache = &newCache, .Allocator = _wrappersAllocator};
+    auto data = Data{.Cache = &_newCache, .Allocator = _wrappersAllocator};
 
     dl_iterate_phdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
@@ -229,34 +343,62 @@ void LibrariesInfoCache::UpdateCache()
         &data);
 
 #ifdef ARM64
-    static std::vector<ModuleRegion> newRegions;
-    static std::vector<FuncEntry> newSymbols;
-    newRegions.clear();
-    newSymbols.clear();
-    BuildSymbolCache(newCache, newRegions, newSymbols);
+    _newRegions.clear();
+    _newSymbols.clear();
+    BuildSymbolCache(_newCache, _newRegions, _newSymbols);
 #endif
 
+    std::chrono::steady_clock::time_point lockStart;
+    if (_tracker)
+    {
+        lockStart = std::chrono::steady_clock::now();
+    }
     {
         std::unique_lock l{_cacheLock};
-        _librariesInfo.swap(newCache);
+        _librariesInfo.swap(_newCache);
 #ifdef ARM64
-        _moduleRegions.swap(newRegions);
-        _symbols.swap(newSymbols);
+        _moduleRegions.swap(_newRegions);
+        _symbols.swap(_newSymbols);
 #endif
+        if (_tracker)
+        {
+            _tracker->libCount.store(static_cast<uint32_t>(_librariesInfo.size()), std::memory_order_relaxed);
+#ifdef ARM64
+            _tracker->moduleRegionCount.store(static_cast<uint32_t>(_moduleRegions.size()), std::memory_order_relaxed);
+            _tracker->symbolCount.store(static_cast<uint32_t>(_symbols.size()), std::memory_order_relaxed);
+#endif
+        }
+    }
+    std::chrono::steady_clock::time_point lockEnd;
+    if (_tracker)
+    {
+        lockEnd = std::chrono::steady_clock::now();
     }
 
-    newCache.clear();
+    _newCache.clear();
 #ifdef ARM64
-    newRegions.clear();
-    newSymbols.clear();
+    _newRegions.clear();
+    _newSymbols.clear();
 #endif
+
+    if (_tracker)
+    {
+        auto reloadEnd = std::chrono::steady_clock::now();
+        auto reloadDuration = reloadEnd - reloadStart;
+        auto lockDuration = lockEnd - lockStart;
+
+        struct timespec cpuEnd = {};
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &cpuEnd);
+
+        _tracker->RecordReload(reloadDuration, lockDuration, cpuStart, cpuEnd);
+    }
 }
 
 #ifdef ARM64
 void LibrariesInfoCache::BuildSymbolCache(
-    std::vector<DlPhdrInfoWrapper>& phdrCache,
-    std::vector<ModuleRegion>& outRegions,
-    std::vector<FuncEntry>& outSymbols)
+    std::vector<DlPhdrInfoWrapper, shared::pmr::polymorphic_allocator<DlPhdrInfoWrapper>>& phdrCache,
+    std::vector<ModuleRegion, shared::pmr::polymorphic_allocator<ModuleRegion>>& outRegions,
+    std::vector<FuncEntry, shared::pmr::polymorphic_allocator<FuncEntry>>& outSymbols)
 {
     std::vector<FuncEntry> moduleSymbols;
 
@@ -485,3 +627,57 @@ void* LibrariesInfoCache::GetLocalAddressSpace()
     return unw_local_addr_space;
 }
 #endif
+
+// --------------------------------------------------------------------------
+// FootprintTracker method implementations
+// --------------------------------------------------------------------------
+
+void FootprintTracker::RegisterMetrics(MetricsRegistry& registry)
+{
+    libCountMetric = registry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_count", [this]() {
+        return static_cast<double_t>(libCount.load(std::memory_order_relaxed));
+    });
+    memoryFootprintMetric = registry.GetOrRegister<ProxyMetric>("dotnet_memory_footprint_libs_cache", [this]() {
+        return static_cast<double_t>(trackingResource.GetCurrentUsage());
+    });
+#ifdef ARM64
+    moduleCountMetric = registry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_module_regions", [this]() {
+        return static_cast<double_t>(moduleRegionCount.load(std::memory_order_relaxed));
+    });
+    symbolCountMetric = registry.GetOrRegister<ProxyMetric>("dotnet_libs_cache_symbols", [this]() {
+        return static_cast<double_t>(symbolCount.load(std::memory_order_relaxed));
+    });
+#endif
+    updateCpuMetric = registry.GetOrRegister<MeanMaxMetric>("dotnet_libs_cache_update_cpu_ns");
+    reloadDurationMetric = registry.GetOrRegister<MeanMaxMetric>("dotnet_libs_cache_reload_duration_ns");
+    lockHoldDurationMetric = registry.GetOrRegister<MeanMaxMetric>("dotnet_libs_cache_lock_hold_duration_ns");
+}
+
+void FootprintTracker::LogStats(std::size_t libCount)
+{
+    Log::Info("LibrariesInfoCache stats:");
+    Log::Info("  Cache reloads: ", reloadCount);
+    Log::Info("  Total CPU (worker): ", totalCpuNs / 1'000'000, " ms");
+    Log::Info("  Libraries in cache: ", libCount);
+#ifdef ARM64
+    Log::Info("  Module regions: ", moduleRegionCount.load(std::memory_order_relaxed));
+    Log::Info("  Symbol entries: ", symbolCount.load(std::memory_order_relaxed));
+#endif
+    Log::Info("  Memory current: ", trackingResource.GetCurrentUsage(), " bytes");
+}
+
+void FootprintTracker::RecordReload(std::chrono::steady_clock::duration reloadDuration,
+                                    std::chrono::steady_clock::duration lockDuration,
+                                    struct timespec cpuStart, struct timespec cpuEnd)
+{
+    auto cpuNs = static_cast<double_t>(
+        (cpuEnd.tv_sec - cpuStart.tv_sec) * 1'000'000'000LL + (cpuEnd.tv_nsec - cpuStart.tv_nsec));
+
+    totalCpuNs += static_cast<std::uint64_t>(cpuNs);
+
+    updateCpuMetric->Add(cpuNs);
+    reloadDurationMetric->Add(static_cast<double_t>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(reloadDuration).count()));
+    lockHoldDurationMetric->Add(static_cast<double_t>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(lockDuration).count()));
+}

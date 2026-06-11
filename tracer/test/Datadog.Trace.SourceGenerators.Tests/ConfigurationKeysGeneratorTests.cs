@@ -479,4 +479,69 @@ public class ConfigurationKeysGeneratorTests
         diagnostics.Where(d => d.Id == "DDSG0008").Should().HaveCount(1);
         diagnostics.First(d => d.Id == "DDSG0008").GetMessage().Should().Contain("DD_TRACE_ENABLED").And.Contain("documentation");
     }
+
+    [Fact]
+    public void NativeScopeOnlyEntryIsExcludedFromGeneratedOutput()
+    {
+        const string supportedConfigYaml = """
+                                           version: '2'
+                                           supportedConfigurations:
+                                             DD_MANAGED_ONLY:
+                                             - implementation: A
+                                               scope: managed
+                                               product: Tracer
+                                               documentation: A managed-only config.
+                                             DD_NATIVE_ONLY:
+                                             - implementation: A
+                                               scope: native
+                                               product: Tracer
+                                               documentation: A native-only config.
+                                             DD_BOTH:
+                                             - implementation: A
+                                               scope: managed, native
+                                               product: Tracer
+                                               documentation: A config read by both.
+                                           """;
+
+        var (diagnostics, outputs) = TestHelpers.GetGeneratedTrees<ConfigurationKeysGenerator>(
+            [],
+            [],
+            [("supported-configurations.yaml", supportedConfigYaml)],
+            assertOutput: false);
+
+        diagnostics.Should().BeEmpty();
+
+        var allOutput = string.Join("\n", outputs);
+        allOutput.Should().Contain("DD_MANAGED_ONLY", because: "managed-only entry must generate a constant");
+        allOutput.Should().Contain("DD_BOTH", because: "managed+native entry must generate a constant");
+        allOutput.Should().NotContain("DD_NATIVE_ONLY", because: "native-only entry must not generate a constant");
+    }
+
+    [Fact]
+    public void EmitsErrorForEmptyOrInvalidScopeArray()
+    {
+        const string supportedConfigYaml = """
+                                           version: '2'
+                                           supportedConfigurations:
+                                             DD_EMPTY_SCOPE:
+                                             - implementation: A
+                                               scope:
+                                               product: Tracer
+                                               documentation: Entry with empty scope array.
+                                             DD_TYPO_SCOPE:
+                                             - implementation: A
+                                               scope: managd
+                                               product: Tracer
+                                               documentation: Entry with a typo in scope.
+                                           """;
+
+        var (diagnostics, _) = TestHelpers.GetGeneratedTrees<ConfigurationKeysGenerator>(
+            [],
+            [],
+            [("supported-configurations.yaml", supportedConfigYaml)],
+            assertOutput: false);
+
+        diagnostics.Should().Contain(d => d.Id == "DDSG0009", because: "empty or unrecognized scope must produce a diagnostic");
+        diagnostics.Count(d => d.Id == "DDSG0009").Should().Be(2, because: "both DD_EMPTY_SCOPE and DD_TYPO_SCOPE are invalid");
+    }
 }
