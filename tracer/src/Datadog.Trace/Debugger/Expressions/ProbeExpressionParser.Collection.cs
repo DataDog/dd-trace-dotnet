@@ -20,7 +20,7 @@ internal partial class ProbeExpressionParser<T>
 {
     private Dictionary<Expression, RedactedDictionaryValueExpression> _redactedDictionaryValues;
     private bool _isBoundedFilterCapture;
-    private bool _deferFiltersForBoundedCaptureSource;
+    private int _deferredFilterSourceArrayStack = -1;
     private int _boundedFilterMaxCollectionSize;
 
     private static bool ShouldRedactDictionaryKey(object key)
@@ -69,8 +69,9 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression Filter(JsonTextReader reader, List<ParameterExpression> parameters)
     {
-        var filterExpression = ParseFilter(reader, parameters);
-        if (_deferFiltersForBoundedCaptureSource)
+        var shouldDefer = _deferredFilterSourceArrayStack == _arrayStack;
+        var filterExpression = ParseFilter(reader, parameters, shouldDefer);
+        if (shouldDefer)
         {
             return filterExpression;
         }
@@ -125,15 +126,17 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    private FilterExpression ParseFilter(JsonTextReader reader, List<ParameterExpression> parameters)
+    private FilterExpression ParseFilter(JsonTextReader reader, List<ParameterExpression> parameters, bool isDeferredFilterSource = false)
     {
         Expression source = null;
         try
         {
             var previousIsBoundedFilterCapture = _isBoundedFilterCapture;
-            var previousDeferFiltersForBoundedCaptureSource = _deferFiltersForBoundedCaptureSource;
+            var previousDeferredFilterSourceArrayStack = _deferredFilterSourceArrayStack;
             _isBoundedFilterCapture = false;
-            _deferFiltersForBoundedCaptureSource = previousIsBoundedFilterCapture || previousDeferFiltersForBoundedCaptureSource;
+            _deferredFilterSourceArrayStack = previousIsBoundedFilterCapture || isDeferredFilterSource
+                                                  ? _arrayStack + 1
+                                                  : -1;
             try
             {
                 source = ParseTree(reader, parameters, null);
@@ -141,7 +144,7 @@ internal partial class ProbeExpressionParser<T>
             finally
             {
                 _isBoundedFilterCapture = previousIsBoundedFilterCapture;
-                _deferFiltersForBoundedCaptureSource = previousDeferFiltersForBoundedCaptureSource;
+                _deferredFilterSourceArrayStack = previousDeferredFilterSourceArrayStack;
             }
 
             if (source.Type == ProbeExpressionParserHelper.UndefinedValueType)
@@ -159,9 +162,9 @@ internal partial class ProbeExpressionParser<T>
                                       : GetIteratorParameterType(source.Type);
             ParameterExpression itParameter = Expression.Parameter(itParameterType);
             previousIsBoundedFilterCapture = _isBoundedFilterCapture;
-            previousDeferFiltersForBoundedCaptureSource = _deferFiltersForBoundedCaptureSource;
+            previousDeferredFilterSourceArrayStack = _deferredFilterSourceArrayStack;
             _isBoundedFilterCapture = false;
-            _deferFiltersForBoundedCaptureSource = false;
+            _deferredFilterSourceArrayStack = -1;
             Expression predicate;
             try
             {
@@ -170,7 +173,7 @@ internal partial class ProbeExpressionParser<T>
             finally
             {
                 _isBoundedFilterCapture = previousIsBoundedFilterCapture;
-                _deferFiltersForBoundedCaptureSource = previousDeferFiltersForBoundedCaptureSource;
+                _deferredFilterSourceArrayStack = previousDeferredFilterSourceArrayStack;
             }
 
             var lambda = Expression.Lambda(predicate, itParameter);

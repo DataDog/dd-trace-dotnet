@@ -460,6 +460,82 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionEvaluator_CaptureExpressionRootFilter_MaterializesNestedFilterUnderIndex()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var nestedCollections = new List<List<string>>
+            {
+                new() { "a" },
+                new() { "hello", "world", "again" },
+            };
+            scopeMembers.AddMember(new ScopeMember("NestedCollectionsLocal", typeof(List<List<string>>), nestedCollections, ScopeMemberKind.Local));
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions:
+                [
+                    new CaptureExpressionDefinition(
+                        "filtered",
+                        new DebuggerExpression(
+                            string.Empty,
+                            @"{""filter"":[{""index"":[{""filter"":[{""ref"":""NestedCollectionsLocal""},{""gt"":[{""len"":""@it""},1]}]},0]},{""gt"":[{""len"":""@it""},0]}]}",
+                            null),
+                        new CaptureLimitInfo(MaxReferenceDepth: 5, MaxCollectionSize: 1, MaxLength: 255, MaxFieldCount: 20))
+                ]);
+
+            ExpressionEvaluationResult result = default;
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+
+            result.CaptureExpressionCount.Should().Be(1);
+            result.CaptureExpressions[0].Value.Should().BeAssignableTo<IBoundedCaptureCollectionResult>();
+            var filtered = (IBoundedCaptureCollectionResult)result.CaptureExpressions[0].Value;
+            filtered.Count.Should().Be(1);
+            filtered.WasTruncated.Should().BeTrue();
+            ((IEnumerable<string>)result.CaptureExpressions[0].Value).Should().ContainSingle().Which.Should().Be("hello");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_CaptureExpressionRootFilter_MaterializesNestedDictionaryFilterUnderIndex()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var dictionary = new Dictionary<string, List<string>>
+            {
+                { "first", new List<string> { "skip" } },
+                { "target", new List<string> { "alpha", "beta", "gamma" } },
+            };
+            scopeMembers.AddMember(new ScopeMember("NestedDictionaryLocal", typeof(Dictionary<string, List<string>>), dictionary, ScopeMemberKind.Local));
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions:
+                [
+                    new CaptureExpressionDefinition(
+                        "filtered",
+                        new DebuggerExpression(
+                            string.Empty,
+                            @"{""filter"":[{""getmember"":[{""index"":[{""filter"":[{""ref"":""NestedDictionaryLocal""},{""eq"":[""@key"",""target""]}]},0]},""Value""]},{""gt"":[{""len"":""@it""},0]}]}",
+                            null),
+                        new CaptureLimitInfo(MaxReferenceDepth: 5, MaxCollectionSize: 1, MaxLength: 255, MaxFieldCount: 20))
+                ]);
+
+            ExpressionEvaluationResult result = default;
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+
+            result.CaptureExpressionCount.Should().Be(1);
+            result.CaptureExpressions[0].Value.Should().BeAssignableTo<IBoundedCaptureCollectionResult>();
+            var filtered = (IBoundedCaptureCollectionResult)result.CaptureExpressions[0].Value;
+            filtered.Count.Should().Be(1);
+            filtered.WasTruncated.Should().BeTrue();
+            ((IEnumerable<string>)result.CaptureExpressions[0].Value).Should().ContainSingle().Which.Should().Be("alpha");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
         public void FilterEvaluationHelpers_FilterForCapture_StopsAfterLimitAndOneExtraMatch()
         {
             var collection = new CountingEnumerable<string>(["hello", "world", "again"]);
