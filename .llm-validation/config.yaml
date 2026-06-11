@@ -4,4 +4,8 @@ runs: 3
 
 policy:
   noise_threshold: 1.0
-  pairwise_win_floor: 0.45
+  pairwise_win_floor: 0.45        # candidate loses the pairwise majority on a case -> regression (WARN for medium/low)
+  high_severity_fail_floor: 0.45  # a HIGH-severity case below this FAILs (blocks). == win floor: any high-sev
+                                  # regression blocks. Lower it (e.g. 0.40) to allow a high-severity WARN band.
+                                  # Calibrated from the observed logging-terminology regression (~25-42% win-rate),
+                                  # which is a real high-severity regression and must FAIL, not WARN.
