@@ -21,6 +21,21 @@ if ! { command -v git && command -v curl && command -v jq; } >/dev/null 2>&1; th
     || echo "WARN: could not apt-get base tools; assuming they are present."
 fi
 
+echo "=== LLM Validation: resolve baseline + skip if AGENTS.md unchanged ==="
+# Do this BEFORE the expensive installs (auth/node/.NET/clone/build): on branches that didn't touch the
+# prompt, the job exits here in seconds instead of paying to install a whole toolchain just to no-op.
+# Now that the job runs on_success (not manual), this early skip is what keeps cost ~zero on non-prompt PRs.
+# dd-trace-dotnet GitLab pipelines are branch pipelines (no MR vars), so baseline = merge-base with the
+# target branch (default master). The CLI later reads `git show <base-sha>:AGENTS.md`.
+BASE_REF="${LLMVAL_BASE_REF:-master}"
+git -C "$CI_PROJECT_DIR" fetch --depth 200 origin "$BASE_REF" || true
+BASE_SHA="$(git -C "$CI_PROJECT_DIR" merge-base "origin/$BASE_REF" HEAD 2>/dev/null || echo "origin/$BASE_REF")"
+echo "baseline = $BASE_SHA (vs $BASE_REF)"
+if git -C "$CI_PROJECT_DIR" diff --quiet "$BASE_SHA" HEAD -- AGENTS.md 2>/dev/null; then
+  echo "AGENTS.md unchanged vs $BASE_REF — nothing to validate. Exiting 0."
+  exit 0
+fi
+
 echo "=== LLM Validation: gateway auth (rapid-ai-platform) ==="
 curl -fsSL -o /usr/local/bin/authanywhere \
   "https://binaries.ddbuild.io/dd-source/authanywhere/LATEST/authanywhere-linux-amd64"
@@ -78,20 +93,6 @@ fi
 ( cd /tmp/llmval && dotnet build -c Release Datadog.LlmValidation.slnx )
 CLI_DLL="/tmp/llmval/src/Datadog.LlmValidation.Cli/bin/Release/net8.0/Datadog.LlmValidation.Cli.dll"
 
-echo "=== LLM Validation: resolve baseline ==="
-# dd-trace-dotnet GitLab pipelines are branch pipelines (no MR vars), so baseline = merge-base with the
-# target branch (default master). The CLI reads `git show <base-sha>:AGENTS.md`.
-BASE_REF="${LLMVAL_BASE_REF:-master}"
-git -C "$CI_PROJECT_DIR" fetch --depth 200 origin "$BASE_REF" || true
-BASE_SHA="$(git -C "$CI_PROJECT_DIR" merge-base "origin/$BASE_REF" HEAD 2>/dev/null || echo "origin/$BASE_REF")"
-echo "baseline = $BASE_SHA (vs $BASE_REF)"
-
-# Nothing to validate if AGENTS.md is unchanged vs the baseline.
-if git -C "$CI_PROJECT_DIR" diff --quiet "$BASE_SHA" HEAD -- AGENTS.md 2>/dev/null; then
-  echo "AGENTS.md unchanged vs $BASE_REF — nothing to validate. Exiting 0."
-  exit 0
-fi
-
 echo "=== LLM Validation: run gate (baseline=$BASE_SHA, level=${LLMVAL_LEVEL:-default}) ==="
 # Level preset (minimum/medium/full) is defined in .llm-validation/config.yaml; explicit overrides win.
 EXTRA=()
@@ -126,6 +127,6 @@ else
   echo "pr-commenter not on PATH (or master branch) — see report.md in the log above / job artifacts."
 fi
 
-# Advisory during the POC: surface the verdict but don't fail the pipeline.
-# To enforce later, replace the next line with: exit "$GATE_EXIT"
-exit 0
+# Enforcing: a FAIL verdict fails the job (and thus the pipeline), blocking the merge. The PR comment
+# above always posts first, so the verdict is visible regardless. PASS/WARN exit 0.
+exit "$GATE_EXIT"

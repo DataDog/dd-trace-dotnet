@@ -28,8 +28,9 @@ as an artifact** (the dd-trace-py #17900 model). Posting to the GitHub PR is **o
 `pr-commenter --for-pr=$CI_COMMIT_REF_NAME --on-duplicate=replace` only if `pr-commenter` is on `PATH`.
 Artifacts: `results.json`, `report.md`, `details.json`.
 
-The job is **manual** during bring-up (it's a paid LLM run) and skips `master`; `run.sh` also self-skips if
-`AGENTS.md` is unchanged vs `master`. Flip the rule to `when: on_success` to run it automatically per branch.
+The job runs **automatically** (`when: on_success`) on every non-`master` pipeline and **blocks the merge on a
+FAIL** (`allow_failure: false`). To keep cost ~zero on PRs that don't touch the prompt, `run.sh` self-skips
+**early** (exit 0, before any installs) when `AGENTS.md` is unchanged vs `master`.
 
 ## Prerequisites / open items (must confirm before first run)
 
@@ -58,5 +59,7 @@ move to the Batches API. Prompt caching (the shared `AGENTS.md`) already cuts co
 
 ## Enforcement
 
-Advisory for now: the job is `allow_failure: true` and `run.sh` exits 0 regardless of verdict. To enforce,
-set `allow_failure: false` and change the last line of `run.sh` to `exit "$GATE_EXIT"`.
+**Enforcing (2026-06):** `allow_failure: false` and `run.sh` ends in `exit "$GATE_EXIT"`, so a **FAIL** verdict
+fails the job → fails the pipeline → blocks the merge. PASS/WARN exit 0. The PR comment posts before the exit,
+so the verdict is always visible. To make the gate advisory again, set `allow_failure: true` (the job will
+still post the report but won't block).

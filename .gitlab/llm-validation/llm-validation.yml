@@ -16,12 +16,13 @@
   timeout: 2h   # agent runs are slow in CI (~15 min/case); avoid the default 1h timeout for multi-case runs
   rules:
     # dd-trace-dotnet GitLab pipelines are branch pipelines (no merge_request_event), like the BP jobs.
-    # Manual during bring-up (it's a paid LLM run); run.sh self-skips if AGENTS.md is unchanged vs master.
-    # To automate later: replace the manual rule with `when: on_success`.
+    # Enforcing: runs automatically on every non-master pipeline and BLOCKS the merge on a FAIL verdict
+    # (allow_failure: false). run.sh self-skips early (exit 0, before any installs) when AGENTS.md is
+    # unchanged vs master, so non-prompt PRs cost ~nothing and never fail here.
     - if: '$CI_COMMIT_REF_NAME == "master"'
       when: never
-    - when: manual
-      allow_failure: true
+    - when: on_success
+      allow_failure: false
   variables:
     # Must be an approved (registry.ddbuild.io) image — the k8s runners enforce a registry allowlist (VAP).
     # benchmarking-platform-tools-ubuntu is proven-approved (the gateway-check ran on it) and has
