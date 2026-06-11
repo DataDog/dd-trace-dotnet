@@ -2659,6 +2659,16 @@ supportedConfigurations:
       Configuration key for setting the format of <see cref="Datadog.Trace.Configuration.MutableSettings.CustomSamplingRules"/>.
       Valid values are <c>regex</c> or <c>glob</c>.
       If the value is not recognized, trace sampling rules are disabled.
+  DD_TRACE_SECURE_RANDOM:
+  - implementation: A
+    type: boolean
+    default: 'false'
+    documentation: |-
+      When <c>true</c>, all trace and span ID generation uses <c>RandomNumberGenerator.Fill()</c>
+      (reads kernel entropy on every call) instead of the thread-local PRNG.
+      Enable this when the process may be forked or restored from a snapshot
+      to guarantee ID uniqueness across copies.
+      Default value is <c>false</c>.
   DD_TRACE_SERVICE_MAPPING:
   - implementation: A
     scope: managed
