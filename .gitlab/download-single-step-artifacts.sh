@@ -46,15 +46,31 @@ fi
 branchName="refs/heads/$CI_COMMIT_BRANCH"
 artifactName="ssi-artifacts"
 
-echo "Looking for azure devops PR builds for branch '$branchName' for commit '$CI_COMMIT_SHA' to start"
+echo "Looking for an azure devops build for commit '$CI_COMMIT_SHA' (branch '$branchName') to start"
 
-# We should _definitely_ have the build by now, so if not, there probably won't be one
-# Check for PR builds first (as more likely to be "full" builds)
-allBuildsForPrUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=100&queryOrder=queueTimeDescending&reasonFilter=pullRequest"
-buildId=$(curl -sS $allBuildsForPrUrl | jq --arg version $CI_COMMIT_SHA --arg branch $CI_COMMIT_BRANCH '.value[] | select(.triggerInfo["pr.sourceBranch"] == $branch and .triggerInfo["pr.sourceSha"] == $version)  | .id' | head -n 1)
+# Artifacts are identified by the commit SHA, not the branch: the same SHA always produces
+# the same artifacts regardless of which ref the pipeline ran on. A branch-keyed lookup
+# breaks when the mirrored GitLab pipeline is attributed to a ref that merely *contains*
+# this commit (e.g. a feature branch rebased onto this master commit) — no Azure build
+# exists for that (branch, SHA) pair even though builds for the SHA exist on another branch.
+# So match on the commit SHA first, across all branches. A build "carries" the commit when
+# it is a PR build with pr.sourceSha == SHA, or any build with sourceVersion == SHA. Prefer
+# non-scheduled builds, but fall back to a scheduled build for the same SHA.
+allBuildsUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=200&queryOrder=queueTimeDescending"
+buildId=$(curl -sS "$allBuildsUrl" | jq -r --arg version "$CI_COMMIT_SHA" '
+  [ .value[] | select((.triggerInfo["pr.sourceSha"] == $version) or (.sourceVersion == $version)) ]
+  | ( map(select(.reason != "schedule")) + map(select(.reason == "schedule")) )
+  | .[0].id // empty')
+
+# Fallback: original branch-keyed lookup (PR builds first, then standalone branch builds).
+if [ -z "${buildId}" ]; then
+  echo "No build matched commit '$CI_COMMIT_SHA' directly; falling back to branch '$branchName' lookup..."
+  allBuildsForPrUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=100&queryOrder=queueTimeDescending&reasonFilter=pullRequest"
+  buildId=$(curl -sS $allBuildsForPrUrl | jq --arg version $CI_COMMIT_SHA --arg branch $CI_COMMIT_BRANCH '.value[] | select(.triggerInfo["pr.sourceBranch"] == $branch and .triggerInfo["pr.sourceSha"] == $version)  | .id' | head -n 1)
+fi
 
 if [ -z "${buildId}" ]; then
-  echo "No PR builds found for commit '$CI_COMMIT_SHA' on branch '$branchName'. Checking for standalone builds..."  
+  echo "No PR builds found for commit '$CI_COMMIT_SHA' on branch '$branchName'. Checking for standalone builds..."
   allBuildsForBranchUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=10&queryOrder=queueTimeDescending&branchName=$branchName&reasonFilter=manual,individualCI"
   buildId=$(curl -sS $allBuildsForBranchUrl | jq --arg version $CI_COMMIT_SHA '.value[] | select(.sourceVersion == $version and .reason != "schedule")  | .id' | head -n 1)
 fi
@@ -64,7 +80,7 @@ if [ -z "${buildId}" ]; then
   exit 1
 fi
 
-echo "Found build with id '$buildId' for commit '$CI_COMMIT_SHA' on branch '$branchName'"
+echo "Found build with id '$buildId' for commit '$CI_COMMIT_SHA'"
 
 # Now try to download the ssi artifacts from the build
 artifactsUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds/$buildId/artifacts?api-version=7.1&artifactName=$artifactName"
