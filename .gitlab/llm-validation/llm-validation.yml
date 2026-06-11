@@ -1,0 +1,46 @@
+# LLM Validation gate — compares the MR's AGENTS.md against the target branch and posts a
+# pass/warn/fail report to the GitHub PR. See README.md in this directory for setup + assumptions.
+#
+# Wire it in by adding to the repo's top-level .gitlab-ci.yml:
+#   include:
+#     - local: .gitlab/llm-validation/llm-validation.yml
+
+"llm validation":
+  stage: .post
+  needs: []   # independent of the rest of the pipeline — playable immediately, no waiting for .post
+  # Reuse a Linux .NET 8 image from the dotnet pipeline; run.sh installs node + the claude CLI.
+  # The report is always printed to the log + uploaded as an artifact (the #17900 model); posting to
+  # the PR is optional (run.sh uses pr-commenter only if it's on PATH).
+  image: "$LLMVAL_IMAGE"
+  tags: ["arch:amd64"]
+  timeout: 2h   # agent runs are slow in CI (~15 min/case); avoid the default 1h timeout for multi-case runs
+  rules:
+    # dd-trace-dotnet GitLab pipelines are branch pipelines (no merge_request_event), like the BP jobs.
+    # Enforcing: runs automatically on every non-master pipeline and BLOCKS the merge on a FAIL verdict
+    # (allow_failure: false). run.sh self-skips early (exit 0, before any installs) when AGENTS.md is
+    # unchanged vs master, so non-prompt PRs cost ~nothing and never fail here.
+    - if: '$CI_COMMIT_REF_NAME == "master"'
+      when: never
+    - when: on_success
+      allow_failure: false
+  variables:
+    # Must be an approved (registry.ddbuild.io) image — the k8s runners enforce a registry allowlist (VAP).
+    # benchmarking-platform-tools-ubuntu is proven-approved (the gateway-check ran on it) and has
+    # pr-commenter/git/jq/curl; run.sh installs .NET 8 + node + claude on top. If runtime egress for those
+    # installs is blocked, bake a custom approved image instead (see README).
+    LLMVAL_IMAGE: "registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest"
+    LLMVAL_PLATFORM_REF: "nacho/initialImplementation"  # TODO: switch to "main" once the code is merged there
+    # Testing level (preset defined in .llm-validation/config.yaml): minimum | medium | full.
+    # `minimum` runs only the logging-terminology regression — cheap + meaningful while we iterate.
+    LLMVAL_LEVEL: "minimum"
+    # Optional overrides (win over the preset): LLMVAL_RUNS, LLMVAL_MAX_CASES, LLMVAL_CASES.
+    # LLMVAL_CASES: "dotnet-tracer-logging-terminology-004"
+  script:
+    - bash .gitlab/llm-validation/run.sh
+  artifacts:
+    when: always
+    paths:
+      - results.json
+      - report.md
+      - details.json
+    expire_in: 1 month
