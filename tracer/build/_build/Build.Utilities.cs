@@ -564,17 +564,24 @@ partial class Build
 
                     samplesSln.Save();
 
-                    // Create a copy of the "full solution" containing everything EXCEPT the standalone test-application projects.
-                    // This is the inverse of Samples.g.sln; together they cover the full project graph with zero overlap.
-                    // It is the default Nuke Solution used by CI/build targets — restoring it does not pull in sample-only NuGet
-                    // dependencies (MongoDB, Elasticsearch, etc.), which dominate the local packages folder shipped via working-directory artifacts.
+                    // Create a copy of the "full solution" containing everything EXCEPT:
+                    //  - standalone test-application projects (covered by Samples.g.sln, see IsTestApplication)
+                    //  - the Datadog.Trace.Tools.Runner / Tools.dd_dotnet families and Tools.Shared (see IsToolProject)
+                    // The tool projects are NOT compiled by the upstream tracer build (CompileManagedSrc in Build.Steps.cs
+                    // explicitly excludes them); they're built later by dedicated Nuke targets (BuildRunnerTool,
+                    // PackRunnerToolNuget, BuildStandaloneTool, BuildDdDotnet, ...) which look the projects up via
+                    // FullSolution.GetProject(...). Keeping them out of Build.g.sln means the upstream solution-wide
+                    // Restore doesn't pull in their (large) multi-RID / multi-TFM dependencies — runtime packs,
+                    // ASP.NET / Windows-desktop runtime, and reference assemblies for older TFMs.
+                    // Tool projects are intentionally in neither Build.g.sln nor Samples.g.sln; the FullSolution
+                    // (Datadog.Trace.sln) remains the source of truth for them.
                     var buildSln = ProjectModelTasks.CreateSolution(
                         fileName: RootDirectory / "Datadog.Trace.Build.g.sln",
                         solutions: new[] { FullSolution },
                         randomizeProjectIds: false);
 
                     buildSln.AllProjects
-                       .Where(IsTestApplication)
+                       .Where(x => IsTestApplication(x) || IsToolProject(x))
                        .ForEach(x =>
                         {
                             Logger.Information("Build sln: removing project '{Name}'", x.Name);
@@ -582,6 +589,18 @@ partial class Build
                         });
 
                     buildSln.Save();
+
+                    bool IsToolProject(Project x) =>
+                        x.Name is "Datadog.Trace.Tools.Runner"
+                            or "Datadog.Trace.Tools.Runner.Tests"
+                            or "Datadog.Trace.Tools.Runner.IntegrationTests"
+                            or "Datadog.Trace.Tools.Runner.ArtifactTests"
+                            or "Datadog.Trace.Tools.dd_dotnet"
+                            or "Datadog.Trace.Tools.dd_dotnet.Tests"
+                            or "Datadog.Trace.Tools.dd_dotnet.IntegrationTests"
+                            or "Datadog.Trace.Tools.dd_dotnet.ArtifactTests"
+                            or "Datadog.Trace.Tools.dd_dotnet.SourceGenerators"
+                            or "Datadog.Trace.Tools.Shared";
 
                     bool IsTestApplication(Project x)
                     {
