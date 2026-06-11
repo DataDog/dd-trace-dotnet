@@ -278,10 +278,10 @@ errors: [
 "locations": [
 {
 "line": 1,
-"column": 2
+"column": 2,
 },
 ]
-},
+}
 ]
 ,
       error.type: HotChocolate.Error,
@@ -321,10 +321,10 @@ errors: [
 "locations": [
 {
 "line": 1,
-"column": 18
+"column": 18,
 },
 ]
-},
+}
 ]
 ,
       error.type: HotChocolate.Error,
@@ -360,10 +360,10 @@ errors: [
 "locations": [
 {
 "line": 1,
-"column": 18
+"column": 18,
 },
 ]
-},
+}
 ]
 ,
       error.type: HotChocolate.Error,
