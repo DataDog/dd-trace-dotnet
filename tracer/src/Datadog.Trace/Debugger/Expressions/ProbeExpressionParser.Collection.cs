@@ -55,16 +55,16 @@ internal partial class ProbeExpressionParser<T>
                (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>));
     }
 
-    private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters)
+    private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var any = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.Any) && m.GetParameters().Length == 2);
-        return Predicate(reader, parameters, any);
+        return Predicate(reader, parameters, any, itParameter);
     }
 
-    private Expression HasAll(JsonTextReader reader, List<ParameterExpression> parameters)
+    private Expression HasAll(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var all = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.All) && m.GetParameters().Length == 2);
-        return Predicate(reader, parameters, all);
+        return Predicate(reader, parameters, all, itParameter);
     }
 
     private Expression Filter(JsonTextReader reader, List<ParameterExpression> parameters)
@@ -81,13 +81,13 @@ internal partial class ProbeExpressionParser<T>
                    : MaterializeFilterExpression(filterExpression);
     }
 
-    private Expression Predicate(JsonTextReader reader, List<ParameterExpression> parameters, MethodInfo predicateMethod)
+    private Expression Predicate(JsonTextReader reader, List<ParameterExpression> parameters, MethodInfo predicateMethod, ParameterExpression outerItParameter)
     {
         Expression source = null;
         MethodCallExpression callExpression = null;
         try
         {
-            source = ParseTree(reader, parameters, null);
+            source = ParseTree(reader, parameters, outerItParameter);
             if (source.Type == ProbeExpressionParserHelper.UndefinedValueType)
             {
                 ReturnDefaultValueExpression();
@@ -106,7 +106,7 @@ internal partial class ProbeExpressionParser<T>
             }
 
             ParameterExpression itParameter = Expression.Parameter(itParameterType);
-            var predicate = ParseTree(reader, new List<ParameterExpression> { Expression.Parameter(source.Type) }, itParameter);
+            var predicate = ParseTree(reader, parameters, itParameter);
             var lambda = Expression.Lambda(predicate, itParameter);
             var genericPredicateMethod = predicateMethod.MakeGenericMethod(itParameterType);
             callExpression = Expression.Call(null, genericPredicateMethod, PredicateSource(source, itParameterType), lambda);
@@ -168,7 +168,7 @@ internal partial class ProbeExpressionParser<T>
             Expression predicate;
             try
             {
-                predicate = ParseTree(reader, new List<ParameterExpression> { Expression.Parameter(source.Type) }, itParameter);
+                predicate = ParseTree(reader, parameters, itParameter);
             }
             finally
             {
@@ -214,7 +214,7 @@ internal partial class ProbeExpressionParser<T>
             null,
             helperMethod,
             PredicateSource(source, filterExpression.IteratorType),
-            CompiledPredicateConstant(predicate, filterExpression.IteratorType),
+            PredicateArgument(predicate, filterExpression.IteratorType),
             Expression.Constant(maxCollectionSize),
             Expression.Constant(filterExpression.IsDictionary));
     }
@@ -237,6 +237,25 @@ internal partial class ProbeExpressionParser<T>
         var parameter = firstPredicate.Parameters[0];
         var secondPredicateBody = new ParameterReplacingVisitor(secondPredicate.Parameters[0], parameter).Visit(secondPredicate.Body);
         return Expression.Lambda(Expression.AndAlso(firstPredicate.Body, secondPredicateBody), parameter);
+    }
+
+    private Expression PredicateArgument(LambdaExpression predicate, Type iteratorType)
+    {
+        return ReferencesOuterParameter(predicate)
+                   ? predicate
+                   : CompiledPredicateConstant(predicate, iteratorType);
+    }
+
+    private bool ReferencesOuterParameter(LambdaExpression predicate)
+    {
+        var visitor = new OuterParameterReferenceVisitor(predicate.Parameters[0]);
+        visitor.Visit(predicate.Body);
+        return visitor.Found;
+    }
+
+    private ConstantExpression CompiledPredicateConstant(LambdaExpression predicate, Type iteratorType)
+    {
+        return Expression.Constant(predicate.Compile(), typeof(Func<,>).MakeGenericType(iteratorType, typeof(bool)));
     }
 
     private Expression GetItemAtIndex(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -350,11 +369,6 @@ internal partial class ProbeExpressionParser<T>
             AddError($"{source?.ToString() ?? "N/A"}.Count", e.Message);
             return ReturnDefaultValueExpression();
         }
-    }
-
-    private ConstantExpression CompiledPredicateConstant(LambdaExpression predicate, Type iteratorType)
-    {
-        return Expression.Constant(predicate.Compile(), typeof(Func<,>).MakeGenericType(iteratorType, typeof(bool)));
     }
 
     private MethodCallExpression CollectionAndStringLengthExpression(Expression source)
@@ -668,5 +682,53 @@ internal partial class ProbeExpressionParser<T>
         internal Expression ShouldRedactExpression { get; } = shouldRedactExpression;
 
         internal Expression ValueExpression { get; } = valueExpression;
+    }
+
+    private sealed class OuterParameterReferenceVisitor : ExpressionVisitor
+    {
+        private readonly List<ParameterExpression> _localParameters;
+
+        internal OuterParameterReferenceVisitor(ParameterExpression iteratorParameter)
+        {
+            _localParameters = [iteratorParameter];
+        }
+
+        internal bool Found { get; private set; }
+
+        protected override Expression VisitBlock(BlockExpression node)
+        {
+            var previousCount = _localParameters.Count;
+            foreach (var variable in node.Variables)
+            {
+                _localParameters.Add(variable);
+            }
+
+            Visit(node.Expressions);
+            _localParameters.RemoveRange(previousCount, _localParameters.Count - previousCount);
+            return node;
+        }
+
+        protected override Expression VisitLambda<TDelegate>(Expression<TDelegate> node)
+        {
+            var previousCount = _localParameters.Count;
+            foreach (var parameter in node.Parameters)
+            {
+                _localParameters.Add(parameter);
+            }
+
+            Visit(node.Body);
+            _localParameters.RemoveRange(previousCount, _localParameters.Count - previousCount);
+            return node;
+        }
+
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            if (!_localParameters.Contains(node))
+            {
+                Found = true;
+            }
+
+            return node;
+        }
     }
 }

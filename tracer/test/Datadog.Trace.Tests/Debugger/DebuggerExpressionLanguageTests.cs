@@ -388,6 +388,63 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionEvaluator_CaptureExpressionRootFilter_CanReferenceMethodScopeMembersInPredicate()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("FilteredCollectionLocal", typeof(List<int>), new List<int> { 1, 2, 3, 4 }, ScopeMemberKind.Local));
+            scopeMembers.AddMember(new ScopeMember("FilterThresholdLocal", typeof(int), 2, ScopeMemberKind.Local));
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions:
+                [
+                    new CaptureExpressionDefinition(
+                        "filtered",
+                        new DebuggerExpression(string.Empty, @"{""filter"":[{""ref"":""FilteredCollectionLocal""},{""gt"":[""@it"",{""ref"":""FilterThresholdLocal""}]}]}", null),
+                        new CaptureLimitInfo(MaxReferenceDepth: 5, MaxCollectionSize: 2, MaxLength: 255, MaxFieldCount: 20))
+                ]);
+
+            ExpressionEvaluationResult result = default;
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+
+            result.CaptureExpressionCount.Should().Be(1);
+            result.CaptureExpressions[0].Value.Should().BeAssignableTo<IBoundedCaptureCollectionResult>();
+            var filtered = (IBoundedCaptureCollectionResult)result.CaptureExpressions[0].Value;
+            filtered.Count.Should().Be(2);
+            filtered.WasTruncated.Should().BeFalse();
+            ((IEnumerable<int>)result.CaptureExpressions[0].Value).Should().Equal(3, 4);
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_AnyPredicate_CanReferenceMethodScopeMembers()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("FilterThresholdLocal", typeof(int), 2, ScopeMemberKind.Local));
+            const string json = """
+                                {
+                                  "any": [
+                                    { "ref": "CollectionIntLocal" },
+                                    { "gt": [ "@it", { "ref": "FilterThresholdLocal" } ] }
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.True(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
         public void ProbeExpressionEvaluator_CaptureExpressionRootDictionaryFilter_KeepsDictionaryMetadata()
         {
             var scopeMembers = CreateScopeMembers();

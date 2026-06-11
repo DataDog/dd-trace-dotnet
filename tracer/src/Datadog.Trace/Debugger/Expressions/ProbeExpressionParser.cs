@@ -262,14 +262,14 @@ internal partial class ProbeExpressionParser<T>
                                 // backward compability
                                 case "hasAny":
                                     {
-                                        return HasAny(reader, parameters);
+                                        return HasAny(reader, parameters, itParameter);
                                     }
 
                                 case "all":
                                 // backward compability
                                 case "hasAll":
                                     {
-                                        return HasAll(reader, parameters);
+                                        return HasAll(reader, parameters, itParameter);
                                     }
 
                                 case "filter":
