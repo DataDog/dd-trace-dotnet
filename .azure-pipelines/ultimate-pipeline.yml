@@ -2416,6 +2416,9 @@ stages:
         SampleName: $(IntegrationTestSampleName)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         COMPOSE_PROFILES: group$(dockerGroup)
+        # Event Grid emulator (group2) pushes to the Functions host webhook; in CI the func host runs inside
+        # the IntegrationTests container, reachable by sibling containers as "integrationtests".
+        EVENTGRID_WEBHOOK_HOST: integrationtests
       displayName: docker-compose build IntegrationTests and run StartDependencies (Group $(dockerGroup))
       retryCountOnTaskFailure: 5
 
@@ -2435,6 +2438,7 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
         COMPOSE_PROFILES: group$(dockerGroup)
+        EVENTGRID_WEBHOOK_HOST: integrationtests # keep the emulator's webhook host stable if compose re-evaluates
 
     - script: docker-compose -f docker-compose.yml -p $(DockerComposeProjectName)-g$(dockerGroup) logs
       displayName: docker-compose logs
