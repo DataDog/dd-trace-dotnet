@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -27,22 +28,17 @@ public class GoogleProtobufTests : TracingIntegrationTest
     {
     }
 
-    public static IEnumerable<object[]> GetEnabledConfig()
-    {
-        return from metadataSchemaVersion in new[] { "v0", "v1" }
-               from packageVersionArray in PackageVersions.Protobuf
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
-    }
-
     public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion)
     {
         return span.IsProtobuf(metadataSchemaVersion);
     }
 
     [SkippableTheory]
-    [MemberData(nameof(GetEnabledConfig))]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
-    public async Task TagTraces(string packageVersion, string metadataSchemaVersion)
+    public async Task TagTraces(
+        [PackageVersionData(nameof(PackageVersions.Protobuf))] string packageVersion,
+        [MetadataSchemaVersionData] string metadataSchemaVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
         using var telemetry = this.ConfigureTelemetry();
