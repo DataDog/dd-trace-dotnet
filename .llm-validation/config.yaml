@@ -2,6 +2,20 @@
 model: claude-opus-4-8
 runs: 3
 
+# Testing-level presets (pick one via --level / LLMVAL_LEVEL). Explicit --case/--max-cases/--runs override.
+# Keep `minimum` as the default during bring-up: cheap, fast, and still meaningful — it runs only the
+# logging-terminology case, the known high-severity regression that the gate should FAIL.
+default_level: minimum
+presets:
+  minimum:                                       # 1 case — the known regression. ~1 case x runs, low cost.
+    cases: ["dotnet-tracer-logging-terminology-004"]
+    runs: 3
+  medium:                                        # first 4 cases (incl. the logging regression). The PR #8774 run.
+    max_cases: 4
+    runs: 3
+  full:                                          # whole suite.
+    runs: 3
+
 policy:
   noise_threshold: 1.0
   pairwise_win_floor: 0.45        # candidate loses the pairwise majority on a case -> regression (WARN for medium/low)

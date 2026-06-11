@@ -29,10 +29,11 @@
     # installs is blocked, bake a custom approved image instead (see README).
     LLMVAL_IMAGE: "registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest"
     LLMVAL_PLATFORM_REF: "nacho/initialImplementation"  # TODO: switch to "main" once the code is merged there
-    LLMVAL_RUNS: "3"              # repeats per case (more = tighter win-rate CI)
-    LLMVAL_MAX_CASES: "4"         # first 4 cases include logging-terminology-004 (the expected regression);
-                                  # remove to run the whole suite, or set LLMVAL_CASES to target specific ids
-    # LLMVAL_CASES: "dotnet-tracer-logging-terminology-004"  # e.g. target just the regression
+    # Testing level (preset defined in .llm-validation/config.yaml): minimum | medium | full.
+    # `minimum` runs only the logging-terminology regression — cheap + meaningful while we iterate.
+    LLMVAL_LEVEL: "minimum"
+    # Optional overrides (win over the preset): LLMVAL_RUNS, LLMVAL_MAX_CASES, LLMVAL_CASES.
+    # LLMVAL_CASES: "dotnet-tracer-logging-terminology-004"
   script:
     - bash .gitlab/llm-validation/run.sh
   artifacts:

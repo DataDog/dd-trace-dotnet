@@ -10,7 +10,8 @@
 set -euo pipefail
 
 PLATFORM_REF="${LLMVAL_PLATFORM_REF:-main}"
-RUNS="${LLMVAL_RUNS:-3}"
+# Case selection + repeats come from the level preset in .llm-validation/config.yaml
+# (LLMVAL_LEVEL, default `minimum`); LLMVAL_RUNS / LLMVAL_CASES / LLMVAL_MAX_CASES override it below.
 
 echo "=== LLM Validation: ensure base tools (git, curl, jq) ==="
 # The .NET SDK image (Debian) is fairly bare — install the small tools run.sh needs.
@@ -91,15 +92,17 @@ if git -C "$CI_PROJECT_DIR" diff --quiet "$BASE_SHA" HEAD -- AGENTS.md 2>/dev/nu
   exit 0
 fi
 
-echo "=== LLM Validation: run gate (baseline=$BASE_SHA, runs=$RUNS) ==="
+echo "=== LLM Validation: run gate (baseline=$BASE_SHA, level=${LLMVAL_LEVEL:-default}) ==="
+# Level preset (minimum/medium/full) is defined in .llm-validation/config.yaml; explicit overrides win.
 EXTRA=()
-[ -n "${LLMVAL_CASES:-}" ] && EXTRA+=(--case "$LLMVAL_CASES")          # optional: target specific case id(s)
+[ -n "${LLMVAL_LEVEL:-}" ] && EXTRA+=(--level "$LLMVAL_LEVEL")
+[ -n "${LLMVAL_CASES:-}" ] && EXTRA+=(--case "$LLMVAL_CASES")          # override: target specific case id(s)
 [ -n "${LLMVAL_MAX_CASES:-}" ] && EXTRA+=(--max-cases "$LLMVAL_MAX_CASES")
+[ -n "${LLMVAL_RUNS:-}" ] && EXTRA+=(--runs "$LLMVAL_RUNS")            # override: repeats per case
 set +e
 dotnet "$CLI_DLL" run \
   --repo "$CI_PROJECT_DIR" \
   --base-sha "$BASE_SHA" \
-  --runs "$RUNS" \
   --evaluators /tmp/llmval/evaluators \
   --out results.json --report report.md --details details.json \
   "${EXTRA[@]}"
