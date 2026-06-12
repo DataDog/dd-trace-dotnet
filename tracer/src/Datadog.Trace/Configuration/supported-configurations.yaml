@@ -2136,7 +2136,7 @@ supportedConfigurations:
     documentation: |-
       Enables CPU profiling. Default is true.
   DD_PROFILING_EXCEPTION_ENABLED:
-  - implementation: B
+  - implementation: A
     scope: native
     type: boolean
     default: 'true'
@@ -2184,7 +2184,7 @@ supportedConfigurations:
     documentation: |-
       Enables HTTP request duration profiling to track time spent in outbound HTTP calls.
   DD_PROFILING_LOCK_ENABLED:
-  - implementation: A
+  - implementation: B
     scope: native
     type: boolean
     default: 'true'
