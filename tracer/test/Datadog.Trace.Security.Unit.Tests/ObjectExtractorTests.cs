@@ -6,9 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 #if NETFRAMEWORK
 using System.Web.Routing;
-using Datadog.Trace.Telemetry.Metrics;
 #endif
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
@@ -26,7 +26,6 @@ namespace Datadog.Trace.Security.Unit.Tests
             nameof(TestVarietyPoco.UIntPtrValue),
             nameof(TestVarietyPoco.CharValue),
             nameof(TestVarietyPoco.GuidValue),
-            nameof(TestVarietyPoco.EnumValue),
             nameof(TestVarietyPoco.DateTimeValue),
             nameof(TestVarietyPoco.DateTimeOffsetValue),
             nameof(TestVarietyPoco.TimeSpanValue),
@@ -47,7 +46,12 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             foreach (var prop in target.GetType().GetProperties())
             {
-                Assert.Equal(_fieldsAsStrings.Contains(prop.Name) ? prop.GetValue(target).ToString() : prop.GetValue(target), result[prop.Name]);
+                var value = prop.GetValue(target);
+                // Enums are now extracted as their underlying numeric value (long/ulong), not their name.
+                object expectedValue = prop.PropertyType.IsEnum
+                    ? Convert.ToInt64(value)
+                    : _fieldsAsStrings.Contains(prop.Name) ? value.ToString() : value;
+                Assert.Equal(expectedValue, result[prop.Name]);
             }
         }
 
@@ -85,7 +89,10 @@ namespace Datadog.Trace.Security.Unit.Tests
             foreach (var prop in target.GetType().GetProperties())
             {
                 var value = prop.GetValue(target);
-                var expectedValue = _fieldsAsStrings.Contains(prop.Name) ? value.ToString() : value;
+                // Enums are now extracted as their underlying numeric value (long/ulong), not their name.
+                object expectedValue = prop.PropertyType.IsEnum
+                    ? Convert.ToInt64(value)
+                    : _fieldsAsStrings.Contains(prop.Name) ? value.ToString() : value;
                 Assert.Equal(expectedValue, result[prop.Name]);
             }
         }
@@ -138,6 +145,40 @@ namespace Datadog.Trace.Security.Unit.Tests
             Assert.Equal(target.Dog2, result[nameof(target.Dog2)]?.ToString());
             result[nameof(target.Id)].Should().BeOfType<int>();
             target.Id.Should().Be((int)result[nameof(target.Id)]);
+        }
+
+        [Fact]
+        public void TestDataMemberNames()
+        {
+            var target = new TestDataContractPoco { Id = 1, Message = "hello", Secret = "secret", Ignored = "ignored" };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result!["id"].Should().Be(target.Id);
+            result["message"].Should().Be(target.Message);
+            result.Should().HaveCount(2);
+            result.Should().NotContainKey(nameof(target.Id));
+            result.Should().NotContainKey(nameof(target.Message));
+            result.Should().NotContainKey(nameof(target.Secret));
+            result.Should().NotContainKey(nameof(target.Ignored));
+        }
+
+        [Fact]
+        public void TestDuplicateDataMemberNamesDoNotThrow()
+        {
+            // Two members resolving to the same [DataMember(Name = ...)] previously threw from dict.Add,
+            // aborting the whole extraction. Now the last one wins and extraction succeeds.
+            var target = new TestDuplicateDataMemberPoco { First = "first", Second = "second" };
+
+            Dictionary<string, object> result = null;
+            Action act = () => result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            act.Should().NotThrow();
+            result.Should().NotBeNull();
+            result.Should().HaveCount(1);
+            result.Should().ContainKey("value");
+            result!["value"].Should().BeOneOf("first", "second");
         }
 
         [Fact]
@@ -421,6 +462,228 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.Should().NotBeNull();
         }
 
+        [Fact]
+        public void TestEmitDefaultValueFalse_OmitsNullAndDefaultMembers()
+        {
+            // EmitDefaultValue=false: null/default members should be absent (serializer omits them)
+            var target = new TestEmitDefaultValuePoco { Id = 0, Name = null, Tag = null, Flag = false };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result.Should().NotContainKey("id");    // int default 0, EmitDefaultValue=false
+            result.Should().NotContainKey("name");  // null, EmitDefaultValue=false
+            result.Should().ContainKey("tag");      // null but EmitDefaultValue=true (default)
+            result.Should().NotContainKey("flag");  // bool default false, EmitDefaultValue=false
+        }
+
+        [Fact]
+        public void TestEmitDefaultValueFalse_IncludesNonDefaultMembers()
+        {
+            var target = new TestEmitDefaultValuePoco { Id = 42, Name = "hello", Tag = "t", Flag = true };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result!["id"].Should().Be(42);
+            result["name"].Should().Be("hello");
+            result["tag"].Should().Be("t");
+            result["flag"].Should().Be(true);
+        }
+
+        [Fact]
+        public void TestInheritedDataContractMembers()
+        {
+            // Private [DataMember] on a base [DataContract] type must be included
+            var target = new TestDerivedDataContractPoco { DerivedName = "derived", BaseId = 7 };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result.Should().ContainKey("derived_name");
+            result.Should().ContainKey("base_id");
+            result!["derived_name"].Should().Be("derived");
+            result["base_id"].Should().Be(7);
+        }
+
+        [Fact]
+        public void TestPublicFieldsIncludedForNonDataContractType()
+        {
+            // DataContractJsonSerializer serializes public fields on plain POCOs
+            var target = new TestPublicFieldPoco { PublicField = "hello", PublicIntField = 5 };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result.Should().ContainKey(nameof(TestPublicFieldPoco.PublicField));
+            result.Should().ContainKey(nameof(TestPublicFieldPoco.PublicIntField));
+            result![nameof(TestPublicFieldPoco.PublicField)].Should().Be("hello");
+            result[nameof(TestPublicFieldPoco.PublicIntField)].Should().Be(5);
+        }
+
+        [Fact]
+        public void TestPolymorphicMemberUsesRuntimeType()
+        {
+            // Members declared as 'object' should be extracted using the runtime type,
+            // matching what the serializer actually wrote to the response body.
+            var target = new TestPolymorphicMemberPoco { Value = 42 };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            // Should be the int value 42, not an empty dict from treating 'object' as a POCO
+            result!["value"].Should().Be(42);
+        }
+
+        [Fact]
+        public void TestDictionaryExtractedAsKeyValuePairsWhenNotSimpleFormat()
+        {
+            // DataContractJsonSerializer with UseSimpleDictionaryFormat=false (the default) writes
+            // Dictionary<K,V> as [{Key:k,Value:v}] arrays, not {k:v} objects.
+            var target = new TestDictionaryMemberPoco
+            {
+                Data = new Dictionary<string, string> { { "a", "1" }, { "b", "2" } }
+            };
+
+            var result = ObjectExtractor.ExtractDataContract(target, useSimpleDictionaryFormat: false) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            var data = result!["data"] as List<object>;
+            data.Should().NotBeNull();
+            data.Should().HaveCount(2);
+            var first = data![0] as Dictionary<string, object>;
+            first.Should().ContainKey("Key");
+            first.Should().ContainKey("Value");
+        }
+
+        [Fact]
+        public void TestDictionaryExtractedAsMapWhenSimpleFormat()
+        {
+            // With UseSimpleDictionaryFormat=true the serializer writes {k:v} objects as usual.
+            var target = new TestDictionaryMemberPoco
+            {
+                Data = new Dictionary<string, string> { { "a", "1" } }
+            };
+
+            var result = ObjectExtractor.ExtractDataContract(target, useSimpleDictionaryFormat: true) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            var data = result!["data"] as Dictionary<string, object>;
+            data.Should().NotBeNull();
+            data!["a"].Should().Be("1");
+        }
+
+        [Fact]
+        public void TestEnumMember_ExtractedAsNumeric_DefaultPath()
+        {
+            // Default Extract path: int-backed enum should be returned as long, not as its name string.
+            var target = new TestEnumPoco { Status = TestStatusEnum.Active }; // = 2
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            result![nameof(TestEnumPoco.Status)].Should().Be(2L);
+        }
+
+        [Fact]
+        public void TestEnumMember_ExtractedAsNumeric_DataContractPath()
+        {
+            // DataContractJsonSerializer emits enum members as their numeric value; ExtractDataContract
+            // must match.
+            var target = new TestDataContractEnumPoco { Status = TestStatusEnum.Active }; // = 2
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            result!["status"].Should().Be(2L);
+        }
+
+        [Fact]
+        public void TestByteBackedEnum_ExtractedAsULong_PreservesLargeValues()
+        {
+            // byte-backed enums with value > 127 would be silently dropped (encoded as empty string)
+            // by the modern WAF encoder if returned as a boxed byte. Widening to ulong preserves them.
+            var target = new TestByteEnumPoco { Level = TestByteEnum.High }; // = 200
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            result![nameof(TestByteEnumPoco.Level)].Should().Be(200UL);
+        }
+
+        [Fact]
+        public void TestCollectionOfTPoco_ExtractedAsArray()
+        {
+            // Collection<T> should produce a List<object>, not an empty dict
+            var target = new TestCollectionPoco { Items = new System.Collections.ObjectModel.Collection<string> { "a", "b", "c" } };
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            var items = result![nameof(TestCollectionPoco.Items)] as List<object>;
+            items.Should().NotBeNull();
+            items.Should().HaveCount(3);
+            items.Should().ContainInOrder("a", "b", "c");
+        }
+
+        [Fact]
+        public void TestObservableCollectionPoco_ExtractedAsArray()
+        {
+            // ObservableCollection<T> (inherits Collection<T>) should produce a List<object>
+            var target = new TestObservableCollectionPoco { Items = new System.Collections.ObjectModel.ObservableCollection<string> { "x", "y" } };
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            var items = result![nameof(TestObservableCollectionPoco.Items)] as List<object>;
+            items.Should().NotBeNull();
+            items.Should().HaveCount(2);
+            items.Should().ContainInOrder("x", "y");
+        }
+
+        [Fact]
+        public void TestHashSetPoco_ExtractedAsArray()
+        {
+            // HashSet<T> does not implement non-generic ICollection; must not throw InvalidCastException
+            var target = new TestHashSetPoco { Items = new HashSet<int> { 1, 2, 3 } };
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            var items = result![nameof(TestHashSetPoco.Items)] as List<object>;
+            items.Should().NotBeNull();
+            items.Should().HaveCount(3);
+            // HashSet is unordered; assert by membership
+            items.Should().Contain(1).And.Contain(2).And.Contain(3);
+        }
+
+        [Fact]
+        public void TestDataContractCollectionOfTPoco_ExtractedAsArray()
+        {
+            // ExtractDataContract path: Collection<T> member should produce a List<object>
+            var target = new TestDataContractCollectionPoco { Items = new System.Collections.ObjectModel.Collection<string> { "a", "b" } };
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            var items = result!["items"] as List<object>;
+            items.Should().NotBeNull();
+            items.Should().HaveCount(2);
+            items.Should().ContainInOrder("a", "b");
+        }
+
+        [Fact]
+        public void TestDataContractObservableCollectionPoco_ExtractedAsArray()
+        {
+            // ExtractDataContract path: ObservableCollection<T> member should produce a List<object>
+            var target = new TestDataContractObservableCollectionPoco { Items = new System.Collections.ObjectModel.ObservableCollection<string> { "p", "q" } };
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            var items = result!["items"] as List<object>;
+            items.Should().NotBeNull();
+            items.Should().HaveCount(2);
+            items.Should().ContainInOrder("p", "q");
+        }
+
+        [Fact]
+        public void TestDataContractHashSetPoco_ExtractedAsArray()
+        {
+            // ExtractDataContract path: HashSet<T> member must not throw InvalidCastException
+            var target = new TestDataContractHashSetPoco { Items = new HashSet<int> { 10, 20 } };
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+            result.Should().NotBeNull();
+            var items = result!["items"] as List<object>;
+            items.Should().NotBeNull();
+            items.Should().HaveCount(2);
+            items.Should().Contain(10).And.Contain(20);
+        }
+
         private static void PopulateNestedTarget(TestNestedPropertiesPoco target, int count)
         {
             var current = target;
@@ -540,6 +803,31 @@ namespace Datadog.Trace.Security.Unit.Tests
         public string StringValue { get; set; }
     }
 
+    [DataContract]
+    public class TestDataContractPoco
+    {
+        [DataMember(Name = "id")]
+        public int Id { get; set; }
+
+        [DataMember(Name = "message")]
+        public string Message { get; set; }
+
+        public string Secret { get; set; }
+
+        [IgnoreDataMember]
+        public string Ignored { get; set; }
+    }
+
+    [DataContract]
+    public class TestDuplicateDataMemberPoco
+    {
+        [DataMember(Name = "value")]
+        public string First { get; set; }
+
+        [DataMember(Name = "value")]
+        public string Second { get; set; }
+    }
+
     public class TestNestedPropertiesPoco
     {
         public TestNestedPropertiesPoco TestNestedPropertiesPocoValue { get; set; }
@@ -575,5 +863,129 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             return Test.GetHashCode() + Prop.GetHashCode();
         }
+    }
+
+    [DataContract]
+    public class TestEmitDefaultValuePoco
+    {
+        [DataMember(Name = "id", EmitDefaultValue = false)]
+        public int Id { get; set; }
+
+        [DataMember(Name = "name", EmitDefaultValue = false)]
+        public string Name { get; set; }
+
+        [DataMember(Name = "tag")]
+        public string Tag { get; set; }
+
+        [DataMember(Name = "flag", EmitDefaultValue = false)]
+        public bool Flag { get; set; }
+    }
+
+    [DataContract]
+    public class TestBaseDataContractPoco
+    {
+        [DataMember(Name = "base_id")]
+        public int BaseId { get; set; }
+    }
+
+    [DataContract]
+    public class TestDerivedDataContractPoco : TestBaseDataContractPoco
+    {
+        [DataMember(Name = "derived_name")]
+        public string DerivedName { get; set; }
+    }
+
+#pragma warning disable SA1401 // Fields should be private — public fields are the subject under test
+    public class TestPublicFieldPoco
+    {
+        public string PublicField;
+
+        public int PublicIntField;
+    }
+#pragma warning restore SA1401
+
+    [DataContract]
+    public class TestPolymorphicMemberPoco
+    {
+        [DataMember(Name = "value")]
+        public object Value { get; set; }
+    }
+
+    [DataContract]
+    public class TestDictionaryMemberPoco
+    {
+        [DataMember(Name = "data")]
+        public Dictionary<string, string> Data { get; set; }
+    }
+
+    public class TestCollectionPoco
+    {
+        public System.Collections.ObjectModel.Collection<string> Items { get; set; }
+    }
+
+    public class TestObservableCollectionPoco
+    {
+        public System.Collections.ObjectModel.ObservableCollection<string> Items { get; set; }
+    }
+
+    public class TestHashSetPoco
+    {
+        public HashSet<int> Items { get; set; }
+    }
+
+    [DataContract]
+    public class TestDataContractCollectionPoco
+    {
+        [DataMember(Name = "items")]
+        public System.Collections.ObjectModel.Collection<string> Items { get; set; }
+    }
+
+    [DataContract]
+    public class TestDataContractObservableCollectionPoco
+    {
+        [DataMember(Name = "items")]
+        public System.Collections.ObjectModel.ObservableCollection<string> Items { get; set; }
+    }
+
+    [DataContract]
+    public class TestDataContractHashSetPoco
+    {
+        [DataMember(Name = "items")]
+        public HashSet<int> Items { get; set; }
+    }
+
+    public enum TestStatusEnum
+    {
+#pragma warning disable SA1602 // Enumeration items should be documented
+        Unknown = 0,
+        Inactive = 1,
+        Active = 2,
+        Deleted = 3
+#pragma warning restore SA1602
+    }
+
+    public class TestEnumPoco
+    {
+        public TestStatusEnum Status { get; set; }
+    }
+
+    [DataContract]
+    public class TestDataContractEnumPoco
+    {
+        [DataMember(Name = "status")]
+        public TestStatusEnum Status { get; set; }
+    }
+
+    public enum TestByteEnum : byte
+    {
+#pragma warning disable SA1602 // Enumeration items should be documented
+        Low = 0,
+        High = 200
+#pragma warning restore SA1602
+    }
+
+    public class TestByteEnumPoco
+    {
+        public TestByteEnum Level { get; set; }
     }
 }

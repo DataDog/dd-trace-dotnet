@@ -226,6 +226,13 @@
   },
   {
     "integrationName": "AspNetMvc",
+    "assemblyName": "System.Runtime.Serialization",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "AspNetMvc",
     "assemblyName": "System.Web.Mvc",
     "minAssemblyVersionInclusive": "4.0.0",
     "maxAssemblyVersionInclusive": "5.65535.65535",
