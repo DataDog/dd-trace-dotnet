@@ -424,6 +424,8 @@ WCHAR* sig405[]={(WCHAR*)WStr("System.Void"),(WCHAR*)WStr("_"),(WCHAR*)WStr("_")
 WCHAR* sig406[]={(WCHAR*)WStr("System.Web.Mvc.ActionResult"),(WCHAR*)WStr("System.Web.Mvc.ControllerContext"),(WCHAR*)WStr("System.Web.Mvc.ActionDescriptor"),(WCHAR*)WStr("System.Collections.Generic.IDictionary`2[System.String,System.Object]"),};
 WCHAR* sig407[]={(WCHAR*)WStr("_"),(WCHAR*)WStr("_"),};
 WCHAR* sig408[]={(WCHAR*)WStr("_"),(WCHAR*)WStr("_"),(WCHAR*)WStr("_"),};
+// EnqueueEVP: void EnqueueEVP(string, string?, string, string?, string?, long, IDictionary<string,object?>?)
+WCHAR* sig409[]={(WCHAR*)WStr("System.Void"),(WCHAR*)WStr("System.String"),(WCHAR*)WStr("System.String"),(WCHAR*)WStr("System.String"),(WCHAR*)WStr("System.String"),(WCHAR*)WStr("System.String"),(WCHAR*)WStr("System.Int64"),(WCHAR*)WStr("System.Collections.Generic.IDictionary`2[System.String,System.Object]"),};
 
 std::vector<CallTargetDefinition3> callTargets =
 {
@@ -1002,6 +1004,7 @@ std::vector<CallTargetDefinition3> callTargets =
 {(WCHAR*)WStr("Datadog.FeatureFlags.OpenFeature"),(WCHAR*)WStr("Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk"),(WCHAR*)WStr("Evaluate"),sig061,6,2,0,0,2,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration"),CallTargetKind::Default,1,15},
 {(WCHAR*)WStr("Datadog.FeatureFlags.OpenFeature"),(WCHAR*)WStr("Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk"),(WCHAR*)WStr("IsAvailable"),sig128,1,2,0,0,2,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkIsAvailableIntegration"),CallTargetKind::Default,1,15},
 {(WCHAR*)WStr("Datadog.FeatureFlags.OpenFeature"),(WCHAR*)WStr("Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk"),(WCHAR*)WStr("RegisterOnNewConfigEventHandler"),sig351,2,2,0,0,2,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkRegisterOnNewConfigEventHandlerIntegration"),CallTargetKind::Default,1,15},
+{(WCHAR*)WStr("Datadog.FeatureFlags.OpenFeature"),(WCHAR*)WStr("Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk"),(WCHAR*)WStr("EnqueueEVP"),sig409,8,2,0,0,2,65535,65535,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEnqueueEVPIntegration"),CallTargetKind::Default,1,15},
 {(WCHAR*)WStr("OpenTelemetry"),(WCHAR*)WStr("OpenTelemetry.Trace.TracerProviderBuilderExtensions"),(WCHAR*)WStr("Build"),sig117,2,1,0,0,1,0,0,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.TracerProviderBuilderIntegration"),CallTargetKind::Default,1,15},
 {(WCHAR*)WStr("OpenTelemetry.Api"),(WCHAR*)WStr("OpenTelemetry.Baggage"),(WCHAR*)WStr("ClearBaggage"),sig111,2,1,0,0,1,0,0,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_ClearBaggageIntegration"),CallTargetKind::Default,1,15},
 {(WCHAR*)WStr("OpenTelemetry.Api"),(WCHAR*)WStr("OpenTelemetry.Baggage"),(WCHAR*)WStr("get_Current"),sig110,1,1,0,0,1,0,0,assemblyName,(WCHAR*)WStr("Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.OTelBaggage_GetCurrentIntegration"),CallTargetKind::Default,1,15},
