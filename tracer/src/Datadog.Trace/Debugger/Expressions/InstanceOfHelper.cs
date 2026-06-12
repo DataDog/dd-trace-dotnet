@@ -22,9 +22,10 @@ internal static class InstanceOfHelper
     private const int MaxCachedTypes = 512;
     private const int MaxTrackedMisses = 512;
     private const int MaxResolutionRetries = 3;
+    private const int LinearAssemblyIdentityScanThreshold = 8;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InstanceOfHelper));
-    private static readonly string[] EmptyAssemblyNames = [];
+    private static readonly AssemblyIdentity[] EmptyAssemblyIdentities = [];
     private static readonly ConcurrentDictionary<string, ResolutionState> ResolutionStates = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, Type> BclTypeAliases = CreateBclTypeAliases();
 
@@ -104,11 +105,12 @@ internal static class InstanceOfHelper
         }
 
         var typeNameInfo = ParseTypeName(typeName);
-        var resolvedType = TryResolveKnownFrameworkType(typeName, typeNameInfo, out var knownFrameworkType)
-                               ? knownFrameworkType
-                               : typeNameInfo.IsAssemblyQualified
-                                   ? null
-                                   : Type.GetType(typeName, throwOnError: false, ignoreCase: true);
+        if (typeNameInfo.IsAssemblyQualified)
+        {
+            return AssemblyQualifiedTypeResolver.Resolve(typeName, typeNameInfo);
+        }
+
+        var resolvedType = Type.GetType(typeName, throwOnError: false, ignoreCase: true);
         if (resolvedType is not null)
         {
             AddResolvedType(typeName, resolvedType, Volatile.Read(ref _assemblyLoadGeneration));
@@ -182,25 +184,28 @@ internal static class InstanceOfHelper
         throw UnknownType(typeName);
     }
 
-    private static ScanResult ScanAssemblies(string typeName, TypeNameInfo typeNameInfo, Assembly[] assemblies, string[]? alreadyScannedAssemblies, Type? currentResolvedType)
+    private static ScanResult ScanAssemblies(string typeName, TypeNameInfo typeNameInfo, Assembly[] assemblies, AssemblyIdentity[]? alreadyScannedAssemblies, Type? currentResolvedType)
     {
         Type? resolvedType = null;
         var isAmbiguous = false;
-        var scannedAssemblies = new List<string>();
+        AssemblyIdentity[]? scannedAssemblies = null;
+        var scannedAssemblyCount = 0;
         var alreadyScannedAssemblySet = alreadyScannedAssemblies is null || alreadyScannedAssemblies.Length == 0
                                             ? null
-                                            : new HashSet<string>(alreadyScannedAssemblies, StringComparer.Ordinal);
+                                            : alreadyScannedAssemblies.Length > LinearAssemblyIdentityScanThreshold
+                                                ? new HashSet<AssemblyIdentity>(alreadyScannedAssemblies)
+                                                : null;
 
         for (var i = 0; i < assemblies.Length; i++)
         {
             var assembly = assemblies[i];
-            var assemblyIdentity = GetAssemblyIdentity(assembly);
-            if (alreadyScannedAssemblySet?.Contains(assemblyIdentity) == true)
+            var assemblyIdentity = new AssemblyIdentity(assembly);
+            if (ContainsAssemblyIdentity(alreadyScannedAssemblies, alreadyScannedAssemblySet, assemblyIdentity))
             {
                 continue;
             }
 
-            scannedAssemblies.Add(assemblyIdentity);
+            AddAssemblyIdentity(ref scannedAssemblies, ref scannedAssemblyCount, assemblies.Length, assemblyIdentity);
             var matchedType = TryResolveFromAssembly(typeName, typeNameInfo, assembly);
             if (matchedType is null)
             {
@@ -222,12 +227,13 @@ internal static class InstanceOfHelper
             resolvedType = matchedType;
         }
 
-        return new ScanResult(resolvedType, isAmbiguous, scannedAssemblies.Count == 0 ? EmptyAssemblyNames : scannedAssemblies.ToArray());
+        return new ScanResult(resolvedType, isAmbiguous, ToExactAssemblyIdentityArray(scannedAssemblies, scannedAssemblyCount));
     }
 
     private static Type? TryResolveFromAssembly(string typeName, TypeNameInfo typeNameInfo, Assembly assembly)
     {
-        if (typeNameInfo.IsAssemblyQualified && !IsMatchingAssembly(assembly, typeNameInfo.AssemblyName!))
+        if (typeNameInfo.IsAssemblyQualified &&
+            !AssemblyQualifiedTypeResolver.IsMatchingAssembly(assembly, typeNameInfo.AssemblyName!))
         {
             return null;
         }
@@ -257,30 +263,6 @@ internal static class InstanceOfHelper
     private static bool IsFullyQualifiedTypeName(string typeName)
     {
         return typeName.IndexOf('.') >= 0;
-    }
-
-    private static bool TryResolveKnownFrameworkType(string typeName, TypeNameInfo typeNameInfo, [NotNullWhen(true)] out Type? type)
-    {
-        type = null;
-        if (!typeNameInfo.IsAssemblyQualified ||
-            !IsKnownFrameworkAssemblyName(typeNameInfo.AssemblyName!))
-        {
-            return false;
-        }
-
-        if (BclTypeAliases.TryGetValue(typeNameInfo.SearchTypeName, out type))
-        {
-            return true;
-        }
-
-        type = typeof(object).Assembly.GetType(typeNameInfo.SearchTypeName, throwOnError: false, ignoreCase: true);
-        if (type is not null)
-        {
-            return true;
-        }
-
-        type = Type.GetType(typeName, ResolveLoadedAssembly, typeResolver: null, throwOnError: false, ignoreCase: true);
-        return type is not null;
     }
 
     private static void LogSuspiciousMismatch(Type resolvedType, Type? valueType, string requestedTypeName, bool result)
@@ -337,73 +319,75 @@ internal static class InstanceOfHelper
         return -1;
     }
 
-    private static bool IsMatchingAssembly(Assembly assembly, string assemblyName)
+    private static bool ContainsAssemblyIdentity(AssemblyIdentity[]? identities, HashSet<AssemblyIdentity>? identitySet, AssemblyIdentity identity)
     {
-        if (string.IsNullOrEmpty(assemblyName))
+        if (identitySet is not null)
+        {
+            return identitySet.Contains(identity);
+        }
+
+        if (identities is null)
         {
             return false;
         }
 
-        return string.Equals(assembly.GetName().Name, assemblyName, StringComparison.Ordinal) ||
-               string.Equals(assembly.FullName, assemblyName, StringComparison.Ordinal);
-    }
-
-    private static Assembly? ResolveLoadedAssembly(AssemblyName assemblyName)
-    {
-        var requestedFullName = assemblyName.FullName;
-        var assemblies = Volatile.Read(ref _getAssemblies)();
-
-        for (var i = 0; i < assemblies.Length; i++)
+        for (var i = 0; i < identities.Length; i++)
         {
-            var assembly = assemblies[i];
-            if (string.Equals(assembly.FullName, requestedFullName, StringComparison.Ordinal))
+            if (identities[i].Equals(identity))
             {
-                return assembly;
+                return true;
             }
         }
 
-        var requestedName = assemblyName.Name;
-        if (requestedName is null)
-        {
-            return null;
-        }
+        return false;
+    }
 
-        for (var i = 0; i < assemblies.Length; i++)
+    private static bool ContainsAssemblyIdentity(AssemblyIdentity[] identities, int count, AssemblyIdentity identity)
+    {
+        for (var i = 0; i < count; i++)
         {
-            var assembly = assemblies[i];
-            if (string.Equals(assembly.GetName().Name, requestedName, StringComparison.Ordinal))
+            if (identities[i].Equals(identity))
             {
-                return assembly;
+                return true;
             }
         }
 
-        return null;
+        return false;
     }
 
-    private static bool IsKnownFrameworkAssemblyName(string assemblyName)
+    private static void AddAssemblyIdentity(ref AssemblyIdentity[]? identities, ref int count, int maxCapacity, AssemblyIdentity identity)
     {
-        var simpleNameLength = assemblyName.IndexOf(',');
-        if (simpleNameLength < 0)
+        if (identities is null)
         {
-            simpleNameLength = assemblyName.Length;
+            identities = new AssemblyIdentity[Math.Min(maxCapacity, LinearAssemblyIdentityScanThreshold)];
+        }
+        else if (count == identities.Length)
+        {
+            var newLength = Math.Min(maxCapacity, identities.Length * 2);
+            var resizedIdentities = new AssemblyIdentity[newLength];
+            Array.Copy(identities, resizedIdentities, identities.Length);
+            identities = resizedIdentities;
         }
 
-        return AssemblyNameEquals(assemblyName, simpleNameLength, "mscorlib") ||
-               AssemblyNameEquals(assemblyName, simpleNameLength, "netstandard") ||
-               AssemblyNameEquals(assemblyName, simpleNameLength, "System") ||
-               AssemblyNameEquals(assemblyName, simpleNameLength, "System.Private.CoreLib") ||
-               AssemblyNameEquals(assemblyName, simpleNameLength, "System.Runtime");
+        identities[count] = identity;
+        count++;
     }
 
-    private static bool AssemblyNameEquals(string assemblyName, int simpleNameLength, string expectedName)
+    private static AssemblyIdentity[] ToExactAssemblyIdentityArray(AssemblyIdentity[]? identities, int count)
     {
-        return simpleNameLength == expectedName.Length &&
-               string.Compare(assemblyName, 0, expectedName, 0, expectedName.Length, StringComparison.Ordinal) == 0;
-    }
+        if (identities is null || count == 0)
+        {
+            return EmptyAssemblyIdentities;
+        }
 
-    private static string GetAssemblyIdentity(Assembly assembly)
-    {
-        return string.Concat(assembly.FullName, "|", RuntimeHelpers.GetHashCode(assembly).ToString());
+        if (count == identities.Length)
+        {
+            return identities;
+        }
+
+        var result = new AssemblyIdentity[count];
+        Array.Copy(identities, result, count);
+        return result;
     }
 
     private static Dictionary<string, Type> CreateBclTypeAliases()
@@ -475,7 +459,7 @@ internal static class InstanceOfHelper
     private static void AddResolvedType(string typeName, Type type, int scannedGeneration)
     {
         ClearCacheIfNeeded();
-        var newResolution = new ResolutionState(type, isAmbiguous: false, scannedGeneration, EmptyAssemblyNames);
+        var newResolution = new ResolutionState(type, isAmbiguous: false, scannedGeneration, EmptyAssemblyIdentities);
         ResolutionStates.AddOrUpdate(
             typeName,
             newResolution,
@@ -501,7 +485,7 @@ internal static class InstanceOfHelper
         var hasCurrentType = currentResolution.TryGetType(out var currentType);
         if (currentResolution.HasResolvedType && !hasCurrentType)
         {
-            return new ResolutionState(resolvedType, isAmbiguous, scannedGeneration, EmptyAssemblyNames);
+            return new ResolutionState(resolvedType, isAmbiguous, scannedGeneration, EmptyAssemblyIdentities);
         }
 
         var type = currentType ?? resolvedType;
@@ -538,11 +522,11 @@ internal static class InstanceOfHelper
         ((ICollection<KeyValuePair<string, ResolutionState>>)ResolutionStates).Remove(new KeyValuePair<string, ResolutionState>(typeName, resolution));
     }
 
-    private static string[] MergeScannedAssemblies(string[] currentAssemblies, string[] scannedAssemblies)
+    private static AssemblyIdentity[] MergeScannedAssemblies(AssemblyIdentity[] currentAssemblies, AssemblyIdentity[] scannedAssemblies)
     {
         if (currentAssemblies is null || currentAssemblies.Length == 0)
         {
-            return scannedAssemblies is null || scannedAssemblies.Length == 0 ? EmptyAssemblyNames : scannedAssemblies;
+            return scannedAssemblies is null || scannedAssemblies.Length == 0 ? EmptyAssemblyIdentities : scannedAssemblies;
         }
 
         if (scannedAssemblies is null || scannedAssemblies.Length == 0)
@@ -550,15 +534,23 @@ internal static class InstanceOfHelper
             return currentAssemblies;
         }
 
-        var merged = new HashSet<string>(currentAssemblies, StringComparer.Ordinal);
-        for (var i = 0; i < scannedAssemblies.Length; i++)
+        AssemblyIdentity[]? merged = null;
+        var count = 0;
+        for (var i = 0; i < currentAssemblies.Length; i++)
         {
-            merged.Add(scannedAssemblies[i]);
+            AddAssemblyIdentity(ref merged, ref count, currentAssemblies.Length + scannedAssemblies.Length, currentAssemblies[i]);
         }
 
-        var result = new string[merged.Count];
-        merged.CopyTo(result);
-        return result;
+        for (var i = 0; i < scannedAssemblies.Length; i++)
+        {
+            var scannedAssembly = scannedAssemblies[i];
+            if (!ContainsAssemblyIdentity(merged!, count, scannedAssembly))
+            {
+                AddAssemblyIdentity(ref merged, ref count, currentAssemblies.Length + scannedAssemblies.Length, scannedAssembly);
+            }
+        }
+
+        return ToExactAssemblyIdentityArray(merged, count);
     }
 
     private static void ClearCacheIfNeeded()
@@ -626,7 +618,7 @@ internal static class InstanceOfHelper
 
     private readonly struct ScanResult
     {
-        internal ScanResult(Type? type, bool isAmbiguous, string[] scannedAssemblies)
+        internal ScanResult(Type? type, bool isAmbiguous, AssemblyIdentity[] scannedAssemblies)
         {
             Type = type;
             IsAmbiguous = isAmbiguous;
@@ -637,7 +629,35 @@ internal static class InstanceOfHelper
 
         internal bool IsAmbiguous { get; }
 
-        internal string[] ScannedAssemblies { get; }
+        internal AssemblyIdentity[] ScannedAssemblies { get; }
+    }
+
+    private readonly struct AssemblyIdentity : IEquatable<AssemblyIdentity>
+    {
+        private readonly string? _fullName;
+        private readonly int _runtimeHashCode;
+
+        internal AssemblyIdentity(Assembly assembly)
+        {
+            _fullName = assembly.FullName;
+            _runtimeHashCode = RuntimeHelpers.GetHashCode(assembly);
+        }
+
+        public bool Equals(AssemblyIdentity other)
+        {
+            return _runtimeHashCode == other._runtimeHashCode &&
+                   string.Equals(_fullName, other._fullName, StringComparison.Ordinal);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is AssemblyIdentity other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return _runtimeHashCode;
+        }
     }
 
     private readonly struct TypeNameInfo
@@ -655,16 +675,140 @@ internal static class InstanceOfHelper
         internal bool IsAssemblyQualified => AssemblyName is not null;
     }
 
+    private sealed class AssemblyQualifiedTypeResolver
+    {
+        internal static Type Resolve(string typeName, TypeNameInfo typeNameInfo)
+        {
+            if (TryResolveKnownFrameworkType(typeName, typeNameInfo, out var frameworkType))
+            {
+                AddResolvedType(typeName, frameworkType, Volatile.Read(ref _assemblyLoadGeneration));
+                return frameworkType;
+            }
+
+            if (!IsFullyQualifiedTypeName(typeNameInfo.SearchTypeName))
+            {
+                ThrowFullyQualifiedNameRequired(typeName);
+            }
+
+            return ResolveLoadedType(typeName, typeNameInfo);
+        }
+
+        internal static bool IsMatchingAssembly(Assembly assembly, string assemblyName)
+        {
+            if (string.IsNullOrEmpty(assemblyName))
+            {
+                return false;
+            }
+
+            var fullName = assembly.FullName;
+            return fullName is not null &&
+                   (string.Equals(fullName, assemblyName, StringComparison.Ordinal) ||
+                    AssemblySimpleNameEquals(fullName, assemblyName));
+        }
+
+        private static bool TryResolveKnownFrameworkType(string typeName, TypeNameInfo typeNameInfo, [NotNullWhen(true)] out Type? type)
+        {
+            type = null;
+            if (!IsKnownFrameworkAssemblyName(typeNameInfo.AssemblyName!))
+            {
+                return false;
+            }
+
+            if (BclTypeAliases.TryGetValue(typeNameInfo.SearchTypeName, out type))
+            {
+                return true;
+            }
+
+            type = typeof(object).Assembly.GetType(typeNameInfo.SearchTypeName, throwOnError: false, ignoreCase: true);
+            if (type is not null)
+            {
+                return true;
+            }
+
+            type = Type.GetType(typeName, ResolveLoadedAssembly, typeResolver: null, throwOnError: false, ignoreCase: true);
+            return type is not null;
+        }
+
+        private static Assembly? ResolveLoadedAssembly(AssemblyName assemblyName)
+        {
+            var requestedFullName = assemblyName.FullName;
+            var assemblies = Volatile.Read(ref _getAssemblies)();
+
+            for (var i = 0; i < assemblies.Length; i++)
+            {
+                var assembly = assemblies[i];
+                if (string.Equals(assembly.FullName, requestedFullName, StringComparison.Ordinal))
+                {
+                    return assembly;
+                }
+            }
+
+            var requestedName = assemblyName.Name;
+            if (requestedName is null)
+            {
+                return null;
+            }
+
+            for (var i = 0; i < assemblies.Length; i++)
+            {
+                var assembly = assemblies[i];
+                if (AssemblySimpleNameEquals(assembly.FullName, requestedName))
+                {
+                    return assembly;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsKnownFrameworkAssemblyName(string assemblyName)
+        {
+            var simpleNameLength = assemblyName.IndexOf(',');
+            if (simpleNameLength < 0)
+            {
+                simpleNameLength = assemblyName.Length;
+            }
+
+            return AssemblyNameEquals(assemblyName, simpleNameLength, "mscorlib") ||
+                   AssemblyNameEquals(assemblyName, simpleNameLength, "netstandard") ||
+                   AssemblyNameEquals(assemblyName, simpleNameLength, "System") ||
+                   AssemblyNameEquals(assemblyName, simpleNameLength, "System.Private.CoreLib") ||
+                   AssemblyNameEquals(assemblyName, simpleNameLength, "System.Runtime");
+        }
+
+        private static bool AssemblyNameEquals(string assemblyName, int simpleNameLength, string expectedName)
+        {
+            return simpleNameLength == expectedName.Length &&
+                   string.Compare(assemblyName, 0, expectedName, 0, expectedName.Length, StringComparison.Ordinal) == 0;
+        }
+
+        private static bool AssemblySimpleNameEquals(string? assemblyFullName, string expectedName)
+        {
+            if (assemblyFullName is null)
+            {
+                return false;
+            }
+
+            var simpleNameLength = assemblyFullName.IndexOf(',');
+            if (simpleNameLength < 0)
+            {
+                simpleNameLength = assemblyFullName.Length;
+            }
+
+            return AssemblyNameEquals(assemblyFullName, simpleNameLength, expectedName);
+        }
+    }
+
     private sealed class ResolutionState
     {
         private readonly WeakReference<Type>? _type;
 
-        internal ResolutionState(Type? type, bool isAmbiguous, int scannedGeneration, string[] scannedAssemblies)
+        internal ResolutionState(Type? type, bool isAmbiguous, int scannedGeneration, AssemblyIdentity[] scannedAssemblies)
         {
             _type = type is null ? null : new WeakReference<Type>(type);
             IsAmbiguous = isAmbiguous;
             ScannedGeneration = scannedGeneration;
-            ScannedAssemblies = scannedAssemblies ?? EmptyAssemblyNames;
+            ScannedAssemblies = scannedAssemblies ?? EmptyAssemblyIdentities;
         }
 
         internal bool HasResolvedType => _type is not null;
@@ -673,7 +817,7 @@ internal static class InstanceOfHelper
 
         internal int ScannedGeneration { get; }
 
-        internal string[] ScannedAssemblies { get; }
+        internal AssemblyIdentity[] ScannedAssemblies { get; }
 
         internal Type? GetTypeOrDefault()
         {
