@@ -1,0 +1,7 @@
+{
+  "Topics": {
+    "samples-eventgrid-topic": [
+      "http://host.docker.internal:7071/runtime/webhooks/eventgrid?functionName=EventGridTrigger"
+    ]
+  }
+}

@@ -402,6 +402,23 @@
     ]
   },
   {
+    "integrationName": "AzureEventGrid",
+    "assemblyName": "Azure.Messaging.EventGrid",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "5.65535.65535",
+    "packages": [
+      {
+        "name": "Azure.Messaging.EventGrid",
+        "minVersionAvailableInclusive": "4.0.0",
+        "minVersionSupportedInclusive": "4.0.0",
+        "minVersionTestedInclusive": "4.0.0",
+        "maxVersionSupportedInclusive": "5.0.0",
+        "maxVersionAvailableInclusive": "5.0.0",
+        "maxVersionTestedInclusive": "5.0.0"
+      }
+    ]
+  },
+  {
     "integrationName": "AzureEventHubs",
     "assemblyName": "Azure.Messaging.EventHubs",
     "minAssemblyVersionInclusive": "5.9.2",
