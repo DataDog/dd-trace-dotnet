@@ -25,6 +25,13 @@ namespace Samples.Console_
                     NativeCrash();
                 }
 
+#if NETFRAMEWORK
+                if (args[0].StartsWith("crash-appdomain"))
+                {
+                    CrashAppDomain(args[0]);
+                }
+#endif
+
                 var exception = args[0] == "crash-datadog" ? (Exception)new BadImageFormatException("Expected") : new InvalidOperationException("Expected");
 
                 // Add an indirection to have a BCL type on the callstack, to properly test obfuscation
@@ -219,6 +226,51 @@ namespace Samples.Console_
 
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern IntPtr GetCurrentThread();
+
+        private static void CrashAppDomain(string scenario)
+        {
+            var setup = AppDomain.CurrentDomain.SetupInformation;
+
+            AppDomain CreateConfiguredDomain(string name, string serviceName)
+            {
+                var domain = AppDomain.CreateDomain(name, null, setup);
+                domain.SetData("DD_SERVICE", serviceName);
+                domain.SetData("DD_RUNTIME_ID", Guid.NewGuid().ToString());
+                domain.DoCallBack(AppDomainCrasher.ConfigureTracer);
+                return domain;
+            }
+
+            switch (scenario)
+            {
+                case "crash-appdomain-single":
+                {
+                    var domain = CreateConfiguredDomain("AppA", "web-app-a");
+                    domain.DoCallBack(AppDomainCrasher.CrashManaged);
+                    break;
+                }
+
+                case "crash-appdomain-multi":
+                {
+                    CreateConfiguredDomain("AppA", "web-app-a");
+                    var domainB = CreateConfiguredDomain("AppB", "web-app-b");
+                    CreateConfiguredDomain("AppC", "web-app-c");
+                    domainB.DoCallBack(AppDomainCrasher.CrashManaged);
+                    break;
+                }
+
+                case "crash-appdomain-multi-native":
+                {
+                    CreateConfiguredDomain("AppA", "web-app-a");
+                    var domainB = CreateConfiguredDomain("AppB", "web-app-b");
+                    CreateConfiguredDomain("AppC", "web-app-c");
+
+                    // CrashProcess spawns a native thread (no AppDomain) — crash reporter
+                    // can't attribute it to any domain and must enumerate all.
+                    NativeCrash();
+                    break;
+                }
+            }
+        }
 #endif
 
         private static int GetMainThreadId()
@@ -232,5 +284,36 @@ namespace Samples.Console_
 
             public override void Send(SendOrPostCallback d, object state) => d(state);
         }
+
+#if NETFRAMEWORK
+        private static class AppDomainCrasher
+        {
+            public static void ConfigureTracer()
+            {
+                // Simulate IIS behavior: in w3wp.exe the native loader generates a unique
+                // runtime ID per AppDomain. In non-IIS processes it returns the same ID for all.
+                // Pre-set RuntimeId._runtimeId via reflection before Tracer.Configure runs,
+                // so LazyInitializer.EnsureInitialized sees it as non-null and skips the native call.
+                var runtimeId = (string)AppDomain.CurrentDomain.GetData("DD_RUNTIME_ID");
+                if (runtimeId is not null)
+                {
+                    var runtimeIdType = Type.GetType("Datadog.Trace.Util.RuntimeId, Datadog.Trace", throwOnError: true);
+                    var field = runtimeIdType.GetField("_runtimeId", BindingFlags.NonPublic | BindingFlags.Static);
+                    field.SetValue(null, runtimeId);
+                }
+
+                var serviceName = (string)AppDomain.CurrentDomain.GetData("DD_SERVICE");
+                var settings = new Datadog.Trace.Configuration.TracerSettings { ServiceName = serviceName };
+                Datadog.Trace.Tracer.Configure(settings);
+            }
+
+            public static void CrashManaged()
+            {
+                var thread = new Thread(() => throw new BadImageFormatException("Expected"));
+                thread.Start();
+                Thread.Sleep(Timeout.Infinite);
+            }
+        }
+#endif
     }
 }
