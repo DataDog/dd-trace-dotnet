@@ -123,7 +123,9 @@ public class FlagEvaluationApiTests
         agg.Add(ev);
         agg.Add(ev2);
 
-        var (fullMap, degradedMap, _) = agg.Drain();
+        var drained = agg.Drain();
+        var fullMap = drained.Full;
+        var degradedMap = drained.Degraded;
         fullMap.Should().HaveCount(1, "identical dims+context → one full-tier bucket");
         var bucket = fullMap.Values.Should().ContainSingle().Subject;
         bucket.Count.Should().Be(2);
@@ -145,7 +147,9 @@ public class FlagEvaluationApiTests
         agg.Add(evInt);
         agg.Add(evStr);
 
-        var (fullMap, degradedMap, _) = agg.Drain();
+        var drained = agg.Drain();
+        var fullMap = drained.Full;
+        var degradedMap = drained.Degraded;
         fullMap.Should().HaveCount(2, "int 1 and string \"1\" must produce distinct full-tier buckets");
         degradedMap.Should().BeEmpty();
     }
@@ -163,7 +167,10 @@ public class FlagEvaluationApiTests
         // 3rd event should overflow to degraded
         agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-3", t, new Dictionary<string, object?> { ["ctx"] = "v3" }));
 
-        var (fullMap, degradedMap, dropped) = agg.Drain();
+        var drained = agg.Drain();
+        var fullMap = drained.Full;
+        var degradedMap = drained.Degraded;
+        long dropped = drained.Dropped;
         fullMap.Should().HaveCount(2);
         degradedMap.Should().HaveCount(1, "overflow from full tier routes to degraded");
         dropped.Should().Be(0);
@@ -182,7 +189,10 @@ public class FlagEvaluationApiTests
         // 3rd event for same flag should overflow to degraded
         agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-3", t, new Dictionary<string, object?> { ["ctx"] = "v3" }));
 
-        var (fullMap, degradedMap, dropped) = agg.Drain();
+        var drained = agg.Drain();
+        var fullMap = drained.Full;
+        var degradedMap = drained.Degraded;
+        long dropped = drained.Dropped;
         fullMap.Should().HaveCount(2);
         degradedMap.Should().HaveCount(1, "per-flag overflow routes to degraded");
         dropped.Should().Be(0);
@@ -195,16 +205,20 @@ public class FlagEvaluationApiTests
         var agg = new FlagEvaluationAggregator(globalCap: 0, perFlagCap: 0, degradedCap: 2);
         long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        // All 4 events have different degraded keys (flag+variant+alloc+reason all distinct)
+        // All 4 events have different degraded keys (flag+variant+alloc+reason all distinct).
+        // degradedCap=2, so the first 2 fill the cap, and the last 2 are dropped.
         agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-1", t, null));
         agg.Add(new FlagEvalEvent("flag-a", "off", "split", "alloc-1", "user-2", t, null));
-        agg.Add(new FlagEvalEvent("flag-b", "on", "split", "alloc-1", "user-3", t, null)); // fills degradedCap
-        agg.Add(new FlagEvalEvent("flag-c", "on", "split", "alloc-1", "user-4", t, null)); // should be dropped
+        agg.Add(new FlagEvalEvent("flag-b", "on", "split", "alloc-1", "user-3", t, null)); // exceeds cap → dropped
+        agg.Add(new FlagEvalEvent("flag-c", "on", "split", "alloc-1", "user-4", t, null)); // exceeds cap → dropped
 
-        var (fullMap, degradedMap, dropped) = agg.Drain();
+        var drained = agg.Drain();
+        var fullMap = drained.Full;
+        var degradedMap = drained.Degraded;
+        long dropped = drained.Dropped;
         fullMap.Should().BeEmpty();
-        degradedMap.Should().HaveCount(2, "degraded cap is 2");
-        dropped.Should().Be(1, "one event dropped due to degraded cap overflow");
+        degradedMap.Should().HaveCount(2, "degraded cap is 2; first 2 events fill it");
+        dropped.Should().Be(2, "two events dropped due to degraded cap overflow (cap=2, 4 distinct keys)");
     }
 
     [Fact]
@@ -216,7 +230,9 @@ public class FlagEvaluationApiTests
 
         agg.Add(new FlagEvalEvent("flag-a", variant: null, "default", "alloc-1", "user-1", t, null));
 
-        var (fullMap, degradedMap, _) = agg.Drain();
+        var drained = agg.Drain();
+        var fullMap = drained.Full;
+        var degradedMap = drained.Degraded;
         fullMap.Should().HaveCount(1);
         fullMap.Values.Should().ContainSingle().Which.RuntimeDefault.Should().BeTrue("absent variant means runtime_default_used=true");
     }
@@ -229,7 +245,8 @@ public class FlagEvaluationApiTests
 
         agg.Add(new FlagEvalEvent("flag-a", variant: "on", "targeting_match", "alloc-1", "user-1", t, null));
 
-        var (fullMap, _, _) = agg.Drain();
+        var drained2 = agg.Drain();
+        var fullMap = drained2.Full;
         fullMap.Should().HaveCount(1);
         fullMap.Values.Should().ContainSingle().Which.RuntimeDefault.Should().BeFalse("present variant means runtime_default_used=false");
     }

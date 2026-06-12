@@ -1,0 +1,74 @@
+// <copyright file="FullKey.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+#nullable enable
+
+using System;
+
+namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
+
+/// <summary>
+/// Full-tier bucket identity: all dims plus a comparable canonical-context key.
+/// No hash — distinct contexts always produce distinct buckets (reviewer concern #3).
+/// </summary>
+internal readonly struct FullKey : IEquatable<FullKey>
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FullKey"/> struct.
+    /// </summary>
+    public FullKey(string flagKey, string variant, string allocationKey, string reason, string targetingKey, string contextKey)
+    {
+        FlagKey = flagKey;
+        Variant = variant;
+        AllocationKey = allocationKey;
+        Reason = reason;
+        TargetingKey = targetingKey;
+        ContextKey = contextKey;
+    }
+
+    /// <summary>Gets the flag key.</summary>
+    public string FlagKey { get; }
+
+    /// <summary>Gets the variant.</summary>
+    public string Variant { get; }
+
+    /// <summary>Gets the allocation key.</summary>
+    public string AllocationKey { get; }
+
+    /// <summary>Gets the reason.</summary>
+    public string Reason { get; }
+
+    /// <summary>Gets the targeting key.</summary>
+    public string TargetingKey { get; }
+
+    /// <summary>Gets the exact canonical encoding of the pruned context — comparable, not a digest.</summary>
+    public string ContextKey { get; }
+
+    /// <inheritdoc/>
+    public bool Equals(FullKey other) =>
+        FlagKey == other.FlagKey &&
+        Variant == other.Variant &&
+        AllocationKey == other.AllocationKey &&
+        Reason == other.Reason &&
+        TargetingKey == other.TargetingKey &&
+        ContextKey == other.ContextKey;
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => obj is FullKey other && Equals(other);
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            int h = FlagKey?.GetHashCode() ?? 0;
+            h = (h * 397) ^ (Variant?.GetHashCode() ?? 0);
+            h = (h * 397) ^ (AllocationKey?.GetHashCode() ?? 0);
+            h = (h * 397) ^ (Reason?.GetHashCode() ?? 0);
+            h = (h * 397) ^ (TargetingKey?.GetHashCode() ?? 0);
+            h = (h * 397) ^ (ContextKey?.GetHashCode() ?? 0);
+            return h;
+        }
+    }
+}
