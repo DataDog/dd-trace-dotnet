@@ -17,6 +17,8 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         void SetRate(double? samplesPerSecond);
 
+        void SetUnlimitedRate();
+
         void ResetRate();
     }
 }

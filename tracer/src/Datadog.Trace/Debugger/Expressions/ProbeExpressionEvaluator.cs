@@ -259,6 +259,7 @@ internal sealed class ProbeExpressionEvaluator
         }
 
         CompiledExpression<bool> compiledExpression = default;
+
         try
         {
             if (!cached.HasValue)

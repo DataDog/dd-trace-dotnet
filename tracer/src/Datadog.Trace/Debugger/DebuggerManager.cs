@@ -27,7 +27,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger
 {
-    internal sealed class DebuggerManager
+    internal sealed partial class DebuggerManager
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerManager));
         private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(250);
@@ -216,7 +216,30 @@ namespace Datadog.Trace.Debugger
         //   - DynamicConfigurationManager.OnConfigurationChanged (gates with ShouldApplyDynamicDebuggerConfig)
         internal Task UpdateConfiguration(TracerSettings tracerSettings, DebuggerSettings? newDebuggerSettings = null)
         {
-            return UpdateProductsState(tracerSettings, newDebuggerSettings ?? DebuggerSettings);
+            var settings = newDebuggerSettings ?? DebuggerSettings;
+
+            // Snapshot exploration test runs take a different initialization path (no agent
+            // discovery, no-op symbols/probe-status pollers, sink writes to CSV).
+            // Route here so that Instrumentation.cs stays free of debugger test plumbing.
+            // This intentionally runs and completes synchronously (returning an already-completed
+            // task): the test host must not start executing probed code until initialization and
+            // probe installation have finished. This path only runs inside a vstest test host.
+            if (settings.IsSnapshotExplorationTestEnabled)
+            {
+                try
+                {
+                    OneTimeSetup(tracerSettings);
+                    InitForSnapshotExploration();
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, "Error initializing Dynamic Instrumentation for snapshot exploration test");
+                }
+
+                return Task.CompletedTask;
+            }
+
+            return UpdateProductsState(tracerSettings, settings);
         }
 
         private Task UpdateProductsState(TracerSettings tracerSettings, DebuggerSettings newDebuggerSettings)
@@ -630,7 +653,7 @@ namespace Datadog.Trace.Debugger
 
         private bool ShouldSkipDiUpdate(bool requested, bool current, DebuggerSettings debuggerSettings)
         {
-            if (requested && debuggerSettings is { DynamicInstrumentationCanBeEnabled: false })
+            if (requested && !debuggerSettings.DynamicInstrumentationCanBeEnabled)
             {
                 Log.Debug("Dynamic Instrumentation can't be enabled because the local environment variable is set to false");
                 return true;
@@ -702,7 +725,6 @@ namespace Datadog.Trace.Debugger
             {
                 var tracerManager = TracerManager.Instance;
                 var discoveryService = tracerManager.DiscoveryService;
-
                 di = DebuggerFactory.CreateDynamicInstrumentation(
                     discoveryService,
                     RcmSubscriptionManager.Instance,

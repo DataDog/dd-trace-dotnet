@@ -36,6 +36,7 @@ using ExpressionProbeLocation = Datadog.Trace.Debugger.Expressions.ProbeLocation
 
 namespace Datadog.Trace.Tests.Debugger;
 
+[Collection(nameof(EnvironmentVariablesTestCollection))]
 public class DynamicInstrumentationTests
 {
     [Fact]
@@ -61,6 +62,43 @@ public class DynamicInstrumentationTests
             globalRateLimiter);
 
         globalRateLimiter.InitializeCallCount.Should().Be(1);
+        globalRateLimiter.SetUnlimitedRateCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void DynamicInstrumentation_DisablesGlobalRateLimiterForSnapshotExplorationTests()
+    {
+        var originalRootPath = Environment.GetEnvironmentVariable(SnapshotExplorationConstants.TestRootPathKey);
+        try
+        {
+            Environment.SetEnvironmentVariable(SnapshotExplorationConstants.TestRootPathKey, Path.GetTempPath());
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
+                NullConfigurationTelemetry.Instance);
+            settings.IsSnapshotExplorationTestEnabled.Should().BeTrue("snapshot exploration only runs inside a vstest test host");
+
+            var globalRateLimiter = new GlobalRateLimiterMock();
+
+            _ = new DynamicInstrumentation(
+                settings,
+                new DiscoveryServiceMock(),
+                new RcmSubscriptionManagerMock(),
+                new LineProbeResolverMock(),
+                new SnapshotUploaderMock(),
+                new LogUploaderMock(),
+                new UploaderMock(),
+                new ProbeStatusPollerMock(),
+                ConfigurationUpdater.Create(string.Empty, string.Empty, 0, globalRateLimiter),
+                NoOpStatsd.Instance,
+                globalRateLimiter);
+
+            globalRateLimiter.InitializeCallCount.Should().Be(1);
+            globalRateLimiter.SetUnlimitedRateCallCount.Should().Be(1);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(SnapshotExplorationConstants.TestRootPathKey, originalRootPath);
+        }
     }
 
     [Fact]
@@ -1488,6 +1526,8 @@ public class DynamicInstrumentationTests
 
         internal int SetRateCallCount { get; private set; }
 
+        internal int SetUnlimitedRateCallCount { get; private set; }
+
         public bool ShouldSampleSnapshot(string probeId) => true;
 
         public void Initialize()
@@ -1498,6 +1538,11 @@ public class DynamicInstrumentationTests
         public void SetRate(double? samplesPerSecond)
         {
             SetRateCallCount++;
+        }
+
+        public void SetUnlimitedRate()
+        {
+            SetUnlimitedRateCallCount++;
         }
 
         public void ResetRate()
