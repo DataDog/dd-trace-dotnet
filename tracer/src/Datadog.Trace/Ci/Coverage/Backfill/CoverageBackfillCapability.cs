@@ -168,13 +168,33 @@ internal static class CoverageBackfillCapability
     {
         var command = CoverageBackfillCommandLine.Parse(GetCommandLine(), GetCommandWorkingDirectory());
 
+        return IsActiveCoverageModeBackfillable(settings, command, allowTargetFrameworkSelection: false, out reason, out _);
+    }
+
+    /// <summary>
+    /// Gets whether active coverage can be corrected once the skippable-tests response proves framework-scoped coverage compatibility.
+    /// </summary>
+    /// <param name="settings">Resolved Test Optimization settings for the current process.</param>
+    /// <param name="reason">Reason why the setup is not safe for coverage-active skipping.</param>
+    /// <param name="requiresBackendConfigurationValidation">Whether the skippable-tests response must prove a homogeneous backend configuration scope.</param>
+    /// <returns>True when ITR may skip tests after response-level validation.</returns>
+    internal static bool IsActiveCoverageModeBackfillableForSkippableResponse(TestOptimizationSettings settings, out string reason, out bool requiresBackendConfigurationValidation)
+    {
+        var command = CoverageBackfillCommandLine.Parse(GetCommandLine(), GetCommandWorkingDirectory());
+
+        return IsActiveCoverageModeBackfillable(settings, command, allowTargetFrameworkSelection: true, out reason, out requiresBackendConfigurationValidation);
+    }
+
+    private static bool IsActiveCoverageModeBackfillable(TestOptimizationSettings settings, CoverageBackfillCommandLine command, bool allowTargetFrameworkSelection, out string reason, out bool requiresBackendConfigurationValidation)
+    {
+        requiresBackendConfigurationValidation = false;
         if (!HasSelectedCoverageReportSource(settings, command))
         {
             reason = string.Empty;
             return true;
         }
 
-        if (HasUnsupportedSelection(command, out reason))
+        if (HasUnsupportedSelection(command, allowTargetFrameworkSelection, out reason, out requiresBackendConfigurationValidation))
         {
             return false;
         }
@@ -574,10 +594,13 @@ internal static class CoverageBackfillCapability
     /// Detects local test subsetting that can make the backend aggregate broader than the current execution.
     /// </summary>
     /// <param name="command">Parsed command to inspect.</param>
+    /// <param name="allowTargetFrameworkSelection">Whether target-framework selectors can be deferred to backend configuration validation.</param>
     /// <param name="reason">Reason why the command scope is unsafe.</param>
+    /// <param name="requiresBackendConfigurationValidation">Whether the backend response must prove a homogeneous configuration scope.</param>
     /// <returns>True when coverage-active skipping must be disabled for aggregate safety.</returns>
-    private static bool HasUnsupportedSelection(CoverageBackfillCommandLine command, out string reason)
+    private static bool HasUnsupportedSelection(CoverageBackfillCommandLine command, bool allowTargetFrameworkSelection, out string reason, out bool requiresBackendConfigurationValidation)
     {
+        requiresBackendConfigurationValidation = false;
         if (command.HasUnexpandedResponseFileReferenceIncludingDotnetCoverageChildCommand() ||
             command.HasUnexpandedTestingPlatformCommandLineArgumentResponseFileReferenceIncludingDotnetCoverageChildCommand())
         {
@@ -593,13 +616,17 @@ internal static class CoverageBackfillCapability
             return true;
         }
 
-        if (command.HasOptionIncludingDotnetCoverageChildCommand(UnsupportedFrameworkFilterOptions) ||
-            command.ContainsShortFrameworkOptionIncludingDotnetCoverageChildCommand() ||
-            command.HasAnyNonEmptyMsBuildPropertyIncludingDotnetCoverageChildCommand(UnsupportedFrameworkFilterProperties) ||
-            command.HasRunSettingsTargetFrameworkIncludingDotnetCoverageChildCommand())
+        if (HasTargetFrameworkSelection(command))
         {
             reason = "A target-framework subset was detected; backend coverage is not scoped to the selected framework.";
-            return true;
+            if (!allowTargetFrameworkSelection)
+            {
+                return true;
+            }
+
+            reason = string.Empty;
+            requiresBackendConfigurationValidation = true;
+            return false;
         }
 
         // Explicit project, solution, and assembly targets are safe here because coverage-active skipping uses
@@ -699,6 +726,12 @@ internal static class CoverageBackfillCapability
 
         return false;
     }
+
+    private static bool HasTargetFrameworkSelection(CoverageBackfillCommandLine command)
+        => command.HasOptionIncludingDotnetCoverageChildCommand(UnsupportedFrameworkFilterOptions) ||
+           command.ContainsShortFrameworkOptionIncludingDotnetCoverageChildCommand() ||
+           command.HasAnyNonEmptyMsBuildPropertyIncludingDotnetCoverageChildCommand(UnsupportedFrameworkFilterProperties) ||
+           command.HasRunSettingsTargetFrameworkIncludingDotnetCoverageChildCommand();
 
     private static bool RequiresExternalXmlWrittenByCurrentCoverageCommand(CoverageBackfillCommandLine command)
     {

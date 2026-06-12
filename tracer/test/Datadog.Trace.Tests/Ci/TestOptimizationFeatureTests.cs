@@ -311,6 +311,128 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     [Fact]
+    public void CoverageBackfillSkipGateAllowsTargetFrameworkSelectionWhenBackendConfigurationsAreHomogeneous()
+    {
+        ClearCoverageBackfillEnvironment();
+        var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-skippable-feature-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(workspacePath);
+        try
+        {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test --framework net8.0 --collect \"XPlat Code Coverage\"");
+            var settings = CreateSettings();
+            var remoteSettings = CreateRemoteSettingsResponse(testsSkippingEnabled: true);
+            var configurations = CreateBackendConfigurations("8.0.8");
+            var candidate = new SkippableTest("SimplePassTest", "Samples.XUnitTests.TestSuite", parameters: null, configurations, missingLineCodeCoverage: false);
+            var otherCandidate = new SkippableTest("OtherPassTest", "Samples.XUnitTests.TestSuite", parameters: null, configurations, missingLineCodeCoverage: false);
+            var response = new TestOptimizationClient.SkippableTestsResponse(
+                correlationId: "correlation-id",
+                tests: [candidate, otherCandidate],
+                CoverageBackfillData.FromBackendCoverage(new Dictionary<string, string> { ["src/Calculator.cs"] = "wA==" }),
+                isCoverageBackfillSafe: true);
+            var client = new TestOptimizationClientStub(skippableTestsResponse: response);
+            var testOptimization = CreateTestOptimization(settings, workspacePath, runId: "injected-run");
+            var skippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client, testOptimization.Object);
+
+            var skippableTests = skippableFeature.GetSkippableTestsFromSuiteAndName("Samples.XUnitTests.TestSuite", "SimplePassTest", "Samples.XUnitTests");
+
+            skippableTests.Should().ContainSingle();
+            skippableFeature.CanSkipWithCoverageBackfill(skippableTests[0], "Samples.XUnitTests", out var reason).Should().BeTrue();
+            skippableFeature.RecordTestSkipCoverageBackfill(skippableTests[0], "Samples.XUnitTests");
+
+            reason.Should().BeEmpty();
+            skippableFeature.IsCoverageBackfillSafe().Should().BeTrue();
+            skippableFeature.GetCoverageBackfillData().IsPresent.Should().BeTrue();
+        }
+        finally
+        {
+            ClearCoverageBackfillEnvironment();
+            if (Directory.Exists(workspacePath))
+            {
+                Directory.Delete(workspacePath, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void CoverageBackfillSkipGateFailsTargetFrameworkSelectionWhenBackendConfigurationsDiffer()
+    {
+        ClearCoverageBackfillEnvironment();
+        var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-skippable-feature-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(workspacePath);
+        try
+        {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test --framework net8.0 --collect \"XPlat Code Coverage\"");
+            var settings = CreateSettings();
+            var remoteSettings = CreateRemoteSettingsResponse(testsSkippingEnabled: true);
+            var candidate = new SkippableTest("SimplePassTest", "Samples.XUnitTests.TestSuite", parameters: null, CreateBackendConfigurations("8.0.8"), missingLineCodeCoverage: false);
+            var otherCandidate = new SkippableTest("OtherPassTest", "Samples.XUnitTests.TestSuite", parameters: null, CreateBackendConfigurations("9.0.0"), missingLineCodeCoverage: false);
+            var response = new TestOptimizationClient.SkippableTestsResponse(
+                correlationId: "correlation-id",
+                tests: [candidate, otherCandidate],
+                CoverageBackfillData.FromBackendCoverage(new Dictionary<string, string> { ["src/Calculator.cs"] = "wA==" }),
+                isCoverageBackfillSafe: true);
+            var client = new TestOptimizationClientStub(skippableTestsResponse: response);
+            var testOptimization = CreateTestOptimization(settings, workspacePath, runId: "injected-run");
+            var skippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client, testOptimization.Object);
+
+            var skippableTests = skippableFeature.GetSkippableTestsFromSuiteAndName("Samples.XUnitTests.TestSuite", "SimplePassTest", "Samples.XUnitTests");
+
+            skippableTests.Should().ContainSingle();
+            skippableFeature.CanSkipWithCoverageBackfill(skippableTests[0], "Samples.XUnitTests", out var reason).Should().BeFalse();
+
+            reason.Should().Contain("multiple configurations");
+            CoverageBackfillDataStore.HasActualItrSkip(testOptimization.Object).Should().BeFalse();
+        }
+        finally
+        {
+            ClearCoverageBackfillEnvironment();
+            if (Directory.Exists(workspacePath))
+            {
+                Directory.Delete(workspacePath, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void CoverageBackfillSkipGateFailsTargetFrameworkSelectionWhenBackendConfigurationsAreMissing()
+    {
+        ClearCoverageBackfillEnvironment();
+        var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-skippable-feature-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(workspacePath);
+        try
+        {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test --framework net8.0 --collect \"XPlat Code Coverage\"");
+            var settings = CreateSettings();
+            var remoteSettings = CreateRemoteSettingsResponse(testsSkippingEnabled: true);
+            var candidate = new SkippableTest("SimplePassTest", "Samples.XUnitTests.TestSuite", parameters: null, configurations: null, missingLineCodeCoverage: false);
+            var response = new TestOptimizationClient.SkippableTestsResponse(
+                correlationId: "correlation-id",
+                tests: [candidate],
+                CoverageBackfillData.FromBackendCoverage(new Dictionary<string, string> { ["src/Calculator.cs"] = "wA==" }),
+                isCoverageBackfillSafe: true);
+            var client = new TestOptimizationClientStub(skippableTestsResponse: response);
+            var testOptimization = CreateTestOptimization(settings, workspacePath, runId: "injected-run");
+            var skippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client, testOptimization.Object);
+
+            var skippableTests = skippableFeature.GetSkippableTestsFromSuiteAndName("Samples.XUnitTests.TestSuite", "SimplePassTest", "Samples.XUnitTests");
+
+            skippableTests.Should().ContainSingle();
+            skippableFeature.CanSkipWithCoverageBackfill(skippableTests[0], "Samples.XUnitTests", out var reason).Should().BeFalse();
+
+            reason.Should().Contain("did not include configurations");
+            CoverageBackfillDataStore.HasActualItrSkip(testOptimization.Object).Should().BeFalse();
+        }
+        finally
+        {
+            ClearCoverageBackfillEnvironment();
+            if (Directory.Exists(workspacePath))
+            {
+                Directory.Delete(workspacePath, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void CoverageBackfillSkipGateDoesNotRecordActualSkipStateBeforeFrameworkCommitsToSkip()
     {
         ClearCoverageBackfillEnvironment();
@@ -1948,6 +2070,17 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
                 enabled: false,
                 attemptToFixRetries: 0),
             dynamicInstrumentationEnabled: false);
+
+    private static TestsConfigurations CreateBackendConfigurations(string runtimeVersion)
+        => new(
+            osPlatform: "linux",
+            osVersion: "test-os",
+            osArchitecture: "x64",
+            runtimeName: ".NET",
+            runtimeVersion: runtimeVersion,
+            runtimeArchitecture: "x64",
+            custom: null,
+            testBundle: "Samples.XUnitTests");
 
     private static Mock<ITestOptimization> CreateTestOptimization(TestOptimizationSettings settings, string workspacePath, string runId = "test-run")
     {

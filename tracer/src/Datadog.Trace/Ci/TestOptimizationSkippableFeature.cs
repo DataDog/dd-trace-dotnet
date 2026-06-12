@@ -34,6 +34,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     private readonly Dictionary<string, ActualSkippedDictionaryState> _actualSkippedDictionaries = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<ulong, byte> _itrSkippedSessions = new();
     private readonly bool _coverageBackfillRequiresScopedRequests;
+    private readonly bool _coverageBackfillRequiresBackendConfigurationValidation;
     private readonly string _coverageBackfillUnsupportedReason;
     // Keeps scoped tasks in insertion order so shutdown can wait for them without allocating array snapshots.
     private List<Task<SkippableTestsDictionary>>? _scopedSkippableTestsTaskList;
@@ -49,10 +50,16 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         }
 
         _coverageBackfillRequiresScopedRequests = CoverageBackfillCapability.IsCoverageBackfillRequired(settings);
-        _coverageBackfillUnsupportedReason = _coverageBackfillRequiresScopedRequests &&
-                                             !CoverageBackfillCapability.IsActiveCoverageModeBackfillable(settings, out var unsupportedReason) ?
-                                                 unsupportedReason :
-                                                 string.Empty;
+        var requiresBackendConfigurationValidation = false;
+        _coverageBackfillUnsupportedReason = string.Empty;
+        if (_coverageBackfillRequiresScopedRequests &&
+            !CoverageBackfillCapability.IsActiveCoverageModeBackfillableForSkippableResponse(settings, out var unsupportedReason, out requiresBackendConfigurationValidation))
+        {
+            _coverageBackfillUnsupportedReason = unsupportedReason;
+        }
+
+        _coverageBackfillRequiresBackendConfigurationValidation = requiresBackendConfigurationValidation;
+
         if (settings.TestsSkippingEnabled == true)
         {
             Log.Information("TestOptimizationSkippableFeature: Test skipping is enabled.");
@@ -269,6 +276,12 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             return false;
         }
 
+        if (_coverageBackfillRequiresBackendConfigurationValidation &&
+            !CanSkipWithBackendConfigurationScope(skippableTest, moduleName, out reason))
+        {
+            return false;
+        }
+
         if (skippableTest.MissingLineCodeCoverage == true)
         {
             reason = "backend marked the test as missing line coverage";
@@ -299,7 +312,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
 
             var dictionary = skippableTestsTask.SafeGetResult();
             CoverageBackfillDataStore.RecordActualItrSkip(sessionId, dictionary.Scope);
-            if (IsDictionaryCoverageBackfillSafe(dictionary))
+            if (IsDictionaryCoverageBackfillSafeForCurrentRun(dictionary))
             {
                 CoverageBackfillDataStore.RecordBackfillableItrSkipScope(sessionId, dictionary.Scope);
             }
@@ -374,6 +387,100 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
                coverageBackfillData.IsValid;
     }
 
+    private static bool HasHomogeneousBackendConfigurations(SkippableTestsDictionary skippableTestsBySuiteAndName, out string reason)
+    {
+        var hasConfigurations = false;
+        TestsConfigurations firstConfigurations = default;
+
+        foreach (var testsInSuite in skippableTestsBySuiteAndName.Values)
+        {
+            foreach (var tests in testsInSuite.Values)
+            {
+                foreach (var candidate in tests)
+                {
+                    if (candidate.Configurations is not { } candidateConfigurations)
+                    {
+                        reason = "backend skippable response did not include configurations for every target-framework scoped candidate";
+                        return false;
+                    }
+
+                    if (!hasConfigurations)
+                    {
+                        firstConfigurations = candidateConfigurations;
+                        hasConfigurations = true;
+                    }
+                    else if (!TestsConfigurationsEqual(firstConfigurations, candidateConfigurations))
+                    {
+                        reason = "backend skippable response included multiple configurations for the selected target-framework scope";
+                        return false;
+                    }
+                }
+            }
+        }
+
+        if (!hasConfigurations)
+        {
+            reason = "backend skippable response did not include configurations for the selected target-framework scope";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
+    }
+
+    private static TestsConfigurations GetFirstBackendConfigurations(SkippableTestsDictionary skippableTestsBySuiteAndName)
+    {
+        foreach (var testsInSuite in skippableTestsBySuiteAndName.Values)
+        {
+            foreach (var tests in testsInSuite.Values)
+            {
+                foreach (var candidate in tests)
+                {
+                    if (candidate.Configurations is { } candidateConfigurations)
+                    {
+                        return candidateConfigurations;
+                    }
+                }
+            }
+        }
+
+        return default;
+    }
+
+    private static bool TestsConfigurationsEqual(TestsConfigurations first, TestsConfigurations second)
+        => string.Equals(first.OSPlatform, second.OSPlatform, StringComparison.Ordinal) &&
+           string.Equals(first.OSVersion, second.OSVersion, StringComparison.Ordinal) &&
+           string.Equals(first.OSArchitecture, second.OSArchitecture, StringComparison.Ordinal) &&
+           string.Equals(first.RuntimeName, second.RuntimeName, StringComparison.Ordinal) &&
+           string.Equals(first.RuntimeVersion, second.RuntimeVersion, StringComparison.Ordinal) &&
+           string.Equals(first.RuntimeArchitecture, second.RuntimeArchitecture, StringComparison.Ordinal) &&
+           string.Equals(first.TestBundle, second.TestBundle, StringComparison.Ordinal) &&
+           CustomConfigurationsEqual(first.Custom, second.Custom);
+
+    private static bool CustomConfigurationsEqual(Dictionary<string, string>? first, Dictionary<string, string>? second)
+    {
+        if (first is null || first.Count == 0)
+        {
+            return second is null || second.Count == 0;
+        }
+
+        if (second is null || first.Count != second.Count)
+        {
+            return false;
+        }
+
+        foreach (var item in first)
+        {
+            if (!second.TryGetValue(item.Key, out var value) ||
+                !string.Equals(item.Value, value, StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private static bool ContainsCoverageBackfillCandidate(SkippableTestsDictionary skippableTestsBySuiteAndName, SkippableTest expectedCandidate)
     {
         foreach (var testsInSuite in skippableTestsBySuiteAndName.Values)
@@ -406,6 +513,40 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
     private static string GetModuleScopeOrEmpty(SkippableTest candidate)
     {
         return candidate.TryGetModuleScope(out var moduleScope) ? moduleScope : string.Empty;
+    }
+
+    private bool IsDictionaryCoverageBackfillSafeForCurrentRun(SkippableTestsDictionary skippableTestsBySuiteAndName)
+        => IsDictionaryCoverageBackfillSafe(skippableTestsBySuiteAndName) &&
+           (!_coverageBackfillRequiresBackendConfigurationValidation ||
+            HasHomogeneousBackendConfigurations(skippableTestsBySuiteAndName, out _));
+
+    private bool CanSkipWithBackendConfigurationScope(SkippableTest skippableTest, string? moduleName, out string reason)
+    {
+        if (!TryGetCoverageBackfillDictionary(moduleName, out var skippableTestsBySuiteAndName))
+        {
+            reason = "backend configurations could not be retrieved for the selected target-framework scope";
+            return false;
+        }
+
+        if (!HasHomogeneousBackendConfigurations(skippableTestsBySuiteAndName, out reason))
+        {
+            return false;
+        }
+
+        if (skippableTest.Configurations is not { } candidateConfigurations)
+        {
+            reason = "backend skippable candidate did not include configurations for the selected target-framework scope";
+            return false;
+        }
+
+        if (!TestsConfigurationsEqual(candidateConfigurations, GetFirstBackendConfigurations(skippableTestsBySuiteAndName)))
+        {
+            reason = "backend skippable candidate configurations do not match the selected target-framework scope";
+            return false;
+        }
+
+        reason = string.Empty;
+        return true;
     }
 
     /// <summary>
@@ -592,7 +733,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
         }
 
         CoverageBackfillDataStore.RecordActualItrSkip(sessionId, dictionary.Scope);
-        if (IsDictionaryCoverageBackfillSafe(dictionary))
+        if (IsDictionaryCoverageBackfillSafeForCurrentRun(dictionary))
         {
             CoverageBackfillDataStore.RecordBackfillableItrSkipScope(sessionId, dictionary.Scope);
         }
@@ -627,7 +768,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
                 foreach (var state in _actualSkippedDictionaries.Values)
                 {
                     var dictionary = state.Dictionary;
-                    return IsDictionaryCoverageBackfillSafe(dictionary) ? dictionary.BackfillData : CoverageBackfillData.Missing;
+                    return IsDictionaryCoverageBackfillSafeForCurrentRun(dictionary) ? dictionary.BackfillData : CoverageBackfillData.Missing;
                 }
             }
 
@@ -635,7 +776,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
             foreach (var state in _actualSkippedDictionaries.Values)
             {
                 var dictionary = state.Dictionary;
-                if (IsDictionaryCoverageBackfillSafe(dictionary))
+                if (IsDictionaryCoverageBackfillSafeForCurrentRun(dictionary))
                 {
                     coverageMaps.Add(dictionary.BackfillData);
                 }
@@ -660,7 +801,7 @@ internal sealed class TestOptimizationSkippableFeature : ITestOptimizationSkippa
 
             foreach (var state in _actualSkippedDictionaries.Values)
             {
-                if (IsDictionaryCoverageBackfillSafe(state.Dictionary))
+                if (IsDictionaryCoverageBackfillSafeForCurrentRun(state.Dictionary))
                 {
                     return true;
                 }
