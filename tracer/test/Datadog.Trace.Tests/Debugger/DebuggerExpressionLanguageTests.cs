@@ -541,7 +541,6 @@ namespace Datadog.Trace.Tests.Debugger
             try
             {
                 InstanceOfHelper.ResetForTests();
-                var scopeMembers = CreateScopeMembers();
                 var type = typeof(TestStruct.NestedObject);
 
                 InstanceOfHelper.IsInstanceOf(TestObject.Nested, $"{type.FullName}, {type.Assembly.GetName().Name}").Should().BeTrue();
