@@ -36,7 +36,7 @@ internal static class ProbeExpressionParserHelper
                                                     m.GetParameters().Length == methodIdentifier.Parameters.Length &&
                                                     m.ContainsGenericParameters &&
                                                     m.GetGenericArguments().Length == methodIdentifier.GenericArguments.Length).
-                                          SingleOrDefault(m => m.GetParameters().Select(pi => pi.ParameterType.Name).SequenceEqual(methodIdentifier.Parameters.Select(p => p.Name)));
+                                          SingleOrDefault(m => ParameterTypesMatch(m, methodIdentifier.Parameters, methodIdentifier.GenericArguments));
 
                 method = method?.MakeGenericMethod(methodIdentifier.GenericArguments);
             }
@@ -54,6 +54,33 @@ internal static class ProbeExpressionParserHelper
 
             return method;
         }
+    }
+
+    private static bool ParameterTypesMatch(MethodInfo method, Type[] parameters, Type[] genericArguments)
+    {
+        var methodParameters = method.GetParameters();
+        var methodGenericArguments = method.GetGenericArguments();
+        for (var i = 0; i < methodParameters.Length; i++)
+        {
+            var parameterType = methodParameters[i].ParameterType;
+            if (parameterType.IsGenericParameter)
+            {
+                var genericArgumentIndex = Array.IndexOf(methodGenericArguments, parameterType);
+                if (genericArgumentIndex < 0 || genericArguments[genericArgumentIndex] != parameters[i])
+                {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if (parameterType.Name != parameters[i].Name)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     internal readonly struct ReflectionMethodIdentifier : IEquatable<ReflectionMethodIdentifier>
