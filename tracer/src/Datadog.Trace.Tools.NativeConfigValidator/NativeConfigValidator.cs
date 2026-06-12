@@ -98,7 +98,7 @@ internal sealed class NativeConfigValidator
                 continue;
             }
 
-            if (!entry.Scope.Any(s => string.Equals(s, "native", StringComparison.OrdinalIgnoreCase)))
+            if (!entry.Scope.AsSpan().Contains("native"))
             {
                 missingNativeScope.Add(name);
             }
