@@ -76,11 +76,6 @@ internal static class InstanceOfHelper
             ThrowInvalidTypeName();
         }
 
-        if (BclTypeAliases.TryGetValue(typeName, out var aliasType))
-        {
-            return aliasType;
-        }
-
         var observedGeneration = Volatile.Read(ref _assemblyLoadGeneration);
         if (ResolutionStates.TryGetValue(typeName, out var cachedResolution))
         {
@@ -104,17 +99,25 @@ internal static class InstanceOfHelper
             }
         }
 
+        if (TryResolveBclTypeAlias(typeName, out var aliasType))
+        {
+            return aliasType;
+        }
+
         var typeNameInfo = ParseTypeName(typeName);
         if (typeNameInfo.IsAssemblyQualified)
         {
             return AssemblyQualifiedTypeResolver.Resolve(typeName, typeNameInfo);
         }
 
-        var resolvedType = Type.GetType(typeName, throwOnError: false, ignoreCase: true);
-        if (resolvedType is not null)
+        if (MayResolveWithoutAssemblyScan(typeNameInfo.SearchTypeName))
         {
-            AddResolvedType(typeName, resolvedType, Volatile.Read(ref _assemblyLoadGeneration));
-            return resolvedType;
+            var resolvedType = Type.GetType(typeName, throwOnError: false, ignoreCase: true);
+            if (resolvedType is not null)
+            {
+                AddResolvedType(typeName, resolvedType, Volatile.Read(ref _assemblyLoadGeneration));
+                return resolvedType;
+            }
         }
 
         if (!IsFullyQualifiedTypeName(typeNameInfo.SearchTypeName))
@@ -287,6 +290,11 @@ internal static class InstanceOfHelper
 
     private static TypeNameInfo ParseTypeName(string typeName)
     {
+        if (typeName.IndexOf(',') < 0)
+        {
+            return new TypeNameInfo(typeName, null);
+        }
+
         var assemblySeparatorIndex = GetAssemblySeparatorIndex(typeName);
         if (assemblySeparatorIndex < 0)
         {
@@ -423,6 +431,28 @@ internal static class InstanceOfHelper
         return aliases;
     }
 
+    private static bool TryResolveBclTypeAlias(string typeName, [NotNullWhen(true)] out Type? type)
+    {
+        type = null;
+        if (!MayBeBclTypeAlias(typeName))
+        {
+            return false;
+        }
+
+        return BclTypeAliases.TryGetValue(typeName, out type);
+    }
+
+    private static bool MayBeBclTypeAlias(string typeName)
+    {
+        return typeName.IndexOf('.') < 0 ||
+               typeName.StartsWith("System.", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool MayResolveWithoutAssemblyScan(string typeName)
+    {
+        return typeName.StartsWith("System.", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static void AddBclType(Dictionary<string, Type> aliases, Type type, params string[] names)
     {
         if (type.FullName is { } fullName)
@@ -460,10 +490,24 @@ internal static class InstanceOfHelper
     {
         ClearCacheIfNeeded();
         var newResolution = new ResolutionState(type, isAmbiguous: false, scannedGeneration, EmptyAssemblyIdentities);
-        ResolutionStates.AddOrUpdate(
-            typeName,
-            newResolution,
-            (_, currentResolution) => MergeResolvedType(typeName, currentResolution, type, scannedGeneration));
+        while (true)
+        {
+            if (!ResolutionStates.TryGetValue(typeName, out var currentResolution))
+            {
+                if (ResolutionStates.TryAdd(typeName, newResolution))
+                {
+                    return;
+                }
+
+                continue;
+            }
+
+            var mergedResolution = MergeResolvedType(typeName, currentResolution, type, scannedGeneration);
+            if (ResolutionStates.TryUpdate(typeName, mergedResolution, currentResolution))
+            {
+                return;
+            }
+        }
     }
 
     private static ResolutionState AddScannedResolution(string typeName, ResolutionState? currentResolution, ScanResult scanResult, int scannedGeneration)
@@ -473,10 +517,24 @@ internal static class InstanceOfHelper
                                 ? new ResolutionState(scanResult.Type, scanResult.IsAmbiguous, scannedGeneration, scanResult.ScannedAssemblies)
                                 : MergeScannedResolution(typeName, currentResolution, scanResult, scannedGeneration);
 
-        return ResolutionStates.AddOrUpdate(
-            typeName,
-            newResolution,
-            (_, currentResolution) => MergeScannedResolution(typeName, currentResolution, scanResult, scannedGeneration));
+        while (true)
+        {
+            if (!ResolutionStates.TryGetValue(typeName, out var latestResolution))
+            {
+                if (ResolutionStates.TryAdd(typeName, newResolution))
+                {
+                    return newResolution;
+                }
+
+                continue;
+            }
+
+            var mergedResolution = MergeScannedResolution(typeName, latestResolution, scanResult, scannedGeneration);
+            if (ResolutionStates.TryUpdate(typeName, mergedResolution, latestResolution))
+            {
+                return mergedResolution;
+            }
+        }
     }
 
     private static ResolutionState MergeResolvedType(string typeName, ResolutionState currentResolution, Type resolvedType, int scannedGeneration)
