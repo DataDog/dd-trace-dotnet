@@ -524,7 +524,7 @@ namespace Datadog.Trace.Agent
 
             if (!_isOtlp // If we are using OTLP, we include both top-level and non-top-level spans
                 && (!(span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
-                 || span.GetMetric(Tags.PartialSnapshot) > 0))
+                 || span.GetMetric(Tags.PartialSnapshot) >= 0))
             {
                 return;
             }
