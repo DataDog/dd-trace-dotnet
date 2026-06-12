@@ -3,9 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -23,65 +26,7 @@ internal static class InstanceOfHelper
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InstanceOfHelper));
     private static readonly string[] EmptyAssemblyNames = [];
     private static readonly ConcurrentDictionary<string, ResolutionState> ResolutionStates = new(StringComparer.Ordinal);
-    private static readonly Dictionary<string, Type> BclTypeAliases = new(StringComparer.OrdinalIgnoreCase)
-    {
-        { "Array", typeof(Array) },
-        { typeof(Array).FullName, typeof(Array) },
-        { "bool", typeof(bool) },
-        { typeof(bool).FullName, typeof(bool) },
-        { "byte", typeof(byte) },
-        { typeof(byte).FullName, typeof(byte) },
-        { "sbyte", typeof(sbyte) },
-        { typeof(sbyte).FullName, typeof(sbyte) },
-        { "char", typeof(char) },
-        { typeof(char).FullName, typeof(char) },
-        { "DateTime", typeof(DateTime) },
-        { typeof(DateTime).FullName, typeof(DateTime) },
-        { "DateTimeOffset", typeof(DateTimeOffset) },
-        { typeof(DateTimeOffset).FullName, typeof(DateTimeOffset) },
-        { "decimal", typeof(decimal) },
-        { typeof(decimal).FullName, typeof(decimal) },
-        { "Delegate", typeof(Delegate) },
-        { typeof(Delegate).FullName, typeof(Delegate) },
-        { "double", typeof(double) },
-        { typeof(double).FullName, typeof(double) },
-        { "Enum", typeof(Enum) },
-        { typeof(Enum).FullName, typeof(Enum) },
-        { "Exception", typeof(Exception) },
-        { typeof(Exception).FullName, typeof(Exception) },
-        { "float", typeof(float) },
-        { typeof(float).FullName, typeof(float) },
-        { "Guid", typeof(Guid) },
-        { typeof(Guid).FullName, typeof(Guid) },
-        { "int", typeof(int) },
-        { typeof(int).FullName, typeof(int) },
-        { "IntPtr", typeof(IntPtr) },
-        { typeof(IntPtr).FullName, typeof(IntPtr) },
-        { "uint", typeof(uint) },
-        { typeof(uint).FullName, typeof(uint) },
-        { "long", typeof(long) },
-        { typeof(long).FullName, typeof(long) },
-        { "nint", typeof(IntPtr) },
-        { "nuint", typeof(UIntPtr) },
-        { "ulong", typeof(ulong) },
-        { typeof(ulong).FullName, typeof(ulong) },
-        { "object", typeof(object) },
-        { typeof(object).FullName, typeof(object) },
-        { "short", typeof(short) },
-        { typeof(short).FullName, typeof(short) },
-        { "ushort", typeof(ushort) },
-        { typeof(ushort).FullName, typeof(ushort) },
-        { "string", typeof(string) },
-        { typeof(string).FullName, typeof(string) },
-        { "TimeSpan", typeof(TimeSpan) },
-        { typeof(TimeSpan).FullName, typeof(TimeSpan) },
-        { "Type", typeof(Type) },
-        { typeof(Type).FullName, typeof(Type) },
-        { "UIntPtr", typeof(UIntPtr) },
-        { typeof(UIntPtr).FullName, typeof(UIntPtr) },
-        { "ValueType", typeof(ValueType) },
-        { typeof(ValueType).FullName, typeof(ValueType) },
-    };
+    private static readonly Dictionary<string, Type> BclTypeAliases = CreateBclTypeAliases();
 
     private static Func<Assembly[]> _getAssemblies = AppDomain.CurrentDomain.GetAssemblies;
     private static int _assemblyLoadGeneration;
@@ -91,7 +36,7 @@ internal static class InstanceOfHelper
         AppDomain.CurrentDomain.AssemblyLoad += OnAssemblyLoad;
     }
 
-    internal static bool IsInstanceOf(object value, string typeName)
+    internal static bool IsInstanceOf(object? value, string typeName)
     {
         var type = ResolveType(typeName);
         var result = type.IsInstanceOfType(value);
@@ -138,12 +83,21 @@ internal static class InstanceOfHelper
         var observedGeneration = Volatile.Read(ref _assemblyLoadGeneration);
         if (ResolutionStates.TryGetValue(typeName, out var cachedResolution))
         {
-            if (cachedResolution.Type is not null || cachedResolution.IsAmbiguous)
+            if (cachedResolution.IsAmbiguous)
             {
                 return GetResolvedTypeOrThrow(typeName, cachedResolution, noNewAssemblies: false);
             }
 
-            if (cachedResolution.ScannedGeneration == observedGeneration)
+            if (cachedResolution.TryGetType(out var cachedType))
+            {
+                return cachedType;
+            }
+
+            if (cachedResolution.HasResolvedType)
+            {
+                TryRemoveResolution(typeName, cachedResolution);
+            }
+            else if (cachedResolution.ScannedGeneration == observedGeneration)
             {
                 return GetResolvedTypeOrThrow(typeName, cachedResolution, noNewAssemblies: true);
             }
@@ -169,35 +123,45 @@ internal static class InstanceOfHelper
 
     private static Type ResolveLoadedType(string typeName, TypeNameInfo typeNameInfo)
     {
-        ResolutionState lastResolution = null;
+        ResolutionState? lastResolution = null;
         for (var i = 0; i < MaxResolutionRetries; i++)
         {
             var observedGeneration = Volatile.Read(ref _assemblyLoadGeneration);
             ResolutionStates.TryGetValue(typeName, out var currentResolution);
             if (currentResolution is not null)
             {
-                if (currentResolution.Type is not null || currentResolution.IsAmbiguous)
+                if (currentResolution.IsAmbiguous)
                 {
                     return GetResolvedTypeOrThrow(typeName, currentResolution, noNewAssemblies: false);
                 }
 
-                if (currentResolution.ScannedGeneration == observedGeneration)
+                if (currentResolution.TryGetType(out var currentType))
+                {
+                    return currentType;
+                }
+
+                if (currentResolution.HasResolvedType)
+                {
+                    TryRemoveResolution(typeName, currentResolution);
+                    currentResolution = null;
+                }
+                else if (currentResolution.ScannedGeneration == observedGeneration)
                 {
                     return GetResolvedTypeOrThrow(typeName, currentResolution, noNewAssemblies: true);
                 }
             }
 
             var assemblies = Volatile.Read(ref _getAssemblies)();
-            var scanResult = ScanAssemblies(typeName, typeNameInfo, assemblies, currentResolution?.ScannedAssemblies, currentResolution?.Type);
+            var scanResult = ScanAssemblies(typeName, typeNameInfo, assemblies, currentResolution?.ScannedAssemblies, currentResolution?.GetTypeOrDefault());
             lastResolution = AddScannedResolution(typeName, currentResolution, scanResult, observedGeneration);
             if (lastResolution.IsAmbiguous)
             {
                 ThrowAmbiguousType(typeName);
             }
 
-            if (lastResolution.Type is not null)
+            if (lastResolution.TryGetType(out var lastType))
             {
-                return lastResolution.Type;
+                return lastType;
             }
 
             if (observedGeneration != Volatile.Read(ref _assemblyLoadGeneration))
@@ -213,13 +177,12 @@ internal static class InstanceOfHelper
             return GetResolvedTypeOrThrow(typeName, lastResolution, noNewAssemblies: false);
         }
 
-        ThrowUnknownType(typeName);
-        return null;
+        throw UnknownType(typeName);
     }
 
-    private static ScanResult ScanAssemblies(string typeName, TypeNameInfo typeNameInfo, Assembly[] assemblies, string[] alreadyScannedAssemblies, Type currentResolvedType)
+    private static ScanResult ScanAssemblies(string typeName, TypeNameInfo typeNameInfo, Assembly[] assemblies, string[]? alreadyScannedAssemblies, Type? currentResolvedType)
     {
-        Type resolvedType = null;
+        Type? resolvedType = null;
         var isAmbiguous = false;
         var scannedAssemblies = new List<string>();
         var alreadyScannedAssemblySet = alreadyScannedAssemblies is null || alreadyScannedAssemblies.Length == 0
@@ -260,14 +223,14 @@ internal static class InstanceOfHelper
         return new ScanResult(resolvedType, isAmbiguous, scannedAssemblies.Count == 0 ? EmptyAssemblyNames : scannedAssemblies.ToArray());
     }
 
-    private static Type TryResolveFromAssembly(string typeName, TypeNameInfo typeNameInfo, Assembly assembly)
+    private static Type? TryResolveFromAssembly(string typeName, TypeNameInfo typeNameInfo, Assembly assembly)
     {
-        if (typeNameInfo.IsAssemblyQualified && !IsMatchingAssembly(assembly, typeNameInfo.AssemblyName))
+        if (typeNameInfo.IsAssemblyQualified && !IsMatchingAssembly(assembly, typeNameInfo.AssemblyName!))
         {
             return null;
         }
 
-        Type type;
+        Type? type;
         try
         {
             type = assembly.GetType(typeNameInfo.SearchTypeName, throwOnError: false, ignoreCase: true);
@@ -294,7 +257,7 @@ internal static class InstanceOfHelper
         return typeName.IndexOf('.') >= 0;
     }
 
-    private static void LogSuspiciousMismatch(Type resolvedType, Type valueType, string requestedTypeName, bool result)
+    private static void LogSuspiciousMismatch(Type resolvedType, Type? valueType, string requestedTypeName, bool result)
     {
         if (result ||
             valueType is null ||
@@ -364,6 +327,52 @@ internal static class InstanceOfHelper
         return string.Concat(assembly.FullName, "|", RuntimeHelpers.GetHashCode(assembly).ToString());
     }
 
+    private static Dictionary<string, Type> CreateBclTypeAliases()
+    {
+        var aliases = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
+        AddBclType(aliases, typeof(Array), "Array");
+        AddBclType(aliases, typeof(bool), "bool");
+        AddBclType(aliases, typeof(byte), "byte");
+        AddBclType(aliases, typeof(sbyte), "sbyte");
+        AddBclType(aliases, typeof(char), "char");
+        AddBclType(aliases, typeof(DateTime), "DateTime");
+        AddBclType(aliases, typeof(DateTimeOffset), "DateTimeOffset");
+        AddBclType(aliases, typeof(decimal), "decimal");
+        AddBclType(aliases, typeof(Delegate), "Delegate");
+        AddBclType(aliases, typeof(double), "double");
+        AddBclType(aliases, typeof(Enum), "Enum");
+        AddBclType(aliases, typeof(Exception), "Exception");
+        AddBclType(aliases, typeof(float), "float");
+        AddBclType(aliases, typeof(Guid), "Guid");
+        AddBclType(aliases, typeof(int), "int");
+        AddBclType(aliases, typeof(IntPtr), "IntPtr", "nint");
+        AddBclType(aliases, typeof(uint), "uint");
+        AddBclType(aliases, typeof(long), "long");
+        AddBclType(aliases, typeof(UIntPtr), "UIntPtr", "nuint");
+        AddBclType(aliases, typeof(ulong), "ulong");
+        AddBclType(aliases, typeof(object), "object");
+        AddBclType(aliases, typeof(short), "short");
+        AddBclType(aliases, typeof(ushort), "ushort");
+        AddBclType(aliases, typeof(string), "string");
+        AddBclType(aliases, typeof(TimeSpan), "TimeSpan");
+        AddBclType(aliases, typeof(Type), "Type");
+        AddBclType(aliases, typeof(ValueType), "ValueType");
+        return aliases;
+    }
+
+    private static void AddBclType(Dictionary<string, Type> aliases, Type type, params string[] names)
+    {
+        if (type.FullName is { } fullName)
+        {
+            aliases[fullName] = type;
+        }
+
+        for (var i = 0; i < names.Length; i++)
+        {
+            aliases[names[i]] = type;
+        }
+    }
+
     private static Type GetResolvedTypeOrThrow(string typeName, ResolutionState resolution, bool noNewAssemblies)
     {
         if (resolution.IsAmbiguous)
@@ -371,9 +380,9 @@ internal static class InstanceOfHelper
             ThrowAmbiguousType(typeName);
         }
 
-        if (resolution.Type is not null)
+        if (resolution.TryGetType(out var type))
         {
-            return resolution.Type;
+            return type;
         }
 
         if (noNewAssemblies)
@@ -381,8 +390,7 @@ internal static class InstanceOfHelper
             ThrowUnknownTypeNoNewAssemblies(typeName);
         }
 
-        ThrowUnknownType(typeName);
-        return null;
+        throw UnknownType(typeName);
     }
 
     private static void AddResolvedType(string typeName, Type type, int scannedGeneration)
@@ -395,7 +403,7 @@ internal static class InstanceOfHelper
             (_, currentResolution) => MergeResolvedType(typeName, currentResolution, type, scannedGeneration));
     }
 
-    private static ResolutionState AddScannedResolution(string typeName, ResolutionState currentResolution, ScanResult scanResult, int scannedGeneration)
+    private static ResolutionState AddScannedResolution(string typeName, ResolutionState? currentResolution, ScanResult scanResult, int scannedGeneration)
     {
         ClearCacheIfNeeded();
         var newResolution = currentResolution is null
@@ -411,8 +419,14 @@ internal static class InstanceOfHelper
     private static ResolutionState MergeResolvedType(string typeName, ResolutionState currentResolution, Type resolvedType, int scannedGeneration)
     {
         var isAmbiguous = currentResolution.IsAmbiguous;
-        var type = currentResolution.Type ?? resolvedType;
-        if (currentResolution.Type is not null && currentResolution.Type != resolvedType)
+        var hasCurrentType = currentResolution.TryGetType(out var currentType);
+        if (currentResolution.HasResolvedType && !hasCurrentType)
+        {
+            return new ResolutionState(resolvedType, isAmbiguous, scannedGeneration, EmptyAssemblyNames);
+        }
+
+        var type = currentType ?? resolvedType;
+        if (currentType is not null && currentType != resolvedType)
         {
             isAmbiguous = true;
         }
@@ -423,15 +437,26 @@ internal static class InstanceOfHelper
     private static ResolutionState MergeScannedResolution(string typeName, ResolutionState currentResolution, ScanResult scanResult, int scannedGeneration)
     {
         var isAmbiguous = currentResolution.IsAmbiguous || scanResult.IsAmbiguous;
-        var type = currentResolution.Type ?? scanResult.Type;
-        if (currentResolution.Type is not null &&
+        var hasCurrentType = currentResolution.TryGetType(out var currentType);
+        if (currentResolution.HasResolvedType && !hasCurrentType)
+        {
+            return new ResolutionState(scanResult.Type, scanResult.IsAmbiguous, scannedGeneration, scanResult.ScannedAssemblies);
+        }
+
+        var type = currentType ?? scanResult.Type;
+        if (currentType is not null &&
             scanResult.Type is not null &&
-            currentResolution.Type != scanResult.Type)
+            currentType != scanResult.Type)
         {
             isAmbiguous = true;
         }
 
         return new ResolutionState(type, isAmbiguous, Math.Max(currentResolution.ScannedGeneration, scannedGeneration), MergeScannedAssemblies(currentResolution.ScannedAssemblies, scanResult.ScannedAssemblies));
+    }
+
+    private static void TryRemoveResolution(string typeName, ResolutionState resolution)
+    {
+        ((ICollection<KeyValuePair<string, ResolutionState>>)ResolutionStates).Remove(new KeyValuePair<string, ResolutionState>(typeName, resolution));
     }
 
     private static string[] MergeScannedAssemblies(string[] currentAssemblies, string[] scannedAssemblies)
@@ -466,7 +491,7 @@ internal static class InstanceOfHelper
         }
     }
 
-    private static void OnAssemblyLoad(object sender, AssemblyLoadEventArgs args)
+    private static void OnAssemblyLoad(object? sender, AssemblyLoadEventArgs args)
     {
         Interlocked.Increment(ref _assemblyLoadGeneration);
     }
@@ -502,7 +527,12 @@ internal static class InstanceOfHelper
 
     private static void ThrowUnknownType(string typeName)
     {
-        throw new InstanceOfEvaluationException($"'{typeName}' is unknown type");
+        throw UnknownType(typeName);
+    }
+
+    private static InstanceOfEvaluationException UnknownType(string typeName)
+    {
+        return new InstanceOfEvaluationException($"'{typeName}' is unknown type");
     }
 
     private static void ThrowUnknownTypeNoNewAssemblies(string typeName)
@@ -517,14 +547,14 @@ internal static class InstanceOfHelper
 
     private readonly struct ScanResult
     {
-        internal ScanResult(Type type, bool isAmbiguous, string[] scannedAssemblies)
+        internal ScanResult(Type? type, bool isAmbiguous, string[] scannedAssemblies)
         {
             Type = type;
             IsAmbiguous = isAmbiguous;
             ScannedAssemblies = scannedAssemblies;
         }
 
-        internal Type Type { get; }
+        internal Type? Type { get; }
 
         internal bool IsAmbiguous { get; }
 
@@ -533,7 +563,7 @@ internal static class InstanceOfHelper
 
     private readonly struct TypeNameInfo
     {
-        internal TypeNameInfo(string searchTypeName, string assemblyName)
+        internal TypeNameInfo(string searchTypeName, string? assemblyName)
         {
             SearchTypeName = searchTypeName;
             AssemblyName = assemblyName;
@@ -541,28 +571,46 @@ internal static class InstanceOfHelper
 
         internal string SearchTypeName { get; }
 
-        internal string AssemblyName { get; }
+        internal string? AssemblyName { get; }
 
         internal bool IsAssemblyQualified => AssemblyName is not null;
     }
 
     private sealed class ResolutionState
     {
-        internal ResolutionState(Type type, bool isAmbiguous, int scannedGeneration, string[] scannedAssemblies)
+        private readonly WeakReference<Type>? _type;
+
+        internal ResolutionState(Type? type, bool isAmbiguous, int scannedGeneration, string[] scannedAssemblies)
         {
-            Type = type;
+            _type = type is null ? null : new WeakReference<Type>(type);
             IsAmbiguous = isAmbiguous;
             ScannedGeneration = scannedGeneration;
             ScannedAssemblies = scannedAssemblies ?? EmptyAssemblyNames;
         }
 
-        internal Type Type { get; }
+        internal bool HasResolvedType => _type is not null;
 
         internal bool IsAmbiguous { get; }
 
         internal int ScannedGeneration { get; }
 
         internal string[] ScannedAssemblies { get; }
+
+        internal Type? GetTypeOrDefault()
+        {
+            return TryGetType(out var type) ? type : null;
+        }
+
+        internal bool TryGetType([NotNullWhen(true)] out Type? type)
+        {
+            if (_type is null)
+            {
+                type = null;
+                return false;
+            }
+
+            return _type.TryGetTarget(out type);
+        }
     }
 
     internal sealed class InstanceOfEvaluationException : Exception
