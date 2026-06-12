@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -19,6 +20,8 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
@@ -343,6 +346,579 @@ namespace Datadog.Trace.Tests.Debugger
             result.CaptureExpressionCount.Should().Be(0);
             result.CaptureExpressions.Should().BeNull();
             result.Errors.Should().NotBeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_ResolvedCustomerType_EvaluatesCondition()
+        {
+            try
+            {
+                InstanceOfHelper.ResetForTests();
+                var scopeMembers = CreateScopeMembers();
+                var typeName = typeof(TestStruct.NestedObject).FullName;
+                var evaluator = new ProbeExpressionEvaluator(
+                    templates: null,
+                    condition: new DebuggerExpression(string.Empty, CreateInstanceOfJson(@"{""ref"":""NestedObjectLocal""}", typeName), null),
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Condition.Should().BeTrue();
+                result.Errors.Should().BeNullOrEmpty();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_CustomerTypeName_EvaluatesCaseInsensitive()
+        {
+            try
+            {
+                InstanceOfHelper.ResetForTests();
+                var scopeMembers = CreateScopeMembers();
+                var typeName = typeof(TestStruct.NestedObject).FullName.ToUpperInvariant();
+                var evaluator = new ProbeExpressionEvaluator(
+                    templates: null,
+                    condition: new DebuggerExpression(string.Empty, CreateInstanceOfJson(@"{""ref"":""NestedObjectLocal""}", typeName), null),
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Condition.Should().BeTrue();
+                result.Errors.Should().BeNullOrEmpty();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_ValueType_EvaluatesCondition()
+        {
+            try
+            {
+                InstanceOfHelper.ResetForTests();
+                var scopeMembers = CreateScopeMembers();
+                var evaluator = new ProbeExpressionEvaluator(
+                    templates: null,
+                    condition: new DebuggerExpression(string.Empty, CreateInstanceOfJson(@"{""ref"":""IntLocal""}", typeof(int).FullName), null),
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Condition.Should().BeTrue();
+                result.Errors.Should().BeNullOrEmpty();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Theory]
+        [InlineData("string")]
+        [InlineData("STRING")]
+        [InlineData("int")]
+        [InlineData("INT")]
+        [InlineData("double")]
+        [InlineData("DOUBLE")]
+        public void ProbeExpressionParser_InstanceOf_BclAlias_EvaluatesConditionCaseInsensitive(string typeName)
+        {
+            try
+            {
+                InstanceOfHelper.ResetForTests();
+                var scopeMembers = CreateScopeMembers();
+                var source = typeName.Equals("string", StringComparison.OrdinalIgnoreCase)
+                                 ? @"{""ref"":""StringLocal""}"
+                                 : typeName.Equals("int", StringComparison.OrdinalIgnoreCase)
+                                     ? @"{""ref"":""IntLocal""}"
+                                     : @"{""ref"":""DoubleLocal""}";
+                var evaluator = new ProbeExpressionEvaluator(
+                    templates: null,
+                    condition: new DebuggerExpression(string.Empty, CreateInstanceOfJson(source, typeName), null),
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Condition.Should().BeTrue();
+                result.Errors.Should().BeNullOrEmpty();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Theory]
+        [InlineData("string")]
+        [InlineData("System.String")]
+        [InlineData("INT")]
+        [InlineData("System.Int32")]
+        [InlineData("Guid")]
+        [InlineData("System.Guid")]
+        [InlineData("DateTime")]
+        [InlineData("System.DateTimeOffset")]
+        [InlineData("TimeSpan")]
+        [InlineData("Type")]
+        [InlineData("Exception")]
+        [InlineData("Enum")]
+        [InlineData("ValueType")]
+        [InlineData("Array")]
+        [InlineData("IntPtr")]
+        public void ProbeExpressionParser_InstanceOf_KnownBclType_DoesNotScanAssemblies(string typeName)
+        {
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => throw new InvalidOperationException("Assembly scanning should not run for BCL aliases."));
+
+                object value = typeName switch
+                {
+                    { } name when name.IndexOf("String", StringComparison.OrdinalIgnoreCase) >= 0 => "hello",
+                    { } name when name.IndexOf("Int32", StringComparison.OrdinalIgnoreCase) >= 0 || name.Equals("int", StringComparison.OrdinalIgnoreCase) => 42,
+                    { } name when name.IndexOf("Guid", StringComparison.OrdinalIgnoreCase) >= 0 => Guid.NewGuid(),
+                    { } name when name.IndexOf("DateTimeOffset", StringComparison.OrdinalIgnoreCase) >= 0 => DateTimeOffset.UtcNow,
+                    { } name when name.IndexOf("DateTime", StringComparison.OrdinalIgnoreCase) >= 0 => DateTime.UtcNow,
+                    { } name when name.IndexOf("TimeSpan", StringComparison.OrdinalIgnoreCase) >= 0 => TimeSpan.FromSeconds(1),
+                    { } name when name.IndexOf("Exception", StringComparison.OrdinalIgnoreCase) >= 0 => new Exception(),
+                    { } name when name.IndexOf("Enum", StringComparison.OrdinalIgnoreCase) >= 0 => DayOfWeek.Friday,
+                    { } name when name.IndexOf("ValueType", StringComparison.OrdinalIgnoreCase) >= 0 => 42,
+                    { } name when name.IndexOf("Array", StringComparison.OrdinalIgnoreCase) >= 0 => Array.Empty<string>(),
+                    { } name when name.IndexOf("Type", StringComparison.OrdinalIgnoreCase) >= 0 => typeof(string),
+                    { } name when name.IndexOf("IntPtr", StringComparison.OrdinalIgnoreCase) >= 0 => new IntPtr(42),
+                    _ => throw new InvalidOperationException($"Unexpected test case: {typeName}")
+                };
+
+                InstanceOfHelper.IsInstanceOf((object)value, typeName).Should().BeTrue();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Theory]
+        [InlineData("System.String, mscorlib")]
+        [InlineData("System.String, System.Runtime")]
+        [InlineData("System.String, System.Private.CoreLib")]
+        [InlineData("System.String, netstandard")]
+        public void ProbeExpressionParser_InstanceOf_AssemblyQualifiedBclType_DoesNotScanAssemblies(string typeName)
+        {
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => throw new InvalidOperationException("Assembly scanning should not run for BCL aliases."));
+
+                InstanceOfHelper.IsInstanceOf("hello", typeName).Should().BeTrue();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Theory]
+        [InlineData("System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib")]
+        public void ProbeExpressionParser_InstanceOf_AssemblyQualifiedFrameworkType_DoesNotScanAssemblies(string typeName)
+        {
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => throw new InvalidOperationException("Assembly scanning should not run for framework aliases."));
+
+                InstanceOfHelper.IsInstanceOf(new List<string>(), typeName).Should().BeTrue();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_CustomerSimpleName_ReportsRuntimeError()
+        {
+            try
+            {
+                InstanceOfHelper.ResetForTests();
+                var scopeMembers = CreateScopeMembers();
+                var evaluator = new ProbeExpressionEvaluator(
+                    templates: null,
+                    condition: new DebuggerExpression(string.Empty, CreateInstanceOfJson(@"{""ref"":""NestedObjectLocal""}", "NestedObject"), null),
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Condition.Should().BeTrue();
+                result.HasConditionError.Should().BeTrue();
+                result.Errors.Should().ContainSingle();
+                result.Errors[0].Message.Should().Contain("must be a fully qualified type name");
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_AssemblyQualifiedTypeName_EvaluatesCondition()
+        {
+            try
+            {
+                InstanceOfHelper.ResetForTests();
+                var type = typeof(TestStruct.NestedObject);
+
+                InstanceOfHelper.IsInstanceOf(TestObject.Nested, $"{type.FullName}, {type.Assembly.GetName().Name}").Should().BeTrue();
+                InstanceOfHelper.IsInstanceOf(TestObject.Nested, type.AssemblyQualifiedName).Should().BeTrue();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_AssemblyQualifiedCustomerType_ScansLoadedAssembliesOnly()
+        {
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => []);
+
+                Action lookup = () => InstanceOfHelper.ResolveType("Unknown.CustomerType, UnknownCustomerAssembly");
+
+                lookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_ResolvedCustomerType_EvaluatesTemplate()
+        {
+            try
+            {
+                InstanceOfHelper.ResetForTests();
+                var scopeMembers = CreateScopeMembers();
+                var typeName = typeof(TestStruct.NestedObject).FullName;
+                var evaluator = new ProbeExpressionEvaluator(
+                    templates: [new(null, null, "instanceof: "), new(string.Empty, CreateInstanceOfJson(@"{""ref"":""NestedObjectLocal""}", typeName), null)],
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Template.Should().Be("instanceof: True");
+                result.Errors.Should().BeNullOrEmpty();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_ResolvedCustomerType_EvaluatesCaptureExpression()
+        {
+            try
+            {
+                InstanceOfHelper.ResetForTests();
+                var scopeMembers = CreateScopeMembers();
+                var typeName = typeof(TestStruct.NestedObject).FullName;
+                var evaluator = new ProbeExpressionEvaluator(
+                    templates: null,
+                    condition: null,
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions:
+                    [
+                        new CaptureExpressionDefinition("is_nested", new DebuggerExpression(string.Empty, CreateInstanceOfJson(@"{""ref"":""NestedObjectLocal""}", typeName), null), default)
+                    ]);
+
+                ExpressionEvaluationResult result = default;
+                evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+
+                result.CaptureExpressionCount.Should().Be(1);
+                result.CaptureExpressions[0].Name.Should().Be("is_nested");
+                result.CaptureExpressions[0].Value.Should().Be(true);
+                result.CaptureExpressions[0].Type.Should().Be(typeof(bool));
+                result.Errors.Should().BeNullOrEmpty();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_ResolvedCustomerType_EvaluatesSpanDecoration()
+        {
+            try
+            {
+                InstanceOfHelper.ResetForTests();
+                var scopeMembers = CreateScopeMembers();
+                var typeName = typeof(TestStruct.NestedObject).FullName;
+                var evaluator = new ProbeExpressionEvaluator(
+                    templates: null,
+                    condition: null,
+                    metric: null,
+                    spanDecorations:
+                    [
+                        new KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>(
+                            new DebuggerExpression(string.Empty, CreateInstanceOfJson(@"{""ref"":""NestedObjectLocal""}", typeName), null),
+                            [new KeyValuePair<string, DebuggerExpression?[]>("tag", [new DebuggerExpression(null, null, "decorated")])])
+                    ],
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Decorations.Should().ContainSingle();
+                result.Decorations[0].TagName.Should().Be("tag");
+                result.Decorations[0].Value.Should().Be("decorated");
+                result.Decorations[0].Errors.Should().BeNullOrEmpty();
+                result.Errors.Should().BeNullOrEmpty();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_UnknownType_ReportsRuntimeError()
+        {
+            try
+            {
+                InstanceOfHelper.ResetForTests();
+                var scopeMembers = CreateScopeMembers();
+                var evaluator = new ProbeExpressionEvaluator(
+                    templates: null,
+                    condition: new DebuggerExpression(string.Empty, CreateInstanceOfJson(@"{""ref"":""NestedObjectLocal""}", "DebuggerExpressionLanguageTests"), null),
+                    metric: null,
+                    spanDecorations: null,
+                    captureExpressions: null);
+
+                var result = evaluator.Evaluate(scopeMembers);
+
+                result.Condition.Should().BeTrue();
+                result.HasConditionError.Should().BeTrue();
+                result.Errors.Should().ContainSingle();
+                result.Errors[0].Message.Should().Contain("must be a fully qualified type name");
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_AmbiguousType_ReportsRuntimeError()
+        {
+            var firstAssembly = CreateDynamicAssembly(
+                "InstanceOfAmbiguousAssemblyOne",
+                "Ambiguous.TypeForInstanceOf");
+            var secondAssembly = CreateDynamicAssembly(
+                "InstanceOfAmbiguousAssemblyTwo",
+                "Ambiguous.TypeForInstanceOf");
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => [firstAssembly, secondAssembly]);
+
+                Action lookup = () => InstanceOfHelper.ResolveType("Ambiguous.TypeForInstanceOf");
+
+                lookup.Should().Throw<Exception>().WithMessage("*Multiple types matching*");
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_AmbiguousTypeAfterCacheHit_KeepsCachedResolution()
+        {
+            var firstAssembly = CreateDynamicAssembly(
+                "InstanceOfAmbiguousCachedAssemblyOne",
+                "AmbiguousCached.TypeForInstanceOf");
+            var secondAssembly = CreateDynamicAssembly(
+                "InstanceOfAmbiguousCachedAssemblyTwo",
+                "AmbiguousCached.TypeForInstanceOf");
+            var calls = 0;
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() =>
+                {
+                    calls++;
+                    return calls == 1 ? [firstAssembly] : [firstAssembly, secondAssembly];
+                });
+
+                InstanceOfHelper.ResolveType("AmbiguousCached.TypeForInstanceOf").Should().Be(firstAssembly.GetType("AmbiguousCached.TypeForInstanceOf"));
+                InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
+
+                InstanceOfHelper.ResolveType("AmbiguousCached.TypeForInstanceOf").Should().Be(firstAssembly.GetType("AmbiguousCached.TypeForInstanceOf"));
+                calls.Should().Be(1);
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_LazyLoadedType_CanSucceedWithoutRecompile()
+        {
+            var firstAssembly = typeof(string).Assembly;
+            var secondAssembly = CreateDynamicAssembly(
+                "InstanceOfLazyAssembly",
+                "LazyLoaded.TypeForInstanceOf");
+            var calls = 0;
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() =>
+                {
+                    calls++;
+                    return calls == 1 ? [firstAssembly] : [firstAssembly, secondAssembly];
+                });
+
+                var instance = Activator.CreateInstance(secondAssembly.GetType("LazyLoaded.TypeForInstanceOf"));
+
+                Action firstLookup = () => InstanceOfHelper.ResolveType("LazyLoaded.TypeForInstanceOf");
+                firstLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+
+                InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
+                InstanceOfHelper.IsInstanceOf(instance, "LazyLoaded.TypeForInstanceOf").Should().BeTrue();
+                calls.Should().Be(2);
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_CacheHit_DoesNotScanAssembliesAgain()
+        {
+            var assembly = typeof(TestStruct.NestedObject).Assembly;
+            var calls = 0;
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() =>
+                {
+                    calls++;
+                    return [assembly];
+                });
+
+                var typeName = typeof(TestStruct.NestedObject).FullName;
+                InstanceOfHelper.IsInstanceOf(TestObject.Nested, typeName).Should().BeTrue();
+                InstanceOfHelper.IsInstanceOf(TestObject.Nested, typeName).Should().BeTrue();
+
+                calls.Should().Be(1);
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_MissScansOnlyNewAssemblies()
+        {
+            var firstAssembly = typeof(string).Assembly;
+            var secondAssembly = typeof(TestStruct.NestedObject).Assembly;
+            var calls = 0;
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() =>
+                {
+                    calls++;
+                    return calls == 1 ? [firstAssembly] : [firstAssembly, secondAssembly];
+                });
+
+                Action firstLookup = () => InstanceOfHelper.ResolveType("Missing.TypeForInstanceOf");
+                firstLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+
+                InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
+                Action secondLookup = () => InstanceOfHelper.ResolveType("Missing.TypeForInstanceOf");
+                secondLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+
+                calls.Should().Be(2);
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_CacheClearDuringMerge_PreservesScannedSnapshot()
+        {
+            var assembly = CreateDynamicAssembly(
+                "InstanceOfCacheClearAssembly",
+                "CacheClear.TypeForInstanceOf");
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => [assembly]);
+
+                InstanceOfHelper.ResolveType("CacheClear.TypeForInstanceOf").Should().Be(assembly.GetType("CacheClear.TypeForInstanceOf"));
+
+                for (var i = 0; i < 511; i++)
+                {
+                    Action fillCache = () => InstanceOfHelper.ResolveType($"Missing.CacheFill{i}");
+                    fillCache.Should().Throw<Exception>().WithMessage("*unknown type*");
+                }
+
+                InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
+
+                InstanceOfHelper.ResolveType("CacheClear.TypeForInstanceOf").Should().Be(assembly.GetType("CacheClear.TypeForInstanceOf"));
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_ContinuousAssemblyLoadChurn_StopsAfterBoundedRetries()
+        {
+            var calls = 0;
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() =>
+                {
+                    calls++;
+                    InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
+                    return [typeof(string).Assembly];
+                });
+
+                Action lookup = () => InstanceOfHelper.ResolveType("Missing.ChurningTypeForInstanceOf");
+
+                lookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+                calls.Should().Be(3);
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
         }
 
         [Theory]
@@ -1173,6 +1749,33 @@ namespace Datadog.Trace.Tests.Debugger
 
             Assert.Equal("{[hello, ], }", result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        private static string CreateInstanceOfJson(string valueJson, string typeName)
+        {
+            return $$"""
+                    {
+                      "instanceof": [
+                        {{valueJson}},
+                        "{{typeName}}"
+                      ]
+                    }
+                    """;
+        }
+
+        private static Assembly CreateDynamicAssembly(string assemblyName, string typeName)
+        {
+            var lastDotIndex = typeName.LastIndexOf('.');
+            var compilation = CSharpCompilation.Create(
+                assemblyName,
+                syntaxTrees: [CSharpSyntaxTree.ParseText($"namespace {typeName.Substring(0, lastDotIndex)} {{ public class {typeName.Substring(lastDotIndex + 1)} {{ }} }}")],
+                references: [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
+                options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+            using var stream = new MemoryStream();
+            var result = compilation.Emit(stream);
+            result.Success.Should().BeTrue(string.Join(Environment.NewLine, result.Diagnostics.Select(d => d.ToString())));
+            return Assembly.Load(stream.ToArray());
         }
 
         private async Task Test(string expressionTestFilePath)
