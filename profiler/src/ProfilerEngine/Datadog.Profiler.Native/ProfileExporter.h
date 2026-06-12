@@ -35,6 +35,7 @@ namespace libdatadog {
 class Exporter;
 class Profile;
 class Tags;
+class SymbolsStore;
 } // namespace libdatadog
 
 class ProfileExporter : public IExporter
@@ -50,7 +51,8 @@ public:
         IMetadataProvider* metadataProvider,
         ISsiManager* ssiManager,
         IAllocationsRecorder* allocationsRecorder,
-        IHeapSnapshotManager* heapSnapshotManager);
+        IHeapSnapshotManager* heapSnapshotManager,
+        libdatadog::SymbolsStore* symbolsStore);
     ~ProfileExporter() override;
 
     bool Export(bool lastCall = false) override;
@@ -148,7 +150,7 @@ private:
     static std::string const ProfilePeriodUnit;
     static std::string const StartTime;
 
-    std::string const ProviderList;
+    std::string const _providerList;
 
     std::vector<SampleValueType> _sampleTypeDefinitions;
     fs::path _outputPath;
@@ -172,6 +174,7 @@ private:
     ISsiManager* _ssiManager;
     IHeapSnapshotManager* _heapSnapshotManager;
     IGcSettingsProvider* _gcSettingsProvider = nullptr;  // could be null with .NET Framework
+    libdatadog::SymbolsStore* _pSymbolsStore;
 
 public: // for tests
     static std::string GetEnabledProfilers(IEnabledProfilers* enabledProfilers);

@@ -25,6 +25,9 @@
 class IConfiguration;
 class SampleValueTypeProvider;
 class RawSampleTransformer;
+namespace libdatadog {
+class SymbolsStore;
+}
 
 class ExceptionsProvider :
     public CollectorBase<RawExceptionSample>,
@@ -40,7 +43,8 @@ public:
         RawSampleTransformer* rawSampleTransformer,
         MetricsRegistry& metricsRegistry,
         CallstackProvider pool,
-        shared::pmr::memory_resource* memoryResource);
+        shared::pmr::memory_resource* memoryResource,
+        libdatadog::SymbolsStore* pSymbolsStore);
 
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID thrownObjectId);

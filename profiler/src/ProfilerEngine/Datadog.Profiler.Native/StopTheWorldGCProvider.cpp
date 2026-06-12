@@ -24,9 +24,10 @@
 StopTheWorldGCProvider::StopTheWorldGCProvider(
     SampleValueTypeProvider& valueTypeProvider,
     RawSampleTransformer* rawSampleTransformer,
-    shared::pmr::memory_resource* memoryResource)
+    shared::pmr::memory_resource* memoryResource,
+    libdatadog::SymbolsStore* pSymbolsStore)
     :
-    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource)
+    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), rawSampleTransformer, memoryResource, pSymbolsStore)
 {
 }
 

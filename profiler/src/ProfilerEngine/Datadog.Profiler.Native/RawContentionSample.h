@@ -46,7 +46,7 @@ public:
         return *this;
     }
 
-    void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
+    void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets, libdatadog::SymbolsStore* pSymbolsStore) const override
     {
         assert(valueOffsets.size() == 2);
         auto contentionCountIndex = valueOffsets[0];
@@ -54,22 +54,22 @@ public:
 
         // To avoid breaking the backend, always set the bucket label, but provide the wait bucket label if needed
         // This is needed to allow an upscaling different between wait and lock contentions
-        sample->AddLabel(StringLabel{BucketLabelName, Bucket});
+        sample->AddLabel(StringLabel{pSymbolsStore->GetBucketLabelName(), Bucket});
         if (Type == ContentionType::Wait)
         {
-            sample->AddLabel(StringLabel{WaitBucketLabelName, std::move(Bucket)});
+            sample->AddLabel(StringLabel{pSymbolsStore->GetWaitBucketLabelName(), std::move(Bucket)});
         }
 
         sample->AddValue(1, contentionCountIndex);
-        sample->AddLabel(NumericLabel{RawCountLabelName, 1});
-        sample->AddLabel(NumericLabel{RawDurationLabelName, ContentionDuration.count()});
+        sample->AddLabel(NumericLabel{pSymbolsStore->GetRawCountLabelName(), 1});
+        sample->AddLabel(NumericLabel{pSymbolsStore->GetRawDurationLabelName(), ContentionDuration.count()});
         sample->AddValue(ContentionDuration.count(), contentionDurationIndex);
         if (BlockingThreadId != 0)
         {
-            sample->AddLabel(NumericLabel{BlockingThreadIdLabelName, BlockingThreadId});
-            sample->AddLabel(StringLabel{BlockingThreadNameLabelName, shared::ToString(BlockingThreadName)});
+            sample->AddLabel(NumericLabel{pSymbolsStore->GetBlockingThreadIdLabelName(), BlockingThreadId});
+            sample->AddLabel(StringLabel{pSymbolsStore->GetBlockingThreadNameLabelName(), shared::ToString(BlockingThreadName)});
         }
-        sample->AddLabel(StringLabel{ContentionTypeLabelName, ContentionTypes[static_cast<int>(Type)]});
+        sample->AddLabel(StringLabel{pSymbolsStore->GetContentionTypeLabelName(), ContentionTypes[static_cast<int>(Type)]});
     }
 
     std::chrono::nanoseconds ContentionDuration;

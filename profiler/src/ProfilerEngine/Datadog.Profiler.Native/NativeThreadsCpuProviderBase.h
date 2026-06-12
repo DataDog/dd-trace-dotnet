@@ -13,15 +13,19 @@
 
 #include <vector>
 
+namespace libdatadog {
+class SymbolsStore;
+}
 class RawSampleTransformer;
 
 class NativeThreadsCpuProviderBase : public ISamplesProvider
 {
 public:
-    NativeThreadsCpuProviderBase(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* sampleTransformer);
+    NativeThreadsCpuProviderBase(SampleValueTypeProvider& valueTypeProvider, RawSampleTransformer* sampleTransformer, libdatadog::SymbolsStore* pSymbolsStore);
 
 protected:
     virtual void OnCpuDuration(std::chrono::milliseconds cpuTime);
+    libdatadog::SymbolsStore* _pSymbolsStore;
 
 private:
 
