@@ -165,13 +165,7 @@ internal readonly partial struct SecurityCoordinator
         return result;
     }
 
-    public void AddResponseHeadersToSpan()
-    {
-        if (_localRootSpan.IsAppsecEvent())
-        {
-            Reporter.AddResponseHeaderTags();
-        }
-    }
+    public void AddResponseHeadersToSpan() => Reporter.AddResponseHeadersToSpan();
 
     internal static Dictionary<string, object>? ExtractCookiesFromRequest(HttpRequest request)
     {
