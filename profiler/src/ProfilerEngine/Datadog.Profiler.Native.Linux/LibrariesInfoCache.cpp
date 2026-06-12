@@ -476,7 +476,10 @@ void LibrariesInfoCache::BuildSymbolCache(
             !IsFileRangeValid(ehdr->e_shoff,
                               static_cast<std::uint64_t>(ehdr->e_shnum) * sizeof(ElfW(Shdr)),
                               fileSize))
+        {
+            LogOnce(Info, "LibrariesInfoCache: skipping invalid ELF header in ", modulePath);
             continue;
+        }
 
         auto* shdrs = reinterpret_cast<const ElfW(Shdr)*>(base + ehdr->e_shoff);
 
@@ -491,7 +494,10 @@ void LibrariesInfoCache::BuildSymbolCache(
                 continue;
 
             if (!IsFileRangeValid(shdrs[s].sh_offset, shdrs[s].sh_size, fileSize))
+            {
+                LogOnce(Info, "LibrariesInfoCache: skipping invalid section header in ", modulePath);
                 continue;
+            }
 
             auto symCount = shdrs[s].sh_size / sizeof(ElfW(Sym));
             auto* syms = reinterpret_cast<const ElfW(Sym)*>(base + shdrs[s].sh_offset);
