@@ -11,10 +11,12 @@ using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.FeatureFlags
 {
@@ -26,6 +28,7 @@ namespace Datadog.Trace.FeatureFlags
         private readonly ISubscription _rcmSubscription;
         private readonly FfeProduct _ffeProduct;
         private readonly ExposureApi _exposureApi;
+        private readonly FlagEvaluationApi? _evpApi;
 
         private Action? _onNewConfigEventHander;
         private FeatureFlagsEvaluator? _evaluator;
@@ -39,6 +42,24 @@ namespace Datadog.Trace.FeatureFlags
             _rcmSubscription = new Subscription(_ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
             _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription!);
             _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
+
+            // Wire the EVP flag evaluation api unless the killswitch is "false".
+            bool evpEnabled = !string.Equals(
+                EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled),
+                "false",
+                StringComparison.OrdinalIgnoreCase);
+
+            if (evpEnabled)
+            {
+                try
+                {
+                    _evpApi = new FlagEvaluationApi(settings);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "FeatureFlagsModule: failed to create FlagEvaluationApi (EVP disabled, OTel unaffected)");
+                }
+            }
         }
 
         public static FeatureFlagsModule? Create(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
@@ -51,9 +72,16 @@ namespace Datadog.Trace.FeatureFlags
             return null;
         }
 
+        /// <summary>
+        /// Gets the EVP flag evaluation api instance, or null if the EVP path is disabled.
+        /// Used by tests and by the OpenFeature provider wiring.
+        /// </summary>
+        internal FlagEvaluationApi? GetEVPApi() => _evpApi;
+
         public void Dispose()
         {
             _exposureApi.Dispose();
+            _evpApi?.Dispose();
         }
 
         internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)

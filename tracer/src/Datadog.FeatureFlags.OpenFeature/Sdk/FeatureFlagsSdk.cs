@@ -22,6 +22,26 @@ namespace Datadog.FeatureFlags.OpenFeature;
 [Browsable(false)]
 internal static class FeatureFlagsSdk
 {
+    /// <summary>
+    /// Enqueues one flag evaluation event into the EVP aggregation pipeline.
+    /// Stub implementation — no-op in the standalone NuGet path.
+    /// The auto-instrumentation side intercepts this via CallTarget and routes to
+    /// FlagEvaluationApi.Enqueue in the full tracer (Datadog.Trace.dll).
+    /// NoInlining: required so CallTarget can hook the method boundary.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void EnqueueEVP(
+        string flagKey,
+        string? variant,
+        string reason,
+        string? allocationKey,
+        string? targetingKey,
+        long evalTimeMs,
+        System.Collections.Generic.IDictionary<string, object?>? contextAttrs)
+    {
+        // Stub — CallTarget replaces this body with the real enqueue when the tracer is loaded.
+    }
+
     /// <summary> Gets a value indicating whether FeatureFlags framework is available or not </summary>
     /// <returns> True if FeatureFlagsSDK is instrumented </returns>
     [MethodImpl(MethodImplOptions.NoInlining)]
