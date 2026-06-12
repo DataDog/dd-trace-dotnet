@@ -302,7 +302,7 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 if (isCodeOriginEnabled && !codeOrigin!.HasCodeOrigin(rootSpan))
                 {
-                    if (AspNetCoreDiagnosticObserver.TryGetTypeAndMethod(typedArg, out var type, out var method))
+                    if (AspNetCoreEndpointCodeOrigin.TryGetTypeAndMethod(typedArg, out var type, out var method))
                     {
                         codeOrigin.SetCodeOriginForEntrySpan(rootSpan, type, method);
                     }

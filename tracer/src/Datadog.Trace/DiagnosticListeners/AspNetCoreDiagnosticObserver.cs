@@ -7,7 +7,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -625,7 +624,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (isCodeOriginEnabled && !codeOrigin.HasCodeOrigin(rootSpan))
                 {
-                    if (TryGetTypeAndMethod(typedArg, out var type, out var method))
+                    if (AspNetCoreEndpointCodeOrigin.TryGetTypeAndMethod(typedArg, out var type, out var method))
                     {
                         codeOrigin.SetCodeOriginForEntrySpan(rootSpan, type, method);
                     }
@@ -645,49 +644,6 @@ namespace Datadog.Trace.DiagnosticListeners
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
             }
-        }
-
-        internal static bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, [NotNullWhen(true)] out Type type, [NotNullWhen(true)] out MethodInfo method)
-        {
-            try
-            {
-                if (beforeAction.ActionDescriptor.TryDuckCast<ControllerActionDescriptorStruct>(out var controllerActionDescriptor))
-                {
-                    type = controllerActionDescriptor.ControllerTypeInfo;
-                    method = controllerActionDescriptor.MethodInfo;
-                    return true;
-                }
-
-                if (beforeAction.ActionDescriptor.TryDuckCast<CompiledPageActionDescriptorStruct>(out var compiledPageActionDescriptor))
-                {
-                    foreach (var part in compiledPageActionDescriptor.HandlerMethods)
-                    {
-                        if (part.TryDuckCast(out HandlerMethodDescriptorStruct methodDesc))
-                        {
-                            if (string.Equals(methodDesc.HttpMethod, beforeAction.HttpContext.Request.Method, StringComparison.OrdinalIgnoreCase))
-                            {
-                                type = compiledPageActionDescriptor.HandlerTypeInfo;
-                                method = methodDesc.MethodInfo;
-                                return true;
-                            }
-                            else
-                            {
-                                Log.Debug("Ignoring handler method {Method} for HTTP method {HttpMethod}", methodDesc.MethodInfo.Name, methodDesc.HttpMethod);
-                            }
-                        }
-                    }
-
-                    Log.Debug("No matching handler method found for HTTP method {HttpMethod}", beforeAction.HttpContext.Request.Method);
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Fail to extract type and method from ActionDescriptor");
-            }
-
-            type = null;
-            method = null;
-            return false;
         }
 
         private void OnMvcAfterAction(object arg)

@@ -52,6 +52,10 @@
       _dd.appsec.s.req.query: [{}],
       _dd.appsec.s.res.body: [{"Id":[4],"Message":[8],"PathParamId":[4]}],
       _dd.appsec.s.res.headers: [{"cache-control":[8],"content-type":[8],"server":[8],"x-aspnetmvc-version":[8],"x-aspnet-version":[8]}],
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: ApiSecurity,
+      _dd.code_origin.frames.0.type: Samples.AspNetMvc5.Controllers.HomeController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
