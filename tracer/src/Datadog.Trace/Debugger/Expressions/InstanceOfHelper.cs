@@ -104,9 +104,11 @@ internal static class InstanceOfHelper
         }
 
         var typeNameInfo = ParseTypeName(typeName);
-        var resolvedType = typeNameInfo.IsAssemblyQualified
-                               ? null
-                               : Type.GetType(typeName, throwOnError: false, ignoreCase: true);
+        var resolvedType = TryResolveKnownFrameworkType(typeName, typeNameInfo, out var knownFrameworkType)
+                               ? knownFrameworkType
+                               : typeNameInfo.IsAssemblyQualified
+                                   ? null
+                                   : Type.GetType(typeName, throwOnError: false, ignoreCase: true);
         if (resolvedType is not null)
         {
             AddResolvedType(typeName, resolvedType, Volatile.Read(ref _assemblyLoadGeneration));
@@ -257,6 +259,30 @@ internal static class InstanceOfHelper
         return typeName.IndexOf('.') >= 0;
     }
 
+    private static bool TryResolveKnownFrameworkType(string typeName, TypeNameInfo typeNameInfo, [NotNullWhen(true)] out Type? type)
+    {
+        type = null;
+        if (!typeNameInfo.IsAssemblyQualified ||
+            !IsKnownFrameworkAssemblyName(typeNameInfo.AssemblyName!))
+        {
+            return false;
+        }
+
+        if (BclTypeAliases.TryGetValue(typeNameInfo.SearchTypeName, out type))
+        {
+            return true;
+        }
+
+        type = typeof(object).Assembly.GetType(typeNameInfo.SearchTypeName, throwOnError: false, ignoreCase: true);
+        if (type is not null)
+        {
+            return true;
+        }
+
+        type = Type.GetType(typeName, ResolveLoadedAssembly, typeResolver: null, throwOnError: false, ignoreCase: true);
+        return type is not null;
+    }
+
     private static void LogSuspiciousMismatch(Type resolvedType, Type? valueType, string requestedTypeName, bool result)
     {
         if (result ||
@@ -320,6 +346,59 @@ internal static class InstanceOfHelper
 
         return string.Equals(assembly.GetName().Name, assemblyName, StringComparison.Ordinal) ||
                string.Equals(assembly.FullName, assemblyName, StringComparison.Ordinal);
+    }
+
+    private static Assembly? ResolveLoadedAssembly(AssemblyName assemblyName)
+    {
+        var requestedFullName = assemblyName.FullName;
+        var assemblies = Volatile.Read(ref _getAssemblies)();
+
+        for (var i = 0; i < assemblies.Length; i++)
+        {
+            var assembly = assemblies[i];
+            if (string.Equals(assembly.FullName, requestedFullName, StringComparison.Ordinal))
+            {
+                return assembly;
+            }
+        }
+
+        var requestedName = assemblyName.Name;
+        if (requestedName is null)
+        {
+            return null;
+        }
+
+        for (var i = 0; i < assemblies.Length; i++)
+        {
+            var assembly = assemblies[i];
+            if (string.Equals(assembly.GetName().Name, requestedName, StringComparison.Ordinal))
+            {
+                return assembly;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsKnownFrameworkAssemblyName(string assemblyName)
+    {
+        var simpleNameLength = assemblyName.IndexOf(',');
+        if (simpleNameLength < 0)
+        {
+            simpleNameLength = assemblyName.Length;
+        }
+
+        return AssemblyNameEquals(assemblyName, simpleNameLength, "mscorlib") ||
+               AssemblyNameEquals(assemblyName, simpleNameLength, "netstandard") ||
+               AssemblyNameEquals(assemblyName, simpleNameLength, "System") ||
+               AssemblyNameEquals(assemblyName, simpleNameLength, "System.Private.CoreLib") ||
+               AssemblyNameEquals(assemblyName, simpleNameLength, "System.Runtime");
+    }
+
+    private static bool AssemblyNameEquals(string assemblyName, int simpleNameLength, string expectedName)
+    {
+        return simpleNameLength == expectedName.Length &&
+               string.Compare(assemblyName, 0, expectedName, 0, expectedName.Length, StringComparison.Ordinal) == 0;
     }
 
     private static string GetAssemblyIdentity(Assembly assembly)

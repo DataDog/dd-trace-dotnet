@@ -906,6 +906,41 @@ namespace Datadog.Trace.Tests.Debugger
             }
         }
 
+        [Theory]
+        [InlineData("System.String, mscorlib")]
+        [InlineData("System.String, System.Runtime")]
+        [InlineData("System.String, System.Private.CoreLib")]
+        [InlineData("System.String, netstandard")]
+        public void ProbeExpressionParser_InstanceOf_AssemblyQualifiedBclType_DoesNotScanAssemblies(string typeName)
+        {
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => throw new InvalidOperationException("Assembly scanning should not run for BCL aliases."));
+
+                InstanceOfHelper.IsInstanceOf("hello", typeName).Should().BeTrue();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Theory]
+        [InlineData("System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib")]
+        public void ProbeExpressionParser_InstanceOf_AssemblyQualifiedFrameworkType_DoesNotScanAssemblies(string typeName)
+        {
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => throw new InvalidOperationException("Assembly scanning should not run for framework aliases."));
+
+                InstanceOfHelper.IsInstanceOf(new List<string>(), typeName).Should().BeTrue();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
         [Fact]
         public void ProbeExpressionParser_InstanceOf_CustomerSimpleName_ReportsRuntimeError()
         {
@@ -943,6 +978,23 @@ namespace Datadog.Trace.Tests.Debugger
 
                 InstanceOfHelper.IsInstanceOf(TestObject.Nested, $"{type.FullName}, {type.Assembly.GetName().Name}").Should().BeTrue();
                 InstanceOfHelper.IsInstanceOf(TestObject.Nested, type.AssemblyQualifiedName).Should().BeTrue();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_AssemblyQualifiedCustomerType_ScansLoadedAssembliesOnly()
+        {
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => []);
+
+                Action lookup = () => InstanceOfHelper.ResolveType("Unknown.CustomerType, UnknownCustomerAssembly");
+
+                lookup.Should().Throw<Exception>().WithMessage("*unknown type*");
             }
             finally
             {
