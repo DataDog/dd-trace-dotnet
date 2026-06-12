@@ -49,6 +49,17 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
     /// </summary>
     private const int SimplePassTestBackfilledLineCount = 1;
 
+    private const string CoverageBackfillMatrixTestArguments = "--collect:\"XPlat Code Coverage;IncludeTestAssembly=true\"";
+
+    private const string MissingLineCoverageBlocksSkip = nameof(MissingLineCoverageBlocksSkip);
+    private const string MissingBackendCoverageStillSkips = nameof(MissingBackendCoverageStillSkips);
+    private const string EmptyBackendConfigurationsStillSkip = nameof(EmptyBackendConfigurationsStillSkip);
+    private const string DivergentBackendConfigurationsBlockSkip = nameof(DivergentBackendConfigurationsBlockSkip);
+    private const string SafeAndMissingLineCandidates = nameof(SafeAndMissingLineCandidates);
+    private const string ParameterizedCandidateDoesNotSkip = nameof(ParameterizedCandidateDoesNotSkip);
+    private const string BackendCoverageDoesNotMatchLocalReport = nameof(BackendCoverageDoesNotMatchLocalReport);
+    private const string NoSkippableResponse = nameof(NoSkippableResponse);
+
     public XUnitEvpTests(ITestOutputHelper output)
         : base("XUnitTests", output)
     {
@@ -74,6 +85,23 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
     {
         // Use the newest XUnit row so this focused smoke test exercises the current Coverlet collector and test-platform path.
         yield return PackageVersions.XUnit.Last().Concat("evp_proxy/v4", false);
+    }
+
+    /// <summary>
+    /// Provides focused rows that run the real XUnit sample against skippable-test responses matching Java reference behavior.
+    /// </summary>
+    /// <returns>Package version, EVP endpoint version to remove, expected compression, and scenario.</returns>
+    public static IEnumerable<object[]> GetDataForCoverageBackfillMatrix()
+    {
+        var row = PackageVersions.XUnit.Last().Concat("evp_proxy/v4", false);
+        yield return row.Concat(MissingLineCoverageBlocksSkip);
+        yield return row.Concat(MissingBackendCoverageStillSkips);
+        yield return row.Concat(EmptyBackendConfigurationsStillSkip);
+        yield return row.Concat(DivergentBackendConfigurationsBlockSkip);
+        yield return row.Concat(SafeAndMissingLineCandidates);
+        yield return row.Concat(ParameterizedCandidateDoesNotSkip);
+        yield return row.Concat(BackendCoverageDoesNotMatchLocalReport);
+        yield return row.Concat(NoSkippableResponse);
     }
 
     [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:Parameter should not span multiple lines", Justification = "readability")]
@@ -920,6 +948,160 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         coverageMessage.Value.Should().BeGreaterThan(expectedPercentageWithoutBackfill);
     }
 
+    /// <summary>
+    /// Runs the real XUnit sample through ITR and verifies the skip decisions that guard coverage backfill.
+    /// </summary>
+    /// <param name="packageVersion">XUnit package version under test.</param>
+    /// <param name="evpVersionToRemove">EVP endpoint version removed from the mock agent to force the target path.</param>
+    /// <param name="expectedGzip">Whether the target EVP path should use gzip.</param>
+    /// <param name="matrixCase">Backend-response shape under test.</param>
+    public virtual async Task ItrCoverageBackfillSkippableDecisionMatrixMatchesJavaBehavior(string packageVersion, string evpVersionToRemove, bool expectedGzip, string matrixCase)
+    {
+        var tests = new List<MockCIVisibilityTest>();
+        var coverageMessages = new List<SessionCodeCoverageMessage>();
+        var evpRequests = new List<string>();
+        var skippableRequestBodies = new List<string>();
+
+        InjectSession(
+            out var sessionId,
+            out _,
+            out _,
+            out _,
+            out _,
+            out _,
+            out var runId);
+
+        var sessionCommand = GetCoverageBackfillMatrixSessionCommand(matrixCase);
+        Output.WriteLine("RunId: {0}", runId);
+        Output.WriteLine("CoverageBackfillMatrixCase: {0}", matrixCase);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, sessionCommand);
+
+        var ipcServerName = $"session_{sessionId}";
+        using var ipcServer = new IpcServer(ipcServerName);
+        ipcServer.SetMessageReceivedCallback(
+            message =>
+            {
+                if (message is SessionCodeCoverageMessage coverageMessage)
+                {
+                    lock (coverageMessages)
+                    {
+                        coverageMessages.Add(coverageMessage);
+                    }
+                }
+            });
+
+        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true, useStatsD: !IsMacOS());
+        agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
+
+        const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
+        agent.EventPlatformProxyPayloadReceived += (sender, e) =>
+        {
+            lock (evpRequests)
+            {
+                evpRequests.Add($"{e.Value.PathAndQuery} ({e.Value.Headers["Content-Type"] ?? "unknown"})");
+            }
+
+            if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
+            {
+                e.Value.Response = new MockTracerResponse("""{"data":{"id":"b5a855bffe6c0b2ae5d150fb6ad674363464c816","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"efd_enabled":false,"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}} """, 200);
+                return;
+            }
+
+            if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
+            {
+                lock (skippableRequestBodies)
+                {
+                    skippableRequestBodies.Add(e.Value.BodyInJson);
+                }
+
+                var skippableRequest = JObject.Parse(e.Value.BodyInJson);
+                var requestConfigurations = skippableRequest["data"]?["attributes"]?["configurations"] as JObject;
+                requestConfigurations.Should().NotBeNull("skippable request body: {0}", e.Value.BodyInJson);
+                e.Value.Response = new MockTracerResponse(BuildCoverageBackfillMatrixSkippableResponse(matrixCase, correlationId, requestConfigurations), 200);
+                return;
+            }
+
+            if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
+            {
+                e.Value.Headers["Content-Encoding"].Should().Be(expectedGzip ? "gzip" : null);
+
+                var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                if (payload.Events?.Length > 0)
+                {
+                    foreach (var @event in payload.Events)
+                    {
+                        if (@event.Content.ToString() is not { } eventContent || @event.Type != SpanTypes.Test)
+                        {
+                            continue;
+                        }
+
+                        lock (tests)
+                        {
+                            tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent));
+                        }
+                    }
+                }
+            }
+        };
+
+        using var processResult = await RunDotnetTestSampleAndWaitForExit(
+                                      agent,
+                                      arguments: CoverageBackfillMatrixTestArguments,
+                                      packageVersion: packageVersion,
+                                      expectedExitCode: 1);
+
+        string[] receivedEvpRequests;
+        lock (evpRequests)
+        {
+            receivedEvpRequests = evpRequests.ToArray();
+        }
+
+        string[] receivedSkippableRequestBodies;
+        lock (skippableRequestBodies)
+        {
+            receivedSkippableRequestBodies = skippableRequestBodies.ToArray();
+        }
+
+        var skippableRequestBody = receivedSkippableRequestBodies.Should().ContainSingle("received EVP requests: {0}", string.Join(", ", receivedEvpRequests)).Subject;
+        var skippableRequestAttributes = JObject.Parse(skippableRequestBody)["data"]?["attributes"];
+        skippableRequestAttributes.Should().NotBeNull("skippable request body: {0}", skippableRequestBody);
+        skippableRequestAttributes!["test_level"]?.Value<string>().Should().Be("test");
+        var configurations = skippableRequestAttributes["configurations"];
+        configurations.Should().NotBeNull("skippable request body: {0}", skippableRequestBody);
+        configurations![TestTags.Bundle]?.Value<string>().Should().Be(TestBundleName);
+
+        MockCIVisibilityTest[] receivedTests;
+        lock (tests)
+        {
+            receivedTests = tests.ToArray();
+        }
+
+        AssertItrDecision(receivedTests, "SimplePassTest", ShouldSkipSimplePassTest(matrixCase), correlationId, receivedEvpRequests);
+        if (matrixCase == SafeAndMissingLineCandidates)
+        {
+            AssertItrDecision(receivedTests, "TraitPassTest", shouldSkip: false, correlationId, receivedEvpRequests);
+        }
+        else if (matrixCase == ParameterizedCandidateDoesNotSkip)
+        {
+            receivedTests.Where(test => test.Meta[TestTags.Name] == "SimpleParameterizedTest")
+                         .Should()
+                         .NotBeEmpty("received EVP requests: {0}", string.Join(", ", receivedEvpRequests))
+                         .And
+                         .OnlyContain(test => test.Meta[TestTags.Status] == TestTags.StatusPass);
+        }
+
+        if (ShouldAssertNoBackfilledCoverageMessages(matrixCase))
+        {
+            SessionCodeCoverageMessage[] receivedCoverageMessages;
+            lock (coverageMessages)
+            {
+                receivedCoverageMessages = coverageMessages.ToArray();
+            }
+
+            receivedCoverageMessages.Should().NotContain(message => message.Backfilled);
+        }
+    }
+
     public virtual async Task EarlyFlakeDetection(string packageVersion, string evpVersionToRemove, bool expectedGzip, MockData mockData, int expectedExitCode, int expectedSpans, string friendlyName)
     {
         // TODO: Fix alpine flakiness
@@ -1027,6 +1209,125 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                     },
                     useDotnetExec: false))
            .ConfigureAwait(false);
+    }
+
+    private static bool ShouldSkipSimplePassTest(string matrixCase)
+        => matrixCase is MissingBackendCoverageStillSkips
+                         or EmptyBackendConfigurationsStillSkip
+                         or SafeAndMissingLineCandidates
+                         or BackendCoverageDoesNotMatchLocalReport;
+
+    private static bool ShouldAssertNoBackfilledCoverageMessages(string matrixCase)
+        => matrixCase is not EmptyBackendConfigurationsStillSkip
+                         and not SafeAndMissingLineCandidates;
+
+    private static string GetCoverageBackfillMatrixSessionCommand(string matrixCase)
+        => matrixCase switch
+        {
+            EmptyBackendConfigurationsStillSkip or DivergentBackendConfigurationsBlockSkip => "dotnet test --framework net8.0 " + CoverageBackfillMatrixTestArguments,
+            _ => "dotnet test " + CoverageBackfillMatrixTestArguments
+        };
+
+    private static string BuildCoverageBackfillMatrixSkippableResponse(string matrixCase, string correlationId, JObject requestConfigurations)
+    {
+        var response = new JObject
+        {
+            ["data"] = CreateCoverageBackfillMatrixSkippableTests(matrixCase, requestConfigurations),
+            ["meta"] = new JObject
+            {
+                ["correlation_id"] = correlationId
+            }
+        };
+
+        if (matrixCase != MissingBackendCoverageStillSkips)
+        {
+            response["meta"]!["coverage"] = new JObject
+            {
+                [matrixCase == BackendCoverageDoesNotMatchLocalReport ? XUnitSampleSourcePath + ".unmatched" : XUnitSampleSourcePath] = SimplePassTestLineCoverageBitmap
+            };
+        }
+
+        return response.ToString(Formatting.None);
+    }
+
+    private static JArray CreateCoverageBackfillMatrixSkippableTests(string matrixCase, JObject requestConfigurations)
+    {
+        if (matrixCase == NoSkippableResponse)
+        {
+            return new JArray();
+        }
+
+        if (matrixCase == DivergentBackendConfigurationsBlockSkip)
+        {
+            return new JArray(
+                CreateSkippableTestResponse("Samples.XUnitTests.TestSuite.SimplePassTest", "SimplePassTest", missingLineCodeCoverage: false, CloneConfigurations(requestConfigurations)),
+                CreateSkippableTestResponse("Samples.XUnitTests.TestSuite.OtherPassTest", "OtherPassTest", missingLineCodeCoverage: false, CloneConfigurations(requestConfigurations, "matrix-different-runtime")));
+        }
+
+        if (matrixCase == SafeAndMissingLineCandidates)
+        {
+            return new JArray(
+                CreateSkippableTestResponse("Samples.XUnitTests.TestSuite.SimplePassTest", "SimplePassTest", missingLineCodeCoverage: false, CloneConfigurations(requestConfigurations)),
+                CreateSkippableTestResponse("Samples.XUnitTests.TestSuite.TraitPassTest", "TraitPassTest", missingLineCodeCoverage: true, CloneConfigurations(requestConfigurations)));
+        }
+
+        var skippableTest = CreateSkippableTestResponse(
+            matrixCase == ParameterizedCandidateDoesNotSkip ? "Samples.XUnitTests.TestSuite.SimpleParameterizedTest" : "Samples.XUnitTests.TestSuite.SimplePassTest",
+            matrixCase == ParameterizedCandidateDoesNotSkip ? "SimpleParameterizedTest" : "SimplePassTest",
+            missingLineCodeCoverage: matrixCase == MissingLineCoverageBlocksSkip,
+            matrixCase == EmptyBackendConfigurationsStillSkip ? new JObject() : CloneConfigurations(requestConfigurations));
+
+        if (matrixCase == ParameterizedCandidateDoesNotSkip)
+        {
+            skippableTest["attributes"]!["parameters"] = """{"metadata":{"test_name":"SimpleParameterizedTest(xValue: 99, yValue: 99, expectedResult: 198)"},"arguments":{"xValue":"99","yValue":"99","expectedResult":"198"}}""";
+        }
+
+        return new JArray(skippableTest);
+    }
+
+    private static JObject CreateSkippableTestResponse(string id, string name, bool missingLineCodeCoverage, JObject configurations)
+    {
+        return new JObject
+        {
+            ["id"] = id,
+            ["type"] = "test_params",
+            ["attributes"] = new JObject
+            {
+                ["suite"] = TestSuiteName,
+                ["name"] = name,
+                ["_missing_line_code_coverage"] = missingLineCodeCoverage,
+                ["configurations"] = configurations
+            }
+        };
+    }
+
+    private static JObject CloneConfigurations(JObject configurations, string runtimeVersion = null)
+    {
+        var clone = (JObject)configurations.DeepClone();
+        if (runtimeVersion is not null)
+        {
+            clone["runtime.version"] = runtimeVersion;
+        }
+
+        return clone;
+    }
+
+    private static void AssertItrDecision(IReadOnlyCollection<MockCIVisibilityTest> receivedTests, string testName, bool shouldSkip, string correlationId, string[] receivedEvpRequests)
+    {
+        var test = receivedTests.Should().ContainSingle(test => test.Meta[TestTags.Name] == testName, "received EVP requests: {0}", string.Join(", ", receivedEvpRequests)).Subject;
+        if (shouldSkip)
+        {
+            test.Meta[TestTags.Status].Should().Be(TestTags.StatusSkip);
+            test.Meta[IntelligentTestRunnerTags.SkippedBy].Should().Be("true");
+            test.Meta[TestTags.SkipReason].Should().Be(IntelligentTestRunnerTags.SkippedByReason);
+            test.CorrelationId.Should().Be(correlationId);
+        }
+        else
+        {
+            test.Meta[TestTags.Status].Should().Be(TestTags.StatusPass);
+            test.Meta.Should().NotContainKey(IntelligentTestRunnerTags.SkippedBy);
+            test.Meta.Should().NotContainKey(TestTags.SkipReason);
+        }
     }
 
     private static bool HasCorrectCompressionTag(string[] tags, bool isGzipped)

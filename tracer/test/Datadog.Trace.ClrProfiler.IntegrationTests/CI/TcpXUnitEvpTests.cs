@@ -45,6 +45,17 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
     }
 
     [SkippableTheory]
+    [MemberData(nameof(GetDataForCoverageBackfillMatrix))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "ArmUnsupported")]
+    public override Task ItrCoverageBackfillSkippableDecisionMatrixMatchesJavaBehavior(string packageVersion, string evpVersionToRemove, bool expectedGzip, string matrixCase)
+    {
+        EnvironmentHelper.EnableDefaultTransport();
+        return base.ItrCoverageBackfillSkippableDecisionMatrixMatchesJavaBehavior(packageVersion, evpVersionToRemove, expectedGzip, matrixCase);
+    }
+
+    [SkippableTheory]
     [MemberData(nameof(GetDataForEarlyFlakeDetection))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
