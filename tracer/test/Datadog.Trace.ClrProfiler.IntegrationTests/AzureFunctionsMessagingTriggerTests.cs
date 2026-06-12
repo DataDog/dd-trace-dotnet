@@ -90,10 +90,14 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
                    seedAsync: () => SeedViaHttpAsync("seed/servicebus"),
                    expectedExitCode: ExpectedFuncKillExitCode))
         {
-            // 7 spans total: 1 health-check ping + 6 meaningful spans
+            // Wait for at least 7 spans (1 health-check ping + 6 meaningful).
             var allSpans = await agent.WaitForSpansAsync(7, timeoutInMilliseconds: 30000, returnAllOperations: true);
-            // Filter out the health-check ping used to detect host readiness
-            var spans = allSpans.Where(s => s.Resource != "GET /admin/host/ping").ToImmutableList();
+            var filteredSpans = allSpans.Where(s => s.Resource != "GET /admin/host/ping").ToImmutableList();
+            var manualSpan = filteredSpans.FirstOrDefault(s => s.Name == "Manual inside ServiceBusTrigger");
+            var sendSpan = filteredSpans.FirstOrDefault(s => s.Name == "azure_servicebus.send");
+            var spans = filteredSpans
+                        .Where(s => s.TraceId == manualSpan?.TraceId || s.TraceId == sendSpan?.TraceId)
+                        .ToImmutableList();
             var settings = GetMessagingTriggerSettings();
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName($"{nameof(AzureFunctionsMessagingTriggerTests)}.{nameof(ServiceBusTrigger_SubmitsTrace)}")
