@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <elf.h>
 #include <fcntl.h>
 #include <string.h>
@@ -43,6 +44,14 @@ struct ScopedMmap
 
     explicit operator bool() const { return data != MAP_FAILED; }
 };
+
+#ifdef ARM64
+bool IsFileRangeValid(std::uint64_t offset, std::uint64_t size, size_t fileSize)
+{
+    auto fileSize64 = static_cast<std::uint64_t>(fileSize);
+    return offset <= fileSize64 && size <= fileSize64 - offset;
+}
+#endif
 
 } // anonymous namespace
 
@@ -463,7 +472,10 @@ void LibrariesInfoCache::BuildSymbolCache(
         auto base = static_cast<const uint8_t*>(mapping.data);
 
         if (ehdr->e_shoff == 0 || ehdr->e_shnum == 0 ||
-            ehdr->e_shoff + static_cast<size_t>(ehdr->e_shnum) * sizeof(ElfW(Shdr)) > fileSize)
+            ehdr->e_shentsize != sizeof(ElfW(Shdr)) ||
+            !IsFileRangeValid(ehdr->e_shoff,
+                              static_cast<std::uint64_t>(ehdr->e_shnum) * sizeof(ElfW(Shdr)),
+                              fileSize))
             continue;
 
         auto* shdrs = reinterpret_cast<const ElfW(Shdr)*>(base + ehdr->e_shoff);
@@ -475,13 +487,13 @@ void LibrariesInfoCache::BuildSymbolCache(
             if (shdrs[s].sh_type != SHT_SYMTAB && shdrs[s].sh_type != SHT_DYNSYM)
                 continue;
 
-            if (shdrs[s].sh_entsize == 0)
+            if (shdrs[s].sh_entsize != sizeof(ElfW(Sym)))
                 continue;
 
-            if (shdrs[s].sh_offset + shdrs[s].sh_size > fileSize)
+            if (!IsFileRangeValid(shdrs[s].sh_offset, shdrs[s].sh_size, fileSize))
                 continue;
 
-            auto symCount = shdrs[s].sh_size / shdrs[s].sh_entsize;
+            auto symCount = shdrs[s].sh_size / sizeof(ElfW(Sym));
             auto* syms = reinterpret_cast<const ElfW(Sym)*>(base + shdrs[s].sh_offset);
 
             for (size_t j = 0; j < symCount; ++j)
@@ -514,15 +526,27 @@ void LibrariesInfoCache::BuildSymbolCache(
         moduleSymbols.erase(last, moduleSymbols.end());
 
         auto symOffset = static_cast<uint32_t>(outSymbols.size());
-        auto symCount = static_cast<uint32_t>(moduleSymbols.size());
-        outRegions.push_back({segLow, segHigh, symOffset, symCount});
+        outRegions.push_back({segLow, segHigh, symOffset, 0});
 
+        // FuncEntry uses uint32_t for offset and size to halve memory usage (8 vs 16 bytes
+        // per entry). This is safe because ARM64 shared libraries are constrained to < 4GiB
+        // by the ABI (ADRP instruction range is ±4GiB). Skip any symbol that would overflow
+        // as a defensive measure against hypothetical large code model binaries.
+        uint32_t inserted = 0;
         for (const auto& abs : moduleSymbols)
         {
-            outSymbols.push_back({
-                static_cast<uint32_t>(abs.start_ip - segLow),
-                static_cast<uint32_t>(abs.end_ip - abs.start_ip)});
+            auto offset = abs.start_ip - segLow;
+            auto funcSize = abs.end_ip - abs.start_ip;
+            if (offset > UINT32_MAX || funcSize > UINT32_MAX) [[unlikely]]
+            {
+                Log::Info("LibrariesInfoCache: skipping out-of-range symbol (offset=",
+                          offset, ", size=", funcSize, ") in ", modulePath);
+                continue;
+            }
+            outSymbols.push_back({static_cast<uint32_t>(offset), static_cast<uint32_t>(funcSize)});
+            inserted++;
         }
+        outRegions.back().sym_count = inserted;
     }
 
     std::sort(outRegions.begin(), outRegions.end(),
