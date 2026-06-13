@@ -12,7 +12,6 @@ namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 
 /// <summary>
 /// Two-tier aggregation (full → degraded → drop-counted). Thread-safe via a single lock.
-/// All aggregation constants are frozen per FANOUT-CONTRACT.md.
 /// </summary>
 internal sealed class FlagEvaluationAggregator
 {
@@ -20,7 +19,7 @@ internal sealed class FlagEvaluationAggregator
     internal const int MaxContextFields = 256;
     internal const int MaxFieldLength = 256;
 
-    // Type discriminator bytes — one per .NET type so int 1 and string "1" differ (concern #3).
+    // Type discriminator bytes — one per .NET type so int 1 and string "1" encode differently.
     private const byte TagString = (byte)'s';
     private const byte TagBool = (byte)'b';
     private const byte TagInt = (byte)'i';
@@ -57,7 +56,6 @@ internal sealed class FlagEvaluationAggregator
     /// <summary>
     /// Applies 256-field / 256-char limits. Keeps the first MaxContextFields non-oversized entries
     /// in alphabetical key order (deterministic cut so identical contexts always prune identically).
-    /// Reviewer concern #1 (review:4477935835).
     /// </summary>
     internal static Dictionary<string, object?> PruneContext(Dictionary<string, object?> attrs)
     {
@@ -115,7 +113,7 @@ internal sealed class FlagEvaluationAggregator
     /// <summary>
     /// Builds the EXACT, comparable canonical-context key for the pruned context map.
     /// Encoding: sorted keys, each field = length-delimited-key + type-tag + length-delimited-value.
-    /// No hash — distinct contexts always produce distinct keys (reviewer concern #3 3395004724).
+    /// No hash — distinct contexts always produce distinct keys (no digest, so no collisions).
     /// Exposed internal for unit testing.
     /// </summary>
     internal static string CanonicalContextKey(Dictionary<string, object?>? attrs)
@@ -150,7 +148,7 @@ internal sealed class FlagEvaluationAggregator
         string variant = ev.Variant ?? string.Empty;
         long evalTimeMs = ev.EvalTimeMs;
 
-        // Prune context before building the key (reviewer concern #1).
+        // Prune context (256 fields / 256 chars) before building the key.
         Dictionary<string, object?>? contextAttrs = ev.ContextAttrs is { Count: > 0 }
             ? PruneContext(ev.ContextAttrs)
             : null;
@@ -237,7 +235,7 @@ internal sealed class FlagEvaluationAggregator
         // New degraded bucket — check cap.
         if (_degraded.Count >= _degradedCap)
         {
-            // Terminal tier: drop and count (reviewer concern #8).
+            // Terminal tier: degraded cap reached — drop the count but keep it observable.
             _droppedDegradedOverflow++;
             return;
         }

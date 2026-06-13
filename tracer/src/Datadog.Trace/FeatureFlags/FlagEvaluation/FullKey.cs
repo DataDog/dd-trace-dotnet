@@ -10,7 +10,7 @@ namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 
 /// <summary>
 /// Full-tier bucket identity: all dims plus a comparable canonical-context key.
-/// No hash — distinct contexts always produce distinct buckets (reviewer concern #3).
+/// No hash — distinct contexts always produce distinct buckets (no digest, so no collisions).
 /// </summary>
 internal readonly struct FullKey : IEquatable<FullKey>
 {

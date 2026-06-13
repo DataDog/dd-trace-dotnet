@@ -16,7 +16,6 @@ using Datadog.Trace.FeatureFlags.Rcm;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.FeatureFlags
 {
@@ -43,13 +42,11 @@ namespace Datadog.Trace.FeatureFlags
             _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription!);
             _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
 
-            // Wire the EVP flag evaluation api unless the killswitch is "false".
-            bool evpEnabled = !string.Equals(
-                EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled),
-                "false",
-                StringComparison.OrdinalIgnoreCase);
-
-            if (evpEnabled)
+            // Wire the EVP flag evaluation api unless the killswitch
+            // (DD_FLAGGING_EVALUATION_COUNTS_ENABLED, default on) disables it. Read through the
+            // tracer configuration system so the value is parsed, telemetry-reported, and overridable
+            // like every other DD_* setting (not a raw environment read).
+            if (settings.IsFlaggingEvaluationCountsEnabled)
             {
                 try
                 {

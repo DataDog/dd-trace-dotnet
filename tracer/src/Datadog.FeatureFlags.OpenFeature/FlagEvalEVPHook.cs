@@ -16,11 +16,11 @@ namespace Datadog.FeatureFlags.OpenFeature;
 
 /// <summary>
 /// OpenFeature hook that enqueues flag evaluation events for EVP <c>flagevaluation</c> aggregation.
-/// Uses the FinallyAsync stage so it fires for success/error/default (reviewer concern #7 3385309423).
+/// Uses the FinallyAsync stage so it fires for every evaluation path (success, error, and default).
 /// Does ONLY cheap capture + non-blocking enqueue on the eval hot path — NO inline aggregation.
 /// Routes through FeatureFlagsSdk.EnqueueEVP (static delegate bridge wired by FeatureFlagsModule
 /// in the auto-instrumentation side) to avoid a cross-assembly reference to FlagEvaluationApi.
-/// The existing OTel FlagEvalMetricsHook is unmodified (PRES-01).
+/// The existing OTel FlagEvalMetricsHook is left unmodified (no regression to that metric path).
 /// </summary>
 internal sealed class FlagEvalEVPHook : Hook
 {
@@ -47,9 +47,9 @@ internal sealed class FlagEvalEVPHook : Hook
     /// <inheritdoc/>
     /// <remarks>
     /// FinallyAsync fires after all hook stages (Before/After/Error) on every evaluation path
-    /// including error and default paths — this ensures error/default evaluations are counted
-    /// (reviewer concern #7 3385309423). The body does only cheap scalar extraction and a
-    /// non-blocking call to FeatureFlagsSdk.EnqueueEVP; aggregation happens on the background send loop.
+    /// including error and default paths — this ensures error/default evaluations are counted, not
+    /// just successful ones. The body does only cheap scalar extraction and a non-blocking call to
+    /// FeatureFlagsSdk.EnqueueEVP; aggregation happens on the background send loop.
     /// </remarks>
     public override ValueTask FinallyAsync<T>(
         HookContext<T> context,
@@ -61,8 +61,8 @@ internal sealed class FlagEvalEVPHook : Hook
         {
             var flagKey = context.FlagKey;
 
-            // Variant: null = absent = runtime_default_used (reviewer concern #5 3395344504).
-            // Use null explicitly when variant is null or empty (empty string = no variant).
+            // Variant: an absent (null/empty) variant means the runtime default was used. Pass null
+            // explicitly so the aggregator marks runtime_default_used rather than keying on "".
             string? variant = string.IsNullOrEmpty(details.Variant) ? null : details.Variant;
 
             // Reason: lower-case; fallback to "unknown" (matches FlagEvalMetricsHook convention).
@@ -79,7 +79,8 @@ internal sealed class FlagEvalEVPHook : Hook
             // The evaluator stores metadata as string, so GetString and parse.
             long evalTimeMs = 0;
             string? evalTimeStr = details.FlagMetadata?.GetString(MetadataEvalTimeKey);
-            if (!string.IsNullOrEmpty(evalTimeStr) && long.TryParse(evalTimeStr, out long parsedMs))
+            if (!string.IsNullOrEmpty(evalTimeStr) &&
+                long.TryParse(evalTimeStr, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long parsedMs))
             {
                 evalTimeMs = parsedMs;
             }

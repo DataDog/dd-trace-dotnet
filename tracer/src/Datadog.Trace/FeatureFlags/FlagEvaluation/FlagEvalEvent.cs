@@ -38,7 +38,7 @@ internal sealed class FlagEvalEvent
     /// <summary>Gets the flag key.</summary>
     public string FlagKey { get; }
 
-    /// <summary>Gets the variant; null means absent variant = runtime_default_used (reviewer concern #5).</summary>
+    /// <summary>Gets the variant; null means an absent variant, i.e. the runtime default was used.</summary>
     public string? Variant { get; }
 
     /// <summary>Gets the evaluation reason.</summary>

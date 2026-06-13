@@ -23,6 +23,13 @@ namespace Datadog.FeatureFlags.OpenFeature;
 internal static class FeatureFlagsSdk
 {
     /// <summary>
+    /// Metadata key carrying the evaluation timestamp (Unix milliseconds), stamped at provider
+    /// entry so the EVP hook can use the true evaluation time for first/last_evaluation bounds
+    /// rather than the later hook-fire time. Mirrors the Go reference provider behavior.
+    /// </summary>
+    internal const string MetadataEvalTimeKey = "dd.eval.timestamp_ms";
+
+    /// <summary>
     /// Enqueues one flag evaluation event into the EVP aggregation pipeline.
     /// Stub implementation — no-op in the standalone NuGet path.
     /// The auto-instrumentation side intercepts this via CallTarget and routes to
@@ -65,8 +72,14 @@ internal static class FeatureFlagsSdk
         return null;
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, EvaluationContext? context) =>
-        GetResolutionDetails<T>(Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, GetContextAttributes(context)));
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, EvaluationContext? context)
+    {
+        // Stamp the evaluation time once at provider entry (UnixMilli). The EVP hook reads it from
+        // flag metadata so first_evaluation/last_evaluation reflect the evaluation moment, not the
+        // (potentially later) hook-fire time.
+        long evalTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return GetResolutionDetails<T>(Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, GetContextAttributes(context)), evalTimeMs);
+    }
 
     private static IDictionary<string, object?>? GetContextAttributes(EvaluationContext? context)
     {
@@ -87,7 +100,7 @@ internal static class FeatureFlagsSdk
         _ => value.AsObject,
     };
 
-    private static ResolutionDetails<T> GetResolutionDetails<T>(Datadog.Trace.FeatureFlags.IEvaluation? evaluation)
+    private static ResolutionDetails<T> GetResolutionDetails<T>(Datadog.Trace.FeatureFlags.IEvaluation? evaluation, long evalTimeMs)
     {
         if (evaluation is null)
         {
@@ -98,7 +111,7 @@ internal static class FeatureFlagsSdk
                         default,
                         default,
                         "FeatureFlagsSdk is disabled",
-                        null);
+                        ToMetadata(null, evalTimeMs));
         }
 
         var value = typeof(T) == typeof(Value) ? JsonToValue(evaluation.Value) : evaluation.Value!;
@@ -109,7 +122,7 @@ internal static class FeatureFlagsSdk
             ReasonToLowerSnakeCase(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
-            ToMetadata(evaluation.FlagMetadata));
+            ToMetadata(evaluation.FlagMetadata, evalTimeMs));
         return res;
     }
 
@@ -144,9 +157,13 @@ internal static class FeatureFlagsSdk
         _ => "unknown"
     };
 
-    private static ImmutableMetadata ToMetadata(IDictionary<string, string>? metadata)
+    private static ImmutableMetadata ToMetadata(IDictionary<string, string>? metadata, long evalTimeMs)
     {
         var dic = (metadata ?? new Dictionary<string, string>()).ToDictionary(p => p.Key, p => (object)p.Value);
+
+        // Stamp the provider-captured evaluation time so the EVP hook can read it from metadata.
+        // ImmutableMetadata.GetString reads string-typed values, so store it as a string.
+        dic[MetadataEvalTimeKey] = evalTimeMs.ToString(System.Globalization.CultureInfo.InvariantCulture);
         return new ImmutableMetadata(dic);
     }
 

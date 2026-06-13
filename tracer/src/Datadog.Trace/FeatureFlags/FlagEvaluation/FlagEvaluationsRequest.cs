@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 
@@ -18,5 +19,9 @@ internal sealed class FlagEvaluationsRequest
     public FlagEvalDDContext Context { get; set; } = default!;
 
     /// <summary>Gets or sets the list of flag evaluation events in this batch.</summary>
+    // Batch wrapper key is camelCase ("flagEvaluations") per the flageval-worker schema
+    // (batchedflagevaluations.json) and the Go reference, while inner event fields stay
+    // snake_case; the explicit name overrides the snake_case naming strategy for this property.
+    [JsonProperty("flagEvaluations")]
     public List<FlagEvaluationEvent> FlagEvaluations { get; set; } = default!;
 }

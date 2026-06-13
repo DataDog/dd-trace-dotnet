@@ -676,6 +676,9 @@ namespace Datadog.Trace.Configuration
             IsFlaggingProviderEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled)
                                                        .AsBool(false);
 
+            IsFlaggingEvaluationCountsEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled)
+                                                       .AsBool(true);
+
             if (source is CompositeConfigurationSource compositeSource)
             {
                 foreach (var nestedSource in compositeSource)
@@ -1289,6 +1292,12 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether remote Feature Flags Provider is enabled
         /// </summary>
         internal bool IsFlaggingProviderEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether EVP flagevaluation emission from the OpenFeature provider is enabled.
+        /// Gates only the EVP path; the OTel feature_flag.evaluations metric path is unaffected. Default <c>true</c>.
+        /// </summary>
+        internal bool IsFlaggingEvaluationCountsEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether partial flush is enabled
