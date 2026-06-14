@@ -2353,6 +2353,17 @@ supportedConfigurations:
       <c>full</c>.</li>
         <li>The stored procedure call does not have <c>Output</c>, <c>InputOutput</c>, or <c>Return</c> ADO.NET command parameters.</li>
       </ul>
+  DD_FLAGGING_EVALUATION_COUNTS_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'true'
+    product: FeatureFlags
+    const_name: FlaggingEvaluationCountsEnabled
+    documentation: |-
+      Enables EVP flagevaluation emission from the OpenFeature provider.
+      When set to false, disables the EVP path; the OTel feature_flag.evaluations metric path is unaffected.
+      Default value is <c>true</c> (enabled).
   DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED:
   - implementation: A
     scope: managed
