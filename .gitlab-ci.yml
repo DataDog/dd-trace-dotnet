@@ -11,8 +11,6 @@ stages:
 
 include:
   - local: .gitlab/one-pipeline.locked.yml
-  # LLM Validation: one-off manual entitlement probe (kept for re-checks; harmless — it's manual).
-  - local: .gitlab/llm-validation/gateway-check.yml
   # LLM Validation gate: reusable job shipped BY the platform repo — only the local .llm-validation/ suite
   # stays in this repo now. `ref` and the LLMVAL_PLATFORM_REF override below must point at the same platform
   # branch (it must carry ci/ + the CLI on the gitlab.ddbuild.io mirror). Switch both to `main` once merged.
