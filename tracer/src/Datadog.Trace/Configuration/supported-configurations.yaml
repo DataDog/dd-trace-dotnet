@@ -2479,6 +2479,17 @@ supportedConfigurations:
     - DD_TRACE_ACTIVITY_LISTENER_ENABLED
     const_name: OpenTelemetryEnabled
     documentation: Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
+  DD_TRACE_OTEL_SEMANTICS_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'false'
+    const_name: OtelSemanticsEnabled
+    documentation: |-
+      Configuration key for enabling OpenTelemetry semantic convention attribute names on HTTP spans.
+      When true, HTTP span attributes use OTel naming (e.g. <c>http.request.method</c>)
+      instead of Datadog naming (e.g. <c>http.method</c>). Supersedes <c>DD_TRACE_SPAN_ATTRIBUTE_SCHEMA</c>.
+      Default value is <c>false</c> (disabled).
   DD_TRACE_PARTIAL_FLUSH_ENABLED:
   - implementation: A
     scope: managed

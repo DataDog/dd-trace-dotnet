@@ -608,6 +608,14 @@ internal static partial class ConfigurationKeys
     public const string ObfuscationQueryStringRegexTimeout = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT";
 
     /// <summary>
+    /// Configuration key for enabling OpenTelemetry semantic convention attribute names on HTTP spans.
+    /// When true, HTTP span attributes use OTel naming (e.g. <c>http.request.method</c>)
+    /// instead of Datadog naming (e.g. <c>http.method</c>). Supersedes <c>DD_TRACE_SPAN_ATTRIBUTE_SCHEMA</c>.
+    /// Default value is <c>false</c> (disabled).
+    /// </summary>
+    public const string OtelSemanticsEnabled = "DD_TRACE_OTEL_SEMANTICS_ENABLED";
+
+    /// <summary>
     /// Configuration key to enable sending partial traces to the agent
     /// </summary>
     public const string PartialFlushEnabled = "DD_TRACE_PARTIAL_FLUSH_ENABLED";
