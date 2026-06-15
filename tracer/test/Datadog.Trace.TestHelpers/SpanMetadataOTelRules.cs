@@ -30,6 +30,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("network.peer.port")
                 .IsOptional("network.protocol.version")
                 // DD Only
+                .IsOptional("span.kind")
+                .IsOptional("component")
                 .IsOptional("http-client-handler-type")
                 .IsOptional("_dd.base_service")
                 .IsOptional("_dd.tags.process")
