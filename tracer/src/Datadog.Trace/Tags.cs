@@ -769,9 +769,6 @@ namespace Datadog.Trace
         internal const string HangfireJobId = "job.ID";
 
         // MassTransit tags
-        internal const string MassTransitMessagingOperation = "messaging.operation";
-        internal const string MassTransitMessagingSystem = "messaging.system";
-        internal const string MassTransitDestinationName = "messaging.destination.name";
         internal const string MassTransitMessageId = "messaging.masstransit.message_id";
         internal const string MassTransitConversationId = "messaging.message.conversation_id";
         internal const string MassTransitCorrelationId = "messaging.masstransit.correlation_id";

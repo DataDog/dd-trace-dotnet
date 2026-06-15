@@ -33,13 +33,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => MassTransitConstants.ComponentTagName;
 
-        [Tag(Trace.Tags.MassTransitMessagingOperation)]
+        [Tag(Trace.Tags.MessagingOperation)]
         public string? MessagingOperation { get; set; }
 
-        [Tag(Trace.Tags.MassTransitMessagingSystem)]
+        [Tag(Trace.Tags.MessagingSystem)]
         public string? MessagingSystem { get; set; }
 
-        [Tag(Trace.Tags.MassTransitDestinationName)]
+        [Tag(Trace.Tags.MessagingDestinationName)]
         public string? DestinationName { get; set; }
 
         [Tag(Trace.Tags.MassTransitMessageId)]
