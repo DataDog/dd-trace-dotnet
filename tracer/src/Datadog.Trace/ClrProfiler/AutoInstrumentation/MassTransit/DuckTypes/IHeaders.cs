@@ -19,12 +19,12 @@ internal interface IHeaders
     /// Looks up a single header by key. Backed by a dictionary in MassTransit's
     /// implementations, so this is O(1) and avoids the per-call allocations from GetAll().
     /// <para/>
-    /// <c>TryGetHeader</c> is declared on the <c>MassTransit.Headers</c> interface but the concrete
-    /// types (e.g. JsonTransportHeaders) implement it via *explicit interface implementation*
-    /// — duck typing's default public-member binder cannot see those. The wildcard
-    /// <c>ExplicitInterfaceTypeName = "*"</c> tells the binder to also match
-    /// explicit impls (named <c>MassTransit.Headers.TryGetHeader</c> in IL).
+    /// In MassTransit 7.x, <c>JsonTransportHeaders</c> implements <c>TryGetHeader</c> as an
+    /// explicit interface implementation of <c>MassTransit.Headers</c>; the IL method name is
+    /// <c>MassTransit.Headers.TryGetHeader</c> (private, not visible to the default public binder).
+    /// <c>ExplicitInterfaceTypeName = "MassTransit.Headers"</c> directs the binder to that exact
+    /// explicit implementation.
     /// </summary>
-    [Duck(ExplicitInterfaceTypeName = "*")]
+    [Duck(ExplicitInterfaceTypeName = "MassTransit.Headers")]
     bool TryGetHeader(string key, out object value);
 }
