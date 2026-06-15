@@ -13,6 +13,10 @@ on:
       - 'shared/src/**'
       - 'profiler/src/**'
       - 'tracer/src/Datadog.Trace.Tools.NativeConfigValidator/**'
+      # The job runs the validator via the ValidateNativeConfigurations Nuke target, so
+      # changes to the build entrypoint or the Nuke project must also trigger this gate.
+      - 'tracer/build.sh'
+      - 'tracer/build/_build/**'
       - '.github/workflows/validate_native_configurations.yml'
   workflow_dispatch:
 
@@ -32,4 +36,4 @@ jobs:
           global-json-file: global.json
 
       - name: "Validate native configurations are registered"
-        run: dotnet run -c Release --project tracer/src/Datadog.Trace.Tools.NativeConfigValidator/Datadog.Trace.Tools.NativeConfigValidator.csproj -- "${{ github.workspace }}"
+        run: ./tracer/build.sh ValidateNativeConfigurations

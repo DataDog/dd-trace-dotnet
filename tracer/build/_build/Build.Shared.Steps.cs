@@ -7,10 +7,12 @@ using System.IO;
 using DiffMatchPatch;
 using NativeValidation;
 using Nuke.Common.Tooling;
+using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 using Nuke.Common.Utilities;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
+using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Logger = Serilog.Log;
 
@@ -320,5 +322,23 @@ partial class Build
 
             var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
             nativeLibHelper.ValidateNativeLibraryCompatibility(dest, expectedGlibcVersion, $"native-tracer-symbols-alpine-{UnixArchitectureIdentifier}");
+        });
+
+    Target ValidateNativeConfigurations => _ => _
+        .Description("Validates that every DD_* environment variable read by native code is registered in supported-configurations.yaml with native scope")
+        .Executes(() =>
+        {
+            // Runs the standalone Datadog.Trace.Tools.NativeConfigValidator tool rather than
+            // doing the validation inline here. The tool source-links the source generator's
+            // YamlReader so the validator and the ConfigurationKeys generator can never drift;
+            // that file link cannot live in this _build project, whose Docker build context
+            // COPYs _build in isolation (a cross-directory link fails with CS2001 and breaks
+            // every build_* job). A normal src project has the full checkout, so it can.
+            var project = TracerDirectory / "src" / "Datadog.Trace.Tools.NativeConfigValidator" / "Datadog.Trace.Tools.NativeConfigValidator.csproj";
+            DotNetRun(s => s
+                .SetProjectFile(project)
+                .SetConfiguration(BuildConfiguration)
+                .EnableNoLaunchProfile()
+                .SetApplicationArguments(RootDirectory));
         });
 }

@@ -488,7 +488,7 @@ partial class Build
                 "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",     // no code, used to generate nuget package
                 "src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj", // no code, used to generate nuget package
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
-                "src/Datadog.Trace.Tools.NativeConfigValidator/*.csproj", // CI-only tool, built and run solely by the validate_native_configurations workflow
+                "src/Datadog.Trace.Tools.NativeConfigValidator/*.csproj", // CI-only tool, built and run via the ValidateNativeConfigurations Nuke target (validate_native_configurations workflow)
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
                 "src/Datadog.AutoInstrumentation.Generator/*.csproj",
                 $"src/{Projects.ManagedLoader}/*.csproj"
