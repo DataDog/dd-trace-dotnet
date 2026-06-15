@@ -29,13 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http
 
             if (Uri.TryCreate(rawUrl, UriKind.Absolute, out var uri))
             {
-                span.SetTag("url.scheme", uri.Scheme);
-                span.SetTag("url.path", uri.AbsolutePath);
-                if (!StringUtil.IsNullOrEmpty(uri.Query) && uri.Query.Length > 1)
-                {
-                    span.SetTag("url.query", uri.Query.Substring(1));
-                }
-
                 if (uri.Port > 0 && !uri.IsDefaultPort)
                 {
                     span.SetTag("server.port", uri.Port.ToString());
