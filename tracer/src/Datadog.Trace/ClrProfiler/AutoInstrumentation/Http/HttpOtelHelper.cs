@@ -43,8 +43,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http
                 return;
             }
 
-            span.SetTag("url.full", rawUrl);
-
             if (Uri.TryCreate(rawUrl, UriKind.Absolute, out var uri))
             {
                 span.SetTag("url.scheme", uri.Scheme);
