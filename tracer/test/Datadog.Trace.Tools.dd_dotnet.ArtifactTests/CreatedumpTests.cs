@@ -692,7 +692,6 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task ServiceNameInCrashReport(string crashArg, string ddService, string expectedService)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         if (crashArg == "crash-native" && Utils.IsAlpine())
         {
@@ -737,7 +736,6 @@ public class CreatedumpTests : ConsoleTestHelper
     public async Task ServiceNameInCrashReportFrameworkAppDomains(string crashArg, string expectedService)
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
 
         using var reportFile = new TemporaryFile();
 

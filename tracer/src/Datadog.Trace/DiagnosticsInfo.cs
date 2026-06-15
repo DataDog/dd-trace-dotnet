@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Threading;
 
 namespace Datadog.Trace
@@ -17,12 +19,12 @@ namespace Datadog.Trace
     /// </summary>
     internal sealed class DiagnosticsInfo
     {
-        private static DiagnosticsInfo _instance;
+        private static DiagnosticsInfo _instance = null!;
         private static bool _initialized;
         private static object _lock = new();
 
-        private string _serviceName;
-        private string _runtimeId;
+        private string? _serviceName;
+        private string? _runtimeId;
 
         internal static void Update(string serviceName, string runtimeId)
         {

@@ -303,15 +303,12 @@ namespace Samples.Console_
                 }
 
                 var serviceName = (string)AppDomain.CurrentDomain.GetData("DD_SERVICE");
-                var settings = new Datadog.Trace.Configuration.TracerSettings { ServiceName = serviceName };
-                Datadog.Trace.Tracer.Configure(settings);
+		Samples.SampleHelpers.ConfigureTracer(serviceName);
             }
 
             public static void CrashManaged()
             {
-                var thread = new Thread(() => throw new BadImageFormatException("Expected"));
-                thread.Start();
-                Thread.Sleep(Timeout.Infinite);
+                throw new BadImageFormatException("Expected");
             }
         }
 #endif

@@ -747,23 +747,8 @@ internal class CreatedumpCommand : Command
             string? serviceName = null;
             string? runtimeId = null;
 
-            try
-            {
-                serviceName = instance.ReadStringField("_serviceName");
-            }
-            catch
-            {
-                // Field may not exist in older tracer versions
-            }
-
-            try
-            {
-                runtimeId = instance.ReadStringField("_runtimeId");
-            }
-            catch
-            {
-                // Field may not exist in older tracer versions
-            }
+            serviceName = instance.ReadStringField("_serviceName");
+            runtimeId = instance.ReadStringField("_runtimeId");
 
             return new CrashDiagnosticsInfo(
                 ServiceName: string.IsNullOrEmpty(serviceName) ? null : serviceName,
