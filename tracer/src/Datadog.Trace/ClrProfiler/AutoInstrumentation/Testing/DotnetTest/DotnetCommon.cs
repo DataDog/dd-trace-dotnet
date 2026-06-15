@@ -40,6 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
         private const int CoverageXmlRestoreMaxAttempts = 3;
         private const int CoverageXmlRestoreRetryDelayMilliseconds = 50;
+        private const string VSTestArtifactsPostprocessArgument = "--artifactsProcessingMode-postprocess";
 
         internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
 
@@ -158,6 +159,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 return null;
             }
 
+            if (IsVSTestArtifactsPostprocessCommand(Environment.CommandLine))
+            {
+                Log.Debug("CreateSession: VSTest artifacts postprocess invocation detected. Session was not created.");
+                return null;
+            }
+
             // Let's detect if we already have a session for this test process
             var context = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
                 EnvironmentHelpers.GetEnvironmentVariables(),
@@ -220,6 +227,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             Log.Information("CreateSession: Session was not created.");
             return null;
         }
+
+        /// <summary>
+        /// Detects the VSTest artifacts postprocess invocation started after the real test run when artifact collection is enabled.
+        /// </summary>
+        /// <param name="commandLine">Current process command line.</param>
+        /// <returns>True when the command line belongs to the VSTest artifacts postprocess phase.</returns>
+        internal static bool IsVSTestArtifactsPostprocessCommand(string? commandLine)
+            => commandLine?.IndexOf(VSTestArtifactsPostprocessArgument, StringComparison.OrdinalIgnoreCase) >= 0;
 
         /// <summary>
         /// Captures Coverlet collector XML attachments that already exist before the test command writes current results.

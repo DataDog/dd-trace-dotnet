@@ -2822,6 +2822,74 @@ public class TestSessionCoverageTests
     }
 
     [Fact]
+    public void CloseDoesNotWaitForPersistedCoverletXmlFallbackWhenFallbackAlreadyRecorded()
+    {
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test --collect \"XPlat Code Coverage\"");
+        var runFolder = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-coverage-ipc-{Guid.NewGuid():N}");
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, runFolder);
+        CoverageBackfillCapability.ResetCommandLineCacheForTests();
+        var session = CreateSession();
+        Thread? closeThread = null;
+        Exception? closeException = null;
+        try
+        {
+            InvokeIpcMessageReceived(
+                session,
+                new SessionCodeCoverageMessage(
+                    CodeCoverageReportSource.Coverlet,
+                    10,
+                    backfilled: false,
+                    executableLines: 10,
+                    coveredLines: 1,
+                    diagnostic: "ipc-before-close"));
+            CoverageBackfillDataStore.RecordCoverageIpcResult(
+                session.Tags.SessionId,
+                CodeCoverageReportSource.Coverlet,
+                percentage: 10,
+                backfilled: false,
+                executableLines: 10,
+                coveredLines: 1,
+                diagnostic: "persisted-before-close");
+            session.RecordCodeCoverage(
+                CodeCoverageReportSource.CoverletXmlFallback,
+                90,
+                backfilled: true,
+                executableLines: 10,
+                coveredLines: 9,
+                diagnostic: "fallback-already-recorded");
+
+            closeThread = new Thread(
+                () =>
+                {
+                    try
+                    {
+                        session.Close(TestStatus.Pass);
+                    }
+                    catch (Exception ex)
+                    {
+                        closeException = ex;
+                    }
+                });
+            closeThread.Start();
+
+            closeThread.Join(TimeSpan.FromSeconds(1)).Should().BeTrue("the close path should not wait for a persisted XML fallback that was already recorded");
+            closeException.Should().BeNull();
+            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(90);
+            session.Tags.GetTag(CodeCoverageTags.Backfilled).Should().Be("true");
+        }
+        finally
+        {
+            closeThread?.Join(TimeSpan.FromSeconds(6));
+            CloseAndReset(session);
+            CoverageBackfillCapability.ResetCommandLineCacheForTests();
+            if (Directory.Exists(runFolder))
+            {
+                Directory.Delete(runFolder, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void LateIpcCoverageMessagesSentDuringSessionCloseDoNotThrow()
     {
         var session = CreateSession();
@@ -2944,6 +3012,23 @@ public class TestSessionCoverageTests
         {
             CloseAndReset(session);
         }
+    }
+
+    [Theory]
+    [InlineData("/usr/local/share/dotnet/dotnet exec /usr/local/share/dotnet/sdk/10.0.101/vstest.console.dll --artifactsProcessingMode-postprocess --testSessionCorrelationId:33745_b1a9b6fd")]
+    [InlineData("/usr/local/share/dotnet/dotnet exec /usr/local/share/dotnet/sdk/10.0.101/vstest.console.dll --ARTIFACTSPROCESSINGMODE-POSTPROCESS --testSessionCorrelationId:33745_b1a9b6fd")]
+    public void DetectsVSTestArtifactsPostprocessCommand(string commandLine)
+    {
+        DotnetCommon.IsVSTestArtifactsPostprocessCommand(commandLine).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("dotnet test --framework net8.0 --collect \"XPlat Code Coverage\"")]
+    [InlineData("/usr/local/share/dotnet/dotnet exec /usr/local/share/dotnet/sdk/10.0.101/vstest.console.dll --testSessionCorrelationId:33745_b1a9b6fd")]
+    [InlineData(null)]
+    public void DoesNotDetectNormalCommandsAsVSTestArtifactsPostprocess(string? commandLine)
+    {
+        DotnetCommon.IsVSTestArtifactsPostprocessCommand(commandLine).Should().BeFalse();
     }
 
     private static TestSession CreateSession(bool propagateEnvironmentVariables = false, string? workingDirectory = null, string command = "dotnet test")

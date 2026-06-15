@@ -434,9 +434,14 @@ public sealed class TestSession
         }
 
         WaitForActiveIpcCallbacks(TimeSpan.FromMilliseconds(100));
+        // Coverlet XML fallback can be processed in-process before the final close path.
+        // In that case there is no persisted fallback result to wait for.
+        var waitForCoverletXmlFallback =
+            CoverageBackfillCapability.ShouldWaitForCoverletXmlFallback(_testOptimization.Settings) &&
+            !HasCodeCoverageResult(CodeCoverageReportSource.CoverletXmlFallback);
         RecordPersistedCoverageIpcResults(
             coverageIpcExpected,
-            CoverageBackfillCapability.ShouldWaitForCoverletXmlFallback(_testOptimization.Settings),
+            waitForCoverletXmlFallback,
             out var persistedCoverageIpcReadFailed);
         var canPublishCoverage = !persistedCoverageIpcReadFailed ||
                                  CanPublishAfterPersistedCoverageIpcReadFailure();
