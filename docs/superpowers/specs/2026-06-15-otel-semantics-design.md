@@ -30,6 +30,7 @@ A new opt-in feature controlled by `DD_TRACE_OTEL_SEMANTICS_ENABLED=true` that c
 | `http.url` | `url.path` | Decomposed from URL |
 | `http.url` | `url.query` | Decomposed from URL, omitted if empty |
 | `out.host` | `server.address` | |
+| `out.port` | `server.port` | Decomposed from URL port |
 | `peer.service` | `peer.service` | Unchanged |
 | `http-client-handler-type` | `http-client-handler-type` | Unchanged |
 | `_dd.peer.service.source` | `_dd.peer.service.source` | Unchanged |
@@ -47,6 +48,7 @@ A new opt-in feature controlled by `DD_TRACE_OTEL_SEMANTICS_ENABLED=true` that c
 | `http.url` | `url.query` | Decomposed from URL, omitted if empty |
 | `http.useragent` | `user_agent.original` | |
 | `http.request.headers.host` | `server.address` | |
+| *(URL port)* | `server.port` | Decomposed from URL port |
 | `http.client_ip` | `client.address` | |
 | `network.client.ip` | `network.peer.address` | |
 | `http.route` | `http.route` | Unchanged — same in both conventions |
@@ -73,11 +75,16 @@ internal static class HttpOtelHelper
             span.SetTag("url.path", uri.AbsolutePath);
             if (!string.IsNullOrEmpty(uri.Query))
                 span.SetTag("url.query", uri.Query);
+            if (uri.Port > 0)
+                span.SetTag("server.port", uri.Port.ToString());
         }
     }
 
     public static void SetServerAddress(ISpan span, string host)
         => span.SetTag("server.address", host);
+
+    public static void SetServerPort(ISpan span, int port)
+        => span.SetTag("server.port", port.ToString());
 
     public static void SetUserAgent(ISpan span, string ua)
         => span.SetTag("user_agent.original", ua);
