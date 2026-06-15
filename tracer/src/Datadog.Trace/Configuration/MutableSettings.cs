@@ -62,7 +62,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         string? gitRepositoryUrl,
         string? gitCommitSha,
         OverrideErrorLog errorLog,
-        bool propagateProcessTags)
+        bool propagateProcessTags,
+        bool otelSemanticsEnabled)
     {
         IsInitialSettings = isInitialSettings;
         TraceEnabled = traceEnabled;
@@ -93,6 +94,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         GitCommitSha = gitCommitSha;
         ErrorLog = errorLog;
         ProcessTags = propagateProcessTags ? new ProcessTags(!string.IsNullOrWhiteSpace(serviceName), defaultServiceName) : null;
+        OtelSemanticsEnabled = otelSemanticsEnabled;
     }
 
     // Settings that can be set via remote config
@@ -268,6 +270,12 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// Will be null if propagateProcessTags is null
     /// </summary>
     internal ProcessTags? ProcessTags { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether OpenTelemetry semantic conventions are enabled for HTTP spans.
+    /// </summary>
+    /// <seealso cref="ConfigurationKeys.OtelSemanticsEnabled"/>
+    internal bool OtelSemanticsEnabled { get; }
 
     internal static ReadOnlyDictionary<string, string>? InitializeHeaderTags(in ConfigurationBuilder.HasKeys key, bool headerTagsNormalizationFixEnabled)
         => InitializeHeaderTags(
@@ -744,7 +752,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
             errorLog: errorLog,
-            propagateProcessTags: tracerSettings.PropagateProcessTags);
+            propagateProcessTags: tracerSettings.PropagateProcessTags,
+            otelSemanticsEnabled: tracerSettings.OtelSemanticsEnabled);
 
         static ReadOnlyDictionary<string, string> GetHeaderTagsResult(
             ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> result,
@@ -1078,7 +1087,8 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
             errorLog: errorLog,
-            propagateProcessTags: tracerSettings.PropagateProcessTags);
+            propagateProcessTags: tracerSettings.PropagateProcessTags,
+            otelSemanticsEnabled: tracerSettings.OtelSemanticsEnabled);
     }
 
     /// <summary>

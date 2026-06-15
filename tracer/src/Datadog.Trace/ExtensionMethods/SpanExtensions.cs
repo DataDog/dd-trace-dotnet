@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -51,12 +52,20 @@ namespace Datadog.Trace.ExtensionMethods
             string host,
             string httpUrl,
             string userAgent,
-            WebTags tags)
+            WebTags tags,
+            bool otelSemanticsEnabled = false)
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
 
-            if (tags is not null)
+            if (otelSemanticsEnabled)
+            {
+                HttpOtelHelper.SetRequestMethod(span, method);
+                HttpOtelHelper.SetServerUrl(span, httpUrl);
+                HttpOtelHelper.SetServerAddress(span, host);
+                HttpOtelHelper.SetUserAgent(span, userAgent);
+            }
+            else if (tags is not null)
             {
                 tags.HttpMethod = method;
                 tags.HttpRequestHeadersHost = host;
@@ -103,7 +112,11 @@ namespace Datadog.Trace.ExtensionMethods
 
             string statusCodeString = ConvertStatusCodeToString(statusCode);
 
-            if (span.Tags is IHasStatusCode statusCodeTags)
+            if (tracerSettings.OtelSemanticsEnabled)
+            {
+                span.SetTag("http.response.status_code", statusCodeString);
+            }
+            else if (span.Tags is IHasStatusCode statusCodeTags)
             {
                 statusCodeTags.HttpStatusCode = statusCodeString;
             }
