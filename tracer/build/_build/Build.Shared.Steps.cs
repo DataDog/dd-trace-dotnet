@@ -328,12 +328,9 @@ partial class Build
         .Description("Validates that every DD_* environment variable read by native code is registered in supported-configurations.yaml with native scope")
         .Executes(() =>
         {
-            // Runs the standalone Datadog.Trace.Tools.NativeConfigValidator tool rather than
-            // doing the validation inline here. The tool source-links the source generator's
-            // YamlReader so the validator and the ConfigurationKeys generator can never drift;
-            // that file link cannot live in this _build project, whose Docker build context
-            // COPYs _build in isolation (a cross-directory link fails with CS2001 and breaks
-            // every build_* job). A normal src project has the full checkout, so it can.
+            // Runs the standalone NativeConfigValidator tool rather than validating inline: it
+            // source-links the generator's YamlReader, which can't be linked into _build (the
+            // Docker build context COPYs _build alone, so the cross-dir link fails with CS2001).
             var project = TracerDirectory / "src" / "Datadog.Trace.Tools.NativeConfigValidator" / "Datadog.Trace.Tools.NativeConfigValidator.csproj";
             DotNetRun(s => s
                 .SetProjectFile(project)
