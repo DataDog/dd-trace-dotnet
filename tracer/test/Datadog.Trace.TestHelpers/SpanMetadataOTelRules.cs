@@ -60,6 +60,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("server.address")
                 .IsOptional("user_agent.original")
                 // DD Only
+                .IsOptional("span.kind")
+                .IsOptional("component")
                 .IsOptional("_dd.base_service")
                 .IsOptional("_dd.tags.process"));
 
@@ -85,10 +87,9 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("network.protocol.version")
                 .IsOptional("server.address")
                 .IsOptional("user_agent.original")
-                // ASP.NET Core specific
-                // .IsOptional("aspnet_core.endpoint")
-                // .IsOptional("aspnet_core.route"));
                 // DD Only
+                .IsOptional("span.kind")
+                .IsOptional("component")
                 .IsOptional("_dd.base_service")
                 .IsOptional("_dd.tags.process"));
 
@@ -116,13 +117,12 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("network.peer.port")
                 .IsOptional("network.protocol.version")
                 .IsOptional("server.address")
-                .IsOptional("user_agent.original"));
-                // ASP.NET Core MVC specific
-                // .IsPresent("aspnet_core.action")
-                // .IsOptional("aspnet_core.area")
-                // .IsPresent("aspnet_core.controller")
-                // .IsOptional("aspnet_core.page")
-                // .IsPresent("aspnet_core.route")
+                .IsOptional("user_agent.original")
+                // DD Only
+                .IsOptional("span.kind")
+                .IsOptional("component")
+                .IsOptional("_dd.base_service")
+                .IsOptional("_dd.tags.process"));
 
         // See: https://opentelemetry.io/docs/specs/semconv/database/database-spans/
         public static Result IsDatabaseClientOTel(this MockSpan span) => Result.FromSpan(span)
