@@ -2,6 +2,11 @@
 model: claude-opus-4-8
 runs: 3
 
+# The instruction file this repo monitors (candidate = the PR's copy, baseline = master's). Repo-relative.
+# This is the single source of truth for *which* file is validated; the CI trigger derives its watch path
+# from it too. Change it here to monitor a different file (e.g. CLAUDE.md or a nested AGENTS.md).
+instruction_file: AGENTS.md
+
 # Testing-level presets (pick one via --level / LLMVAL_LEVEL). Explicit --case/--max-cases/--runs override.
 # Keep `minimum` as the default during bring-up: cheap, fast, and still meaningful — it runs only the
 # logging-terminology case, the known high-severity regression that the gate should FAIL.
