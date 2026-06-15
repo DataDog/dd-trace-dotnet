@@ -190,7 +190,7 @@ namespace Datadog.Trace.AspNet
                 var resourceName = tracer.CurrentTraceSettings.HasResourceBasedSamplingRule
                                        ? BuildResourceName(tracer, httpRequest)
                                        : null;
-                scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags);
+                scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags, otelSemanticsEnabled: tracer.Settings.OtelSemanticsEnabled);
                 tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers, tracer.CurrentTraceSettings.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(scope.Span, headers);
                 if (inferredProxyScope?.Span is { } proxySpan)

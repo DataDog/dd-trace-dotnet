@@ -11,10 +11,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http
     internal static class HttpOtelHelper
     {
         internal static void SetRequestMethod(ISpan span, string method)
-            => span.SetTag("http.request.method", method);
-
-        internal static void SetResponseStatusCode(ISpan span, int statusCode)
-            => span.SetTag("http.response.status_code", statusCode.ToString());
+        {
+            if (!StringUtil.IsNullOrEmpty(method))
+            {
+                span.SetTag("http.request.method", method);
+            }
+        }
 
         internal static void SetClientUrl(ISpan span, string rawUrl)
         {
@@ -29,12 +31,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http
             {
                 span.SetTag("url.scheme", uri.Scheme);
                 span.SetTag("url.path", uri.AbsolutePath);
-                if (!StringUtil.IsNullOrEmpty(uri.Query))
+                if (!StringUtil.IsNullOrEmpty(uri.Query) && uri.Query.Length > 1)
                 {
-                    span.SetTag("url.query", uri.Query);
+                    span.SetTag("url.query", uri.Query.Substring(1));
                 }
 
-                if (uri.Port > 0)
+                if (uri.Port > 0 && !uri.IsDefaultPort)
                 {
                     span.SetTag("server.port", uri.Port.ToString());
                 }
@@ -54,12 +56,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http
             {
                 span.SetTag("url.scheme", uri.Scheme);
                 span.SetTag("url.path", uri.AbsolutePath);
-                if (!StringUtil.IsNullOrEmpty(uri.Query))
+                if (!StringUtil.IsNullOrEmpty(uri.Query) && uri.Query.Length > 1)
                 {
-                    span.SetTag("url.query", uri.Query);
+                    span.SetTag("url.query", uri.Query.Substring(1));
                 }
 
-                if (uri.Port > 0)
+                if (uri.Port > 0 && !uri.IsDefaultPort)
                 {
                     span.SetTag("server.port", uri.Port.ToString());
                 }

@@ -81,7 +81,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public AspNetCoreMvc31OTelTests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
             : base("AspNetCoreMvc31", fixture, output, AspNetCoreFeatureFlags.RouteTemplateResourceNames)
         {
-            SetEnvironmentVariable("ADD_EXTRA_MIDDLEWARE", "1");
             SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", "true");
         }
 
