@@ -107,6 +107,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                        _ => ".NoFF",
                    };
         }
+
+        protected async Task SubmitsTracesOTelAsync()
+        {
+            await Fixture.TryStartApp(this);
+            Fixture.SetOutput(Output);
+
+            var spans = await Fixture.WaitForSpans("/");
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "otel", expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
+        }
     }
 }
 #endif

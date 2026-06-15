@@ -75,5 +75,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                           .UseTypeName(_testName);
         }
     }
+
+    public class AspNetCoreMvc31OTelTests : AspNetCoreMvcTestBase
+    {
+        public AspNetCoreMvc31OTelTests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base("AspNetCoreMvc31", fixture, output, AspNetCoreFeatureFlags.RouteTemplateResourceNames)
+        {
+            SetEnvironmentVariable("ADD_EXTRA_MIDDLEWARE", "1");
+            SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", "true");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task SubmitsTracesOTel() => await SubmitsTracesOTelAsync();
+    }
 }
 #endif
