@@ -12,6 +12,7 @@ using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Helpers;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -135,7 +136,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
-            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
+            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags, otelSemanticsEnabled: tracer.Settings.OtelSemanticsEnabled);
 
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
             if (dataStreamsManager.IsTransactionTrackingEnabled)
@@ -203,6 +204,21 @@ namespace Datadog.Trace.PlatformHelpers
                 var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
                 string GetRequestHeaderFromKey(string key) => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;
                 Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, GetRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
+
+                if (tracer.Settings.OtelSemanticsEnabled)
+                {
+                    if (tags.NetworkClientIp is not null)
+                    {
+                        HttpOtelHelper.SetNetworkPeerAddress(scope.Span, tags.NetworkClientIp);
+                        tags.NetworkClientIp = null;
+                    }
+
+                    if (tags.HttpClientIp is not null)
+                    {
+                        HttpOtelHelper.SetClientAddress(scope.Span, tags.HttpClientIp);
+                        tags.HttpClientIp = null;
+                    }
+                }
             }
 
             if (iast.Settings.Enabled && iast.OverheadController.AcquireRequest())
