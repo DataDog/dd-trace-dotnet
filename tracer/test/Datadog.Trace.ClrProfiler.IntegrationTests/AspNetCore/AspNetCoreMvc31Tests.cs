@@ -78,16 +78,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
     public class AspNetCoreMvc31OTelTests : AspNetCoreMvcTestBase
     {
+        private readonly string _testName;
+
         public AspNetCoreMvc31OTelTests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
             : base("AspNetCoreMvc31", fixture, output, AspNetCoreFeatureFlags.RouteTemplateResourceNames)
         {
             SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", "true");
+            _testName = GetTestName(nameof(AspNetCoreMvc31OTelTests));
         }
 
-        [SkippableFact]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTracesOTel() => await SubmitsTracesOTelAsync();
+        [MemberData(nameof(Data))]
+        public async Task SubmitsTracesOTel(string path, int statusCode)
+        {
+            await Fixture.TryStartApp(this);
+
+            var spans = await Fixture.WaitForSpans("/");
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "otel", expectedServiceName: "Samples.AspNetCoreMvc31", isExternalSpan: false);
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
+
+            // Overriding the type name here as we have multiple test classes in the file
+            // Ensures that we get nice file nesting in Solution Explorer
+            await Verifier.Verify(spans, settings)
+                          .UseMethodName("_")
+                          .UseTypeName(_testName);
+        }
     }
 }
 #endif
