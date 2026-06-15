@@ -613,6 +613,7 @@ internal static partial class ConfigurationKeys
     /// instead of Datadog naming (e.g. <c>http.method</c>). Supersedes <c>DD_TRACE_SPAN_ATTRIBUTE_SCHEMA</c>.
     /// Default value is <c>false</c> (disabled).
     /// </summary>
+    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.OtelSemanticsEnabled"/>
     public const string OtelSemanticsEnabled = "DD_TRACE_OTEL_SEMANTICS_ENABLED";
 
     /// <summary>
