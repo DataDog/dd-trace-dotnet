@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -27,11 +28,31 @@ namespace Datadog.Trace.FeatureFlags
     /// </summary>
     internal static class SpanEnrichmentStore
     {
+        // Gate-ON growth bound (WR-03). Entries are normally reclaimed on root-span finish
+        // (GetAndClear) or provider Dispose (Clear), but a root span that never finishes —
+        // abandoned scopes, sampled-out traces that skip Finish, or long-lived ambient roots in
+        // background workers/message pumps — would otherwise leave its state in the map forever.
+        // Once the map holds this many distinct roots we stop creating new entries (existing roots
+        // still accumulate so in-flight evals complete and the eventual drain stays correct). This
+        // is the gate-on counterpart to the DG-005 gate-off zero-idle guarantee; the per-root limits
+        // already cap each state's memory, so a simple max-roots cap is the lowest-risk mitigation.
+        internal const int MaxTrackedRootSpans = 10_000;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanEnrichmentStore));
 
         // Keyed by root-span id. Lazily allocated on first accumulate so the gate-off path
         // (which never calls Accumulate) leaves this null and allocation-free.
         private static ConcurrentDictionary<ulong, SpanEnrichmentState>? _states;
+
+        // Set once (per process) after the cap is first hit, so the warning is logged exactly once
+        // rather than on every dropped evaluation.
+        private static int _capWarningLogged;
+
+        /// <summary>
+        /// Gets the number of distinct root spans currently tracked. Test seam for the WR-03
+        /// growth-bound regression test; cheap (a <see cref="ConcurrentDictionary{TKey,TValue}.Count"/> read).
+        /// </summary>
+        internal static int TrackedRootCount => _states?.Count ?? 0;
 
         /// <summary>
         /// Accumulates a single flag evaluation into the per-root-span state, applying the frozen
@@ -51,7 +72,27 @@ namespace Datadog.Trace.FeatureFlags
             try
             {
                 var states = _states ??= new ConcurrentDictionary<ulong, SpanEnrichmentState>();
-                var state = states.GetOrAdd(rootSpanId, static _ => new SpanEnrichmentState());
+
+                // Always allow accumulation into a root we are already tracking (so in-flight evals
+                // for a live trace are never lost). Only NEW roots are subject to the growth cap.
+                if (!states.TryGetValue(rootSpanId, out var state))
+                {
+                    if (states.Count >= MaxTrackedRootSpans)
+                    {
+                        // Gate-on growth bound hit (WR-03): drop this new root rather than grow
+                        // unboundedly. Log once to avoid spamming the customer's logs.
+                        if (Interlocked.Exchange(ref _capWarningLogged, 1) == 0)
+                        {
+                            Log.Warning<int>(
+                                "SpanEnrichmentStore: tracked-root cap ({Max}) reached; dropping span enrichment for new root spans until existing roots finish. A root span may not be finishing.",
+                                MaxTrackedRootSpans);
+                        }
+
+                        return;
+                    }
+
+                    state = states.GetOrAdd(rootSpanId, static _ => new SpanEnrichmentState());
+                }
 
                 if (serialId.HasValue)
                 {
@@ -100,6 +141,10 @@ namespace Datadog.Trace.FeatureFlags
         public static void Clear()
         {
             _states?.Clear();
+
+            // Re-arm the one-shot cap warning so a reconfigured provider (or a fresh test) can log
+            // again if it re-hits the bound.
+            Interlocked.Exchange(ref _capWarningLogged, 0);
         }
     }
 }
