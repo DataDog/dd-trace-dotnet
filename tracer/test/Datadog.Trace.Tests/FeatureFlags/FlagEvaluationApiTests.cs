@@ -7,8 +7,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -24,6 +27,8 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 /// </summary>
 public class FlagEvaluationApiTests
 {
+    private const long SchemaValidTimestampMs = 1_800_000_000_000L;
+
     // -------------------------------------------------------------------------
     // Canonical context key — type-tagged, length-delimited, comparable, no hash
     // -------------------------------------------------------------------------
@@ -136,7 +141,7 @@ public class FlagEvaluationApiTests
         var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 5, degradedCap: 5);
         long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var ctx = new Dictionary<string, object?> { ["keep"] = "ok", ["drop"] = new string('y', 300) };
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc", "user", t, ctx));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc", "user", t, ctx));
 
         var entry = agg.Drain().Full.Values.Should().ContainSingle().Subject;
         entry.ContextAttrs.Should().NotBeNull();
@@ -156,8 +161,8 @@ public class FlagEvaluationApiTests
         long t2 = t1 + 100;
 
         var ctx = new Dictionary<string, object?> { ["env"] = "prod" };
-        agg.Add(new FlagEvalEvent("flag-a", "on", "targeting_match", "alloc-1", "user-1", t1, new Dictionary<string, object?>(ctx)));
-        agg.Add(new FlagEvalEvent("flag-a", "on", "targeting_match", "alloc-1", "user-1", t2, new Dictionary<string, object?>(ctx)));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", t1, new Dictionary<string, object?>(ctx)));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", t2, new Dictionary<string, object?>(ctx)));
 
         var drained = agg.Drain();
         drained.Full.Should().HaveCount(1, "identical dims + context collapse into one full-tier bucket");
@@ -176,8 +181,8 @@ public class FlagEvaluationApiTests
         long late = 5_000;
         long early = 1_000;
 
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc", "user", late, null));
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc", "user", early, null));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc", "user", late, null));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc", "user", early, null));
 
         var bucket = agg.Drain().Full.Values.Should().ContainSingle().Subject;
         bucket.FirstEvaluationMs.Should().Be(early);
@@ -190,8 +195,8 @@ public class FlagEvaluationApiTests
         var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 5, degradedCap: 5);
         long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-1", t, new Dictionary<string, object?> { ["count"] = 1 }));
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-1", t, new Dictionary<string, object?> { ["count"] = "1" }));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", t, new Dictionary<string, object?> { ["count"] = 1 }));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", t, new Dictionary<string, object?> { ["count"] = "1" }));
 
         var drained = agg.Drain();
         drained.Full.Should().HaveCount(2, "int 1 and string \"1\" must land in distinct full-tier buckets");
@@ -204,9 +209,9 @@ public class FlagEvaluationApiTests
         var agg = new FlagEvaluationAggregator(globalCap: 2, perFlagCap: 100, degradedCap: 100);
         long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-1", t, new Dictionary<string, object?> { ["ctx"] = "v1" }));
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-2", t, new Dictionary<string, object?> { ["ctx"] = "v2" }));
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-3", t, new Dictionary<string, object?> { ["ctx"] = "v3" }));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", t, new Dictionary<string, object?> { ["ctx"] = "v1" }));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-2", t, new Dictionary<string, object?> { ["ctx"] = "v2" }));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-3", t, new Dictionary<string, object?> { ["ctx"] = "v3" }));
 
         var drained = agg.Drain();
         drained.Full.Should().HaveCount(2);
@@ -220,9 +225,9 @@ public class FlagEvaluationApiTests
         var agg = new FlagEvaluationAggregator(globalCap: 100, perFlagCap: 2, degradedCap: 100);
         long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-1", t, new Dictionary<string, object?> { ["ctx"] = "v1" }));
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-2", t, new Dictionary<string, object?> { ["ctx"] = "v2" }));
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-3", t, new Dictionary<string, object?> { ["ctx"] = "v3" }));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", t, new Dictionary<string, object?> { ["ctx"] = "v1" }));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-2", t, new Dictionary<string, object?> { ["ctx"] = "v2" }));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-3", t, new Dictionary<string, object?> { ["ctx"] = "v3" }));
 
         var drained = agg.Drain();
         drained.Full.Should().HaveCount(2);
@@ -237,10 +242,10 @@ public class FlagEvaluationApiTests
         var agg = new FlagEvaluationAggregator(globalCap: 0, perFlagCap: 0, degradedCap: 2);
         long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-1", t, null));
-        agg.Add(new FlagEvalEvent("flag-a", "off", "split", "alloc-1", "user-2", t, null));
-        agg.Add(new FlagEvalEvent("flag-b", "on", "split", "alloc-1", "user-3", t, null)); // over cap → dropped
-        agg.Add(new FlagEvalEvent("flag-c", "on", "split", "alloc-1", "user-4", t, null)); // over cap → dropped
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", t, null));
+        agg.Add(new FlagEvalEvent("flag-a", "off", "alloc-1", "user-2", t, null));
+        agg.Add(new FlagEvalEvent("flag-b", "on", "alloc-1", "user-3", t, null)); // over cap → dropped
+        agg.Add(new FlagEvalEvent("flag-c", "on", "alloc-1", "user-4", t, null)); // over cap → dropped
 
         var drained = agg.Drain();
         drained.Full.Should().BeEmpty();
@@ -255,9 +260,9 @@ public class FlagEvaluationApiTests
         var agg = new FlagEvaluationAggregator(globalCap: 0, perFlagCap: 0, degradedCap: 1);
         long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc", "user", t, null));      // fills cap
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc", "user", t + 1, null));  // existing key → counted
-        agg.Add(new FlagEvalEvent("flag-b", "on", "split", "alloc", "user", t, null));      // new key over cap → dropped
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc", "user", t, null));      // fills cap
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc", "user", t + 1, null));  // existing key → counted
+        agg.Add(new FlagEvalEvent("flag-b", "on", "alloc", "user", t, null));      // new key over cap → dropped
 
         var drained = agg.Drain();
         drained.Degraded.Should().HaveCount(1);
@@ -271,7 +276,7 @@ public class FlagEvaluationApiTests
         var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 5, degradedCap: 5);
         long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        agg.Add(new FlagEvalEvent("flag-a", variant: null, "default", "alloc-1", "user-1", t, null));
+        agg.Add(new FlagEvalEvent("flag-a", null, "alloc-1", "user-1", t, null));
 
         agg.Drain().Full.Values.Should().ContainSingle().Which.RuntimeDefault
             .Should().BeTrue("an absent variant means the runtime default was used");
@@ -283,7 +288,7 @@ public class FlagEvaluationApiTests
         var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 5, degradedCap: 5);
         long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        agg.Add(new FlagEvalEvent("flag-a", variant: "on", "targeting_match", "alloc-1", "user-1", t, null));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", t, null));
 
         agg.Drain().Full.Values.Should().ContainSingle().Which.RuntimeDefault
             .Should().BeFalse("a present variant means the runtime default was not used");
@@ -311,7 +316,7 @@ public class FlagEvaluationApiTests
     {
         var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 5, degradedCap: 5);
         long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        agg.Add(new FlagEvalEvent("flag-a", "on", "targeting_match", "alloc-1", "user-1", t, null));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", t, null));
 
         var payload = FlagEvaluationApi.BuildPayload(agg, service: "svc", env: "prod", version: "1.0");
         payload.Should().NotBeNull();
@@ -322,14 +327,14 @@ public class FlagEvaluationApiTests
         ev.EvaluationCount.Should().Be(1);
         ev.FirstEvaluation.Should().Be(t);
         ev.LastEvaluation.Should().Be(t);
-        ev.Timestamp.Should().BeGreaterThan(0);
+        ev.Timestamp.Should().Be(t);
     }
 
     [Fact]
     public void BuildPayload_FullEvent_IncludesAllocationAndTargetingKey()
     {
         var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 5, degradedCap: 5);
-        agg.Add(new FlagEvalEvent("flag", "control", "split", "bucket_7", "user_42", 2_000L, null));
+        agg.Add(new FlagEvalEvent("flag", "control", "bucket_7", "user_42", 2_000L, null));
 
         var ev = FlagEvaluationApi.BuildPayload(agg, "svc", "env", "v")!.FlagEvaluations[0];
         ev.Allocation.Should().NotBeNull();
@@ -345,7 +350,7 @@ public class FlagEvaluationApiTests
         // globalCap=0/perFlagCap=0 forces the degraded tier; it must drop targeting_key + context.
         var agg = new FlagEvaluationAggregator(globalCap: 0, perFlagCap: 0, degradedCap: 10);
         long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-1", t, new Dictionary<string, object?> { ["env"] = "prod" }));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", t, new Dictionary<string, object?> { ["env"] = "prod" }));
 
         var ev = FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")!.FlagEvaluations[0];
         ev.Flag.Key.Should().Be("flag-a");
@@ -358,7 +363,7 @@ public class FlagEvaluationApiTests
     {
         var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 5, degradedCap: 5);
         long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-1", t, null));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", t, null));
 
         FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0");
         FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")
@@ -374,7 +379,7 @@ public class FlagEvaluationApiTests
     {
         var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 5, degradedCap: 5);
         long t = 1_700_000_000_000L;
-        agg.Add(new FlagEvalEvent("flag-a", "on", "targeting_match", "alloc-1", "user-1", t, new Dictionary<string, object?> { ["env"] = "prod" }));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", t, new Dictionary<string, object?> { ["env"] = "prod" }));
 
         var payload = FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")!;
         var json = FlagEvaluationApi.SerializeForTest(payload);
@@ -395,7 +400,7 @@ public class FlagEvaluationApiTests
     public void Serialize_VariantAndAllocation_AreObjectsWithKey_NotBareStrings()
     {
         var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 5, degradedCap: 5);
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-1", 1_700_000_000_000L, null));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", SchemaValidTimestampMs, null));
 
         var payload = FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")!;
         var ev = (JObject)JObject.Parse(FlagEvaluationApi.SerializeForTest(payload))["flagEvaluations"]![0]!;
@@ -411,7 +416,7 @@ public class FlagEvaluationApiTests
     public void Serialize_DegradedEvent_OmitsTargetingKeyAndContextKeys()
     {
         var agg = new FlagEvaluationAggregator(globalCap: 0, perFlagCap: 0, degradedCap: 10);
-        agg.Add(new FlagEvalEvent("flag-a", "on", "split", "alloc-1", "user-1", 1_700_000_000_000L, new Dictionary<string, object?> { ["env"] = "prod" }));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", SchemaValidTimestampMs, new Dictionary<string, object?> { ["env"] = "prod" }));
 
         var payload = FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")!;
         var ev = (JObject)JObject.Parse(FlagEvaluationApi.SerializeForTest(payload))["flagEvaluations"]![0]!;
@@ -424,8 +429,8 @@ public class FlagEvaluationApiTests
     public void Serialize_RuntimeDefaultUsed_PresentOnlyWhenTrue()
     {
         var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 5, degradedCap: 5);
-        agg.Add(new FlagEvalEvent("flag-default", variant: null, "default", null, "user", 1_700_000_000_000L, null));
-        agg.Add(new FlagEvalEvent("flag-present", variant: "on", "split", "alloc", "user", 1_700_000_000_000L, null));
+        agg.Add(new FlagEvalEvent("flag-default", null, null, "user", SchemaValidTimestampMs, null));
+        agg.Add(new FlagEvalEvent("flag-present", "on", "alloc", "user", SchemaValidTimestampMs, null));
 
         var payload = FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")!;
         var json = JObject.Parse(FlagEvaluationApi.SerializeForTest(payload));
@@ -449,6 +454,86 @@ public class FlagEvaluationApiTests
         presentEv!.ContainsKey("runtime_default_used").Should().BeFalse("the field is omitted when not a runtime default");
     }
 
+    [Fact]
+    public void Serialize_FullAndDegradedEvents_ValidateAgainstWorkerSchema()
+    {
+        var agg = new FlagEvaluationAggregator(globalCap: 1, perFlagCap: 10, degradedCap: 10);
+        agg.Add(new FlagEvalEvent("flag-full", "on", "alloc-1", "user-1", SchemaValidTimestampMs, new Dictionary<string, object?> { ["env"] = "prod" }));
+        agg.Add(new FlagEvalEvent("flag-degraded", "off", "alloc-2", "user-2", SchemaValidTimestampMs + 1, new Dictionary<string, object?> { ["env"] = "prod" }));
+
+        var payload = FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")!;
+        var json = JObject.Parse(FlagEvaluationApi.SerializeForTest(payload));
+
+        AssertValidAgainstWorkerSchema(json);
+    }
+
+    [Fact]
+    public void WorkerSchemaRejectsTopLevelReason()
+    {
+        var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 10, degradedCap: 10);
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", SchemaValidTimestampMs, null));
+
+        var payload = FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")!;
+        var json = JObject.Parse(FlagEvaluationApi.SerializeForTest(payload));
+        ((JObject)json["flagEvaluations"]![0]!).Add("reason", "targeting_match");
+
+        var errors = ValidateAgainstWorkerSchema(json);
+        errors.Should().Contain(e => e.Contains("reason", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void FlagEvalEventDoesNotCarryReason()
+    {
+        typeof(FlagEvalEvent).GetProperty("Reason").Should().BeNull("OpenFeature reason is not an EVP schema-visible dimension");
+    }
+
+    [Fact]
+    public void Aggregator_ReasonOnlyDifferencesCollapseIntoOneSchemaVisibleBucket()
+    {
+        var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 10, degradedCap: 10);
+
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", SchemaValidTimestampMs, null));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", SchemaValidTimestampMs + 1, null));
+
+        var payload = FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")!;
+        payload.FlagEvaluations.Should().ContainSingle()
+            .Which.EvaluationCount.Should().Be(2, "hidden OpenFeature reason cannot split backend-indistinguishable EVP buckets");
+    }
+
+    [Fact]
+    public void Aggregator_ErrorMessageSplitsSchemaVisibleBuckets()
+    {
+        var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 10, degradedCap: 10);
+
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", SchemaValidTimestampMs, null, errorMessage: "provider_not_ready"));
+        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", SchemaValidTimestampMs + 1, null, errorMessage: "type_mismatch"));
+
+        var payload = FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")!;
+        payload.FlagEvaluations.Should().HaveCount(2);
+        payload.FlagEvaluations.Should().OnlyContain(ev => ev.Error != null);
+    }
+
+    [Fact]
+    public void FlagEvalEvent_QueuesPrunedContextSnapshot()
+    {
+        var attrs = new Dictionary<string, object?>();
+        for (int i = 0; i < 300; i++)
+        {
+            attrs[$"field_{i:D3}"] = $"value_{i}";
+        }
+
+        attrs["oversized"] = new string('x', 300);
+
+        var ev = new FlagEvalEvent("flag-a", "on", "alloc", "user", SchemaValidTimestampMs, attrs);
+        var contextAttrs = ev.ContextAttrs;
+        contextAttrs.Should().NotBeNull();
+        var boundedAttrs = contextAttrs!;
+        boundedAttrs.Should().HaveCount(256);
+        boundedAttrs.ContainsKey("field_000").Should().BeTrue();
+        boundedAttrs.ContainsKey("field_256").Should().BeFalse();
+        boundedAttrs.ContainsKey("oversized").Should().BeFalse();
+    }
+
     // -------------------------------------------------------------------------
     // G2 — async boundary: the hot-path Enqueue does NOT aggregate; the worker drain does
     // -------------------------------------------------------------------------
@@ -458,7 +543,7 @@ public class FlagEvaluationApiTests
     {
         var api = NewApiWithCapturedTransport(out _);
 
-        api.EnqueueForTest(new FlagEvalEvent("flag-a", "on", "split", "alloc", "user", 1_000L, null));
+        api.EnqueueForTest(new FlagEvalEvent("flag-a", "on", "alloc", "user", 1_000L, null));
         api.PendingQueueCount.Should().Be(1, "the hot path only enqueues; nothing is aggregated yet");
 
         api.DrainQueueIntoAggregator();
@@ -477,13 +562,13 @@ public class FlagEvaluationApiTests
         // Fill the bounded queue exactly to capacity, then push one more.
         for (int i = 0; i < FlagEvaluationApi.QueueCapacity; i++)
         {
-            api.EnqueueForTest(new FlagEvalEvent("flag", "on", "split", "alloc", "user", 1_000L, null));
+            api.EnqueueForTest(new FlagEvalEvent("flag", "on", "alloc", "user", 1_000L, null));
         }
 
         api.PendingQueueCount.Should().Be(FlagEvaluationApi.QueueCapacity);
         api.DroppedBackpressureCount.Should().Be(0, "nothing dropped while at/under capacity");
 
-        api.EnqueueForTest(new FlagEvalEvent("flag", "on", "split", "alloc", "user", 1_000L, null));
+        api.EnqueueForTest(new FlagEvalEvent("flag", "on", "alloc", "user", 1_000L, null));
         api.DroppedBackpressureCount.Should().Be(1, "the overflow event is dropped and counted observably");
         api.PendingQueueCount.Should().Be(FlagEvaluationApi.QueueCapacity, "the queue is not allowed to grow past capacity");
     }
@@ -494,7 +579,7 @@ public class FlagEvaluationApiTests
         var api = NewApiWithCapturedTransport(out _);
         for (int i = 0; i <= FlagEvaluationApi.QueueCapacity; i++)
         {
-            api.EnqueueForTest(new FlagEvalEvent("flag", "on", "split", "alloc", "user", 1_000L, null));
+            api.EnqueueForTest(new FlagEvalEvent("flag", "on", "alloc", "user", 1_000L, null));
         }
 
         api.DroppedBackpressureCount.Should().Be(1);
@@ -511,7 +596,7 @@ public class FlagEvaluationApiTests
     {
         var api = NewApiWithCapturedTransport(out var capture);
 
-        api.EnqueueForTest(new FlagEvalEvent("flag-shutdown", "on", "split", "alloc", "user", 1_000L, null));
+        api.EnqueueForTest(new FlagEvalEvent("flag-shutdown", "on", "alloc", "user", 1_000L, null));
 
         // RunSendLoopForTestAsync sets the process-exit gate then runs the loop, so only the
         // final shutdown drain/flush executes — proving shutdown does not lose buffered events.
@@ -527,8 +612,8 @@ public class FlagEvaluationApiTests
     public async Task FlushAsync_DrainsQueueIntoPostedPayload()
     {
         var api = NewApiWithCapturedTransport(out var capture);
-        api.EnqueueForTest(new FlagEvalEvent("flag-a", "on", "split", "alloc", "user", 1_000L, new Dictionary<string, object?> { ["env"] = "prod" }));
-        api.EnqueueForTest(new FlagEvalEvent("flag-b", "off", "default", null, "user", 1_000L, null));
+        api.EnqueueForTest(new FlagEvalEvent("flag-a", "on", "alloc", "user", 1_000L, new Dictionary<string, object?> { ["env"] = "prod" }));
+        api.EnqueueForTest(new FlagEvalEvent("flag-b", "off", null, "user", 1_000L, null));
 
         var sent = await api.FlushAsync();
 
@@ -561,6 +646,101 @@ public class FlagEvaluationApiTests
         capture = localCapture;
         return new FlagEvaluationApi(factoryMock.Object, service: "svc", env: "prod", version: "1.0");
     }
+
+    private static void AssertValidAgainstWorkerSchema(JObject json)
+    {
+        var errors = ValidateAgainstWorkerSchema(json);
+        errors.Should().BeEmpty(string.Join(Environment.NewLine, errors));
+    }
+
+    private static List<string> ValidateAgainstWorkerSchema(JToken json)
+    {
+        var schema = LoadWorkerSchema();
+        var errors = new List<string>();
+        ValidateSchema(json, schema, "$", errors);
+        return errors;
+    }
+
+    private static JObject LoadWorkerSchema()
+    {
+        var resourceName = typeof(FlagEvaluationApiTests).Assembly
+            .GetManifestResourceNames()
+            .Single(name => name.EndsWith("batchedflagevaluations.json", StringComparison.Ordinal));
+        using var stream = typeof(FlagEvaluationApiTests).Assembly.GetManifestResourceStream(resourceName)!;
+        using var reader = new StreamReader(stream);
+        return JObject.Parse(reader.ReadToEnd());
+    }
+
+    private static void ValidateSchema(JToken value, JObject schema, string path, List<string> errors)
+    {
+        if (schema["type"] is JValue typeToken && !MatchesType(value, typeToken.Value<string>()))
+        {
+            errors.Add($"{path}: expected {typeToken.Value<string>()}, got {value.Type}");
+            return;
+        }
+
+        if (schema["minimum"] is JValue minimum && value.Type == JTokenType.Integer && value.Value<long>() < minimum.Value<long>())
+        {
+            errors.Add($"{path}: value {value.Value<long>()} is below minimum {minimum.Value<long>()}");
+        }
+
+        if (schema["type"]?.Value<string>() == "array" && schema["items"] is JObject itemSchema && value is JArray array)
+        {
+            for (int i = 0; i < array.Count; i++)
+            {
+                ValidateSchema(array[i], itemSchema, $"{path}[{i}]", errors);
+            }
+
+            return;
+        }
+
+        if (schema["type"]?.Value<string>() != "object" || value is not JObject obj)
+        {
+            return;
+        }
+
+        if (schema["required"] is JArray required)
+        {
+            foreach (string? requiredProperty in required.Values<string>())
+            {
+                if (requiredProperty is null)
+                {
+                    continue;
+                }
+
+                if (!obj.ContainsKey(requiredProperty))
+                {
+                    errors.Add($"{path}: missing required property {requiredProperty}");
+                }
+            }
+        }
+
+        var properties = schema["properties"] as JObject;
+        if (properties is not null)
+        {
+            foreach (var property in obj.Properties())
+            {
+                if (properties[property.Name] is JObject propertySchema)
+                {
+                    ValidateSchema(property.Value, propertySchema, $"{path}.{property.Name}", errors);
+                }
+                else if (schema["additionalProperties"]?.Value<bool>() == false)
+                {
+                    errors.Add($"{path}: additional property {property.Name} is not allowed");
+                }
+            }
+        }
+    }
+
+    private static bool MatchesType(JToken value, string? schemaType) => schemaType switch
+    {
+        "object" => value.Type == JTokenType.Object,
+        "array" => value.Type == JTokenType.Array,
+        "string" => value.Type == JTokenType.String,
+        "integer" => value.Type == JTokenType.Integer,
+        "boolean" => value.Type == JTokenType.Boolean,
+        _ => true
+    };
 
     private sealed class PayloadCapture
     {

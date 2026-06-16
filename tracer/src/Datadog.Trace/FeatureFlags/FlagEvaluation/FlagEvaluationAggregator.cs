@@ -148,10 +148,7 @@ internal sealed class FlagEvaluationAggregator
         string variant = ev.Variant ?? string.Empty;
         long evalTimeMs = ev.EvalTimeMs;
 
-        // Prune context (256 fields / 256 chars) before building the key.
-        Dictionary<string, object?>? contextAttrs = ev.ContextAttrs is { Count: > 0 }
-            ? PruneContext(ev.ContextAttrs)
-            : null;
+        Dictionary<string, object?>? contextAttrs = ev.ContextAttrs is { Count: > 0 } ? ev.ContextAttrs : null;
 
         string contextKey = CanonicalContextKey(contextAttrs);
 
@@ -159,7 +156,7 @@ internal sealed class FlagEvaluationAggregator
             ev.FlagKey,
             variant,
             ev.AllocationKey,
-            ev.Reason,
+            ev.ErrorMessage,
             ev.TargetingKey,
             contextKey);
 
@@ -176,7 +173,7 @@ internal sealed class FlagEvaluationAggregator
             _perFlagFull.TryGetValue(ev.FlagKey, out int perFlagCount);
             if (perFlagCount >= _perFlagCap)
             {
-                AddToDegraded(ev.FlagKey, variant, ev.AllocationKey, ev.Reason, evalTimeMs, runtimeDefault);
+                AddToDegraded(ev.FlagKey, variant, ev.AllocationKey, ev.ErrorMessage, evalTimeMs, runtimeDefault);
                 return;
             }
 
@@ -187,7 +184,7 @@ internal sealed class FlagEvaluationAggregator
             // Check global cap before creating a new full-tier bucket.
             if (_globalCount >= _globalCap)
             {
-                AddToDegraded(ev.FlagKey, variant, ev.AllocationKey, ev.Reason, evalTimeMs, runtimeDefault);
+                AddToDegraded(ev.FlagKey, variant, ev.AllocationKey, ev.ErrorMessage, evalTimeMs, runtimeDefault);
                 return;
             }
 
@@ -223,9 +220,9 @@ internal sealed class FlagEvaluationAggregator
     }
 
     // Called with _lock held.
-    private void AddToDegraded(string flagKey, string variant, string allocationKey, string reason, long evalTimeMs, bool runtimeDefault)
+    private void AddToDegraded(string flagKey, string variant, string allocationKey, string errorMessage, long evalTimeMs, bool runtimeDefault)
     {
-        var degKey = new DegradedKey(flagKey, variant, allocationKey, reason);
+        var degKey = new DegradedKey(flagKey, variant, allocationKey, errorMessage);
         if (_degraded.TryGetValue(degKey, out EvaluationEntry? existing))
         {
             existing.Observe(evalTimeMs);

@@ -64,13 +64,12 @@ internal sealed class FlagEvaluationApi : IDisposable
         perFlagCap: 10_000,
         degradedCap: 32_768);
 
-    // Async hand-off: Enqueue (hot path) does a cheap bounded ConcurrentQueue offer; the background
-    // send loop drains it into the aggregator (flatten/prune/canonical-key/map insert all happen
-    // there, off the evaluation thread). No new package dependency (ConcurrentQueue is in-box on all
-    // target frameworks, unlike System.Threading.Channels).
+    // Async hand-off: Enqueue (hot path) does a cheap bounded ConcurrentQueue offer with an already
+    // pruned event snapshot; the background send loop drains it into the aggregator.
     private readonly ConcurrentQueue<FlagEvalEvent> _queue = new();
     private int _queueCount;
     private long _droppedBackpressure;
+    private Task? _sendLoopTask;
 
     private IApiRequestFactory _apiRequestFactory;
     private string _service;
@@ -143,8 +142,8 @@ internal sealed class FlagEvaluationApi : IDisposable
     /// <summary>
     /// Non-blocking enqueue of one evaluation event. This is the ONLY method called from the
     /// hot-path FlagEvalEVPHook.FinallyAsync: it does a cheap bounded ConcurrentQueue offer and
-    /// nothing else. Flatten/prune/canonical-key/aggregation all run later on the background send
-    /// loop (see <see cref="DrainQueueIntoAggregator"/>), off the evaluation thread. When the queue
+    /// nothing else. Canonical-key/aggregation run later on the background send loop
+    /// (see <see cref="DrainQueueIntoAggregator"/>), off the evaluation thread. When the queue
     /// is at capacity the event is dropped and counted (observable, never blocks the evaluation).
     /// </summary>
     public void Enqueue(FlagEvalEvent ev)
@@ -210,6 +209,14 @@ internal sealed class FlagEvaluationApi : IDisposable
     public void Dispose()
     {
         _processExit.TrySetResult(true);
+        try
+        {
+            _sendLoopTask?.GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "FeatureFlags FlagEvaluation send loop failed during shutdown");
+        }
     }
 
     /// <summary>
@@ -238,7 +245,6 @@ internal sealed class FlagEvaluationApi : IDisposable
             return null;
         }
 
-        long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var events = new List<FlagEvaluationEvent>(full.Count + degraded.Count);
 
         // Full tier: all fields present including targeting_key and context.
@@ -249,15 +255,16 @@ internal sealed class FlagEvaluationApi : IDisposable
 
             var ev = new FlagEvaluationEvent
             {
-                Timestamp = nowMs,
+                Timestamp = entry.LastEvaluationMs,
                 Flag = new FlagEvalFlag { Key = key.FlagKey },
                 FirstEvaluation = entry.FirstEvaluationMs,
                 LastEvaluation = entry.LastEvaluationMs,
                 EvaluationCount = entry.Count,
-                RuntimeDefault = entry.RuntimeDefault ? (bool?)true : null,
+                RuntimeDefaultUsed = entry.RuntimeDefault ? (bool?)true : null,
                 TargetingKey = StringUtil.IsNullOrEmpty(key.TargetingKey) ? null : key.TargetingKey,
                 Variant = StringUtil.IsNullOrEmpty(key.Variant) ? null : new FlagEvalVariant { Key = key.Variant },
                 Allocation = StringUtil.IsNullOrEmpty(key.AllocationKey) ? null : new FlagEvalAllocation { Key = key.AllocationKey },
+                Error = StringUtil.IsNullOrEmpty(key.ErrorMessage) ? null : new FlagEvalError { Message = key.ErrorMessage },
                 Context = entry.ContextAttrs is { Count: > 0 } ? new FlagEvalEventContext { Evaluation = entry.ContextAttrs } : null,
             };
             events.Add(ev);
@@ -271,14 +278,15 @@ internal sealed class FlagEvaluationApi : IDisposable
 
             var ev = new FlagEvaluationEvent
             {
-                Timestamp = nowMs,
+                Timestamp = entry.LastEvaluationMs,
                 Flag = new FlagEvalFlag { Key = key.FlagKey },
                 FirstEvaluation = entry.FirstEvaluationMs,
                 LastEvaluation = entry.LastEvaluationMs,
                 EvaluationCount = entry.Count,
-                RuntimeDefault = entry.RuntimeDefault ? (bool?)true : null,
+                RuntimeDefaultUsed = entry.RuntimeDefault ? (bool?)true : null,
                 Variant = StringUtil.IsNullOrEmpty(key.Variant) ? null : new FlagEvalVariant { Key = key.Variant },
                 Allocation = StringUtil.IsNullOrEmpty(key.AllocationKey) ? null : new FlagEvalAllocation { Key = key.AllocationKey },
+                Error = StringUtil.IsNullOrEmpty(key.ErrorMessage) ? null : new FlagEvalError { Message = key.ErrorMessage },
                 // TargetingKey = null (omitted), Context = null (omitted) by NullValueHandling.Ignore
             };
             events.Add(ev);
@@ -311,7 +319,8 @@ internal sealed class FlagEvaluationApi : IDisposable
             return;
         }
 
-        _ = Task.Run(SendLoopAsync).ContinueWith(
+        _sendLoopTask = Task.Run(SendLoopAsync);
+        _ = _sendLoopTask.ContinueWith(
             t => { Log.Error(t.Exception, "FeatureFlags FlagEvaluation send loop failed"); },
             TaskContinuationOptions.OnlyOnFaulted);
     }

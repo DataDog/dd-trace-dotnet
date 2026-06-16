@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -34,7 +36,7 @@ namespace Benchmarks.Trace
             { "request_count", 42 },
         };
 
-        private FlagEvaluationApi _api;
+        private FlagEvaluationApi _api = null!;
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -54,7 +56,6 @@ namespace Benchmarks.Trace
             _api.EnqueueForTest(new FlagEvalEvent(
                 flagKey: "checkout-redesign",
                 variant: "treatment",
-                reason: "targeting_match",
                 allocationKey: "alloc-7",
                 targetingKey: "user-123",
                 evalTimeMs: 1_700_000_000_000L,
@@ -74,7 +75,6 @@ namespace Benchmarks.Trace
             _api.EnqueueForTest(new FlagEvalEvent(
                 flagKey: "checkout-redesign",
                 variant: "treatment",
-                reason: "targeting_match",
                 allocationKey: "alloc-7",
                 targetingKey: "user-123",
                 evalTimeMs: 1_700_000_000_000L,

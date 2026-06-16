@@ -40,9 +40,9 @@ internal static class FeatureFlagsSdk
     internal static void EnqueueEVP(
         string flagKey,
         string? variant,
-        string reason,
         string? allocationKey,
         string? targetingKey,
+        string? errorMessage,
         long evalTimeMs,
         System.Collections.Generic.IDictionary<string, object?>? contextAttrs)
     {

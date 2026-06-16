@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenFeature;
+using OpenFeature.Constant;
 using OpenFeature.Model;
 
 namespace Datadog.FeatureFlags.OpenFeature;
@@ -65,15 +66,13 @@ internal sealed class FlagEvalEVPHook : Hook
             // explicitly so the aggregator marks runtime_default_used rather than keying on "".
             string? variant = string.IsNullOrEmpty(details.Variant) ? null : details.Variant;
 
-            // Reason: lower-case; fallback to "unknown" (matches FlagEvalMetricsHook convention).
-            var detailsReason = details.Reason;
-            string reason = string.IsNullOrEmpty(detailsReason) ? "unknown" : detailsReason!.ToLowerInvariant();
-
             // Allocation key from metadata.
             string? allocationKey = details.FlagMetadata?.GetString(MetadataAllocationKey);
 
             // Targeting key from the evaluation context (cheap string read).
             string? targetingKey = context.EvaluationContext?.TargetingKey;
+
+            string? errorMessage = details.ErrorType == ErrorType.None ? null : ErrorTypeToString(details.ErrorType);
 
             // Eval time: prefer provider-stamped timestamp for accuracy; fall back to hook-fire time.
             // The evaluator stores metadata as string, so GetString and parse.
@@ -95,7 +94,7 @@ internal sealed class FlagEvalEVPHook : Hook
 
             // Route via the static delegate bridge (wired from FeatureFlagsModule when EVP is enabled).
             // No-op when the bridge is null (EVP disabled or tracer not initialized).
-            FeatureFlagsSdk.EnqueueEVP(flagKey, variant, reason, allocationKey, targetingKey, evalTimeMs, contextAttrs);
+            FeatureFlagsSdk.EnqueueEVP(flagKey, variant, allocationKey, targetingKey, errorMessage, evalTimeMs, contextAttrs);
         }
         catch (Exception ex)
         {
@@ -164,4 +163,17 @@ internal sealed class FlagEvalEVPHook : Hook
         // Nested objects / arrays: convert to string; handled via TagOther in canonical key.
         return v.AsObject?.ToString();
     }
+
+    private static string ErrorTypeToString(ErrorType errorType) => errorType switch
+    {
+        ErrorType.ProviderNotReady => "provider_not_ready",
+        ErrorType.FlagNotFound => "flag_not_found",
+        ErrorType.ParseError => "parse_error",
+        ErrorType.TypeMismatch => "type_mismatch",
+        ErrorType.TargetingKeyMissing => "targeting_key_missing",
+        ErrorType.InvalidContext => "invalid_context",
+        ErrorType.ProviderFatal => "provider_fatal",
+        ErrorType.General => "general",
+        _ => "unknown"
+    };
 }

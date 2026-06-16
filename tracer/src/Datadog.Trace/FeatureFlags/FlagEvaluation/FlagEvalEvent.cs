@@ -20,19 +20,21 @@ internal sealed class FlagEvalEvent
     public FlagEvalEvent(
         string flagKey,
         string? variant,
-        string reason,
         string? allocationKey,
         string? targetingKey,
         long evalTimeMs,
-        Dictionary<string, object?>? contextAttrs)
+        Dictionary<string, object?>? contextAttrs,
+        string? errorMessage = null)
     {
         FlagKey = flagKey;
         Variant = variant;
-        Reason = reason;
         AllocationKey = allocationKey ?? string.Empty;
         TargetingKey = targetingKey ?? string.Empty;
+        ErrorMessage = errorMessage ?? string.Empty;
         EvalTimeMs = evalTimeMs;
-        ContextAttrs = contextAttrs;
+        ContextAttrs = contextAttrs is { Count: > 0 }
+            ? FlagEvaluationAggregator.PruneContext(new Dictionary<string, object?>(contextAttrs))
+            : null;
     }
 
     /// <summary>Gets the flag key.</summary>
@@ -41,18 +43,18 @@ internal sealed class FlagEvalEvent
     /// <summary>Gets the variant; null means an absent variant, i.e. the runtime default was used.</summary>
     public string? Variant { get; }
 
-    /// <summary>Gets the evaluation reason.</summary>
-    public string Reason { get; }
-
     /// <summary>Gets the allocation key.</summary>
     public string AllocationKey { get; }
 
     /// <summary>Gets the targeting key.</summary>
     public string TargetingKey { get; }
 
+    /// <summary>Gets the schema-visible error message, if any.</summary>
+    public string ErrorMessage { get; }
+
     /// <summary>Gets the eval time in Unix milliseconds from flag metadata "dd.eval.timestamp_ms", or hook-fire time.</summary>
     public long EvalTimeMs { get; }
 
-    /// <summary>Gets the flat context attributes (already flattened by caller if needed).</summary>
+    /// <summary>Gets the bounded flat context attributes snapshot.</summary>
     public Dictionary<string, object?>? ContextAttrs { get; }
 }

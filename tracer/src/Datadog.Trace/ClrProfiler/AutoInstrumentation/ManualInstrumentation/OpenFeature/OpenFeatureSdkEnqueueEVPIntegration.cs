@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
     TypeName = "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
     MethodName = "EnqueueEVP",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = [ClrNames.String, "System.String", ClrNames.String, "System.String", "System.String", ClrNames.Int64, "System.Collections.Generic.IDictionary`2[System.String,System.Object]"],
+    ParameterTypeNames = [ClrNames.String, "System.String", "System.String", "System.String", "System.String", ClrNames.Int64, "System.Collections.Generic.IDictionary`2[System.String,System.Object]"],
     MinimumVersion = "2.0.0",
     MaximumVersion = "2.*.*",
     IntegrationName = nameof(IntegrationId.OpenFeature))]
@@ -34,9 +34,9 @@ public sealed class OpenFeatureSdkEnqueueEVPIntegration
     internal static CallTargetState OnMethodBegin<TTarget>(
         ref string flagKey,
         ref string? variant,
-        ref string reason,
         ref string? allocationKey,
         ref string? targetingKey,
+        ref string? errorMessage,
         ref long evalTimeMs,
         ref IDictionary<string, object?>? contextAttrs)
     {
@@ -50,11 +50,11 @@ public sealed class OpenFeatureSdkEnqueueEVPIntegration
             api.Enqueue(new FlagEvalEvent(
                 flagKey: flagKey,
                 variant: variant,
-                reason: reason,
                 allocationKey: allocationKey,
                 targetingKey: targetingKey,
                 evalTimeMs: evalTimeMs,
-                contextAttrs: ctxDict));
+                contextAttrs: ctxDict,
+                errorMessage: errorMessage));
         }
 
         return CallTargetState.GetDefault();

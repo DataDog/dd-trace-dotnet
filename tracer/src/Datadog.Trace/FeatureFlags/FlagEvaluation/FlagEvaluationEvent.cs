@@ -28,7 +28,7 @@ internal sealed class FlagEvaluationEvent
     public long EvaluationCount { get; set; }
 
     /// <summary>Gets or sets a value indicating whether the evaluation returned the runtime default (absent variant). Present only when true.</summary>
-    public bool? RuntimeDefault { get; set; }
+    public bool? RuntimeDefaultUsed { get; set; }
 
     /// <summary>Gets or sets the targeting key. Full tier only — null on degraded tier (omitted by NullValueHandling.Ignore).</summary>
     public string? TargetingKey { get; set; }
@@ -38,6 +38,9 @@ internal sealed class FlagEvaluationEvent
 
     /// <summary>Gets or sets the allocation. Absent when allocationKey is null/empty.</summary>
     public FlagEvalAllocation? Allocation { get; set; }
+
+    /// <summary>Gets or sets the schema-visible error. Absent when no error occurred.</summary>
+    public FlagEvalError? Error { get; set; }
 
     /// <summary>Gets or sets the per-event context. Full tier only — null on degraded tier (omitted by NullValueHandling.Ignore).</summary>
     public FlagEvalEventContext? Context { get; set; }

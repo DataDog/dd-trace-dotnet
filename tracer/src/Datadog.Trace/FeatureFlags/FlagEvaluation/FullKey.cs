@@ -17,12 +17,12 @@ internal readonly struct FullKey : IEquatable<FullKey>
     /// <summary>
     /// Initializes a new instance of the <see cref="FullKey"/> struct.
     /// </summary>
-    public FullKey(string flagKey, string variant, string allocationKey, string reason, string targetingKey, string contextKey)
+    public FullKey(string flagKey, string variant, string allocationKey, string errorMessage, string targetingKey, string contextKey)
     {
         FlagKey = flagKey;
         Variant = variant;
         AllocationKey = allocationKey;
-        Reason = reason;
+        ErrorMessage = errorMessage;
         TargetingKey = targetingKey;
         ContextKey = contextKey;
     }
@@ -36,8 +36,8 @@ internal readonly struct FullKey : IEquatable<FullKey>
     /// <summary>Gets the allocation key.</summary>
     public string AllocationKey { get; }
 
-    /// <summary>Gets the reason.</summary>
-    public string Reason { get; }
+    /// <summary>Gets the schema-visible error message.</summary>
+    public string ErrorMessage { get; }
 
     /// <summary>Gets the targeting key.</summary>
     public string TargetingKey { get; }
@@ -50,7 +50,7 @@ internal readonly struct FullKey : IEquatable<FullKey>
         FlagKey == other.FlagKey &&
         Variant == other.Variant &&
         AllocationKey == other.AllocationKey &&
-        Reason == other.Reason &&
+        ErrorMessage == other.ErrorMessage &&
         TargetingKey == other.TargetingKey &&
         ContextKey == other.ContextKey;
 
@@ -65,7 +65,7 @@ internal readonly struct FullKey : IEquatable<FullKey>
             int h = FlagKey?.GetHashCode() ?? 0;
             h = (h * 397) ^ (Variant?.GetHashCode() ?? 0);
             h = (h * 397) ^ (AllocationKey?.GetHashCode() ?? 0);
-            h = (h * 397) ^ (Reason?.GetHashCode() ?? 0);
+            h = (h * 397) ^ (ErrorMessage?.GetHashCode() ?? 0);
             h = (h * 397) ^ (TargetingKey?.GetHashCode() ?? 0);
             h = (h * 397) ^ (ContextKey?.GetHashCode() ?? 0);
             return h;

@@ -10,19 +10,19 @@ namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 
 /// <summary>
 /// Degraded-tier bucket identity: drops targeting_key and context relative to FullKey.
-/// OTel <c>feature_flag.evaluations</c> cardinality. Terminal tier — overflow is drop-counted.
+/// Uses only schema-visible dimensions retained by degraded payloads. Terminal tier — overflow is drop-counted.
 /// </summary>
 internal readonly struct DegradedKey : IEquatable<DegradedKey>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="DegradedKey"/> struct.
     /// </summary>
-    public DegradedKey(string flagKey, string variant, string allocationKey, string reason)
+    public DegradedKey(string flagKey, string variant, string allocationKey, string errorMessage)
     {
         FlagKey = flagKey;
         Variant = variant;
         AllocationKey = allocationKey;
-        Reason = reason;
+        ErrorMessage = errorMessage;
     }
 
     /// <summary>Gets the flag key.</summary>
@@ -34,15 +34,15 @@ internal readonly struct DegradedKey : IEquatable<DegradedKey>
     /// <summary>Gets the allocation key.</summary>
     public string AllocationKey { get; }
 
-    /// <summary>Gets the reason.</summary>
-    public string Reason { get; }
+    /// <summary>Gets the schema-visible error message.</summary>
+    public string ErrorMessage { get; }
 
     /// <inheritdoc/>
     public bool Equals(DegradedKey other) =>
         FlagKey == other.FlagKey &&
         Variant == other.Variant &&
         AllocationKey == other.AllocationKey &&
-        Reason == other.Reason;
+        ErrorMessage == other.ErrorMessage;
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => obj is DegradedKey other && Equals(other);
@@ -55,7 +55,7 @@ internal readonly struct DegradedKey : IEquatable<DegradedKey>
             int h = FlagKey?.GetHashCode() ?? 0;
             h = (h * 397) ^ (Variant?.GetHashCode() ?? 0);
             h = (h * 397) ^ (AllocationKey?.GetHashCode() ?? 0);
-            h = (h * 397) ^ (Reason?.GetHashCode() ?? 0);
+            h = (h * 397) ^ (ErrorMessage?.GetHashCode() ?? 0);
             return h;
         }
     }
