@@ -653,6 +653,7 @@ internal class CreatedumpCommand : Command
 
     private static CrashDiagnosticsInfo ReadDiagnosticsInfo(ClrRuntime runtime, int? crashThread, int pid)
     {
+        var debugLines = new List<string>();
         try
         {
             // Step 1: Try to resolve via crashing thread's AppDomain
@@ -683,9 +684,14 @@ internal class CreatedumpCommand : Command
             var serviceNames = new HashSet<string>();
             var runtimeIds = new HashSet<string>();
 
+            debugLines.Add($"domains_count={runtime.AppDomains.Length}");
+
             foreach (var domain in runtime.AppDomains)
             {
+                var field = FindStaticFieldInDomain(runtime, domain, "Datadog.Trace.DiagnosticsInfo", "_instance");
                 var domainInfo = ReadDiagnosticsInfoFromDomain(runtime, domain);
+
+                debugLines.Add($"domain[{domain.Id}]={domain.Name}|field={(field is null ? "null" : "found")}|svc={domainInfo.ServiceName ?? "(null)"}|rid={domainInfo.RuntimeId ?? "(null)"}");
 
                 if (domainInfo.ServiceName is not null)
                 {
@@ -698,13 +704,16 @@ internal class CreatedumpCommand : Command
                 }
             }
 
+            var debugInfo = string.Join(";", debugLines);
+
             if (serviceNames.Count == 1)
             {
                 return new CrashDiagnosticsInfo(
                     ServiceName: serviceNames.First(),
                     Services: null,
                     RuntimeId: runtimeIds.Count == 1 ? runtimeIds.First() : null,
-                    RuntimeIds: runtimeIds.Count > 1 ? string.Join(",", runtimeIds.OrderBy(x => x)) : null);
+                    RuntimeIds: runtimeIds.Count > 1 ? string.Join(",", runtimeIds.OrderBy(x => x)) : null,
+                    DebugInfo: debugInfo);
             }
 
             if (serviceNames.Count > 1)
@@ -714,15 +723,16 @@ internal class CreatedumpCommand : Command
                     ServiceName: processName,
                     Services: string.Join(",", serviceNames.OrderBy(x => x)),
                     RuntimeId: null,
-                    RuntimeIds: runtimeIds.Count > 0 ? string.Join(",", runtimeIds.OrderBy(x => x)) : null);
+                    RuntimeIds: runtimeIds.Count > 0 ? string.Join(",", runtimeIds.OrderBy(x => x)) : null,
+                    DebugInfo: debugInfo);
             }
 
-            return FallbackToProcessName(pid);
+            return FallbackToProcessName(pid, debugInfo);
         }
         catch (Exception ex)
         {
-            DebugPrint($"Failed to read DiagnosticsInfo: {ex.Message}");
-            return FallbackToProcessName(pid);
+            debugLines.Add($"exception={ex.GetType().Name}:{ex.Message}");
+            return FallbackToProcessName(pid, string.Join(";", debugLines));
         }
     }
 
@@ -782,13 +792,14 @@ internal class CreatedumpCommand : Command
         return null;
     }
 
-    private static CrashDiagnosticsInfo FallbackToProcessName(int pid)
+    private static CrashDiagnosticsInfo FallbackToProcessName(int pid, string? debugInfo = null)
     {
         return new CrashDiagnosticsInfo(
             ServiceName: GetProcessName(pid),
             Services: null,
             RuntimeId: null,
-            RuntimeIds: null);
+            RuntimeIds: null,
+            DebugInfo: debugInfo);
     }
 
     private static string GetProcessName(int pid)
@@ -1271,6 +1282,11 @@ internal class CreatedumpCommand : Command
             tags = [.. tags, ("crash_datadog", "true")];
         }
 
+        if (diagnosticsInfo.DebugInfo is not null)
+        {
+            tags = [.. tags, ("debug_diag", diagnosticsInfo.DebugInfo)];
+        }
+
         var bag = new List<IntPtr>();
 
         try
@@ -1322,7 +1338,7 @@ internal class CreatedumpCommand : Command
         }
     }
 
-    private readonly record struct CrashDiagnosticsInfo(string? ServiceName, string? Services, string? RuntimeId, string? RuntimeIds);
+    private readonly record struct CrashDiagnosticsInfo(string? ServiceName, string? Services, string? RuntimeId, string? RuntimeIds, string? DebugInfo = null);
 
     [StructLayout(LayoutKind.Sequential)]
     private unsafe struct ResolveMethodData

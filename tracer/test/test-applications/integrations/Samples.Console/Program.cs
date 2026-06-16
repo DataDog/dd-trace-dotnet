@@ -303,7 +303,7 @@ namespace Samples.Console_
                 }
 
                 var serviceName = (string)AppDomain.CurrentDomain.GetData("DD_SERVICE");
-		Samples.SampleHelpers.ConfigureTracer(serviceName);
+                Samples.SampleHelpers.ConfigureTracer(serviceName);
             }
 
             public static void CrashManaged()

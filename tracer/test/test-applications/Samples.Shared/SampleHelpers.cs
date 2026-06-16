@@ -38,7 +38,8 @@ namespace Samples
         private static readonly MethodInfo? SetParent = SpanCreationSettingsType?.GetProperty("Parent")?.SetMethod;
         private static readonly MethodInfo? ForceFlushAsyncMethod = TracerType?.GetMethod("ForceFlushAsync", BindingFlags.Public | BindingFlags.Instance);
         private static readonly MethodInfo? ActiveScopeProperty = TracerType?.GetProperty("ActiveScope")?.GetMethod;
-        private static readonly MethodInfo? ConfigureMethod = TracerType?.GetMethod("Configure");
+        private static readonly MethodInfo? ConfigureMethod = TracerType?.GetMethod("Configure", BindingFlags.NonPublic | BindingFlags.Static);
+        private static readonly Type? NameValueConfigurationSourceType = Type.GetType("Datadog.Trace.Configuration.NameValueConfigurationSource, Datadog.Trace");
         private static readonly MethodInfo? TraceIdProperty = SpanContextType?.GetProperty("TraceId")?.GetMethod;
         private static readonly MethodInfo? SpanIdProperty = SpanContextType?.GetProperty("SpanId")?.GetMethod;
         private static readonly MethodInfo? GetOrMakeSamplingDecisionMethod = SpanContextType?.GetMethod("GetOrMakeSamplingDecision", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -96,16 +97,17 @@ namespace Samples
 
         public static void ConfigureTracer(string serviceName)
         {
-            if (TracerSettingsType is null || GetTracerInstance is null || ConfigureMethod is null || FromDefaultSourcesMethod is null || SetServiceName is null)
+            if (TracerSettingsType is null || ConfigureMethod is null || NameValueConfigurationSourceType is null)
             {
+                Console.WriteLine($"*** ConfigureTracer bailing out: TracerSettingsType={TracerSettingsType != null}, ConfigureMethod={ConfigureMethod != null}, NameValueConfigurationSourceType={NameValueConfigurationSourceType != null} ***");
                 return;
             }
 
-            var tracerSettings = FromDefaultSourcesMethod.Invoke(null, Array.Empty<object>());
-            SetServiceName.Invoke(tracerSettings, new object[] { serviceName });
+            var nvc = new System.Collections.Specialized.NameValueCollection { { "DD_SERVICE", serviceName } };
+            var source = Activator.CreateInstance(NameValueConfigurationSourceType, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, new object[] { nvc }, null);
+            var tracerSettings = Activator.CreateInstance(TracerSettingsType, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, new object[] { source, null }, null);
 
-            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
-            ConfigureMethod.Invoke(tracer, new object?[] { tracerSettings });
+            ConfigureMethod.Invoke(null, new[] { tracerSettings });
         }
 
         public static bool IsProfilerAttached()
