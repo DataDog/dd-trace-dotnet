@@ -170,3 +170,22 @@ cases:
       - May mention managing log volume/retention (DD_TRACE_LOGFILE_RETENTION_DAYS) if debug is enabled.
     bad_signals:
       - Recommends enabling DD_TRACE_DEBUG in production with no performance caveat.
+
+  # Exercises the gated `bump-libdatadog` skill (.claude/skills/bump-libdatadog/SKILL.md). The question is
+  # phrased to auto-invoke that skill; the expected_criteria/bad_signals mirror its real guidance, so a
+  # regression in the skill is observable here.
+  - id: dotnet-tracer-bump-libdatadog-013
+    input: |
+      I need to bump the libdatadog native library to a new release version. Walk me
+      through everything I have to update in this repo and how to verify it.
+    expected_criteria:
+      - Updates BOTH version pins — build/cmake/FindLibdatadog.cmake (Linux/macOS) and the Windows vcpkg port (vcpkg.json + portfile.cmake).
+      - FindLibdatadog.cmake uses SHA-256 hashes and a v-prefixed version (e.g. v32.0.0); the vcpkg version-string has NO v prefix.
+      - portfile.cmake uses SHA-512 hashes for the Windows x64/x86 builds.
+      - Verifies by running the Nuke CompileProfilerNativeSrc build target, which validates the hashes.
+      - Notes Linux/macOS and Windows versions can differ, and the NativeValidation symbol snapshots may need regenerating.
+    bad_signals:
+      - Says there is a single version to update / only one file to change.
+      - Swaps the hash algorithms (SHA-512 for the CMake file, or SHA-256 for the vcpkg portfile).
+      - Tells the user to edit the auto-generated .gitlab/one-pipeline.locked.yml by hand.
+      - Invents a libdatadog version pin in the root vcpkg.json.

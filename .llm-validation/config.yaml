@@ -7,15 +7,15 @@ runs: 3
 # List more than one to validate the combined instruction set (e.g. AGENTS.md + a Claude skill file).
 instruction_files:
   - AGENTS.md
-  # - .claude/skills/<your-skill>/SKILL.md   # uncomment to also gate a skill file
+  - .claude/skills/bump-libdatadog/SKILL.md   # also gate the libdatadog-bump skill
 
 # Testing-level presets (pick one via --level / LLMVAL_LEVEL). Explicit --case/--max-cases/--runs override.
-# Keep `minimum` as the default during bring-up: cheap, fast, and still meaningful — it runs only the
-# logging-terminology case, the known high-severity regression that the gate should FAIL.
+# Keep `minimum` as the default during bring-up: cheap, fast, and meaningful — it runs the logging-terminology
+# case (exercises AGENTS.md) and the libdatadog-bump case (exercises the gated skill), the two known regressions.
 default_level: minimum
 presets:
-  minimum:                                       # 1 case — the known regression. The gating default.
-    cases: ["dotnet-tracer-logging-terminology-004"]
+  minimum:                                       # the 2 known-regression cases — one per monitored file. The gating default.
+    cases: ["dotnet-tracer-logging-terminology-004", "dotnet-tracer-bump-libdatadog-013"]
     runs: 6                                       # 6 runs = 12 pairwise comparisons. runs=3 was too noisy to gate
                                                   # on (same inputs swung 0% -> 33% between runs); 6 tightens the CI
                                                   # so a real regression clears the confidence guard and FAILs.
