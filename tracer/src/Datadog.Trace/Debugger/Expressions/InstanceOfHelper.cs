@@ -861,7 +861,7 @@ internal static class InstanceOfHelper
             }
 
             var requestedName = assemblyName.Name;
-            if (requestedName is null)
+            if (requestedName is null || AssemblyNameHasMetadata(requestedFullName))
             {
                 return null;
             }
@@ -876,6 +876,11 @@ internal static class InstanceOfHelper
             }
 
             return null;
+        }
+
+        private static bool AssemblyNameHasMetadata(string assemblyName)
+        {
+            return assemblyName.IndexOf(',') >= 0;
         }
 
         private static bool IsKnownFrameworkAssemblyName(string assemblyName)

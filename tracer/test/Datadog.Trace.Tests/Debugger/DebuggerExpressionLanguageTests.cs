@@ -991,6 +991,30 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_InstanceOf_GenericArgumentAssemblyRequiresExactIdentity()
+        {
+            var assembly = CreateDynamicAssembly(
+                "InstanceOfGenericArgumentVersionAssembly",
+                "GenericArgumentVersion.GenericType`1",
+                "GenericArgumentVersion.GenericArgument");
+            var argumentAssemblyName = assembly.GetName().Name;
+            var typeName = $"GenericArgumentVersion.GenericType`1[[GenericArgumentVersion.GenericArgument, {argumentAssemblyName}, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null]]";
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => [assembly]);
+
+                Action lookup = () => InstanceOfHelper.ResolveType(typeName);
+
+                lookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
         public void ProbeExpressionParser_InstanceOf_CustomerSimpleName_ReportsRuntimeError()
         {
             try
