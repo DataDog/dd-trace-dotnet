@@ -66,7 +66,7 @@ namespace Datadog.Trace.Activity
             // - service.namespace
             // - service.version
 
-            if (w3cActivity is not null)
+            if (!openTelemetryTraceCompatibilityEnabled && w3cActivity is not null)
             {
                 tags.OtelTraceId = w3cActivity.TraceId;
             }
@@ -137,55 +137,58 @@ namespace Datadog.Trace.Activity
             // span.SetTag("w3c.tracestate", w3CActivity.TraceStateString);
 
             // Add the library name and library version
-            if (activity5 is not null)
-            {
-                // For .NET Activity .NET 5+ the Source.Name is only set via ActivitySource.StartActivity
-                // and not when an Activity object is created manually and having .Start() called on it
-                if (!string.IsNullOrEmpty(activity5.Source.Name))
-                {
-                    tags.OtelLibraryName = activity5.Source.Name;
-                }
-
-                if (!string.IsNullOrEmpty(activity5.Source.Version))
-                {
-                    tags.OtelLibraryVersion = activity5.Source.Version;
-                }
-            }
-
-            // Set OTEL status code and OTEL status description
-            if (tags.OtelStatusCode is null)
-            {
-                if (activity6 is not null)
-                {
-                    tags.OtelStatusCode = activity6.Status switch
-                    {
-                        ActivityStatusCode.Unset => "STATUS_CODE_UNSET",
-                        ActivityStatusCode.Ok => "STATUS_CODE_OK",
-                        ActivityStatusCode.Error => "STATUS_CODE_ERROR",
-                        _ => "STATUS_CODE_UNSET"
-                    };
-                }
-                else
-                {
-                    tags.OtelStatusCode = "STATUS_CODE_UNSET";
-                }
-            }
-
-            // Map the OTEL status to error tags
-            // See trace agent func status2Error: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L583
-            if (activity6?.Status == ActivityStatusCode.Error)
-            {
-                AgentStatus2ErrorActivity6(activity6, span, tags);
-            }
-            else if (string.Equals(tags.OtelStatusCode, "STATUS_CODE_ERROR", StringComparison.Ordinal))
+            if (!openTelemetryTraceCompatibilityEnabled)
             {
                 if (activity5 is not null)
                 {
-                    AgentStatus2ErrorActivity5(activity5, span);
+                    // For .NET Activity .NET 5+ the Source.Name is only set via ActivitySource.StartActivity
+                    // and not when an Activity object is created manually and having .Start() called on it
+                    if (!string.IsNullOrEmpty(activity5.Source.Name))
+                    {
+                        tags.OtelLibraryName = activity5.Source.Name;
+                    }
+
+                    if (!string.IsNullOrEmpty(activity5.Source.Version))
+                    {
+                        tags.OtelLibraryVersion = activity5.Source.Version;
+                    }
                 }
-                else
+
+                // Set OTEL status code and OTEL status description
+                if (tags.OtelStatusCode is null)
                 {
-                    AgentStatus2ErrorBasic(activity, span);
+                    if (activity6 is not null)
+                    {
+                        tags.OtelStatusCode = activity6.Status switch
+                        {
+                            ActivityStatusCode.Unset => "STATUS_CODE_UNSET",
+                            ActivityStatusCode.Ok => "STATUS_CODE_OK",
+                            ActivityStatusCode.Error => "STATUS_CODE_ERROR",
+                            _ => "STATUS_CODE_UNSET"
+                        };
+                    }
+                    else
+                    {
+                        tags.OtelStatusCode = "STATUS_CODE_UNSET";
+                    }
+                }
+
+                // Map the OTEL status to error tags
+                // See trace agent func status2Error: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L583
+                if (activity6?.Status == ActivityStatusCode.Error)
+                {
+                    AgentStatus2ErrorActivity6(activity6, span, tags);
+                }
+                else if (string.Equals(tags.OtelStatusCode, "STATUS_CODE_ERROR", StringComparison.Ordinal))
+                {
+                    if (activity5 is not null)
+                    {
+                        AgentStatus2ErrorActivity5(activity5, span);
+                    }
+                    else
+                    {
+                        AgentStatus2ErrorBasic(activity, span);
+                    }
                 }
             }
 

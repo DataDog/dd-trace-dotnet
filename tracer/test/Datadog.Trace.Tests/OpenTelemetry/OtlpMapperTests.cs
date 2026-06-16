@@ -314,6 +314,44 @@ public class OtlpMapperTests
         attributes.Should().Contain(kv => kv.Key == "other.tag" && (string)kv.Value! == "should-be-kept");
     }
 
+    [Theory]
+    [InlineData("otel.library.name")]
+    [InlineData("otel.library.version")]
+    [InlineData("otel.status_code")]
+    [InlineData("otel.trace_id")]
+    [InlineData("span.kind")]
+    [InlineData("service.version")]
+    [InlineData("service.instance.id")]
+    public void EmitAttributesFromSpan_DoesNotEmitOtelCompatRestrictedTag_WhenOpenTelemetryTraceCompatibilityEnabled(string tagKey)
+    {
+        var span = CreateSpan();
+        span.SetTag(tagKey, "some-value");
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: true);
+
+        attributes.Should().NotContain(kv => kv.Key == tagKey, because: $"'{tagKey}' must not be emitted as a span attribute when OTel trace compatibility is enabled");
+    }
+
+    [Theory]
+    [InlineData("otel.library.name")]
+    [InlineData("otel.library.version")]
+    [InlineData("otel.status_code")]
+    [InlineData("otel.trace_id")]
+    [InlineData("span.kind")]
+    [InlineData("service.version")]
+    [InlineData("service.instance.id")]
+    public void EmitAttributesFromSpan_EmitsOtelCompatRestrictedTag_WhenOpenTelemetryTraceCompatibilityDisabled(string tagKey)
+    {
+        var span = CreateSpan();
+        span.SetTag(tagKey, "some-value");
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: false);
+
+        attributes.Should().Contain(kv => kv.Key == tagKey, because: $"'{tagKey}' should be emitted as a span attribute when OTel trace compatibility is disabled");
+    }
+
     private static Span CreateSpan(string? origin = null)
     {
         var traceContext = new TraceContext(new StubDatadogTracer());

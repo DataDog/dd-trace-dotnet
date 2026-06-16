@@ -1,4 +1,4 @@
-﻿{
+{
   "resourceSpans": [
     {
       "resource": {
@@ -66,48 +66,6 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
-                {
                   "key": "http.status_code",
                   "value": {
                     "doubleValue": 404.0
@@ -125,55 +83,7 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "ERROR"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
-                {
                   "key": "otel.status_description",
-                  "value": {
-                    "stringValue": "Something went wrong"
-                  }
-                },
-                {
-                  "key": "error.msg",
                   "value": {
                     "stringValue": "Something went wrong"
                   }
@@ -188,50 +98,7 @@
               "kind": 1,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "OK"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                }
-              ]
+              "attributes": []
             },
             {
               "traceId": "normalized-trace-id",
@@ -243,69 +110,9 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "ERROR"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
-                {
                   "key": "otel.status_description",
                   "value": {
                     "stringValue": "Example argument exception"
-                  }
-                },
-                {
-                  "key": "error.type",
-                  "value": {
-                    "stringValue": "ArgumentException"
-                  }
-                },
-                {
-                  "key": "error.msg",
-                  "value": {
-                    "stringValue": "Example argument exception"
-                  }
-                },
-                {
-                  "key": "error.stack",
-                  "value": {
-                    "stringValue": "System.ArgumentException: Example argument exception"
                   }
                 }
               ],
@@ -349,48 +156,6 @@
                   "value": {
                     "stringValue": "Guid_1"
                   }
-                },
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
                 }
               ]
             },
@@ -404,48 +169,6 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "server"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
-                {
                   "key": "http.request.method",
                   "value": {
                     "stringValue": "GET"
@@ -463,48 +186,6 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "client"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
-                {
                   "key": "http.request.method",
                   "value": {
                     "stringValue": "GET"
@@ -521,48 +202,6 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "client"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
                 {
                   "key": "db.system",
                   "value": {
@@ -580,48 +219,6 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "client"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
                 {
                   "key": "messaging.system",
                   "value": {
@@ -645,48 +242,6 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "server"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
                 {
                   "key": "messaging.system",
                   "value": {
@@ -711,48 +266,6 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "producer"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
-                {
                   "key": "messaging.system",
                   "value": {
                     "stringValue": "Kafka"
@@ -776,48 +289,6 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "consumer"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
-                {
                   "key": "messaging.system",
                   "value": {
                     "stringValue": "Kafka"
@@ -840,48 +311,6 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "client"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
                 {
                   "key": "rpc.system",
                   "value": {
@@ -906,48 +335,6 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "client"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
-                {
                   "key": "rpc.system",
                   "value": {
                     "stringValue": "aws-api"
@@ -964,48 +351,6 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "client"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
                 {
                   "key": "rpc.system",
                   "value": {
@@ -1024,48 +369,6 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "server"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
-                {
                   "key": "rpc.system",
                   "value": {
                     "stringValue": "GRPC"
@@ -1082,48 +385,6 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "client"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
                 {
                   "key": "faas.invoked_provider",
                   "value": {
@@ -1148,48 +409,6 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "server"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
-                {
                   "key": "faas.trigger",
                   "value": {
                     "stringValue": "Datasource"
@@ -1206,48 +425,6 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "server"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
                 {
                   "key": "graphql.operation.type",
                   "value": {
@@ -1266,48 +443,6 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "server"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
-                {
                   "key": "network.protocol.name",
                   "value": {
                     "stringValue": "Amqp"
@@ -1323,50 +458,7 @@
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "server"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                }
-              ]
+              "attributes": []
             },
             {
               "traceId": "normalized-trace-id",
@@ -1377,48 +469,6 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "client"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
                 {
                   "key": "network.protocol.name",
                   "value": {
@@ -1435,50 +485,7 @@
               "kind": 3,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "client"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                }
-              ]
+              "attributes": []
             },
             {
               "traceId": "normalized-trace-id",
@@ -1488,50 +495,7 @@
               "kind": 1,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                }
-              ]
+              "attributes": []
             },
             {
               "traceId": "normalized-trace-id",
@@ -1541,50 +505,7 @@
               "kind": 5,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "consumer"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                }
-              ]
+              "attributes": []
             },
             {
               "traceId": "normalized-trace-id",
@@ -1594,50 +515,7 @@
               "kind": 4,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "producer"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                }
-              ]
+              "attributes": []
             },
             {
               "traceId": "normalized-trace-id",
@@ -1647,56 +525,7 @@
               "kind": 1,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "OtherLibrary"
-                  }
-                },
-                {
-                  "key": "otel.library.version",
-                  "value": {
-                    "stringValue": "4.0.0"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                }
-              ]
+              "attributes": []
             },
             {
               "traceId": "normalized-trace-id",
@@ -1710,48 +539,6 @@
                   "key": "runtime-id",
                   "value": {
                     "stringValue": "Guid_1"
-                  }
-                },
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
                   }
                 },
                 {
@@ -2079,48 +866,6 @@
                   "value": {
                     "stringValue": "Guid_1"
                   }
-                },
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
                 }
               ],
               "links": [
@@ -2143,48 +888,6 @@
                   "key": "runtime-id",
                   "value": {
                     "stringValue": "Guid_1"
-                  }
-                },
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
                   }
                 }
               ],
@@ -2214,36 +917,6 @@
                   "value": {
                     "stringValue": "Guid_1"
                   }
-                },
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MissingServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "Samples.OpenTelemetrySdk"
-                  }
                 }
               ]
             },
@@ -2256,48 +929,6 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
                 {
                   "key": "http.response.status_code",
                   "value": {
@@ -2314,50 +945,7 @@
               "kind": 1,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                }
-              ]
+              "attributes": []
             },
             {
               "traceId": "normalized-trace-id",
@@ -2367,50 +955,7 @@
               "kind": 1,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                }
-              ]
+              "attributes": []
             },
             {
               "traceId": "normalized-trace-id",
@@ -2420,50 +965,7 @@
               "kind": 1,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                }
-              ]
+              "attributes": []
             },
             {
               "traceId": "normalized-trace-id",
@@ -2473,50 +975,7 @@
               "kind": 1,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                }
-              ]
+              "attributes": []
             },
             {
               "traceId": "normalized-trace-id",
@@ -2527,48 +986,6 @@
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
               "attributes": [
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "server"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "MyServiceName"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
-                  }
-                },
-                {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "ServiceNameOverride"
-                  }
-                },
-                {
-                  "key": "service.version",
-                  "value": {
-                    "stringValue": "1.0.x"
-                  }
-                },
-                {
-                  "key": "service.instance.id",
-                  "value": {
-                    "stringValue": "Guid_2"
-                  }
-                },
                 {
                   "key": "http.request.method",
                   "value": {
@@ -2613,30 +1030,6 @@
                   "key": "runtime-id",
                   "value": {
                     "stringValue": "Guid_1"
-                  }
-                },
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "internal"
-                  }
-                },
-                {
-                  "key": "otel.trace_id",
-                  "value": {
-                    "stringValue": "normalized-otel-trace-id"
-                  }
-                },
-                {
-                  "key": "otel.library.name",
-                  "value": {
-                    "stringValue": "AdditionalActivitySource"
-                  }
-                },
-                {
-                  "key": "otel.status_code",
-                  "value": {
-                    "stringValue": "STATUS_CODE_UNSET"
                   }
                 }
               ]
