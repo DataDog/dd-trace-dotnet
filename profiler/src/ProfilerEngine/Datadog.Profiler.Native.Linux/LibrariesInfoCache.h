@@ -22,8 +22,8 @@
 #ifdef ARM64
 struct FuncEntry
 {
-    unw_word_t start_ip;
-    unw_word_t end_ip;
+    uint32_t offset; // relative to ModuleRegion::addr_low
+    uint32_t size;   // function size (end_ip - start_ip)
 };
 
 struct ModuleRegion
