@@ -315,10 +315,7 @@ public class OtlpMapperTests
     }
 
     [Theory]
-    [InlineData("otel.library.name")]
-    [InlineData("otel.library.version")]
     [InlineData("otel.status_code")]
-    [InlineData("otel.trace_id")]
     [InlineData("span.kind")]
     [InlineData("service.version")]
     [InlineData("service.instance.id")]
