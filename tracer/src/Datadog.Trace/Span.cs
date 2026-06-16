@@ -483,6 +483,25 @@ namespace Datadog.Trace
                 if (IsRootSpan)
                 {
                     DebuggerManager.Instance.ExceptionReplay?.EndRequest();
+
+                    // FFE APM span enrichment (NET-01). Guarded by a cheap settings bool so the
+                    // gate-off branch does no work and allocates no per-span state (DG-005, the
+                    // Go #4844 blocker — this is .NET's highest-risk hot path). When on, drain the
+                    // root span's accumulated state and write the ffe_* tags BEFORE CloseSpan.
+                    if (Context.TraceContext?.Tracer?.Settings?.IsSpanEnrichmentEnabled == true)
+                    {
+                        var enrichmentState = FeatureFlags.SpanEnrichmentStore.GetAndClear(SpanId);
+                        if (enrichmentState is not null && enrichmentState.HasData())
+                        {
+                            foreach (var tag in enrichmentState.ToSpanTags())
+                            {
+                                if (!StringUtil.IsNullOrEmpty(tag.Value))
+                                {
+                                    SetTag(tag.Key, tag.Value);
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Duration = duration;
