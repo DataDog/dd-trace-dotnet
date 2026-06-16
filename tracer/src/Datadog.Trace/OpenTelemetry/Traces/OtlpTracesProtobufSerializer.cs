@@ -46,7 +46,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     // by the 7th doubling to maintain efficient allocation without frequent resizing.
     private const int InitialBufferSize = 750000;
 
-    private readonly bool _openTelemetryTraceCompatibilityEnabled;
+    private readonly bool _openTelemetrySemanticsEnabled;
 
     // Absolute positions of the length placeholders. INVARIANT: these are offsets
     // into the caller's eventual `_buffer` (the destination), NOT into the temporary
@@ -58,9 +58,9 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     private int _resourceSpansLengthPos = -1;
     private int _scopeSpansLengthPos = -1;
 
-    public OtlpTracesProtobufSerializer(bool openTelemetryTraceCompatibilityEnabled)
+    public OtlpTracesProtobufSerializer(bool openTelemetrySemanticsEnabled)
     {
-        _openTelemetryTraceCompatibilityEnabled = openTelemetryTraceCompatibilityEnabled;
+        _openTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
     }
 
     public int HeaderSize => 0;
@@ -481,7 +481,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         int droppedAttributes = OtlpMapper.EmitAttributesFromSpan(
             in spanModel,
             SpanAttributeCountLimit,
-            _openTelemetryTraceCompatibilityEnabled,
+            _openTelemetrySemanticsEnabled,
             ref attributesState,
             static (ref WriteAttributesState s, KeyValue kv) =>
                 s.Position = WriteKeyValueAttribute(s.Bytes, s.Position, Span_Attributes, kv));

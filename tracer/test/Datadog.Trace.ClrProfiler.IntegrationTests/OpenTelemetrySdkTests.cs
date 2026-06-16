@@ -271,10 +271,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [MemberData(nameof(GetOtlpTracesTestData))]
-        public async Task SubmitsOtlpTraces(string packageVersion, string datadogTracesEnabled, string otelTracesEnabled, string protocol, bool useAgentHostBackup, bool openTelemetryTraceCompatibilityEnabled)
+        public async Task SubmitsOtlpTraces(string packageVersion, string datadogTracesEnabled, string otelTracesEnabled, string protocol, bool useAgentHostBackup, bool openTelemetrySemanticsEnabled)
         {
             SetServiceVersion("1.0.x"); // We need this to be consistent with the in-code 1.0.x version set in the OTel SDK builder
-            SetEnvironmentVariable("DD_TRACE_OTEL_COMPATIBILITY_ENABLED", openTelemetryTraceCompatibilityEnabled.ToString());
+            SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
 
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
             var runtimeMajor = Environment.Version.Major;
@@ -289,7 +289,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _ => string.Empty
             };
 
-            snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD{(openTelemetryTraceCompatibilityEnabled ? "_OtelCompat" : string.Empty)}";
+            snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD{(openTelemetrySemanticsEnabled ? "_OtelSemantics" : string.Empty)}";
 
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "127.0.0.1";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;

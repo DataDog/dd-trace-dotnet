@@ -159,7 +159,7 @@ public class OtlpMapperTests
         var span = CreateSpan();
 
         var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: false);
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetrySemanticsEnabled: false);
 
         attributes.Should().Contain(kv => kv.Key == "service.name" && (string)kv.Value! == span.ServiceName);
         attributes.Should().Contain(kv => kv.Key == "resource.name" && (string)kv.Value! == span.ResourceName);
@@ -168,12 +168,12 @@ public class OtlpMapperTests
     }
 
     [Fact]
-    public void EmitAttributesFromSpan_DoesNotEmitDatadogAttributes_WhenOpenTelemetryTraceCompatibilityEnabled()
+    public void EmitAttributesFromSpan_DoesNotEmitDatadogAttributes_WhenOpenTelemetrySemanticsEnabled()
     {
         var span = CreateSpan();
 
         var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: true);
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetrySemanticsEnabled: true);
 
         attributes.Should().NotContain(kv => kv.Key == "service.name");
         attributes.Should().NotContain(kv => kv.Key == "resource.name");
@@ -189,7 +189,7 @@ public class OtlpMapperTests
         span.SetTag("http.url", "https://example.com");
 
         var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: false);
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetrySemanticsEnabled: false);
 
         attributes.Should().Contain(kv => kv.Key == "http.method" && (string)kv.Value! == "GET");
         attributes.Should().Contain(kv => kv.Key == "http.url" && (string)kv.Value! == "https://example.com");
@@ -202,7 +202,7 @@ public class OtlpMapperTests
         span.SetMetric("my.metric", 42.5);
 
         var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: false);
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetrySemanticsEnabled: false);
 
         attributes.Should().Contain(kv => kv.Key == "my.metric" && (double)kv.Value! == 42.5);
     }
@@ -214,7 +214,7 @@ public class OtlpMapperTests
         span.Context.LastParentId = "0000000000000042";
 
         var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: false);
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetrySemanticsEnabled: false);
 
         attributes.Should().Contain(kv => kv.Key == Tags.LastParentId && (string)kv.Value! == "0000000000000042");
     }
@@ -225,7 +225,7 @@ public class OtlpMapperTests
         var span = CreateSpan();
 
         var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: false);
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetrySemanticsEnabled: false);
 
         attributes.Should().NotContain(kv => kv.Key == Tags.LastParentId);
     }
@@ -236,7 +236,7 @@ public class OtlpMapperTests
         var span = CreateSpan();
 
         var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: false);
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetrySemanticsEnabled: false);
 
         attributes.Should().Contain(kv => kv.Key == Tags.RuntimeId && (string)kv.Value! == Tracer.RuntimeId);
     }
@@ -251,7 +251,7 @@ public class OtlpMapperTests
         var spanModel = traceChunk.GetSpanModel(0);
 
         var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit: 128, openTelemetryTraceCompatibilityEnabled: false);
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit: 128, openTelemetrySemanticsEnabled: false);
 
         attributes.Should().Contain(kv => kv.Key == Tags.Origin && (string)kv.Value! == "synthetics");
     }
@@ -262,7 +262,7 @@ public class OtlpMapperTests
         var span = CreateSpan();
 
         var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: false);
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetrySemanticsEnabled: false);
 
         attributes.Should().NotContain(kv => kv.Key == Tags.Origin);
     }
@@ -274,7 +274,7 @@ public class OtlpMapperTests
         span.SetTag("single.tag", "value");
 
         var attributes = new List<KeyValue>();
-        int droppedCount = OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: false);
+        int droppedCount = OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetrySemanticsEnabled: false);
 
         droppedCount.Should().Be(0);
     }
@@ -289,7 +289,7 @@ public class OtlpMapperTests
         }
 
         var attributes = new List<KeyValue>();
-        int droppedCount = OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 3, openTelemetryTraceCompatibilityEnabled: false);
+        int droppedCount = OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 3, openTelemetrySemanticsEnabled: false);
 
         attributes.Should().HaveCount(3);
         droppedCount.Should().BeGreaterThanOrEqualTo(7);
@@ -305,7 +305,7 @@ public class OtlpMapperTests
         span.SetTag("other.tag", "should-be-kept");
 
         var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: false);
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetrySemanticsEnabled: false);
 
         // Ensures that telemetry SDK attributes (added by OpenTelemetry) are dropped
         attributes.Should().NotContain(kv => kv.Key == "telemetry.sdk.name");
@@ -322,13 +322,13 @@ public class OtlpMapperTests
     [InlineData("span.kind")]
     [InlineData("service.version")]
     [InlineData("service.instance.id")]
-    public void EmitAttributesFromSpan_DoesNotEmitOtelCompatRestrictedTag_WhenOpenTelemetryTraceCompatibilityEnabled(string tagKey)
+    public void EmitAttributesFromSpan_DoesNotEmitOtelSemanticsRestrictedTag_WhenOpenTelemetrySemanticsEnabled(string tagKey)
     {
         var span = CreateSpan();
         span.SetTag(tagKey, "some-value");
 
         var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: true);
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetrySemanticsEnabled: true);
 
         attributes.Should().NotContain(kv => kv.Key == tagKey, because: $"'{tagKey}' must not be emitted as a span attribute when OTel trace compatibility is enabled");
     }
@@ -341,13 +341,13 @@ public class OtlpMapperTests
     [InlineData("span.kind")]
     [InlineData("service.version")]
     [InlineData("service.instance.id")]
-    public void EmitAttributesFromSpan_EmitsOtelCompatRestrictedTag_WhenOpenTelemetryTraceCompatibilityDisabled(string tagKey)
+    public void EmitAttributesFromSpan_EmitsOtelSemanticsRestrictedTag_WhenOpenTelemetrySemanticsDisabled(string tagKey)
     {
         var span = CreateSpan();
         span.SetTag(tagKey, "some-value");
 
         var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetryTraceCompatibilityEnabled: false);
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetrySemanticsEnabled: false);
 
         attributes.Should().Contain(kv => kv.Key == tagKey, because: $"'{tagKey}' should be emitted as a span attribute when OTel trace compatibility is disabled");
     }
