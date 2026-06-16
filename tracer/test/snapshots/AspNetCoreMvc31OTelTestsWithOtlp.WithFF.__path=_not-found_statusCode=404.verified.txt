@@ -71,30 +71,6 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "samples.aspnetcoremvc31"
-                  }
-                },
-                {
-                  "key": "operation.name",
-                  "value": {
-                    "stringValue": "aspnet_core.request"
-                  }
-                },
-                {
-                  "key": "resource.name",
-                  "value": {
-                    "stringValue": "GET /not-found"
-                  }
-                },
-                {
-                  "key": "span.type",
-                  "value": {
-                    "stringValue": "web"
-                  }
-                },
-                {
                   "key": "runtime-id",
                   "value": {
                     "stringValue": "Guid_1"
@@ -104,12 +80,6 @@
                   "key": "component",
                   "value": {
                     "stringValue": "aspnet_core"
-                  }
-                },
-                {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "server"
                   }
                 },
                 {
