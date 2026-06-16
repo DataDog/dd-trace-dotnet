@@ -136,7 +136,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
-            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags, otelSemanticsEnabled: tracer.Settings.OtelSemanticsEnabled);
+            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags, otelSemanticsEnabled: tracer.Settings.OpenTelemetrySemanticsEnabled);
 
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
             if (dataStreamsManager.IsTransactionTrackingEnabled)
@@ -205,7 +205,7 @@ namespace Datadog.Trace.PlatformHelpers
                 string GetRequestHeaderFromKey(string key) => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;
                 Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, GetRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
 
-                if (tracer.Settings.OtelSemanticsEnabled)
+                if (tracer.Settings.OpenTelemetrySemanticsEnabled)
                 {
                     if (tags.NetworkClientIp is not null)
                     {
@@ -262,7 +262,7 @@ namespace Datadog.Trace.PlatformHelpers
 
                     if (isMissingHttpStatusCode)
                     {
-                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, settings);
+                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, settings, tracer.Settings.OpenTelemetrySemanticsEnabled);
                     }
                 }
 
@@ -270,7 +270,7 @@ namespace Datadog.Trace.PlatformHelpers
 
                 if (proxyScope?.Span != null)
                 {
-                    proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, settings);
+                    proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, settings, tracer.Settings.OpenTelemetrySemanticsEnabled);
                     proxyScope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
 
@@ -306,11 +306,11 @@ namespace Datadog.Trace.PlatformHelpers
                 }
 
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
-                rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
+                rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.CurrentTraceSettings.Settings, tracer.Settings.OpenTelemetrySemanticsEnabled);
 
                 if (proxyScope?.Span != null)
                 {
-                    proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
+                    proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, tracer.CurrentTraceSettings.Settings, tracer.Settings.OpenTelemetrySemanticsEnabled);
                 }
 
                 if (BlockException.GetBlockException(exception) is null)

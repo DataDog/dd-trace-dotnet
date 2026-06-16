@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{httpMethod} {resourceUrl}";
 
-                if (tracer.Settings.OtelSemanticsEnabled)
+                if (tracer.Settings.OpenTelemetrySemanticsEnabled)
                 {
                     HttpOtelHelper.SetRequestMethod(span, httpMethod?.ToUpperInvariant());
                     if (requestUri is not null)

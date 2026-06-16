@@ -201,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     httpUrl: url,
                     userAgent: userAgent,
                     tags,
-                    otelSemanticsEnabled: tracer.Settings.OtelSemanticsEnabled);
+                    otelSemanticsEnabled: tracer.Settings.OpenTelemetrySemanticsEnabled);
 
                 if (tags is not null)
                 {

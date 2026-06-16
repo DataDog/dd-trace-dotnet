@@ -190,7 +190,7 @@ namespace Datadog.Trace.AspNet
                 var resourceName = tracer.CurrentTraceSettings.HasResourceBasedSamplingRule
                                        ? BuildResourceName(tracer, httpRequest)
                                        : null;
-                scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags, otelSemanticsEnabled: tracer.Settings.OtelSemanticsEnabled);
+                scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags, otelSemanticsEnabled: tracer.Settings.OpenTelemetrySemanticsEnabled);
                 tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers, tracer.CurrentTraceSettings.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(scope.Span, headers);
                 if (inferredProxyScope?.Span is { } proxySpan)
@@ -393,21 +393,21 @@ namespace Datadog.Trace.AspNet
                         // add "http.status_code" tag to the root span
                         if (!rootSpan.HasHttpStatusCode())
                         {
-                            rootSpan.SetHttpStatusCode(status, isServer: true, settings);
+                            rootSpan.SetHttpStatusCode(status, isServer: true, settings, tracer.Settings.OpenTelemetrySemanticsEnabled);
                             AddHeaderTagsFromHttpResponse(app.Context, rootScope);
                         }
 
                         // also add "http.status_code" tag to the current span if it's not the root
                         if (currentSpan != rootSpan && !currentSpan.HasHttpStatusCode())
                         {
-                            currentSpan.SetHttpStatusCode(status, isServer: true, settings);
+                            currentSpan.SetHttpStatusCode(status, isServer: true, settings, tracer.Settings.OpenTelemetrySemanticsEnabled);
                             AddHeaderTagsFromHttpResponse(app.Context, scope);
                         }
 
                         // also add "http.status_code" tag to the inferred proxy span
                         if (proxyScope?.Span is { } proxySpan && proxySpan != rootSpan && !proxySpan.HasHttpStatusCode())
                         {
-                            proxySpan.SetHttpStatusCode(status, isServer: true, settings);
+                            proxySpan.SetHttpStatusCode(status, isServer: true, settings, tracer.Settings.OpenTelemetrySemanticsEnabled);
                             AddHeaderTagsFromHttpResponse(app.Context, proxyScope);
                         }
 
@@ -486,8 +486,8 @@ namespace Datadog.Trace.AspNet
                         {
                             // in classic mode, the exception won't cause the correct status code to be set
                             // even though a 500 response will be sent ultimately, so set it manually
-                            scope.Span.SetHttpStatusCode(500, isServer: true, settings);
-                            proxyScope?.Span.SetHttpStatusCode(500, isServer: true, settings);
+                            scope.Span.SetHttpStatusCode(500, isServer: true, settings, tracer.Settings.OpenTelemetrySemanticsEnabled);
+                            proxyScope?.Span.SetHttpStatusCode(500, isServer: true, settings, tracer.Settings.OpenTelemetrySemanticsEnabled);
                         }
                     }
                 }
