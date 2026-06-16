@@ -20,7 +20,6 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal static class InstanceOfHelper
 {
     private const int MaxCachedTypes = 512;
-    private const int MaxTrackedMisses = 512;
     private const int MaxResolutionRetries = 3;
     private const int LinearAssemblyIdentityScanThreshold = 8;
 
@@ -76,6 +75,11 @@ internal static class InstanceOfHelper
             ThrowInvalidTypeName();
         }
 
+        if (TryResolveBclTypeAlias(typeName, out var aliasType))
+        {
+            return aliasType;
+        }
+
         var observedGeneration = Volatile.Read(ref _assemblyLoadGeneration);
         if (ResolutionStates.TryGetValue(typeName, out var cachedResolution))
         {
@@ -97,11 +101,6 @@ internal static class InstanceOfHelper
             {
                 return GetResolvedTypeOrThrow(typeName, cachedResolution, noNewAssemblies: true);
             }
-        }
-
-        if (TryResolveBclTypeAlias(typeName, out var aliasType))
-        {
-            return aliasType;
         }
 
         var typeNameInfo = ParseTypeName(typeName);
@@ -613,8 +612,7 @@ internal static class InstanceOfHelper
 
     private static void ClearCacheIfNeeded()
     {
-        if (ResolutionStates.Count >= MaxCachedTypes ||
-            ResolutionStates.Count >= MaxTrackedMisses)
+        if (ResolutionStates.Count >= MaxCachedTypes)
         {
             ResolutionStates.Clear();
         }
