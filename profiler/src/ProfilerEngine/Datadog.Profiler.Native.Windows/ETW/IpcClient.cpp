@@ -11,9 +11,9 @@ IpcClient::IpcClient()
     _hPipe = nullptr;
 }
 
-IpcClient::IpcClient(IIpcLogger* pLogger, HANDLE hPipe)
+IpcClient::IpcClient(std::shared_ptr<IIpcLogger> pLogger, HANDLE hPipe)
 {
-    _pLogger = pLogger;
+    _pLogger = std::move(pLogger);
     _hPipe = hPipe;
 }
 
@@ -35,9 +35,9 @@ bool IpcClient::Disconnect()
 }
 
 
-std::unique_ptr<IpcClient> IpcClient::Connect(IIpcLogger* pLogger, const std::string& portName, uint32_t timeoutMS)
+std::unique_ptr<IpcClient> IpcClient::Connect(std::shared_ptr<IIpcLogger> pLogger, const std::string& portName, uint32_t timeoutMS)
 {
-    HANDLE hPipe = GetEndPoint(pLogger, portName, timeoutMS);
+    HANDLE hPipe = GetEndPoint(pLogger.get(), portName, timeoutMS);
     if (hPipe == INVALID_HANDLE_VALUE)
     {
         if (pLogger != nullptr)
@@ -56,7 +56,7 @@ std::unique_ptr<IpcClient> IpcClient::Connect(IIpcLogger* pLogger, const std::st
         builder << "Pipe to  " << portName << " has been created";
         pLogger->Info(builder.str());
     }
-    return std::make_unique<IpcClient>(pLogger, hPipe);
+    return std::make_unique<IpcClient>(std::move(pLogger), hPipe);
  }
 
 uint32_t IpcClient::Send(PVOID pBuffer, uint32_t bufferSize)

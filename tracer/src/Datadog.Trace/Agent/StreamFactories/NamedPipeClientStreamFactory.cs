@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.IO.Pipes;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
@@ -36,7 +37,7 @@ namespace Datadog.Trace.Agent.StreamFactories
 
         public Stream GetBidirectionalStream()
         {
-            var pipeStream = new NamedPipeClientStream(ServerName, _pipeName, PipeDirection.InOut, PipeOptions);
+            var pipeStream = new NamedPipeClientStream(ServerName, _pipeName, PipeDirection.InOut, PipeOptions, TokenImpersonationLevel.Anonymous);
             pipeStream.Connect(_timeoutMs);
             return pipeStream;
         }
@@ -47,7 +48,7 @@ namespace Datadog.Trace.Agent.StreamFactories
             NamedPipeClientStream pipeStream = null;
             try
             {
-                pipeStream = new NamedPipeClientStream(ServerName, _pipeName, PipeDirection.InOut, PipeOptions);
+                pipeStream = new NamedPipeClientStream(ServerName, _pipeName, PipeDirection.InOut, PipeOptions, TokenImpersonationLevel.Anonymous);
                 await pipeStream.ConnectAsync(_timeoutMs, token).ConfigureAwait(false);
                 return pipeStream;
             }

@@ -80,7 +80,8 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// Configuration key for setting DBM propagation mode
-    /// Default value is disabled, expected values are either: disabled, service or full
+    /// Default value is disabled, expected values are either: disabled, service, dynamic_service or full
+    /// dynamic_service is equivalent to service with DD_DBM_INJECT_SQL_BASEHASH=true
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmPropagationMode"/>
     public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";
@@ -422,12 +423,6 @@ internal static partial class ConfigurationKeys
     /// or in the <c>app.config</c>/<c>web.config</c> file.
     /// </summary>
     public const string ConfigurationFileName = "DD_TRACE_CONFIG_FILE";
-
-    /// <summary>
-    /// Use libdatadog data pipeline to send traces.
-    /// Default value is <c>false</c> (disabled).
-    /// </summary>
-    public const string TraceDataPipelineEnabled = "DD_TRACE_DATA_PIPELINE_ENABLED";
 
     /// <summary>
     /// Configuration key for enabling or disabling the Tracer's debug mode.
