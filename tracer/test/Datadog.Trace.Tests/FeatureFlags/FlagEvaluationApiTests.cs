@@ -478,7 +478,7 @@ public class FlagEvaluationApiTests
         ((JObject)json["flagEvaluations"]![0]!).Add("reason", "targeting_match");
 
         var errors = ValidateAgainstWorkerSchema(json);
-        errors.Should().Contain(e => e.Contains("reason", StringComparison.Ordinal));
+        errors.Should().Contain(e => e.IndexOf("reason", StringComparison.Ordinal) >= 0);
     }
 
     [Fact]
