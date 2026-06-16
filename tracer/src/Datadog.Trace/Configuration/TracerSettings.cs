@@ -676,6 +676,9 @@ namespace Datadog.Trace.Configuration
             IsFlaggingProviderEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled)
                                                        .AsBool(false);
 
+            IsSpanEnrichmentEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled)
+                                                       .AsBool(false);
+
             if (source is CompositeConfigurationSource compositeSource)
             {
                 foreach (var nestedSource in compositeSource)
@@ -1289,6 +1292,14 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether remote Feature Flags Provider is enabled
         /// </summary>
         internal bool IsFlaggingProviderEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether APM span enrichment with feature-flag
+        /// evaluation metadata is enabled (Experimental). Distinct from
+        /// <see cref="IsFlaggingProviderEnabled"/>; off by default. Used as the cheap
+        /// allocation-free gate in <see cref="Span.Finish(System.TimeSpan)"/> (DG-005).
+        /// </summary>
+        internal bool IsSpanEnrichmentEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether partial flush is enabled
