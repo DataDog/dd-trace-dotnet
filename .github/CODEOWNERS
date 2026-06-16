@@ -203,7 +203,7 @@ Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 # Common Files
 Datadog.Trace.Trimming.xml                @DataDog/apm-dotnet
 Directory.Build.props                     @DataDog/apm-dotnet
-missing-nullability-files.csv             @DataDog/apm-dotnet
+/tracer/missing-nullability-files.csv     @DataDog/apm-dotnet @DataDog/asm-dotnet @DataDog/ci-app-libraries-dotnet @DataDog/debugger-dotnet @DataDog/profiling-dotnet
 /tracer/src/Datadog.Trace/Generated/      @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Configuration/IntegrationId.cs @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Telemetry/Metrics/MetricTags.cs @DataDog/apm-dotnet

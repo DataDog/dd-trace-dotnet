@@ -1,0 +1,31 @@
+﻿{
+  ContentType: multipart/form-data; boundary=faa0a896-8bc8-48f3-b46d-016f2b15a884,
+  Files: [
+    {
+      Name: file,
+      FileName: file.gz,
+      ContentType: application/gzip,
+      Length: <compressed-length>,
+      Content: {"service":"benchmark","scopes":[]}
+    },
+    {
+      Name: event,
+      FileName: event.json,
+      ContentType: application/json,
+      Length: 257,
+      Content:
+{
+  "ddsource": "dd_debugger",
+  "service": "benchmark-service",
+  "version": "1.0.0",
+  "language": "dotnet",
+  "runtimeId": "<runtime-id>",
+  "type": "symdb",
+  "uploadId": "11111111-2222-3333-4444-555555555555",
+  "batchNum": 7,
+  "final": false,
+  "attachmentSize": "<compressed-length>"
+}
+    }
+  ]
+}

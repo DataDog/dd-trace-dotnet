@@ -8,8 +8,10 @@
 #include "environment_variables_util.h"
 #include "logger.h"
 #include "macros.h"
+#include <deque>
 #include <set>
 #include <stack>
+#include <unordered_map>
 
 #include "../../../shared/src/native-src/pal.h"
 
@@ -215,26 +217,39 @@ ModuleInfo GetModuleInfo(ICorProfilerInfo4* info, const ModuleID& module_id)
     return {module_id, shared::WSTRING(module_path), GetAssemblyInfo(info, assembly_id), module_flags};
 }
 
-TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token_)
+namespace
 {
-    mdToken parent_token = mdTokenNil;
-    std::shared_ptr<TypeInfo> parentTypeInfo = nullptr;
-    mdToken parent_type_token = mdTokenNil;
-    WCHAR type_name[kNameMaxSize]{};
-    DWORD type_name_len = 0;
-    DWORD type_flags;
-    std::shared_ptr<TypeInfo> extendsInfo = nullptr;
+// Resolves a metadata token to its leaf type properties without recursively building
+// extend_from / parent_type chains. TypeSpec generic-inst unwrapping tracks visited
+// TypeSpecs on the current unwrap path only; inheritance is handled in GetTypeInfo.
+struct TypeInfoLeaf
+{
+    bool valid = false;
+    bool is_method_token = false;
+    mdToken id = mdTokenNil;
+    shared::WSTRING name;
+    mdTypeSpec type_spec = mdTypeSpecNil;
+    ULONG32 token_type = 0;
+    mdToken scope_token = mdTokenNil;
     mdToken type_extends = mdTokenNil;
-    bool type_valueType = false;
+    mdToken parent_type_token = mdTokenNil;
     bool type_isGeneric = false;
     bool type_isAbstract = false;
     bool type_isSealed = false;
+};
 
+TypeInfoLeaf ResolveTypeInfoLeaf(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token_)
+{
+    TypeInfoLeaf leaf;
+    mdToken parent_token = mdTokenNil;
+    WCHAR type_name[kNameMaxSize]{};
+    DWORD type_name_len = 0;
+    DWORD type_flags = 0;
     HRESULT hr = E_FAIL;
 
     auto token = token_;
     auto typeSpec = mdTypeSpecNil;
-    std::set<mdToken> processed;
+    std::set<mdToken> typespecs_on_path;
 
     while (token != mdTokenNil)
     {
@@ -243,27 +258,17 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
         {
             case mdtTypeDef:
                 hr = metadata_import->GetTypeDefProps(token, type_name, kNameMaxSize, &type_name_len, &type_flags,
-                                                      &type_extends);
+                                                      &leaf.type_extends);
 
-                metadata_import->GetNestedClassProps(token, &parent_type_token);
-                if (parent_type_token != mdTokenNil)
-                {
-                    parentTypeInfo = std::make_shared<TypeInfo>(GetTypeInfo(metadata_import, parent_type_token));
-                }
+                metadata_import->GetNestedClassProps(token, &leaf.parent_type_token);
 
-                if (type_extends != mdTokenNil)
-                {
-                    extendsInfo = std::make_shared<TypeInfo>(GetTypeInfo(metadata_import, type_extends));
-                    type_valueType =
-                        extendsInfo->name == WStr("System.ValueType") || extendsInfo->name == WStr("System.Enum");
-                }
-
-                type_isAbstract = IsTdAbstract(type_flags);
-                type_isSealed = IsTdSealed(type_flags);
+                leaf.type_isAbstract = IsTdAbstract(type_flags);
+                leaf.type_isSealed = IsTdSealed(type_flags);
 
                 break;
             case mdtTypeRef:
                 hr = metadata_import->GetTypeRefProps(token, &parent_token, type_name, kNameMaxSize, &type_name_len);
+                leaf.scope_token = parent_token;
                 break;
             case mdtTypeSpec:
             {
@@ -279,11 +284,11 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
 
                 if (signature[0] & ELEMENT_TYPE_GENERICINST)
                 {
-                    if (std::find(processed.begin(), processed.end(), token) != processed.end())
+                    if (typespecs_on_path.find(token) != typespecs_on_path.end())
                     {
                         return {}; // Break circular reference
                     }
-                    processed.insert(token);
+                    typespecs_on_path.insert(token);
 
                     mdToken type_token;
                     CorSigUncompressToken(&signature[2], &type_token);
@@ -297,11 +302,9 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
                 metadata_import->GetModuleRefProps(token, type_name, kNameMaxSize, &type_name_len);
                 break;
             case mdtMemberRef:
-                return GetFunctionInfo(metadata_import, token).type;
-                break;
             case mdtMethodDef:
-                return GetFunctionInfo(metadata_import, token).type;
-                break;
+                leaf.is_method_token = true;
+                return leaf;
         }
 
         if (FAILED(hr) || type_name_len == 0)
@@ -309,19 +312,141 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
             return {};
         }
 
-        const auto type_name_string = shared::WSTRING(type_name);
-        const auto generic_token_index = type_name_string.rfind(WStr("`"));
+        leaf.valid = true;
+        leaf.id = token;
+        leaf.name = shared::WSTRING(type_name);
+        leaf.type_spec = typeSpec;
+        leaf.token_type = typeSpec != mdTypeSpecNil ? mdtTypeSpec : token_type;
+
+        const auto generic_token_index = leaf.name.rfind(WStr("`"));
         if (generic_token_index != std::string::npos)
         {
-            const auto idxFromRight = type_name_string.length() - generic_token_index - 1;
-            type_isGeneric = idxFromRight == 1 || idxFromRight == 2;
+            const auto idxFromRight = leaf.name.length() - generic_token_index - 1;
+            leaf.type_isGeneric = idxFromRight == 1 || idxFromRight == 2;
         }
 
-        return {token,         type_name_string, typeSpec,       typeSpec != mdTypeSpecNil ? mdtTypeSpec : token_type,
-                extendsInfo,   type_valueType,   type_isGeneric, type_isAbstract,
-                type_isSealed, parentTypeInfo,   parent_token};
+        return leaf;
     }
+
     return {};
+}
+
+bool IsValueTypeBaseName(const shared::WSTRING& name)
+{
+    return name == WStr("System.ValueType") || name == WStr("System.Enum");
+}
+
+} // namespace
+
+// Builds the TypeInfo for a token, including its full extend_from / parent_type chains.
+// The inheritance and nesting graph is walked iteratively (breadth-first) rather than
+// recursively so that deep type hierarchies cannot exhaust the native thread stack. Each
+// reachable token's metadata is read exactly once, then the nodes are linked together.
+TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token_)
+{
+    const auto root_leaf = ResolveTypeInfoLeaf(metadata_import, token_);
+    if (root_leaf.is_method_token)
+    {
+        return GetFunctionInfo(metadata_import, token_).type;
+    }
+
+    if (!root_leaf.valid)
+    {
+        return {};
+    }
+
+    // Phase 1: breadth-first traversal of the inheritance + nesting graph, reading each
+    // reachable token's leaf metadata once.
+    std::unordered_map<mdToken, TypeInfoLeaf> leaves;
+    std::deque<mdToken> pending;
+
+    const auto enqueue = [&](const mdToken token) {
+        if (token != mdTokenNil && leaves.count(token) == 0)
+        {
+            pending.push_back(token);
+        }
+    };
+
+    leaves[token_] = root_leaf;
+    enqueue(root_leaf.type_extends);
+    enqueue(root_leaf.parent_type_token);
+
+    while (!pending.empty())
+    {
+        const auto current = pending.front();
+        pending.pop_front();
+        if (leaves.count(current) > 0)
+        {
+            continue;
+        }
+
+        const auto leaf = ResolveTypeInfoLeaf(metadata_import, current);
+        leaves[current] = leaf;
+        if (leaf.valid)
+        {
+            enqueue(leaf.type_extends);
+            enqueue(leaf.parent_type_token);
+        }
+    }
+
+    // Phase 2: construct a TypeInfo node per token. valueType depends on the base type's
+    // name, which is already resolved in the leaves map.
+    std::unordered_map<mdToken, std::shared_ptr<TypeInfo>> cache;
+    for (const auto& entry : leaves)
+    {
+        const auto& leaf = entry.second;
+        if (!leaf.valid)
+        {
+            cache[entry.first] = std::make_shared<TypeInfo>();
+            continue;
+        }
+
+        bool type_valueType = false;
+        if (leaf.type_extends != mdTokenNil)
+        {
+            const auto base_it = leaves.find(leaf.type_extends);
+            if (base_it != leaves.end() && base_it->second.valid)
+            {
+                type_valueType = IsValueTypeBaseName(base_it->second.name);
+            }
+        }
+
+        cache[entry.first] = std::make_shared<TypeInfo>(
+            leaf.id, leaf.name, leaf.type_spec, leaf.token_type, nullptr, type_valueType, leaf.type_isGeneric,
+            leaf.type_isAbstract, leaf.type_isSealed, nullptr, leaf.scope_token);
+    }
+
+    // Phase 3: link extend_from / parent_type to the materialized nodes.
+    for (const auto& entry : leaves)
+    {
+        const auto& leaf = entry.second;
+        if (!leaf.valid)
+        {
+            continue;
+        }
+
+        auto& info = cache[entry.first];
+
+        if (leaf.type_extends != mdTokenNil)
+        {
+            const auto extends_it = cache.find(leaf.type_extends);
+            if (extends_it != cache.end())
+            {
+                info->extend_from = extends_it->second;
+            }
+        }
+
+        if (leaf.parent_type_token != mdTokenNil)
+        {
+            const auto parent_it = cache.find(leaf.parent_type_token);
+            if (parent_it != cache.end())
+            {
+                info->parent_type = parent_it->second;
+            }
+        }
+    }
+
+    return *cache[token_];
 }
 
 // Searches for an AssemblyRef whose name and version match exactly.

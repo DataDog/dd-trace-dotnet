@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -154,16 +155,12 @@ public class SymbolUploaderTest
     {
         public List<byte[]> Segments { get; } = new();
 
-        public Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
+        public async Task<bool> SendBatchAsync<TState>(Func<Stream, TState, Task> writeSymbols, TState state, SymDbUploadMetadata metadata)
         {
-            Segments.Add(symbols.ToArray());
-            return Task.FromResult(true);
-        }
-
-        public Task<bool> SendBatchAsync(ArraySegment<byte> symbols, SymDbUploadMetadata metadata)
-        {
-            Segments.Add(symbols.ToArray());
-            return Task.FromResult(true);
+            using var stream = new MemoryStream();
+            await writeSymbols(stream, state).ConfigureAwait(false);
+            Segments.Add(stream.ToArray());
+            return true;
         }
     }
 }

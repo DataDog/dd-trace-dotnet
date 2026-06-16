@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Should be run from <github tracer root>/shared/bin/monitoring-home"
+echo "Should be run from <github tracer root>/artifacts/monitoring-home"
 
 if [ -z "$1" ]
 then

@@ -15,12 +15,6 @@ public class TestSuite
     public static void AssemblyInit(TestContext context)
     {
         context.WriteLine($"Pid: {Process.GetCurrentProcess().Id}");
-        context.WriteLine("Environment Variables:");
-        foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
-        {
-            context.WriteLine($"  {entry.Key} = {entry.Value}");
-        }
-
         context.WriteLine(string.Empty);
     }
 

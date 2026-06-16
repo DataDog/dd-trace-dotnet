@@ -356,9 +356,6 @@ shared/src/Datadog.Trace.ClrProfiler.Native/cmake-build-debug/
 !shared/src/Datadog.Trace.ClrProfiler.Native/lib/**
 cmake-build-debug/*
 
-#profiler build files
-profiler/_build/
-
 # global build folder
 obj/*
 obj_arm64/*
