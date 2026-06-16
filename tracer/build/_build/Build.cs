@@ -50,7 +50,7 @@ partial class Build : NukeBuild
     [Parameter("Should minor versions of integration NuGet packages be included")]
     readonly bool IncludeMinorPackageVersions;
 
-    [Parameter("The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home ")]
+    [Parameter("The location to create the monitoring home directory. Default is ./artifacts/monitoring-home ")]
     readonly AbsolutePath MonitoringHome;
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
@@ -65,7 +65,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.45.0";
+    readonly string Version = "3.46.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -165,10 +165,8 @@ partial class Build : NukeBuild
             BenchmarkHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(BuildArtifactsDirectory);
             EnsureCleanDirectory(MonitoringHomeDirectory);
-            EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
-            EnsureCleanDirectory(NativeTracerProject.Directory / "build");
-            EnsureCleanDirectory(NativeTracerProject.Directory / "deps");
+            EnsureCleanDirectory(NativeArtifactsDirectory);
             EnsureCleanDirectory(BuildDataDirectory);
             EnsureCleanDirectory(ExplorationTestsDirectory);
             DeleteFile(WindowsTracerHomeZip);
@@ -677,7 +675,7 @@ partial class Build : NukeBuild
                 Logger.Information("Debugging...");
                 // Execute whatever you want to debug here
                 var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
-                CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version);
+                CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => GetProjectBinDirectory(Projects.DatadogTrace, tfm) / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version);
             });
     //*/
 }

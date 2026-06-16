@@ -245,6 +245,16 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             // By default, the endpoint profiling feature is activated
 
+            // The endpoint is only bound to a trace id when the web root span closes (the tracer then calls
+            // SetEndpointForTrace). libdatadog attaches the "trace endpoint" label to a sample only when that
+            // sample's "local root span id" matches an endpoint registered in the SAME profile generation. With the
+            // default 3s export period, a request's samples and its span close can land in different windows, so the
+            // label is never attached. On the slow 32-bit netcoreapp3.1 runtime (but even on newer ones), the sampling
+            // is sparse enough that this coincidence is missed in every window, making the test flaky.
+            // Use a single export window (flushed on shutdown, after every span has closed) so the association is
+            // deterministic on this runtime.
+            runner.Environment.SetVariable("DD_PROFILING_UPLOAD_PERIOD", "600");
+
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);

@@ -53,46 +53,6 @@ CrashReporting::~CrashReporting()
     }
 }
 
-ddog_crasht_OsInfo GetOsInfo()
-{
-    auto osType = libdatadog::to_char_slice(
-#ifdef _WINDOWS
-                "Windows"
-#elif MACOS
-                "macOS"
-#else
-                "Linux"
-#endif
-    );
-
-    auto architecture = libdatadog::to_char_slice(
-#ifdef _WINDOWS
-#ifdef BIT64
-                "x86_64"
-#else
-                "x86"
-#endif
-#elif AMD64
-                "x86_64"
-#elif X86
-                "x86"
-#elif ARM64
-                "arm64"
-#elif ARM
-                "arm"
-#endif
-    );
-
-    auto osInfo = ddog_crasht_OsInfo {
-        .architecture = architecture,
-        .bitness = {},
-        .os_type = osType,
-        .version = {}
-    };
-
-    return osInfo;
-}
-
 int32_t CrashReporting::Initialize()
 {
     bool succeeded = false;
@@ -106,7 +66,7 @@ int32_t CrashReporting::Initialize()
 
     CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_proc_info(&_builder, {_pid}));
 
-    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_os_info(&_builder, GetOsInfo()));
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_os_info_this_machine(&_builder));
 
 #ifdef _WINDOWS
     CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_kind(&_builder, DDOG_CRASHT_ERROR_KIND_UNHANDLED_EXCEPTION));

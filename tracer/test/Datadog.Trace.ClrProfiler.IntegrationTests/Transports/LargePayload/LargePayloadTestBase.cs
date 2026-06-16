@@ -31,10 +31,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public int ExpectedSpans => TracesToTrigger + (TracesToTrigger * SpansPerTrace);
 
-        protected async Task RunTest(TestTransports transport, bool dataPipelineEnabled)
+        protected async Task RunTest(TestTransports transport)
         {
             EnvironmentHelper.EnableTransport(transport);
-            SetEnvironmentVariable(ConfigurationKeys.TraceDataPipelineEnabled, dataPipelineEnabled.ToString());
             var canUseStatsD = EnvironmentHelper.CanUseStatsD(transport);
             if (!canUseStatsD)
             {
