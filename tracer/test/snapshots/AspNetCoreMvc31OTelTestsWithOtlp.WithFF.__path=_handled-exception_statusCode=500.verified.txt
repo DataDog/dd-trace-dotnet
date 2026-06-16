@@ -71,30 +71,6 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "service.name",
-                  "value": {
-                    "stringValue": "samples.aspnetcoremvc31"
-                  }
-                },
-                {
-                  "key": "operation.name",
-                  "value": {
-                    "stringValue": "aspnet_core.request"
-                  }
-                },
-                {
-                  "key": "resource.name",
-                  "value": {
-                    "stringValue": "GET /handled-exception"
-                  }
-                },
-                {
-                  "key": "span.type",
-                  "value": {
-                    "stringValue": "web"
-                  }
-                },
-                {
                   "key": "runtime-id",
                   "value": {
                     "stringValue": "Guid_1"
@@ -149,12 +125,6 @@
                   }
                 },
                 {
-                  "key": "span.kind",
-                  "value": {
-                    "stringValue": "server"
-                  }
-                },
-                {
                   "key": "http.status_code",
                   "value": {
                     "stringValue": ""
@@ -206,12 +176,6 @@
                   "key": "datadog-header-tag",
                   "value": {
                     "stringValue": "asp-net-core"
-                  }
-                },
-                {
-                  "key": "error.msg",
-                  "value": {
-                    "stringValue": "Exception of type 'System.Exception' was thrown."
                   }
                 },
                 {
