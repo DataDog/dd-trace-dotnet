@@ -145,7 +145,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void HttpStatusCode_WithIntegerValue_IsNotRemapped_WhenOtelCompatibilityEnabled()
+        public void HttpStatusCode_WithIntegerValue_IsNotRemapped_WhenOtelSemanticsEnabled()
         {
             const string key = "http.status_code";
             const int statusCode = 200;
@@ -157,14 +157,14 @@ namespace Datadog.Trace.Tests
             var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
             var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
-            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, openTelemetryTraceCompatibilityEnabled: true);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, openTelemetrySemanticsEnabled: true);
 
             span.GetTag(Tags.HttpStatusCode).Should().BeNull();
             span.GetMetric(key).Should().Be((double)statusCode);
         }
 
         [Fact]
-        public void HttpResponseStatusCode_WithIntegerValue_IsNotRemapped_WhenOtelCompatibilityEnabled()
+        public void HttpResponseStatusCode_WithIntegerValue_IsNotRemapped_WhenOtelSemanticsEnabled()
         {
             const string key = "http.response.status_code";
             const int statusCode = 200;
@@ -176,7 +176,7 @@ namespace Datadog.Trace.Tests
             var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
             var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
-            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, openTelemetryTraceCompatibilityEnabled: true);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, openTelemetrySemanticsEnabled: true);
 
             span.GetTag(Tags.HttpStatusCode).Should().BeNull();
             span.GetMetric(key).Should().Be((double)statusCode);

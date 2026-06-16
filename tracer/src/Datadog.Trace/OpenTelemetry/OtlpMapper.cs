@@ -81,22 +81,22 @@ internal static class OtlpMapper
                tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
     }
 
-    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit, bool openTelemetryTraceCompatibilityEnabled)
+    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit, bool openTelemetrySemanticsEnabled)
     {
         return EmitAttributesFromSpan(
             in spanModel,
             limit,
-            openTelemetryTraceCompatibilityEnabled,
+            openTelemetrySemanticsEnabled,
             ref writeKeyValue,
             static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue));
     }
 
-    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, bool openTelemetryTraceCompatibilityEnabled, ref TState state, KeyValueWriter<TState> writeKeyValue)
+    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, bool openTelemetrySemanticsEnabled, ref TState state, KeyValueWriter<TState> writeKeyValue)
     {
         int count = 0;
         int droppedAttributesCount = 0;
 
-        if (!openTelemetryTraceCompatibilityEnabled)
+        if (!openTelemetrySemanticsEnabled)
         {
             if (count < limit)
             {
@@ -199,7 +199,7 @@ internal static class OtlpMapper
             tagProcessors = tracer.TracerManager?.TagProcessors;
         }
 
-        var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetryTraceCompatibilityEnabled);
+        var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
         spanModel.Span.Tags.EnumerateTags(ref tagWriter);
         count = tagWriter.Count;
         droppedAttributesCount += tagWriter.DroppedCount;
@@ -207,7 +207,7 @@ internal static class OtlpMapper
 
         // Write span metrics
         // Note: I could have done this earlier but I wanted to simulate the same behavior as the MessagePack formatter.
-        var metricsWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetryTraceCompatibilityEnabled);
+        var metricsWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
         spanModel.Span.Tags.EnumerateMetrics(ref metricsWriter);
         count = metricsWriter.Count;
         droppedAttributesCount += metricsWriter.DroppedCount;
@@ -227,20 +227,20 @@ internal static class OtlpMapper
         private readonly KeyValueWriter<TState> _writeKeyValue;
         private readonly ITagProcessor[]? _tagProcessors;
         private readonly int _limit;
-        private readonly bool _openTelemetryTraceCompatibilityEnabled;
+        private readonly bool _openTelemetrySemanticsEnabled;
 
         public TState State;
         public int Count;
         public int DroppedCount;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal TagWriter(TState state, KeyValueWriter<TState> writeKeyValue, ITagProcessor[]? tagProcessors, int count, int limit, bool openTelemetryTraceCompatibilityEnabled = false)
+        internal TagWriter(TState state, KeyValueWriter<TState> writeKeyValue, ITagProcessor[]? tagProcessors, int count, int limit, bool openTelemetrySemanticsEnabled = false)
         {
             State = state;
             _writeKeyValue = writeKeyValue;
             _tagProcessors = tagProcessors;
             _limit = limit;
-            _openTelemetryTraceCompatibilityEnabled = openTelemetryTraceCompatibilityEnabled;
+            _openTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
 
             Count = count;
             DroppedCount = 0;
@@ -264,7 +264,7 @@ internal static class OtlpMapper
 
             // When OTel trace compatibility is enabled, suppress tags that would duplicate
             // OTLP-native fields or Datadog-specific attributes not relevant to OTel consumers.
-            if (_openTelemetryTraceCompatibilityEnabled
+            if (_openTelemetrySemanticsEnabled
                 && (key == Tags.ErrorMsg
                     || key == "otel.status_code"
                     || key == "span.kind"

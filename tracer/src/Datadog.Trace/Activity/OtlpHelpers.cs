@@ -32,14 +32,14 @@ namespace Datadog.Trace.Activity
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpHelpers));
 
-        internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span, bool openTelemetryTraceCompatibilityEnabled = false)
+        internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span, bool openTelemetrySemanticsEnabled = false)
             where TInner : IActivity
         {
-            AgentConvertSpan(activity, span, openTelemetryTraceCompatibilityEnabled);
+            AgentConvertSpan(activity, span, openTelemetrySemanticsEnabled);
         }
 
         // See trace agent func convertSpan: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L459
-        private static void AgentConvertSpan<TInner>(TInner activity, Span span, bool openTelemetryTraceCompatibilityEnabled)
+        private static void AgentConvertSpan<TInner>(TInner activity, Span span, bool openTelemetrySemanticsEnabled)
             where TInner : IActivity
         {
             // This code path _should_ only be called from places where the span being closed was created with OTel tags
@@ -66,7 +66,7 @@ namespace Datadog.Trace.Activity
             // - service.namespace
             // - service.version
 
-            if (!openTelemetryTraceCompatibilityEnabled && w3cActivity is not null)
+            if (!openTelemetrySemanticsEnabled && w3cActivity is not null)
             {
                 tags.OtelTraceId = w3cActivity.TraceId;
             }
@@ -79,20 +79,20 @@ namespace Datadog.Trace.Activity
             {
                 if (activity5.HasTagObjects())
                 {
-                    var state = new OtelTagsEnumerationState(span, openTelemetryTraceCompatibilityEnabled);
+                    var state = new OtelTagsEnumerationState(span, openTelemetrySemanticsEnabled);
                     ActivityEnumerationHelper.EnumerateTagObjects(activity5, ref state, static (ref s, kvp) =>
                     {
-                        OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, remapOtelKeys: !s.OpenTelemetryTraceCompatibilityEnabled);
+                        OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                         return true;
                     });
                 }
             }
             else if (activity.HasTags())
             {
-                var state = new OtelTagsEnumerationState(span, openTelemetryTraceCompatibilityEnabled);
+                var state = new OtelTagsEnumerationState(span, openTelemetrySemanticsEnabled);
                 ActivityEnumerationHelper.EnumerateTags(activity, ref state, static (ref s, kvp) =>
                 {
-                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, remapOtelKeys: !s.OpenTelemetryTraceCompatibilityEnabled);
+                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                     return true;
                 });
             }
@@ -137,7 +137,7 @@ namespace Datadog.Trace.Activity
             // span.SetTag("w3c.tracestate", w3CActivity.TraceStateString);
 
             // Add the library name and library version
-            if (!openTelemetryTraceCompatibilityEnabled)
+            if (!openTelemetrySemanticsEnabled)
             {
                 if (activity5 is not null)
                 {
