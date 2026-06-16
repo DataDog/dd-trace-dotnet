@@ -497,7 +497,11 @@ namespace Datadog.Trace
                             {
                                 if (!StringUtil.IsNullOrEmpty(tag.Value))
                                 {
-                                    SetTag(tag.Key, tag.Value);
+                                    // Write through the underlying tag collection directly: the public
+                                    // SetTag() rejects writes once _isFinished is set (already 1 here),
+                                    // and this is a legitimate internal finish-time write (like other
+                                    // tags set inside Finish before CloseSpan).
+                                    Tags.SetTag(tag.Key, tag.Value);
                                 }
                             }
                         }
