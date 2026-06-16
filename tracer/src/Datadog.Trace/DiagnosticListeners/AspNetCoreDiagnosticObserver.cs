@@ -393,7 +393,7 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 // If we're using endpoint routing or this is a pipeline re-execution,
                 // these will already be set correctly
-                if (!tracer.Settings.OtelSemanticsEnabled)
+                if (!tracer.Settings.OpenTelemetrySemanticsEnabled)
                 {
                     rootSpanTags.AspNetCoreRoute = aspNetRoute;
                 }
@@ -402,7 +402,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             // In OTel semantics mode, a single server span is used: skip child span creation
-            if (tracer.Settings.OtelSemanticsEnabled)
+            if (tracer.Settings.OpenTelemetrySemanticsEnabled)
             {
                 return null;
             }
@@ -545,7 +545,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                if (isFirstExecution && !_tracer.Settings.OtelSemanticsEnabled)
+                if (isFirstExecution && !_tracer.Settings.OpenTelemetrySemanticsEnabled)
                 {
                     tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                 }
@@ -592,7 +592,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // Overwrite the route in the parent span
                     rootSpan.ResourceName = resourceName;
-                    if (!_tracer.Settings.OtelSemanticsEnabled)
+                    if (!_tracer.Settings.OpenTelemetrySemanticsEnabled)
                     {
                         tags.AspNetCoreRoute = normalizedRoute;
                     }

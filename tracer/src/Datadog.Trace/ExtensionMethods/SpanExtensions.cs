@@ -102,7 +102,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, MutableSettings tracerSettings)
+        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, MutableSettings tracerSettings, bool otelSemanticsEnabled = false)
         {
             if (statusCode < 100 || statusCode >= 600)
             {
@@ -112,7 +112,7 @@ namespace Datadog.Trace.ExtensionMethods
 
             string statusCodeString = ConvertStatusCodeToString(statusCode);
 
-            if (tracerSettings.OtelSemanticsEnabled)
+            if (otelSemanticsEnabled)
             {
                 span.SetTag("http.response.status_code", statusCodeString);
             }
