@@ -2896,10 +2896,19 @@ stages:
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
+          run --rm StartDependencies.Profiler
+      displayName: docker-compose run StartDependencies.Profiler
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage)
+      retryCountOnTaskFailure: 5
+
+    - script: |
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
           run --rm \
           -e baseImage=$(baseImage) \
           ProfilerIntegrationTests
-      displayName: docker-compose run --no-deps ProfilerIntegrationTests
+      displayName: docker-compose run ProfilerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
@@ -2996,10 +3005,19 @@ stages:
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
+          run --rm StartDependencies.Profiler
+      displayName: docker-compose run StartDependencies.Profiler
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage)
+      retryCountOnTaskFailure: 5
+
+    - script: |
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
           run --rm \
           -e baseImage=$(baseImage) \
           ProfilerIntegrationTests
-      displayName: docker-compose run --no-deps ProfilerIntegrationTests
+      displayName: docker-compose run ProfilerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
