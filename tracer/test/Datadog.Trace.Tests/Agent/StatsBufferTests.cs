@@ -201,6 +201,43 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void Serialization_PopulatesTracerDdTagsFromGlobalTags()
+        {
+            var settings = MutableSettings.CreateForTesting(
+                new(),
+                new()
+                {
+                    { ConfigurationKeys.GlobalTags, "datacenter:us-east-1,tenant_id:acme-corp" },
+                });
+
+            var buffer = new StatsBuffer(new ClientStatsPayload(settings));
+            var key = CreateKey("resource", "service", "operation", "type", 200, false);
+            var bucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Hits = 1, TopLevelHits = 1 };
+            buffer.Buckets.Add(key, bucket);
+
+            var stream = new MemoryStream();
+            buffer.Serialize(stream, 1);
+            var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
+
+            result.TracerDdTags.Should().BeEquivalentTo("datacenter:us-east-1", "tenant_id:acme-corp");
+        }
+
+        [Fact]
+        public void Serialization_EmitsEmptyTracerDdTagsWhenNoGlobalTags()
+        {
+            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var key = CreateKey("resource", "service", "operation", "type", 200, false);
+            var bucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Hits = 1, TopLevelHits = 1 };
+            buffer.Buckets.Add(key, bucket);
+
+            var stream = new MemoryStream();
+            buffer.Serialize(stream, 1);
+            var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
+
+            result.TracerDdTags.Should().NotBeNull().And.BeEmpty();
+        }
+
+        [Fact]
         public void KeyEquality_NewDimensions()
         {
             // Different SpanKind

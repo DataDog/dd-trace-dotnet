@@ -43,6 +43,7 @@ namespace Datadog.Trace.Agent
         private static ReadOnlySpan<byte> TracerVersionKeyBytes => "TracerVersion"u8;
         private static ReadOnlySpan<byte> RuntimeIdKeyBytes => "RuntimeID"u8;
         private static ReadOnlySpan<byte> SequenceKeyBytes => "Sequence"u8;
+        private static ReadOnlySpan<byte> TracerDdTags => "TracerDdTags"u8;
         private static ReadOnlySpan<byte> GitCommitShaKeyBytes => "GitCommitSha"u8;
 
         // bucket keys
@@ -124,7 +125,7 @@ namespace Datadog.Trace.Agent
 
         public void Serialize(Stream stream, long bucketDuration)
         {
-            var count = 9; // Base: Hostname, Env, Version, Stats, Lang, TracerVersion, RuntimeID, Sequence, Service
+            var count = 10; // Base: Hostname, Env, Version, Stats, Lang, TracerVersion, RuntimeID, Sequence, Service, TracerDdTags
             var details = _header.Details;
 
             var serializedTags = details.ProcessTags?.SerializedTags;
@@ -182,6 +183,14 @@ namespace Datadog.Trace.Agent
 
             MessagePackBinary.WriteStringBytes(stream, ServiceKeyBytes);
             MessagePackBinary.WriteString(stream, details.DefaultServiceName ?? string.Empty);
+
+            var ddTags = details.DdTags;
+            MessagePackBinary.WriteStringBytes(stream, TracerDdTags);
+            MessagePackBinary.WriteArrayHeader(stream, ddTags.Length);
+            foreach (var tag in ddTags)
+            {
+                MessagePackBinary.WriteStringBytes(stream, tag);
+            }
 
             if (writeGitCommitSha)
             {
