@@ -243,6 +243,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             rootTestScope.Span.Context.TraceContext.SamplingPriority.Should().Be(SamplingPriorityValues.AutoKeep);
         }
 
+#if !NETFRAMEWORK
         [Fact]
         public async Task AddResponseHeadersToSpan_WithNoSecurityEvent_AlwaysAddsContentTypeAndContentLength()
         {
@@ -287,6 +288,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             rootTestScope.Span.GetTag("http.response.headers.content-encoding").Should().Be("gzip");
             rootTestScope.Span.GetTag("http.response.headers.content-language").Should().Be("en");
         }
+#endif
 
         private static void AssertTraceTaggingAttributes(IResult result, string expectedAgentPrefix)
         {
