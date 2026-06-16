@@ -91,7 +91,14 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("span.kind")
                 .IsOptional("component")
                 .IsOptional("_dd.base_service")
-                .IsOptional("_dd.tags.process"));
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.code_origin.type")
+                .IsOptional("_dd.code_origin.frames.0.index")
+                .IsOptional("_dd.code_origin.frames.0.method")
+                .IsOptional("_dd.code_origin.frames.0.type")
+                .IsOptional("_dd.code_origin.frames.0.file")
+                .IsOptional("_dd.code_origin.frames.0.line")
+                .IsOptional("_dd.code_origin.frames.0.column"));
 
         // See: https://opentelemetry.io/docs/specs/semconv/http/http-spans/
         public static Result IsAspNetCoreMvcOTel(this MockSpan span) => Result.FromSpan(span)
@@ -122,7 +129,14 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("span.kind")
                 .IsOptional("component")
                 .IsOptional("_dd.base_service")
-                .IsOptional("_dd.tags.process"));
+                .IsOptional("_dd.tags.process")
+                .IsOptional("_dd.code_origin.type")
+                .IsOptional("_dd.code_origin.frames.0.index")
+                .IsOptional("_dd.code_origin.frames.0.method")
+                .IsOptional("_dd.code_origin.frames.0.type")
+                .IsOptional("_dd.code_origin.frames.0.file")
+                .IsOptional("_dd.code_origin.frames.0.line")
+                .IsOptional("_dd.code_origin.frames.0.column"));
 
         // See: https://opentelemetry.io/docs/specs/semconv/database/database-spans/
         public static Result IsDatabaseClientOTel(this MockSpan span) => Result.FromSpan(span)
