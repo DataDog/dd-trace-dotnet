@@ -189,3 +189,4 @@ cases:
       - Swaps the hash algorithms (SHA-512 for the CMake file, or SHA-256 for the vcpkg portfile).
       - Tells the user to edit the auto-generated .gitlab/one-pipeline.locked.yml by hand.
       - Invents a libdatadog version pin in the root vcpkg.json.
+      - Indicates the project's libdatadog skill / instructions are wrong, outdated, or had to be corrected against the actual repo files.
