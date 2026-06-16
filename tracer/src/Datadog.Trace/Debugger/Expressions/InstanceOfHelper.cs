@@ -109,7 +109,8 @@ internal static class InstanceOfHelper
             return AssemblyQualifiedTypeResolver.Resolve(typeName, typeNameInfo);
         }
 
-        if (MayResolveWithoutAssemblyScan(typeNameInfo.SearchTypeName))
+        if (MayResolveWithoutAssemblyScan(typeNameInfo.SearchTypeName) &&
+            !typeNameInfo.MayContainAssemblyQualifiedGenericArguments)
         {
             var resolvedType = Type.GetType(typeName, throwOnError: false, ignoreCase: true);
             if (resolvedType is not null)
@@ -240,10 +241,28 @@ internal static class InstanceOfHelper
             return null;
         }
 
-        Type? type;
         try
         {
-            type = assembly.GetType(typeNameInfo.SearchTypeName, throwOnError: false, ignoreCase: true);
+            var searchTypeName = typeNameInfo.SearchTypeName;
+            Type? type;
+            if (!typeNameInfo.MayContainAssemblyQualifiedGenericArguments)
+            {
+                type = assembly.GetType(searchTypeName, throwOnError: false, ignoreCase: false);
+                if (type is not null)
+                {
+                    return type;
+                }
+
+                return assembly.GetType(searchTypeName, throwOnError: false, ignoreCase: true);
+            }
+
+            type = ResolveConstructedGenericFromLoadedAssemblies(searchTypeName, assembly, ignoreCase: false);
+            if (type is not null)
+            {
+                return type;
+            }
+
+            return ResolveConstructedGenericFromLoadedAssemblies(searchTypeName, assembly, ignoreCase: true);
         }
         catch (AmbiguousMatchException ex)
         {
@@ -258,8 +277,28 @@ internal static class InstanceOfHelper
         {
             throw new InstanceOfEvaluationException($"Failed to inspect assembly '{assembly.FullName}' while resolving type '{typeName}': {ex.Message}", ex);
         }
+    }
 
-        return type;
+    private static Type? ResolveConstructedGenericFromLoadedAssemblies(string searchTypeName, Assembly assembly, bool ignoreCase)
+    {
+        return Type.GetType(
+            searchTypeName,
+            AssemblyQualifiedTypeResolver.ResolveLoadedAssembly,
+            (resolvedAssembly, nestedTypeName, nestedIgnoreCase) => ResolveTypePartFromLoadedAssembly(resolvedAssembly ?? assembly, nestedTypeName, nestedIgnoreCase),
+            throwOnError: false,
+            ignoreCase);
+    }
+
+    private static Type? ResolveTypePartFromLoadedAssembly(Assembly assembly, string typeName, bool ignoreCase)
+    {
+        return MayContainAssemblyQualifiedGenericArguments(typeName)
+                   ? ResolveConstructedGenericFromLoadedAssemblies(typeName, assembly, ignoreCase)
+                   : assembly.GetType(typeName, throwOnError: false, ignoreCase: ignoreCase);
+    }
+
+    private static bool MayContainAssemblyQualifiedGenericArguments(string typeName)
+    {
+        return typeName.IndexOf("[[", StringComparison.Ordinal) >= 0;
     }
 
     private static bool IsFullyQualifiedTypeName(string typeName)
@@ -291,18 +330,20 @@ internal static class InstanceOfHelper
     {
         if (typeName.IndexOf(',') < 0)
         {
-            return new TypeNameInfo(typeName, null);
+            return new TypeNameInfo(typeName, null, mayContainAssemblyQualifiedGenericArguments: false);
         }
 
         var assemblySeparatorIndex = GetAssemblySeparatorIndex(typeName);
         if (assemblySeparatorIndex < 0)
         {
-            return new TypeNameInfo(typeName, null);
+            return new TypeNameInfo(typeName, null, MayContainAssemblyQualifiedGenericArguments(typeName));
         }
 
+        var searchTypeName = typeName.Substring(0, assemblySeparatorIndex).Trim();
         return new TypeNameInfo(
-            typeName.Substring(0, assemblySeparatorIndex).Trim(),
-            typeName.Substring(assemblySeparatorIndex + 1).Trim());
+            searchTypeName,
+            typeName.Substring(assemblySeparatorIndex + 1).Trim(),
+            MayContainAssemblyQualifiedGenericArguments(searchTypeName));
     }
 
     private static int GetAssemblySeparatorIndex(string typeName)
@@ -718,15 +759,18 @@ internal static class InstanceOfHelper
 
     private readonly struct TypeNameInfo
     {
-        internal TypeNameInfo(string searchTypeName, string? assemblyName)
+        internal TypeNameInfo(string searchTypeName, string? assemblyName, bool mayContainAssemblyQualifiedGenericArguments)
         {
             SearchTypeName = searchTypeName;
             AssemblyName = assemblyName;
+            MayContainAssemblyQualifiedGenericArguments = mayContainAssemblyQualifiedGenericArguments;
         }
 
         internal string SearchTypeName { get; }
 
         internal string? AssemblyName { get; }
+
+        internal bool MayContainAssemblyQualifiedGenericArguments { get; }
 
         internal bool IsAssemblyQualified => AssemblyName is not null;
     }
@@ -775,7 +819,9 @@ internal static class InstanceOfHelper
                 return true;
             }
 
-            type = typeof(object).Assembly.GetType(typeNameInfo.SearchTypeName, throwOnError: false, ignoreCase: true);
+            type = typeNameInfo.MayContainAssemblyQualifiedGenericArguments
+                       ? ResolveConstructedGenericFromKnownFrameworkAssemblies(typeNameInfo.SearchTypeName, ignoreCase: true)
+                       : typeof(object).Assembly.GetType(typeNameInfo.SearchTypeName, throwOnError: false, ignoreCase: true);
             if (type is not null)
             {
                 return true;
@@ -785,7 +831,22 @@ internal static class InstanceOfHelper
             return type is not null;
         }
 
-        private static Assembly? ResolveLoadedAssembly(AssemblyName assemblyName)
+        private static Type? ResolveConstructedGenericFromKnownFrameworkAssemblies(string searchTypeName, bool ignoreCase)
+        {
+            return Type.GetType(
+                searchTypeName,
+                ResolveKnownFrameworkAssembly,
+                (resolvedAssembly, nestedTypeName, nestedIgnoreCase) => (resolvedAssembly ?? typeof(object).Assembly).GetType(nestedTypeName, throwOnError: false, ignoreCase: nestedIgnoreCase),
+                throwOnError: false,
+                ignoreCase);
+        }
+
+        private static Assembly? ResolveKnownFrameworkAssembly(AssemblyName assemblyName)
+        {
+            return IsKnownFrameworkAssemblyName(assemblyName.FullName) ? typeof(object).Assembly : null;
+        }
+
+        internal static Assembly? ResolveLoadedAssembly(AssemblyName assemblyName)
         {
             var requestedFullName = assemblyName.FullName;
             var assemblies = Volatile.Read(ref _getAssemblies)();

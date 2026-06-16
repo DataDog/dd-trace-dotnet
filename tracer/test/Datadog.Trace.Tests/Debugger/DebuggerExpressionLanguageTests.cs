@@ -942,6 +942,55 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_InstanceOf_LoadedGenericTypeWithLoadedArgument_EvaluatesCondition()
+        {
+            var assembly = CreateDynamicAssembly(
+                "InstanceOfLoadedGenericAssembly",
+                "LoadedGeneric.GenericType`1",
+                "LoadedGeneric.GenericArgument");
+
+            try
+            {
+                var genericArgument = assembly.GetType("LoadedGeneric.GenericArgument");
+                var genericType = assembly.GetType("LoadedGeneric.GenericType`1").MakeGenericType(genericArgument);
+                var instance = Activator.CreateInstance(genericType);
+                InstanceOfHelper.SetAssemblyProviderForTests(() => [assembly]);
+
+                InstanceOfHelper.IsInstanceOf(instance, genericType.FullName).Should().BeTrue();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_LoadedGenericTypeWithUnloadedArgument_DoesNotLoadArgumentAssembly()
+        {
+            var assembly = CreateDynamicAssembly(
+                "InstanceOfGenericDefinitionAssembly",
+                "GenericDefinition.GenericType`1");
+            var unloadedArgumentAssemblyName = $"InstanceOfUnloadedGenericArgumentAssembly_{Guid.NewGuid():N}";
+            var typeName = $"GenericDefinition.GenericType`1[[Unloaded.Argument, {unloadedArgumentAssemblyName}]]";
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => [assembly]);
+
+                Action lookup = () => InstanceOfHelper.ResolveType(typeName);
+
+                lookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+                AppDomain.CurrentDomain.GetAssemblies()
+                         .Should()
+                         .NotContain(a => a.GetName().Name == unloadedArgumentAssemblyName);
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
         public void ProbeExpressionParser_InstanceOf_CustomerSimpleName_ReportsRuntimeError()
         {
             try
@@ -1139,6 +1188,33 @@ namespace Datadog.Trace.Tests.Debugger
                 Action lookup = () => InstanceOfHelper.ResolveType("Ambiguous.TypeForInstanceOf");
 
                 lookup.Should().Throw<Exception>().WithMessage("*Multiple types matching*");
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_ExactCaseMatch_ResolvesCasingAmbiguousType()
+        {
+            var assembly = CreateDynamicAssembly(
+                "InstanceOfExactCaseAmbiguousAssembly",
+                "ExactCase.TypeForInstanceOf",
+                "ExactCase.typeforinstanceof");
+
+            try
+            {
+                var exactType = assembly.GetType("ExactCase.TypeForInstanceOf");
+                var casingVariantType = assembly.GetType("ExactCase.typeforinstanceof");
+                casingVariantType.Should().NotBe(exactType);
+
+                var instance = Activator.CreateInstance(exactType);
+                var casingVariantInstance = Activator.CreateInstance(casingVariantType);
+                InstanceOfHelper.SetAssemblyProviderForTests(() => [assembly]);
+
+                InstanceOfHelper.IsInstanceOf(instance, "ExactCase.TypeForInstanceOf").Should().BeTrue();
+                InstanceOfHelper.IsInstanceOf(casingVariantInstance, "ExactCase.TypeForInstanceOf").Should().BeFalse();
             }
             finally
             {
@@ -2161,12 +2237,23 @@ namespace Datadog.Trace.Tests.Debugger
                     """;
         }
 
-        private static Assembly CreateDynamicAssembly(string assemblyName, string typeName)
+        private static Assembly CreateDynamicAssembly(string assemblyName, params string[] typeNames)
         {
-            var lastDotIndex = typeName.LastIndexOf('.');
+            var source = new StringBuilder();
+            for (var i = 0; i < typeNames.Length; i++)
+            {
+                var typeName = typeNames[i];
+                var lastDotIndex = typeName.LastIndexOf('.');
+                source.Append("namespace ")
+                      .Append(typeName.Substring(0, lastDotIndex))
+                      .Append(" { public class ")
+                      .Append(CreateDynamicTypeDeclaration(typeName.Substring(lastDotIndex + 1)))
+                      .Append(" { } }");
+            }
+
             var compilation = CSharpCompilation.Create(
                 assemblyName,
-                syntaxTrees: [CSharpSyntaxTree.ParseText($"namespace {typeName.Substring(0, lastDotIndex)} {{ public class {typeName.Substring(lastDotIndex + 1)} {{ }} }}")],
+                syntaxTrees: [CSharpSyntaxTree.ParseText(source.ToString())],
                 references: [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
                 options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
@@ -2174,6 +2261,31 @@ namespace Datadog.Trace.Tests.Debugger
             var result = compilation.Emit(stream);
             result.Success.Should().BeTrue(string.Join(Environment.NewLine, result.Diagnostics.Select(d => d.ToString())));
             return Assembly.Load(stream.ToArray());
+        }
+
+        private static string CreateDynamicTypeDeclaration(string typeName)
+        {
+            var arityIndex = typeName.IndexOf('`');
+            if (arityIndex < 0)
+            {
+                return typeName;
+            }
+
+            var arity = int.Parse(typeName.Substring(arityIndex + 1));
+            var builder = new StringBuilder(typeName.Substring(0, arityIndex));
+            builder.Append('<');
+            for (var i = 0; i < arity; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append(", ");
+                }
+
+                builder.Append('T').Append(i);
+            }
+
+            builder.Append('>');
+            return builder.ToString();
         }
 
         private async Task Test(string expressionTestFilePath)
