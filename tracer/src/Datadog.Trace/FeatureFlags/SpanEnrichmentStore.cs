@@ -55,6 +55,14 @@ namespace Datadog.Trace.FeatureFlags
         internal static int TrackedRootCount => _states?.Count ?? 0;
 
         /// <summary>
+        /// Gets or sets a fault-injection hook invoked at the start of <see cref="GetAndClear"/>.
+        /// Test-only seam (mirrors the established <c>*ForTesting</c> pattern) used by the WR-02
+        /// regression test to deterministically force a throw on the <c>Span.Finish()</c> drain
+        /// path and prove the never-throw guard keeps span finish working. Always null in production.
+        /// </summary>
+        internal static Action? OnGetAndClearForTesting { get; set; }
+
+        /// <summary>
         /// Accumulates a single flag evaluation into the per-root-span state, applying the frozen
         /// Node branch: a present serial id is added (plus a subject when <paramref name="doLog"/> and
         /// a targeting key are present); otherwise a missing variant signals a runtime default.
@@ -124,6 +132,10 @@ namespace Datadog.Trace.FeatureFlags
         /// <returns>The state, or null.</returns>
         public static SpanEnrichmentState? GetAndClear(ulong rootSpanId)
         {
+            // Test-only fault injection (null in production): lets the WR-02 regression test force a
+            // throw on the Span.Finish() drain path to prove the never-throw guard.
+            OnGetAndClearForTesting?.Invoke();
+
             var states = _states;
             if (states is null)
             {

@@ -7,6 +7,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags;
@@ -31,6 +32,10 @@ public class SpanEnrichmentTests
 
     // SHA256("user-123") per the frozen reference.
     private const string User123Sha256 = "fcdec6df4d44dbc637c7c5b58efface52a7f8a88535423430255be0bb89bedd8";
+
+    // Set by the CR-01 race test's reader task when it observes the "Collection was modified"
+    // failure; the test asserts this stays false post-fix.
+    private static volatile bool _raceFailed;
 
     // ---------------------------------------------------------------------
     // Codec golden vector + round-trip (Pattern E)
@@ -371,6 +376,215 @@ public class SpanEnrichmentTests
 
         span.GetTag(SpanEnrichmentState.TagFlagsEnc).Should().BeNull();
         span.GetTag(SpanEnrichmentState.TagRuntimeDefaults).Should().BeNull();
+    }
+
+    // ---------------------------------------------------------------------
+    // Runtime-default rendering parity with Node String(value) (RESEARCH.md:102)
+    // ---------------------------------------------------------------------
+
+    [Fact]
+    public void State_RuntimeDefault_NullValue_RendersAsNullString()
+    {
+        // Node: String(null) === "null". A null default value must render as the literal "null",
+        // NOT an omitted/empty value.
+        var state = new SpanEnrichmentState();
+        state.AddDefault("null-flag", null);
+
+        var defaults = JsonConvert.DeserializeObject<Dictionary<string, string>>(TagDict(state)[SpanEnrichmentState.TagRuntimeDefaults])!;
+        defaults["null-flag"].Should().Be("null");
+    }
+
+    [Fact]
+    public void State_RuntimeDefault_BoolValue_RendersLowercase()
+    {
+        // Node: String(true) === "true", String(false) === "false" (lowercase, not .NET's "True").
+        var state = new SpanEnrichmentState();
+        state.AddDefault("bool-true", true);
+        state.AddDefault("bool-false", false);
+
+        var defaults = JsonConvert.DeserializeObject<Dictionary<string, string>>(TagDict(state)[SpanEnrichmentState.TagRuntimeDefaults])!;
+        defaults["bool-true"].Should().Be("true");
+        defaults["bool-false"].Should().Be("false");
+    }
+
+    // ---------------------------------------------------------------------
+    // CR-01 regression: concurrent mutation of one shared root-span state.
+    // The L0 suite above is single-threaded, so it never exercised the path
+    // CR-01 breaks. These reproduce the real Task.WhenAll / late-Accumulate
+    // races on a SHARED SpanEnrichmentState instance (one root span). They
+    // fail-before (corruption / "Collection was modified") and pass-after.
+    // ---------------------------------------------------------------------
+
+    [Fact]
+    public void State_ConcurrentAccumulation_OnSharedRoot_NoCorruptionOrException()
+    {
+        // Mirrors a Task.WhenAll fan-out of flag resolutions under one ambient root span: the store
+        // hands the SAME state instance to every concurrent eval, each mutating the non-thread-safe
+        // inner SortedSet/Dictionary. Without the per-instance lock this corrupts the red-black tree
+        // or throws; with it, the result is a deterministic deduped/capped merge.
+        const ulong rootSpanId = 70001;
+        SpanEnrichmentStore.Clear();
+
+        // Every task writes the SAME id range (1..IdRange), so heavy contention + dedupe pressure
+        // converge on one unambiguous expected union: exactly {1..IdRange}. IdRange is well under the
+        // 200 serial-id cap so nothing is dropped — any missing/extra id would be a lost/torn write.
+        const int idRange = 150;
+        const int tasks = 16;
+
+        Parallel.For(0, tasks, t =>
+        {
+            for (var id = 1; id <= idRange; id++)
+            {
+                SpanEnrichmentStore.Accumulate(rootSpanId, serialId: id, doLog: true, targetingKey: "user-123", hasVariant: true, flagKey: "flag", value: "on");
+            }
+        });
+
+        var state = SpanEnrichmentStore.GetAndClear(rootSpanId);
+        state.Should().NotBeNull();
+
+        // No exception is the primary assertion; the merged set must be exactly {1..idRange}, sorted +
+        // deduped, decoded from the bare base64 — proving no concurrent write was lost or torn.
+        var tags = TagDict(state!);
+        var decoded = DecodeDeltaVarint(tags[SpanEnrichmentState.TagFlagsEnc]);
+        decoded.Should().Equal(Enumerable.Range(1, idRange).Select(x => (long)x));
+
+        // Subjects must also be intact: a single subject "user-123", its id set capped at 20 (the
+        // first 20 distinct ids per subject win), with no corruption from concurrent AddSubject.
+        var subjects = JsonConvert.DeserializeObject<Dictionary<string, string>>(tags[SpanEnrichmentState.TagSubjectsEnc])!;
+        subjects.Should().ContainKey(User123Sha256);
+        DecodeDeltaVarint(subjects[User123Sha256]).Count.Should().Be(SpanEnrichmentState.MaxExperimentsPerSubject);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task State_ConcurrentAddRacingToSpanTags_NoCollectionModifiedException()
+    {
+        // A straggler Accumulate that obtained the instance via GetOrAdd BEFORE the drain's
+        // TryRemove still holds the reference and can Add while Span.Finish enumerates ToSpanTags.
+        // Pre-fix, the deferred yield iterator ran the foreach body over the live SortedSet during
+        // that Add => InvalidOperationException: "Collection was modified". Post-fix, ToSpanTags
+        // snapshots under the lock, so a concurrent Add can never tear the enumeration.
+        const ulong rootSpanId = 70002;
+        _raceFailed = false;
+
+        for (var round = 0; round < 200 && !_raceFailed; round++)
+        {
+            SpanEnrichmentStore.Clear();
+
+            // Seed so the state exists and ToSpanTags has something to enumerate.
+            for (var i = 1; i <= 30; i++)
+            {
+                SpanEnrichmentStore.Accumulate(rootSpanId, serialId: i, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
+            }
+
+            // Grab the live instance (the "straggler" that raced the drain) and keep mutating it
+            // while another thread repeatedly enumerates ToSpanTags.
+            var live = SpanEnrichmentStore.GetAndClear(rootSpanId)!;
+
+            var adder = System.Threading.Tasks.Task.Run(() =>
+            {
+                for (var i = 31; i <= 400; i++)
+                {
+                    live.AddSerialId(i);
+                }
+            });
+
+            var reader = System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    for (var i = 0; i < 400; i++)
+                    {
+                        // Enumerate the produced tags fully (decode) — pre-fix this tears mid-enumeration.
+                        foreach (var tag in live.ToSpanTags())
+                        {
+                            if (tag.Key == SpanEnrichmentState.TagFlagsEnc)
+                            {
+                                DecodeDeltaVarint(tag.Value);
+                            }
+                        }
+                    }
+                }
+                catch (System.InvalidOperationException)
+                {
+                    // "Collection was modified; enumeration operation may not execute" — the exact
+                    // CR-01 failure. Record it so the assertion reports cleanly (fail-before signal).
+                    _raceFailed = true;
+                }
+            });
+
+            await System.Threading.Tasks.Task.WhenAll(adder, reader);
+        }
+
+        _raceFailed.Should().BeFalse("ToSpanTags must snapshot under the lock so a concurrent Add never throws");
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task SpanFinish_EnrichmentThrows_DoesNotBreakSpanFinish()
+    {
+        // WR-02: Span.Finish() is core span lifecycle. A throw in the drain/encode/serialize path
+        // must NOT propagate out of Finish and break span closing for an unrelated trace. Force a
+        // deterministic throw on the drain path and assert Finish still completes (IsFinished true,
+        // no exception escapes).
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
+        await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
+
+        var scope = (Scope)tracer.StartActive("root-op");
+        var span = scope.Span;
+        span.IsRootSpan.Should().BeTrue();
+
+        SpanEnrichmentStore.Clear();
+        SpanEnrichmentStore.OnGetAndClearForTesting = static () => throw new System.InvalidOperationException("boom: simulated enrichment failure");
+
+        try
+        {
+            // Pre-fix (no try/catch around the enrichment block) this throw propagates out of
+            // Finish; the Should().NotThrow proves the never-throw guard swallows it.
+            var finish = () => span.Finish();
+            finish.Should().NotThrow("enrichment must never break span finish (WR-02)");
+            span.IsFinished.Should().BeTrue("the span must still finish even when enrichment throws");
+        }
+        finally
+        {
+            SpanEnrichmentStore.OnGetAndClearForTesting = null;
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // WR-03 regression: gate-on store growth is bounded when roots never finish.
+    // ---------------------------------------------------------------------
+
+    [Fact]
+    public void Store_GrowthBound_StopsCreatingStatesPastCap_ExistingRootsStillAccumulate()
+    {
+        SpanEnrichmentStore.Clear();
+        SpanEnrichmentStore.TrackedRootCount.Should().Be(0);
+
+        var cap = SpanEnrichmentStore.MaxTrackedRootSpans;
+
+        // Fill to the cap with distinct never-finishing roots.
+        for (var i = 0; i < cap; i++)
+        {
+            SpanEnrichmentStore.Accumulate((ulong)(1000 + i), serialId: 1, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
+        }
+
+        SpanEnrichmentStore.TrackedRootCount.Should().Be(cap);
+
+        // New roots past the cap are dropped — the store does NOT grow unboundedly (WR-03).
+        for (var i = 0; i < 500; i++)
+        {
+            SpanEnrichmentStore.Accumulate((ulong)(900000 + i), serialId: 1, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
+        }
+
+        SpanEnrichmentStore.TrackedRootCount.Should().Be(cap, "new roots past the cap must be dropped, not grow the store");
+
+        // A root we are ALREADY tracking must keep accumulating (in-flight evals for a live trace
+        // are never lost), even at the cap.
+        var existingRoot = 1000UL;
+        SpanEnrichmentStore.Accumulate(existingRoot, serialId: 99, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
+        var state = SpanEnrichmentStore.GetAndClear(existingRoot)!;
+        DecodeDeltaVarint(TagDict(state)[SpanEnrichmentState.TagFlagsEnc]).Should().Contain(99);
+
+        SpanEnrichmentStore.Clear();
     }
 
     // ---------------------------------------------------------------------
