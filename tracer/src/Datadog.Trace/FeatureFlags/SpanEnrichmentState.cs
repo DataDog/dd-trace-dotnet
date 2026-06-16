@@ -41,6 +41,17 @@ namespace Datadog.Trace.FeatureFlags
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanEnrichmentState));
 
+        // Per-instance lock guarding every mutator AND the tag-production method. A single root
+        // span can legitimately accumulate from multiple concurrent flag evaluations (e.g. a
+        // Task.WhenAll fan-out of async resolves under one ambient root), and the same instance is
+        // handed to each by SpanEnrichmentStore.GetOrAdd. The collections below are not
+        // thread-safe; without this lock concurrent AddSerialId/AddSubject would corrupt the
+        // red-black trees, and a straggler Add racing Span.Finish's drain would throw
+        // "Collection was modified". The Node reference never had to solve this because the JS
+        // event loop serializes per request; the .NET port must add the synchronization the
+        // runtime requires (CR-01).
+        private readonly object _gate = new();
+
         // Dedupe is structural (a sorted set), matching the Node Set<number>.
         private readonly SortedSet<long> _serialIds = new();
 
@@ -52,98 +63,128 @@ namespace Datadog.Trace.FeatureFlags
 
         public void AddSerialId(long id)
         {
-            if (_serialIds.Count >= MaxSerialIds && !_serialIds.Contains(id))
+            lock (_gate)
             {
-                Log.Debug<int>("SpanEnrichmentState: serial id limit ({Max}) reached, dropping id", MaxSerialIds);
-                return;
-            }
+                if (_serialIds.Count >= MaxSerialIds && !_serialIds.Contains(id))
+                {
+                    Log.Debug<int>("SpanEnrichmentState: serial id limit ({Max}) reached, dropping id", MaxSerialIds);
+                    return;
+                }
 
-            _serialIds.Add(id);
+                _serialIds.Add(id);
+            }
         }
 
         public void AddSubject(string targetingKey, long id)
         {
             var hashed = HashTargetingKey(targetingKey);
 
-            if (_subjects.TryGetValue(hashed, out var ids))
+            lock (_gate)
             {
-                if (ids.Count >= MaxExperimentsPerSubject && !ids.Contains(id))
+                if (_subjects.TryGetValue(hashed, out var ids))
                 {
-                    Log.Debug<int>("SpanEnrichmentState: experiments-per-subject limit ({Max}) reached, dropping id", MaxExperimentsPerSubject);
+                    if (ids.Count >= MaxExperimentsPerSubject && !ids.Contains(id))
+                    {
+                        Log.Debug<int>("SpanEnrichmentState: experiments-per-subject limit ({Max}) reached, dropping id", MaxExperimentsPerSubject);
+                        return;
+                    }
+
+                    ids.Add(id);
                     return;
                 }
 
-                ids.Add(id);
-                return;
-            }
+                if (_subjects.Count >= MaxSubjects)
+                {
+                    Log.Debug<int>("SpanEnrichmentState: subject limit ({Max}) reached, dropping subject", MaxSubjects);
+                    return;
+                }
 
-            if (_subjects.Count >= MaxSubjects)
-            {
-                Log.Debug<int>("SpanEnrichmentState: subject limit ({Max}) reached, dropping subject", MaxSubjects);
-                return;
+                _subjects[hashed] = new SortedSet<long> { id };
             }
-
-            _subjects[hashed] = new SortedSet<long> { id };
         }
 
         public void AddDefault(string flagKey, object? value)
         {
-            // First-wins: do not overwrite an existing flag default.
-            if (_defaults.ContainsKey(flagKey))
-            {
-                return;
-            }
-
-            if (_defaults.Count >= MaxDefaults)
-            {
-                Log.Debug<int>("SpanEnrichmentState: runtime-default limit ({Max}) reached, dropping default", MaxDefaults);
-                return;
-            }
-
+            // Stringify outside the lock (pure, no shared state) to keep the critical section short.
             var valueStr = StringifyDefault(value);
             if (valueStr.Length > MaxDefaultValueLength)
             {
                 valueStr = TruncateUtf8Safe(valueStr, MaxDefaultValueLength);
             }
 
-            _defaults[flagKey] = valueStr;
+            lock (_gate)
+            {
+                // First-wins: do not overwrite an existing flag default.
+                if (_defaults.ContainsKey(flagKey))
+                {
+                    return;
+                }
+
+                if (_defaults.Count >= MaxDefaults)
+                {
+                    Log.Debug<int>("SpanEnrichmentState: runtime-default limit ({Max}) reached, dropping default", MaxDefaults);
+                    return;
+                }
+
+                _defaults[flagKey] = valueStr;
+            }
         }
 
         // subjects are NOT checked: AddSubject never runs without AddSerialId.
-        public bool HasData() => _serialIds.Count > 0 || _defaults.Count > 0;
+        public bool HasData()
+        {
+            lock (_gate)
+            {
+                return _serialIds.Count > 0 || _defaults.Count > 0;
+            }
+        }
 
         /// <summary>
         /// Produces the contract-conformant <c>ffe_*</c> tags (Pattern F): <c>ffe_flags_enc</c> is a
         /// bare base64 string; <c>ffe_subjects_enc</c> and <c>ffe_runtime_defaults</c> are
         /// JSON-stringified objects. Empty components are omitted.
         /// </summary>
+        /// <remarks>
+        /// This MUST materialize the result inside <see cref="_gate"/> and return a fully-built list,
+        /// NOT a deferred <c>yield</c> iterator: the caller (<c>Span.Finish()</c>) enumerates the
+        /// result in a <c>foreach</c>, and a deferred iterator would run its body — reading the live
+        /// <see cref="_serialIds"/>/<see cref="_subjects"/> collections — outside any lock, racing a
+        /// concurrent <c>Add</c> (CR-01). Building the list under the lock makes the snapshot atomic.
+        /// </remarks>
         /// <returns>The tag key/value pairs to write on the root span.</returns>
-        public IEnumerable<KeyValuePair<string, string>> ToSpanTags()
+        public IReadOnlyList<KeyValuePair<string, string>> ToSpanTags()
         {
-            if (_serialIds.Count > 0)
+            var tags = new List<KeyValuePair<string, string>>(3);
+
+            lock (_gate)
             {
-                var enc = ULeb128Encoder.EncodeDeltaVarint(_serialIds);
-                if (!string.IsNullOrEmpty(enc))
+                if (_serialIds.Count > 0)
                 {
-                    yield return new KeyValuePair<string, string>(TagFlagsEnc, enc);
+                    var enc = ULeb128Encoder.EncodeDeltaVarint(_serialIds);
+                    if (!string.IsNullOrEmpty(enc))
+                    {
+                        tags.Add(new KeyValuePair<string, string>(TagFlagsEnc, enc));
+                    }
+                }
+
+                if (_subjects.Count > 0)
+                {
+                    var encoded = new Dictionary<string, string>(_subjects.Count);
+                    foreach (var pair in _subjects)
+                    {
+                        encoded[pair.Key] = ULeb128Encoder.EncodeDeltaVarint(pair.Value);
+                    }
+
+                    tags.Add(new KeyValuePair<string, string>(TagSubjectsEnc, JsonHelper.SerializeObject(encoded)));
+                }
+
+                if (_defaults.Count > 0)
+                {
+                    tags.Add(new KeyValuePair<string, string>(TagRuntimeDefaults, JsonHelper.SerializeObject(_defaults)));
                 }
             }
 
-            if (_subjects.Count > 0)
-            {
-                var encoded = new Dictionary<string, string>(_subjects.Count);
-                foreach (var pair in _subjects)
-                {
-                    encoded[pair.Key] = ULeb128Encoder.EncodeDeltaVarint(pair.Value);
-                }
-
-                yield return new KeyValuePair<string, string>(TagSubjectsEnc, JsonHelper.SerializeObject(encoded));
-            }
-
-            if (_defaults.Count > 0)
-            {
-                yield return new KeyValuePair<string, string>(TagRuntimeDefaults, JsonHelper.SerializeObject(_defaults));
-            }
+            return tags;
         }
 
         internal static string HashTargetingKey(string targetingKey)
