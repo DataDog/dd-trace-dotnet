@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <elf.h>
 #include <fcntl.h>
 #include <string.h>
@@ -43,6 +44,14 @@ struct ScopedMmap
 
     explicit operator bool() const { return data != MAP_FAILED; }
 };
+
+#ifdef ARM64
+bool IsFileRangeValid(std::uint64_t offset, std::uint64_t size, size_t fileSize)
+{
+    auto fileSize64 = static_cast<std::uint64_t>(fileSize);
+    return offset <= fileSize64 && size <= fileSize64 - offset;
+}
+#endif
 
 } // anonymous namespace
 
@@ -400,7 +409,12 @@ void LibrariesInfoCache::BuildSymbolCache(
     std::vector<ModuleRegion, shared::pmr::polymorphic_allocator<ModuleRegion>>& outRegions,
     std::vector<FuncEntry, shared::pmr::polymorphic_allocator<FuncEntry>>& outSymbols)
 {
-    std::vector<FuncEntry> moduleSymbols;
+    struct AbsFuncEntry
+    {
+        unw_word_t start_ip;
+        unw_word_t end_ip;
+    };
+    std::vector<AbsFuncEntry> moduleSymbols;
 
     for (auto& wrapper : phdrCache)
     {
@@ -458,8 +472,14 @@ void LibrariesInfoCache::BuildSymbolCache(
         auto base = static_cast<const uint8_t*>(mapping.data);
 
         if (ehdr->e_shoff == 0 || ehdr->e_shnum == 0 ||
-            ehdr->e_shoff + static_cast<size_t>(ehdr->e_shnum) * sizeof(ElfW(Shdr)) > fileSize)
+            ehdr->e_shentsize != sizeof(ElfW(Shdr)) ||
+            !IsFileRangeValid(ehdr->e_shoff,
+                              static_cast<std::uint64_t>(ehdr->e_shnum) * sizeof(ElfW(Shdr)),
+                              fileSize))
+        {
+            LogOnce(Info, "LibrariesInfoCache: skipping invalid ELF header in ", modulePath);
             continue;
+        }
 
         auto* shdrs = reinterpret_cast<const ElfW(Shdr)*>(base + ehdr->e_shoff);
 
@@ -470,13 +490,16 @@ void LibrariesInfoCache::BuildSymbolCache(
             if (shdrs[s].sh_type != SHT_SYMTAB && shdrs[s].sh_type != SHT_DYNSYM)
                 continue;
 
-            if (shdrs[s].sh_entsize == 0)
+            if (shdrs[s].sh_entsize != sizeof(ElfW(Sym)))
                 continue;
 
-            if (shdrs[s].sh_offset + shdrs[s].sh_size > fileSize)
+            if (!IsFileRangeValid(shdrs[s].sh_offset, shdrs[s].sh_size, fileSize))
+            {
+                LogOnce(Info, "LibrariesInfoCache: skipping invalid section header in ", modulePath);
                 continue;
+            }
 
-            auto symCount = shdrs[s].sh_size / shdrs[s].sh_entsize;
+            auto symCount = shdrs[s].sh_size / sizeof(ElfW(Sym));
             auto* syms = reinterpret_cast<const ElfW(Sym)*>(base + shdrs[s].sh_offset);
 
             for (size_t j = 0; j < symCount; ++j)
@@ -498,21 +521,38 @@ void LibrariesInfoCache::BuildSymbolCache(
             continue;
 
         std::sort(moduleSymbols.begin(), moduleSymbols.end(),
-                  [](const FuncEntry& a, const FuncEntry& b) {
+                  [](const AbsFuncEntry& a, const AbsFuncEntry& b) {
                       return a.start_ip < b.start_ip || (a.start_ip == b.start_ip && a.end_ip < b.end_ip);
                   });
 
-        // Remove duplicates
         auto last = std::unique(moduleSymbols.begin(), moduleSymbols.end(),
-                                [](const FuncEntry& a, const FuncEntry& b) {
+                                [](const AbsFuncEntry& a, const AbsFuncEntry& b) {
                                     return a.start_ip == b.start_ip && a.end_ip == b.end_ip;
                                 });
         moduleSymbols.erase(last, moduleSymbols.end());
 
         auto symOffset = static_cast<uint32_t>(outSymbols.size());
-        auto symCount = static_cast<uint32_t>(moduleSymbols.size());
-        outRegions.push_back({segLow, segHigh, symOffset, symCount});
-        outSymbols.insert(outSymbols.end(), moduleSymbols.begin(), moduleSymbols.end());
+        outRegions.push_back({segLow, segHigh, symOffset, 0});
+
+        // FuncEntry uses uint32_t for offset and size to halve memory usage (8 vs 16 bytes
+        // per entry). This is safe because ARM64 shared libraries are constrained to < 4GiB
+        // by the ABI (ADRP instruction range is ±4GiB). Skip any symbol that would overflow
+        // as a defensive measure against hypothetical large code model binaries.
+        uint32_t inserted = 0;
+        for (const auto& abs : moduleSymbols)
+        {
+            auto offset = abs.start_ip - segLow;
+            auto funcSize = abs.end_ip - abs.start_ip;
+            if (offset > UINT32_MAX || funcSize > UINT32_MAX) [[unlikely]]
+            {
+                Log::Info("LibrariesInfoCache: skipping out-of-range symbol (offset=",
+                          offset, ", size=", funcSize, ") in ", modulePath);
+                continue;
+            }
+            outSymbols.push_back({static_cast<uint32_t>(offset), static_cast<uint32_t>(funcSize)});
+            inserted++;
+        }
+        outRegions.back().sym_count = inserted;
     }
 
     std::sort(outRegions.begin(), outRegions.end(),
@@ -537,19 +577,23 @@ int LibrariesInfoCache::FindFunctionStart(unw_word_t ip, unw_word_t* func_start)
 
     const FuncEntry* symBegin = _symbols.data() + regionIt->sym_offset;
     const FuncEntry* symEnd = symBegin + regionIt->sym_count;
+    unw_word_t baseLow = regionIt->addr_low;
 
     auto symIt = std::upper_bound(
         symBegin, symEnd, ip,
-        [](unw_word_t addr, const FuncEntry& entry) { return addr < entry.start_ip; });
+        [baseLow](unw_word_t addr, const FuncEntry& entry) {
+            return addr < baseLow + entry.offset;
+        });
 
     if (symIt == symBegin)
         return -UNW_ENOINFO;
 
     --symIt;
-    if (ip >= symIt->end_ip)
+    unw_word_t startIp = baseLow + symIt->offset;
+    if (ip >= startIp + symIt->size)
         return -UNW_ENOINFO;
 
-    *func_start = symIt->start_ip;
+    *func_start = startIp;
     return 0;
 }
 

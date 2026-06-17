@@ -268,13 +268,13 @@ TEST(LibrariesInfoCacheTests, BuildSymbolCacheProducesNoDuplicates)
         {
             auto idx = region.sym_offset + i;
             auto prev = region.sym_offset + i - 1;
-            bool isDuplicate = symbols[idx].start_ip == symbols[prev].start_ip &&
-                               symbols[idx].end_ip == symbols[prev].end_ip;
+            bool isDuplicate = symbols[idx].offset == symbols[prev].offset &&
+                               symbols[idx].size == symbols[prev].size;
             EXPECT_FALSE(isDuplicate)
                 << "Duplicate symbol entry in region " << r
                 << " at index " << i
-                << ": start_ip=0x" << std::hex << symbols[idx].start_ip
-                << " end_ip=0x" << symbols[idx].end_ip;
+                << ": offset=0x" << std::hex << symbols[idx].offset
+                << " size=0x" << symbols[idx].size;
         }
     }
 }
