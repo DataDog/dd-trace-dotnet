@@ -1666,6 +1666,22 @@ supportedConfigurations:
     product: Profiler
     documentation: |-
       Memory pressure percentage threshold that triggers an automatic heap snapshot.
+  DD_INTERNAL_PROFILING_HEAPSNAPSHOT_REFERENCE_TREE_FORMAT:
+  - implementation: A
+    scope: native
+    type: int
+    default: '1'
+    product: Profiler
+    documentation: |-
+      Bitfield selecting the heap snapshot reference tree output format: 1 (binary), 2 (JSON), or 3 (both). Defaults to 1 (binary).
+  DD_INTERNAL_PROFILING_HEAPSNAPSHOT_SKIP_TRAVERSAL:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      When enabled, skips the heap snapshot reference-chain traversal. Default is false.
   DD_INTERNAL_PROFILING_HEAP_HANDLE_LIMIT:
   - implementation: A
     scope: native
@@ -1760,6 +1776,14 @@ supportedConfigurations:
     product: Profiler
     documentation: |-
       Sampling interval in milliseconds for CPU and wall-time profiling.
+  DD_INTERNAL_PROFILING_TEST_HEAPSNAPSHOT_INTERVAL:
+  - implementation: A
+    scope: native
+    type: int
+    default: '0'
+    product: Profiler
+    documentation: |-
+      Test-only override for the heap snapshot interval, in seconds. Default is 0 (disabled).
   DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED:
   - implementation: A
     scope: native
