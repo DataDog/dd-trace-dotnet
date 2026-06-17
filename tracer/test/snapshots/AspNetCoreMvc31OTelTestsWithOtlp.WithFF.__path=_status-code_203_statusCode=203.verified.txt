@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET /status-code/{statuscode}",
+              "name": "GET status-code/{statuscode}",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
@@ -74,12 +74,6 @@
                   "key": "runtime-id",
                   "value": {
                     "stringValue": "Guid_1"
-                  }
-                },
-                {
-                  "key": "component",
-                  "value": {
-                    "stringValue": "aspnet_core"
                   }
                 },
                 {
@@ -115,7 +109,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.file",
                   "value": {
-                    "stringValue": "/Users/zach.montoya/.supacode/repos/dd-trace-dotnet/ai-week-3/tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/HomeController.cs"
+                    "stringValue": "{SolutionDirectory}tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/HomeController.cs"
                   }
                 },
                 {

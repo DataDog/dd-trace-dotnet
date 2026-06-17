@@ -77,12 +77,6 @@
                   }
                 },
                 {
-                  "key": "component",
-                  "value": {
-                    "stringValue": "aspnet_core"
-                  }
-                },
-                {
                   "key": "http.route",
                   "value": {
                     "stringValue": "/api/delay/{seconds}"

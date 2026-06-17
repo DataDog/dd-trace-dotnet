@@ -77,12 +77,6 @@
                   }
                 },
                 {
-                  "key": "component",
-                  "value": {
-                    "stringValue": "aspnet_core"
-                  }
-                },
-                {
                   "key": "http.route",
                   "value": {
                     "stringValue": "status-code/{statuscode}"
@@ -115,7 +109,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.file",
                   "value": {
-                    "stringValue": "/Users/zach.montoya/.supacode/repos/dd-trace-dotnet/ai-week-3/tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/HomeController.cs"
+                    "stringValue": "{SolutionDirectory}tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/HomeController.cs"
                   }
                 },
                 {

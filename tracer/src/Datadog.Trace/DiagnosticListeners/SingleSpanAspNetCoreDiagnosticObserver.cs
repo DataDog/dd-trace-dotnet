@@ -256,10 +256,16 @@ namespace Datadog.Trace.DiagnosticListeners
                     // No need to ToLowerInvariant() these strings, as we lower case
                     // the whole route later
 
-                    var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
-                        routePattern,
-                        routeValues,
-                        _tracer.Settings.ExpandRouteTemplatesEnabled);
+                    var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
+
+                    // In OTel semantics mode, use the raw route text so the resource name matches http.route
+                    // (preserving type constraints like {id:int}). Fall back to SimplifyRoutePattern otherwise.
+                    var resourcePathName = _tracer.Settings.OpenTelemetrySemanticsEnabled && normalizedRoute is not null
+                        ? normalizedRoute
+                        : AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+                            routePattern,
+                            routeValues,
+                            _tracer.Settings.ExpandRouteTemplatesEnabled);
 
                     // If we have a PathBase, then we need to do a bunch of encoding etc which requires allocating buffers
                     // and various other things. We could look at optimizing that later by inlining ToUriComponent and using a ValueStringBuilder,
@@ -270,11 +276,11 @@ namespace Datadog.Trace.DiagnosticListeners
 
                     if (_tracer.Settings.OpenTelemetrySemanticsEnabled)
                     {
-                        tags.HttpRoute = routePattern.RawText?.ToLowerInvariant();
+                        tags.HttpRoute = normalizedRoute;
                     }
                     else
                     {
-                        tags.AspNetCoreRoute = routePattern.RawText?.ToLowerInvariant();
+                        tags.AspNetCoreRoute = normalizedRoute;
                     }
                 }
 

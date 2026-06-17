@@ -3,7 +3,7 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: aspnet_core.request,
-    Resource: GET /home/index,
+    Resource: GET {controller=home}/{action=index}/{id?},
     Service: Samples.AspNetCoreMvc31,
     Type: web,
     Tags: {

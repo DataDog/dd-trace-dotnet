@@ -576,13 +576,17 @@ namespace Datadog.Trace.DiagnosticListeners
                                       ? raw as string
                                       : null;
 
-                var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
-                    routePattern,
-                    routeValues,
-                    areaName: areaName,
-                    controllerName: controllerName,
-                    actionName: actionName,
-                    _tracer.Settings.ExpandRouteTemplatesEnabled);
+                // In OTel semantics mode, use the raw route text so the resource name matches http.route
+                // (preserving type constraints like {id:int}). Fall back to SimplifyRoutePattern otherwise.
+                var resourcePathName = otelSemanticsEnabled && normalizedRoute is not null
+                    ? normalizedRoute
+                    : AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+                        routePattern,
+                        routeValues,
+                        areaName: areaName,
+                        controllerName: controllerName,
+                        actionName: actionName,
+                        _tracer.Settings.ExpandRouteTemplatesEnabled);
 
                 // HttpMethod is null in OTel mode (stored as "http.request.method" raw tag instead)
                 var httpMethod = tags.HttpMethod ?? request.Method?.ToUpperInvariant() ?? "UNKNOWN";
