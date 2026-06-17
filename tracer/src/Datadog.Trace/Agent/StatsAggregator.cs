@@ -742,7 +742,7 @@ namespace Datadog.Trace.Agent
                 // Maximum number of buckets containing additional tag values is reached.
                 // Collapse into a single "blocked" bucket whose values. Only additional tags
                 // are blocked, the other properties are still added normally
-                key = key.WithAdditionalMetricTagsHash(ComputeBlockedAdditionalMetricTagsHash(span));
+                key = key with { AdditionalMetricTagsHash = ComputeBlockedAdditionalMetricTagsHash(span) };
 
                 if (!buffer.Buckets.TryGetValue(key, out bucket))
                 {
