@@ -1590,6 +1590,201 @@ namespace Datadog.Trace.Tests.Agent
             }
         }
 
+        [Fact]
+        public async Task Resource_PerFieldCap_FoldsOverflowToSentinel()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(resourceLimit: 2), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            Span MakeResource(string resource)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.ResourceName = resource;
+                return span;
+            }
+
+            // First 2 distinct resources are admitted; "c" and "d" fold into one sentinel-resource bucket.
+            aggregator.Add(MakeResource("a"), MakeResource("b"), MakeResource("c"), MakeResource("d"));
+
+            var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
+            buckets.Should().HaveCount(3); // a, b, + sentinel sink
+            buckets.Count(b => b.Key.Resource is "a" or "b").Should().Be(2);
+            buckets.Single(b => b.Key.Resource == "tracer_blocked_value").Hits.Should().Be(2); // c + d merged
+        }
+
+        [Fact]
+        public async Task HttpEndpoint_PerFieldCap_FoldsOverflowToSentinel()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(httpEndpointLimit: 2), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            Span MakeEndpoint(string route)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.OperationName = "http.request";
+                span.SetTag(Tags.HttpRoute, route);
+                return span;
+            }
+
+            // First 2 distinct endpoints are admitted; "/c" and "/d" fold into one sentinel-endpoint bucket.
+            aggregator.Add(MakeEndpoint("/a"), MakeEndpoint("/b"), MakeEndpoint("/c"), MakeEndpoint("/d"));
+
+            var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
+            buckets.Count(b => b.Key.HttpEndpoint is "/a" or "/b").Should().Be(2);
+            buckets.Single(b => b.Key.HttpEndpoint == "tracer_blocked_value").Hits.Should().Be(2); // /c + /d merged
+        }
+
+        [Fact]
+        public async Task PeerTags_PerFieldCap_ClearsOverflowCombinations()
+        {
+            var start = DateTimeOffset.UtcNow;
+            // StubDiscoveryService advertises peer.service as a peer tag, so peer-tag hashing is active.
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(peerTagsLimit: 2), new StubDiscoveryService(), isOtlp: false);
+
+            Span MakePeer(string peer)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag(Tags.SpanKind, SpanKinds.Client);
+                span.Tags.SetTag("peer.service", peer);
+                return span;
+            }
+
+            // First 2 distinct peer-tag combinations are admitted; p3/p4 have their peer tags cleared and
+            // collapse into the single no-peer-tags row.
+            aggregator.Add(MakePeer("p1"), MakePeer("p2"), MakePeer("p3"), MakePeer("p4"));
+
+            var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
+            buckets.Count(b => b.PeerTags.Count > 0).Should().Be(2);
+            buckets.Single(b => b.PeerTags.Count == 0 && b.Key.PeerTagsHash == 0).Hits.Should().Be(2); // p3 + p4 merged
+        }
+
+        [Fact]
+        public async Task WholeKeyCap_CollapsesNewBucketsToOverflowRow()
+        {
+            var start = DateTimeOffset.UtcNow;
+            // Drive cardinality through the service dimension, which has no per-field cap, so only the
+            // whole-key backstop can bound it.
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(bucketsLimit: 2), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            aggregator.Add(
+                CreateTopLevelSpan(start, "s1"),
+                CreateTopLevelSpan(start, "s2"),
+                CreateTopLevelSpan(start, "s3"),
+                CreateTopLevelSpan(start, "s4"));
+
+            var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
+            buckets.Should().HaveCount(3); // s1, s2 admitted + the single overflow row
+
+            var overflow = buckets.Single(b => b.Key.Service == "tracer_blocked_value");
+            overflow.Key.Resource.Should().Be("tracer_blocked_value");
+            overflow.Key.OperationName.Should().Be("tracer_blocked_value");
+            overflow.Hits.Should().Be(2); // s3 + s4 merged into the overflow row
+        }
+
+        [Fact]
+        public async Task WholeKeyCap_ResetsAcrossFlushWindow_DoesNotCollapseRetainedBuckets()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(bucketsLimit: 2), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            // Dispose so the background flush completes and explicit Flush() runs synchronously without delay.
+            await aggregator.DisposeAsync();
+
+            // Fill the whole-key budget of 2 with services that receive hits, so both buckets are retained
+            // (cleared to Hits == 0) for sketch reuse rather than pruned when the buffer is reused.
+            aggregator.Add(CreateTopLevelSpan(start, "s1"));
+            aggregator.Add(CreateTopLevelSpan(start, "s2"));
+
+            var retainingBuffer = aggregator.CurrentBuffer;
+            retainingBuffer.Buckets.Should().HaveCount(2);
+
+            // Two flushes rotate back to the same buffer (BufferCount == 2); s1/s2 are retained with Hits == 0.
+            await aggregator.Flush();
+            await aggregator.Flush();
+            aggregator.CurrentBuffer.Should().BeSameAs(retainingBuffer);
+            retainingBuffer.Buckets.Should().HaveCount(2, "retained buckets survive across the rotation for sketch reuse");
+            retainingBuffer.ActiveBucketCount.Should().Be(0, "the per-window active-bucket count resets each flush");
+
+            // A new distinct service in the fresh window must get its own real bucket, not be collapsed into
+            // the overflow row by the stale retained buckets that still occupy Buckets.Count.
+            aggregator.Add(CreateTopLevelSpan(start, "s3"));
+
+            var newBucket = aggregator.CurrentBuffer.Buckets.Values.Single(b => b.Key.Service == "s3");
+            newBucket.Hits.Should().Be(1);
+            aggregator.CurrentBuffer.Buckets.Values.Should().NotContain(
+                b => b.Key.Service == "tracer_blocked_value" && b.Hits > 0,
+                "normal endpoint churn under the cap must not be collapsed in a fresh window");
+        }
+
+        [Fact]
+        public async Task WholeKeyCap_OverflowRow_EncodesSentinelPeerAndAdditionalTags()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(bucketsLimit: 1), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            // s1 fills the single-bucket budget; s2 collapses into the whole-key overflow row.
+            aggregator.Add(
+                CreateTopLevelSpan(start, "s1"),
+                CreateTopLevelSpan(start, "s2"));
+
+            var overflow = aggregator.CurrentBuffer.Buckets.Values.Single(b => b.Key.Service == "tracer_blocked_value");
+
+            DecodeTags(overflow.PeerTags).Should().Equal("tracer_blocked_value");
+            DecodeTags(overflow.AdditionalMetricTags).Should().Equal("tracer_blocked_value");
+        }
+
+        [Fact]
+        public async Task Resource_PerFieldCap_ResetsOnFlush()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(resourceLimit: 1), new StubDiscoveryService(), isOtlp: false);
+
+            // Dispose so the background flush completes and explicit Flush() runs synchronously without delay.
+            await aggregator.DisposeAsync();
+
+            Span MakeResource(string resource)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.ResourceName = resource;
+                return span;
+            }
+
+            aggregator.Add(MakeResource("a")); // admitted (budget now full)
+            aggregator.Add(MakeResource("b")); // folded: budget of 1 exhausted
+
+            var bufferBeforeFlush = aggregator.CurrentBuffer;
+            bufferBeforeFlush.Buckets.Should().HaveCount(2); // resource=a + sentinel sink
+
+            // Flush swaps the buffer and resets the per-field admission set.
+            await aggregator.Flush();
+
+            aggregator.Add(MakeResource("c")); // fresh budget => admitted with its real resource
+
+            var bufferAfterFlush = aggregator.CurrentBuffer;
+            bufferAfterFlush.Should().NotBeSameAs(bufferBeforeFlush);
+            bufferAfterFlush.Buckets.Values.Should().ContainSingle(b => b.Key.Resource == "c");
+        }
+
+        [Theory]
+        [InlineData(false, 5000)]
+        [InlineData(true, 15000)]
+        public async Task ResourceLength_TruncatedToConfiguredByteCap(bool bigResource, int expectedMaxBytes)
+        {
+            var discovery = new StubDiscoveryService(featureFlags: bigResource ? ["big_resource"] : null);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discovery, isOtlp: false);
+
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "svc");
+            span.OperationName = "op";
+            span.ResourceName = new string('x', 20000); // ASCII: 1 byte per char
+            var chunk = new SpanCollection([span]);
+
+            aggregator.ProcessTrace(ref chunk);
+
+            // ASCII => byte length == char length, truncated to exactly the configured cap.
+            System.Text.Encoding.UTF8.GetByteCount(chunk[0].ResourceName).Should().BeLessOrEqualTo(expectedMaxBytes);
+            chunk[0].ResourceName.Length.Should().Be(expectedMaxBytes);
+        }
+
         private static List<string> DecodeTags(List<byte[]> encoded)
             => encoded.Select(bytes => System.Text.Encoding.UTF8.GetString(bytes)).ToList();
 
@@ -1629,6 +1824,37 @@ namespace Datadog.Trace.Tests.Agent
             return TracerSettings.Create(config);
         }
 
+        private static TracerSettings GetSettingsWithCardinalityLimits(
+            int? resourceLimit = null,
+            int? httpEndpointLimit = null,
+            int? peerTagsLimit = null,
+            int? bucketsLimit = null)
+        {
+            var config = new Dictionary<string, object>();
+
+            if (resourceLimit.HasValue)
+            {
+                config[ConfigurationKeys.StatsResourceCardinalityLimit] = resourceLimit.Value;
+            }
+
+            if (httpEndpointLimit.HasValue)
+            {
+                config[ConfigurationKeys.StatsHttpEndpointCardinalityLimit] = httpEndpointLimit.Value;
+            }
+
+            if (peerTagsLimit.HasValue)
+            {
+                config[ConfigurationKeys.StatsPeerTagsCardinalityLimit] = peerTagsLimit.Value;
+            }
+
+            if (bucketsLimit.HasValue)
+            {
+                config[ConfigurationKeys.StatsComputationBucketsCardinalityLimit] = bucketsLimit.Value;
+            }
+
+            return TracerSettings.Create(config);
+        }
+
         // Re-implement timestamp conversion to independently verify the operation
         private static double ConvertTimestamp(long ns)
         {
@@ -1648,7 +1874,8 @@ namespace Datadog.Trace.Tests.Agent
 
         private class StubDiscoveryService(
             int obfuscationVersion = 0,
-            AgentTraceFilterConfig traceFilterConfig = null) : IDiscoveryService
+            AgentTraceFilterConfig traceFilterConfig = null,
+            List<string> featureFlags = null) : IDiscoveryService
         {
             public void SubscribeToChanges(Action<AgentConfiguration> callback)
             {
@@ -1670,7 +1897,8 @@ namespace Datadog.Trace.Tests.Agent
                              spanEvents: true,
                              peerTags: [Tags.PeerService],
                              obfuscationVersion: obfuscationVersion,
-                             traceFilterConfig: traceFilterConfig));
+                             traceFilterConfig: traceFilterConfig,
+                             featureFlags: featureFlags));
             }
 
             public void RemoveSubscription(Action<AgentConfiguration> callback)

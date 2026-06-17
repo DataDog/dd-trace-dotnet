@@ -18,9 +18,10 @@ namespace Datadog.Trace.Agent
 
         private ClientStatsPayload _header;
 
-        public StatsBuffer(ClientStatsPayload header)
+        public StatsBuffer(ClientStatsPayload header, StatsCardinalityLimiter cardinalityLimiter, StatsCardinalityReporter cardinalityReporter)
         {
             _header = header;
+            CardinalityLimiter = cardinalityLimiter;
             _keysToRemove = new();
             Buckets = new();
             Reset();
@@ -28,7 +29,16 @@ namespace Datadog.Trace.Agent
 
         public Dictionary<StatsAggregationKey, StatsBucket> Buckets { get; }
 
+        public StatsCardinalityLimiter CardinalityLimiter { get; }
+
         public long Start { get; private set; }
+
+        /// <summary>
+        /// Gets the number of buckets that have received at least one hit in the current flush window.
+        /// This excludes zero-hit buckets retained across resets for sketch reuse, so the whole-key
+        /// cardinality cap reflects only buckets actually admitted this window.
+        /// </summary>
+        public int ActiveBucketCount { get; private set; }
 
         // UTF-8 bytes for the constant map keys and values are embedded in the PE as static data via u8
         // literals. Using ReadOnlySpan<byte> property getters and WriteStringBytes avoids re-encoding the
@@ -94,6 +104,12 @@ namespace Datadog.Trace.Agent
             return false;
         }
 
+        /// <summary>
+        /// Records that a bucket has become active (received its first hit) in the current flush window.
+        /// Not thread-safe: only called from the single-threaded span-processing path, like bucket hit counting.
+        /// </summary>
+        public void IncrementActiveBucketCount() => ActiveBucketCount++;
+
         public void Reset()
         {
             // We need to do some cleanup because the application could have an unlimited number of endpoints,
@@ -117,6 +133,10 @@ namespace Datadog.Trace.Agent
             }
 
             _keysToRemove.Clear();
+            ActiveBucketCount = 0;
+
+            // Reset the per-field admission sets so each flush window admits a fresh set of distinct values.
+            CardinalityLimiter.Reset();
 
             // Align to 10-second boundary to match the Go tracer's alignTs: ts - ts % bucketSize
             var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();

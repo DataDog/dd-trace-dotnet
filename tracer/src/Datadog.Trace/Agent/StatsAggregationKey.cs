@@ -25,7 +25,8 @@ internal readonly record struct StatsAggregationKey
         string grpcStatusCode,
         string serviceSource,
         ulong peerTagsHash,
-        ulong additionalMetricTagsHash)
+        ulong additionalMetricTagsHash,
+        StatsCardinalityTruncatedFields truncatedFields)
     {
         Resource = resource;
         Service = service;
@@ -43,9 +44,10 @@ internal readonly record struct StatsAggregationKey
         ServiceSource = serviceSource;
         PeerTagsHash = peerTagsHash;
         AdditionalMetricTagsHash = additionalMetricTagsHash;
+        TruncatedFields = truncatedFields;
     }
 
-    public string Resource { get; }
+    public string Resource { get; init; }
 
     public string Service { get; }
 
@@ -67,13 +69,19 @@ internal readonly record struct StatsAggregationKey
 
     public string HttpMethod { get; }
 
-    public string HttpEndpoint { get; }
+    public string HttpEndpoint { get; init; }
 
     public string GrpcStatusCode { get; }
 
     public string ServiceSource { get; }
 
-    public ulong PeerTagsHash { get; }
+    public ulong PeerTagsHash { get; init; }
 
     public ulong AdditionalMetricTagsHash { get; init; }
+
+    // This field must remain here to disambiguate between keys without peer tags
+    // or additional metric tags, and the case where these have hit cardinality limits.
+    public StatsCardinalityLimitedFields CardinalityLimitedFields { get; init; }
+
+    public StatsCardinalityTruncatedFields TruncatedFields { get; }
 }

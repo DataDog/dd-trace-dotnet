@@ -143,6 +143,24 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void Reset_ResetsActiveBucketCount()
+        {
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+
+            buffer.ActiveBucketCount.Should().Be(0);
+
+            buffer.IncrementActiveBucketCount();
+            buffer.IncrementActiveBucketCount();
+            buffer.ActiveBucketCount.Should().Be(2);
+
+            // The whole-key cap counts buckets hit this window; Reset must restart it at zero so retained
+            // (zero-hit) buckets don't consume the cap in the next flush window.
+            buffer.Reset();
+
+            buffer.ActiveBucketCount.Should().Be(0);
+        }
+
+        [Fact]
         public void IncrementSequence()
         {
             var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
