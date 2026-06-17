@@ -270,7 +270,9 @@ internal static class OtlpMapper
                     || key == "span.kind"
                     || key == "service.name"
                     || key == "service.version"
-                    || key == "service.instance.id"))
+                    || key == "service.instance.id"
+                    || key == Tags.InstrumentationName
+                    || key == "http-client-handler-type"))
             {
                 return;
             }
