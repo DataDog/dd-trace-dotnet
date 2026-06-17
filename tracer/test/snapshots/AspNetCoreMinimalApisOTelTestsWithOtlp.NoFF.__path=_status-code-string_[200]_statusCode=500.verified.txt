@@ -6,7 +6,7 @@
           {
             "key": "service.name",
             "value": {
-              "stringValue": "Samples.AspNetCoreMvc31"
+              "stringValue": "Samples.AspNetCoreMinimalApis"
             }
           },
           {
@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET /status-code/{statuscode}",
+              "name": "GET status-code-string/{statusCode}",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
@@ -85,7 +85,7 @@
                 {
                   "key": "http.route",
                   "value": {
-                    "stringValue": "status-code/{statuscode}"
+                    "stringValue": "status-code-string/{statuscode}"
                   }
                 },
                 {
@@ -103,7 +103,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.method",
                   "value": {
-                    "stringValue": "StatusCodeTest"
+                    "stringValue": "StatusCodeTestString"
                   }
                 },
                 {
@@ -121,7 +121,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.line",
                   "value": {
-                    "stringValue": "57"
+                    "stringValue": "65"
                   }
                 },
                 {
@@ -151,7 +151,7 @@
                 {
                   "key": "url.path",
                   "value": {
-                    "stringValue": "/status-code/500"
+                    "stringValue": "/status-code-string/%5B200%5D"
                   }
                 },
                 {
@@ -193,13 +193,13 @@
                 {
                   "key": "error.type",
                   "value": {
-                    "stringValue": "500"
+                    "stringValue": "System.Exception"
                   }
                 },
                 {
-                  "key": "http.response.headers.sample_correlation_identifier",
+                  "key": "error.stack",
                   "value": {
-                    "stringValue": "0000-0000-0000"
+                    "stringValue": "System.Exception: Input was not a status code\n   at Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString(String input) in /Users/zach.montoya/.supacode/repos/dd-trace-dotnet/ai-week-3/tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/HomeController.cs:line 74\n   at lambda_method8(Closure, Object, Object[])\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.SyncObjectResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Logged|12_1(ControllerActionInvoker invoker)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()\n--- End of stack trace from previous location ---\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResourceFilter>g__Awaited|25_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResourceExecutedContextSealed context)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.InvokeFilterPipelineAsync()\n--- End of stack trace from previous location ---\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)\n   at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger logger)\n   at Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.BlockingMiddleware.Invoke(HttpContext context)\n   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)\n   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)\n   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)"
                   }
                 },
                 {

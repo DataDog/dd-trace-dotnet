@@ -6,7 +6,7 @@
           {
             "key": "service.name",
             "value": {
-              "stringValue": "Samples.AspNetCoreMvc31"
+              "stringValue": "Samples.AspNetCoreMinimalApis"
             }
           },
           {
@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET /status-code/{statuscode}",
+              "name": "GET delay/{seconds}",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
@@ -85,7 +85,7 @@
                 {
                   "key": "http.route",
                   "value": {
-                    "stringValue": "status-code/{statuscode}"
+                    "stringValue": "delay/{seconds}"
                   }
                 },
                 {
@@ -103,7 +103,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.method",
                   "value": {
-                    "stringValue": "StatusCodeTest"
+                    "stringValue": "Delay"
                   }
                 },
                 {
@@ -121,7 +121,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.line",
                   "value": {
-                    "stringValue": "57"
+                    "stringValue": "32"
                   }
                 },
                 {
@@ -151,7 +151,7 @@
                 {
                   "key": "url.path",
                   "value": {
-                    "stringValue": "/status-code/500"
+                    "stringValue": "/delay/0"
                   }
                 },
                 {
@@ -187,13 +187,7 @@
                 {
                   "key": "http.response.status_code",
                   "value": {
-                    "intValue": "500"
-                  }
-                },
-                {
-                  "key": "error.type",
-                  "value": {
-                    "stringValue": "500"
+                    "intValue": "200"
                   }
                 },
                 {

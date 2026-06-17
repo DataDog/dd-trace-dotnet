@@ -6,7 +6,7 @@
           {
             "key": "service.name",
             "value": {
-              "stringValue": "Samples.AspNetCoreMvc31"
+              "stringValue": "Samples.AspNetCoreMinimalApis"
             }
           },
           {
@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET /status-code/{statuscode}",
+              "name": "GET handled-exception",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
@@ -85,7 +85,7 @@
                 {
                   "key": "http.route",
                   "value": {
-                    "stringValue": "status-code/{statuscode}"
+                    "stringValue": "handled-exception"
                   }
                 },
                 {
@@ -103,7 +103,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.method",
                   "value": {
-                    "stringValue": "StatusCodeTest"
+                    "stringValue": "HandledException"
                   }
                 },
                 {
@@ -121,7 +121,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.line",
                   "value": {
-                    "stringValue": "57"
+                    "stringValue": "80"
                   }
                 },
                 {
@@ -151,7 +151,7 @@
                 {
                   "key": "url.path",
                   "value": {
-                    "stringValue": "/status-code/500"
+                    "stringValue": "/handled-exception"
                   }
                 },
                 {
@@ -185,15 +185,21 @@
                   }
                 },
                 {
-                  "key": "http.response.status_code",
+                  "key": "error.type",
                   "value": {
-                    "intValue": "500"
+                    "stringValue": "System.Exception"
                   }
                 },
                 {
-                  "key": "error.type",
+                  "key": "error.stack",
                   "value": {
-                    "stringValue": "500"
+                    "stringValue": "System.Exception: Exception of type 'System.Exception' was thrown."
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "500"
                   }
                 },
                 {
