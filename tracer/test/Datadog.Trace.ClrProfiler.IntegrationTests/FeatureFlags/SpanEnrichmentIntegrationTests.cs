@@ -126,18 +126,6 @@ public class SpanEnrichmentIntegrationTests : TestHelper
         }
     }
 
-    private async Task<string> RunTest(MockTracerAgent agent, bool spanEnrichmentEnabled)
-    {
-        SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.5");
-        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "1");
-        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, spanEnrichmentEnabled ? "1" : "0");
-
-        using var telemetry = this.ConfigureTelemetry();
-        // "enrich" tells the shared sample Program.cs to wrap evaluation in a root + child span.
-        using var process = await RunSampleAndWaitForExit(agent, arguments: "enrich");
-        return process.StandardOutput.ToString();
-    }
-
     // Decode side mirrors the cross-SDK codec (system-tests test_ffe/utils.py): base64 -> ULEB128
     // delta-varint -> sorted serial ids. The round-trip oracle for the encoded flags tag.
     private static List<long> DecodeDeltaVarint(string base64)
@@ -172,5 +160,17 @@ public class SpanEnrichmentIntegrationTests : TestHelper
         }
 
         return result;
+    }
+
+    private async Task<string> RunTest(MockTracerAgent agent, bool spanEnrichmentEnabled)
+    {
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.5");
+        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, spanEnrichmentEnabled ? "1" : "0");
+
+        using var telemetry = this.ConfigureTelemetry();
+        // "enrich" tells the shared sample Program.cs to wrap evaluation in a root + child span.
+        using var process = await RunSampleAndWaitForExit(agent, arguments: "enrich");
+        return process.StandardOutput.ToString();
     }
 }
