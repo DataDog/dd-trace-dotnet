@@ -9,6 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -54,7 +55,11 @@ internal static class InstanceOfHelper
             if (Nullable.GetUnderlyingType(valueType) is not null)
             {
                 result = type.IsInstanceOfType(value);
-                LogSuspiciousMismatch(type, value?.GetType(), typeName, result);
+                if (!result && Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    LogSuspiciousMismatch(type, value?.GetType(), typeName, result);
+                }
+
                 return result;
             }
 
@@ -70,7 +75,7 @@ internal static class InstanceOfHelper
 
     internal static Type ResolveType(string typeName)
     {
-        if (string.IsNullOrEmpty(typeName))
+        if (StringUtil.IsNullOrEmpty(typeName))
         {
             ThrowInvalidTypeName();
         }
@@ -204,8 +209,8 @@ internal static class InstanceOfHelper
 
     private static Type? TryResolveFromAssembly(string typeName, TypeNameInfo typeNameInfo, Assembly assembly)
     {
-        if (typeNameInfo.IsAssemblyQualified &&
-            !AssemblyQualifiedTypeResolver.IsMatchingAssembly(assembly, typeNameInfo.AssemblyName!))
+        if (typeNameInfo.AssemblyName is { } assemblyName &&
+            !AssemblyQualifiedTypeResolver.IsMatchingAssembly(assembly, assemblyName))
         {
             return null;
         }
@@ -229,10 +234,20 @@ internal static class InstanceOfHelper
 
             throw new InstanceOfEvaluationException($"Multiple types matching '{typeName}' were found. Use an assembly-qualified name.", ex);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (IsAssemblyInspectionException(ex))
         {
-            throw new InstanceOfEvaluationException($"Failed to inspect assembly '{assembly.FullName}' while resolving type '{typeName}': {ex.Message}", ex);
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug(ex, "Failed to inspect assembly '{AssemblyName}' while resolving type '{TypeName}'. Continuing assembly scan.", assembly.FullName, typeName);
+            }
+
+            return null;
         }
+    }
+
+    private static bool IsAssemblyInspectionException(Exception exception)
+    {
+        return exception is TypeLoadException or FileNotFoundException or FileLoadException or BadImageFormatException or ReflectionTypeLoadException;
     }
 
     private static Type? ResolveConstructedGenericFromLoadedAssemblies(string searchTypeName, Assembly assembly)
@@ -625,19 +640,21 @@ internal static class InstanceOfHelper
             return MergeScannedAssembliesWithSet(currentAssemblies, scannedAssemblies, maxCapacity);
         }
 
-        AssemblyIdentity[]? merged = null;
+        var merged = new AssemblyIdentity[maxCapacity];
         var count = 0;
         for (var i = 0; i < currentAssemblies.Length; i++)
         {
-            AddAssemblyIdentity(ref merged, ref count, maxCapacity, currentAssemblies[i]);
+            merged[count] = currentAssemblies[i];
+            count++;
         }
 
         for (var i = 0; i < scannedAssemblies.Length; i++)
         {
             var scannedAssembly = scannedAssemblies[i];
-            if (!ContainsAssemblyIdentity(merged!, count, scannedAssembly))
+            if (!ContainsAssemblyIdentity(merged, count, scannedAssembly))
             {
-                AddAssemblyIdentity(ref merged, ref count, maxCapacity, scannedAssembly);
+                merged[count] = scannedAssembly;
+                count++;
             }
         }
 
@@ -808,7 +825,7 @@ internal static class InstanceOfHelper
 
         internal static bool IsMatchingAssembly(Assembly assembly, string assemblyName)
         {
-            if (string.IsNullOrEmpty(assemblyName))
+            if (StringUtil.IsNullOrEmpty(assemblyName))
             {
                 return false;
             }
@@ -822,7 +839,8 @@ internal static class InstanceOfHelper
         private static bool TryResolveKnownFrameworkType(string typeName, TypeNameInfo typeNameInfo, [NotNullWhen(true)] out Type? type)
         {
             type = null;
-            if (!IsKnownFrameworkAssemblyName(typeNameInfo.AssemblyName!))
+            if (typeNameInfo.AssemblyName is not { } assemblyName ||
+                !IsKnownFrameworkAssemblyName(assemblyName))
             {
                 return false;
             }

@@ -1281,6 +1281,26 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_InstanceOf_AssemblyInspectionFailure_ContinuesScanning()
+        {
+            var throwingAssembly = new ThrowingGetTypeAssembly("InstanceOfThrowingAssembly");
+            var resolvedAssembly = CreateDynamicAssembly(
+                "InstanceOfInspectionFailureResolvedAssembly",
+                "InspectionFailure.TypeForInstanceOf");
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => [throwingAssembly, resolvedAssembly]);
+
+                InstanceOfHelper.ResolveType("InspectionFailure.TypeForInstanceOf").Should().Be(resolvedAssembly.GetType("InspectionFailure.TypeForInstanceOf"));
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
         public void ProbeExpressionParser_InstanceOf_ExactCaseMatch_ResolvesCasingAmbiguousType()
         {
             var assembly = CreateDynamicAssembly(
@@ -2895,6 +2915,23 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 { "hello", null },
             };
+        }
+
+        private sealed class ThrowingGetTypeAssembly : Assembly
+        {
+            private readonly string _fullName;
+
+            public ThrowingGetTypeAssembly(string name)
+            {
+                _fullName = $"{name}, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null";
+            }
+
+            public override string FullName => _fullName;
+
+            public override Type GetType(string name, bool throwOnError, bool ignoreCase)
+            {
+                throw new FileLoadException("Test assembly cannot inspect types.");
+            }
         }
 
         private sealed class ThrowsOnToStringKey
