@@ -6,7 +6,7 @@
           {
             "key": "service.name",
             "value": {
-              "stringValue": "Samples.AspNetCoreMvc31"
+              "stringValue": "Samples.AspNetCoreMinimalApis"
             }
           },
           {
@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET /status-code/{statuscode}",
+              "name": "GET /not-found",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
@@ -80,54 +80,6 @@
                   "key": "component",
                   "value": {
                     "stringValue": "aspnet_core"
-                  }
-                },
-                {
-                  "key": "http.route",
-                  "value": {
-                    "stringValue": "status-code/{statuscode}"
-                  }
-                },
-                {
-                  "key": "_dd.code_origin.type",
-                  "value": {
-                    "stringValue": "entry"
-                  }
-                },
-                {
-                  "key": "_dd.code_origin.frames.0.index",
-                  "value": {
-                    "stringValue": "0"
-                  }
-                },
-                {
-                  "key": "_dd.code_origin.frames.0.method",
-                  "value": {
-                    "stringValue": "StatusCodeTest"
-                  }
-                },
-                {
-                  "key": "_dd.code_origin.frames.0.type",
-                  "value": {
-                    "stringValue": "Samples.AspNetCoreMvc.Controllers.HomeController"
-                  }
-                },
-                {
-                  "key": "_dd.code_origin.frames.0.file",
-                  "value": {
-                    "stringValue": "/Users/zach.montoya/.supacode/repos/dd-trace-dotnet/ai-week-3/tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/HomeController.cs"
-                  }
-                },
-                {
-                  "key": "_dd.code_origin.frames.0.line",
-                  "value": {
-                    "stringValue": "57"
-                  }
-                },
-                {
-                  "key": "_dd.code_origin.frames.0.column",
-                  "value": {
-                    "stringValue": "9"
                   }
                 },
                 {
@@ -151,7 +103,7 @@
                 {
                   "key": "url.path",
                   "value": {
-                    "stringValue": "/status-code/500"
+                    "stringValue": "/not-found"
                   }
                 },
                 {
@@ -187,19 +139,7 @@
                 {
                   "key": "http.response.status_code",
                   "value": {
-                    "intValue": "500"
-                  }
-                },
-                {
-                  "key": "error.type",
-                  "value": {
-                    "stringValue": "500"
-                  }
-                },
-                {
-                  "key": "http.response.headers.sample_correlation_identifier",
-                  "value": {
-                    "stringValue": "0000-0000-0000"
+                    "intValue": "404"
                   }
                 },
                 {
