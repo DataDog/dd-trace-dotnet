@@ -28,7 +28,7 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
 #if NET6_0_OR_GREATER
     private readonly FlagEvalMetricsHook _metricsHook;
 
-    // Span-enrichment hook is constructed ONLY when the gate is on (DG-005); null otherwise so
+    // Span-enrichment hook is constructed ONLY when the gate is on; null otherwise so
     // nothing is allocated/registered when the feature is disabled.
     private readonly SpanEnrichmentHook? _spanEnrichmentHook;
 #endif

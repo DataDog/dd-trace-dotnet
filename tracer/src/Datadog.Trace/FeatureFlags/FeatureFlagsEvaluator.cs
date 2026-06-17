@@ -28,7 +28,7 @@ namespace Datadog.Trace.FeatureFlags
 
         // Surfaced through OpenFeature ImmutableMetadata so the span-enrichment hook can
         // read them via details.FlagMetadata.GetString(...). Values are strings because
-        // FeatureFlagsSdk.ToMetadata stores them as object-wrapped strings (NET-01).
+        // FeatureFlagsSdk.ToMetadata stores them as object-wrapped strings.
         internal const string MetadataSplitSerialId = "__dd_split_serial_id";
         internal const string MetadataDoLog = "__dd_do_log";
 
@@ -662,7 +662,7 @@ namespace Datadog.Trace.FeatureFlags
                 [MetadataAllocationKey] = allocation.Key,
 
                 // Always surface do_log (string "true"/"false") so the span-enrichment hook can
-                // decide whether to record a subject. Mirrors the frozen Node contract (NET-01).
+                // decide whether to record a subject. Mirrors the frozen Node contract.
                 [MetadataDoLog] = doLog ? "true" : "false"
             };
 

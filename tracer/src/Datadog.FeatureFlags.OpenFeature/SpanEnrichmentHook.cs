@@ -18,7 +18,7 @@ namespace Datadog.FeatureFlags.OpenFeature;
 
 /// <summary>
 /// OpenFeature Finally hook that captures feature-flag evaluation metadata for APM span
-/// enrichment (NET-01). Mirrors <see cref="FlagEvalMetricsHook"/>: it runs in the Finally
+/// enrichment. Mirrors <see cref="FlagEvalMetricsHook"/>: it runs in the Finally
 /// stage on every evaluation (success + error), reads <c>__dd_split_serial_id</c> /
 /// <c>__dd_do_log</c> from the flag metadata and the targeting key from the context, and
 /// applies the frozen Node branch (serial id present → accumulate id, plus a subject when
@@ -28,7 +28,7 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// <see cref="FeatureFlagsSdk.AccumulateSpanEnrichment"/> stub, which CallTarget
 /// auto-instrumentation rewrites to resolve the active root span and store the data in
 /// <c>Datadog.Trace.FeatureFlags.SpanEnrichmentStore</c>. The hook is only constructed when
-/// the gate is on (DG-005) and is disposed on <c>DatadogProvider.Dispose()</c>.</para>
+/// the gate is on and is disposed on <c>DatadogProvider.Dispose()</c>.</para>
 /// </summary>
 internal sealed class SpanEnrichmentHook : Hook, IDisposable
 {

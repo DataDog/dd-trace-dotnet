@@ -28,10 +28,10 @@ internal static class FeatureFlagsSdk
     public static bool IsAvailable() => false;
 
     /// <summary>
-    /// Gets a value indicating whether APM span enrichment is enabled (NET-01). No-op stub
+    /// Gets a value indicating whether APM span enrichment is enabled. No-op stub
     /// returning false; auto-instrumentation rewrites this to read
-    /// <c>TracerSettings.IsSpanEnrichmentEnabled</c>. Used to gate-gate the span-enrichment
-    /// hook construction so nothing is built when the gate is off (DG-005).
+    /// <c>TracerSettings.IsSpanEnrichmentEnabled</c>. Used to gate the span-enrichment
+    /// hook construction so nothing is built when the gate is off.
     /// </summary>
     /// <returns> True when the span-enrichment gate is on </returns>
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -57,7 +57,7 @@ internal static class FeatureFlagsSdk
 
     /// <summary>
     /// Accumulates a single flag evaluation into the active root span's FFE span-enrichment
-    /// state (NET-01). This is a no-op stub in the shim assembly; the real implementation is
+    /// state. This is a no-op stub in the shim assembly; the real implementation is
     /// injected by CallTarget auto-instrumentation, which resolves the active root span and
     /// forwards to <c>Datadog.Trace.FeatureFlags.SpanEnrichmentStore.Accumulate</c>. The
     /// OpenFeature shim cannot reference the core tracer directly, so the root-span resolution
@@ -75,7 +75,7 @@ internal static class FeatureFlagsSdk
     }
 
     /// <summary>
-    /// Clears all accumulated FFE span-enrichment state on provider close (NET-01). No-op stub;
+    /// Clears all accumulated FFE span-enrichment state on provider close. No-op stub;
     /// auto-instrumentation forwards to <c>Datadog.Trace.FeatureFlags.SpanEnrichmentStore.Clear</c>
     /// so a reconfigured provider does not leak prior state.
     /// </summary>

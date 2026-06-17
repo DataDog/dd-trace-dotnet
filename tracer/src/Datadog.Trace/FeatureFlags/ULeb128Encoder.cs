@@ -11,7 +11,7 @@ using System.Collections.Generic;
 namespace Datadog.Trace.FeatureFlags
 {
     /// <summary>
-    /// ULEB128 delta-varint + base64 codec for FFE APM span enrichment (NET-01).
+    /// ULEB128 delta-varint + base64 codec for FFE APM span enrichment.
     /// Ported verbatim from the frozen Node reference (dd-trace-js#8343): dedupe → sort
     /// ascending → delta-from-previous → unsigned LEB128 (7 bits/byte, MSB = continuation)
     /// → base64. The empty set encodes to the empty string (the tag is then omitted).

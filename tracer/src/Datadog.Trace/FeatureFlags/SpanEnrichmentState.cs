@@ -15,12 +15,12 @@ using Datadog.Trace.Util.Json;
 namespace Datadog.Trace.FeatureFlags
 {
     /// <summary>
-    /// Per-root-span accumulator for FFE APM span enrichment (NET-01). Ported verbatim from
+    /// Per-root-span accumulator for FFE APM feature-flag span enrichment. Ported verbatim from
     /// the frozen Node reference (dd-trace-js#8343): enforces the frozen limits, dedupes serial
     /// ids structurally (a <see cref="SortedSet{T}"/>), SHA256-hex hashes subject targeting keys,
     /// JSON-stringifies object runtime defaults (NOT ToString), and UTF-8-safe truncates default
     /// values to 64 chars. Created lazily only when the gate is on and a serial id / default is
-    /// actually seen, so there is no idle per-span overhead when the gate is off (DG-005).
+    /// actually seen, so there is no idle per-span overhead when the gate is off.
     /// </summary>
     internal sealed class SpanEnrichmentState
     {
@@ -49,7 +49,7 @@ namespace Datadog.Trace.FeatureFlags
         // red-black trees, and a straggler Add racing Span.Finish's drain would throw
         // "Collection was modified". The Node reference never had to solve this because the JS
         // event loop serializes per request; the .NET port must add the synchronization the
-        // runtime requires (CR-01).
+        // runtime requires.
         private readonly object _gate = new();
 
         // Dedupe is structural (a sorted set), matching the Node Set<number>.
@@ -140,7 +140,7 @@ namespace Datadog.Trace.FeatureFlags
         }
 
         /// <summary>
-        /// Produces the contract-conformant <c>ffe_*</c> tags (Pattern F): <c>ffe_flags_enc</c> is a
+        /// Produces the contract-conformant <c>ffe_*</c> tags: <c>ffe_flags_enc</c> is a
         /// bare base64 string; <c>ffe_subjects_enc</c> and <c>ffe_runtime_defaults</c> are
         /// JSON-stringified objects. Empty components are omitted.
         /// </summary>
@@ -149,7 +149,7 @@ namespace Datadog.Trace.FeatureFlags
         /// NOT a deferred <c>yield</c> iterator: the caller (<c>Span.Finish()</c>) enumerates the
         /// result in a <c>foreach</c>, and a deferred iterator would run its body — reading the live
         /// <see cref="_serialIds"/>/<see cref="_subjects"/> collections — outside any lock, racing a
-        /// concurrent <c>Add</c> (CR-01). Building the list under the lock makes the snapshot atomic.
+        /// concurrent <c>Add</c>. Building the list under the lock makes the snapshot atomic.
         /// </remarks>
         /// <returns>The tag key/value pairs to write on the root span.</returns>
         public IReadOnlyList<KeyValuePair<string, string>> ToSpanTags()

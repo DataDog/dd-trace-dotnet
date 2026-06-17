@@ -18,7 +18,7 @@ internal sealed class Split
 
     public Dictionary<string, string>? ExtraLogging { get; set; }
 
-    // Serial id of the experiment split, used for APM span enrichment (NET-01).
+    // Serial id of the experiment split, used for APM span enrichment.
     // Nullable: absent in UFC shapes that predate span enrichment. Deserialized
     // from the UFC "serialId" field (Newtonsoft case-insensitive matching).
     public long? SerialId { get; set; }

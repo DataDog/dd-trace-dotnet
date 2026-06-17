@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
 
 /// <summary>
 /// System.Void Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk::ClearSpanEnrichment() calltarget
-/// instrumentation. Bridges provider-close cleanup into <see cref="SpanEnrichmentStore.Clear"/> (NET-01).
+/// instrumentation. Bridges provider-close cleanup into <see cref="SpanEnrichmentStore.Clear"/>.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.FeatureFlags.OpenFeature",

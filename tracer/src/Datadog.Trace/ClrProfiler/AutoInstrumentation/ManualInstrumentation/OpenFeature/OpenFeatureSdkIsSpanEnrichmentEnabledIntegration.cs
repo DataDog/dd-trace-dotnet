@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
 /// <summary>
 /// System.Boolean Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk::IsSpanEnrichmentEnabled()
 /// calltarget instrumentation. Returns the real <c>TracerSettings.IsSpanEnrichmentEnabled</c> so the
-/// provider only constructs the span-enrichment hook when the gate is on (DG-005, NET-01).
+/// provider only constructs the span-enrichment hook when the gate is on.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.FeatureFlags.OpenFeature",

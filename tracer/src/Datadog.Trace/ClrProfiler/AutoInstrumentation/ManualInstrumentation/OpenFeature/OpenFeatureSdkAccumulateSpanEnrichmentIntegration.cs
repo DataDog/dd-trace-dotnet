@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
 /// <summary>
 /// System.Void Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk::AccumulateSpanEnrichment(System.Nullable`1[System.Int64],System.Boolean,System.String,System.Boolean,System.String,System.Object) calltarget instrumentation.
 /// Bridges the OpenFeature span-enrichment hook (which cannot reference the core tracer) into
-/// <see cref="SpanEnrichmentStore"/>, resolving the active root span id on this side (NET-01).
+/// <see cref="SpanEnrichmentStore"/>, resolving the active root span id on this side.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.FeatureFlags.OpenFeature",
