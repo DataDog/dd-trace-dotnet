@@ -2999,7 +2999,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             public override Type GetType(string name, bool throwOnError, bool ignoreCase)
             {
-                throw new FileLoadException("Test assembly cannot inspect types.");
+                throw new TypeLoadException("Test assembly cannot inspect types.");
             }
         }
 

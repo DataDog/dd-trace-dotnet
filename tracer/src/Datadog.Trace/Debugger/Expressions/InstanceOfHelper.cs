@@ -246,7 +246,7 @@ internal static class InstanceOfHelper
 
     private static bool IsAssemblyInspectionException(Exception exception)
     {
-        return exception is TypeLoadException or FileNotFoundException or FileLoadException or BadImageFormatException or ReflectionTypeLoadException;
+        return exception is TypeLoadException or FileNotFoundException or BadImageFormatException;
     }
 
     private static Type? ResolveConstructedGenericFromLoadedAssemblies(string searchTypeName, Assembly assembly)
