@@ -7,12 +7,10 @@ using System.IO;
 using DiffMatchPatch;
 using NativeValidation;
 using Nuke.Common.Tooling;
-using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.MSBuild;
 using Nuke.Common.Utilities;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
-using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Logger = Serilog.Log;
 
@@ -328,14 +326,7 @@ partial class Build
         .Description("Validates that every DD_* environment variable read by native code is registered in supported-configurations.yaml with native scope")
         .Executes(() =>
         {
-            // Runs the standalone NativeConfigValidator tool rather than validating inline: it
-            // source-links the generator's YamlReader, which can't be linked into _build (the
-            // Docker build context COPYs _build alone, so the cross-dir link fails with CS2001).
-            var project = TracerDirectory / "src" / "Datadog.Trace.Tools.NativeConfigValidator" / "Datadog.Trace.Tools.NativeConfigValidator.csproj";
-            DotNetRun(s => s
-                .SetProjectFile(project)
-                .SetConfiguration(BuildConfiguration)
-                .EnableNoLaunchProfile()
-                .SetApplicationArguments(RootDirectory));
+            var supportedConfigurationsPath = TracerDirectory / "src" / "Datadog.Trace" / "Configuration" / "supported-configurations.yaml";
+            new NativeConfigValidator().Validate(RootDirectory, supportedConfigurationsPath);
         });
 }

@@ -10,17 +10,17 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.SourceGenerators.Helpers;
 
-namespace Datadog.Trace.Tools.NativeConfigValidator;
+namespace NativeValidation;
 
 /// <summary>
 /// Validates that every DD_* / _DD_* environment variable read by native C++ code
 /// has a corresponding entry in supported-configurations.yaml with "native" in its scope.
 ///
-/// The registry is parsed with the source generator's own <see cref="YamlReader"/>
-/// (source-linked into this project) so the validator and the ConfigurationKeys
-/// generator can never drift out of sync.
+/// The registry is parsed with the source generator's own <see cref="YamlReader"/>, which
+/// lives in this _build project and is source-linked into the source generator (not the other
+/// way around) so the validator and the ConfigurationKeys generator can never drift out of sync.
 /// </summary>
-internal sealed class NativeConfigValidator
+public sealed class NativeConfigValidator
 {
     // Native source roots to scan, relative to the repository root.
     private static readonly string[] NativeSourceRoots =
@@ -63,8 +63,8 @@ internal sealed class NativeConfigValidator
     /// </summary>
     /// <param name="rootDirectory">The repository root.</param>
     /// <param name="supportedConfigurationsPath">The path to supported-configurations.yaml.</param>
-    /// <returns><c>true</c> if every native env var is registered with native scope; otherwise <c>false</c>.</returns>
-    public bool Validate(string rootDirectory, string supportedConfigurationsPath)
+    /// <exception cref="Exception">Thrown if any native env var is missing from the registry or lacks native scope.</exception>
+    public void Validate(string rootDirectory, string supportedConfigurationsPath)
     {
         var parsed = YamlReader.ParseSupportedConfigurations(File.ReadAllText(supportedConfigurationsPath));
 
@@ -132,14 +132,12 @@ internal sealed class NativeConfigValidator
 
         if (hasErrors)
         {
-            Console.Error.WriteLine(
+            throw new Exception(
                 "Native configuration validation failed. See the errors above. " +
                 "If a flagged literal is not an environment variable (e.g. a named pipe), add it to the allowlist in " + nameof(NativeConfigValidator) + ".");
-            return false;
         }
 
         Console.Out.WriteLine($"Native configuration validation passed: all {nativeVars.Count} native DD_* variables are registered with native scope");
-        return true;
     }
 
     private static HashSet<string> ScanNativeEnvVars(string rootDirectory)

@@ -12,7 +12,6 @@ on:
       - 'tracer/src/Datadog.Tracer.Native/**'
       - 'shared/src/**'
       - 'profiler/src/**'
-      - 'tracer/src/Datadog.Trace.Tools.NativeConfigValidator/**'
       - 'tracer/build.sh'
       - 'tracer/build/_build/**'
       - '.github/workflows/validate_native_configurations.yml'
