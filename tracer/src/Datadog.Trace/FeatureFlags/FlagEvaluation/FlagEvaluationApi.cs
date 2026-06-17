@@ -43,7 +43,7 @@ internal sealed class FlagEvaluationApi : IDisposable
     /// aggregation worker. On overflow Enqueue drops the event and increments an observable counter
     /// rather than aggregating on — or blocking — the evaluation thread.
     /// </summary>
-    private const int EventQueueCapacity = 4096;
+    private const int EventQueueCapacity = 16_384;
 
     private static readonly JsonSerializerSettings SerializerSettings = new()
     {
