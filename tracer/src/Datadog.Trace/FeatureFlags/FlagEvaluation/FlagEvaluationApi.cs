@@ -58,6 +58,7 @@ internal sealed class FlagEvaluationApi : IDisposable
 
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly TimeSpan _sendInterval = TimeSpan.FromSeconds(10);
+    private readonly TimeSpan _drainInterval = TimeSpan.FromMilliseconds(100);
 
     private readonly FlagEvaluationAggregator _aggregator = new(
         globalCap: 131_072,
@@ -328,13 +329,27 @@ internal sealed class FlagEvaluationApi : IDisposable
     private async Task SendLoopAsync()
     {
         Log.Debug("FlagEvaluationApi::SendLoopAsync -> Enter");
+        var nextSend = DateTimeOffset.UtcNow + _sendInterval;
         while (!_processExit.Task.IsCompleted)
         {
-            await FlushAsync().ConfigureAwait(false);
+            ReportBackpressureDrops(DrainQueueIntoAggregator());
+
+            var now = DateTimeOffset.UtcNow;
+            if (now >= nextSend)
+            {
+                await FlushAsync().ConfigureAwait(false);
+                nextSend = now + _sendInterval;
+            }
 
             try
             {
-                await Task.WhenAny(_processExit.Task, Task.Delay(_sendInterval)).ConfigureAwait(false);
+                var delay = nextSend - now;
+                if (delay > _drainInterval)
+                {
+                    delay = _drainInterval;
+                }
+
+                await Task.WhenAny(_processExit.Task, Task.Delay(delay)).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -358,11 +373,7 @@ internal sealed class FlagEvaluationApi : IDisposable
     {
         // Drain the hot-path hand-off queue into the aggregator first (off the evaluation thread),
         // then surface any backpressure drops so an undersized queue is observable.
-        long droppedBackpressure = DrainQueueIntoAggregator();
-        if (droppedBackpressure > 0)
-        {
-            Log.Warning<long>("FlagEvaluationApi: evaluation queue full — dropped {Dropped} evaluation(s) under backpressure (best-effort telemetry)", droppedBackpressure);
-        }
+        ReportBackpressureDrops(DrainQueueIntoAggregator());
 
         try
         {
@@ -382,6 +393,14 @@ internal sealed class FlagEvaluationApi : IDisposable
         {
             Log.Error(ex, "Error while sending Feature Flags evaluation events to the agent");
             return true;
+        }
+    }
+
+    private static void ReportBackpressureDrops(long droppedBackpressure)
+    {
+        if (droppedBackpressure > 0)
+        {
+            Log.Warning<long>("FlagEvaluationApi: evaluation queue full — dropped {Dropped} evaluation(s) under backpressure (best-effort telemetry)", droppedBackpressure);
         }
     }
 }

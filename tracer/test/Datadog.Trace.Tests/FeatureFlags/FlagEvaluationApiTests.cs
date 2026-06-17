@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -606,6 +607,29 @@ public class FlagEvaluationApiTests
         capture.LastPayload!.FlagEvaluations.Should().ContainSingle()
             .Which.Flag.Key.Should().Be("flag-shutdown");
         api.PendingQueueCount.Should().Be(0, "the queue is drained on shutdown");
+    }
+
+    [Fact]
+    public void SendLoop_DrainsQueueBetweenFlushes()
+    {
+        var api = NewApiWithCapturedTransport(out var capture);
+        const int count = 10_050;
+
+        for (int i = 0; i < count; i++)
+        {
+            SpinWait.SpinUntil(() => api.PendingQueueCount < FlagEvaluationApi.QueueCapacity, TimeSpan.FromSeconds(5))
+                .Should().BeTrue("the send loop should drain the bounded queue before the send interval elapses");
+            api.Enqueue(new FlagEvalEvent("flag-drain", "on", "alloc", $"user-{i}", SchemaValidTimestampMs + i, null));
+        }
+
+        api.Dispose();
+
+        api.DroppedBackpressureCount.Should().Be(0);
+        capture.LastPayload.Should().NotBeNull();
+        var rows = capture.LastPayload!.FlagEvaluations.Where(e => e.Flag.Key == "flag-drain").ToList();
+        rows.Sum(e => e.EvaluationCount).Should().Be(count);
+        rows.Count(e => e.TargetingKey is null).Should().Be(1);
+        rows.Where(e => e.TargetingKey is null).Sum(e => e.EvaluationCount).Should().Be(50);
     }
 
     [Fact]
