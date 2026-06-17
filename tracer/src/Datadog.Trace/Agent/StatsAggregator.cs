@@ -29,6 +29,12 @@ namespace Datadog.Trace.Agent
         private const int AdditionalTagMaxValueLength = 200;
         private const string BlockedByTracerSentinel = "tracer_blocked_value";
 
+        // Default matches the Go agent's MaxResourceLen; when the
+        // agent advertises the "big_resource" feature flag it can store larger resource names.
+        private const int DefaultMaxResourceLengthBytes = 5000;
+        private const int BigResourceMaxResourceLengthBytes = 15000;
+        private const string BigResourceFeatureFlag = "big_resource";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsAggregator>();
         private static readonly List<byte[]> EmptyTags = [];
         private static readonly byte[] PeerTagSeparator = [0];
@@ -66,6 +72,8 @@ namespace Datadog.Trace.Agent
 
         private int _numberOfHitBucketsContainingAdditionalTags;
         private int _additionalTagsBlockLoggedThisBucket;
+
+        private int _maxResourceLengthBytes = DefaultMaxResourceLengthBytes;
 
         internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
         {
@@ -193,12 +201,31 @@ namespace Datadog.Trace.Agent
             }
 
             spans = ObfuscateTrace(in spans);
+
+            if (Volatile.Read(ref _tracerObfuscationVersion) == 1)
+            {
+                TruncateResources(in spans);
+            }
+
             if (!ShouldKeepTrace(in spans))
             {
                 return TraceKeepState.AggregateOnly;
             }
 
             return TraceKeepState.AggregateAndExport; // keep
+        }
+
+        private void TruncateResources(in SpanCollection spans)
+        {
+            var limit = Volatile.Read(ref _maxResourceLengthBytes);
+            foreach (var span in spans)
+            {
+                var resource = span.ResourceName;
+                if (TraceUtil.TruncateUTF8(ref resource, limit))
+                {
+                    span.ResourceName = resource;
+                }
+            }
         }
 
         [TestingAndPrivateOnly]
@@ -839,6 +866,11 @@ namespace Datadog.Trace.Agent
             Volatile.Write(
                 ref _traceFilter,
                 config.TraceFilterConfig.HasFilters ? new TraceFilter(config.TraceFilterConfig) : null);
+
+            // The agent advertises "big_resource" when it can
+            // store larger resource names, otherwise fall back to the default cap.
+            var bigResourceEnabled = config.FeatureFlags?.Contains(BigResourceFeatureFlag) == true;
+            Volatile.Write(ref _maxResourceLengthBytes, bigResourceEnabled ? BigResourceMaxResourceLengthBytes : DefaultMaxResourceLengthBytes);
 
             // Tracer obfuscation version is 1. If the agent's version is > 0 and <= ours, the tracer obfuscates.
             const int tracerObfuscationVersion = 1;
