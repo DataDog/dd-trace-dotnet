@@ -319,6 +319,8 @@ public class OtlpMapperTests
     [InlineData("span.kind")]
     [InlineData("service.version")]
     [InlineData("service.instance.id")]
+    [InlineData("component")]
+    [InlineData("http-client-handler-type")]
     public void EmitAttributesFromSpan_DoesNotEmitOtelSemanticsRestrictedTag_WhenOpenTelemetrySemanticsEnabled(string tagKey)
     {
         var span = CreateSpan();
@@ -338,6 +340,8 @@ public class OtlpMapperTests
     [InlineData("span.kind")]
     [InlineData("service.version")]
     [InlineData("service.instance.id")]
+    [InlineData("component")]
+    [InlineData("http-client-handler-type")]
     public void EmitAttributesFromSpan_EmitsOtelSemanticsRestrictedTag_WhenOpenTelemetrySemanticsDisabled(string tagKey)
     {
         var span = CreateSpan();
