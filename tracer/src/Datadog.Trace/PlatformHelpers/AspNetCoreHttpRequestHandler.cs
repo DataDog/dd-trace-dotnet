@@ -105,7 +105,7 @@ namespace Datadog.Trace.PlatformHelpers
         public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
         {
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
-            var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
+            var tags = (routeTemplateResourceNames || tracer.Settings.OpenTelemetrySemanticsEnabled) ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
             return StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, tags, useSingleSpanRequestTracking: false);
         }
 

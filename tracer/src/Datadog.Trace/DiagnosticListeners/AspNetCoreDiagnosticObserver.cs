@@ -393,7 +393,11 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 // If we're using endpoint routing or this is a pipeline re-execution,
                 // these will already be set correctly
-                if (!tracer.Settings.OpenTelemetrySemanticsEnabled)
+                if (tracer.Settings.OpenTelemetrySemanticsEnabled)
+                {
+                    rootSpanTags.HttpRoute = aspNetRoute;
+                }
+                else
                 {
                     rootSpanTags.AspNetCoreRoute = aspNetRoute;
                 }
@@ -468,9 +472,10 @@ namespace Datadog.Trace.DiagnosticListeners
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 var routeTemplateResourceNamesEnabled = _tracer.Settings.RouteTemplateResourceNamesEnabled;
+                var otelSemanticsEnabled = _tracer.Settings.OpenTelemetrySemanticsEnabled;
                 var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
                 // Only modify tracking feature if _not_ using legacy feature names
-                if (isFirstExecution && routeTemplateResourceNamesEnabled)
+                if (isFirstExecution && (routeTemplateResourceNamesEnabled || otelSemanticsEnabled))
                 {
                     trackingFeature.IsUsingEndpointRouting = true;
                     trackingFeature.IsFirstPipelineExecution = false;
@@ -534,7 +539,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     Log.Debug("Could not extract type and method for endpoint code origin. Endpoint: {EndpointDisplayName}", routeEndpoint.Value.DisplayName);
                 }
 
-                if (!routeTemplateResourceNamesEnabled)
+                if (!routeTemplateResourceNamesEnabled && !otelSemanticsEnabled)
                 {
                     return;
                 }
@@ -592,7 +597,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // Overwrite the route in the parent span
                     rootSpan.ResourceName = resourceName;
-                    if (!_tracer.Settings.OpenTelemetrySemanticsEnabled)
+                    if (_tracer.Settings.OpenTelemetrySemanticsEnabled)
+                    {
+                        tags.HttpRoute = normalizedRoute;
+                    }
+                    else
                     {
                         tags.AspNetCoreRoute = normalizedRoute;
                     }
