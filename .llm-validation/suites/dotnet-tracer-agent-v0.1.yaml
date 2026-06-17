@@ -50,6 +50,7 @@ cases:
       - Invents a configuration file or generator that does not exist.
 
   - id: dotnet-tracer-logging-terminology-004
+    files: [AGENTS.md]   # logging terminology lives in AGENTS.md — run this case only when AGENTS.md changed
     input: |
       Write the log message for when the entire Datadog product is being disabled at
       startup, and briefly say which terms to use or avoid.
@@ -175,6 +176,7 @@ cases:
   # phrased to auto-invoke that skill; the expected_criteria/bad_signals mirror its real guidance, so a
   # regression in the skill is observable here.
   - id: dotnet-tracer-bump-libdatadog-013
+    files: [.claude/skills/bump-libdatadog/SKILL.md]   # only run when the bump-libdatadog skill changed
     input: |
       I need to bump the libdatadog native library to a new release version. Walk me
       through everything I have to update in this repo and how to verify it.
