@@ -81,26 +81,10 @@ internal static class InstanceOfHelper
         }
 
         var observedGeneration = Volatile.Read(ref _assemblyLoadGeneration);
-        if (ResolutionStates.TryGetValue(typeName, out var cachedResolution))
+        ResolutionStates.TryGetValue(typeName, out var cachedResolution);
+        if (TryGetCachedResolution(typeName, observedGeneration, ref cachedResolution, out var cachedType))
         {
-            if (cachedResolution.IsAmbiguous)
-            {
-                return GetResolvedTypeOrThrow(typeName, cachedResolution, noNewAssemblies: false);
-            }
-
-            if (cachedResolution.TryGetType(out var cachedType))
-            {
-                return cachedType;
-            }
-
-            if (cachedResolution.HasResolvedType)
-            {
-                TryRemoveResolution(typeName, cachedResolution);
-            }
-            else if (cachedResolution.ScannedGeneration == observedGeneration)
-            {
-                return GetResolvedTypeOrThrow(typeName, cachedResolution, noNewAssemblies: true);
-            }
+            return cachedType;
         }
 
         var typeNameInfo = ParseTypeName(typeName);
@@ -135,27 +119,9 @@ internal static class InstanceOfHelper
         {
             var observedGeneration = Volatile.Read(ref _assemblyLoadGeneration);
             ResolutionStates.TryGetValue(typeName, out var currentResolution);
-            if (currentResolution is not null)
+            if (TryGetCachedResolution(typeName, observedGeneration, ref currentResolution, out var cachedType))
             {
-                if (currentResolution.IsAmbiguous)
-                {
-                    return GetResolvedTypeOrThrow(typeName, currentResolution, noNewAssemblies: false);
-                }
-
-                if (currentResolution.TryGetType(out var currentType))
-                {
-                    return currentType;
-                }
-
-                if (currentResolution.HasResolvedType)
-                {
-                    TryRemoveResolution(typeName, currentResolution);
-                    currentResolution = null;
-                }
-                else if (currentResolution.ScannedGeneration == observedGeneration)
-                {
-                    return GetResolvedTypeOrThrow(typeName, currentResolution, noNewAssemblies: true);
-                }
+                return cachedType;
             }
 
             var assemblies = Volatile.Read(ref _getAssemblies)();
@@ -506,6 +472,37 @@ internal static class InstanceOfHelper
         }
     }
 
+    private static bool TryGetCachedResolution(string typeName, int observedGeneration, ref ResolutionState? resolution, [NotNullWhen(true)] out Type? type)
+    {
+        type = null;
+        if (resolution is null)
+        {
+            return false;
+        }
+
+        if (resolution.IsAmbiguous)
+        {
+            ThrowAmbiguousType(typeName);
+        }
+
+        if (resolution.TryGetType(out type))
+        {
+            return true;
+        }
+
+        if (resolution.HasResolvedType)
+        {
+            RemoveResolutionIfCurrent(typeName, resolution);
+            resolution = null;
+        }
+        else if (resolution.ScannedGeneration == observedGeneration)
+        {
+            ThrowUnknownTypeNoNewAssemblies(typeName);
+        }
+
+        return false;
+    }
+
     private static Type GetResolvedTypeOrThrow(string typeName, ResolutionState resolution, bool noNewAssemblies)
     {
         if (resolution.IsAmbiguous)
@@ -615,7 +612,7 @@ internal static class InstanceOfHelper
         return new ResolutionState(type, isAmbiguous, Math.Max(currentResolution.ScannedGeneration, scannedGeneration), MergeScannedAssemblies(currentResolution.ScannedAssemblies, scanResult.ScannedAssemblies));
     }
 
-    private static void TryRemoveResolution(string typeName, ResolutionState resolution)
+    private static void RemoveResolutionIfCurrent(string typeName, ResolutionState resolution)
     {
         ((ICollection<KeyValuePair<string, ResolutionState>>)ResolutionStates).Remove(new KeyValuePair<string, ResolutionState>(typeName, resolution));
     }
@@ -632,11 +629,17 @@ internal static class InstanceOfHelper
             return currentAssemblies;
         }
 
+        var maxCapacity = currentAssemblies.Length + scannedAssemblies.Length;
+        if (maxCapacity > LinearAssemblyIdentityScanThreshold)
+        {
+            return MergeScannedAssembliesWithSet(currentAssemblies, scannedAssemblies, maxCapacity);
+        }
+
         AssemblyIdentity[]? merged = null;
         var count = 0;
         for (var i = 0; i < currentAssemblies.Length; i++)
         {
-            AddAssemblyIdentity(ref merged, ref count, currentAssemblies.Length + scannedAssemblies.Length, currentAssemblies[i]);
+            AddAssemblyIdentity(ref merged, ref count, maxCapacity, currentAssemblies[i]);
         }
 
         for (var i = 0; i < scannedAssemblies.Length; i++)
@@ -644,7 +647,27 @@ internal static class InstanceOfHelper
             var scannedAssembly = scannedAssemblies[i];
             if (!ContainsAssemblyIdentity(merged!, count, scannedAssembly))
             {
-                AddAssemblyIdentity(ref merged, ref count, currentAssemblies.Length + scannedAssemblies.Length, scannedAssembly);
+                AddAssemblyIdentity(ref merged, ref count, maxCapacity, scannedAssembly);
+            }
+        }
+
+        return ToExactAssemblyIdentityArray(merged, count);
+    }
+
+    private static AssemblyIdentity[] MergeScannedAssembliesWithSet(AssemblyIdentity[] currentAssemblies, AssemblyIdentity[] scannedAssemblies, int maxCapacity)
+    {
+        var mergedSet = new HashSet<AssemblyIdentity>(currentAssemblies);
+        var merged = new AssemblyIdentity[maxCapacity];
+        Array.Copy(currentAssemblies, merged, currentAssemblies.Length);
+        var count = currentAssemblies.Length;
+
+        for (var i = 0; i < scannedAssemblies.Length; i++)
+        {
+            var scannedAssembly = scannedAssemblies[i];
+            if (mergedSet.Add(scannedAssembly))
+            {
+                merged[count] = scannedAssembly;
+                count++;
             }
         }
 

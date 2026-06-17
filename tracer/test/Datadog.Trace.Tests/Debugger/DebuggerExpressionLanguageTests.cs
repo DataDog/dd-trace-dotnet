@@ -1366,6 +1366,44 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_InstanceOf_LargeMissCacheScansOnlyNewAssemblies()
+        {
+            var initialAssemblies = new Assembly[9];
+            for (var i = 0; i < initialAssemblies.Length; i++)
+            {
+                initialAssemblies[i] = CreateDynamicAssembly(
+                    $"InstanceOfLargeMissCacheAssembly{i}",
+                    $"LargeMissCache.IgnoredType{i}");
+            }
+
+            var resolvedAssembly = CreateDynamicAssembly(
+                "InstanceOfLargeMissCacheResolvedAssembly",
+                "LargeMissCache.ResolvedType");
+            var calls = 0;
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() =>
+                {
+                    calls++;
+                    return calls == 1 ? initialAssemblies : [.. initialAssemblies, resolvedAssembly];
+                });
+
+                Action firstLookup = () => InstanceOfHelper.ResolveType("LargeMissCache.ResolvedType");
+                firstLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+
+                InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
+                InstanceOfHelper.ResolveType("LargeMissCache.ResolvedType").Should().Be(resolvedAssembly.GetType("LargeMissCache.ResolvedType"));
+
+                calls.Should().Be(2);
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
         public void ProbeExpressionParser_InstanceOf_CacheClearDuringMerge_PreservesScannedSnapshot()
         {
             var assembly = CreateDynamicAssembly(
