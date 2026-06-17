@@ -96,7 +96,7 @@ internal static class InstanceOfHelper
         if (MayResolveWithoutAssemblyScan(typeNameInfo.SearchTypeName) &&
             !typeNameInfo.MayContainAssemblyQualifiedGenericArguments)
         {
-            var resolvedType = Type.GetType(typeName, throwOnError: false, ignoreCase: true);
+            var resolvedType = Type.GetType(typeName, throwOnError: false, ignoreCase: false);
             if (resolvedType is not null)
             {
                 AddResolvedType(typeName, resolvedType, Volatile.Read(ref _assemblyLoadGeneration));
@@ -125,7 +125,10 @@ internal static class InstanceOfHelper
             }
 
             var assemblies = Volatile.Read(ref _getAssemblies)();
-            var scanResult = ScanAssemblies(typeName, typeNameInfo, assemblies, currentResolution?.ScannedAssemblies, currentResolution?.GetTypeOrDefault());
+            var alreadyScannedAssemblies = typeNameInfo.MayContainAssemblyQualifiedGenericArguments
+                                               ? null
+                                               : currentResolution?.ScannedAssemblies;
+            var scanResult = ScanAssemblies(typeName, typeNameInfo, assemblies, alreadyScannedAssemblies, currentResolution?.GetTypeOrDefault());
             lastResolution = AddScannedResolution(typeName, currentResolution, scanResult, observedGeneration);
             if (lastResolution.IsAmbiguous)
             {
@@ -187,7 +190,7 @@ internal static class InstanceOfHelper
                 isAmbiguous = true;
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug("Ambiguous case-insensitive type lookup for '{TypeName}'. Matched '{FirstType}' and '{SecondType}'. Use exact type casing or an assembly-qualified name.", typeName, previousMatch.AssemblyQualifiedName, matchedType.AssemblyQualifiedName);
+                    Log.Debug("Ambiguous type lookup for '{TypeName}'. Matched '{FirstType}' and '{SecondType}'. Use an assembly-qualified name.", typeName, previousMatch.AssemblyQualifiedName, matchedType.AssemblyQualifiedName);
                 }
 
                 continue;
@@ -210,34 +213,21 @@ internal static class InstanceOfHelper
         try
         {
             var searchTypeName = typeNameInfo.SearchTypeName;
-            Type? type;
             if (!typeNameInfo.MayContainAssemblyQualifiedGenericArguments)
             {
-                type = assembly.GetType(searchTypeName, throwOnError: false, ignoreCase: false);
-                if (type is not null)
-                {
-                    return type;
-                }
-
-                return assembly.GetType(searchTypeName, throwOnError: false, ignoreCase: true);
+                return assembly.GetType(searchTypeName, throwOnError: false, ignoreCase: false);
             }
 
-            type = ResolveConstructedGenericFromLoadedAssemblies(searchTypeName, assembly, ignoreCase: false);
-            if (type is not null)
-            {
-                return type;
-            }
-
-            return ResolveConstructedGenericFromLoadedAssemblies(searchTypeName, assembly, ignoreCase: true);
+            return ResolveConstructedGenericFromLoadedAssemblies(searchTypeName, assembly);
         }
         catch (AmbiguousMatchException ex)
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                Log.Debug(ex, "Ambiguous case-insensitive type lookup for '{TypeName}' in assembly '{AssemblyName}'. Use exact type casing or an assembly-qualified name.", typeName, assembly.FullName);
+                Log.Debug(ex, "Ambiguous type lookup for '{TypeName}' in assembly '{AssemblyName}'. Use an assembly-qualified name.", typeName, assembly.FullName);
             }
 
-            throw new InstanceOfEvaluationException($"Multiple types matching '{typeName}' were found using case-insensitive lookup. Use exact type casing or an assembly-qualified name.", ex);
+            throw new InstanceOfEvaluationException($"Multiple types matching '{typeName}' were found. Use an assembly-qualified name.", ex);
         }
         catch (Exception ex)
         {
@@ -245,20 +235,20 @@ internal static class InstanceOfHelper
         }
     }
 
-    private static Type? ResolveConstructedGenericFromLoadedAssemblies(string searchTypeName, Assembly assembly, bool ignoreCase)
+    private static Type? ResolveConstructedGenericFromLoadedAssemblies(string searchTypeName, Assembly assembly)
     {
         return Type.GetType(
             searchTypeName,
-            AssemblyQualifiedTypeResolver.ResolveLoadedAssembly,
+            AssemblyQualifiedTypeResolver.ResolveGenericArgumentAssembly,
             (resolvedAssembly, nestedTypeName, nestedIgnoreCase) => ResolveTypePartFromLoadedAssembly(resolvedAssembly ?? assembly, nestedTypeName, nestedIgnoreCase),
             throwOnError: false,
-            ignoreCase);
+            ignoreCase: false);
     }
 
     private static Type? ResolveTypePartFromLoadedAssembly(Assembly assembly, string typeName, bool ignoreCase)
     {
         return MayContainAssemblyQualifiedGenericArguments(typeName)
-                   ? ResolveConstructedGenericFromLoadedAssemblies(typeName, assembly, ignoreCase)
+                   ? ResolveConstructedGenericFromLoadedAssemblies(typeName, assembly)
                    : assembly.GetType(typeName, throwOnError: false, ignoreCase: ignoreCase);
     }
 
@@ -406,7 +396,7 @@ internal static class InstanceOfHelper
 
     private static Dictionary<string, Type> CreateBclTypeAliases()
     {
-        var aliases = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
+        var aliases = new Dictionary<string, Type>(StringComparer.Ordinal);
         AddBclType(aliases, typeof(Array), "Array");
         AddBclType(aliases, typeof(bool), "bool");
         AddBclType(aliases, typeof(byte), "byte");
@@ -451,12 +441,12 @@ internal static class InstanceOfHelper
     private static bool MayBeBclTypeAlias(string typeName)
     {
         return typeName.IndexOf('.') < 0 ||
-               typeName.StartsWith("System.", StringComparison.OrdinalIgnoreCase);
+               typeName.StartsWith("System.", StringComparison.Ordinal);
     }
 
     private static bool MayResolveWithoutAssemblyScan(string typeName)
     {
-        return typeName.StartsWith("System.", StringComparison.OrdinalIgnoreCase);
+        return typeName.StartsWith("System.", StringComparison.Ordinal);
     }
 
     private static void AddBclType(Dictionary<string, Type> aliases, Type type, params string[] names)
@@ -733,7 +723,7 @@ internal static class InstanceOfHelper
 
     private static void ThrowAmbiguousType(string typeName)
     {
-        throw new InstanceOfEvaluationException($"Multiple types matching '{typeName}' were found using case-insensitive lookup. Use exact type casing or an assembly-qualified name.");
+        throw new InstanceOfEvaluationException($"Multiple types matching '{typeName}' were found. Use an assembly-qualified name.");
     }
 
     private readonly struct ScanResult
@@ -837,20 +827,20 @@ internal static class InstanceOfHelper
                 return false;
             }
 
-            if (BclTypeAliases.TryGetValue(typeNameInfo.SearchTypeName, out type))
-            {
-                return true;
-            }
-
             type = typeNameInfo.MayContainAssemblyQualifiedGenericArguments
-                       ? ResolveConstructedGenericFromKnownFrameworkAssemblies(typeNameInfo.SearchTypeName, ignoreCase: true)
-                       : typeof(object).Assembly.GetType(typeNameInfo.SearchTypeName, throwOnError: false, ignoreCase: true);
+                       ? ResolveConstructedGenericFromKnownFrameworkAssemblies(typeNameInfo.SearchTypeName, ignoreCase: false)
+                       : typeof(object).Assembly.GetType(typeNameInfo.SearchTypeName, throwOnError: false, ignoreCase: false);
             if (type is not null)
             {
                 return true;
             }
 
-            type = Type.GetType(typeName, ResolveLoadedAssembly, typeResolver: null, throwOnError: false, ignoreCase: true);
+            if (!IsFullyQualifiedTypeName(typeNameInfo.SearchTypeName))
+            {
+                return false;
+            }
+
+            type = Type.GetType(typeName, ResolveLoadedAssembly, typeResolver: null, throwOnError: false, ignoreCase: false);
             return type is not null;
         }
 
@@ -858,10 +848,22 @@ internal static class InstanceOfHelper
         {
             return Type.GetType(
                 searchTypeName,
-                ResolveKnownFrameworkAssembly,
-                (resolvedAssembly, nestedTypeName, nestedIgnoreCase) => (resolvedAssembly ?? typeof(object).Assembly).GetType(nestedTypeName, throwOnError: false, ignoreCase: nestedIgnoreCase),
+                ResolveGenericArgumentAssembly,
+                ResolveKnownFrameworkGenericTypePart,
                 throwOnError: false,
                 ignoreCase);
+        }
+
+        private static Type? ResolveKnownFrameworkGenericTypePart(Assembly? resolvedAssembly, string nestedTypeName, bool ignoreCase)
+        {
+            if (resolvedAssembly is not null)
+            {
+                return resolvedAssembly.GetType(nestedTypeName, throwOnError: false, ignoreCase: ignoreCase);
+            }
+
+            return IsKnownFrameworkTypeName(nestedTypeName)
+                       ? typeof(object).Assembly.GetType(nestedTypeName, throwOnError: false, ignoreCase: ignoreCase)
+                       : null;
         }
 
         private static Assembly? ResolveKnownFrameworkAssembly(AssemblyName assemblyName)
@@ -901,6 +903,11 @@ internal static class InstanceOfHelper
             return null;
         }
 
+        internal static Assembly? ResolveGenericArgumentAssembly(AssemblyName assemblyName)
+        {
+            return ResolveKnownFrameworkAssembly(assemblyName) ?? ResolveLoadedAssembly(assemblyName);
+        }
+
         private static bool AssemblyNameHasMetadata(string assemblyName)
         {
             return assemblyName.IndexOf(',') >= 0;
@@ -919,6 +926,11 @@ internal static class InstanceOfHelper
                    AssemblyNameEquals(assemblyName, simpleNameLength, "System") ||
                    AssemblyNameEquals(assemblyName, simpleNameLength, "System.Private.CoreLib") ||
                    AssemblyNameEquals(assemblyName, simpleNameLength, "System.Runtime");
+        }
+
+        private static bool IsKnownFrameworkTypeName(string typeName)
+        {
+            return typeName.StartsWith("System.", StringComparison.Ordinal);
         }
 
         private static bool AssemblyNameEquals(string assemblyName, int simpleNameLength, string expectedName)

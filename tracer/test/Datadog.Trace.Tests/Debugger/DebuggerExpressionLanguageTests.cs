@@ -773,7 +773,7 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
-        public void ProbeExpressionParser_InstanceOf_CustomerTypeName_EvaluatesCaseInsensitive()
+        public void ProbeExpressionParser_InstanceOf_CustomerTypeName_RequiresExactCasing()
         {
             try
             {
@@ -790,7 +790,9 @@ namespace Datadog.Trace.Tests.Debugger
                 var result = evaluator.Evaluate(scopeMembers);
 
                 result.Condition.Should().BeTrue();
-                result.Errors.Should().BeNullOrEmpty();
+                result.HasConditionError.Should().BeTrue();
+                result.Errors.Should().ContainSingle();
+                result.Errors[0].Message.Should().Contain("unknown type");
             }
             finally
             {
@@ -825,12 +827,9 @@ namespace Datadog.Trace.Tests.Debugger
 
         [Theory]
         [InlineData("string")]
-        [InlineData("STRING")]
         [InlineData("int")]
-        [InlineData("INT")]
         [InlineData("double")]
-        [InlineData("DOUBLE")]
-        public void ProbeExpressionParser_InstanceOf_BclAlias_EvaluatesConditionCaseInsensitive(string typeName)
+        public void ProbeExpressionParser_InstanceOf_BclAlias_EvaluatesCondition(string typeName)
         {
             try
             {
@@ -862,7 +861,7 @@ namespace Datadog.Trace.Tests.Debugger
         [Theory]
         [InlineData("string")]
         [InlineData("System.String")]
-        [InlineData("INT")]
+        [InlineData("int")]
         [InlineData("System.Int32")]
         [InlineData("Guid")]
         [InlineData("System.Guid")]
@@ -925,6 +924,23 @@ namespace Datadog.Trace.Tests.Debugger
             }
         }
 
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_AssemblyQualifiedBclAlias_RequiresFullyQualifiedClrTypeName()
+        {
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => throw new InvalidOperationException("Assembly scanning should not run for framework aliases."));
+
+                Action lookup = () => InstanceOfHelper.ResolveType("string, mscorlib");
+
+                lookup.Should().Throw<Exception>().WithMessage("*must be a fully qualified type name*");
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
         [Theory]
         [InlineData("System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib")]
         public void ProbeExpressionParser_InstanceOf_AssemblyQualifiedFrameworkType_DoesNotScanAssemblies(string typeName)
@@ -934,6 +950,29 @@ namespace Datadog.Trace.Tests.Debugger
                 InstanceOfHelper.SetAssemblyProviderForTests(() => throw new InvalidOperationException("Assembly scanning should not run for framework aliases."));
 
                 InstanceOfHelper.IsInstanceOf(new List<string>(), typeName).Should().BeTrue();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_AssemblyQualifiedFrameworkGenericTypeWithLoadedArgument_EvaluatesCondition()
+        {
+            var argumentAssembly = CreateDynamicAssembly(
+                "InstanceOfFrameworkGenericArgumentAssembly",
+                "FrameworkGenericArgument.Argument");
+
+            try
+            {
+                var argumentType = argumentAssembly.GetType("FrameworkGenericArgument.Argument");
+                var listType = typeof(List<>).MakeGenericType(argumentType);
+                var instance = Activator.CreateInstance(listType);
+                var typeName = "System.Collections.Generic.List`1[[FrameworkGenericArgument.Argument, InstanceOfFrameworkGenericArgumentAssembly]], mscorlib";
+                InstanceOfHelper.SetAssemblyProviderForTests(() => [argumentAssembly]);
+
+                InstanceOfHelper.IsInstanceOf(instance, typeName).Should().BeTrue();
             }
             finally
             {
@@ -957,6 +996,28 @@ namespace Datadog.Trace.Tests.Debugger
                 InstanceOfHelper.SetAssemblyProviderForTests(() => [assembly]);
 
                 InstanceOfHelper.IsInstanceOf(instance, genericType.FullName).Should().BeTrue();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_LoadedGenericTypeWithKnownFrameworkArgument_EvaluatesCondition()
+        {
+            var assembly = CreateDynamicAssembly(
+                "InstanceOfLoadedGenericFrameworkArgumentAssembly",
+                "LoadedGenericFrameworkArgument.GenericType`1");
+            var genericType = assembly.GetType("LoadedGenericFrameworkArgument.GenericType`1").MakeGenericType(typeof(string));
+            var instance = Activator.CreateInstance(genericType);
+            var typeName = "LoadedGenericFrameworkArgument.GenericType`1[[System.String, mscorlib]]";
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => [assembly]);
+
+                InstanceOfHelper.IsInstanceOf(instance, typeName).Should().BeTrue();
             }
             finally
             {
@@ -1247,6 +1308,57 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_InstanceOf_ExactCaseMatchAcrossAssemblies_ResolvesExactMatch()
+        {
+            var firstAssembly = CreateDynamicAssembly(
+                "InstanceOfExactCaseAcrossAssembliesVariantAssembly",
+                "ExactCaseAcrossAssemblies.typeforinstanceof");
+            var secondAssembly = CreateDynamicAssembly(
+                "InstanceOfExactCaseAcrossAssembliesExactAssembly",
+                "ExactCaseAcrossAssemblies.TypeForInstanceOf");
+
+            try
+            {
+                var casingVariantType = firstAssembly.GetType("ExactCaseAcrossAssemblies.typeforinstanceof");
+                var exactType = secondAssembly.GetType("ExactCaseAcrossAssemblies.TypeForInstanceOf");
+                casingVariantType.Should().NotBe(exactType);
+
+                var instance = Activator.CreateInstance(exactType);
+                var casingVariantInstance = Activator.CreateInstance(casingVariantType);
+                InstanceOfHelper.SetAssemblyProviderForTests(() => [firstAssembly, secondAssembly]);
+
+                InstanceOfHelper.IsInstanceOf(instance, "ExactCaseAcrossAssemblies.TypeForInstanceOf").Should().BeTrue();
+                InstanceOfHelper.IsInstanceOf(casingVariantInstance, "ExactCaseAcrossAssemblies.TypeForInstanceOf").Should().BeFalse();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_AssemblyQualifiedTypeNameRequiresExactCasing()
+        {
+            var assembly = CreateDynamicAssembly(
+                "InstanceOfAssemblyQualifiedExactCaseAssembly",
+                "AssemblyQualifiedExactCase.TypeForInstanceOf");
+            var typeName = "AssemblyQualifiedExactCase.typeforinstanceof, InstanceOfAssemblyQualifiedExactCaseAssembly";
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() => [assembly]);
+
+                Action lookup = () => InstanceOfHelper.ResolveType(typeName);
+
+                lookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
         public void ProbeExpressionParser_InstanceOf_AmbiguousTypeAfterCacheHit_KeepsCachedResolution()
         {
             var firstAssembly = CreateDynamicAssembly(
@@ -1302,6 +1414,45 @@ namespace Datadog.Trace.Tests.Debugger
                 InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
                 InstanceOfHelper.IsInstanceOf(instance, "LazyLoaded.TypeForInstanceOf").Should().BeTrue();
                 calls.Should().Be(2);
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_InstanceOf_LazyLoadedGenericArgument_CanSucceedWithoutRecompile()
+        {
+            var outerAssembly = CreateDynamicAssembly(
+                "InstanceOfLazyGenericOuterAssembly",
+                "LazyGeneric.Outer`1");
+            var argumentAssembly = CreateDynamicAssembly(
+                "InstanceOfLazyGenericArgumentAssembly",
+                "LazyGeneric.Argument");
+            var includeArgumentAssembly = false;
+            var calls = 0;
+
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(() =>
+                {
+                    calls++;
+                    return includeArgumentAssembly ? [outerAssembly, argumentAssembly] : [outerAssembly];
+                });
+
+                var typeName = "LazyGeneric.Outer`1[[LazyGeneric.Argument, InstanceOfLazyGenericArgumentAssembly]]";
+
+                Action firstLookup = () => InstanceOfHelper.ResolveType(typeName);
+                firstLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+
+                InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
+                includeArgumentAssembly = true;
+                var argumentType = argumentAssembly.GetType("LazyGeneric.Argument");
+                var genericType = outerAssembly.GetType("LazyGeneric.Outer`1").MakeGenericType(argumentType);
+                var instance = Activator.CreateInstance(genericType);
+                InstanceOfHelper.IsInstanceOf(instance, typeName).Should().BeTrue();
+                calls.Should().BeGreaterThan(1);
             }
             finally
             {
