@@ -3482,7 +3482,7 @@ supportedConfigurations:
     documentation: |-
       Configuration key for the maximum number of distinct stat entries with additional
       tags allowed per flush interval. New entries beyond the cap have their additional
-      tag values replaced with "blocked_by_tracer".
+      tag values replaced with "tracer_blocked_value".
   DD_TRACE_STATS_COMPUTATION_ENABLED:
   - implementation: A
     scope: managed

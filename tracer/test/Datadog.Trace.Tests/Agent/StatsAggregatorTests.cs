@@ -1405,7 +1405,7 @@ namespace Datadog.Trace.Tests.Agent
             var bucket = aggregator.CurrentBuffer.Buckets[key];
 
             // The oversized value is masked, but the dimension key and the span's base stats survive
-            DecodeTags(bucket.AdditionalMetricTags).Should().Equal("region:blocked_by_tracer");
+            DecodeTags(bucket.AdditionalMetricTags).Should().Equal("region:tracer_blocked_value");
             bucket.Hits.Should().Be(1);
             bucket.Duration.Should().Be(100 * 1_000_000);
         }
@@ -1481,7 +1481,7 @@ namespace Datadog.Trace.Tests.Agent
             aggregator.CurrentBuffer.Buckets.Should().HaveCount(4);
 
             var blockedBucket = aggregator.CurrentBuffer.Buckets.Values
-                                          .Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "tenant:blocked_by_tracer" }));
+                                          .Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "tenant:tracer_blocked_value" }));
             blockedBucket.Hits.Should().Be(2); // d + e merged into the blocked bucket
 
             // A repeat of an already-admitted key still merges into its existing entry, regardless of the cap.
@@ -1576,11 +1576,11 @@ namespace Datadog.Trace.Tests.Agent
             var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
 
             // Exactly one real additional-tag bucket has hits this interval; region=a's retained real bucket got none.
-            buckets.Count(b => b.AdditionalMetricTags.Count > 0 && b.Hits > 0 && DecodeTags(b.AdditionalMetricTags)[0] != "region:blocked_by_tracer")
+            buckets.Count(b => b.AdditionalMetricTags.Count > 0 && b.Hits > 0 && DecodeTags(b.AdditionalMetricTags)[0] != "region:tracer_blocked_value")
                    .Should().Be(1);
             buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:b" })).Hits.Should().Be(1);
             buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:a" })).Hits.Should().Be(0);
-            buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:blocked_by_tracer" })).Hits.Should().Be(1);
+            buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:tracer_blocked_value" })).Hits.Should().Be(1);
 
             Span MakeRegion(string region)
             {

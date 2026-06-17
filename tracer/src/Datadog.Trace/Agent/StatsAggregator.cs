@@ -27,7 +27,7 @@ namespace Datadog.Trace.Agent
         private const int BufferCount = 2;
 
         private const int AdditionalTagMaxValueLength = 200;
-        private const string BlockedByTracerSentinel = "blocked_by_tracer";
+        private const string BlockedByTracerSentinel = "tracer_blocked_value";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsAggregator>();
         private static readonly List<byte[]> EmptyTags = [];
@@ -132,7 +132,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private static ReadOnlySpan<byte> BlockedByTracerSentinelUtf8 => "blocked_by_tracer"u8;
+        private static ReadOnlySpan<byte> BlockedByTracerSentinelUtf8 => "tracer_blocked_value"u8;
 
         /// <summary>
         /// Gets the current buffer.

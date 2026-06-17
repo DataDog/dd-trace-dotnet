@@ -766,7 +766,7 @@ internal static partial class ConfigurationKeys
     /// <summary>
     /// Configuration key for the maximum number of distinct stat entries with additional
     /// tags allowed per flush interval. New entries beyond the cap have their additional
-    /// tag values replaced with "blocked_by_tracer".
+    /// tag values replaced with "tracer_blocked_value".
     /// </summary>
     public const string StatsAdditionalTagsCardinalityLimit = "DD_TRACE_STATS_ADDITIONAL_TAGS_CARDINALITY_LIMIT";
 
