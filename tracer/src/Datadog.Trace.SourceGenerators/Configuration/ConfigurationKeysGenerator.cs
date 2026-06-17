@@ -229,7 +229,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
                 deprecationMessage,
                 entry.ConstName,
                 entry.Sensitive,
-                entry.Aliases);
+                entry.Aliases.AsArray());
         }
 
         return new Result<ConfigurationData>(new ConfigurationData(configurations), new EquatableArray<DiagnosticInfo>(diagnostics.ToArray()));
