@@ -133,7 +133,7 @@ internal static class InstanceOfHelper
             var alreadyScannedAssemblies = typeNameInfo.MayContainAssemblyQualifiedGenericArguments
                                                ? null
                                                : currentResolution?.ScannedAssemblies;
-            var scanResult = ScanAssemblies(typeName, typeNameInfo, assemblies, alreadyScannedAssemblies, currentResolution?.GetTypeOrDefault());
+            var scanResult = ScanAssemblies(typeName, typeNameInfo, assemblies, alreadyScannedAssemblies);
             lastResolution = AddScannedResolution(typeName, currentResolution, scanResult, observedGeneration);
             if (lastResolution.IsAmbiguous)
             {
@@ -161,7 +161,7 @@ internal static class InstanceOfHelper
         throw UnknownType(typeName);
     }
 
-    private static ScanResult ScanAssemblies(string typeName, TypeNameInfo typeNameInfo, Assembly[] assemblies, AssemblyIdentity[]? alreadyScannedAssemblies, Type? currentResolvedType)
+    private static ScanResult ScanAssemblies(string typeName, TypeNameInfo typeNameInfo, Assembly[] assemblies, AssemblyIdentity[]? alreadyScannedAssemblies)
     {
         Type? resolvedType = null;
         var isAmbiguous = false;
@@ -189,13 +189,12 @@ internal static class InstanceOfHelper
                 continue;
             }
 
-            var previousMatch = currentResolvedType ?? resolvedType;
-            if (previousMatch is not null && previousMatch != matchedType)
+            if (resolvedType is not null && resolvedType != matchedType)
             {
                 isAmbiguous = true;
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug("Ambiguous type lookup for '{TypeName}'. Matched '{FirstType}' and '{SecondType}'. Use an assembly-qualified name.", typeName, previousMatch.AssemblyQualifiedName, matchedType.AssemblyQualifiedName);
+                    Log.Debug("Ambiguous type lookup for '{TypeName}'. Matched '{FirstType}' and '{SecondType}'. Use an assembly-qualified name.", typeName, resolvedType.AssemblyQualifiedName, matchedType.AssemblyQualifiedName);
                 }
 
                 continue;
@@ -993,11 +992,6 @@ internal static class InstanceOfHelper
         internal int ScannedGeneration { get; }
 
         internal AssemblyIdentity[] ScannedAssemblies { get; }
-
-        internal Type? GetTypeOrDefault()
-        {
-            return TryGetType(out var type) ? type : null;
-        }
 
         internal bool TryGetType([NotNullWhen(true)] out Type? type)
         {

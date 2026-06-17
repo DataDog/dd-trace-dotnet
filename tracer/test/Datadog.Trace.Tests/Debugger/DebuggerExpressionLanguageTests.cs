@@ -171,6 +171,34 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_MethodReflectionCache_UsesStructuralParameterKeys()
+        {
+            var first = new ProbeExpressionParserHelper.ReflectionMethodIdentifier(typeof(string), nameof(string.Contains), [typeof(string)], null);
+            var second = new ProbeExpressionParserHelper.ReflectionMethodIdentifier(typeof(string), nameof(string.Contains), [typeof(string)], null);
+
+            second.Should().Be(first);
+            second.GetHashCode().Should().Be(first.GetHashCode());
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_GenericMethodReflectionCache_UsesStructuralGenericArgumentKeys()
+        {
+            var first = new ProbeExpressionParserHelper.ReflectionMethodIdentifier(
+                typeof(InstanceOfHelper),
+                nameof(InstanceOfHelper.IsInstanceOf),
+                [typeof(int), typeof(string)],
+                [typeof(int)]);
+            var second = new ProbeExpressionParserHelper.ReflectionMethodIdentifier(
+                typeof(InstanceOfHelper),
+                nameof(InstanceOfHelper.IsInstanceOf),
+                [typeof(int), typeof(string)],
+                [typeof(int)]);
+
+            second.Should().Be(first);
+            second.GetHashCode().Should().Be(first.GetHashCode());
+        }
+
+        [Fact]
         public void ProbeExpressionParser_ObjectReturnType_AllowsValueTypeResults()
         {
             // Arrange
