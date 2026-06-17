@@ -74,13 +74,25 @@ internal static class ProbeExpressionParserHelper
                 continue;
             }
 
-            if (parameterType.Name != parameters[i].Name)
+            if (!ParameterTypeMatches(parameterType, parameters[i]))
             {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private static bool ParameterTypeMatches(Type methodParameterType, Type requestedParameterType)
+    {
+        if (methodParameterType == requestedParameterType)
+        {
+            return true;
+        }
+
+        return methodParameterType.IsGenericType &&
+               requestedParameterType.IsGenericTypeDefinition &&
+               methodParameterType.GetGenericTypeDefinition() == requestedParameterType;
     }
 
     internal readonly struct ReflectionMethodIdentifier : IEquatable<ReflectionMethodIdentifier>

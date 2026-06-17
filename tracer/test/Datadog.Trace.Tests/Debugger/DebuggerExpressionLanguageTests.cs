@@ -199,6 +199,30 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_GenericMethodReflection_UsesExactNonGenericParameterTypes()
+        {
+            var method = ProbeExpressionParserHelper.GetMethodByReflection(
+                typeof(SameParameterNameOverloads),
+                nameof(SameParameterNameOverloads.Match),
+                [typeof(string), typeof(string)],
+                [typeof(string)]);
+
+            method.Invoke(null, ["value", "generic"]).Should().Be("system");
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_GenericMethodReflection_MatchesOpenGenericParameterDefinitions()
+        {
+            var method = ProbeExpressionParserHelper.GetMethodByReflection(
+                typeof(Enumerable),
+                nameof(Enumerable.Where),
+                [typeof(IEnumerable<>), typeof(Func<,>)],
+                [typeof(string)]);
+
+            method.GetParameters()[0].ParameterType.GetGenericTypeDefinition().Should().Be(typeof(IEnumerable<>));
+        }
+
+        [Fact]
         public void ProbeExpressionParser_ObjectReturnType_AllowsValueTypeResults()
         {
             // Arrange
@@ -2934,6 +2958,23 @@ namespace Datadog.Trace.Tests.Debugger
 
         internal class RecursiveGenericConstraintTarget<T>
             where T : IComparable<T>
+        {
+        }
+
+        internal class SameParameterNameOverloads
+        {
+            public static string Match<T>(String value, T genericValue)
+            {
+                return "custom";
+            }
+
+            public static string Match<T>(string value, T genericValue)
+            {
+                return "system";
+            }
+        }
+
+        internal sealed class String
         {
         }
 
