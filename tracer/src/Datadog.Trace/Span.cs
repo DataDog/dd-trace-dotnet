@@ -484,18 +484,19 @@ namespace Datadog.Trace
                 {
                     DebuggerManager.Instance.ExceptionReplay?.EndRequest();
 
-                    // FFE APM span enrichment (NET-01). Guarded by a cheap settings bool so the
-                    // gate-off branch does no work and allocates no per-span state (DG-005, the
-                    // Go #4844 blocker — this is .NET's highest-risk hot path). When on, drain the
-                    // root span's accumulated state and write the ffe_* tags BEFORE CloseSpan.
-                    if (Context.TraceContext?.Tracer?.Settings?.IsSpanEnrichmentEnabled == true)
+                    // FFE APM feature-flag span enrichment. Guarded by a cheap process-wide enabled
+                    // latch (a single volatile bool read) so the gate-off branch does no work and
+                    // allocates no per-span state — span finish is .NET's highest-risk hot path.
+                    // When on, drain the root span's accumulated state and write the ffe_* tags
+                    // BEFORE CloseSpan.
+                    if (FeatureFlags.SpanEnrichmentStore.IsEnabled)
                     {
                         // Never-throw guard: Span.Finish() is core span lifecycle. Enrichment must
                         // NEVER break span finish/flush for an unrelated trace, mirroring the
                         // try/catch isolation in both SpanEnrichmentStore.Accumulate and the
                         // OpenFeature hook's FinallyAsync (the Node reference isolates both finally
                         // and onSpanFinish). Any throw inside the drain/encode/serialize path is
-                        // logged and swallowed here (WR-02).
+                        // logged and swallowed here.
                         try
                         {
                             var enrichmentState = FeatureFlags.SpanEnrichmentStore.GetAndClear(SpanId);

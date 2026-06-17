@@ -21,10 +21,9 @@ using Xunit;
 namespace Datadog.Trace.Tests.FeatureFlags;
 
 /// <summary>
-/// L0 unit tests for the .NET FFE APM span-enrichment codec + accumulator + Span.Finish write
-/// path (NET-01). Covers the 7 required VALIDATION.md cases plus the explicit max-200 case:
-/// no-span, finished-root, error/default variant, per-subject cap, max-200 serial ids,
-/// JSON/object-default, gate-off negative control, and the codec golden-vector round-trip.
+/// Unit tests for the .NET FFE APM span-enrichment codec + accumulator + Span.Finish write
+/// path. Covers: no-span, finished-root, error/default variant, per-subject cap, max-200 serial
+/// ids, JSON/object-default, gate-off negative control, and the codec golden-vector round-trip.
 /// </summary>
 public class SpanEnrichmentTests
 {
@@ -33,12 +32,12 @@ public class SpanEnrichmentTests
     // SHA256("user-123") per the frozen reference.
     private const string User123Sha256 = "fcdec6df4d44dbc637c7c5b58efface52a7f8a88535423430255be0bb89bedd8";
 
-    // Set by the CR-01 race test's reader task when it observes the "Collection was modified"
-    // failure; the test asserts this stays false post-fix.
+    // Set by the concurrency race test's reader task when it observes the "Collection was
+    // modified" failure; the test asserts this stays false post-fix.
     private static volatile bool _raceFailed;
 
     // ---------------------------------------------------------------------
-    // Codec golden vector + round-trip (Pattern E)
+    // Codec golden vector + round-trip
     // ---------------------------------------------------------------------
 
     [Fact]
@@ -307,7 +306,7 @@ public class SpanEnrichmentTests
     }
 
     // ---------------------------------------------------------------------
-    // Span.Finish write path: gate-on positive control + gate-off negative control (DG-005)
+    // Span.Finish write path: gate-on positive control + gate-off negative control
     // ---------------------------------------------------------------------
 
     [Fact]
@@ -321,7 +320,7 @@ public class SpanEnrichmentTests
         span.IsRootSpan.Should().BeTrue();
         var rootSpanId = span.SpanId;
 
-        // Simulate what the hook + bridge do at runtime (auto-instrumentation is not active in L0).
+        // Simulate what the hook + bridge do at runtime (auto-instrumentation is not active in these unit tests).
         SpanEnrichmentStore.Clear();
         SpanEnrichmentStore.Accumulate(rootSpanId, serialId: 100, doLog: true, targetingKey: "user-123", hasVariant: true, flagKey: "flag", value: "on");
         SpanEnrichmentStore.Accumulate(rootSpanId, serialId: 108, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag2", value: "off");
@@ -339,10 +338,16 @@ public class SpanEnrichmentTests
     [Fact]
     public async System.Threading.Tasks.Task SpanFinish_GateOff_NegativeControl_NoTags_NoStateAllocated()
     {
-        // Gate OFF (default). DG-005 / Go #4844 proof: Span.Finish() must do no work and the
+        // Gate OFF (default). Zero-idle-overhead proof: Span.Finish() must do no work and the
         // store must hold no per-span state.
         var settings = TracerSettings.Create(new());
         settings.IsSpanEnrichmentEnabled.Should().BeFalse("the gate is off by default");
+
+        // The enabled latch is a process-wide static that other tests in this process may have
+        // flipped on. Reset it so this test genuinely exercises the gate-off (inert) Span.Finish
+        // path rather than passing via the empty-store path with the latch stuck on.
+        SpanEnrichmentStore.ResetIsEnabledForTesting();
+        SpanEnrichmentStore.IsEnabled.Should().BeFalse("the gate-off path must be inert");
 
         await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
 
@@ -379,7 +384,7 @@ public class SpanEnrichmentTests
     }
 
     // ---------------------------------------------------------------------
-    // Runtime-default rendering parity with Node String(value) (RESEARCH.md:102)
+    // Runtime-default rendering parity with Node String(value)
     // ---------------------------------------------------------------------
 
     [Fact]
@@ -408,11 +413,11 @@ public class SpanEnrichmentTests
     }
 
     // ---------------------------------------------------------------------
-    // CR-01 regression: concurrent mutation of one shared root-span state.
-    // The L0 suite above is single-threaded, so it never exercised the path
-    // CR-01 breaks. These reproduce the real Task.WhenAll / late-Accumulate
-    // races on a SHARED SpanEnrichmentState instance (one root span). They
-    // fail-before (corruption / "Collection was modified") and pass-after.
+    // Concurrency regression: concurrent mutation of one shared root-span state.
+    // The single-threaded suite above never exercised the concurrent path.
+    // These reproduce the real Task.WhenAll / late-Accumulate races on a SHARED
+    // SpanEnrichmentState instance (one root span). They fail-before (corruption
+    // / "Collection was modified") and pass-after.
     // ---------------------------------------------------------------------
 
     [Fact]
@@ -453,6 +458,77 @@ public class SpanEnrichmentTests
         var subjects = JsonConvert.DeserializeObject<Dictionary<string, string>>(tags[SpanEnrichmentState.TagSubjectsEnc])!;
         subjects.Should().ContainKey(User123Sha256);
         DecodeDeltaVarint(subjects[User123Sha256]).Count.Should().Be(SpanEnrichmentState.MaxExperimentsPerSubject);
+    }
+
+    [Fact]
+    public void Store_ConcurrentFirstAccumulate_FromNullStore_NoLostState()
+    {
+        // Regression for the non-atomic lazy-init of the backing dictionary. With a plain
+        // `_states ??= new(...)`, concurrent first-time Accumulate calls (the store starting from
+        // null) can each construct a separate dictionary; whichever assignment wins drops the state
+        // accumulated into the loser, silently losing flags/subjects for those root spans. The
+        // atomic LazyInitializer.EnsureInitialized publishes exactly one dictionary, so every
+        // distinct root's first write survives.
+        //
+        // Each task targets a DISTINCT root span id and writes exactly one serial id, so the only
+        // way an id can go missing is a lost dictionary publish during lazy init — making this a
+        // direct probe of the init race rather than per-state mutation (covered above).
+        const int roots = 256;
+
+        // Clear() releases the backing map so the next Accumulate hits the null-store lazy-init
+        // path under contention — exactly the window the fix protects.
+        SpanEnrichmentStore.Clear();
+        SpanEnrichmentStore.TrackedRootCount.Should().Be(0, "the store must start from null/empty so the lazy-init race is exercised");
+
+        Parallel.For(0, roots, i =>
+        {
+            var rootSpanId = (ulong)(800000 + i);
+            SpanEnrichmentStore.Accumulate(rootSpanId, serialId: i + 1, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
+        });
+
+        // Every distinct root must have survived the concurrent first-time init — none dropped by a
+        // losing dictionary assignment.
+        SpanEnrichmentStore.TrackedRootCount.Should().Be(roots, "no root's first-time Accumulate may be lost to a non-atomic lazy init");
+
+        for (var i = 0; i < roots; i++)
+        {
+            var rootSpanId = (ulong)(800000 + i);
+            var state = SpanEnrichmentStore.GetAndClear(rootSpanId);
+            state.Should().NotBeNull($"root {rootSpanId}'s first-time Accumulate must not be lost");
+            DecodeDeltaVarint(TagDict(state!)[SpanEnrichmentState.TagFlagsEnc]).Should().Equal(new long[] { i + 1 });
+        }
+
+        SpanEnrichmentStore.Clear();
+    }
+
+    [Fact]
+    public void Store_ClearReleasesBackingMap_ConcurrentWithAccumulate_DoesNotThrow()
+    {
+        // Clear() now atomically swaps the backing map out (Interlocked.Exchange to null) rather than
+        // clearing it in place. A racing Accumulate either completes against the old (orphaned) map
+        // or lazily re-initializes a fresh one; neither path may throw or corrupt the store.
+        SpanEnrichmentStore.Clear();
+
+        var clearer = Task.Run(() =>
+        {
+            for (var i = 0; i < 2000; i++)
+            {
+                SpanEnrichmentStore.Clear();
+            }
+        });
+
+        var accumulator = Task.Run(() =>
+        {
+            for (var i = 0; i < 2000; i++)
+            {
+                SpanEnrichmentStore.Accumulate((ulong)(900000 + (i % 64)), serialId: i, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
+            }
+        });
+
+        var act = () => Task.WaitAll(clearer, accumulator);
+        act.Should().NotThrow("Clear() must atomically release the map without racing a concurrent Accumulate");
+
+        SpanEnrichmentStore.Clear();
     }
 
     [Fact]
@@ -506,8 +582,8 @@ public class SpanEnrichmentTests
                 }
                 catch (System.InvalidOperationException)
                 {
-                    // "Collection was modified; enumeration operation may not execute" — the exact
-                    // CR-01 failure. Record it so the assertion reports cleanly (fail-before signal).
+                    // "Collection was modified; enumeration operation may not execute" — the
+                    // concurrency failure. Record it so the assertion reports cleanly (fail-before signal).
                     _raceFailed = true;
                 }
             });
@@ -521,8 +597,8 @@ public class SpanEnrichmentTests
     [Fact]
     public async System.Threading.Tasks.Task SpanFinish_EnrichmentThrows_DoesNotBreakSpanFinish()
     {
-        // WR-02: Span.Finish() is core span lifecycle. A throw in the drain/encode/serialize path
-        // must NOT propagate out of Finish and break span closing for an unrelated trace. Force a
+        // Span.Finish() is core span lifecycle. A throw in the drain/encode/serialize path must NOT
+        // propagate out of Finish and break span closing for an unrelated trace. Force a
         // deterministic throw on the drain path and assert Finish still completes (IsFinished true,
         // no exception escapes).
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
@@ -540,7 +616,7 @@ public class SpanEnrichmentTests
             // Pre-fix (no try/catch around the enrichment block) this throw propagates out of
             // Finish; the Should().NotThrow proves the never-throw guard swallows it.
             var finish = () => span.Finish();
-            finish.Should().NotThrow("enrichment must never break span finish (WR-02)");
+            finish.Should().NotThrow("enrichment must never break span finish");
             span.IsFinished.Should().BeTrue("the span must still finish even when enrichment throws");
         }
         finally
@@ -550,7 +626,7 @@ public class SpanEnrichmentTests
     }
 
     // ---------------------------------------------------------------------
-    // WR-03 regression: gate-on store growth is bounded when roots never finish.
+    // Growth-bound regression: gate-on store growth is bounded when roots never finish.
     // ---------------------------------------------------------------------
 
     [Fact]
@@ -569,7 +645,7 @@ public class SpanEnrichmentTests
 
         SpanEnrichmentStore.TrackedRootCount.Should().Be(cap);
 
-        // New roots past the cap are dropped — the store does NOT grow unboundedly (WR-03).
+        // New roots past the cap are dropped — the store does NOT grow unboundedly.
         for (var i = 0; i < 500; i++)
         {
             SpanEnrichmentStore.Accumulate((ulong)(900000 + i), serialId: 1, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
@@ -594,7 +670,7 @@ public class SpanEnrichmentTests
     private static Dictionary<string, string> TagDict(SpanEnrichmentState state)
         => state.ToSpanTags().ToDictionary(p => p.Key, p => p.Value);
 
-    // Decode side mirrors the L2 codec (system-tests test_ffe/utils.py) — the round-trip oracle.
+    // Decode side mirrors the cross-SDK codec (system-tests test_ffe/utils.py) — the round-trip oracle.
     private static List<long> DecodeDeltaVarint(string base64)
     {
         var result = new List<long>();
