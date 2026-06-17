@@ -10,11 +10,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http
 {
     internal static class HttpOtelHelper
     {
+        private static readonly System.Collections.Generic.HashSet<string> KnownMethods = new(System.StringComparer.OrdinalIgnoreCase)
+        {
+            "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "PATCH", "CONNECT", "QUERY"
+        };
+
         internal static void SetRequestMethod(ISpan span, string method)
         {
-            if (!StringUtil.IsNullOrEmpty(method))
+            if (StringUtil.IsNullOrEmpty(method))
             {
-                span.SetTag("http.request.method", method);
+                return;
+            }
+
+            var upper = method.ToUpperInvariant();
+            if (KnownMethods.Contains(upper))
+            {
+                span.SetTag("http.request.method", upper);
+            }
+            else
+            {
+                span.SetTag("http.request.method", "_OTHER");
+                span.SetTag("http.request.method_original", method);
             }
         }
 
@@ -25,14 +41,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http
                 return;
             }
 
-            span.SetTag("url.full", rawUrl);
-
             if (Uri.TryCreate(rawUrl, UriKind.Absolute, out var uri))
             {
+                span.SetTag("url.scheme", uri.Scheme);
+
+                // Redact credentials (username:password@host) before setting url.full
+                if (!StringUtil.IsNullOrEmpty(uri.UserInfo))
+                {
+                    var builder = new UriBuilder(uri) { UserName = string.Empty, Password = string.Empty };
+                    span.SetTag("url.full", builder.Uri.ToString());
+                }
+                else
+                {
+                    span.SetTag("url.full", rawUrl);
+                }
+
                 if (uri.Port > 0 && !uri.IsDefaultPort)
                 {
                     span.SetTag("server.port", uri.Port.ToString());
                 }
+            }
+            else
+            {
+                span.SetTag("url.full", rawUrl);
             }
         }
 

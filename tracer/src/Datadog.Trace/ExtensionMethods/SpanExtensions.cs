@@ -130,9 +130,17 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 span.Error = true;
 
-                // if an error message already exists (e.g. from a previous exception), don't replace it
-                if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
+                if (otelSemanticsEnabled)
                 {
+                    // Don't clobber an error.type already set by an exception handler
+                    if (span.GetTag("error.type") is null)
+                    {
+                        span.SetTag("error.type", statusCodeString);
+                    }
+                }
+                else if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
+                {
+                    // if an error message already exists (e.g. from a previous exception), don't replace it
                     span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {statusCodeString}.");
                 }
             }
