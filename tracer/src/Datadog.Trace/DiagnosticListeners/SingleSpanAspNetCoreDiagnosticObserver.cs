@@ -268,7 +268,14 @@ namespace Datadog.Trace.DiagnosticListeners
                                                 ? string.Create(null, stackalloc char[1024], $"{tags.HttpMethod} {resourcePathName}")
                                                 : $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
-                    tags.AspNetCoreRoute = routePattern.RawText?.ToLowerInvariant();
+                    if (_tracer.Settings.OpenTelemetrySemanticsEnabled)
+                    {
+                        tags.HttpRoute = routePattern.RawText?.ToLowerInvariant();
+                    }
+                    else
+                    {
+                        tags.AspNetCoreRoute = routePattern.RawText?.ToLowerInvariant();
+                    }
                 }
 
                 // We check appsec enabled in here, but this avoids the method call if it's not needed

@@ -83,6 +83,12 @@
                   }
                 },
                 {
+                  "key": "http.route",
+                  "value": {
+                    "stringValue": "api/delay/{seconds}"
+                  }
+                },
+                {
                   "key": "_dd.code_origin.type",
                   "value": {
                     "stringValue": "entry"

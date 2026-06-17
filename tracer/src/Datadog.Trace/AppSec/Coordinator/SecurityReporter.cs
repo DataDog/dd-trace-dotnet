@@ -345,7 +345,7 @@ internal sealed partial class SecurityReporter
 
     private void TryAddEndPoint()
     {
-        var route = _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
+        var route = _span.GetTag(Tags.HttpRoute) ?? _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
         if (route != null)
         {
             _span.SetTag(Tags.HttpEndpoint, route);

@@ -72,6 +72,9 @@ namespace Datadog.Trace.Tagging
                 case "aspnet_core.route": 
                     AspNetCoreRoute = value;
                     break;
+                case "http.route": 
+                    HttpRoute = value;
+                    break;
                 case "_dd.code_origin.type": 
                     CodeOriginType = value;
                     break;
@@ -92,9 +95,6 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "_dd.code_origin.frames.0.column": 
                     CodeOriginFrameColumn = value;
-                    break;
-                case "http.route": 
-                    Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AspNetCoreTags));
                     break;
                 default: 
                     base.SetTag(key, value);
