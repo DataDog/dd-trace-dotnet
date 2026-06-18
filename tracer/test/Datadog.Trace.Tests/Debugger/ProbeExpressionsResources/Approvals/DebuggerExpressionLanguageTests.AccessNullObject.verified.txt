@@ -1,5 +1,5 @@
-Template:
-Segments: 
+﻿Template:
+Segments:
 
 {
     "getmember": [
@@ -9,8 +9,7 @@ Segments:
         "NestedString"
     ]
 }
-Expressions: 
-(
+Expressions: (
     scopeMember,
     scopeMember,
     scopeMember,
@@ -50,4 +49,4 @@ Expressions:
 }
 Result: The result of the expression is: 
 Errors:
-EvaluationError { Expression = this.Null.NestedString), Message = Object reference not set to an instance of an object. }
+EvaluationError { Expression = { ... }), Message = Object reference not set to an instance of an object. }

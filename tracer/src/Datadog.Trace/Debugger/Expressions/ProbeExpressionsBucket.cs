@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -24,7 +25,7 @@ internal sealed class ProbeExpressionsBucket
         _log = log;
     }
 
-    public bool TryGetFirstEntry(out ProbeExpressionsCacheEntry entry)
+    public bool TryGetFirstEntry([NotNullWhen(true)] out ProbeExpressionsCacheEntry? entry)
     {
         var entries = Volatile.Read(ref _entries);
         if (entries.Length > 0)
@@ -33,7 +34,7 @@ internal sealed class ProbeExpressionsBucket
             return true;
         }
 
-        entry = null!;
+        entry = null;
         return false;
     }
 

@@ -103,6 +103,7 @@ internal partial class ProbeExpressionParser<T>
             Expression.Equal(moveNextCall, Expression.Constant(true)),
             Expression.Block(
                 new[] { loopItem },
+                BudgetCheck(),
                 Expression.IfThenElse(
                     Expression.LessThan(index, Expression.Constant(3)),
                     Expression.Block(
@@ -183,6 +184,7 @@ internal partial class ProbeExpressionParser<T>
         var loopBodyExpression = Expression.IfThenElse(
            condition,
            Expression.Block(
+               BudgetCheck(),
                dumpObjectCallExpression,
                Expression.PostIncrementAssign(index),
                Expression.IfThen(
@@ -202,13 +204,18 @@ internal partial class ProbeExpressionParser<T>
 
     private string DumpObject(object value, Type type, string name, int depth = 0)
     {
+        if (type == null)
+        {
+            return string.Empty;
+        }
+
         // only one level depth of collection
         if (depth == 0 && IsTypeSupportIndex(type, out var assignableFrom))
         {
             return DumpCollection(value, assignableFrom);
         }
 
-        if (!string.IsNullOrEmpty(name))
+        if (!StringUtil.IsNullOrEmpty(name))
         {
             name += "=";
         }
@@ -221,7 +228,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         return Redaction.IsSafeToCallToString(type) ?
-                   $"{name}{value?.ToString() ?? type?.FullName}" :
+                   $"{name}{value?.ToString() ?? type.FullName}" :
                    $"{name}{type?.FullName}";
     }
 
@@ -242,7 +249,7 @@ internal partial class ProbeExpressionParser<T>
                 sb.Append('[');
                 foreach (var item in (value as IList))
                 {
-                    sb.Append($"{DumpObject(item, item.GetType(), null, 1)}");
+                    sb.Append(DumpObject(item, item?.GetType(), null, 1));
                     if (++count == 3)
                     {
                         sb.Append(", ...");
@@ -260,7 +267,7 @@ internal partial class ProbeExpressionParser<T>
                 sb.Append('[');
                 foreach (var item in (value as IEnumerable))
                 {
-                    sb.Append($"{DumpObject(item, item.GetType(), null, 1)}");
+                    sb.Append(DumpObject(item, item?.GetType(), null, 1));
                     if (++count == 3)
                     {
                         sb.Append(", ...");
@@ -278,7 +285,11 @@ internal partial class ProbeExpressionParser<T>
                 sb.Append('{');
                 foreach (DictionaryEntry entry in (value as IDictionary))
                 {
-                    sb.Append($"[{DumpObject(entry.Key, entry.Key?.GetType(), null, 1)}, {DumpObject(entry.Value, entry.Value?.GetType(), null, 1)}]");
+                    sb.Append('[');
+                    sb.Append(DumpObject(entry.Key, entry.Key?.GetType(), null, 1));
+                    sb.Append(", ");
+                    sb.Append(DumpObject(entry.Value, entry.Value?.GetType(), null, 1));
+                    sb.Append(']');
                     if (++count == 3)
                     {
                         sb.Append(", ...");

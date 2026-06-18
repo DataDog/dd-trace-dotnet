@@ -12,6 +12,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Expressions;
@@ -247,7 +248,7 @@ internal partial class ProbeExpressionParser<T>
         var value = ParseTree(reader, parameters, itParameter);
         var instanceOf = (ConstantExpression)ParseTree(reader, parameters, itParameter);
         var typeName = instanceOf.Value?.ToString();
-        if (string.IsNullOrEmpty(typeName))
+        if (StringUtil.IsNullOrEmpty(typeName))
         {
             AddError($"{value} is ?", "failed to parse type name");
             return Expression.Constant(false);
@@ -335,7 +336,7 @@ internal partial class ProbeExpressionParser<T>
     private Expression MemberPathExpression(Expression expression, ConstantExpression propertyOrField)
     {
         var propertyOrFieldValue = propertyOrField.Value?.ToString();
-        if (string.IsNullOrEmpty(propertyOrFieldValue))
+        if (StringUtil.IsNullOrEmpty(propertyOrFieldValue))
         {
             AddError($"{expression}.{propertyOrFieldValue}", "Property or field name is empty.");
             return UndefinedValue();
@@ -376,13 +377,16 @@ internal partial class ProbeExpressionParser<T>
                 return memberInfo.MemberType switch
                 {
                     MemberTypes.Field => Expression.Field(null, (FieldInfo)memberInfo),
-                    MemberTypes.Property => Expression.Property(null, (PropertyInfo)memberInfo),
+                    MemberTypes.Property => Expression.Block(BudgetCheck(), Expression.Property(null, (PropertyInfo)memberInfo)),
                     _ => throw new InvalidOperationException("Unsupported member type for static member access.")
                 };
             }
             else
             {
-                return Expression.PropertyOrField(expression, propertyOrFieldValue);
+                var member = Expression.PropertyOrField(expression, propertyOrFieldValue);
+                return member is MemberExpression { Member: PropertyInfo }
+                           ? Expression.Block(BudgetCheck(), member)
+                           : member;
             }
         }
         catch (Exception e)
