@@ -414,23 +414,23 @@ namespace Datadog.Trace
         /// <param name="exception">The exception.</param>
         internal void SetException(Exception exception)
         {
-            // We do not log BlockExceptions as errors
-            if (exception is not AppSec.BlockException)
-            {
-                Error = true;
-                SetExceptionTags(exception);
-            }
+            SetException(exception, markAsError: true);
         }
 
         /// <summary>
-        /// Add the StackTrace and other exception metadata to the span,
-        /// but does not mark the span as an error.
+        /// Add the StackTrace and other exception metadata to the span.
         /// </summary>
         /// <param name="exception">The exception.</param>
-        internal void SetExceptionTags(Exception exception)
+        /// <param name="markAsError">Whether to mark the span as an error. BlockExceptions are never marked as errors.</param>
+        internal void SetException(Exception exception, bool markAsError)
         {
             if (exception != null && exception is not AppSec.BlockException)
             {
+                if (markAsError)
+                {
+                    Error = true;
+                }
+
                 try
                 {
                     // for AggregateException, use the first inner exception until we can support multiple errors.
