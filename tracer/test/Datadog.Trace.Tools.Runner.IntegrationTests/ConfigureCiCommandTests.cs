@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -118,7 +119,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             try
             {
-                Directory.CreateDirectory(tempRoot);
+                CreateTrustedCacheHome(cacheHome);
                 Directory.CreateDirectory(fixedTempTracerHome);
                 EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
@@ -176,7 +177,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             try
             {
-                Directory.CreateDirectory(tempRoot);
+                CreateTrustedCacheHome(cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
@@ -231,7 +232,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             try
             {
-                Directory.CreateDirectory(tempRoot);
+                CreateTrustedCacheHome(cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
@@ -286,7 +287,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             try
             {
-                Directory.CreateDirectory(tempRoot);
+                CreateTrustedCacheHome(cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
@@ -339,7 +340,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             try
             {
-                Directory.CreateDirectory(tempRoot);
+                CreateTrustedCacheHome(cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
@@ -391,7 +392,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             try
             {
-                Directory.CreateDirectory(tempRoot);
+                CreateTrustedCacheHome(cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
@@ -444,8 +445,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             try
             {
-                Directory.CreateDirectory(cacheHome);
-                SetDirectoryMode(cacheHome, "700");
+                CreateTrustedCacheHome(cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("TEMP", tempRoot + Path.DirectorySeparatorChar);
@@ -575,7 +575,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             try
             {
-                Directory.CreateDirectory(tempRoot);
+                CreateTrustedCacheHome(cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
@@ -794,7 +794,41 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             return output.Trim();
         }
 
+        private static void CreateTrustedCacheHome(string path)
+        {
+            Directory.CreateDirectory(path);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                RestrictWindowsDirectoryToTrustedWriters(path);
+            }
+            else
+            {
+                SetDirectoryMode(path, "700");
+            }
+        }
+
+#pragma warning disable CA1416 // Windows ACL setup is only called after a RuntimeInformation Windows guard.
+        private static void RestrictWindowsDirectoryToTrustedWriters(string path)
+        {
+            var currentUserSid = WindowsIdentity.GetCurrent().User?.Value;
+            currentUserSid.Should().NotBeNullOrEmpty("the test cache directory needs an explicit ACE for the current user");
+
+            RunIcacls(
+                path,
+                "/inheritance:r",
+                "/grant:r",
+                $"*{currentUserSid}:(OI)(CI)F",
+                "*S-1-5-18:(OI)(CI)F",
+                "*S-1-5-32-544:(OI)(CI)F");
+        }
+#pragma warning restore CA1416
+
         private static void GrantWindowsModifyAccessToEveryone(string path)
+        {
+            RunIcacls(path, "/grant", "*S-1-1-0:(OI)(CI)M");
+        }
+
+        private static void RunIcacls(string path, params string[] arguments)
         {
             var processStartInfo = new ProcessStartInfo("icacls")
             {
@@ -803,8 +837,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             processStartInfo.ArgumentList.Add(path);
-            processStartInfo.ArgumentList.Add("/grant");
-            processStartInfo.ArgumentList.Add("*S-1-1-0:(OI)(CI)M");
+            foreach (var argument in arguments)
+            {
+                processStartInfo.ArgumentList.Add(argument);
+            }
 
             using var process = Process.Start(processStartInfo);
             var output = process.StandardOutput.ReadToEnd();
