@@ -90,7 +90,7 @@ public class PackageBumpReport
             sb.AppendLine("integration's `MaximumVersion` and the definition's `MaxVersionExclusive`/`SpecificVersions`,");
             sb.AppendLine("or add a new split entry, to adopt.");
             sb.AppendLine();
-            AppendMajorAvailableTable(sb, _majorAvailableEntries);
+            AppendMajorAvailableTable(sb, _majorAvailableEntries, "Latest available", e => e.LatestAvailable);
             sb.AppendLine();
         }
 
@@ -138,6 +138,7 @@ public class PackageBumpReport
             .Where(r => !inspectedPackages.Contains(r.PackageName))
             .Concat(_majorAvailableEntries)
             .OrderBy(r => r.PackageName, StringComparer.Ordinal)
+            .ThenBy(r => r.IntegrationName, StringComparer.Ordinal)
             .ToList();
 
         var sb = new StringBuilder();
@@ -153,7 +154,7 @@ public class PackageBumpReport
             return sb.ToString();
         }
 
-        AppendMajorAvailableTable(sb, merged);
+        AppendMajorAvailableTable(sb, merged, "Available major", e => e.LatestMajor);
         return sb.ToString();
     }
 
@@ -190,18 +191,21 @@ public class PackageBumpReport
                 continue;
             }
 
-            yield return new MajorAvailableEntry(package, cells[1].Trim(), cells[2].Trim(), cells[3].Trim());
+            // The file stores the major form ("2.x") in the last column; the exact LatestAvailable
+            // isn't persisted and isn't needed for preserved rows (the PR body renders only this run).
+            var major = cells[3].Trim();
+            yield return new MajorAvailableEntry(package, cells[1].Trim(), cells[2].Trim(), major, major);
         }
     }
 
-    private static void AppendMajorAvailableTable(StringBuilder sb, IEnumerable<MajorAvailableEntry> entries)
+    private static void AppendMajorAvailableTable(StringBuilder sb, IEnumerable<MajorAvailableEntry> entries, string lastHeader, Func<MajorAvailableEntry, string> lastValue)
     {
-        sb.AppendLine("| Package | Integration | Current cap | Latest available |");
+        sb.AppendLine($"| Package | Integration | Current cap | {lastHeader} |");
         sb.AppendLine("|---------|-------------|-------------|------------------|");
 
         foreach (var entry in entries)
         {
-            sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {entry.CurrentCap} | {entry.LatestAvailable} |");
+            sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {entry.CurrentCap} | {lastValue(entry)} |");
         }
     }
 
@@ -225,5 +229,6 @@ public class PackageBumpReport
         string PackageName,
         string IntegrationName,
         string CurrentCap,
-        string LatestAvailable);
+        string LatestAvailable,
+        string LatestMajor);
 }

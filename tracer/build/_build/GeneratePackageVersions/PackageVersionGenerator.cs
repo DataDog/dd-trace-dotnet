@@ -194,13 +194,23 @@ namespace GeneratePackageVersions
         /// </summary>
         private void ReportNewMajorVersionsAvailable(IEnumerable<PackageVersionEntry> entries, List<TestedPackage> testedVersions)
         {
-            // The entry that defines the highest upper bound for each package; its integration
-            // name labels the report row.
-            var ceilingByPackage = entries
+            // All entries that sit at a package's ceiling (its highest MaxVersionExclusive). Split-range
+            // packages (e.g. GraphQL 6.0.0 and 9.0.0) keep only the top entry, since only it would adopt
+            // the next major; same-ceiling siblings (e.g. RabbitMQ + DataStreamsRabbitMQ, both <8.0.0) are
+            // all kept, so a shared package's new major flags every integration that must widen its range.
+            var ceilingEntriesByPackage = entries
                 .GroupBy(e => e.NugetPackageSearchName)
                 .ToDictionary(
                     g => g.Key,
-                    g => g.OrderByDescending(e => NuGetVersion.Parse(e.MaxVersionExclusive)).First());
+                    g =>
+                    {
+                        var withMax = g.Select(e => (entry: e, max: NuGetVersion.Parse(e.MaxVersionExclusive))).ToList();
+                        var ceiling = withMax.Max(x => x.max);
+                        return withMax.Where(x => x.max == ceiling)
+                                      .Select(x => x.entry)
+                                      .OrderBy(e => e.IntegrationName, StringComparer.Ordinal)
+                                      .ToList();
+                    });
 
             // Highest in-range version we selected to test this run, per package. Across split-range
             // entries that share a package name we take the overall max.
@@ -212,17 +222,19 @@ namespace GeneratePackageVersions
 
             foreach (var packageName in QueriedVersions.Keys.OrderBy(k => k, StringComparer.Ordinal))
             {
-                if (!ceilingByPackage.TryGetValue(packageName, out var entry))
+                if (!ceilingEntriesByPackage.TryGetValue(packageName, out var ceilingEntries))
                 {
                     continue;
                 }
 
-                var maxVersionExclusive = NuGetVersion.Parse(entry.MaxVersionExclusive);
+                var maxVersionExclusive = NuGetVersion.Parse(ceilingEntries[0].MaxVersionExclusive);
 
+                // Only listed versions count: an unlisted/yanked major isn't really "available".
                 NuGetVersion latestAvailable = null;
                 foreach (var candidate in QueriedVersions[packageName])
                 {
-                    if (NuGetVersion.TryParse(candidate.Version, out var parsed)
+                    if (candidate.IsListed
+                        && NuGetVersion.TryParse(candidate.Version, out var parsed)
                         && (latestAvailable is null || parsed > latestAvailable))
                     {
                         latestAvailable = parsed;
@@ -235,13 +247,22 @@ namespace GeneratePackageVersions
                     // happen for a package that has in-range versions on NuGet).
                     var currentCap = currentCapByPackage.TryGetValue(packageName, out var tested)
                         ? tested.ToString()
-                        : entry.MaxVersionExclusive;
+                        : ceilingEntries[0].MaxVersionExclusive;
 
-                    BumpReport.AddMajorAvailable(new PackageBumpReport.MajorAvailableEntry(
-                        entry.NugetPackageSearchName,
-                        entry.IntegrationName,
-                        currentCap,
-                        latestAvailable.ToNormalizedString()));
+                    // Tracked file keys on the major (e.g. "2.x"), so intra-major patch releases don't
+                    // churn it; the exact version stays in the PR body / build log.
+                    var latestMajor = $"{latestAvailable.Major}.x";
+                    var latestExact = latestAvailable.ToNormalizedString();
+
+                    foreach (var entry in ceilingEntries)
+                    {
+                        BumpReport.AddMajorAvailable(new PackageBumpReport.MajorAvailableEntry(
+                            entry.NugetPackageSearchName,
+                            entry.IntegrationName,
+                            currentCap,
+                            latestExact,
+                            latestMajor));
+                    }
                 }
             }
         }
