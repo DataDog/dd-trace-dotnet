@@ -136,7 +136,7 @@ partial class Build
        });
 
     [Parameter("Path to the assembly to generate instrumentation for")]
-    readonly string? AssemblyPath;
+    readonly string AssemblyPath;
 
     [Parameter("Fully qualified type name for instrumentation generation")]
     readonly string? TypeName;
