@@ -275,6 +275,46 @@
     },
     {
       "scenarioId": "D-34",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopySimpleProjection",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopySimpleTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "D-35",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopyNonPublicProjection",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopyNonPublicTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "D-36",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopyNestedInnerProjection",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopyNestedInnerTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "D-36",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopyNestedOuterProjection",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopyNestedOuterTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "D-37",
+      "mode": "forward",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopyEmptyProjection",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopyEmptyTarget",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "RV-01",
       "mode": "reverse",
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IReverseGreetingProxy",
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
@@ -282,7 +322,7 @@
       "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
     },
     {
-      "scenarioId": "D-35",
+      "scenarioId": "RV-02",
       "mode": "reverse",
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IReverseStateProxy",
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
@@ -290,7 +330,7 @@
       "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
     },
     {
-      "scenarioId": "D-36",
+      "scenarioId": "RV-03",
       "mode": "reverse",
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IReverseMathProxy",
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
@@ -298,7 +338,7 @@
       "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
     },
     {
-      "scenarioId": "D-37",
+      "scenarioId": "RV-04",
       "mode": "reverse",
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IReverseRefOutProxy",
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
@@ -335,6 +375,30 @@
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IReverseAttributeCopyProxy",
       "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
       "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseAttributeCopyDelegation",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "E-41B",
+      "mode": "reverse",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IReverseNamedAttributeCopyProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseNamedAttributeCopyDelegation",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "E-42B",
+      "mode": "reverse",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IReverseImplementorConstraintProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseAbstractImplementorDelegation",
+      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
+    },
+    {
+      "scenarioId": "E-42C",
+      "mode": "reverse",
+      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IReverseImplementorConstraintProxy",
+      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
+      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IReverseInterfaceImplementorDelegation",
       "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
     },
     {

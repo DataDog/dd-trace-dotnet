@@ -851,9 +851,109 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
-        public void DifferentialParityD34ReverseInterfaceShouldMatchBetweenDynamicAndAot()
+        public void DifferentialParityD34DuckCopySimpleProjectionShouldMatchBetweenDynamicAndAot()
         {
             const string scenarioId = "D-34";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(DuckCopySimpleProjection),
+                typeof(DuckCopySimpleTarget),
+                typeof(DuckCopySimpleProjection),
+                instance =>
+                {
+                    var target = (DuckCopySimpleTarget)instance!;
+                    return new DuckCopySimpleProjection { Name = target.Name, Count = target.Count };
+                });
+
+            var dynamicResult = InvokeDynamicForward(typeof(DuckCopySimpleProjection), typeof(DuckCopySimpleTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(DuckCopySimpleProjection), typeof(DuckCopySimpleTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<DuckCopySimpleProjection>(new DuckCopySimpleTarget("simple", 34));
+            var aotProxy = aotResult.CreateInstance<DuckCopySimpleProjection>(new DuckCopySimpleTarget("simple", 34));
+
+            aotProxy.Name.Should().Be(dynamicProxy.Name, $"scenario {scenarioId} should preserve DuckCopy field values");
+            aotProxy.Count.Should().Be(dynamicProxy.Count, $"scenario {scenarioId} should preserve DuckCopy value-type fields");
+        }
+
+        [Fact]
+        public void DifferentialParityD35DuckCopyNonPublicFieldShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "D-35";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(DuckCopyNonPublicProjection),
+                typeof(DuckCopyNonPublicTarget),
+                typeof(DuckCopyNonPublicProjection),
+                instance => new DuckCopyNonPublicProjection { Secret = ((DuckCopyNonPublicTarget)instance!)._secret });
+
+            var dynamicResult = InvokeDynamicForward(typeof(DuckCopyNonPublicProjection), typeof(DuckCopyNonPublicTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(DuckCopyNonPublicProjection), typeof(DuckCopyNonPublicTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<DuckCopyNonPublicProjection>(new DuckCopyNonPublicTarget("hidden"));
+            var aotProxy = aotResult.CreateInstance<DuckCopyNonPublicProjection>(new DuckCopyNonPublicTarget("hidden"));
+
+            aotProxy.Secret.Should().Be(dynamicProxy.Secret, $"scenario {scenarioId} should preserve DuckCopy non-public field binding");
+        }
+
+        [Fact]
+        public void DifferentialParityD36DuckCopyNestedProjectionShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "D-36";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(DuckCopyNestedInnerProjection),
+                typeof(DuckCopyNestedInnerTarget),
+                typeof(DuckCopyNestedInnerProjection),
+                instance => new DuckCopyNestedInnerProjection { Number = ((DuckCopyNestedInnerTarget)instance!).Number });
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(DuckCopyNestedOuterProjection),
+                typeof(DuckCopyNestedOuterTarget),
+                typeof(DuckCopyNestedOuterProjection),
+                instance =>
+                {
+                    var target = (DuckCopyNestedOuterTarget)instance!;
+                    return new DuckCopyNestedOuterProjection { Inner = new DuckCopyNestedInnerProjection { Number = target.Inner.Number } };
+                });
+
+            var dynamicResult = InvokeDynamicForward(typeof(DuckCopyNestedOuterProjection), typeof(DuckCopyNestedOuterTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(DuckCopyNestedOuterProjection), typeof(DuckCopyNestedOuterTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<DuckCopyNestedOuterProjection>(new DuckCopyNestedOuterTarget(36));
+            var aotProxy = aotResult.CreateInstance<DuckCopyNestedOuterProjection>(new DuckCopyNestedOuterTarget(36));
+
+            aotProxy.Inner.Number.Should().Be(dynamicProxy.Inner.Number, $"scenario {scenarioId} should preserve nested DuckCopy projections");
+        }
+
+        [Fact]
+        public void DifferentialParityD37DuckCopyEmptyProjectionShouldFailInBothModes()
+        {
+            const string scenarioId = "D-37";
+            DuckTypeAotEngine.RegisterProxyFailure(
+                typeof(DuckCopyEmptyProjection),
+                typeof(DuckCopyEmptyTarget),
+                () => DuckTypeDuckCopyStructDoesNotContainsAnyField.Throw(typeof(DuckCopyEmptyProjection)));
+
+            var dynamicResult = InvokeDynamicForward(typeof(DuckCopyEmptyProjection), typeof(DuckCopyEmptyTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(DuckCopyEmptyProjection), typeof(DuckCopyEmptyTarget));
+
+            AssertCannotCreateWithExactException<DuckTypeDuckCopyStructDoesNotContainsAnyField>(
+                scenarioId,
+                dynamicResult,
+                aotResult,
+                result => _ = result.ProxyType,
+                result => _ = result.ProxyType);
+        }
+
+        [Fact]
+        public void DifferentialParityRV01ReverseInterfaceShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "RV-01";
             DuckTypeAotEngine.RegisterReverseProxy(
                 typeof(IReverseGreetingProxy),
                 typeof(ReverseGreetingDelegation),
@@ -874,9 +974,9 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
-        public void DifferentialParityD35ReversePropertyShouldMatchBetweenDynamicAndAot()
+        public void DifferentialParityRV02ReversePropertyShouldMatchBetweenDynamicAndAot()
         {
-            const string scenarioId = "D-35";
+            const string scenarioId = "RV-02";
             DuckTypeAotEngine.RegisterReverseProxy(
                 typeof(IReverseStateProxy),
                 typeof(ReverseStateDelegation),
@@ -899,9 +999,9 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
-        public void DifferentialParityD36ReverseMethodShouldMatchBetweenDynamicAndAot()
+        public void DifferentialParityRV03ReverseMethodShouldMatchBetweenDynamicAndAot()
         {
-            const string scenarioId = "D-36";
+            const string scenarioId = "RV-03";
             DuckTypeAotEngine.RegisterReverseProxy(
                 typeof(IReverseMathProxy),
                 typeof(ReverseMathDelegation),
@@ -921,9 +1021,9 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
-        public void DifferentialParityD37ReverseRefOutShouldMatchBetweenDynamicAndAot()
+        public void DifferentialParityRV04ReverseRefOutShouldMatchBetweenDynamicAndAot()
         {
-            const string scenarioId = "D-37";
+            const string scenarioId = "RV-04";
             DuckTypeAotEngine.RegisterReverseProxy(
                 typeof(IReverseRefOutProxy),
                 typeof(ReverseRefOutDelegation),
@@ -1015,13 +1115,83 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void DifferentialParityE41BReverseCustomAttributeNamedArgumentsShouldFailInBothModes()
+        {
+            const string scenarioId = "E-41B";
+            DuckTypeAotEngine.RegisterReverseProxyFailure(
+                typeof(IReverseNamedAttributeCopyProxy),
+                typeof(ReverseNamedAttributeCopyDelegation),
+                ThrowReverseNamedAttributeCopyFailure);
+
+            var dynamicResult = InvokeDynamicReverse(typeof(IReverseNamedAttributeCopyProxy), typeof(ReverseNamedAttributeCopyDelegation));
+            var aotResult = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseNamedAttributeCopyProxy), typeof(ReverseNamedAttributeCopyDelegation));
+
+            AssertCannotCreateWithExactException<DuckTypeCustomAttributeHasNamedArgumentsException>(
+                scenarioId,
+                dynamicResult,
+                aotResult,
+                result => _ = result.ProxyType,
+                result => _ = result.ProxyType);
+        }
+
+        [Fact]
         public void DifferentialParityE42ReverseTypeConstraintsShouldFailInBothModes()
         {
             const string scenarioId = "E-42";
+            DuckTypeAotEngine.RegisterReverseProxyFailure(
+                typeof(ReverseStructBase),
+                typeof(ReverseStructDelegation),
+                () => DuckTypeReverseProxyBaseIsStructException.Throw(typeof(ReverseStructDelegation)));
+
             var dynamicResult = InvokeDynamicReverse(typeof(ReverseStructBase), typeof(ReverseStructDelegation));
             var aotResult = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(ReverseStructBase), typeof(ReverseStructDelegation));
 
-            AssertCannotCreate(scenarioId, dynamicResult, aotResult);
+            AssertCannotCreateWithExactException<DuckTypeReverseProxyBaseIsStructException>(
+                scenarioId,
+                dynamicResult,
+                aotResult,
+                result => _ = result.ProxyType,
+                result => _ = result.ProxyType);
+        }
+
+        [Fact]
+        public void DifferentialParityE42BReverseAbstractImplementorShouldFailInBothModes()
+        {
+            const string scenarioId = "E-42B";
+            DuckTypeAotEngine.RegisterReverseProxyFailure(
+                typeof(IReverseImplementorConstraintProxy),
+                typeof(ReverseAbstractImplementorDelegation),
+                () => DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException.Throw(typeof(IReverseImplementorConstraintProxy)));
+
+            var dynamicResult = InvokeDynamicReverse(typeof(IReverseImplementorConstraintProxy), typeof(ReverseAbstractImplementorDelegation));
+            var aotResult = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseImplementorConstraintProxy), typeof(ReverseAbstractImplementorDelegation));
+
+            AssertCannotCreateWithExactException<DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException>(
+                scenarioId,
+                dynamicResult,
+                aotResult,
+                result => _ = result.ProxyType,
+                result => _ = result.ProxyType);
+        }
+
+        [Fact]
+        public void DifferentialParityE42CReverseInterfaceImplementorShouldFailInBothModes()
+        {
+            const string scenarioId = "E-42C";
+            DuckTypeAotEngine.RegisterReverseProxyFailure(
+                typeof(IReverseImplementorConstraintProxy),
+                typeof(IReverseInterfaceImplementorDelegation),
+                () => DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException.Throw(typeof(IReverseImplementorConstraintProxy)));
+
+            var dynamicResult = InvokeDynamicReverse(typeof(IReverseImplementorConstraintProxy), typeof(IReverseInterfaceImplementorDelegation));
+            var aotResult = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseImplementorConstraintProxy), typeof(IReverseInterfaceImplementorDelegation));
+
+            AssertCannotCreateWithExactException<DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException>(
+                scenarioId,
+                dynamicResult,
+                aotResult,
+                result => _ = result.ProxyType,
+                result => _ = result.ProxyType);
         }
 
         [Fact]
@@ -1944,6 +2114,28 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
             dynamicResult.CanCreate().Should().BeFalse($"scenario {scenarioId} must be non-creatable in dynamic mode");
             aotResult.CanCreate().Should().BeFalse($"scenario {scenarioId} must be non-creatable in AOT mode");
+        }
+
+        private static void AssertCannotCreateWithExactException<TException>(
+            string scenarioId,
+            DuckType.CreateTypeResult dynamicResult,
+            DuckType.CreateTypeResult aotResult,
+            Action<DuckType.CreateTypeResult> dynamicFailureAction,
+            Action<DuckType.CreateTypeResult> aotFailureAction)
+            where TException : Exception
+        {
+            AssertCannotCreate(scenarioId, dynamicResult, aotResult);
+            Action throwDynamic = () => dynamicFailureAction(dynamicResult);
+            Action throwAot = () => aotFailureAction(aotResult);
+
+            throwDynamic.Should().ThrowExactly<TException>($"scenario {scenarioId} must preserve the dynamic exception type");
+            throwAot.Should().ThrowExactly<TException>($"scenario {scenarioId} must preserve the AOT exception type");
+        }
+
+        private static void ThrowReverseNamedAttributeCopyFailure()
+        {
+            var customAttribute = CustomAttributeData.GetCustomAttributes(typeof(ReverseNamedAttributeCopyDelegation))[0];
+            DuckTypeCustomAttributeHasNamedArgumentsException.Throw(typeof(IReverseNamedAttributeCopyProxy), customAttribute);
         }
 
         [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ForwardValueTarget", "Datadog.Trace.DuckTyping.Tests")]
@@ -2915,6 +3107,87 @@ namespace Datadog.Trace.DuckTyping.Tests
 
                 return new NullableInnerDuckCopy { Number = instance.Number };
             }
+        }
+
+        [DuckCopy("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopySimpleTarget", "Datadog.Trace.DuckTyping.Tests")]
+        private struct DuckCopySimpleProjection
+        {
+            public string Name;
+
+            public int Count;
+        }
+
+        private class DuckCopySimpleTarget
+        {
+            public DuckCopySimpleTarget(string name, int count)
+            {
+                Name = name;
+                Count = count;
+            }
+
+            public string Name { get; }
+
+            public int Count { get; }
+        }
+
+        [DuckCopy("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopyNonPublicTarget", "Datadog.Trace.DuckTyping.Tests")]
+        private struct DuckCopyNonPublicProjection
+        {
+            [DuckField(Name = "_secret", BindingFlags = BindingFlags.NonPublic | BindingFlags.Instance)]
+            public string Secret;
+        }
+
+        private class DuckCopyNonPublicTarget
+        {
+            internal readonly string _secret;
+
+            public DuckCopyNonPublicTarget(string secret)
+            {
+                _secret = secret;
+            }
+        }
+
+        [DuckCopy("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopyNestedInnerTarget", "Datadog.Trace.DuckTyping.Tests")]
+        private struct DuckCopyNestedInnerProjection
+        {
+            public int Number;
+        }
+
+        [DuckCopy("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopyNestedOuterTarget", "Datadog.Trace.DuckTyping.Tests")]
+        private struct DuckCopyNestedOuterProjection
+        {
+            public DuckCopyNestedInnerProjection Inner;
+        }
+
+        private class DuckCopyNestedOuterTarget
+        {
+            public DuckCopyNestedOuterTarget(int number)
+            {
+                Inner = new DuckCopyNestedInnerTarget(number);
+            }
+
+            public DuckCopyNestedInnerTarget Inner { get; }
+        }
+
+        private class DuckCopyNestedInnerTarget
+        {
+            public DuckCopyNestedInnerTarget(int number)
+            {
+                Number = number;
+            }
+
+            public int Number { get; }
+        }
+
+        [DuckCopy("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+DuckCopyEmptyTarget", "Datadog.Trace.DuckTyping.Tests")]
+        private struct DuckCopyEmptyProjection
+        {
+            public string Name { get; set; }
+        }
+
+        private class DuckCopyEmptyTarget
+        {
+            public string Name { get; set; } = "empty";
         }
 
         [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ValueWithTypeTarget", "Datadog.Trace.DuckTyping.Tests")]
@@ -4655,6 +4928,19 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Marker { get; }
         }
 
+        [AttributeUsage(AttributeTargets.Class)]
+        private sealed class ReverseNamedMarkerAttribute : Attribute
+        {
+            public ReverseNamedMarkerAttribute(string marker)
+            {
+                Marker = marker;
+            }
+
+            public string Marker { get; }
+
+            public string? Alias { get; set; }
+        }
+
         [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseAttributeCopyDelegation", "Datadog.Trace.DuckTyping.Tests")]
         private interface IReverseAttributeCopyProxy
         {
@@ -4687,6 +4973,22 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseNamedAttributeCopyDelegation", "Datadog.Trace.DuckTyping.Tests")]
+        private interface IReverseNamedAttributeCopyProxy
+        {
+            int Bump(int value);
+        }
+
+        [ReverseNamedMarker("copied-marker", Alias = "named")]
+        private class ReverseNamedAttributeCopyDelegation
+        {
+            [DuckReverseMethod]
+            public int Bump(int value)
+            {
+                return value + 5;
+            }
+        }
+
         private struct ReverseStructBase
         {
             public int Value { get; set; }
@@ -4694,6 +4996,27 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         private class ReverseStructDelegation
         {
+        }
+
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseAbstractImplementorDelegation", "Datadog.Trace.DuckTyping.Tests")]
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IReverseInterfaceImplementorDelegation", "Datadog.Trace.DuckTyping.Tests")]
+        private interface IReverseImplementorConstraintProxy
+        {
+            int Echo(int value);
+        }
+
+        private abstract class ReverseAbstractImplementorDelegation
+        {
+            [DuckReverseMethod]
+            public int Echo(int value)
+            {
+                return value;
+            }
+        }
+
+        private interface IReverseInterfaceImplementorDelegation
+        {
+            int Echo(int value);
         }
     }
 }

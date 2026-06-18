@@ -91,6 +91,22 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                         proxyAssembly = "SampleDuckContracts",
                         targetType = "SampleDuckContracts.ValueCopyTarget",
                         targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = "SampleDuckContracts.IInnerProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.InnerTarget",
+                        targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = "SampleDuckContracts.IChainProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.ChainTarget",
+                        targetAssembly = "SampleDuckContracts"
                     }
                 }
             };
@@ -216,6 +232,9 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             runResult.StandardOutput.Should().Contain("REVERSE_VALUE:42");
             runResult.StandardOutput.Should().Contain("CAN_CREATE_COPY:True");
             runResult.StandardOutput.Should().Contain("COPY_VALUE:42");
+            runResult.StandardOutput.Should().Contain("CAN_CREATE_CHAIN:True");
+            runResult.StandardOutput.Should().Contain("CHAIN_VALUE:native-aot");
+            runResult.StandardOutput.Should().Contain("CHAIN_RECEIVED:True");
             runResult.StandardOutput.Should().Contain("DYNAMIC_CODE:False");
             runResult.StandardOutput.Should().Contain("DYNAMIC_ASSEMBLIES:0");
         }
@@ -261,6 +280,16 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             "        int DoubleValue(int value);" + Environment.NewLine +
             "    }" + Environment.NewLine +
             Environment.NewLine +
+            "    public interface IInnerProxy" + Environment.NewLine +
+            "    {" + Environment.NewLine +
+            "        string Name { get; }" + Environment.NewLine +
+            "    }" + Environment.NewLine +
+            Environment.NewLine +
+            "    public interface IChainProxy" + Environment.NewLine +
+            "    {" + Environment.NewLine +
+            "        IInnerProxy Roundtrip(IInnerProxy value);" + Environment.NewLine +
+            "    }" + Environment.NewLine +
+            Environment.NewLine +
             "    [Datadog.Trace.DuckTyping.DuckCopyAttribute]" + Environment.NewLine +
             "    public struct ValueCopyProxy" + Environment.NewLine +
             "    {" + Environment.NewLine +
@@ -298,6 +327,27 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             "        }" + Environment.NewLine +
             Environment.NewLine +
             "        public int Value { get; set; }" + Environment.NewLine +
+            "    }" + Environment.NewLine +
+            Environment.NewLine +
+            "    public sealed class InnerTarget" + Environment.NewLine +
+            "    {" + Environment.NewLine +
+            "        public InnerTarget(string name)" + Environment.NewLine +
+            "        {" + Environment.NewLine +
+            "            Name = name;" + Environment.NewLine +
+            "        }" + Environment.NewLine +
+            Environment.NewLine +
+            "        public string Name { get; }" + Environment.NewLine +
+            "    }" + Environment.NewLine +
+            Environment.NewLine +
+            "    public sealed class ChainTarget" + Environment.NewLine +
+            "    {" + Environment.NewLine +
+            "        public InnerTarget? LastReceived { get; private set; }" + Environment.NewLine +
+            Environment.NewLine +
+            "        public InnerTarget Roundtrip(InnerTarget value)" + Environment.NewLine +
+            "        {" + Environment.NewLine +
+            "            LastReceived = value;" + Environment.NewLine +
+            "            return value;" + Environment.NewLine +
+            "        }" + Environment.NewLine +
             "    }" + Environment.NewLine +
             "}" + Environment.NewLine;
     }
@@ -367,15 +417,30 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             "    return;" + Environment.NewLine +
             "}" + Environment.NewLine +
             Environment.NewLine +
+            "var createChainTypeResult = DuckType.GetOrCreateProxyType(typeof(IChainProxy), typeof(ChainTarget));" + Environment.NewLine +
+            "if (!createChainTypeResult.CanCreate())" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    Console.WriteLine(\"CAN_CREATE_CHAIN:False\");" + Environment.NewLine +
+            "    Environment.ExitCode = 14;" + Environment.NewLine +
+            "    return;" + Environment.NewLine +
+            "}" + Environment.NewLine +
+            Environment.NewLine +
             "var proxy = createTypeResult.CreateInstance<IValueProxy>(new ValueTarget(42));" + Environment.NewLine +
             "var reverseProxy = (IReverseValueProxy)DuckType.CreateReverse(typeof(IReverseValueProxy), new ReverseValueDelegation());" + Environment.NewLine +
             "var copyProxy = createCopyTypeResult.CreateInstance<ValueCopyProxy>(new ValueCopyTarget(42));" + Environment.NewLine +
+            "var chainTarget = new ChainTarget();" + Environment.NewLine +
+            "var chainProxy = createChainTypeResult.CreateInstance<IChainProxy>(chainTarget);" + Environment.NewLine +
+            "var innerProxy = DuckType.Create<IInnerProxy>(new InnerTarget(\"native-aot\"));" + Environment.NewLine +
+            "var chainResult = chainProxy.Roundtrip(innerProxy!);" + Environment.NewLine +
             "Console.WriteLine(\"CAN_CREATE:True\");" + Environment.NewLine +
             "Console.WriteLine($\"VALUE:{proxy.GetValue()}\");" + Environment.NewLine +
             "Console.WriteLine(\"CAN_CREATE_REVERSE:True\");" + Environment.NewLine +
             "Console.WriteLine($\"REVERSE_VALUE:{reverseProxy.DoubleValue(21)}\");" + Environment.NewLine +
             "Console.WriteLine(\"CAN_CREATE_COPY:True\");" + Environment.NewLine +
             "Console.WriteLine($\"COPY_VALUE:{copyProxy.Value}\");" + Environment.NewLine +
+            "Console.WriteLine(\"CAN_CREATE_CHAIN:True\");" + Environment.NewLine +
+            "Console.WriteLine($\"CHAIN_VALUE:{chainResult.Name}\");" + Environment.NewLine +
+            "Console.WriteLine($\"CHAIN_RECEIVED:{object.ReferenceEquals(chainTarget.LastReceived, ((IDuckType)innerProxy!).Instance)}\");" + Environment.NewLine +
             "Console.WriteLine($\"DYNAMIC_CODE:{RuntimeFeature.IsDynamicCodeSupported}\");" + Environment.NewLine +
             "Console.WriteLine($\"DYNAMIC_ASSEMBLIES:{dynamicAssemblyLoads}\");" + Environment.NewLine;
     }
