@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Resource Files">
@@ -504,6 +504,33 @@
     <ClInclude Include="HeapSnapshotManager.h">
       <Filter>HeapSnapshot</Filter>
     </ClInclude>
+    <ClInclude Include="SnapshotCooldown.h">
+      <Filter>HeapSnapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="GCDescReader.h">
+      <Filter>HeapSnapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="InlineVTCache.h">
+      <Filter>HeapSnapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="ReferenceChainTraverser.h">
+      <Filter>HeapSnapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="ReferenceChainTypes.h">
+      <Filter>HeapSnapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="TypeReferenceTree.h">
+      <Filter>HeapSnapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="TypeReferenceTreeJsonSerializer.h">
+      <Filter>HeapSnapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="TypeReferenceTreeBinarySerializer.h">
+      <Filter>HeapSnapshot</Filter>
+    </ClInclude>
+    <ClInclude Include="VisitedObjectSet.h">
+      <Filter>HeapSnapshot</Filter>
+    </ClInclude>
     <ClInclude Include="IGCDumpListener.h" />
     <ClInclude Include="INativeThreadList.h" />
     <ClInclude Include="NativeThreadList.h" />
@@ -774,6 +801,18 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="HeapSnapshotManager.cpp">
+      <Filter>HeapSnapshot</Filter>
+    </ClCompile>
+    <ClCompile Include="InlineVTCache.cpp">
+      <Filter>HeapSnapshot</Filter>
+    </ClCompile>
+    <ClCompile Include="ReferenceChainTraverser.cpp">
+      <Filter>HeapSnapshot</Filter>
+    </ClCompile>
+    <ClCompile Include="TypeReferenceTreeJsonSerializer.cpp">
+      <Filter>HeapSnapshot</Filter>
+    </ClCompile>
+    <ClCompile Include="TypeReferenceTreeBinarySerializer.cpp">
       <Filter>HeapSnapshot</Filter>
     </ClCompile>
     <ClCompile Include="NativeThreadList.cpp">

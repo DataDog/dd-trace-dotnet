@@ -630,7 +630,7 @@ namespace Datadog.Trace.Debugger
 
         private bool ShouldSkipDiUpdate(bool requested, bool current, DebuggerSettings debuggerSettings)
         {
-            if (requested && !debuggerSettings.DynamicInstrumentationCanBeEnabled)
+            if (requested && debuggerSettings is { DynamicInstrumentationCanBeEnabled: false })
             {
                 Log.Debug("Dynamic Instrumentation can't be enabled because the local environment variable is set to false");
                 return true;
@@ -702,6 +702,7 @@ namespace Datadog.Trace.Debugger
             {
                 var tracerManager = TracerManager.Instance;
                 var discoveryService = tracerManager.DiscoveryService;
+
                 di = DebuggerFactory.CreateDynamicInstrumentation(
                     discoveryService,
                     RcmSubscriptionManager.Instance,

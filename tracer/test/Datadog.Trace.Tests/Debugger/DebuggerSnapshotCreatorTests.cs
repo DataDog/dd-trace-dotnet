@@ -5,9 +5,11 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,6 +32,26 @@ namespace Datadog.Trace.Tests.Debugger
     [UsesVerify]
     public class DebuggerSnapshotCreatorTests(ITestOutputHelper output)
     {
+        public static IEnumerable<object[]> SupportedCollectionSamples()
+        {
+            yield return [new List<int> { 1 }, "List`1", 1];
+            yield return [new[] { 1 }, "Int32[]", 1];
+            yield return [new Queue<int>(new[] { 1 }), "Queue`1", 1];
+            yield return [new Stack<int>(new[] { 1 }), "Stack`1", 1];
+            yield return [new ConcurrentQueue<int>(new[] { 1 }), "ConcurrentQueue`1", 1];
+            yield return [new ConcurrentBag<int>(new[] { 1 }), "ConcurrentBag`1", 1];
+            yield return [new BlockingCollection<int>(new ConcurrentQueue<int>(new[] { 1 })), "BlockingCollection`1", 1];
+            yield return [new SortedSet<int> { 1 }, "SortedSet`1", 1];
+        }
+
+        public static IEnumerable<object[]> SupportedDictionarySamples()
+        {
+            yield return [new Dictionary<string, int> { { "one", 1 } }, "Dictionary`2", 1];
+            yield return [new SortedDictionary<string, int> { { "one", 1 } }, "SortedDictionary`2", 1];
+            yield return [new ConcurrentDictionary<string, int>(new[] { new KeyValuePair<string, int>("one", 1) }), "ConcurrentDictionary`2", 1];
+            yield return [new Hashtable { { "one", 1 } }, "Hashtable", 1];
+        }
+
         [Fact]
         public async Task Limits_LargeCollection()
         {
@@ -128,6 +150,43 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void Limits_BoundedCaptureCollectionResultWithTruncation_SetsCollectionSizeReason()
+        {
+            var result = new BoundedCaptureCollectionResult<object>([1], wasTruncated: true, isDictionary: false);
+
+            var collectionJson = SerializeCollection(result, maxCollectionSize: 10, collectionCount: result.Count, wasTruncated: result.WasTruncated);
+
+            Assert.Equal(1, collectionJson["size"]?.Value<int>());
+            Assert.Equal(1, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Equal("collectionSize", collectionJson["notCapturedReason"]?.Value<string>());
+        }
+
+        [Fact]
+        public void Limits_BoundedCaptureCollectionResultCanceledBeforeVisitingAllItems_SetsTimeoutReason()
+        {
+            using var cts = new CancellationTokenSource();
+            var result = new BoundedCaptureCollectionResult<object>([1, 2], wasTruncated: true, isDictionary: false);
+
+            var collectionJson = SerializeCollection(new CancelingCollection([1, 2], cancelAfterVisitedItems: 1, cts), maxCollectionSize: 10, collectionCount: result.Count, wasTruncated: result.WasTruncated, cts: cts);
+
+            Assert.Equal(2, collectionJson["size"]?.Value<int>());
+            Assert.Equal(1, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Equal("timeout", collectionJson["notCapturedReason"]?.Value<string>());
+        }
+
+        [Fact]
+        public void Limits_BoundedCaptureCollectionResultWithoutTruncation_DoesNotSetCollectionSizeReason()
+        {
+            var result = new BoundedCaptureCollectionResult<object>([1], wasTruncated: false, isDictionary: false);
+
+            var collectionJson = SerializeCollection(result, maxCollectionSize: 10, collectionCount: result.Count, wasTruncated: result.WasTruncated);
+
+            Assert.Equal(1, collectionJson["size"]?.Value<int>());
+            Assert.Equal(1, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Null(collectionJson["notCapturedReason"]);
+        }
+
+        [Fact]
         public void Limits_CollectionCanceledBeforeVisitingAllItems_SetsTimeoutReason()
         {
             using var cts = new CancellationTokenSource();
@@ -164,6 +223,148 @@ namespace Datadog.Trace.Tests.Debugger
         public async Task ObjectStructure_EmptyList()
         {
             await ValidateSingleValue(new List<int>());
+        }
+
+        [Fact]
+        public void ObjectStructure_HashSet()
+        {
+            var local = GetLocalToken(new HashSet<int> { 1, 2 });
+
+            Assert.Equal("HashSet`1", local["type"]?.Value<string>());
+            Assert.Equal(2, local["size"]?.Value<int>());
+            Assert.Null(local["entries"]);
+
+            var elements = local["elements"] as JArray;
+            Assert.NotNull(elements);
+            Assert.Equal(2, elements!.Count);
+            Assert.Equal(new[] { 1, 2 }, elements.Select(e => e["value"]!.Value<int>()).OrderBy(i => i).ToArray());
+        }
+
+        [Theory]
+        [MemberData(nameof(SupportedCollectionSamples))]
+        public void ObjectStructure_SupportedCollections(object collection, string expectedType, int expectedSize)
+        {
+            var local = GetLocalToken(collection);
+
+            Assert.Equal(expectedType, local["type"]?.Value<string>());
+            Assert.Equal(expectedSize, local["size"]?.Value<int>());
+            Assert.NotNull(local["elements"]);
+            Assert.Null(local["entries"]);
+        }
+
+        [Theory]
+        [MemberData(nameof(SupportedDictionarySamples))]
+        public void ObjectStructure_SupportedDictionaries(object dictionary, string expectedType, int expectedSize)
+        {
+            var local = GetLocalToken(dictionary);
+
+            Assert.Equal(expectedType, local["type"]?.Value<string>());
+            Assert.Equal(expectedSize, local["size"]?.Value<int>());
+            Assert.NotNull(local["entries"]);
+            Assert.Null(local["elements"]);
+        }
+
+        [Fact]
+        public void ObjectStructure_ObjectTypedDictionaryEntries_UseRuntimeTypeAndNullFallback()
+        {
+            var local = GetLocalToken(new Dictionary<object, object> { { 42, null }, { "name", "value" } });
+
+            Assert.Equal("Dictionary`2", local["type"]?.Value<string>());
+            Assert.Equal(2, local["size"]?.Value<int>());
+            Assert.Null(local["elements"]);
+
+            var entries = local["entries"] as JArray;
+            Assert.NotNull(entries);
+            Assert.Equal(2, entries!.Count);
+            Assert.Contains(entries, entry =>
+                entry[0]?["type"]?.Value<string>() == "Int32" &&
+                entry[0]?["value"]?.Value<int>() == 42 &&
+                entry[1]?["type"]?.Value<string>() == "Object" &&
+                entry[1]?["isNull"]?.Value<string>() == "true");
+            Assert.Contains(entries, entry =>
+                entry[0]?["type"]?.Value<string>() == "String" &&
+                entry[0]?["value"]?.Value<string>() == "name" &&
+                entry[1]?["type"]?.Value<string>() == "String" &&
+                entry[1]?["value"]?.Value<string>() == "value");
+        }
+
+        [Fact]
+        public void ObjectStructure_DictionaryEntryValue_WithRedactedKey_IsRedacted()
+        {
+            object[] dictionaries =
+            [
+                new Dictionary<string, object> { { "password", "DD_SECRET_LEAK" }, { "name", "value" } },
+                new Dictionary<object, object> { { "password", "DD_SECRET_LEAK" }, { "name", "value" } },
+                new Hashtable { { "password", "DD_SECRET_LEAK" }, { "name", "value" } }
+            ];
+
+            foreach (var dictionary in dictionaries)
+            {
+                var local = GetLocalToken(dictionary);
+                var expectedType = dictionary is Hashtable ? "Hashtable" : "Dictionary`2";
+
+                Assert.Equal(expectedType, local["type"]?.Value<string>());
+                Assert.Equal(2, local["size"]?.Value<int>());
+                Assert.Null(local["elements"]);
+
+                var entries = local["entries"] as JArray;
+                Assert.NotNull(entries);
+                Assert.Equal(2, entries!.Count);
+                Assert.Contains(entries, entry =>
+                    entry[0]?["value"]?.Value<string>() == "password" &&
+                    entry[1]?["type"]?.Value<string>() == "String" &&
+                    entry[1]?["notCapturedReason"]?.Value<string>() == "redactedIdent" &&
+                    entry[1]?["value"] is null);
+                Assert.Contains(entries, entry =>
+                    entry[0]?["value"]?.Value<string>() == "name" &&
+                    entry[1]?["value"]?.Value<string>() == "value");
+            }
+        }
+
+        [Fact]
+        public void ObjectStructure_SortedList_IsSerializedAsDictionary()
+        {
+            var local = GetLocalToken(new SortedList { { "one", 1 }, { "two", 2 } });
+
+            Assert.Equal("SortedList", local["type"]?.Value<string>());
+            Assert.Equal(2, local["size"]?.Value<int>());
+            Assert.Null(local["elements"]);
+
+            var entries = local["entries"] as JArray;
+            Assert.NotNull(entries);
+            Assert.Equal(2, entries!.Count);
+            Assert.Contains(entries, entry => entry[0]?["value"]?.Value<string>() == "one" && entry[1]?["value"]?.Value<int>() == 1);
+            Assert.Contains(entries, entry => entry[0]?["value"]?.Value<string>() == "two" && entry[1]?["value"]?.Value<int>() == 2);
+        }
+
+        [Fact]
+        public void ObjectStructure_GenericSortedList_IsSerializedAsDictionary()
+        {
+            var local = GetLocalToken(new SortedList<string, int> { { "one", 1 }, { "two", 2 } });
+
+            Assert.Equal("SortedList`2", local["type"]?.Value<string>());
+            Assert.Equal(2, local["size"]?.Value<int>());
+            Assert.Null(local["elements"]);
+
+            var entries = local["entries"] as JArray;
+            Assert.NotNull(entries);
+            Assert.Equal(2, entries!.Count);
+            Assert.Contains(entries, entry => entry[0]?["value"]?.Value<string>() == "one" && entry[1]?["value"]?.Value<int>() == 1);
+            Assert.Contains(entries, entry => entry[0]?["value"]?.Value<string>() == "two" && entry[1]?["value"]?.Value<int>() == 2);
+        }
+
+        [Fact]
+        public void ObjectStructure_ConditionalWeakTable_IsNotSupportedCollection()
+        {
+            var table = new ConditionalWeakTable<object, object>();
+            table.Add(new object(), new object());
+
+            var local = GetLocalToken(table);
+
+            Assert.Equal("ConditionalWeakTable`2", local["type"]?.Value<string>());
+            Assert.Null(local["size"]);
+            Assert.Null(local["elements"]);
+            Assert.Null(local["entries"]);
         }
 
         [Fact]
@@ -441,11 +642,22 @@ namespace Datadog.Trace.Tests.Debugger
             await Verifier.Verify(localVariableAsJson, verifierSettings);
         }
 
+        private static JToken GetLocalToken(object local)
+        {
+            var snapshot = SnapshotHelper.GenerateSnapshot(local, prettify: false);
+            return JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return.locals.local0");
+        }
+
         private static void DummyMethod()
         {
         }
 
         private static JObject SerializeCollection(ICollection collection, int maxCollectionSize, CancellationTokenSource cts = null)
+        {
+            return SerializeCollection(collection, maxCollectionSize, collection.Count, wasTruncated: false, cts);
+        }
+
+        private static JObject SerializeCollection(IEnumerable collection, int maxCollectionSize, int collectionCount, bool wasTruncated, CancellationTokenSource cts = null)
         {
             var ownsCancellationTokenSource = cts is null;
             cts ??= new CancellationTokenSource();
@@ -454,6 +666,11 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 var serializeEnumerable = typeof(DebuggerSnapshotSerializer).GetMethod("SerializeEnumerable", BindingFlags.NonPublic | BindingFlags.Static);
                 Assert.NotNull(serializeEnumerable);
+                var enumerableInfoType = typeof(DebuggerSnapshotSerializer).GetNestedType("SupportedEnumerableInfo", BindingFlags.NonPublic);
+                Assert.NotNull(enumerableInfoType);
+                var enumerableInfoConstructor = enumerableInfoType!.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, binder: null, types: [typeof(int), typeof(bool), typeof(bool)], modifiers: null);
+                Assert.NotNull(enumerableInfoConstructor);
+                var enumerableInfo = enumerableInfoConstructor!.Invoke([collectionCount, false, wasTruncated]);
 
                 var limitInfo = new CaptureLimitInfo(
                     MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
@@ -471,6 +688,7 @@ namespace Datadog.Trace.Tests.Debugger
                         collection.GetType(),
                         jsonWriter,
                         collection,
+                        enumerableInfo,
                         0,
                         cts,
                         limitInfo,

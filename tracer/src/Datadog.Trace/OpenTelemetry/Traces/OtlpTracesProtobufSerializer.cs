@@ -14,7 +14,6 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer;
 using static Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer.ProtobufOtlpCommonFieldNumberConstants;
-using static Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer.ProtobufOtlpResourceFieldNumberConstants;
 using static Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer.ProtobufOtlpTraceFieldNumberConstants;
 
 #nullable enable
@@ -201,7 +200,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
 
     private static int WriteSpan(byte[] bytes, int writePosition, in SpanModel spanModel)
     {
-        writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, ScopeSpans_Spans, ProtobufWireType.LEN);
+        writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, ScopeSpans_Span, ProtobufWireType.LEN);
         int spanLengthPos = writePosition;
         writePosition += ReserveSizeForLength;
 
@@ -305,8 +304,8 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         // status (field 15)
         int? statusCode = spanModel.Span.GetTag("otel.status_code") switch
         {
-            "STATUS_CODE_OK" => Status_Code_Ok,
-            "STATUS_CODE_ERROR" => Status_Code_Error,
+            "STATUS_CODE_OK" => StatusCode_Ok,
+            "STATUS_CODE_ERROR" => StatusCode_Error,
             _ => null,
         };
         if (statusCode is not null)
