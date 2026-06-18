@@ -77,12 +77,6 @@
                   }
                 },
                 {
-                  "key": "http.status_code",
-                  "value": {
-                    "stringValue": ""
-                  }
-                },
-                {
                   "key": "http.request.method",
                   "value": {
                     "stringValue": "GET"
