@@ -808,6 +808,7 @@
       <type fullname="System.OperatingSystem" />
       <type fullname="System.OperationCanceledException" />
       <type fullname="System.OutOfMemoryException" />
+      <type fullname="System.OverflowException" />
       <type fullname="System.ParamArrayAttribute" />
       <type fullname="System.PlatformID" />
       <type fullname="System.PlatformNotSupportedException" />
@@ -1212,6 +1213,7 @@
       <type fullname="System.Web.HttpUtility" />
    </assembly>
    <assembly fullname="System.Xml.ReaderWriter">
+      <type fullname="System.Xml.DtdProcessing" />
       <type fullname="System.Xml.NameTable" />
       <type fullname="System.Xml.XmlAttribute" />
       <type fullname="System.Xml.XmlAttributeCollection" />
@@ -1232,6 +1234,7 @@
       <type fullname="System.Xml.XmlNodeType" />
       <type fullname="System.Xml.XmlProcessingInstruction" />
       <type fullname="System.Xml.XmlReader" />
+      <type fullname="System.Xml.XmlReaderSettings" />
       <type fullname="System.Xml.XmlResolver" />
       <type fullname="System.Xml.XmlSignificantWhitespace" />
       <type fullname="System.Xml.XmlText" />

@@ -51,7 +51,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         {
             TestClass = testcase.TestMethod.TestClass.Class,
             TestMethod = testcase.TestMethod.Method,
-            TestMethodArguments = testcase.TestMethod.TestMethodArguments!,
+            TestMethodArguments = GetTestCaseMethodArguments(testcaseOriginal, testcase)!,
             TestCase = new CustomTestCase
             {
                 DisplayName = testcase.TestCaseDisplayName,
@@ -71,20 +71,33 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             return CallTargetState.GetDefault();
         }
 
+        var isEarlyFlakeDetectionEnabled = testOptimization.EarlyFlakeDetectionFeature?.Enabled == true;
+        var isFlakyRetryEnabled = testOptimization.FlakyRetryFeature?.Enabled == true;
+        var isTestManagementEnabled = testOptimization.TestManagementFeature?.Enabled == true;
+        var testManagementProperties = isTestManagementEnabled ? XUnitIntegration.GetTestManagementProperties(ref testRunnerData) : null;
+        var isDisabledByTestManagement = Common.IsDisabledByTestManagement(testManagementProperties);
+
         // Check if the test should be skipped by the ITR
-        if (XUnitIntegration.ShouldSkip(ref testRunnerData, out _, out _))
+        if (Common.CanApplyItrSkip(testManagementProperties) &&
+            XUnitIntegration.ShouldSkip(ref testRunnerData, out _, out _, out var skippableTest))
         {
             Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Test skipped by test skipping feature: {Class}.{Name}", testcase.TestClass?.ToString() ?? string.Empty, testcase.TestMethod?.Method.Name ?? string.Empty);
             // Refresh values after skip reason change, and create Skip by ITR span.
             testcase.SkipReason = IntelligentTestRunnerTags.SkippedByReason;
             testRunnerData.SkipReason = testcase.SkipReason;
+            if (skippableTest is { } matchedSkippableTest)
+            {
+                var moduleName = XUnitIntegration.GetTestModuleName(ref testRunnerData);
+                Common.RecordTestSkipCoverageBackfill(matchedSkippableTest, moduleName);
+            }
+            else
+            {
+                Common.RecordTestSkipCoverageBackfill();
+            }
+
             XUnitIntegration.CreateTest(ref testRunnerData);
             return CallTargetState.GetDefault();
         }
-
-        var isEarlyFlakeDetectionEnabled = testOptimization.EarlyFlakeDetectionFeature?.Enabled == true;
-        var isFlakyRetryEnabled = testOptimization.FlakyRetryFeature?.Enabled == true;
-        var isTestManagementEnabled = testOptimization.TestManagementFeature?.Enabled == true;
 
         // If there's no...
         // - EarlyFlakeDetectionFeature enabled
@@ -108,10 +121,11 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             var testCaseMetadata = retryMessageBus.GetMetadata(testcase.TestMethod.UniqueID);
 
             // We skip the test if the tesk management property is set to Disabled and there's no attempt to fix
-            if (XUnitIntegration.GetTestManagementProperties(ref testRunnerData) is { Disabled: true, AttemptToFix: false })
+            if (isDisabledByTestManagement)
             {
                 testcase.SkipReason = "Flaky test is disabled by Datadog";
                 testRunnerData.SkipReason = testcase.SkipReason;
+                testCaseMetadata.Skipped = true;
                 Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Skipping test: {Class}.{Name} Reason: {Reason}", testcase.TestClass?.ToString() ?? string.Empty, testcase.TestMethod.Method.Name, testcase.SkipReason);
                 XUnitIntegration.CreateTest(ref testRunnerData, testCaseMetadata);
             }
@@ -223,11 +237,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                         // Quarantined or disabled test results should not be reported to the testing framework.
                         Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Quarantined or disabled test: {TestCaseDisplayName}", testcase.TestCaseDisplayName);
 
-                        // Let's update the summary to not have a single test run
-                        runSummaryUnsafe.Total = 1;
-                        runSummaryUnsafe.Failed = 0;
-                        runSummaryUnsafe.Skipped = 0;
-                        runSummaryUnsafe.NotRun = 0;
+                        HideQuarantinedOrDisabledRunSummary(ref runSummaryUnsafe);
                     }
                     else
                     {
@@ -275,10 +285,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
             // - Is a disabled test
             case { IsQuarantinedTest: true } or { IsDisabledTest: true }:
                 Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Quarantined or disabled test: {TestCaseDisplayName}", testcase.TestCaseDisplayName);
-                runSummaryUnsafe.Total = 1;
-                runSummaryUnsafe.Failed = 0;
-                runSummaryUnsafe.Skipped = 1;
-                runSummaryUnsafe.NotRun = 0;
+                ReportQuarantinedOrDisabledRunSummaryAsSkipped(ref runSummaryUnsafe);
                 messageBus.FlushMessages(testcase.TestMethod.UniqueID);
                 break;
 
@@ -289,7 +296,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
                 break;
         }
 
-        return returnValue;
+        return RunSummaryConverter<TReturn>.ToReturnValue(ref runSummaryUnsafe);
     }
 
     /// <summary>
@@ -300,6 +307,53 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
     /// </summary>
     internal static int GetRemainingAtrBudget()
         => Interlocked.CompareExchange(ref _totalRetries, 0, 0);
+
+    /// <summary>
+    /// Hides a quarantined or disabled first execution from the framework retry summary.
+    /// </summary>
+    /// <param name="runSummary">Run summary to edit before returning to xUnit.</param>
+    internal static void HideQuarantinedOrDisabledRunSummary(ref RunSummaryUnsafeStruct runSummary)
+    {
+        runSummary.Total = 1;
+        runSummary.Failed = 0;
+        runSummary.Skipped = 0;
+        runSummary.NotRun = 0;
+    }
+
+    /// <summary>
+    /// Reports a final quarantined or disabled execution as skipped to xUnit.
+    /// </summary>
+    /// <param name="runSummary">Run summary to edit before returning to xUnit.</param>
+    internal static void ReportQuarantinedOrDisabledRunSummaryAsSkipped(ref RunSummaryUnsafeStruct runSummary)
+    {
+        runSummary.Total = 1;
+        runSummary.Failed = 0;
+        runSummary.Skipped = 1;
+        runSummary.NotRun = 0;
+    }
+
+    /// <summary>
+    /// Converts the edited unsafe run summary back to the framework return type after compatibility checks pass.
+    /// </summary>
+    /// <param name="runSummary">Edited run summary value.</param>
+    /// <typeparam name="TReturn">xUnit run summary return type.</typeparam>
+    /// <returns>Run summary represented as the original framework return type.</returns>
+    internal static TReturn ToRunSummaryReturnValue<TReturn>(ref RunSummaryUnsafeStruct runSummary)
+        => RunSummaryConverter<TReturn>.ToReturnValue(ref runSummary);
+
+    /// <summary>
+    /// Gets row-specific test method arguments from the test case when xUnit exposes them.
+    /// </summary>
+    /// <param name="testcaseOriginal">Original xUnit test case instance.</param>
+    /// <param name="testcase">Duck-typed xUnit test case.</param>
+    /// <typeparam name="TTestCase">Original xUnit test case type.</typeparam>
+    /// <returns>Arguments attached to the current test case, or the method-level fallback.</returns>
+    internal static object?[]? GetTestCaseMethodArguments<TTestCase>(TTestCase testcaseOriginal, IXunitTestCaseV3 testcase)
+    {
+        return testcaseOriginal.TryDuckCast<IXunitTestCaseMethodArgumentsV3>(out var testCaseWithMethodArguments) ?
+                   testCaseWithMethodArguments.TestMethodArguments :
+                   testcase.TestMethod.TestMethodArguments;
+    }
 
     private readonly struct TestRunnerState
     {
@@ -349,6 +403,16 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
             editableRunSummary = Unsafe.As<TReturn, RunSummaryUnsafeStruct>(ref returnValue);
             return true;
+        }
+
+        /// <summary>
+        /// Converts the edited unsafe run summary back to the framework return type.
+        /// </summary>
+        /// <param name="runSummary">Edited run summary value.</param>
+        /// <returns>Run summary represented as the original framework return type.</returns>
+        public static TReturn ToReturnValue(ref RunSummaryUnsafeStruct runSummary)
+        {
+            return Unsafe.As<RunSummaryUnsafeStruct, TReturn>(ref runSummary);
         }
     }
 }
