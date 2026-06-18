@@ -48,14 +48,6 @@ namespace Datadog.Trace.Tests.TraceProcessors
             span.GetTag(Tags.HttpStatusCode).Should().Be("200");
         }
 
-        private static Span CreateWebSpan()
-        {
-            var traceContext = new TraceContext(new StubDatadogTracer());
-            var spanContext = new SpanContext(parent: null, traceContext, serviceName: null);
-            return new Span(spanContext, DateTimeOffset.UtcNow, new WebTags());
-        }
-
-
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize_test.go#L17
         [Fact]
         public void NormalizeTagTests()
@@ -166,6 +158,13 @@ namespace Datadog.Trace.Tests.TraceProcessors
                 yield return new object[] { "Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.", "too_long_.too_long_.too_long_.too_long_.too_long_.too_long_.too_long_.too_long_.too_long_.too_long_." };
                 yield return new object[] { "bad$service", "bad_service" };
             }
+        }
+
+        private static Span CreateWebSpan()
+        {
+            var traceContext = new TraceContext(new StubDatadogTracer());
+            var spanContext = new SpanContext(parent: null, traceContext, serviceName: null);
+            return new Span(spanContext, DateTimeOffset.UtcNow, new WebTags());
         }
     }
 }
