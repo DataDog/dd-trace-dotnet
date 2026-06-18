@@ -30,8 +30,6 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
     private const string ParitySeedEnvironmentVariable = "DD_DUCKTYPE_AOT_FULL_SUITE_PARITY_SEED";
     private const string KeepArtifactsEnvironmentVariable = "DD_DUCKTYPE_AOT_FULL_SUITE_PARITY_KEEP_ARTIFACTS";
     private const string RandomSeedEnvironmentVariable = "RANDOM_SEED";
-    private const string DotNetX64Path = "/usr/local/share/dotnet/x64/dotnet";
-    private const string DotNetX64Root = "/usr/local/share/dotnet/x64";
     private const string DefaultParitySeed = "20260301";
 
     private static readonly string[] DefaultMatrixFrameworks =
@@ -40,11 +38,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         "net9.0",
         "net8.0",
         "net7.0",
-        "net6.0",
-        "net5.0",
-        "netcoreapp3.1",
-        "netcoreapp3.0",
-        "netcoreapp2.1"
+        "net6.0"
     ];
 
     private static readonly object RuntimeInventoryLock = new();
@@ -107,6 +101,22 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             "all requested full-suite parity matrix lanes should pass." +
             Environment.NewLine +
             string.Join(Environment.NewLine, failures));
+    }
+
+    [Fact]
+    public void FullSuiteParityMatrixShouldNotUseX64DotNetHost()
+    {
+        GetDotNetExecutableCandidates()
+           .Should()
+           .Equal(["dotnet"], "the AOT parity gate should run on the current architecture dotnet host only");
+    }
+
+    [Fact]
+    public void FullSuiteParityDefaultMatrixShouldIncludeCurrentSupportedFrameworks()
+    {
+        DefaultMatrixFrameworks
+           .Should()
+           .ContainInOrder("net10.0", "net9.0", "net8.0", "net7.0", "net6.0");
     }
 
     private static void RunFullSuiteParityForFramework(string framework, string dotNetExecutable)
@@ -281,8 +291,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             File.Exists(dynamicTrxPath).Should().BeTrue("dynamic run should produce a trx report");
             File.Exists(discoveredMapPath).Should().BeTrue("dynamic discovery should produce a ducktype-aot map file");
             var includeCurrentProcessAssemblies =
-                string.Equals(framework, "net8.0", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(dotNetExecutable, DotNetX64Path, StringComparison.Ordinal);
+                string.Equals(framework, "net8.0", StringComparison.OrdinalIgnoreCase);
             var generateInput = PrepareGenerateInput(
                 discoveredMapPath,
                 sanitizedDiscoveredMapPath,
@@ -663,13 +672,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
 
     private static IReadOnlyList<string> GetDotNetExecutableCandidates()
     {
-        var candidates = new List<string> { "dotnet" };
-        if (File.Exists(DotNetX64Path))
-        {
-            candidates.Add(DotNetX64Path);
-        }
-
-        return candidates.Distinct(StringComparer.Ordinal).ToList();
+        return ["dotnet"];
     }
 
     private static string GetFrameworkRuntimePrefix(string framework)
@@ -702,14 +705,6 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             ["MSBuildExtensionsPath32"] = null,
             ["MSBuildExtensionsPath64"] = null
         };
-
-        if (string.Equals(dotNetExecutable, DotNetX64Path, StringComparison.Ordinal))
-        {
-            environmentVariables["DOTNET_ROOT"] = DotNetX64Root;
-            environmentVariables["DOTNET_ROOT_X64"] = DotNetX64Root;
-            environmentVariables["DOTNET_ROOT_ARM64"] = null;
-            environmentVariables["DOTNET_MULTILEVEL_LOOKUP"] = "0";
-        }
 
         if (additionalEnvironmentVariables is null || additionalEnvironmentVariables.Count == 0)
         {

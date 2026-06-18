@@ -1588,8 +1588,30 @@ partial class Build
     Target RunDuckTypeAotGates => _ => _
         .Unlisted()
         .DependsOn(RunDuckTypeAotCompatibilityGate)
+        .DependsOn(RunDuckTypeAotProcessorGate)
         .DependsOn(RunDuckTypeAotFullSuiteParityGate)
         .DependsOn(RunDuckTypeAotNativeAotPublishGate);
+
+    Target RunDuckTypeAotProcessorGate => _ => _
+        .Unlisted()
+        .After(RunDuckTypeAotCompatibilityGate)
+        .After(BuildRunnerTool)
+        .DependsOn(BuildRunnerTool)
+        .Executes(() =>
+        {
+            var runnerTestsProjectPath = TracerDirectory / "test" / "Datadog.Trace.Tools.Runner.Tests" / "Datadog.Trace.Tools.Runner.Tests.csproj";
+            EnsureFileExists(runnerTestsProjectPath, "DuckType AOT processor test project");
+            DotnetBuild(new[] { runnerTestsProjectPath }, framework: TargetFramework.NET8_0, noRestore: false, noDependencies: false);
+
+            DotNetTest(x => x
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetConfiguration(BuildConfiguration)
+                .SetProjectFile(runnerTestsProjectPath)
+                .SetFramework("net8.0")
+                .SetFilter("FullyQualifiedName~DuckTypeAotProcessorsTests")
+                .WithDatadogLogger());
+        });
 
     Target RunDuckTypeAotNativeAotPublishGate => _ => _
         .Unlisted()

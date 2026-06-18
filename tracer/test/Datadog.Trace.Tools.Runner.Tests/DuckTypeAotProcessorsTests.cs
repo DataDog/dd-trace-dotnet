@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 #if NETCOREAPP2_1
 using AssemblyLoadContext = Datadog.Trace.Tools.Runner.Tests.NetCore21AssemblyLoadContext;
@@ -30,7 +31,7 @@ using FluentAssertions;
 using Spectre.Console;
 using Xunit;
 
-#pragma warning disable SA1201 // Elements should appear in the correct order
+#pragma warning disable SA1201, SA1202 // Elements should appear in the correct order
 
 namespace Datadog.Trace.Tools.Runner.Tests;
 
@@ -38,6 +39,7 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 public class DuckTypeAotProcessorsTests
 {
     private const string BibleMappingCatalogFileName = "ducktype-aot-bible-mapping-catalog.json";
+    private const string BibleScenarioInventoryFileName = "ducktype-aot-bible-scenario-inventory.json";
     private const string BibleExpectedOutcomesFileName = "ducktype-aot-bible-expected-outcomes.json";
     private const string BibleKnownLimitationsFileName = "ducktype-aot-bible-known-limitations.json";
     private const string DuplicateAssignableBaseTargetTypeName = "Duplicate.Targets.SharedBaseTarget";
@@ -260,6 +262,42 @@ public class DuckTypeAotProcessorsTests
         scenarioIds.Should().Contain("TX-R");
         scenarioIds.Should().Contain("TX-S");
         scenarioIds.Should().Contain("TX-T");
+    }
+
+    [Fact]
+    public void BibleMappingCatalogShouldMatchScenarioInventoryContract()
+    {
+        var catalogPath = GetDuckTypingAotCompatibilityFilePath(BibleMappingCatalogFileName);
+        var inventoryPath = GetDuckTypingAotCompatibilityFilePath(BibleScenarioInventoryFileName);
+
+        var catalogResult = DuckTypeAotMappingCatalogParser.Parse(catalogPath);
+        var inventoryResult = DuckTypeAotScenarioInventoryParser.Parse(inventoryPath);
+
+        catalogResult.Errors.Should().BeEmpty();
+        inventoryResult.Errors.Should().BeEmpty();
+        catalogResult.RequiredMappings.Should().NotBeEmpty();
+        inventoryResult.RequiredScenarios.Should().NotBeEmpty();
+
+        var catalogScenarioIds = catalogResult.RequiredMappings
+                                            .Select(mapping => mapping.ScenarioId)
+                                            .Where(scenarioId => !string.IsNullOrWhiteSpace(scenarioId))
+                                            .Select(scenarioId => scenarioId!)
+                                            .ToHashSet(StringComparer.Ordinal);
+        var inventoryScenarioIds = inventoryResult.RequiredScenarios.ToHashSet(StringComparer.Ordinal);
+
+        var catalogEntriesMissingFromInventory = catalogScenarioIds
+                                                .Where(scenarioId => !IsScenarioTrackedByInventoryForTest(scenarioId, inventoryScenarioIds))
+                                                .OrderBy(scenarioId => scenarioId, StringComparer.Ordinal)
+                                                .ToList();
+        catalogEntriesMissingFromInventory.Should().BeEmpty(
+            "every catalog scenario id must be explicitly tracked by the inventory or a reviewed wildcard family");
+
+        var inventoryEntriesMissingFromCatalog = inventoryScenarioIds
+                                                .Where(requiredEntry => !IsScenarioCoveredByCatalogForTest(requiredEntry, catalogScenarioIds))
+                                                .OrderBy(requiredEntry => requiredEntry, StringComparer.Ordinal)
+                                                .ToList();
+        inventoryEntriesMissingFromCatalog.Should().BeEmpty(
+            "every required inventory scenario or wildcard family must have at least one catalog mapping");
     }
 
     [Fact]
@@ -568,6 +606,95 @@ public class DuckTypeAotProcessorsTests
         finally
         {
             DuckType.ResetRuntimeModeForTests();
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldPreferExplicitCanonicalDerivedMappingOverAssignableAlias()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            DuckType.ResetRuntimeModeForTests();
+
+            var assemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var assemblyName = AssemblyName.GetAssemblyName(assemblyPath).Name;
+            assemblyName.Should().NotBeNullOrWhiteSpace();
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.Alias.CanonicalDerived.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-alias-canonical-derived-map.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-alias-canonical-derived.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-alias-canonical-derived.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IAliasShadowProxy).FullName,
+                        proxyAssembly = assemblyName,
+                        targetType = typeof(AliasShadowBaseTarget).FullName,
+                        targetAssembly = assemblyName
+                    },
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IAliasShadowProxy).FullName,
+                        proxyAssembly = assemblyName,
+                        targetType = typeof(AliasShadowDerivedTarget).FullName,
+                        targetAssembly = assemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { assemblyPath },
+                targetAssemblies: new[] { assemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.Alias.CanonicalDerived",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-Alias-CanonicalDerived", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                DuckType.ResetRuntimeModeForTests();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var baseProxy = DuckType.Create<IAliasShadowProxy>(new AliasShadowBaseTarget("value"));
+                baseProxy.Should().NotBeNull();
+                baseProxy!.Value.Should().Be("base:value");
+
+                var derivedProxy = DuckType.Create<IAliasShadowProxy>(new AliasShadowDerivedTarget("value"));
+                derivedProxy.Should().NotBeNull();
+                derivedProxy!.Value.Should().Be("derived:value", "an explicit canonical derived mapping must not be shadowed by the base mapping assignable alias");
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
             TryDeleteDirectory(tempDirectory);
         }
     }
@@ -1690,6 +1817,167 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void GenerateProcessorShouldSupportClosedGenericClassMappingsWhenDuckAdaptationIsRequired()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.ClosedGeneric.ClassDuckAdaptation.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-closed-generic-class-duck-adaptation.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-closed-generic-class-duck-adaptation.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-closed-generic-class-duck-adaptation.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(ClosedGenericClassDuckProxy<int>).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(ClosedGenericClassDuckTarget<int>).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.ClosedGeneric.ClassDuckAdaptation",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-ClosedGeneric-ClassDuckAdaptation", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var proxy = DuckType.Create(typeof(ClosedGenericClassDuckProxy<int>), new ClosedGenericClassDuckTarget<int>(42));
+                proxy.Should().BeAssignableTo<ClosedGenericClassDuckProxy<int>>();
+                ((ClosedGenericClassDuckProxy<int>)proxy!).Value.Should().Be(42);
+                ((ClosedGenericClassDuckProxy<int>)proxy).Echo(7).Should().Be(8);
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldEmitAssignableAliasRegistrationsForClosedGenericBaseMappings()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            DuckType.ResetRuntimeModeForTests();
+
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.ClosedGeneric.AssignableAlias.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-closed-generic-assignable-alias.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-closed-generic-assignable-alias.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-closed-generic-assignable-alias.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IClosedGenericAliasProxy<int>).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(ClosedGenericAliasBase<int>).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.ClosedGeneric.AssignableAlias",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var manifestPath = $"{outputPath}.manifest.json";
+            var manifest = JsonConvert.DeserializeObject<DuckTypeAotManifest>(File.ReadAllText(manifestPath));
+            manifest.Should().NotBeNull();
+            manifest!.AliasRegistrations.Should().BeGreaterThan(0);
+            manifest.TotalRuntimeRegistrations.Should().BeGreaterThan(manifest.Mappings.Count);
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-ClosedGeneric-AssignableAlias", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var proxy = DuckType.Create(typeof(IClosedGenericAliasProxy<int>), new ClosedGenericAliasDerived(42));
+                proxy.Should().BeAssignableTo<IClosedGenericAliasProxy<int>>();
+                ((IClosedGenericAliasProxy<int>)proxy!).Value.Should().Be(42);
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void GenerateProcessorShouldSupportClosedGenericDuckTypeTaskContracts()
     {
         var tempDirectory = CreateTempDirectory();
@@ -1958,6 +2246,147 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void GenerateProcessorShouldKeepIgnoreCaseOutOfRelaxedMethodFallback()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.BindingFlags.IgnoreCaseRelaxedFallback.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-binding-flags-ignore-case-relaxed-fallback.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-binding-flags-ignore-case-relaxed-fallback.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-binding-flags-ignore-case-relaxed-fallback.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    CreateMappingDocumentEntry(typeof(IIgnoreCaseRelaxedFallbackProxy), typeof(IgnoreCaseRelaxedFallbackTarget))
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.BindingFlags.IgnoreCaseRelaxedFallback",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            var mapping = matrix!.Mappings.Should().ContainSingle().Subject;
+            mapping.Status.Should().Be(DuckTypeAotCompatibilityStatuses.MissingTargetMethod);
+            mapping.DiagnosticCode.Should().Be("DTAOT0207");
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldHonorDuckAttributeBindingFlagsVisibilityStaticnessAndScope()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.BindingFlags.Semantics.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-binding-flags-semantics.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-binding-flags-semantics.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-binding-flags-semantics.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    CreateMappingDocumentEntry(typeof(IBindingFlagsPublicOnlyFieldProxy), typeof(BindingFlagsPrivateFieldTarget)),
+                    CreateMappingDocumentEntry(typeof(IBindingFlagsInstanceOnlyStaticFieldProxy), typeof(BindingFlagsStaticFieldTarget)),
+                    CreateMappingDocumentEntry(typeof(IBindingFlagsDeclaredOnlyPropertyProxy), typeof(BindingFlagsDerivedTarget)),
+                    CreateMappingDocumentEntry(typeof(IBindingFlagsFlattenHierarchyStaticPropertyProxy), typeof(BindingFlagsStaticDerivedTarget)),
+                    CreateMappingDocumentEntry(typeof(IBindingFlagsFallbackDeclaredOnlyPropertyProxy), typeof(BindingFlagsFallbackDerivedTarget)),
+                    CreateMappingDocumentEntry(typeof(IBindingFlagsFallbackDeclaredOnlyFieldProxy), typeof(BindingFlagsFallbackDerivedTarget))
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.BindingFlags.Semantics",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            AssertMappingDiagnostic(matrix!, typeof(IBindingFlagsPublicOnlyFieldProxy), typeof(BindingFlagsPrivateFieldTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+            AssertMappingDiagnostic(matrix!, typeof(IBindingFlagsInstanceOnlyStaticFieldProxy), typeof(BindingFlagsStaticFieldTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+            AssertMappingDiagnostic(matrix!, typeof(IBindingFlagsDeclaredOnlyPropertyProxy), typeof(BindingFlagsDerivedTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+            AssertMappingDiagnostic(matrix!, typeof(IBindingFlagsFlattenHierarchyStaticPropertyProxy), typeof(BindingFlagsStaticDerivedTarget), DuckTypeAotCompatibilityStatuses.Compatible, null);
+            AssertMappingDiagnostic(matrix!, typeof(IBindingFlagsFallbackDeclaredOnlyPropertyProxy), typeof(BindingFlagsFallbackDerivedTarget), DuckTypeAotCompatibilityStatuses.Compatible, null);
+            AssertMappingDiagnostic(matrix!, typeof(IBindingFlagsFallbackDeclaredOnlyFieldProxy), typeof(BindingFlagsFallbackDerivedTarget), DuckTypeAotCompatibilityStatuses.Compatible, null);
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-BindingFlags-Semantics", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var proxy = DuckType.Create(typeof(IBindingFlagsFlattenHierarchyStaticPropertyProxy), new BindingFlagsStaticDerivedTarget());
+                proxy.Should().BeAssignableTo<IBindingFlagsFlattenHierarchyStaticPropertyProxy>();
+                ((IBindingFlagsFlattenHierarchyStaticPropertyProxy)proxy!).Flattened.Should().Be("flattened");
+
+                var fallbackPropertyProxy = DuckType.Create(typeof(IBindingFlagsFallbackDeclaredOnlyPropertyProxy), new BindingFlagsFallbackDerivedTarget());
+                fallbackPropertyProxy.Should().BeAssignableTo<IBindingFlagsFallbackDeclaredOnlyPropertyProxy>();
+                ((IBindingFlagsFallbackDeclaredOnlyPropertyProxy)fallbackPropertyProxy!).SecretProperty.Should().Be("base-property");
+
+                var fallbackFieldProxy = DuckType.Create(typeof(IBindingFlagsFallbackDeclaredOnlyFieldProxy), new BindingFlagsFallbackDerivedTarget());
+                fallbackFieldProxy.Should().BeAssignableTo<IBindingFlagsFallbackDeclaredOnlyFieldProxy>();
+                ((IBindingFlagsFallbackDeclaredOnlyFieldProxy)fallbackFieldProxy!).SecretField.Should().Be("base-field");
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void GenerateProcessorShouldSupportInheritedGenericInterfaceSubstitutions()
     {
         var tempDirectory = CreateTempDirectory();
@@ -2051,6 +2480,95 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void GenerateProcessorShouldPreserveInheritedGenericByRefParameterMetadataAndArraySubstitution()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.InheritedGenericByRefSubstitution.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-inherited-generic-byref-substitution.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-inherited-generic-byref-substitution.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-inherited-generic-byref-substitution.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IInheritedGenericByRefComposedProxy<int>).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(InheritedGenericByRefTarget).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.InheritedGenericByRefSubstitution",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-InheritedGenericByRefSubstitution", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var proxy = DuckType.Create(typeof(IInheritedGenericByRefComposedProxy<int>), new InheritedGenericByRefTarget());
+                proxy.Should().BeAssignableTo<IInheritedGenericByRefComposedProxy<int>>();
+                var typedProxy = (IInheritedGenericByRefComposedProxy<int>)proxy!;
+
+                typedProxy.TryGet(out var value).Should().BeTrue();
+                value.Should().BeEquivalentTo([1, 2, 3]);
+
+                var updateValue = new List<int> { 6 };
+                typedProxy.TryUpdate(ref updateValue).Should().BeTrue();
+                updateValue.Should().BeEquivalentTo([6, 8]);
+
+                var grid = new[,] { { new List<int> { 4, 5 } } };
+                typedProxy.EchoGrid(grid)[0, 0].Should().BeEquivalentTo([4, 5, 9]);
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void GenerateProcessorShouldSupportTrailingOptionalTargetParameters()
     {
         var tempDirectory = CreateTempDirectory();
@@ -2122,6 +2640,67 @@ public class DuckTypeAotProcessorsTests
                 DuckTypeAotEngine.ResetForTests();
                 loadContext.Unload();
             }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldNotTreatParameterConstantAsOptionalFlag()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyPath = CreateConstantOnlyOptionalTargetAssembly(tempDirectory);
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.OptionalParameters.ConstantOnly.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-optional-constant-only.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-optional-constant-only.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-optional-constant-only.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IConstantOnlyOptionalParameterProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = "ExternalOptional.ConstantOnlyOptionalParameterTarget",
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.OptionalParameters.ConstantOnly",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            var mapping = matrix!.Mappings.Should().ContainSingle().Subject;
+            mapping.Status.Should().Be(DuckTypeAotCompatibilityStatuses.MissingTargetMethod);
+            mapping.DiagnosticCode.Should().Be("DTAOT0207");
         }
         finally
         {
@@ -3949,6 +4528,94 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void GenerateProcessorShouldMatchDynamicReverseImplementationMemberScope()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.Reverse.MemberScope.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-reverse-member-scope.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-reverse-member-scope.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-reverse-member-scope.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    CreateMappingDocumentEntry(typeof(IReverseInheritedMethodProxy), typeof(ReverseInheritedMethodTarget), mode: "reverse"),
+                    CreateMappingDocumentEntry(typeof(IReversePrivatePropertyProxy), typeof(ReversePrivatePropertyTarget), mode: "reverse"),
+                    CreateMappingDocumentEntry(typeof(IReverseInheritedPublicPropertyProxy), typeof(ReverseInheritedPublicPropertyTarget), mode: "reverse")
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.Reverse.MemberScope",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().HaveCount(3);
+            AssertMappingDiagnostic(matrix, typeof(IReverseInheritedMethodProxy), typeof(ReverseInheritedMethodTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+            AssertMappingDiagnostic(matrix, typeof(IReversePrivatePropertyProxy), typeof(ReversePrivatePropertyTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+            AssertMappingDiagnostic(matrix, typeof(IReverseInheritedPublicPropertyProxy), typeof(ReverseInheritedPublicPropertyTarget), DuckTypeAotCompatibilityStatuses.Compatible, null);
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-Reverse-MemberScope", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
+                    string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
+                    type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(IReverseInheritedPublicPropertyProxy).FullName, StringComparison.Ordinal)));
+                var proxyDefinitionType = generatedProxyType.GetInterfaces().Single(@interface =>
+                    string.Equals(@interface.FullName, typeof(IReverseInheritedPublicPropertyProxy).FullName, StringComparison.Ordinal));
+
+                var target = new ReverseInheritedPublicPropertyTarget("before");
+                var reverseProxy = DuckType.CreateReverse(proxyDefinitionType, target);
+                reverseProxy.Should().NotBeNull();
+
+                var property = proxyDefinitionType.GetProperty(nameof(IReverseInheritedPublicPropertyProxy.Value));
+                property.Should().NotBeNull();
+                property!.GetValue(reverseProxy).Should().Be("before");
+                property.SetValue(reverseProxy, "after");
+                target.ReadValue().Should().Be("after");
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void GenerateProcessorShouldSignRegistryAssemblyWhenStrongNameKeyIsProvided()
     {
         var tempDirectory = CreateTempDirectory();
@@ -4214,6 +4881,224 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void GenerateProcessorShouldStoreClassProxyTargetBeforeBaseConstructorRuns()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.Class.ConstructorOrder.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-class-constructor-order.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-class-constructor-order.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-class-constructor-order.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    CreateMappingDocumentEntry(typeof(ConstructorOrderProxyBase), typeof(ConstructorOrderTarget))
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.Class.ConstructorOrder",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-Class-ConstructorOrder", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var proxy = DuckType.Create(typeof(ConstructorOrderProxyBase), new ConstructorOrderTarget("constructor-value"));
+                proxy.Should().BeAssignableTo<ConstructorOrderProxyBase>();
+                ((ConstructorOrderProxyBase)proxy!).CapturedDuringConstruction.Should().Be("constructor-value");
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldSupportClassProxyWithPrivateParameterlessConstructor()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.Class.PrivateCtor.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-class-private-ctor.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-class-private-ctor.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-class-private-ctor.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    CreateMappingDocumentEntry(typeof(PrivateConstructorClassProxy), typeof(PrivateConstructorClassTarget))
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.Class.PrivateCtor",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-Class-PrivateCtor", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var proxy = DuckType.Create(typeof(PrivateConstructorClassProxy), new PrivateConstructorClassTarget());
+                proxy.Should().BeAssignableTo<PrivateConstructorClassProxy>();
+                ((PrivateConstructorClassProxy)proxy!).ReadValue().Should().Be("private-ctor");
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldEmitNonPublicClassProxyMethodsAndConstructor()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.Class.NonPublicMembers.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-class-non-public-members.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-class-non-public-members.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-class-non-public-members.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(NonPublicClassProxy).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(NonPublicClassTarget).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.Class.NonPublicMembers",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-Class-NonPublicMembers", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var proxy = DuckType.Create(typeof(NonPublicClassProxy), new NonPublicClassTarget());
+                proxy.Should().BeAssignableTo<NonPublicClassProxy>();
+                ((NonPublicClassProxy)proxy!).InvokeInternal("value").Should().Be("internal:value");
+                ((NonPublicClassProxy)proxy).InvokePrivateProtected("value").Should().Be("private-protected:value");
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void GenerateProcessorShouldEmitDuckAsClassInterfaceProxyAsClass()
     {
         var tempDirectory = CreateTempDirectory();
@@ -4273,6 +5158,118 @@ public class DuckTypeAotProcessorsTests
                 string.Equals(interfaceImpl.Interface.FullName, typeof(ITestDuckAsClassProxy).FullName, StringComparison.Ordinal)).Should().BeTrue();
             generatedProxyType.Interfaces.Any(interfaceImpl =>
                 string.Equals(interfaceImpl.Interface.FullName, typeof(IDuckType).FullName, StringComparison.Ordinal)).Should().BeTrue();
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-DuckAsClassInterface", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                DuckType.ResetRuntimeModeForTests();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var proxy = DuckType.Create<ITestDuckAsClassProxy>(new TestDuckTarget());
+                proxy.Should().NotBeNull();
+                proxy!.Echo("duck-as-class").Should().Be("duck-as-class");
+                proxy.Should().BeAssignableTo<IDuckType>();
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldExerciseDuckIncludeDuckIgnoreAndReverseAttributeRuntimePaths()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.RuntimeFeatureCoverage.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-runtime-feature-coverage.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-runtime-feature-coverage.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-runtime-feature-coverage.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    CreateMappingDocumentEntry(typeof(IObjectDuckIncludeProxy), typeof(ObjectDuckIncludeTarget)),
+                    CreateMappingDocumentEntry(typeof(DuckIgnoreRuntimeProxyBase), typeof(DuckIgnoreRuntimeTarget)),
+                    CreateMappingDocumentEntry(typeof(IReverseCopiedAttributeRuntimeProxy), typeof(ReverseCopiedAttributeRuntimeTarget), mode: "reverse")
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.RuntimeFeatureCoverage",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().HaveCount(3);
+            matrix.Mappings.Should().OnlyContain(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-RuntimeFeatureCoverage", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                DuckType.ResetRuntimeModeForTests();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var includeProxy = DuckType.Create(typeof(IObjectDuckIncludeProxy), new ObjectDuckIncludeTarget());
+                includeProxy.Should().BeAssignableTo<IObjectDuckIncludeProxy>();
+                includeProxy!.GetHashCode().Should().Be(1234);
+
+                var ignoreProxy = DuckType.Create(typeof(DuckIgnoreRuntimeProxyBase), new DuckIgnoreRuntimeTarget());
+                ignoreProxy.Should().BeAssignableTo<DuckIgnoreRuntimeProxyBase>();
+                var typedIgnoreProxy = (DuckIgnoreRuntimeProxyBase)ignoreProxy!;
+                typedIgnoreProxy.Value.Should().Be("target");
+                typedIgnoreProxy.IgnoredValue.Should().Be("ignored");
+
+                var reverseProxy = DuckType.CreateReverse(typeof(IReverseCopiedAttributeRuntimeProxy), new ReverseCopiedAttributeRuntimeTarget());
+                reverseProxy.Should().BeAssignableTo<IReverseCopiedAttributeRuntimeProxy>();
+                ((IReverseCopiedAttributeRuntimeProxy)reverseProxy!).Read().Should().Be("reverse");
+                var copiedAttribute = reverseProxy.GetType().GetCustomAttribute<ReverseCopiedRuntimeMarkerAttribute>();
+                copiedAttribute.Should().NotBeNull();
+                copiedAttribute!.Marker.Should().Be("copied");
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
         }
         finally
         {
@@ -6780,6 +7777,95 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void GenerateProcessorShouldSupportDuckCopyPrivateBaseMembersWithDeclaredOnlyFallback()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.StructCopy.BasePrivateDeclaredOnly.Fallback.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-struct-copy-base-private-declared-only-fallback.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-struct-copy-base-private-declared-only-fallback.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-struct-copy-base-private-declared-only-fallback.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    CreateMappingDocumentEntry(typeof(TestDuckStructCopyBasePrivatePropertyDeclaredOnlyFallbackProxy), typeof(TestDuckBasePrivatePropertyTarget)),
+                    CreateMappingDocumentEntry(typeof(TestDuckStructCopyBasePrivateFieldDeclaredOnlyFallbackProxy), typeof(TestDuckBasePrivateFieldTarget))
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.StructCopy.BasePrivateDeclaredOnly.Fallback",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            AssertMappingDiagnostic(matrix!, typeof(TestDuckStructCopyBasePrivatePropertyDeclaredOnlyFallbackProxy), typeof(TestDuckBasePrivatePropertyTarget), DuckTypeAotCompatibilityStatuses.Compatible, null);
+            AssertMappingDiagnostic(matrix!, typeof(TestDuckStructCopyBasePrivateFieldDeclaredOnlyFallbackProxy), typeof(TestDuckBasePrivateFieldTarget), DuckTypeAotCompatibilityStatuses.Compatible, null);
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-StructCopy-BasePrivateDeclaredOnly-Fallback", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var propertyCopyObject = DuckType.Create(
+                    typeof(TestDuckStructCopyBasePrivatePropertyDeclaredOnlyFallbackProxy),
+                    new TestDuckBasePrivatePropertyTarget(31, 5));
+                propertyCopyObject.Should().NotBeNull();
+
+                var propertyHiddenField = typeof(TestDuckStructCopyBasePrivatePropertyDeclaredOnlyFallbackProxy)
+                                         .GetField(nameof(TestDuckStructCopyBasePrivatePropertyDeclaredOnlyFallbackProxy.Hidden));
+                propertyHiddenField.Should().NotBeNull();
+                propertyHiddenField!.GetValue(propertyCopyObject).Should().Be(31);
+
+                var fieldCopyObject = DuckType.Create(
+                    typeof(TestDuckStructCopyBasePrivateFieldDeclaredOnlyFallbackProxy),
+                    new TestDuckBasePrivateFieldTarget(47));
+                fieldCopyObject.Should().NotBeNull();
+
+                var fieldHiddenField = typeof(TestDuckStructCopyBasePrivateFieldDeclaredOnlyFallbackProxy)
+                                      .GetField(nameof(TestDuckStructCopyBasePrivateFieldDeclaredOnlyFallbackProxy.Hidden));
+                fieldHiddenField.Should().NotBeNull();
+                fieldHiddenField!.GetValue(fieldCopyObject).Should().Be(47);
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void GenerateProcessorShouldPreferPropertyForDuckPropertyOrFieldWhenPropertyExists()
     {
         var tempDirectory = CreateTempDirectory();
@@ -6931,6 +8017,87 @@ public class DuckTypeAotProcessorsTests
             finally
             {
                 loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldSupportStaticClassTargetWithNullCreateInstance()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            TestDuckStaticClassTarget.ResetValue("initial");
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.StaticClass.NullTarget.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-static-class-null-target.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-static-class-null-target.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-static-class-null-target.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    CreateMappingDocumentEntry(typeof(ITestDuckStaticClassProxy), typeof(TestDuckStaticClassTarget))
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.StaticClass.NullTarget",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-StaticClass-NullTarget", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var createTypeResult = DuckType.GetOrCreateProxyType(typeof(ITestDuckStaticClassProxy), typeof(TestDuckStaticClassTarget));
+                createTypeResult.Success.Should().BeTrue();
+
+                var proxy = createTypeResult.CreateInstance<ITestDuckStaticClassProxy>(null);
+                proxy.Echo("hello").Should().Be("static-class:hello");
+                proxy.Value.Should().Be("initial");
+
+                proxy.Value = "after";
+                proxy.Value.Should().Be("after");
+                TestDuckStaticClassTarget.ReadValue().Should().Be("after");
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+                TestDuckStaticClassTarget.ResetValue("initial");
             }
         }
         finally
@@ -7185,6 +8352,81 @@ public class DuckTypeAotProcessorsTests
             }
             finally
             {
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldIgnoreInRefDirectionForMethodSelectionParity()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(InRefDirectionTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.ByRef.InDirection.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-byref-in-direction.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-byref-in-direction.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-byref-in-direction.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    CreateMappingDocumentEntry(typeof(IInRefDirectionProxy), typeof(InRefDirectionTarget))
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.ByRef.InDirection",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-ByRef-InDirection", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var proxy = DuckType.Create<IInRefDirectionProxy>(new InRefDirectionTarget());
+                var value = 4;
+                proxy!.Mutate(ref value);
+                value.Should().Be(5);
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
                 loadContext.Unload();
             }
         }
@@ -7874,6 +9116,155 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void GenerateProcessorShouldNotPreserveNullForStandardDuckChainMethodArguments()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(NonByRefDuckChainNullTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.DuckChain.NullStandardArgument.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-duck-chain-null-standard-argument.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-duck-chain-null-standard-argument.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-duck-chain-null-standard-argument.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    CreateMappingDocumentEntry(typeof(INonByRefDuckChainNullProxy), typeof(NonByRefDuckChainNullTarget))
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.DuckChain.NullStandardArgument",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-DuckChain-NullStandardArgument", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var proxy = DuckType.Create<INonByRefDuckChainNullProxy>(new NonByRefDuckChainNullTarget());
+                Action callWithNull = () => proxy!.Read(null!);
+                callWithNull.Should().Throw<NullReferenceException>();
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldPreserveNullForByRefDuckChainMethodArguments()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var targetAssemblyPath = typeof(ByRefDuckChainNullTarget).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.DuckChain.NullByRefArgument.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-duck-chain-null-byref-argument.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-duck-chain-null-byref-argument.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-duck-chain-null-byref-argument.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    CreateMappingDocumentEntry(typeof(IByRefDuckChainNullProxy), typeof(ByRefDuckChainNullTarget))
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.DuckChain.NullByRefArgument",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-DuckChain-NullByRefArgument", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var proxy = DuckType.Create<IByRefDuckChainNullProxy>(new ByRefDuckChainNullTarget());
+                IByRefDuckChainNullInnerProxy? value = null;
+                proxy!.IsNullPreserved(ref value).Should().BeTrue();
+                value.Should().BeNull();
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void GenerateProcessorShouldSupportNullableDuckCopyMethodReturnConversions()
     {
         var tempDirectory = CreateTempDirectory();
@@ -8098,6 +9489,94 @@ public class DuckTypeAotProcessorsTests
             }
             finally
             {
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldResolveDuckGenericParameterTypeNamesFromTargetAssemblyPaths()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+            var (targetAssemblyPath, dependencyAssemblyPath) = CreateGenericParameterTypeNameAssemblies(tempDirectory);
+            var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.GenericParameterTypeNames.External.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-generic-parameter-type-names-external.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-generic-parameter-type-names-external.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-generic-parameter-type-names-external.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IExternalGenericParameterTypeNameProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = "ExternalGenericArgs.GenericParameterTypeNameTarget",
+                        targetAssembly = targetAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { targetAssemblyPath },
+                targetFolders: new[] { Path.GetDirectoryName(targetAssemblyPath)!, Path.GetDirectoryName(dependencyAssemblyPath)! },
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.GenericParameterTypeNames.External",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-GenericParameterTypeNames-External", isCollectible: true);
+            try
+            {
+                _ = loadContext.LoadFromAssemblyPath(dependencyAssemblyPath);
+                var targetAssembly = loadContext.LoadFromAssemblyPath(targetAssemblyPath);
+                var targetType = targetAssembly.GetType("ExternalGenericArgs.GenericParameterTypeNameTarget");
+                targetType.Should().NotBeNull();
+                var targetInstance = Activator.CreateInstance(targetType!);
+                targetInstance.Should().NotBeNull();
+
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var proxy = DuckType.Create(typeof(IExternalGenericParameterTypeNameProxy), targetInstance!);
+                proxy.Should().BeAssignableTo<IExternalGenericParameterTypeNameProxy>();
+                ((IExternalGenericParameterTypeNameProxy)proxy!).Resolve().Should().Be("ExternalGenericArgs.GenericArgument");
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
                 loadContext.Unload();
             }
         }
@@ -8965,6 +10444,10 @@ public class DuckTypeAotProcessorsTests
                     CreateMappingDocumentEntry(typeof(IFailureReplayReverseAttributeMismatchProxy), typeof(FailureReplayReverseAttributeMismatchTarget), mode: "reverse"),
                     CreateMappingDocumentEntry(typeof(IFailureReplayReverseMissingMethodProxy), typeof(FailureReplayReverseMissingMethodTarget), mode: "reverse"),
                     CreateMappingDocumentEntry(typeof(IFailureReplayReverseMissingPropertyProxy), typeof(FailureReplayReverseMissingPropertyTarget), mode: "reverse"),
+                    CreateMappingDocumentEntry(typeof(FailureReplayEmptyDuckCopyProxy), typeof(FailureReplayEmptyDuckCopyTarget)),
+                    CreateMappingDocumentEntry(typeof(IFailureReplayReverseAbstractImplementorProxy), typeof(FailureReplayReverseAbstractImplementorTarget), mode: "reverse"),
+                    CreateMappingDocumentEntry(typeof(IFailureReplayReverseInterfaceImplementorProxy), typeof(IFailureReplayReverseInterfaceImplementorTarget), mode: "reverse"),
+                    CreateMappingDocumentEntry(typeof(IFailureReplayReverseNamedArgumentAttributeProxy), typeof(FailureReplayReverseNamedArgumentAttributeTarget), mode: "reverse"),
                 }
             };
             File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
@@ -8988,7 +10471,7 @@ public class DuckTypeAotProcessorsTests
             var compatibilityMatrixPath = $"{outputPath}.compat.json";
             var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
             matrix.Should().NotBeNull();
-            matrix!.Mappings.Should().HaveCount(9);
+            matrix!.Mappings.Should().HaveCount(13);
 
             AssertMappingDiagnostic(matrix, typeof(IFailureReplayPropertyCantBeReadProxy), typeof(FailureReplayPropertyCantBeReadTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
             AssertMappingDiagnostic(matrix, typeof(IFailureReplayPropertyArgumentsLengthProxy), typeof(FailureReplayPropertyArgumentsLengthTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
@@ -8999,6 +10482,10 @@ public class DuckTypeAotProcessorsTests
             AssertMappingDiagnostic(matrix, typeof(IFailureReplayReverseAttributeMismatchProxy), typeof(FailureReplayReverseAttributeMismatchTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
             AssertMappingDiagnostic(matrix, typeof(IFailureReplayReverseMissingMethodProxy), typeof(FailureReplayReverseMissingMethodTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
             AssertMappingDiagnostic(matrix, typeof(IFailureReplayReverseMissingPropertyProxy), typeof(FailureReplayReverseMissingPropertyTarget), DuckTypeAotCompatibilityStatuses.MissingTargetMethod, "DTAOT0207");
+            AssertMappingDiagnostic(matrix, typeof(FailureReplayEmptyDuckCopyProxy), typeof(FailureReplayEmptyDuckCopyTarget), DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature, "DTAOT0209");
+            AssertMappingDiagnostic(matrix, typeof(IFailureReplayReverseAbstractImplementorProxy), typeof(FailureReplayReverseAbstractImplementorTarget), DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature, "DTAOT0209");
+            AssertMappingDiagnostic(matrix, typeof(IFailureReplayReverseInterfaceImplementorProxy), typeof(IFailureReplayReverseInterfaceImplementorTarget), DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature, "DTAOT0209");
+            AssertMappingDiagnostic(matrix, typeof(IFailureReplayReverseNamedArgumentAttributeProxy), typeof(FailureReplayReverseNamedArgumentAttributeTarget), DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature, "DTAOT0214");
 
             using (var generatedModule = ModuleDefMD.Load(outputPath))
             {
@@ -9065,6 +10552,10 @@ public class DuckTypeAotProcessorsTests
                 AssertThrowsExactDuckTypeFailure<DuckTypeReverseAttributeParameterNamesMismatchException>(() => DuckType.CreateReverse(typeof(IFailureReplayReverseAttributeMismatchProxy), new FailureReplayReverseAttributeMismatchTarget()));
                 AssertThrowsExactDuckTypeFailure<DuckTypeReverseProxyMissingMethodImplementationException>(() => DuckType.CreateReverse(typeof(IFailureReplayReverseMissingMethodProxy), new FailureReplayReverseMissingMethodTarget()));
                 AssertThrowsExactDuckTypeFailure<DuckTypeReverseProxyMissingPropertyImplementationException>(() => DuckType.CreateReverse(typeof(IFailureReplayReverseMissingPropertyProxy), new FailureReplayReverseMissingPropertyTarget()));
+                AssertThrowsExactDuckTypeFailure<DuckTypeDuckCopyStructDoesNotContainsAnyField>(() => DuckType.Create(typeof(FailureReplayEmptyDuckCopyProxy), new FailureReplayEmptyDuckCopyTarget()));
+                AssertThrowsExactDuckTypeFailure<DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException>(() => _ = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IFailureReplayReverseAbstractImplementorProxy), typeof(FailureReplayReverseAbstractImplementorTarget)).ProxyType);
+                AssertThrowsExactDuckTypeFailure<DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException>(() => _ = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IFailureReplayReverseInterfaceImplementorProxy), typeof(IFailureReplayReverseInterfaceImplementorTarget)).ProxyType);
+                AssertThrowsExactDuckTypeFailure<DuckTypeCustomAttributeHasNamedArgumentsException>(() => DuckType.CreateReverse(typeof(IFailureReplayReverseNamedArgumentAttributeProxy), new FailureReplayReverseNamedArgumentAttributeTarget()));
             }
             finally
             {
@@ -9149,19 +10640,199 @@ public class DuckTypeAotProcessorsTests
         return assemblyPath;
     }
 
+    private static string CreateConstantOnlyOptionalTargetAssembly(string tempDirectory)
+    {
+        const string assemblyName = "DuckTypeAotConstantOnlyOptionalTarget";
+        var projectDirectory = Path.Combine(tempDirectory, assemblyName);
+        Directory.CreateDirectory(projectDirectory);
+
+        var projectPath = Path.Combine(projectDirectory, $"{assemblyName}.csproj");
+        var projectContents =
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <TargetFramework>net8.0</TargetFramework>
+                 <AssemblyName>{assemblyName}</AssemblyName>
+                 <ImplicitUsings>disable</ImplicitUsings>
+                 <Nullable>enable</Nullable>
+               </PropertyGroup>
+             </Project>
+             """;
+        File.WriteAllText(projectPath, projectContents);
+
+        var targetContents =
+            """
+            namespace ExternalOptional
+            {
+                public sealed class ConstantOnlyOptionalParameterTarget
+                {
+                    public int Add(int value, int optional = 7)
+                    {
+                        return value + optional;
+                    }
+                }
+            }
+            """;
+        File.WriteAllText(Path.Combine(projectDirectory, "Targets.cs"), targetContents);
+
+        var buildResult = RunProcess(
+            "dotnet",
+            projectDirectory,
+            timeoutMilliseconds: 120_000,
+            captureOutput: true,
+            "build",
+            projectPath,
+            "-c",
+            "Release",
+            "-f",
+            "net8.0",
+            "/nologo");
+        buildResult.ExitCode.Should().Be(
+            0,
+            $"temporary constant-only optional target assembly should build.{Environment.NewLine}STDOUT:{Environment.NewLine}{buildResult.StandardOutput}{Environment.NewLine}STDERR:{Environment.NewLine}{buildResult.StandardError}");
+
+        var assemblyPath = Path.Combine(projectDirectory, "bin", "Release", "net8.0", $"{assemblyName}.dll");
+        var mutatedAssemblyPath = Path.Combine(projectDirectory, "bin", "Release", "net8.0", $"{assemblyName}.mutated.dll");
+        using (var module = ModuleDefMD.Load(assemblyPath))
+        {
+            var targetType = module.Find("ExternalOptional.ConstantOnlyOptionalParameterTarget", isReflectionName: false);
+            targetType.Should().NotBeNull();
+            var addMethod = targetType!.FindMethod("Add");
+            addMethod.Should().NotBeNull();
+            var trailingParameter = addMethod!.Parameters.Single(parameter => parameter.MethodSigIndex == 1);
+            trailingParameter.ParamDef.Should().NotBeNull();
+            trailingParameter.ParamDef!.Constant.Should().NotBeNull();
+            trailingParameter.ParamDef.Attributes &= ~dnlib.DotNet.ParamAttributes.Optional;
+            module.Write(mutatedAssemblyPath);
+        }
+
+        File.Exists(mutatedAssemblyPath).Should().BeTrue($"temporary mutated target assembly should exist at '{mutatedAssemblyPath}'");
+        return mutatedAssemblyPath;
+    }
+
+    private static (string TargetAssemblyPath, string DependencyAssemblyPath) CreateGenericParameterTypeNameAssemblies(string tempDirectory)
+    {
+        const string dependencyAssemblyName = "ExternalGenericArgs";
+        var dependencyProjectDirectory = Path.Combine(tempDirectory, dependencyAssemblyName);
+        Directory.CreateDirectory(dependencyProjectDirectory);
+
+        var dependencyProjectPath = Path.Combine(dependencyProjectDirectory, $"{dependencyAssemblyName}.csproj");
+        var dependencyProjectContents =
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <TargetFramework>net8.0</TargetFramework>
+                 <AssemblyName>{dependencyAssemblyName}</AssemblyName>
+                 <ImplicitUsings>disable</ImplicitUsings>
+                 <Nullable>enable</Nullable>
+               </PropertyGroup>
+             </Project>
+             """;
+        File.WriteAllText(dependencyProjectPath, dependencyProjectContents);
+
+        var dependencyContents =
+            """
+            namespace ExternalGenericArgs
+            {
+                public sealed class GenericArgument
+                {
+                }
+            }
+            """;
+        File.WriteAllText(Path.Combine(dependencyProjectDirectory, "Types.cs"), dependencyContents);
+
+        var dependencyBuildResult = RunProcess(
+            "dotnet",
+            dependencyProjectDirectory,
+            timeoutMilliseconds: 120_000,
+            captureOutput: true,
+            "build",
+            dependencyProjectPath,
+            "-c",
+            "Release",
+            "-f",
+            "net8.0",
+            "/nologo");
+        dependencyBuildResult.ExitCode.Should().Be(
+            0,
+            $"temporary generic-parameter dependency assembly should build.{Environment.NewLine}STDOUT:{Environment.NewLine}{dependencyBuildResult.StandardOutput}{Environment.NewLine}STDERR:{Environment.NewLine}{dependencyBuildResult.StandardError}");
+
+        const string targetAssemblyName = "ExternalGenericTarget";
+        var targetProjectDirectory = Path.Combine(tempDirectory, targetAssemblyName);
+        Directory.CreateDirectory(targetProjectDirectory);
+
+        var targetProjectPath = Path.Combine(targetProjectDirectory, $"{targetAssemblyName}.csproj");
+        var targetProjectContents =
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <TargetFramework>net8.0</TargetFramework>
+                 <AssemblyName>{targetAssemblyName}</AssemblyName>
+                 <ImplicitUsings>disable</ImplicitUsings>
+                 <Nullable>enable</Nullable>
+               </PropertyGroup>
+             </Project>
+             """;
+        File.WriteAllText(targetProjectPath, targetProjectContents);
+
+        var targetContents =
+            """
+            namespace ExternalGenericArgs
+            {
+                public sealed class GenericParameterTypeNameTarget
+                {
+                    public string Resolve<T>()
+                    {
+                        return typeof(T).FullName!;
+                    }
+                }
+            }
+            """;
+        File.WriteAllText(Path.Combine(targetProjectDirectory, "Targets.cs"), targetContents);
+
+        var targetBuildResult = RunProcess(
+            "dotnet",
+            targetProjectDirectory,
+            timeoutMilliseconds: 120_000,
+            captureOutput: true,
+            "build",
+            targetProjectPath,
+            "-c",
+            "Release",
+            "-f",
+            "net8.0",
+            "/nologo");
+        targetBuildResult.ExitCode.Should().Be(
+            0,
+            $"temporary generic-parameter target assembly should build.{Environment.NewLine}STDOUT:{Environment.NewLine}{targetBuildResult.StandardOutput}{Environment.NewLine}STDERR:{Environment.NewLine}{targetBuildResult.StandardError}");
+
+        var targetAssemblyPath = Path.Combine(targetProjectDirectory, "bin", "Release", "net8.0", $"{targetAssemblyName}.dll");
+        var dependencyAssemblyPath = Path.Combine(dependencyProjectDirectory, "bin", "Release", "net8.0", $"{dependencyAssemblyName}.dll");
+        File.Exists(targetAssemblyPath).Should().BeTrue($"temporary generic-parameter target assembly should exist at '{targetAssemblyPath}'");
+        File.Exists(dependencyAssemblyPath).Should().BeTrue($"temporary generic-parameter dependency assembly should exist at '{dependencyAssemblyPath}'");
+        return (targetAssemblyPath, dependencyAssemblyPath);
+    }
+
     private static void AssertMappingDiagnostic(
         DuckTypeAotCompatibilityMatrix matrix,
         Type proxyType,
         Type targetType,
         string expectedStatus,
-        string expectedDiagnosticCode)
+        string? expectedDiagnosticCode)
     {
         var mapping = matrix.Mappings.Single(item =>
             string.Equals(item.ProxyType, proxyType.FullName, StringComparison.Ordinal) &&
             string.Equals(item.TargetType, targetType.FullName, StringComparison.Ordinal));
 
         mapping.Status.Should().Be(expectedStatus);
-        mapping.DiagnosticCode.Should().Be(expectedDiagnosticCode);
+        if (expectedDiagnosticCode is null)
+        {
+            mapping.DiagnosticCode.Should().BeNullOrWhiteSpace();
+        }
+        else
+        {
+            mapping.DiagnosticCode.Should().Be(expectedDiagnosticCode);
+        }
     }
 
     private static object CreateMappingDocumentEntry(Type proxyType, Type targetType, string mode = "forward")
@@ -9323,6 +10994,52 @@ public class DuckTypeAotProcessorsTests
                 fileName));
     }
 
+    private static bool IsScenarioTrackedByInventoryForTest(string scenarioId, IReadOnlyCollection<string> inventoryScenarioIds)
+    {
+        foreach (var inventoryScenarioId in inventoryScenarioIds)
+        {
+            if (IsScenarioWildcardForTest(inventoryScenarioId))
+            {
+                var wildcardPrefix = inventoryScenarioId.Substring(0, inventoryScenarioId.Length - 1);
+                if (scenarioId.StartsWith(wildcardPrefix, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if (string.Equals(scenarioId, inventoryScenarioId, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsScenarioCoveredByCatalogForTest(string inventoryScenarioId, IReadOnlyCollection<string> catalogScenarioIds)
+    {
+        if (!IsScenarioWildcardForTest(inventoryScenarioId))
+        {
+            return catalogScenarioIds.Contains(inventoryScenarioId);
+        }
+
+        var wildcardPrefix = inventoryScenarioId.Substring(0, inventoryScenarioId.Length - 1);
+        foreach (var scenarioId in catalogScenarioIds)
+        {
+            if (scenarioId.StartsWith(wildcardPrefix, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsScenarioWildcardForTest(string scenarioId)
+        => scenarioId.EndsWith("*", StringComparison.Ordinal);
+
     private static string GetVendoredStrongNameKeyPath([CallerFilePath] string sourceFilePath = "")
     {
         var testsDirectory = Path.GetDirectoryName(sourceFilePath);
@@ -9365,6 +11082,11 @@ public class DuckTypeAotProcessorsTests
     }
 
     private interface IAliasForwardProxy
+    {
+        string Value { get; }
+    }
+
+    private interface IAliasShadowProxy
     {
         string Value { get; }
     }
@@ -9415,6 +11137,31 @@ public class DuckTypeAotProcessorsTests
         }
     }
 
+    private class AliasShadowBaseTarget
+    {
+        private readonly string _value;
+
+        public AliasShadowBaseTarget(string value)
+        {
+            _value = value;
+        }
+
+        public string Value => $"base:{_value}";
+    }
+
+    private sealed class AliasShadowDerivedTarget : AliasShadowBaseTarget
+    {
+        private readonly string _value;
+
+        public AliasShadowDerivedTarget(string value)
+            : base(value)
+        {
+            _value = value;
+        }
+
+        public new string Value => $"derived:{_value}";
+    }
+
     private interface IExternalInheritedCompletionProxy : ICriticalNotifyCompletion
     {
         string Value { get; }
@@ -9458,6 +11205,113 @@ public class DuckTypeAotProcessorsTests
         public string Method(string value) => $"method:{value}";
     }
 
+    private interface IIgnoreCaseRelaxedFallbackProxy
+    {
+        [Duck(Name = "read", BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase, ExplicitInterfaceTypeName = "*")]
+        string Read(IIgnoreCaseRelaxedFallbackInnerProxy value);
+    }
+
+    private interface IIgnoreCaseRelaxedFallbackInnerProxy
+    {
+        string Name { get; }
+    }
+
+    private interface IIgnoreCaseRelaxedFallbackTargetContract
+    {
+        string Read(IgnoreCaseRelaxedFallbackInnerTarget value);
+    }
+
+    private sealed class IgnoreCaseRelaxedFallbackTarget : IIgnoreCaseRelaxedFallbackTargetContract
+    {
+        string IIgnoreCaseRelaxedFallbackTargetContract.Read(IgnoreCaseRelaxedFallbackInnerTarget value) => value.Name;
+    }
+
+    private sealed class IgnoreCaseRelaxedFallbackInnerTarget
+    {
+        public string Name => "inner";
+    }
+
+    private interface IBindingFlagsPublicOnlyFieldProxy
+    {
+        [DuckField(Name = "_hidden", BindingFlags = BindingFlags.Public | BindingFlags.Instance)]
+        string Hidden { get; }
+    }
+
+    private sealed class BindingFlagsPrivateFieldTarget
+    {
+#pragma warning disable CS0414, SA1401 // The target intentionally uses fields to exercise BindingFlags filtering.
+        private readonly string _hidden = "hidden";
+#pragma warning restore CS0414, SA1401
+    }
+
+    private interface IBindingFlagsInstanceOnlyStaticFieldProxy
+    {
+        [DuckField(Name = "Value", BindingFlags = BindingFlags.Public | BindingFlags.Instance)]
+        string Value { get; }
+    }
+
+    private sealed class BindingFlagsStaticFieldTarget
+    {
+#pragma warning disable SA1401 // The target intentionally uses fields to exercise BindingFlags filtering.
+        public static string Value = "static";
+#pragma warning restore SA1401
+    }
+
+    private interface IBindingFlagsDeclaredOnlyPropertyProxy
+    {
+        [Duck(Name = "Inherited", BindingFlags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)]
+        string Inherited { get; }
+    }
+
+    private class BindingFlagsBaseTarget
+    {
+        public string Inherited => "base";
+    }
+
+    private sealed class BindingFlagsDerivedTarget : BindingFlagsBaseTarget
+    {
+    }
+
+    private interface IBindingFlagsFlattenHierarchyStaticPropertyProxy
+    {
+        [Duck(Name = "Flattened", BindingFlags = BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)]
+        string Flattened { get; }
+    }
+
+    private class BindingFlagsStaticBaseTarget
+    {
+        public static string Flattened => "flattened";
+    }
+
+    private sealed class BindingFlagsStaticDerivedTarget : BindingFlagsStaticBaseTarget
+    {
+    }
+
+    private interface IBindingFlagsFallbackDeclaredOnlyPropertyProxy
+    {
+        [Duck(Name = "SecretProperty", BindingFlags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly, FallbackToBaseTypes = true)]
+        string SecretProperty { get; }
+    }
+
+    private interface IBindingFlagsFallbackDeclaredOnlyFieldProxy
+    {
+        [DuckField(Name = "_secretField", BindingFlags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly, FallbackToBaseTypes = true)]
+        string SecretField { get; }
+    }
+
+    private class BindingFlagsFallbackBaseTarget
+    {
+#pragma warning disable CS0414, SA1401 // The target intentionally uses a private field to exercise DuckField binding.
+        private readonly string _secretField = "base-field";
+#pragma warning restore CS0414, SA1401
+
+        private string SecretProperty => "base-property";
+    }
+
+    private sealed class BindingFlagsFallbackDerivedTarget : BindingFlagsFallbackBaseTarget
+    {
+    }
+
     private interface IInheritedGenericBaseProxy<TValue>
     {
         TValue Value { get; }
@@ -9470,6 +11324,19 @@ public class DuckTypeAotProcessorsTests
     }
 
     private interface IInheritedGenericComposedProxy<TValue> : IInheritedGenericBaseProxy<List<TValue>>
+    {
+    }
+
+    private interface IInheritedGenericByRefBaseProxy<TValue>
+    {
+        bool TryGet(out TValue value);
+
+        bool TryUpdate(ref TValue value);
+
+        TValue[,] EchoGrid(TValue[,] values);
+    }
+
+    private interface IInheritedGenericByRefComposedProxy<TValue> : IInheritedGenericByRefBaseProxy<List<TValue>>
     {
     }
 
@@ -9492,7 +11359,202 @@ public class DuckTypeAotProcessorsTests
         }
     }
 
+    private sealed class InheritedGenericByRefTarget
+    {
+        public bool TryGet(out List<int> value)
+        {
+            value = [1, 2, 3];
+            return true;
+        }
+
+        public bool TryUpdate(ref List<int> value)
+        {
+            value.Add(8);
+            return true;
+        }
+
+        public List<int>[,] EchoGrid(List<int>[,] values)
+        {
+            values[0, 0].Add(9);
+            return values;
+        }
+    }
+
+    private interface IClosedGenericAliasProxy<T>
+    {
+        T Value { get; }
+    }
+
+    private class ClosedGenericAliasBase<T>
+    {
+        public ClosedGenericAliasBase(T value)
+        {
+            Value = value;
+        }
+
+        public T Value { get; }
+    }
+
+    private sealed class ClosedGenericAliasDerived : ClosedGenericAliasBase<int>
+    {
+        public ClosedGenericAliasDerived(int value)
+            : base(value)
+        {
+        }
+    }
+
+    internal abstract class ClosedGenericClassDuckProxy<T>
+    {
+        protected ClosedGenericClassDuckProxy()
+        {
+        }
+
+        public abstract T Value { get; }
+
+        public abstract T Echo(T value);
+    }
+
+    private sealed class ClosedGenericClassDuckTarget<T>
+    {
+        public ClosedGenericClassDuckTarget(T value)
+        {
+            Value = value;
+        }
+
+        public T Value { get; }
+
+        public T Echo(T value)
+        {
+            if (value is int number)
+            {
+                return (T)(object)(number + 1);
+            }
+
+            return value;
+        }
+    }
+
+    internal abstract class NonPublicClassProxy
+    {
+        internal NonPublicClassProxy()
+        {
+        }
+
+        public string InvokeInternal(string value) => InternalEcho(value);
+
+        public string InvokePrivateProtected(string value) => PrivateProtectedEcho(value);
+
+        internal abstract string InternalEcho(string value);
+
+        private protected abstract string PrivateProtectedEcho(string value);
+    }
+
+    internal abstract class ConstructorOrderProxyBase
+    {
+        protected ConstructorOrderProxyBase()
+        {
+            CapturedDuringConstruction = ReadValue();
+        }
+
+        public string? CapturedDuringConstruction { get; }
+
+        public abstract string ReadValue();
+    }
+
+    private sealed class ConstructorOrderTarget
+    {
+        private readonly string _value;
+
+        public ConstructorOrderTarget(string value)
+        {
+            _value = value;
+        }
+
+        public string ReadValue() => _value;
+    }
+
+    internal abstract class PrivateConstructorClassProxy
+    {
+        private PrivateConstructorClassProxy()
+        {
+        }
+
+        public abstract string ReadValue();
+    }
+
+    private sealed class PrivateConstructorClassTarget
+    {
+        public string ReadValue() => "private-ctor";
+    }
+
+    private interface IExternalGenericParameterTypeNameProxy
+    {
+        [Duck(Name = "Resolve", GenericParameterTypeNames = new[] { "ExternalGenericArgs.GenericArgument, ExternalGenericArgs" })]
+        string Resolve();
+    }
+
+    private sealed class NonPublicClassTarget
+    {
+        internal string InternalEcho(string value) => $"internal:{value}";
+
+        internal string PrivateProtectedEcho(string value) => $"private-protected:{value}";
+    }
+
+    private interface IObjectDuckIncludeProxy
+    {
+    }
+
+    private sealed class ObjectDuckIncludeTarget
+    {
+        [DuckInclude]
+        public override int GetHashCode()
+        {
+            return 1234;
+        }
+    }
+
+    internal abstract class DuckIgnoreRuntimeProxyBase
+    {
+        public abstract string Value { get; }
+
+        [DuckIgnore]
+        public virtual string IgnoredValue => "ignored";
+    }
+
+    private sealed class DuckIgnoreRuntimeTarget
+    {
+        public string Value => "target";
+    }
+
+    [AttributeUsage(AttributeTargets.Class)]
+    private sealed class ReverseCopiedRuntimeMarkerAttribute : Attribute
+    {
+        public ReverseCopiedRuntimeMarkerAttribute(string marker)
+        {
+            Marker = marker;
+        }
+
+        public string Marker { get; }
+    }
+
+    private interface IReverseCopiedAttributeRuntimeProxy
+    {
+        string Read();
+    }
+
+    [ReverseCopiedRuntimeMarker("copied")]
+    private sealed class ReverseCopiedAttributeRuntimeTarget
+    {
+        [DuckReverseMethod]
+        public string Read() => "reverse";
+    }
+
     private interface IOptionalParameterProxy
+    {
+        int Add(int value);
+    }
+
+    private interface IConstantOnlyOptionalParameterProxy
     {
         int Add(int value);
     }
@@ -9500,6 +11562,65 @@ public class DuckTypeAotProcessorsTests
     private sealed class OptionalParameterTarget
     {
         public int Add(int value, int optional = 7) => value + optional;
+    }
+
+    private interface IInRefDirectionProxy
+    {
+        void Mutate([In] ref int value);
+    }
+
+    private sealed class InRefDirectionTarget
+    {
+        public void Mutate(ref int value)
+        {
+            value++;
+        }
+    }
+
+    private interface INonByRefDuckChainNullProxy
+    {
+        string Read(INonByRefDuckChainNullInnerProxy value);
+    }
+
+    private interface INonByRefDuckChainNullInnerProxy
+    {
+        string Name { get; }
+    }
+
+    private sealed class NonByRefDuckChainNullInnerTarget
+    {
+        public string Name => "inner";
+    }
+
+    private sealed class NonByRefDuckChainNullTarget
+    {
+        public string Read(NonByRefDuckChainNullInnerTarget? value)
+        {
+            return value is null ? "null-preserved" : value.Name;
+        }
+    }
+
+    private interface IByRefDuckChainNullProxy
+    {
+        bool IsNullPreserved(ref IByRefDuckChainNullInnerProxy? value);
+    }
+
+    private interface IByRefDuckChainNullInnerProxy
+    {
+        string Name { get; }
+    }
+
+    private sealed class ByRefDuckChainNullInnerTarget
+    {
+        public string Name => "inner";
+    }
+
+    private sealed class ByRefDuckChainNullTarget
+    {
+        public bool IsNullPreserved(ref ByRefDuckChainNullInnerTarget? value)
+        {
+            return value is null;
+        }
     }
 
     private interface IFailureReplayPropertyCantBeReadProxy
@@ -9557,6 +11678,91 @@ public class DuckTypeAotProcessorsTests
         public int Sum(int a, int b) => a + b;
     }
 
+    private interface ITestDuckStaticClassProxy
+    {
+        string Value { get; set; }
+
+        string Echo(string value);
+    }
+
+    private static class TestDuckStaticClassTarget
+    {
+        private static string _value = "initial";
+
+        public static string Value
+        {
+            get => _value;
+            set => _value = value;
+        }
+
+        public static string Echo(string value) => $"static-class:{value}";
+
+        public static string ReadValue() => _value;
+
+        public static void ResetValue(string value)
+        {
+            _value = value;
+        }
+    }
+
+    private interface IReverseInheritedMethodProxy
+    {
+        string Echo(string value);
+    }
+
+    private class ReverseInheritedMethodBaseTarget
+    {
+        [DuckReverseMethod]
+        public string Echo(string value) => $"base:{value}";
+    }
+
+    private sealed class ReverseInheritedMethodTarget : ReverseInheritedMethodBaseTarget
+    {
+    }
+
+    private interface IReversePrivatePropertyProxy
+    {
+        string Value { get; set; }
+    }
+
+    private sealed class ReversePrivatePropertyTarget
+    {
+        [DuckReverseMethod]
+        private string Value { get; set; } = "private";
+    }
+
+    private interface IReverseInheritedPublicPropertyProxy
+    {
+        string Value { get; set; }
+    }
+
+    private class ReverseInheritedPublicPropertyBaseTarget
+    {
+        private string _value;
+
+        public ReverseInheritedPublicPropertyBaseTarget(string value)
+        {
+            _value = value;
+        }
+
+        [DuckReverseMethod]
+        public string Value
+        {
+            get => _value;
+            set => _value = value;
+        }
+    }
+
+    private sealed class ReverseInheritedPublicPropertyTarget : ReverseInheritedPublicPropertyBaseTarget
+    {
+        public ReverseInheritedPublicPropertyTarget(string value)
+            : base(value)
+        {
+        }
+
+        public string ReadValue() => Value;
+    }
+
     private interface IFailureReplayReverseGenericProxy
     {
         void Add<TKey, TValue>(TKey key, TValue value);
@@ -9599,6 +11805,73 @@ public class DuckTypeAotProcessorsTests
 
     private sealed class FailureReplayReverseMissingPropertyTarget
     {
+    }
+
+    [DuckCopy]
+    private struct FailureReplayEmptyDuckCopyProxy
+    {
+        public string Name { get; set; }
+    }
+
+    private sealed class FailureReplayEmptyDuckCopyTarget
+    {
+        public string Name => "empty";
+    }
+
+#pragma warning disable CS0649
+    [DuckCopy]
+    private struct TestDuckStructCopyBasePrivatePropertyDeclaredOnlyFallbackProxy
+    {
+        [Duck(Name = "Hidden", BindingFlags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly, FallbackToBaseTypes = true)]
+        public int Hidden;
+    }
+
+    [DuckCopy]
+    private struct TestDuckStructCopyBasePrivateFieldDeclaredOnlyFallbackProxy
+    {
+        [DuckField(Name = "_hidden", BindingFlags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly, FallbackToBaseTypes = true)]
+        public int Hidden;
+    }
+#pragma warning restore CS0649
+
+    private interface IFailureReplayReverseAbstractImplementorProxy
+    {
+        string Value { get; }
+    }
+
+    private abstract class FailureReplayReverseAbstractImplementorTarget
+    {
+        [DuckReverseMethod]
+        public string Value => "abstract";
+    }
+
+    private interface IFailureReplayReverseInterfaceImplementorProxy
+    {
+        string Value { get; }
+    }
+
+    private interface IFailureReplayReverseInterfaceImplementorTarget
+    {
+        [DuckReverseMethod]
+        string Value { get; }
+    }
+
+    [AttributeUsage(AttributeTargets.Class)]
+    private sealed class FailureReplayNamedArgumentAttribute : Attribute
+    {
+        public string? Name { get; set; }
+    }
+
+    private interface IFailureReplayReverseNamedArgumentAttributeProxy
+    {
+        string Value { get; }
+    }
+
+    [FailureReplayNamedArgument(Name = "named")]
+    private sealed class FailureReplayReverseNamedArgumentAttributeTarget
+    {
+        [DuckReverseMethod]
+        public string Value => "named";
     }
 
     private static void TryDeleteDirectory(string directory)
