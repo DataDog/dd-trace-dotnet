@@ -1041,6 +1041,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             ValidateFingerprints(manifest.TargetAssemblies, "target", issues);
             ValidateFingerprints(manifest.ProxyAssemblies, "proxy", issues);
+            if (manifest.DatadogTraceAssembly is not null)
+            {
+                ValidateFingerprints(new[] { manifest.DatadogTraceAssembly }, "Datadog.Trace", issues);
+            }
 
             // Branch: take this path when (issues.Count == 0) evaluates to true.
             if (issues.Count == 0)

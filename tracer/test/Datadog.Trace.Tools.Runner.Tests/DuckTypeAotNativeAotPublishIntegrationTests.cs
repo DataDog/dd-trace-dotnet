@@ -20,6 +20,31 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 
 public class DuckTypeAotNativeAotPublishIntegrationTests
 {
+    private const string RequireNativeAotToolchainEnvironmentVariable = "DD_DUCKTYPE_AOT_NATIVEAOT_REQUIRE_TOOLCHAIN";
+
+    [Fact]
+    public void NativeAotInfrastructureSkipDetectionShouldBeDisabledWhenToolchainIsRequired()
+    {
+        var previousValue = Environment.GetEnvironmentVariable(RequireNativeAotToolchainEnvironmentVariable);
+        try
+        {
+            Environment.SetEnvironmentVariable(RequireNativeAotToolchainEnvironmentVariable, "1");
+
+            var result = new CommandResult(
+                exitCode: 1,
+                standardOutput: string.Empty,
+                standardError: "Platform linker was not found");
+
+            TryGetNativeAotInfrastructureSkipReason(result, out _)
+               .Should()
+               .BeFalse("CI can opt into hard failure when the NativeAOT toolchain is missing");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(RequireNativeAotToolchainEnvironmentVariable, previousValue);
+        }
+    }
+
     [Fact]
     public void NativeAotPublishShouldRunWithGeneratedDuckTypeRegistryAndWithoutDynamicEmit()
     {
@@ -457,7 +482,8 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                 architectureSuffix = "arm64";
                 break;
             default:
-                throw new SkipException($"NativeAOT integration test is only supported on x64/arm64. Current architecture: {RuntimeInformation.ProcessArchitecture}");
+                ThrowNativeAotInfrastructureUnavailable($"NativeAOT integration test is only supported on x64/arm64. Current architecture: {RuntimeInformation.ProcessArchitecture}");
+                throw new InvalidOperationException("Unreachable NativeAOT infrastructure branch.");
         }
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -475,11 +501,18 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             return $"osx-{architectureSuffix}";
         }
 
-        throw new SkipException("NativeAOT integration test is only supported on Windows, Linux, and macOS.");
+        ThrowNativeAotInfrastructureUnavailable("NativeAOT integration test is only supported on Windows, Linux, and macOS.");
+        throw new InvalidOperationException("Unreachable NativeAOT infrastructure branch.");
     }
 
     private static bool TryGetNativeAotInfrastructureSkipReason(CommandResult result, out string reason)
     {
+        if (IsNativeAotToolchainRequired())
+        {
+            reason = string.Empty;
+            return false;
+        }
+
         var combined = $"{result.StandardOutput}{Environment.NewLine}{result.StandardError}";
         var knownInfrastructureMarkers = new[]
         {
@@ -503,6 +536,23 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
 
         reason = string.Empty;
         return false;
+    }
+
+    private static void ThrowNativeAotInfrastructureUnavailable(string reason)
+    {
+        if (IsNativeAotToolchainRequired())
+        {
+            throw new InvalidOperationException(reason);
+        }
+
+        throw new SkipException(reason);
+    }
+
+    private static bool IsNativeAotToolchainRequired()
+    {
+        var value = Environment.GetEnvironmentVariable(RequireNativeAotToolchainEnvironmentVariable);
+        return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
     }
 
     private static CommandResult RunProcess(string fileName, string workingDirectory, int timeoutMilliseconds, bool captureOutput, string[] arguments)
