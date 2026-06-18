@@ -1631,6 +1631,7 @@ partial class Build
                 .SetProjectFile(runnerTestsProjectPath)
                 .SetFramework("net8.0")
                 .SetFilter("FullyQualifiedName~DuckTypeAotNativeAotPublishIntegrationTests")
+                .When(IsServerBuild, o => o.SetProcessEnvironmentVariable("DD_DUCKTYPE_AOT_NATIVEAOT_REQUIRE_TOOLCHAIN", "1"))
                 .WithDatadogLogger());
         });
 
