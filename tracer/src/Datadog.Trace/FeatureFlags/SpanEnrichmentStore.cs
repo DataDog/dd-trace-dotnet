@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -153,6 +154,51 @@ namespace Datadog.Trace.FeatureFlags
                 // Enrichment must never break flag evaluation.
                 Log.Warning(ex, "SpanEnrichmentStore.Accumulate failed");
             }
+        }
+
+        /// <summary>
+        /// Accumulates a native FeatureFlags SDK evaluation into the active root span. This mirrors
+        /// the OpenFeature shim hook, but runs from the Datadog.Trace.Manual CallTarget integration
+        /// because native SDK calls do not pass through OpenFeature provider hooks.
+        /// </summary>
+        /// <param name="evaluation">The completed evaluation returned by the FFE evaluator.</param>
+        /// <param name="targetingKey">The caller's targeting key, or null.</param>
+        public static void AccumulateForActiveRoot(IEvaluation? evaluation, string? targetingKey)
+        {
+            if (!_isEnabled || evaluation is null)
+            {
+                return;
+            }
+
+            var rootSpan = Datadog.Trace.Tracer.Instance.InternalActiveScope?.Span?.Context.TraceContext?.RootSpan;
+            if (rootSpan is null)
+            {
+                return;
+            }
+
+            long? serialId = null;
+            var metadata = evaluation.FlagMetadata;
+            if (metadata is not null &&
+                metadata.TryGetValue(FeatureFlagsEvaluator.MetadataSplitSerialId, out var serialIdStr) &&
+                !StringUtil.IsNullOrEmpty(serialIdStr) &&
+                long.TryParse(serialIdStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
+            {
+                serialId = parsed;
+            }
+
+            var doLog =
+                metadata is not null &&
+                metadata.TryGetValue(FeatureFlagsEvaluator.MetadataDoLog, out var doLogStr) &&
+                string.Equals(doLogStr, "true", StringComparison.OrdinalIgnoreCase);
+
+            Accumulate(
+                rootSpan.SpanId,
+                serialId,
+                doLog,
+                targetingKey,
+                hasVariant: !StringUtil.IsNullOrEmpty(evaluation.Variant),
+                evaluation.FlagKey,
+                evaluation.Value);
         }
 
         /// <summary>

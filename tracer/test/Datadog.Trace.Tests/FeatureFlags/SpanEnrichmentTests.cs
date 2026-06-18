@@ -12,6 +12,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -25,6 +26,7 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 /// path. Covers: no-span, finished-root, error/default variant, per-subject cap, max-200 serial
 /// ids, JSON/object-default, gate-off negative control, and the codec golden-vector round-trip.
 /// </summary>
+[TracerRestorer]
 public class SpanEnrichmentTests
 {
     private const string GoldenBase64 = "ZAgUAg==";
@@ -292,6 +294,52 @@ public class SpanEnrichmentTests
 
         var state = SpanEnrichmentStore.GetAndClear(rootSpanId);
         (state is null || !state.HasData()).Should().BeTrue();
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Store_AccumulateForActiveRoot_NativeEvaluationMetadata_WritesRootTags()
+    {
+        SpanEnrichmentStore.ResetIsEnabledForTesting();
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
+        await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
+        TracerRestorerAttribute.SetTracer(tracer);
+
+        SpanEnrichmentStore.Clear();
+        var rootScope = (Scope)tracer.StartActive("root-op", new SpanCreationSettings { FinishOnClose = false });
+        var rootSpan = rootScope.Span;
+        rootSpan.IsRootSpan.Should().BeTrue();
+
+        try
+        {
+            using (tracer.StartActive("child-op"))
+            {
+                var evaluation = new Evaluation(
+                    "native-flag",
+                    "enabled",
+                    EvaluationReason.Static,
+                    variant: "treatment",
+                    metadata: new Dictionary<string, string>
+                    {
+                        [FeatureFlagsEvaluator.MetadataSplitSerialId] = "100",
+                        [FeatureFlagsEvaluator.MetadataDoLog] = "true"
+                    });
+
+                // Native SDK calls bypass OpenFeature hooks, so the manual CallTarget integration
+                // must accumulate from the returned evaluation while any child span is active.
+                SpanEnrichmentStore.AccumulateForActiveRoot(evaluation, "user-123");
+            }
+        }
+        finally
+        {
+            rootScope.Dispose();
+        }
+
+        rootSpan.Finish();
+
+        DecodeDeltaVarint(rootSpan.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(new long[] { 100 });
+        var subjects = JsonConvert.DeserializeObject<Dictionary<string, string>>(rootSpan.GetTag(SpanEnrichmentState.TagSubjectsEnc)!)!;
+        subjects.Should().ContainKey(User123Sha256);
+        DecodeDeltaVarint(subjects[User123Sha256]).Should().Equal(new long[] { 100 });
     }
 
     [Fact]
