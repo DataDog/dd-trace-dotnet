@@ -50,9 +50,15 @@ namespace Datadog.Trace.PlatformHelpers
             _requestInOperationName = requestInOperationName;
         }
 
-        public string GetDefaultResourceName(HttpRequest request)
+        public string GetDefaultResourceName(HttpRequest request, bool otelSemanticsEnabled = false)
         {
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+
+            if (otelSemanticsEnabled)
+            {
+                // OTel spec: no http.route → span name is just the method (or "HTTP" for unknown methods)
+                return HttpOtelHelper.GetResourceNameMethod(httpMethod);
+            }
 
             string absolutePath = request.PathBase.HasValue
                                       ? request.PathBase.ToUriComponent() + request.Path.ToUriComponent()
@@ -122,7 +128,7 @@ namespace Datadog.Trace.PlatformHelpers
             string url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
 
-            resourceName ??= GetDefaultResourceName(request);
+            resourceName ??= GetDefaultResourceName(request, tracer.Settings.OpenTelemetrySemanticsEnabled);
             var extractedContext = ExtractPropagatedContext(tracer, request).MergeBaggageInto(Baggage.Current);
             InferredProxyScopePropagationContext? proxyContext = null;
 
@@ -257,7 +263,7 @@ namespace Datadog.Trace.PlatformHelpers
                 {
                     if (string.IsNullOrEmpty(span.ResourceName))
                     {
-                        span.ResourceName = GetDefaultResourceName(httpContext.Request);
+                        span.ResourceName = GetDefaultResourceName(httpContext.Request, tracer.Settings.OpenTelemetrySemanticsEnabled);
                     }
 
                     if (isMissingHttpStatusCode)

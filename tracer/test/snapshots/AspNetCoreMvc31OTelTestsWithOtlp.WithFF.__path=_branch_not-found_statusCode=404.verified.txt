@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET /branch/not-found",
+              "name": "GET",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",

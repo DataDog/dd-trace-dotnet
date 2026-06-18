@@ -15,6 +15,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http
             "GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE", "PATCH", "CONNECT", "QUERY"
         };
 
+        internal static string GetResourceNameMethod(string method)
+        {
+            if (StringUtil.IsNullOrEmpty(method))
+            {
+                return "HTTP";
+            }
+
+            var upper = method.ToUpperInvariant();
+            return KnownMethods.Contains(upper) ? upper : "HTTP";
+        }
+
         internal static void SetRequestMethod(ISpan span, string method)
         {
             if (StringUtil.IsNullOrEmpty(method))

@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
@@ -375,7 +376,10 @@ namespace Datadog.Trace.DiagnosticListeners
                         expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
 
                     // HttpMethod is null in OTel mode (stored as "http.request.method" raw tag instead)
-                    var httpMethod = rootSpanTags.HttpMethod ?? request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+                    // In OTel mode, use "HTTP" for unknown methods per OTel semantic conventions
+                    var httpMethod = tracer.Settings.OpenTelemetrySemanticsEnabled
+                        ? HttpOtelHelper.GetResourceNameMethod(request.Method)
+                        : (rootSpanTags.HttpMethod ?? request.Method?.ToUpperInvariant() ?? "UNKNOWN");
                     resourceName = $"{httpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
@@ -386,7 +390,7 @@ namespace Datadog.Trace.DiagnosticListeners
             // (and the parent is not using the placeholder resource name)
             var effectiveResourceName = resourceName
                                      ?? (string.IsNullOrEmpty(rootSpan.ResourceName)
-                                             ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request)
+                                             ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request, tracer.Settings.OpenTelemetrySemanticsEnabled)
                                              : rootSpan.ResourceName);
 
             if (!isUsingEndpointRouting && isFirstExecution)
@@ -589,7 +593,10 @@ namespace Datadog.Trace.DiagnosticListeners
                         _tracer.Settings.ExpandRouteTemplatesEnabled);
 
                 // HttpMethod is null in OTel mode (stored as "http.request.method" raw tag instead)
-                var httpMethod = tags.HttpMethod ?? request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+                // In OTel mode, use "HTTP" for unknown methods per OTel semantic conventions
+                var httpMethod = otelSemanticsEnabled
+                    ? HttpOtelHelper.GetResourceNameMethod(request.Method)
+                    : (tags.HttpMethod ?? request.Method?.ToUpperInvariant() ?? "UNKNOWN");
                 var resourceName = $"{httpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
                 // NOTE: We could set the controller/action/area tags on the parent span
