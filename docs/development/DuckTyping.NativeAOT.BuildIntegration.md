@@ -29,7 +29,7 @@ There are two distinct artifact flows:
 
 Deployable flow keeps the generated registry DLL and companion files for publish/runtime consumption.
 
-Bible compatibility-gate flow intentionally removes the generated Bible-gate registry DLL after strict verification and retains compatibility artifacts only, to prevent accidental runtime wiring of the gate artifact.
+Bible compatibility-gate artifacts are validation-only. Whether CI retains or cleans the generated Bible-gate registry DLL is a diagnostics policy decision; applications must not consume the Bible-gate registry as a runtime registry.
 
 ## Prerequisites
 
@@ -139,7 +139,7 @@ For deployable app/service registries, publish these as a single immutable artif
 
 Do not publish only the registry DLL without the companion files.
 
-For Bible compatibility-gate outputs, publish compatibility artifacts only:
+For Bible compatibility-gate outputs, treat the whole artifact set as validation-only:
 
 1. `*.dll.manifest.json`
 2. `*.dll.compat.json`
@@ -147,7 +147,7 @@ For Bible compatibility-gate outputs, publish compatibility artifacts only:
 4. `*.linker.xml`
 5. generated map and gate metadata files
 
-Do not consume Bible compatibility-gate artifacts as runtime registries.
+Retain or publish diagnostics according to CI policy, but do not consume the Bible compatibility-gate registry DLL or companion files as an application runtime registry.
 
 ## MSBuild Consumption
 

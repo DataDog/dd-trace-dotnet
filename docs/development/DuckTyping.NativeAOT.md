@@ -27,6 +27,8 @@ Use this document as the entrypoint, then drill into companion docs:
 
 This guide covers the NativeAOT DuckTyping path only. Dynamic (runtime IL emit) DuckTyping is documented in [DuckTyping.md](./DuckTyping.md) and [DuckTyping.Bible.md](./DuckTyping.Bible.md).
 
+DuckTyping is an internal repository capability used by tracer integrations. This NativeAOT path follows that model: it provides generated registry tooling and validation for integration-owned proxy contracts, not a public customer-facing MSBuild/package integration.
+
 Key design rule for NativeAOT:
 
 1. No runtime proxy IL emission.
@@ -78,9 +80,10 @@ The generated bootstrap calls all of these automatically.
 
 Current generated bootstrap behavior:
 
-1. It registers mappings using the `RuntimeMethodHandle` overloads (`RegisterAotProxy(Type, Type, Type, RuntimeMethodHandle)` and `RegisterAotReverseProxy(Type, Type, Type, RuntimeMethodHandle)`).
-2. Failure registrations are emitted as generated throwers and registered through `RuntimeMethodHandle`.
-3. The public manual registration overloads remain for compatibility but are deprecated for application code. The supported model is generated bootstrap only.
+1. It registers mappings by constructing direct `Func<object?, object?>` delegates for generated object bridge activators and calling the delegate overloads (`RegisterAotProxy(Type, Type, Type, Func<object?, object?>)` and `RegisterAotReverseProxy(Type, Type, Type, Func<object?, object?>)`).
+2. Failure registrations are emitted as generated throwers and registered through direct `Action` delegates.
+3. The `RuntimeMethodHandle` registration overloads remain for legacy/internal callers and focused engine tests, but the generated NativeAOT bootstrap intentionally does not use them.
+4. The public manual registration overloads remain for compatibility but are deprecated for application code. The supported model is generated bootstrap only.
 
 ## Proxy Definition Authoring
 
@@ -302,8 +305,8 @@ Allocation/IL notes for generated activators:
 
 Note:
 
-1. In the managed build Bible compatibility gate, the generated `Datadog.Trace.DuckType.AotRegistry.BibleGate.dll` is intentionally deleted after verification.
-2. Compatibility artifacts are retained (`*.manifest.json`, `*.compat.json`, `*.compat.md`, props, linker descriptor, generated map) to prevent accidental runtime reuse of the Bible-gate registry.
+1. In the managed build Bible compatibility gate, the generated `Datadog.Trace.DuckType.AotRegistry.BibleGate.dll` is written to a clean build-data directory and treated as a transient verification artifact.
+2. Compatibility artifacts are retained in that gate output directory (`*.manifest.json`, `*.compat.json`, `*.compat.md`, props, linker descriptor, generated map) for diagnostics and drift review, not for application reuse.
 
 ## Application Wiring
 
@@ -757,6 +760,8 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
   --compat-report /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.md \
   --compat-matrix /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.json \
   --map-file tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-mappings.json \
+  --mapping-catalog tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-mapping-catalog.json \
+  --scenario-inventory tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-scenario-inventory.json \
   --manifest /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.manifest.json \
   --failure-mode strict
 ```
@@ -766,9 +771,21 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
 1. `--compat-report`, `--compat-matrix`, and `--map-file` are required.
 2. Optional contract:
    1. `--manifest`
+   2. `--mapping-catalog`
+   3. `--scenario-inventory`
 3. `--failure-mode` values:
    1. `default`: manifest fingerprint drift warns.
    2. `strict`: manifest fingerprint drift fails.
+
+For protected-branch validation, use the Nuke gate bundle:
+
+```bash
+./tracer/build.sh RunDuckTypeAotGates
+```
+
+That bundle runs strict compatibility verification, full-suite dynamic-vs-AOT parity, and NativeAOT publish validation.
+
+`RunManagedUnitTests` depends on this bundle, so managed-unit validation also exercises the NativeAOT publish test on runners where the NativeAOT toolchain is available.
 
 ## Compatibility Status and Diagnostics
 

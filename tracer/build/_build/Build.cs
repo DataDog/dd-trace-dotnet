@@ -282,8 +282,7 @@ partial class Build : NukeBuild
         .Description("Builds the managed unit tests and runs them")
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(BuildManagedUnitTests)
-        .DependsOn(RunManagedUnitTests)
-        .DependsOn(RunDuckTypeAotGates);
+        .DependsOn(RunManagedUnitTests);
 
     Target RunNativeUnitTests => _ => _
         .Description("Builds the native unit tests and runs them")
@@ -494,6 +493,14 @@ partial class Build : NukeBuild
         .After(CreateBundleHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {
+            DotNetBuild(x => x
+                .SetProjectFile(Solution.GetProject(Projects.DatadogTraceToolsShared))
+                .EnableNoRestore()
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
+                .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1"));
+
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdTrace))
                 .EnableNoRestore()

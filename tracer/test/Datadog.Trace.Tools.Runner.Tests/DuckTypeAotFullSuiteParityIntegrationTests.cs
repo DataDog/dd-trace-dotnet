@@ -881,6 +881,16 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         return message.Substring(0, maxLength) + "...";
     }
 
+    private static string TruncateMessage(string? message, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return string.Empty;
+        }
+
+        return message.Length <= maxLength ? message : message.Substring(0, maxLength) + "...";
+    }
+
     private static GenerateInput PrepareGenerateInput(
         string discoveredMapPath,
         string sanitizedMapPath,
@@ -908,6 +918,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         var isolatedTargetAssemblyDirectory = Path.Combine(
             Path.GetDirectoryName(sanitizedMapPath) ?? Path.GetTempPath(),
             "resolved-target-assemblies");
+        var repositoryAssemblyBuildFailures = new List<string>();
 
         bool TryEnsureAssemblyResolved(string assemblyName)
         {
@@ -935,6 +946,28 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                     {
                         return true;
                     }
+                }
+
+                if (TryBuildRepositoryAssembly(repositoryRoot, framework, assemblyName, dotNetExecutable, out var builtAssemblyPath, out var buildFailure))
+                {
+                    TryAddAssemblyPath(assemblyPathIndex, builtAssemblyPath);
+                    if (!assemblyPathIndex.ContainsKey(assemblyName))
+                    {
+                        var normalizedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName);
+                        if (!string.IsNullOrWhiteSpace(normalizedAssemblyName))
+                        {
+                            assemblyPathIndex[normalizedAssemblyName] = builtAssemblyPath;
+                        }
+                    }
+
+                    if (assemblyPathIndex.ContainsKey(assemblyName))
+                    {
+                        return true;
+                    }
+                }
+                else if (!string.IsNullOrWhiteSpace(buildFailure))
+                {
+                    repositoryAssemblyBuildFailures.Add(buildFailure);
                 }
             }
 
@@ -1005,6 +1038,9 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             string.Join(Environment.NewLine, unexpectedExcludedMappings.Take(50)) +
             (unexpectedExcludedMappings.Count > 50
                  ? $"{Environment.NewLine}... ({unexpectedExcludedMappings.Count - 50} additional exclusions)"
+                 : string.Empty) +
+            (repositoryAssemblyBuildFailures.Count > 0
+                 ? Environment.NewLine + string.Join(Environment.NewLine, repositoryAssemblyBuildFailures.Distinct(StringComparer.Ordinal).Take(10))
                  : string.Empty));
 
         var proxyAssemblyPaths = filteredMappings
@@ -1039,7 +1075,10 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         unresolvedAttributeTargetAssemblies.Should().BeEmpty(
             "attribute-discovered mappings should have their target assemblies resolved for parity generation." +
             Environment.NewLine +
-            string.Join(Environment.NewLine, unresolvedAttributeTargetAssemblies));
+            string.Join(Environment.NewLine, unresolvedAttributeTargetAssemblies) +
+            (repositoryAssemblyBuildFailures.Count > 0
+                 ? Environment.NewLine + string.Join(Environment.NewLine, repositoryAssemblyBuildFailures.Distinct(StringComparer.Ordinal).Take(10))
+                 : string.Empty));
 
         var referencedTypeAssemblies = filteredMappings
                                       .SelectMany(mapping => EnumerateReferencedAssemblyNames(mapping.ProxyTypeName)
@@ -1186,6 +1225,112 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
 
         var repositoryIndex = GetRepositoryAssemblyIndex(repositoryRoot, framework);
         return repositoryIndex.TryGetValue(DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName), out var resolvedPath) ? resolvedPath : null;
+    }
+
+    private static bool TryBuildRepositoryAssembly(
+        string repositoryRoot,
+        string framework,
+        string assemblyName,
+        string dotNetExecutable,
+        out string assemblyPath,
+        out string? failure)
+    {
+        assemblyPath = string.Empty;
+        failure = null;
+
+        if (!TryGetRepositoryAssemblyBuildInfo(repositoryRoot, assemblyName, out var projectPath, out var buildFramework, out var expectedAssemblyPath))
+        {
+            return false;
+        }
+
+        if (File.Exists(expectedAssemblyPath))
+        {
+            assemblyPath = expectedAssemblyPath;
+            return true;
+        }
+
+        if (!File.Exists(projectPath))
+        {
+            failure = $"Repository assembly '{assemblyName}' could not be built because project '{projectPath}' was not found.";
+            return false;
+        }
+
+        var result = RunProcess(
+            fileName: dotNetExecutable,
+            workingDirectory: repositoryRoot,
+            timeoutMilliseconds: 600_000,
+            captureOutput: true,
+            environmentVariables: BuildDotNetProcessEnvironment(dotNetExecutable, additionalEnvironmentVariables: null),
+            arguments:
+            [
+                "build",
+                projectPath,
+                "-c",
+                "Release",
+                "--framework",
+                buildFramework
+            ]);
+
+        if (result.ExitCode != 0)
+        {
+            failure =
+                $"Repository assembly '{assemblyName}' could not be built for parity generation. " +
+                $"Requested framework: {framework}; build framework: {buildFramework}." +
+                Environment.NewLine +
+                "STDOUT:" +
+                Environment.NewLine +
+                TruncateMessage(result.StandardOutput, 4000) +
+                Environment.NewLine +
+                "STDERR:" +
+                Environment.NewLine +
+                TruncateMessage(result.StandardError, 4000);
+            return false;
+        }
+
+        if (!File.Exists(expectedAssemblyPath))
+        {
+            failure = $"Repository assembly '{assemblyName}' build succeeded but expected output '{expectedAssemblyPath}' was not found.";
+            return false;
+        }
+
+        lock (RepositoryAssemblyIndexLock)
+        {
+            RepositoryAssemblyIndexesByFramework.Clear();
+        }
+
+        assemblyPath = expectedAssemblyPath;
+        return true;
+    }
+
+    private static bool TryGetRepositoryAssemblyBuildInfo(
+        string repositoryRoot,
+        string assemblyName,
+        out string projectPath,
+        out string buildFramework,
+        out string expectedAssemblyPath)
+    {
+        projectPath = string.Empty;
+        buildFramework = string.Empty;
+        expectedAssemblyPath = string.Empty;
+
+        var normalizedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName);
+        if (!string.Equals(normalizedAssemblyName, "Datadog.Trace.Manual", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        buildFramework = "netstandard2.0";
+        projectPath = Path.Combine(repositoryRoot, "tracer", "src", "Datadog.Trace.Manual", "Datadog.Trace.Manual.csproj");
+        expectedAssemblyPath = Path.Combine(
+            repositoryRoot,
+            "tracer",
+            "src",
+            "Datadog.Trace.Manual",
+            "bin",
+            "Release",
+            buildFramework,
+            $"{normalizedAssemblyName}.dll");
+        return true;
     }
 
     private static IReadOnlyDictionary<string, string> GetRepositoryAssemblyIndex(string repositoryRoot, string framework)

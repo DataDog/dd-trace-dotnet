@@ -28,69 +28,28 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
     /// </summary>
     internal sealed class DuckTypeAotVerifyCompatOptions
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DuckTypeAotVerifyCompatOptions"/> class.
-        /// </summary>
-        /// <param name="compatReportPath">The compat report path value.</param>
-        /// <param name="compatMatrixPath">The compat matrix path value.</param>
-        /// <param name="mapFilePath">The canonical map file path value.</param>
-        /// <param name="manifestPath">The manifest path value.</param>
-        /// <param name="strictAssemblyFingerprintValidation">The strict assembly fingerprint validation value.</param>
-        /// <param name="failureMode">The failure mode value.</param>
-        public DuckTypeAotVerifyCompatOptions(
+        private DuckTypeAotVerifyCompatOptions(
             string compatReportPath,
             string compatMatrixPath,
             string mapFilePath,
+            string? mappingCatalogPath,
             string? manifestPath,
-            bool strictAssemblyFingerprintValidation = false,
-            DuckTypeAotFailureMode failureMode = DuckTypeAotFailureMode.Default)
+            string? scenarioInventoryPath,
+            string? expectedOutcomesPath,
+            string? knownLimitationsPath,
+            bool strictAssemblyFingerprintValidation,
+            DuckTypeAotFailureMode failureMode)
         {
             CompatReportPath = compatReportPath;
             CompatMatrixPath = compatMatrixPath;
             MapFilePath = mapFilePath;
             ManifestPath = manifestPath;
-            MappingCatalogPath = null;
-            ScenarioInventoryPath = null;
-            ExpectedOutcomesPath = null;
-            KnownLimitationsPath = null;
-            FailureMode = failureMode;
-            StrictAssemblyFingerprintValidation = strictAssemblyFingerprintValidation || failureMode == DuckTypeAotFailureMode.Strict;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DuckTypeAotVerifyCompatOptions"/> class using legacy parameters.
-        /// </summary>
-        /// <param name="compatReportPath">The compat report path value.</param>
-        /// <param name="compatMatrixPath">The compat matrix path value.</param>
-        /// <param name="mappingCatalogPath">Legacy mapping catalog path. Retained for source compatibility and ignored.</param>
-        /// <param name="manifestPath">The manifest path value.</param>
-        /// <param name="scenarioInventoryPath">Legacy scenario inventory path. Retained for source compatibility and ignored.</param>
-        /// <param name="expectedOutcomesPath">Legacy expected outcomes path. Retained for source compatibility and ignored.</param>
-        /// <param name="knownLimitationsPath">Legacy known limitations path. Retained for source compatibility and ignored.</param>
-        /// <param name="strictAssemblyFingerprintValidation">The strict assembly fingerprint validation value.</param>
-        /// <param name="failureMode">The failure mode value.</param>
-        public DuckTypeAotVerifyCompatOptions(
-            string compatReportPath,
-            string compatMatrixPath,
-            string? mappingCatalogPath,
-            string? manifestPath,
-            string? scenarioInventoryPath = null,
-            string? expectedOutcomesPath = null,
-            string? knownLimitationsPath = null,
-            bool strictAssemblyFingerprintValidation = false,
-            DuckTypeAotFailureMode failureMode = DuckTypeAotFailureMode.Default)
-            : this(
-                compatReportPath,
-                compatMatrixPath,
-                mappingCatalogPath ?? string.Empty,
-                manifestPath,
-                strictAssemblyFingerprintValidation,
-                failureMode)
-        {
             MappingCatalogPath = mappingCatalogPath;
             ScenarioInventoryPath = scenarioInventoryPath;
             ExpectedOutcomesPath = expectedOutcomesPath;
             KnownLimitationsPath = knownLimitationsPath;
+            FailureMode = failureMode;
+            StrictAssemblyFingerprintValidation = strictAssemblyFingerprintValidation || failureMode == DuckTypeAotFailureMode.Strict;
         }
 
         /// <summary>
@@ -118,22 +77,22 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         public string? ManifestPath { get; }
 
         /// <summary>
-        /// Gets legacy mapping catalog path.
+        /// Gets mapping catalog path.
         /// </summary>
         public string? MappingCatalogPath { get; }
 
         /// <summary>
-        /// Gets legacy scenario inventory path.
+        /// Gets scenario inventory path.
         /// </summary>
         public string? ScenarioInventoryPath { get; }
 
         /// <summary>
-        /// Gets legacy expected outcomes path.
+        /// Gets the legacy expected outcomes path retained for migration and focused compatibility tests.
         /// </summary>
         public string? ExpectedOutcomesPath { get; }
 
         /// <summary>
-        /// Gets legacy known limitations path.
+        /// Gets the legacy known limitations path retained for migration and focused compatibility tests.
         /// </summary>
         public string? KnownLimitationsPath { get; }
 
@@ -148,5 +107,71 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <value>The strict assembly fingerprint validation value.</value>
         public bool StrictAssemblyFingerprintValidation { get; }
+
+        /// <summary>
+        /// Creates options for the canonical map-file compatibility contract.
+        /// </summary>
+        /// <param name="compatReportPath">The compat report path value.</param>
+        /// <param name="compatMatrixPath">The compat matrix path value.</param>
+        /// <param name="mapFilePath">The canonical map file path value.</param>
+        /// <param name="mappingCatalogPath">The mapping catalog path value.</param>
+        /// <param name="manifestPath">The manifest path value.</param>
+        /// <param name="scenarioInventoryPath">The scenario inventory path value.</param>
+        /// <param name="strictAssemblyFingerprintValidation">The strict assembly fingerprint validation value.</param>
+        /// <param name="failureMode">The failure mode value.</param>
+        public static DuckTypeAotVerifyCompatOptions CreateCanonicalMapContract(
+            string compatReportPath,
+            string compatMatrixPath,
+            string mapFilePath,
+            string? mappingCatalogPath = null,
+            string? manifestPath = null,
+            string? scenarioInventoryPath = null,
+            bool strictAssemblyFingerprintValidation = false,
+            DuckTypeAotFailureMode failureMode = DuckTypeAotFailureMode.Default)
+            => new(
+                compatReportPath,
+                compatMatrixPath,
+                mapFilePath,
+                mappingCatalogPath,
+                manifestPath,
+                scenarioInventoryPath,
+                expectedOutcomesPath: null,
+                knownLimitationsPath: null,
+                strictAssemblyFingerprintValidation,
+                failureMode);
+
+        /// <summary>
+        /// Creates options for the legacy compatibility contract retained for migration and focused compatibility tests.
+        /// </summary>
+        /// <param name="compatReportPath">The compat report path value.</param>
+        /// <param name="compatMatrixPath">The compat matrix path value.</param>
+        /// <param name="mappingCatalogPath">The mapping catalog path value.</param>
+        /// <param name="manifestPath">The manifest path value.</param>
+        /// <param name="scenarioInventoryPath">The scenario inventory path value.</param>
+        /// <param name="expectedOutcomesPath">Legacy expected outcomes path retained for migration and focused compatibility tests.</param>
+        /// <param name="knownLimitationsPath">Legacy known limitations path retained for migration and focused compatibility tests.</param>
+        /// <param name="strictAssemblyFingerprintValidation">The strict assembly fingerprint validation value.</param>
+        /// <param name="failureMode">The failure mode value.</param>
+        public static DuckTypeAotVerifyCompatOptions CreateLegacyContract(
+            string compatReportPath,
+            string compatMatrixPath,
+            string? mappingCatalogPath = null,
+            string? manifestPath = null,
+            string? scenarioInventoryPath = null,
+            string? expectedOutcomesPath = null,
+            string? knownLimitationsPath = null,
+            bool strictAssemblyFingerprintValidation = false,
+            DuckTypeAotFailureMode failureMode = DuckTypeAotFailureMode.Default)
+            => new(
+                compatReportPath,
+                compatMatrixPath,
+                mapFilePath: string.Empty,
+                mappingCatalogPath,
+                manifestPath,
+                scenarioInventoryPath,
+                expectedOutcomesPath,
+                knownLimitationsPath,
+                strictAssemblyFingerprintValidation,
+                failureMode);
     }
 }

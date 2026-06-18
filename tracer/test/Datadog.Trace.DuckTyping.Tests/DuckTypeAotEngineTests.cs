@@ -332,9 +332,18 @@ namespace Datadog.Trace.DuckTyping.Tests
             var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
 
             result.CanCreate().Should().BeTrue();
+            result.UsesDynamicInvokeFallback.Should().BeFalse();
             result.CreateInstance<IForwardProxy>(target).Value.Should().Be("hello");
             DuckTypeAotEngine.DirectObjectActivatorHandleCount.Should().Be(1);
             DuckTypeAotEngine.AdaptedTypedActivatorHandleCount.Should().Be(0);
+
+            var activator = GetCreateTypeResultField<Delegate>(result, "_activator");
+            var untypedActivator = GetCreateTypeResultField<Func<object?, object?>>(result, "_untypedActivator");
+            activator.Should().NotBeNull();
+            activator!.GetType().Should().Be(typeof(CreateProxyInstance<IForwardProxy>));
+            untypedActivator.Should().NotBeNull();
+            untypedActivator!.Method.Name.Should().Be(activator.Method.Name);
+            untypedActivator.Method.DeclaringType.Should().Be(activator.Method.DeclaringType);
         }
 
         [Fact]
@@ -353,9 +362,39 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             var result = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseProxy), typeof(ReverseTarget));
             result.CanCreate().Should().BeTrue();
+            result.UsesDynamicInvokeFallback.Should().BeFalse();
             result.CreateInstance<IReverseProxy>(new ReverseTarget("reverse")).Value.Should().Be("reverse");
             DuckTypeAotEngine.DirectObjectActivatorHandleCount.Should().Be(1);
             DuckTypeAotEngine.AdaptedTypedActivatorHandleCount.Should().Be(0);
+
+            var activator = GetCreateTypeResultField<Delegate>(result, "_activator");
+            var untypedActivator = GetCreateTypeResultField<Func<object?, object?>>(result, "_untypedActivator");
+            activator.Should().NotBeNull();
+            activator!.GetType().Should().Be(typeof(CreateProxyInstance<IReverseProxy>));
+            untypedActivator.Should().NotBeNull();
+            untypedActivator!.Method.Name.Should().Be(activator.Method.Name);
+            untypedActivator.Method.DeclaringType.Should().Be(activator.Method.DeclaringType);
+        }
+
+        [Fact]
+        public void GenericForwardAndReverseFastPathsShouldNotShareCachedResultForSameTypePair()
+        {
+            DuckType.RegisterAotProxy(
+                typeof(ISharedForwardReverseProxy),
+                typeof(SharedForwardReverseTarget),
+                typeof(SharedForwardGeneratedProxy),
+                instance => new SharedForwardGeneratedProxy((SharedForwardReverseTarget)instance!));
+            DuckType.RegisterAotReverseProxy(
+                typeof(ISharedForwardReverseProxy),
+                typeof(SharedForwardReverseTarget),
+                typeof(SharedReverseGeneratedProxy),
+                instance => new SharedReverseGeneratedProxy((SharedForwardReverseTarget)instance!));
+
+            var target = new SharedForwardReverseTarget("cache");
+
+            DuckType.CreateCache<ISharedForwardReverseProxy>.Create(target)!.Value.Should().Be("forward:cache");
+            DuckType.CreateCache<ISharedForwardReverseProxy>.CreateReverse(target)!.Value.Should().Be("reverse:cache");
+            DuckType.CreateCache<ISharedForwardReverseProxy>.Create(target)!.Value.Should().Be("forward:cache");
         }
 
         [Fact]
@@ -444,6 +483,37 @@ namespace Datadog.Trace.DuckTyping.Tests
             var resolvedResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(ILateProxy), typeof(LateTarget));
             resolvedResult.CanCreate().Should().BeTrue();
             resolvedResult.CreateInstance<ILateProxy>(new LateTarget(42)).Number.Should().Be(42);
+        }
+
+        [Fact]
+        public void LateRegistrationInvalidatesGenericFastPathMiss()
+        {
+            DuckType.EnableAotMode();
+            var missingResult = DuckType.CreateCache<ILateProxy>.GetProxy(typeof(LateTarget));
+            missingResult.CanCreate().Should().BeFalse();
+
+            DuckType.RegisterAotProxy(
+                typeof(ILateProxy),
+                typeof(LateTarget),
+                typeof(LateGeneratedProxy),
+                instance => new LateGeneratedProxy((LateTarget)instance!));
+
+            DuckType.CreateCache<ILateProxy>.Create(new LateTarget(42))!.Number.Should().Be(42);
+        }
+
+        [Fact]
+        public void ResetRuntimeModeForTestsInvalidatesGenericAotFastPathBeforeDynamicReuse()
+        {
+            DuckType.RegisterAotProxy(
+                typeof(IResetProxy),
+                typeof(ResetTarget),
+                typeof(ResetGeneratedProxy),
+                instance => new ResetGeneratedProxy((ResetTarget)instance!));
+            DuckType.Create<IResetProxy>(new ResetTarget("value"))!.Value.Should().Be("aot:value");
+
+            DuckType.ResetRuntimeModeForTests();
+
+            DuckType.Create<IResetProxy>(new ResetTarget("value"))!.Value.Should().Be("value");
         }
 
         [Fact]
@@ -793,6 +863,33 @@ namespace Datadog.Trace.DuckTyping.Tests
             public int Number => _target.Number;
         }
 
+        private interface IResetProxy
+        {
+            string Value { get; }
+        }
+
+        private class ResetTarget
+        {
+            public ResetTarget(string value)
+            {
+                Value = value;
+            }
+
+            public string Value { get; }
+        }
+
+        private class ResetGeneratedProxy : IResetProxy
+        {
+            private readonly ResetTarget _target;
+
+            public ResetGeneratedProxy(ResetTarget target)
+            {
+                _target = target;
+            }
+
+            public string Value => "aot:" + _target.Value;
+        }
+
         private interface IReverseProxy
         {
             string Value { get; }
@@ -818,6 +915,45 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
 
             public string Value => _target.Value;
+        }
+
+        private interface ISharedForwardReverseProxy
+        {
+            string Value { get; }
+        }
+
+        private class SharedForwardReverseTarget
+        {
+            public SharedForwardReverseTarget(string value)
+            {
+                Value = value;
+            }
+
+            public string Value { get; }
+        }
+
+        private class SharedForwardGeneratedProxy : ISharedForwardReverseProxy
+        {
+            private readonly SharedForwardReverseTarget _target;
+
+            public SharedForwardGeneratedProxy(SharedForwardReverseTarget target)
+            {
+                _target = target;
+            }
+
+            public string Value => "forward:" + _target.Value;
+        }
+
+        private class SharedReverseGeneratedProxy : ISharedForwardReverseProxy
+        {
+            private readonly SharedForwardReverseTarget _target;
+
+            public SharedReverseGeneratedProxy(SharedForwardReverseTarget target)
+            {
+                _target = target;
+            }
+
+            public string Value => "reverse:" + _target.Value;
         }
 
         private interface IInvalidGeneratedProxy
@@ -971,6 +1107,13 @@ namespace Datadog.Trace.DuckTyping.Tests
             createMethod.Should().NotBeNull();
 
             return (Func<object?, object?>)Delegate.CreateDelegate(typeof(Func<object?, object?>), createMethod!);
+        }
+
+        private static TField? GetCreateTypeResultField<TField>(DuckType.CreateTypeResult result, string fieldName)
+        {
+            var field = typeof(DuckType.CreateTypeResult).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            return (TField?)field!.GetValue(result);
         }
 
         private static string CurrentDatadogTraceAssemblyVersion => typeof(DuckTypeAotEngine).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";

@@ -57,6 +57,16 @@ DD_DUCKTYPE_AOT_FULL_SUITE_PARITY_SEED=20260301 \
   --filter FullyQualifiedName~DuckTypeAotFullSuiteParityIntegrationTests
 ```
 
+### Managed DuckTyping AOT gate bundle
+
+Use the build gate bundle for protected-branch validation. It runs strict compatibility verification, full-suite dynamic-vs-AOT parity, and NativeAOT publish validation.
+
+This bundle is also part of `RunManagedUnitTests`, so the managed test targets used by CI require a runner with the NativeAOT publish toolchain or a supported skip path for the publish validation test.
+
+```bash
+./tracer/build.sh RunDuckTypeAotGates
+```
+
 ### Runner AOT-focused test suite
 
 ```bash
@@ -75,6 +85,8 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
   --compat-report /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.md \
   --compat-matrix /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.json \
   --map-file tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-mappings.json \
+  --mapping-catalog tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-mapping-catalog.json \
+  --scenario-inventory tracer/test/Datadog.Trace.DuckTyping.Tests/AotCompatibility/ducktype-aot-bible-scenario-inventory.json \
   --manifest /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.manifest.json \
   --failure-mode strict
 ```
@@ -89,10 +101,12 @@ Any non-compatible status should be treated as a regression until explicitly rev
 
 The parity harness should cover:
 
-1. Bible families `A-01..E-42`.
+1. Bible families `A-01..E-41` in the strict generated-artifact contract.
 2. IL atlas IDs `FG-*`, `FS-*`, `FF-*`, `FM-*`, `RT-*`.
 3. Bible examples `EX-01..EX-20`.
 4. Test-adapted excerpts `TX-A..TX-T`.
+
+`E-42` is a non-creatable reverse type-constraint guard. It is intentionally covered by `DuckTypeAotDifferentialParityTests`, not by the strict generated-artifact catalog.
 
 Any newly added scenario IDs should fail CI until included in mapping catalog and scenario inventory contracts.
 
@@ -108,6 +122,12 @@ NativeAOT validation should assert:
 Use:
 
 ```bash
+./tracer/build.sh RunDuckTypeAotNativeAotPublishGate
+```
+
+Or run the focused test directly:
+
+```bash
 dotnet test tracer/test/Datadog.Trace.Tools.Runner.Tests/Datadog.Trace.Tools.Runner.Tests.csproj \
   -c Release --framework net8.0 \
   --filter FullyQualifiedName~DuckTypeAotNativeAotPublishIntegrationTests
@@ -118,10 +138,8 @@ dotnet test tracer/test/Datadog.Trace.Tools.Runner.Tests/Datadog.Trace.Tools.Run
 Minimum protected-branch gate:
 
 1. Dynamic baseline tests pass.
-2. Full parity orchestration passes.
+2. `RunDuckTypeAotGates` passes.
 3. Runner AOT suite passes.
-4. Strict verify-compat passes for produced artifacts.
-5. NativeAOT publish integration test passes.
 
 ## Failure Triage Order
 

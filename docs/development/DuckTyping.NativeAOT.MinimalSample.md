@@ -18,28 +18,28 @@ This is intentionally smaller than the full guide in [DuckTyping.NativeAOT.md](.
 You need:
 
 1. A NativeAOT app project.
-2. A target type.
-3. A proxy interface.
-4. A generated DuckTyping AOT registry assembly.
-5. A startup call to `DuckTypeAotRegistryBootstrap.Initialize()`.
+2. A small contracts project containing the target type and proxy interface.
+3. A generated DuckTyping AOT registry assembly.
+4. A startup call to `DuckTypeAotRegistryBootstrap.Initialize()`.
 
 ## Minimal App Layout
 
 ```text
 NativeAotDuckSample/
-├─ NativeAotDuckSample.csproj
-└─ Program.cs
+├─ NativeAotDuckContracts/
+│  ├─ NativeAotDuckContracts.csproj
+│  └─ PersonContracts.cs
+├─ NativeAotDuckApp/
+│  ├─ NativeAotDuckApp.csproj
+│  └─ Program.cs
+└─ ducktype-aot-map.json
 ```
 
 ## Minimal Source Code
 
-### `Program.cs`
+### `NativeAotDuckContracts/PersonContracts.cs`
 
 ```csharp
-using System;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.DuckTyping.Generated;
-
 public class Person
 {
     public string Name { get; set; } = string.Empty;
@@ -49,6 +49,14 @@ public interface IPersonProxy
 {
     string Name { get; }
 }
+```
+
+### `NativeAotDuckApp/Program.cs`
+
+```csharp
+using System;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.DuckTyping.Generated;
 
 public static class Program
 {
@@ -64,7 +72,18 @@ public static class Program
 }
 ```
 
-### `NativeAotDuckSample.csproj`
+### `NativeAotDuckContracts/NativeAotDuckContracts.csproj`
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>
+```
+
+### `NativeAotDuckApp/NativeAotDuckApp.csproj`
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -78,6 +97,7 @@ public static class Program
 
   <ItemGroup>
     <ProjectReference Include="/abs/path/to/dd-trace-dotnet/tracer/src/Datadog.Trace/Datadog.Trace.csproj" />
+    <ProjectReference Include="../NativeAotDuckContracts/NativeAotDuckContracts.csproj" />
   </ItemGroup>
 
   <Import Project="$(DuckTypeAotPropsPath)"
@@ -89,39 +109,62 @@ Notes:
 
 1. The `<Import />` is how the generated registry assembly and linker metadata are brought into publish.
 2. `DuckTypeAotPropsPath` is passed on the publish command line.
-3. This sample uses a repo `ProjectReference` because it is meant for local development in this repository.
+3. The app can reference `Datadog.Trace.DuckTyping.Generated` only after the generated registry props are imported during publish.
+4. This sample uses a repo `ProjectReference` because it is meant for local development in this repository.
 
 ## Build the Runner Tool First
 
 The generator lives in `Datadog.Trace.Tools.Runner`.
 
 ```bash
-dotnet build /Users/tony.redondo/repos/github/Datadog/dd-trace-dotnet/tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj -c Release --no-restore
+export REPO_ROOT=/abs/path/to/dd-trace-dotnet
+export SAMPLE_ROOT=/abs/path/to/NativeAotDuckSample
+
+dotnet build "$REPO_ROOT/tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj" -c Release --no-restore
 ```
 
 Runner path:
 
 ```text
-/Users/tony.redondo/repos/github/Datadog/dd-trace-dotnet/tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net10.0/Datadog.Trace.Tools.Runner.dll
+$REPO_ROOT/tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net10.0/Datadog.Trace.Tools.Runner.dll
 ```
 
-## Build the Sample Once
+## Build the Contract Assembly Once
 
-Build the sample first so the app assembly exists for discovery.
+Build the contracts first so the proxy and target assembly exists for generation.
 
 ```bash
-dotnet build /abs/path/to/NativeAotDuckSample/NativeAotDuckSample.csproj -c Release
+dotnet build "$SAMPLE_ROOT/NativeAotDuckContracts/NativeAotDuckContracts.csproj" -c Release
 ```
 
-Assume the sample output is:
+Assume the contracts output is:
 
 ```text
-/abs/path/to/NativeAotDuckSample/bin/Release/net10.0
+$SAMPLE_ROOT/NativeAotDuckContracts/bin/Release/net10.0
 ```
 
-## Generate the AOT Registry
+## Create the Mapping File
 
-For the smallest setup, do discovery and generation in one step.
+The minimal proxy does not carry discovery metadata, so use an explicit map file:
+
+```json
+{
+  "schemaVersion": "1",
+  "mappings": [
+    {
+      "mode": "forward",
+      "proxyType": "IPersonProxy",
+      "proxyAssembly": "NativeAotDuckContracts",
+      "targetType": "Person",
+      "targetAssembly": "NativeAotDuckContracts"
+    }
+  ]
+}
+```
+
+Save this as `$SAMPLE_ROOT/ducktype-aot-map.json`.
+
+## Generate the AOT Registry
 
 This creates:
 
@@ -130,48 +173,33 @@ This creates:
 3. The manifest.
 4. Compatibility artifacts.
 5. The trimmer descriptor.
-6. The canonical discovered map file.
 
 ```bash
-dotnet /Users/tony.redondo/repos/github/Datadog/dd-trace-dotnet/tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net10.0/Datadog.Trace.Tools.Runner.dll ducktype-aot generate \
-  --discover-mappings \
-  --proxy-assembly /abs/path/to/NativeAotDuckSample/bin/Release/net10.0/NativeAotDuckSample.dll \
-  --target-folder /abs/path/to/NativeAotDuckSample/bin/Release/net10.0 \
-  --target-filter NativeAotDuckSample.dll \
-  --map-file /abs/path/to/NativeAotDuckSample/artifacts/ducktype-aot-map.json \
+export RUNNER="$REPO_ROOT/tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net10.0/Datadog.Trace.Tools.Runner.dll"
+mkdir -p "$SAMPLE_ROOT/artifacts"
+
+dotnet "$RUNNER" ducktype-aot generate \
+  --proxy-assembly "$SAMPLE_ROOT/NativeAotDuckContracts/bin/Release/net10.0/NativeAotDuckContracts.dll" \
+  --target-folder "$SAMPLE_ROOT/NativeAotDuckContracts/bin/Release/net10.0" \
+  --target-filter NativeAotDuckContracts.dll \
+  --map-file "$SAMPLE_ROOT/ducktype-aot-map.json" \
   --assembly-name Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample \
-  --emit-trimmer-descriptor /abs/path/to/NativeAotDuckSample/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.linker.xml \
-  --emit-props /abs/path/to/NativeAotDuckSample/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.props \
-  --output /abs/path/to/NativeAotDuckSample/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.dll
+  --emit-trimmer-descriptor "$SAMPLE_ROOT/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.linker.xml" \
+  --emit-props "$SAMPLE_ROOT/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.props" \
+  --output "$SAMPLE_ROOT/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.dll"
 ```
 
-This one command:
-
-1. discovers mappings from the proxy definitions found in the app assembly,
-2. writes the discovered canonical map to `--map-file`,
-3. generates the AOT registry assembly and companion artifacts.
-
-## Optional: Discover the Mapping Separately
-
-Use a separate discovery step only if you want to inspect or check in the canonical map before generation.
-
-```bash
-dotnet /Users/tony.redondo/repos/github/Datadog/dd-trace-dotnet/tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net10.0/Datadog.Trace.Tools.Runner.dll ducktype-aot discover-mappings \
-  --proxy-assembly /abs/path/to/NativeAotDuckSample/bin/Release/net10.0/NativeAotDuckSample.dll \
-  --target-folder /abs/path/to/NativeAotDuckSample/bin/Release/net10.0 \
-  --target-filter NativeAotDuckSample.dll \
-  --output /abs/path/to/NativeAotDuckSample/artifacts/ducktype-aot-map.json
-```
+The command reads the canonical map and generates the AOT registry assembly and companion artifacts.
 
 ## Publish the NativeAOT App
 
 Pass the generated `.props` into publish.
 
 ```bash
-dotnet publish /abs/path/to/NativeAotDuckSample/NativeAotDuckSample.csproj \
+dotnet publish "$SAMPLE_ROOT/NativeAotDuckApp/NativeAotDuckApp.csproj" \
   -c Release \
   -r osx-arm64 \
-  /p:DuckTypeAotPropsPath=/abs/path/to/NativeAotDuckSample/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.props
+  /p:DuckTypeAotPropsPath="$SAMPLE_ROOT/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.props"
 ```
 
 Replace `osx-arm64` with your RID when needed.
@@ -192,10 +220,12 @@ There is no runtime IL emit fallback in this path.
 You can validate the generated compatibility contract before publish:
 
 ```bash
-dotnet /Users/tony.redondo/repos/github/Datadog/dd-trace-dotnet/tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net10.0/Datadog.Trace.Tools.Runner.dll ducktype-aot verify-compat \
-  --compat-matrix /abs/path/to/NativeAotDuckSample/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.dll.compat.json \
-  --map-file /abs/path/to/NativeAotDuckSample/artifacts/ducktype-aot-map.json \
-  --manifest /abs/path/to/NativeAotDuckSample/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.dll.manifest.json
+dotnet "$RUNNER" ducktype-aot verify-compat \
+  --compat-report "$SAMPLE_ROOT/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.dll.compat.md" \
+  --compat-matrix "$SAMPLE_ROOT/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.dll.compat.json" \
+  --map-file "$SAMPLE_ROOT/ducktype-aot-map.json" \
+  --manifest "$SAMPLE_ROOT/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.dll.manifest.json" \
+  --failure-mode strict
 ```
 
 ## Important Constraints

@@ -48,15 +48,16 @@ namespace Datadog.Trace.DuckTyping.Tests
                 throw new AggregateException(lstExceptions.ToArray());
             }
 
-            // This test is primarily meaningful in full-suite execution, where many duck types
-            // have already been generated. In isolated/filter runs there may be none.
+            // This test is primarily meaningful after other tests have generated ducktype assemblies.
+            // In isolated/filter runs, or when it runs early in a randomized full-suite process, there may be none.
             if (asmDuckTypes == 0)
             {
                 return;
             }
 
-            // In AOT mode we load a generated registry assembly instead of creating thousands of
-            // dynamic ducktype assemblies, so this lower-bound assertion is not meaningful.
+            // In explicit AOT/dynamic parity modes the assembly count depends on the selected mode and
+            // randomized test order. The GetTypes() validation above is still useful for assemblies
+            // loaded so far, but the lower-bound assertion is not stable in these modes.
             var testMode = Environment.GetEnvironmentVariable(TestModeEnvironmentVariable);
             if (string.Equals(testMode, AotModeValue, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(testMode, DynamicModeValue, StringComparison.OrdinalIgnoreCase))

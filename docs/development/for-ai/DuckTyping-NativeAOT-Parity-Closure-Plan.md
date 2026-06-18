@@ -19,7 +19,7 @@ Enforce strict behavioral parity between Dynamic DuckTyping and AOT DuckTyping f
    - compatibility verification no longer relies on separate scenario override files.
 4. Emitter/runtime parity improvements:
    - default interface proxies emit as value types (unless `[DuckAsClass]`),
-   - typed activator registration via method handles,
+   - generated object bridge activator registration via direct delegates,
    - avoidable boxing reduced where parity allows.
 
 ## Gate Sequence (Current)

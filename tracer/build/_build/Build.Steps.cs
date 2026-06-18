@@ -1420,6 +1420,7 @@ partial class Build
         .Unlisted()
         .After(CompileManagedUnitTests)
         .DependsOn(CleanTestLogs)
+        .DependsOn(RunDuckTypeAotGates)
         .Executes(() =>
         {
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
@@ -1478,9 +1479,7 @@ partial class Build
 
     Target RunDuckTypeAotCompatibilityGate => _ => _
         .Unlisted()
-        .After(RunManagedUnitTests)
-        .After(CompileManagedUnitTests)
-        .DependsOn(CompileManagedUnitTests)
+        .After(BuildRunnerTool)
         .DependsOn(BuildRunnerTool)
         .Executes(() =>
         {
@@ -1488,6 +1487,7 @@ partial class Build
                                    ?? throw new Exception($"Could not resolve project '{Projects.DdTrace}'.");
             var duckTypingTestsProject = Solution.GetProject(Projects.DuckTypingTests)
                                        ?? throw new Exception($"Could not resolve project '{Projects.DuckTypingTests}'.");
+            DotnetBuild(duckTypingTestsProject, framework: Framework, noRestore: false, noDependencies: false);
 
             var frameworkPreferences = BuildDuckTypeAotFrameworkPreferences();
             var runnerToolAssemblyPath = ResolveBuiltAssemblyPath(
@@ -1503,7 +1503,11 @@ partial class Build
 
             var compatibilityDirectory = duckTypingTestsProject.Directory / "AotCompatibility";
             var canonicalMapFilePath = compatibilityDirectory / "ducktype-aot-bible-mappings.json";
+            var mappingCatalogPath = compatibilityDirectory / "ducktype-aot-bible-mapping-catalog.json";
+            var scenarioInventoryPath = compatibilityDirectory / "ducktype-aot-bible-scenario-inventory.json";
             EnsureFileExists(canonicalMapFilePath, "DuckType AOT canonical map file");
+            EnsureFileExists(mappingCatalogPath, "DuckType AOT mapping catalog");
+            EnsureFileExists(scenarioInventoryPath, "DuckType AOT scenario inventory");
             var duckTypingTestsOutputDirectory = (AbsolutePath)Path.GetDirectoryName(duckTypingTestsAssemblyPath)!;
             var duckTypingTestsAssemblyFileName = Path.GetFileName(duckTypingTestsAssemblyPath);
 
@@ -1530,6 +1534,7 @@ partial class Build
                 $"--proxy-assembly {QuotePath(duckTypingTestsAssemblyPath)} " +
                 $"--target-folder {QuotePath(duckTypingTestsOutputDirectory)} " +
                 $"--target-filter {QuoteArgument(duckTypingTestsAssemblyFileName)} " +
+                "--strict " +
                 $"--output {QuotePath(discoveredCompatibleMapFilePath)} " +
                 $"--warnings-report {QuotePath(discoverWarningsPath)}");
 
@@ -1559,6 +1564,8 @@ partial class Build
                 $"--compat-report {QuotePath(compatibilityReportPath)} " +
                 $"--compat-matrix {QuotePath(compatibilityMatrixPath)} " +
                 $"--map-file {QuotePath(canonicalMapFilePath)} " +
+                $"--mapping-catalog {QuotePath(mappingCatalogPath)} " +
+                $"--scenario-inventory {QuotePath(scenarioInventoryPath)} " +
                 $"--manifest {QuotePath(manifestPath)} " +
                 "--failure-mode strict");
 
@@ -1581,19 +1588,44 @@ partial class Build
     Target RunDuckTypeAotGates => _ => _
         .Unlisted()
         .DependsOn(RunDuckTypeAotCompatibilityGate)
-        .DependsOn(RunDuckTypeAotFullSuiteParityGate);
+        .DependsOn(RunDuckTypeAotFullSuiteParityGate)
+        .DependsOn(RunDuckTypeAotNativeAotPublishGate);
+
+    Target RunDuckTypeAotNativeAotPublishGate => _ => _
+        .Unlisted()
+        .After(RunDuckTypeAotFullSuiteParityGate)
+        .After(BuildRunnerTool)
+        .DependsOn(BuildRunnerTool)
+        .Executes(() =>
+        {
+            var runnerTestsProjectPath = TracerDirectory / "test" / "Datadog.Trace.Tools.Runner.Tests" / "Datadog.Trace.Tools.Runner.Tests.csproj";
+            EnsureFileExists(runnerTestsProjectPath, "DuckType AOT NativeAOT publish test project");
+            DotnetBuild(new[] { runnerTestsProjectPath }, framework: TargetFramework.NET8_0, noRestore: false, noDependencies: false);
+
+            DotNetTest(x => x
+                .EnableNoRestore()
+                .EnableNoBuild()
+                .SetConfiguration(BuildConfiguration)
+                .SetProjectFile(runnerTestsProjectPath)
+                .SetFramework("net8.0")
+                .SetFilter("FullyQualifiedName~DuckTypeAotNativeAotPublishIntegrationTests")
+                .WithDatadogLogger());
+        });
 
     Target RunDuckTypeAotFullSuiteParityGate => _ => _
         .Unlisted()
         .After(RunDuckTypeAotCompatibilityGate)
-        .After(CompileManagedUnitTests)
-        .DependsOn(CompileManagedUnitTests)
+        .After(BuildRunnerTool)
         .DependsOn(BuildRunnerTool)
         .DependsOn(RunDuckTypeAotCompatibilityGate)
         .Executes(() =>
         {
+            var duckTypingTestsProject = Solution.GetProject(Projects.DuckTypingTests)
+                                       ?? throw new Exception($"Could not resolve project '{Projects.DuckTypingTests}'.");
             var parityTestsProjectPath = TracerDirectory / "test" / "Datadog.Trace.Tools.Runner.Tests" / "Datadog.Trace.Tools.Runner.Tests.csproj";
             EnsureFileExists(parityTestsProjectPath, "DuckType AOT full-suite parity test project");
+            DotnetBuild(duckTypingTestsProject, framework: null, noRestore: false, noDependencies: false);
+            DotnetBuild(new[] { parityTestsProjectPath }, framework: TargetFramework.NET8_0, noRestore: false, noDependencies: false);
 
             const string paritySeed = "20260301";
             var parityFilter = "FullyQualifiedName~DuckTypeAotFullSuiteParityIntegrationTests";

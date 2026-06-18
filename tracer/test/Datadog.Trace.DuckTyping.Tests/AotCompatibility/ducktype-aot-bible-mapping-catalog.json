@@ -338,14 +338,6 @@
       "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
     },
     {
-      "scenarioId": "E-42",
-      "mode": "reverse",
-      "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseStructBase",
-      "proxyAssembly": "Datadog.Trace.DuckTyping.Tests",
-      "targetType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseStructDelegation",
-      "targetAssembly": "Datadog.Trace.DuckTyping.Tests"
-    },
-    {
       "scenarioId": "FG-1",
       "mode": "forward",
       "proxyType": "Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+IFg1GetterProxy",
