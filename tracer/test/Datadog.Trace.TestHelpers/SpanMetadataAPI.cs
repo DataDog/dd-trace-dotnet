@@ -265,6 +265,7 @@ namespace Datadog.Trace.TestHelpers
             metadataSchemaVersion switch
             {
                 "v1" => span.IsMySqlV1(),
+                "otel" => span.IsMySqlOTel(),
                 _ => span.IsMySqlV0(),
             };
 
@@ -272,6 +273,7 @@ namespace Datadog.Trace.TestHelpers
             metadataSchemaVersion switch
             {
                 "v1" => span.IsNpgsqlV1(),
+                "otel" => span.IsNpgsqlOTel(),
                 _ => span.IsNpgsqlV0(),
             };
 
@@ -286,6 +288,7 @@ namespace Datadog.Trace.TestHelpers
             metadataSchemaVersion switch
             {
                 "v1" => span.IsOracleV1(),
+                "otel" => span.IsOracleOTel(),
                 _ => span.IsOracleV0(),
             };
 
@@ -372,6 +375,7 @@ namespace Datadog.Trace.TestHelpers
             metadataSchemaVersion switch
             {
                 "v1" => span.IsSqliteV1(),
+                "otel" => span.IsSqliteOTel(),
                 _ => span.IsSqliteV0(),
             };
 
@@ -379,6 +383,7 @@ namespace Datadog.Trace.TestHelpers
             metadataSchemaVersion switch
             {
                 "v1" => span.IsSqlClientV1(),
+                "otel" => span.IsSqlClientOTel(),
                 _ => span.IsSqlClientV0(),
             };
 

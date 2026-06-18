@@ -166,7 +166,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 // Required
-                .Matches("db.system", "mssql")
+                .Matches("db.system.name", "microsoft.sql_server")
                 // Conditionally required
                 .IsOptional("db.namespace")
                 .IsOptional("db.operation.name")
@@ -175,7 +175,7 @@ namespace Datadog.Trace.TestHelpers
                 // Recommended
                 .IsPresent("server.address")
                 .IsOptional("server.port")
-                .IsOptional("db.query.text")
+                .IsPresent("db.query.text")
                 .IsOptional("db.user")
                 .IsOptional("network.peer.address")
                 .IsOptional("dd.instrumentation.time_ms")
@@ -188,7 +188,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 // Required
-                .Matches("db.system", "mysql")
+                .Matches("db.system.name", "mysql")
                 // Conditionally required
                 .IsPresent("db.namespace")
                 .IsOptional("db.operation.name")
@@ -197,7 +197,7 @@ namespace Datadog.Trace.TestHelpers
                 // Recommended
                 .IsPresent("server.address")
                 .IsOptional("server.port")
-                .IsOptional("db.query.text")
+                .IsPresent("db.query.text")
                 .IsOptional("db.user")
                 .IsOptional("network.peer.address")
                 .Matches("component", "MySql")
@@ -209,7 +209,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 // Required
-                .Matches("db.system", "postgresql")
+                .Matches("db.system.name", "postgresql")
                 // Conditionally required
                 .IsPresent("db.namespace")
                 .IsOptional("db.operation.name")
@@ -218,7 +218,7 @@ namespace Datadog.Trace.TestHelpers
                 // Recommended
                 .IsPresent("server.address")
                 .IsOptional("server.port")
-                .IsOptional("db.query.text")
+                .IsPresent("db.query.text")
                 .IsOptional("db.user")
                 .IsOptional("network.peer.address")
                 .Matches("component", "Npgsql")
@@ -230,7 +230,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 // Required
-                .Matches("db.system", "sqlite")
+                .Matches("db.system.name", "sqlite")
                 // Conditionally required
                 .IsOptional("db.namespace")
                 .IsOptional("db.operation.name")
@@ -249,7 +249,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 // Required
-                .Matches("db.system", "oracle")
+                .Matches("db.system.name", "oracle.db")
                 // Conditionally required
                 .IsPresent("db.namespace")
                 .IsOptional("db.operation.name")
@@ -258,7 +258,7 @@ namespace Datadog.Trace.TestHelpers
                 // Recommended
                 .IsPresent("server.address")
                 .IsOptional("server.port")
-                .IsOptional("db.query.text")
+                .IsPresent("db.query.text")
                 .IsOptional("network.peer.address")
                 .Matches("component", "Oracle")
                 .Matches("span.kind", "client"));
