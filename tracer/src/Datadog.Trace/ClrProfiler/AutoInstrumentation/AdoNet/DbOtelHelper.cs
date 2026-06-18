@@ -22,6 +22,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             [DbType.Sqlite] = "sqlite",
         };
 
+        internal static string GetSystemName(string dbType)
+        {
+            return DbSystemNameMap.TryGetValue(dbType, out var mapped) ? mapped : dbType;
+        }
+
         internal static void SetDatabaseAttributes(
             ISpan span,
             string dbType,
@@ -32,8 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             bool peerServiceEnabled)
         {
             // db.system.name (always set)
-            var systemName = DbSystemNameMap.TryGetValue(dbType, out var mapped) ? mapped : dbType;
-            span.SetTag("db.system.name", systemName);
+            span.SetTag("db.system.name", GetSystemName(dbType));
 
             // db.namespace
             if (!StringUtil.IsNullOrEmpty(dbName))
