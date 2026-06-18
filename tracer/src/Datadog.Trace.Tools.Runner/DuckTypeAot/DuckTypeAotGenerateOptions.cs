@@ -65,13 +65,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="targetFolders">The target folders value.</param>
         /// <param name="targetFilters">The target filters value.</param>
         /// <param name="mapFile">The map file value.</param>
-        /// <param name="mappingCatalog">Legacy catalog path (ignored by the simplified contract).</param>
+        /// <param name="mappingCatalog">Legacy catalog path retained for test/helper compatibility. The generate processor ignores it because <c>--map-file</c> is the canonical contract.</param>
         /// <param name="genericInstantiationsFile">The generic instantiations file value.</param>
         /// <param name="outputPath">The output path value.</param>
         /// <param name="assemblyName">The assembly name value.</param>
         /// <param name="trimmerDescriptorPath">The trimmer descriptor path value.</param>
         /// <param name="propsPath">The props path value.</param>
-        /// <param name="requireMappingCatalog">Legacy catalog requirement flag (ignored by the simplified contract).</param>
+        /// <param name="requireMappingCatalog">Legacy catalog requirement flag retained for test/helper compatibility. The generate processor ignores it because <c>--map-file</c> is the canonical contract.</param>
         /// <param name="strongNameKeyFile">The strong name key file value.</param>
         /// <param name="discoverMappings">Whether generate should discover compatible mappings into the provided map file before emitting artifacts.</param>
         public DuckTypeAotGenerateOptions(

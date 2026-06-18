@@ -27,6 +27,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IsRequired = true
         };
 
+        private readonly Option<string?> _mappingCatalogOption = new("--mapping-catalog", "Optional mapping catalog used to validate required mapping coverage.");
+
+        private readonly Option<string?> _scenarioInventoryOption = new("--scenario-inventory", "Optional scenario inventory used to validate required scenario coverage.");
+
         /// <summary>
         /// Stores manifest option.
         /// </summary>
@@ -51,11 +55,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             AddOption(_compatReportOption);
             AddOption(_compatMatrixOption);
             AddOption(_mapFileOption);
+            AddOption(_mappingCatalogOption);
+            AddOption(_scenarioInventoryOption);
             AddOption(_manifestOption);
             AddOption(_failureModeOption);
             AddOption(_strictAssemblyFingerprintsOption);
 
-            AddExample("dd-trace ducktype-aot verify-compat --compat-report ducktyping-aot-compat.md --compat-matrix ducktyping-aot-compat.json --map-file ducktype-aot-mappings.json --manifest Datadog.Trace.DuckType.AotRegistry.dll.manifest.json --failure-mode strict");
+            AddExample("dd-trace ducktype-aot verify-compat --compat-report ducktyping-aot-compat.md --compat-matrix ducktyping-aot-compat.json --map-file ducktype-aot-mappings.json --mapping-catalog ducktype-aot-mapping-catalog.json --scenario-inventory ducktype-aot-scenario-inventory.json --manifest Datadog.Trace.DuckType.AotRegistry.dll.manifest.json --failure-mode strict");
 
             this.SetHandler(Execute);
         }
@@ -94,6 +100,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var compatReportPath = _compatReportOption.GetValue(context) ?? string.Empty;
             var compatMatrixPath = _compatMatrixOption.GetValue(context);
             var mapFilePath = _mapFileOption.GetValue(context);
+            var mappingCatalogPath = _mappingCatalogOption.GetValue(context);
+            var scenarioInventoryPath = _scenarioInventoryOption.GetValue(context);
             var manifestPath = _manifestOption.GetValue(context);
             var strictAssemblyFingerprints = _strictAssemblyFingerprintsOption.GetValue(context);
             var failureModeValue = _failureModeOption.GetValue(context);
@@ -109,13 +117,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 failureMode = DuckTypeAotFailureMode.Strict;
             }
 
-            var options = new DuckTypeAotVerifyCompatOptions(
-                compatReportPath,
-                compatMatrixPath,
-                mapFilePath,
-                manifestPath,
-                strictAssemblyFingerprints,
-                failureMode);
+            var options = DuckTypeAotVerifyCompatOptions.CreateCanonicalMapContract(
+                compatReportPath: compatReportPath,
+                compatMatrixPath: compatMatrixPath,
+                mapFilePath: mapFilePath,
+                mappingCatalogPath: mappingCatalogPath,
+                manifestPath: manifestPath,
+                scenarioInventoryPath: scenarioInventoryPath,
+                strictAssemblyFingerprintValidation: strictAssemblyFingerprints,
+                failureMode: failureMode);
             context.ExitCode = DuckTypeAotVerifyCompatProcessor.Process(options);
         }
     }

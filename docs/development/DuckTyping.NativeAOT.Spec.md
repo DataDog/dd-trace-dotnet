@@ -125,11 +125,11 @@ The generated assembly must contain:
 5. Forward interface proxy shape parity rules:
    1. default interface proxy emission as value type (`System.ValueType` parent).
    2. `[DuckAsClass]` interfaces emitted as class proxies.
-6. Bootstrap registration through `RuntimeMethodHandle` activator overloads on `DuckType` for generated mappings.
+6. Bootstrap registration through direct `Func<object?, object?>` activator delegates on `DuckType` for generated mappings.
 7. Activator pair per mapping:
    1. typed activator (`CreateProxy_XXXX(<targetType>)`).
    2. object bridge activator (`ActivateProxy_XXXX(object)`).
-8. Generated failure throwers registered through `RuntimeMethodHandle` failure overloads on `DuckType`.
+8. Generated failure throwers registered through direct `Action` delegates on `DuckType`.
 9. Optional additional runtime registrations for compatible concrete alias types discovered during generation. These aliases are registry-internal and do not alter the canonical map contract.
 
 Consumers may still call `DuckTypeAotRegistryBootstrap.Initialize()` explicitly for deterministic startup.
@@ -179,6 +179,8 @@ Optional contract inputs:
 
 1. `--manifest`
 2. `--compat-report`
+3. `--mapping-catalog`
+4. `--scenario-inventory`
 
 Failure mode:
 

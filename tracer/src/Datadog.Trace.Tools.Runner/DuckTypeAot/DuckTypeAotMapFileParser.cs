@@ -101,7 +101,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
-                mappings[mapping.Key] = mapping;
+                if (mappings.ContainsKey(mapping.Key))
+                {
+                    errors.Add($"--map-file contains duplicate mappings for key '{mapping.Key}'.");
+                    continue;
+                }
+
+                mappings.Add(mapping.Key, mapping);
             }
         }
 

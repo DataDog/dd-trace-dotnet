@@ -84,7 +84,8 @@ ducktype-aot verify-compat \
    - Default interface proxies emit as value types.
    - `[DuckAsClass]` interface proxies emit as class proxies.
 2. AOT registration path:
-   - Runtime method-handle activator overloads are supported and used by emitted bootstrap.
+   - Emitted bootstrap registers generated object bridge activators through direct `Func<object?, object?>` delegates.
+   - Runtime method-handle activator overloads remain available for legacy/internal callers, but are not used by emitted NativeAOT bootstrap code.
 3. Allocation behavior:
    - Avoidable boxing is removed from typed activator paths where dynamic semantics allow.
    - Required boxing at object/interface boundaries remains (dynamic parity).
