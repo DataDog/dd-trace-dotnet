@@ -389,8 +389,13 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
+                if (Tracer.Instance.Settings.IsActivityListenerEnabled || Tracer.Instance.Settings.IsActivityInterceptionEnabled)
                 {
+                    // In interception mode the listener still has to be registered so that
+                    // ActivitySources without an external subscriber still produce activities (otherwise
+                    // ActivitySource.StartActivity returns null and our CallTarget intercept never fires).
+                    // ActivityListenerHandler short-circuits its ActivityStarted/Stopped callbacks in
+                    // interception mode, so no Datadog spans are created via the listener path.
                     Log.Debug("Initializing activity listener.");
                     Activity.ActivityListener.Initialize();
                 }
@@ -422,8 +427,13 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
+                if (Tracer.Instance.Settings.IsActivityListenerEnabled || Tracer.Instance.Settings.IsActivityInterceptionEnabled)
                 {
+                    // Same rationale as the ActivityListener init above: interception mode also relies on
+                    // OTel's static infrastructure (specifically Propagators.DefaultTextMapPropagator,
+                    // which our Sdk.Initialize swaps from a no-op to a composite TraceContext+Baggage
+                    // propagator). Without this, user calls to DefaultTextMapPropagator.Inject(...) silently
+                    // write nothing, even when OTel.Baggage.Current is populated.
                     Log.Debug("Initializing OpenTelemetry components.");
                     OpenTelemetry.Sdk.Initialize();
                 }
