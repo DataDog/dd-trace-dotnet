@@ -38,6 +38,7 @@ const std::string MetadataProvider::HttpRequestDurationThreshold("DD_INTERNAL_PR
 const std::string MetadataProvider::HeapSnapshotInterval("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_INTERVAL");
 const std::string MetadataProvider::HeapSnapshotCheckInterval("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_CHECK_INTERVAL");
 const std::string MetadataProvider::HeapSnapshotMemoryPressureThreshold("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_MEMORY_PRESSURE_THRESHOLD");
+const std::string MetadataProvider::HeapSnapshotSkipTraversal("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_SKIP_TRAVERSAL");
 const std::string MetadataProvider::ForceHttpSampling("DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING");
 
 const std::string MetadataProvider::SectionOverrides("Environment Overrides");
@@ -96,6 +97,7 @@ void MetadataProvider::Initialize()
     AddEnvVar(SectionEnvVars, HeapSnapshotInterval, EnvironmentVariables::HeapSnapshotInterval);
     AddEnvVar(SectionEnvVars, HeapSnapshotCheckInterval, EnvironmentVariables::HeapSnapshotCheckInterval);
     AddEnvVar(SectionEnvVars, HeapSnapshotMemoryPressureThreshold, EnvironmentVariables::HeapSnapshotMemoryPressureThreshold);
+    AddEnvVar(SectionEnvVars, HeapSnapshotSkipTraversal, EnvironmentVariables::HeapSnapshotSkipTraversal);
     AddEnvVar(SectionEnvVars, ForceHttpSampling, EnvironmentVariables::ForceHttpSampling);
 
     AddEnvVar(SectionOverrides, ProfilerEnabled, EnvironmentVariables::ProfilerEnabled);

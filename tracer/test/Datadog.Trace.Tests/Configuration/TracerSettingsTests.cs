@@ -1171,5 +1171,21 @@ namespace Datadog.Trace.Tests.Configuration
 
             settings.PropagateProcessTags.Should().Be(expected);
         }
+
+        [Theory]
+        [InlineData(null, new string[0])]
+        [InlineData("none", new string[0])]
+        [InlineData("DD_TAGS", new[] { "DD_TAGS" })]
+        [InlineData("DD_TAGS,OTHER_FEATURE", new[] { "DD_TAGS", "OTHER_FEATURE" })]
+        [InlineData(" DD_TAGS , OTHER_FEATURE ", new[] { "DD_TAGS", "OTHER_FEATURE" })]
+        [InlineData("DD_TAGS, OTHER_FEATURE", new[] { "DD_TAGS", "OTHER_FEATURE" })]
+        [InlineData("DD_TAGS ,OTHER_FEATURE", new[] { "DD_TAGS", "OTHER_FEATURE" })]
+        public void ExperimentalFeaturesEnabled_ParsesAndTrimsEntries(string value, string[] expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.ExperimentalFeaturesEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.ExperimentalFeaturesEnabled.Should().BeEquivalentTo(expected);
+        }
     }
 }

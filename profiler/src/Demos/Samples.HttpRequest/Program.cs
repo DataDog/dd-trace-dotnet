@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 
 //// uncomment to allow manual test using the process ID
@@ -59,9 +62,8 @@ app.MapGet("/stop", async (HttpContext context) =>
 // get from the command line the different /endpoint parameters and the number of iterations to run
 Thread runner = new Thread(() =>
 {
-    // wait for the HTTP server to start
-    // TODO: maybe there is an event on the app lifetime that can be used to know when the server is ready
-    Thread.Sleep(1000);
+    // Wait until the HTTP server has fully started and bound its port.
+    app.Lifetime.ApplicationStarted.WaitHandle.WaitOne();
 
     int iterations = 1;
     int code = 200;
@@ -75,7 +77,8 @@ Thread runner = new Thread(() =>
     {
         // send the requests
         var client = new System.Net.Http.HttpClient();
-        var baseUrl = app.Urls.First();
+        var server = app.Services.GetRequiredService<IServer>();
+        var baseUrl = server.Features.Get<IServerAddressesFeature>().Addresses.First();
         Console.WriteLine($"##LISTENING_URL:{baseUrl}##");
         for (int iteration = 0; iteration < iterations; iteration++)
         {

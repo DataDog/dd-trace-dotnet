@@ -413,6 +413,10 @@ namespace Datadog.Trace.Debugger.Snapshots
                 {
                     notCapturedReason = NotCapturedReason.timeout;
                 }
+                else if (enumerableInfo.WasTruncated)
+                {
+                    notCapturedReason = NotCapturedReason.collectionSize;
+                }
                 else if (!enumerationCompleted &&
                          enumeratedItemCount >= limitInfo.MaxCollectionSize &&
                          enumeratedItemCount < collectionCount)

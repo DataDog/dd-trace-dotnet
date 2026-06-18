@@ -629,7 +629,7 @@ internal sealed class ProbeExpressionEvaluator
             var expression = CaptureExpressions[i].Expression;
             if (expression?.Json != null && IsExpression(expression) == true)
             {
-                compiledExpressions[i] = ProbeExpressionParser<object>.ParseExpression(expression.Value.Json, scopeMembers);
+                compiledExpressions[i] = ProbeExpressionParser<object>.ParseCaptureExpression(expression.Value.Json, scopeMembers, CaptureExpressions[i].CaptureLimitInfo);
             }
         }
 
