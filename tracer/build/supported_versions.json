@@ -736,7 +736,7 @@
         "minVersionTestedInclusive": "11.3.8",
         "maxVersionSupportedInclusive": "15.1.17",
         "maxVersionAvailableInclusive": "16.1.4",
-        "maxVersionTestedInclusive": "15.1.16"
+        "maxVersionTestedInclusive": "16.1.4"
       }
     ]
   },
