@@ -45,13 +45,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
         }
 
-        public static void SerializeStaticFields(Type declaringType, JsonTextWriter jsonWriter, CaptureLimitInfo limitInfo)
-        {
-            using var cts = CreateCancellationTimeout();
-            var collectionsBeingSerialized = new HashSet<object>(ObjectReferenceEqualityComparer.Instance);
-            WriteFields(null, declaringType, jsonWriter, cts, currentDepth: 0, writeStaticFields: true, limitInfo, collectionsBeingSerialized);
-        }
-
         private static bool SerializeInternal(
             object source,
             Type type,

@@ -531,23 +531,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             CaptureArgument(instance, "this", type);
         }
 
-        public void CaptureStaticFields<T>(ref CaptureInfo<T> info)
-        {
-            if (_omitCaptureData)
-            {
-                return;
-            }
-
-            if (info.IsAsyncCapture())
-            {
-                DebuggerSnapshotSerializer.SerializeStaticFields(info.AsyncCaptureInfo.KickoffInvocationTargetType, JsonWriter, _limitInfo);
-            }
-            else
-            {
-                DebuggerSnapshotSerializer.SerializeStaticFields(info.InvocationTargetType, JsonWriter, _limitInfo);
-            }
-        }
-
         internal void CaptureArgument<TArg>(TArg value, string name, Type? type = null)
         {
             if (_omitCaptureData)
@@ -621,7 +604,6 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void CaptureEntryMethodStartMarker<T>(ref CaptureInfo<T> info)
         {
             StartEntry();
-            CaptureStaticFields(ref info);
         }
 
         internal void CaptureEntryMethodEndMarker<TTarget>(TTarget value, Type type)
@@ -650,8 +632,6 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private void ExitMethodStart<TReturnOrException>(ref CaptureInfo<TReturnOrException> info)
         {
-            CaptureStaticFields(ref info);
-
             switch (info.MethodState)
             {
                 case MethodState.ExitStartAsync:
@@ -758,7 +738,6 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal void CaptureBeginLine<T>(ref CaptureInfo<T> info)
         {
             StartLines(info.LineCaptureInfo.LineNumber);
-            CaptureStaticFields(ref info);
         }
 
         internal void CaptureEndLine<TTarget>(ref CaptureInfo<TTarget> info)
