@@ -11,28 +11,28 @@ namespace Datadog.Trace.Util
 {
     internal static class SqlQueryParser
     {
-        internal static (string? Operation, string? Table) Parse(string? commandText)
+        internal static ParseResult Parse(string? commandText)
         {
             if (StringUtil.IsNullOrEmpty(commandText))
             {
-                return (null, null);
+                return new ParseResult(null, null);
             }
 
             var pos = SkipLeadingBlockComments(commandText, 0);
             var verb = ReadToken(commandText, pos, out pos);
             if (verb is null)
             {
-                return (null, null);
+                return new ParseResult(null, null);
             }
 
             var operation = GetOperation(verb);
             if (operation is null)
             {
-                return (null, null);
+                return new ParseResult(null, null);
             }
 
             var table = ExtractTable(commandText, operation);
-            return (operation, table);
+            return new ParseResult(operation, table);
         }
 
         private static string? GetOperation(string verb)
@@ -333,6 +333,24 @@ namespace Datadog.Trace.Util
             nextPos = pos;
             var token = text.Substring(start, pos - start);
             return StringUtil.IsNullOrEmpty(token) ? null : token;
+        }
+
+        internal readonly struct ParseResult
+        {
+            internal readonly string? Operation;
+            internal readonly string? Table;
+
+            internal ParseResult(string? operation, string? table)
+            {
+                Operation = operation;
+                Table = table;
+            }
+
+            internal void Deconstruct(out string? operation, out string? table)
+            {
+                operation = Operation;
+                table = Table;
+            }
         }
     }
 }
