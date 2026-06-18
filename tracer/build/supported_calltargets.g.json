@@ -8806,6 +8806,31 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "HotChocolate",
+    "AssemblyName": "HotChocolate.Types",
+    "TargetTypeName": "HotChocolate.Execution.DefaultRequestExecutor",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
+    "TargetParameterTypes": [
+      "HotChocolate.Execution.IOperationRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 16,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 16,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationV14",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "HttpMessageHandler",
     "AssemblyName": "Ocelot",
     "TargetTypeName": "Ocelot.Requester.MessageInvokerPool",
