@@ -10,7 +10,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Security.Principal;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -807,21 +806,19 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
         }
 
-#pragma warning disable CA1416 // Windows ACL setup is only called after a RuntimeInformation Windows guard.
         private static void RestrictWindowsDirectoryToTrustedWriters(string path)
         {
-            var currentUserSid = WindowsIdentity.GetCurrent().User?.Value;
-            currentUserSid.Should().NotBeNullOrEmpty("the test cache directory needs an explicit ACE for the current user");
+            var currentUser = $@"{Environment.UserDomainName}\{Environment.UserName}";
+            currentUser.Should().NotBeNullOrWhiteSpace("the test cache directory needs an explicit ACE for the current user");
 
             RunIcacls(
                 path,
                 "/inheritance:r",
                 "/grant:r",
-                $"*{currentUserSid}:(OI)(CI)F",
+                $"{currentUser}:(OI)(CI)F",
                 "*S-1-5-18:(OI)(CI)F",
                 "*S-1-5-32-544:(OI)(CI)F");
         }
-#pragma warning restore CA1416
 
         private static void GrantWindowsModifyAccessToEveryone(string path)
         {
