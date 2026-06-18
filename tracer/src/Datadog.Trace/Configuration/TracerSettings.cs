@@ -284,7 +284,7 @@ namespace Datadog.Trace.Configuration
 
             OtlpMetricsHeaders = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders)
-                            .AsDictionaryResult(separator: '=')
+                            .AsRedactedDictionaryResult(separator: '=')
                             .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
                             .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
                             .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
@@ -334,7 +334,7 @@ namespace Datadog.Trace.Configuration
 
             OtlpLogsHeaders = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
-                            .AsDictionaryResult(separator: '=')
+                            .AsRedactedDictionaryResult(separator: '=')
                             .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
                             .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
                             .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);

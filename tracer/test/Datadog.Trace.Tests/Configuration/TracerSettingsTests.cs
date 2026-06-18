@@ -1136,6 +1136,57 @@ namespace Datadog.Trace.Tests.Configuration
             settings.OtlpLogsHeaders.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split('=').First(), v => v.Split('=').Last()));
         }
 
+        [Fact]
+        public void OtlpHeaders_AreNotReportedInConfigurationTelemetry()
+        {
+            const string baseSentinel = "SENTINEL_OTLP_BASE";
+            const string metricsSentinel = "SENTINEL_OTLP_METRICS";
+            const string tracesSentinel = "SENTINEL_OTLP_TRACES";
+            const string logsSentinel = "SENTINEL_OTLP_LOGS";
+
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders, $"dd-api-key={baseSentinel}"),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, $"dd-api-key={metricsSentinel}"),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders, $"dd-api-key={tracesSentinel}"),
+                (ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders, $"dd-api-key={logsSentinel}"));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new());
+
+            // The values are still parsed and applied (functional behavior is unchanged)
+            settings.OtlpMetricsHeaders.Should().Contain(new KeyValuePair<string, string>("dd-api-key", metricsSentinel));
+            settings.OtlpLogsHeaders.Should().Contain(new KeyValuePair<string, string>("dd-api-key", logsSentinel));
+
+            // ... but none of the configured header values appear in any telemetry configuration value
+            var recordedValues = telemetry.GetQueueForTesting()
+                                          .Select(e => e.StringValue)
+                                          .Where(v => v is not null)
+                                          .ToList();
+
+            using var scope = new AssertionScope();
+            foreach (var sentinel in new[] { baseSentinel, metricsSentinel, tracesSentinel, logsSentinel })
+            {
+                recordedValues.Should().NotContain(v => v.Contains(sentinel), $"sentinel '{sentinel}' must not appear in configuration telemetry");
+            }
+
+            // The header keys that TracerSettings reads (metrics and logs) are present in telemetry, and every
+            // recorded entry for them is a redacted entry with no source value. The base and traces header keys
+            // are read by ExporterSettings, not TracerSettings, so they are covered by ExporterSettingsTests.
+            foreach (var key in new[]
+                     {
+                         ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders,
+                         ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders,
+                     })
+            {
+                var entries = telemetry.GetQueueForTesting().Where(e => e.Key == key).ToList();
+
+                // Guard against a vacuous assertion: the key must actually be recorded by TracerSettings
+                entries.Should().NotBeEmpty($"'{key}' should be recorded by TracerSettings");
+                entries.Should().OnlyContain(
+                    e => e.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted && e.StringValue == null,
+                    $"every '{key}' entry should be redacted with no source value");
+            }
+        }
+
         [Theory]
         [InlineData(null, 10000)]
         [InlineData("5000", 5000)]  // User custom value
