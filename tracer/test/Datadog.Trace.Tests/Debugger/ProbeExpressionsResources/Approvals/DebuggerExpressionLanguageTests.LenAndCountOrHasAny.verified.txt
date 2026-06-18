@@ -1,4 +1,4 @@
-Condition:
+﻿Condition:
 Json:
 {
   "and": [
@@ -91,10 +91,71 @@ Expression: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = (this.String.Length > 2) && ((CollectionLocal.Count > 2) || CollectionLocal
-        .Where(string1 => string1.Length > 4)
-        .ToList()
-        .Any(string2 => string2 == "hello"));
+    var $dd_el_result = (this.String.Length > 2) && ((CollectionLocal.Count > 2) ||
+    {
+        IEnumerator<string> enumerator;
+        string @string;
+        var enumerable = (IEnumerable<string>)IEnumerator<string> enumerator;
+        string @string;
+        enumerable = (IEnumerable<string>)CollectionLocal;
+        enumerator = enumerable.GetEnumerator();
+        var filterResult = new List<string>();
+        try
+        {
+            while (true)
+            {
+                if (!enumerator.MoveNext())
+                {
+                    break;
+                }
+
+                @string = enumerator.Current;
+
+                if (@string.Length > 4)
+                {
+                    filterResult.Add(@string);
+                }
+            }
+        }
+        finally
+        {
+            if (enumerator != null)
+            {
+                enumerator.Dispose();
+            }
+        }
+
+        return filterResult;;
+        enumerator = enumerable.GetEnumerator();
+        var anyResult = false;
+        try
+        {
+            while (true)
+            {
+                if (!enumerator.MoveNext())
+                {
+                    break;
+                }
+
+                @string = enumerator.Current;
+
+                if (@string == "hello";)
+                {
+                    anyResult = true;
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            if (enumerator != null)
+            {
+                enumerator.Dispose();
+            }
+        }
+
+        return anyResult;
+    });
 
     return $dd_el_result;
 }

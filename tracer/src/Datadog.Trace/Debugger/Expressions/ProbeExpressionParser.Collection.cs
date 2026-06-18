@@ -23,6 +23,13 @@ internal partial class ProbeExpressionParser<T>
     private int _deferredFilterSourceArrayStack = -1;
     private int _boundedFilterMaxCollectionSize;
 
+    private enum PredicateOperation
+    {
+        Any,
+        All,
+        Filter
+    }
+
     private static bool ShouldRedactDictionaryKey(object key)
     {
         var type = key?.GetType() ?? typeof(object);
@@ -57,14 +64,12 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
-        var any = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.Any) && m.GetParameters().Length == 2);
-        return Predicate(reader, parameters, any, itParameter);
+        return Predicate(reader, parameters, PredicateOperation.Any, itParameter);
     }
 
     private Expression HasAll(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
-        var all = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.All) && m.GetParameters().Length == 2);
-        return Predicate(reader, parameters, all, itParameter);
+        return Predicate(reader, parameters, PredicateOperation.All, itParameter);
     }
 
     private Expression Filter(JsonTextReader reader, List<ParameterExpression> parameters)
@@ -86,10 +91,10 @@ internal partial class ProbeExpressionParser<T>
                    : MaterializeFilterExpression(parsedFilterExpression);
     }
 
-    private Expression Predicate(JsonTextReader reader, List<ParameterExpression> parameters, MethodInfo predicateMethod, ParameterExpression outerItParameter)
+    private Expression Predicate(JsonTextReader reader, List<ParameterExpression> parameters, PredicateOperation operation, ParameterExpression outerItParameter)
     {
         Expression source = null;
-        MethodCallExpression callExpression = null;
+        Expression predicateExpression = null;
         try
         {
             source = ParseTree(reader, parameters, outerItParameter);
@@ -109,29 +114,20 @@ internal partial class ProbeExpressionParser<T>
             }
 
             var itParameterType = GetIteratorParameterType(source.Type);
-
-            if (predicateMethod == null)
-            {
-                throw new InvalidOperationException("Fail to determined the iterator parameter type");
-            }
-
             ParameterExpression itParameter = Expression.Parameter(itParameterType);
-            var predicate = ParseTree(reader, parameters, itParameter);
-            var lambda = Expression.Lambda(predicate, itParameter);
-            var genericPredicateMethod = predicateMethod.MakeGenericMethod(itParameterType);
-            callExpression = Expression.Call(null, genericPredicateMethod, PredicateSource(source, itParameterType), lambda);
-            if (IsIEnumerable(callExpression.Type))
-            {
-                var toListMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.ToList), null);
-                var genericToListMethod = toListMethod.MakeGenericMethod(itParameterType);
-                callExpression = Expression.Call(null, genericToListMethod, callExpression);
-            }
+            predicateExpression = ParseTree(reader, parameters, itParameter);
 
-            return callExpression;
+            return operation switch
+            {
+                PredicateOperation.Any => EnumerableAnyExpression(source, itParameter, predicateExpression),
+                PredicateOperation.All => EnumerableAllExpression(source, itParameter, predicateExpression),
+                PredicateOperation.Filter => EnumerableFilterExpression(source, itParameter, predicateExpression),
+                _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, "Unsupported predicate operation")
+            };
         }
         catch (Exception e)
         {
-            AddError($"{source?.ToString() ?? "N/A"}[{callExpression?.ToString() ?? "N/A"}]", e.Message);
+            AddError($"{source?.ToString() ?? "N/A"}[{predicateExpression?.ToString() ?? "N/A"}]", e.Message);
             return ReturnDefaultValueExpression();
         }
     }
@@ -204,16 +200,12 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    private MethodCallExpression MaterializeFilterExpression(FilterExpression filterExpression)
+    private BlockExpression MaterializeFilterExpression(FilterExpression filterExpression)
     {
-        var genericWhere = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.Where), [typeof(IEnumerable<>), typeof(Func<,>)], [filterExpression.IteratorType]);
         var source = filterExpression.Source is FilterExpression sourceFilterExpression
                          ? MaterializeFilterExpression(sourceFilterExpression)
                          : filterExpression.Source;
-        var whereCall = Expression.Call(null, genericWhere, PredicateSource(source, filterExpression.IteratorType), filterExpression.Predicate);
-        var toListMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.ToList), null);
-        var genericToListMethod = toListMethod.MakeGenericMethod(filterExpression.IteratorType);
-        return Expression.Call(null, genericToListMethod, whereCall);
+        return EnumerableFilterExpression(source, filterExpression.Predicate.Parameters[0], filterExpression.Predicate.Body);
     }
 
     private MethodCallExpression BoundedFilterExpression(FilterExpression filterExpression, int maxCollectionSize)
@@ -221,7 +213,7 @@ internal partial class ProbeExpressionParser<T>
         var helperMethod = ProbeExpressionParserHelper.GetMethodByReflection(
             typeof(FilterEvaluationHelpers),
             nameof(FilterEvaluationHelpers.FilterForCapture),
-            [typeof(IEnumerable<>), typeof(Func<,>), typeof(int), typeof(bool)],
+            [typeof(IEnumerable<>), typeof(FilterEvaluationHelpers.FilterPredicate<>), typeof(EvaluationBudget).MakeByRefType(), typeof(int), typeof(bool)],
             [filterExpression.IteratorType]);
         var source = FlattenFilterChain(filterExpression, out var predicate);
 
@@ -230,6 +222,7 @@ internal partial class ProbeExpressionParser<T>
             helperMethod,
             PredicateSource(source, filterExpression.IteratorType),
             PredicateArgument(predicate, filterExpression.IteratorType),
+            _evaluationBudgetParameterExpression,
             Expression.Constant(maxCollectionSize),
             Expression.Constant(filterExpression.IsDictionary));
     }
@@ -256,21 +249,132 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression PredicateArgument(LambdaExpression predicate, Type iteratorType)
     {
-        return ReferencesOuterParameter(predicate)
-                   ? predicate
-                   : CompiledPredicateConstant(predicate, iteratorType);
+        var budgetedPredicate = BudgetedPredicate(predicate, iteratorType);
+        return ReferencesOuterParameter(budgetedPredicate)
+                   ? budgetedPredicate
+                   : CompiledPredicateConstant(budgetedPredicate, iteratorType);
+    }
+
+    private LambdaExpression BudgetedPredicate(LambdaExpression predicate, Type iteratorType)
+    {
+        var itemParameter = predicate.Parameters[0];
+        var budgetParameter = Expression.Parameter(typeof(EvaluationBudget).MakeByRefType(), "budget");
+        var body = new ParameterReplacingVisitor(_evaluationBudgetParameterExpression, budgetParameter).Visit(predicate.Body);
+        return Expression.Lambda(typeof(FilterEvaluationHelpers.FilterPredicate<>).MakeGenericType(iteratorType), body, itemParameter, budgetParameter);
     }
 
     private bool ReferencesOuterParameter(LambdaExpression predicate)
     {
-        var visitor = new OuterParameterReferenceVisitor(predicate.Parameters[0]);
+        var visitor = new OuterParameterReferenceVisitor(predicate.Parameters);
         visitor.Visit(predicate.Body);
         return visitor.Found;
     }
 
     private ConstantExpression CompiledPredicateConstant(LambdaExpression predicate, Type iteratorType)
     {
-        return Expression.Constant(predicate.Compile(), typeof(Func<,>).MakeGenericType(iteratorType, typeof(bool)));
+        return Expression.Constant(predicate.Compile(), predicate.Type);
+    }
+
+    private BlockExpression EnumerableAnyExpression(Expression source, ParameterExpression itParameter, Expression predicate)
+    {
+        var result = Expression.Variable(typeof(bool), "anyResult");
+        var breakLabel = Expression.Label("anyBreak");
+        return BuildEnumerableLoop(
+            source,
+            itParameter,
+            [result],
+            Expression.Assign(result, Expression.Constant(false)),
+            Expression.IfThen(
+                predicate,
+                Expression.Block(
+                    Expression.Assign(result, Expression.Constant(true)),
+                    Expression.Break(breakLabel))),
+            breakLabel,
+            result);
+    }
+
+    private BlockExpression EnumerableAllExpression(Expression source, ParameterExpression itParameter, Expression predicate)
+    {
+        var result = Expression.Variable(typeof(bool), "allResult");
+        var breakLabel = Expression.Label("allBreak");
+        return BuildEnumerableLoop(
+            source,
+            itParameter,
+            [result],
+            Expression.Assign(result, Expression.Constant(true)),
+            Expression.IfThen(
+                Expression.Not(predicate),
+                Expression.Block(
+                    Expression.Assign(result, Expression.Constant(false)),
+                    Expression.Break(breakLabel))),
+            breakLabel,
+            result);
+    }
+
+    private BlockExpression EnumerableFilterExpression(Expression source, ParameterExpression itParameter, Expression predicate)
+    {
+        var listType = typeof(List<>).MakeGenericType(itParameter.Type);
+        var result = Expression.Variable(listType, "filterResult");
+        var breakLabel = Expression.Label("filterBreak");
+        var addMethod = ProbeExpressionParserHelper.GetMethodByReflection(listType, nameof(List<int>.Add), [itParameter.Type]);
+
+        return BuildEnumerableLoop(
+            source,
+            itParameter,
+            [result],
+            Expression.Assign(result, Expression.New(listType)),
+            Expression.IfThen(
+                predicate,
+                Expression.Call(result, addMethod, itParameter)),
+            breakLabel,
+            result);
+    }
+
+    private BlockExpression BuildEnumerableLoop(
+        Expression source,
+        ParameterExpression itParameter,
+        IEnumerable<ParameterExpression> additionalVariables,
+        Expression initializeResult,
+        Expression loopBody,
+        LabelTarget breakLabel,
+        Expression result)
+    {
+        var enumerableType = typeof(IEnumerable<>).MakeGenericType(itParameter.Type);
+        var enumeratorType = typeof(IEnumerator<>).MakeGenericType(itParameter.Type);
+        var enumerable = Expression.Variable(enumerableType, "enumerable");
+        var enumerator = Expression.Variable(enumeratorType, "enumerator");
+        var moveNext = ProbeExpressionParserHelper.GetMethodByReflection(typeof(IEnumerator), nameof(IEnumerator.MoveNext), Type.EmptyTypes);
+        var getCurrent = ProbeExpressionParserHelper.GetMethodByReflection(enumeratorType, "get_Current", Type.EmptyTypes);
+        var getEnumerator = ProbeExpressionParserHelper.GetMethodByReflection(enumerableType, nameof(IEnumerable.GetEnumerator), Type.EmptyTypes);
+        var dispose = ProbeExpressionParserHelper.GetMethodByReflection(typeof(IDisposable), nameof(IDisposable.Dispose), Type.EmptyTypes);
+
+        var variables = new List<ParameterExpression>(additionalVariables)
+        {
+            enumerable,
+            enumerator,
+            itParameter
+        };
+
+        return Expression.Block(
+            variables,
+            BudgetCheck(),
+            Expression.Assign(enumerable, Expression.Convert(PredicateSource(source, itParameter.Type), enumerableType)),
+            Expression.Assign(enumerator, Expression.Call(enumerable, getEnumerator)),
+            initializeResult,
+            Expression.TryFinally(
+                Expression.Loop(
+                    Expression.Block(
+                        BudgetCheck(),
+                        Expression.IfThen(
+                            Expression.Not(Expression.Call(enumerator, moveNext)),
+                            Expression.Break(breakLabel)),
+                        Expression.Assign(itParameter, Expression.Call(enumerator, getCurrent)),
+                        loopBody),
+                    breakLabel),
+                Expression.IfThen(
+                    Expression.NotEqual(enumerator, Expression.Constant(null, enumeratorType)),
+                    Expression.Call(enumerator, dispose))),
+            result);
     }
 
     private Expression GetItemAtIndex(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -712,9 +816,9 @@ internal partial class ProbeExpressionParser<T>
     {
         private readonly List<ParameterExpression> _localParameters;
 
-        internal OuterParameterReferenceVisitor(ParameterExpression iteratorParameter)
+        internal OuterParameterReferenceVisitor(IReadOnlyList<ParameterExpression> localParameters)
         {
-            _localParameters = [iteratorParameter];
+            _localParameters = new List<ParameterExpression>(localParameters);
         }
 
         internal bool Found { get; private set; }
