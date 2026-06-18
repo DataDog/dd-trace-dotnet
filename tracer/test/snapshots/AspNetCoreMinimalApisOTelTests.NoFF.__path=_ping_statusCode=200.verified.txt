@@ -14,12 +14,10 @@
       http.request.method: GET,
       http.response.headers.sample_correlation_identifier: 0000-0000-0000,
       http.response.headers.server: Kestrel,
-      http.response.status_code: 200,
       http.route: {controller=home}/{action=index}/{id?},
       language: dotnet,
       runtime-id: Guid_1,
       server.address: localhost:00000,
-      server.port: 00000,
       span.kind: server,
       url.path: /,
       url.scheme: http,
@@ -34,7 +32,9 @@
       _dd.code_origin.type: entry
     },
     Metrics: {
+      http.response.status_code: 200.0,
       process_id: 0,
+      server.port: 00000.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0

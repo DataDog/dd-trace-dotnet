@@ -143,12 +143,6 @@
                   }
                 },
                 {
-                  "key": "server.port",
-                  "value": {
-                    "intValue": "normalized-server-port"
-                  }
-                },
-                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost:00000"
@@ -175,19 +169,7 @@
                 {
                   "key": "error.type",
                   "value": {
-                    "stringValue": "System.Exception"
-                  }
-                },
-                {
-                  "key": "error.stack",
-                  "value": {
-                    "stringValue": "System.Exception: Exception of type 'System.Exception' was thrown."
-                  }
-                },
-                {
-                  "key": "http.response.status_code",
-                  "value": {
-                    "intValue": "500"
+                    "stringValue": "500"
                   }
                 },
                 {
@@ -200,6 +182,18 @@
                   "key": "http.response.headers.server",
                   "value": {
                     "stringValue": "Kestrel"
+                  }
+                },
+                {
+                  "key": "server.port",
+                  "value": {
+                    "intValue": "normalized-server-port"
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "500"
                   }
                 }
               ]

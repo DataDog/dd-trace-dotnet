@@ -143,12 +143,6 @@
                   }
                 },
                 {
-                  "key": "server.port",
-                  "value": {
-                    "intValue": "normalized-server-port"
-                  }
-                },
-                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost:00000"
@@ -173,12 +167,6 @@
                   }
                 },
                 {
-                  "key": "http.response.status_code",
-                  "value": {
-                    "intValue": "203"
-                  }
-                },
-                {
                   "key": "http.response.headers.sample_correlation_identifier",
                   "value": {
                     "stringValue": "0000-0000-0000"
@@ -188,6 +176,18 @@
                   "key": "http.response.headers.server",
                   "value": {
                     "stringValue": "Kestrel"
+                  }
+                },
+                {
+                  "key": "server.port",
+                  "value": {
+                    "intValue": "normalized-server-port"
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "203"
                   }
                 }
               ]

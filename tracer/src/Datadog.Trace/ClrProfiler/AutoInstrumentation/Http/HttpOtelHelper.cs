@@ -67,9 +67,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http
                     span.SetTag("url.full", rawUrl);
                 }
 
-                if (uri.Port > 0 && !uri.IsDefaultPort)
+                if (span is Span internalSpan && uri.Port > 0 && !uri.IsDefaultPort)
                 {
-                    span.SetTag("server.port", uri.Port.ToString());
+                    internalSpan.SetMetric("server.port", uri.Port);
                 }
             }
             else
@@ -94,9 +94,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http
                     span.SetTag("url.query", uri.Query.Substring(1));
                 }
 
-                if (uri.Port > 0 && !uri.IsDefaultPort)
+                if (span is Span internalSpan && uri.Port > 0 && !uri.IsDefaultPort)
                 {
-                    span.SetTag("server.port", uri.Port.ToString());
+                    internalSpan.SetMetric("server.port", uri.Port);
                 }
             }
         }

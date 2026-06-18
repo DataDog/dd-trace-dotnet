@@ -114,7 +114,7 @@ namespace Datadog.Trace.ExtensionMethods
 
             if (otelSemanticsEnabled)
             {
-                span.SetTag("http.response.status_code", statusCodeString);
+                span.SetMetric("http.response.status_code", statusCode);
             }
             else if (span.Tags is IHasStatusCode statusCodeTags)
             {
