@@ -5,7 +5,6 @@
 
 #nullable enable
 
-#if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -18,7 +17,7 @@ namespace Datadog.FeatureFlags.OpenFeature;
 
 /// <summary>
 /// OpenFeature Finally hook that captures feature-flag evaluation metadata for APM span
-/// enrichment. Mirrors <see cref="FlagEvalMetricsHook"/>: it runs in the Finally
+/// enrichment. It runs in the Finally
 /// stage on every evaluation (success + error), reads <c>__dd_split_serial_id</c> /
 /// <c>__dd_do_log</c> from the flag metadata and the targeting key from the context, and
 /// applies the frozen Node branch (serial id present → accumulate id, plus a subject when
@@ -164,4 +163,3 @@ internal sealed class SpanEnrichmentHook : Hook, IDisposable
         return null;
     }
 }
-#endif
