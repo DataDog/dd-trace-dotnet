@@ -119,7 +119,7 @@ partial class Build
 
            DotNetBuild(s => s
                            .SetDotnetPath(TargetPlatform)
-                           .SetFramework(TargetFramework.NET7_0)
+                           .SetFramework(TargetFramework.NET10_0)
                            .SetProjectFile(autoInstGenProj)
                            .SetConfiguration(Configuration.Release)
                            .SetNoWarnDotNetCore3());
@@ -128,7 +128,7 @@ partial class Build
            var dotnetRunSettings = new DotNetRunSettings()
                                   .SetDotnetPath(TargetPlatform)
                                   .SetNoBuild(true)
-                                  .SetFramework(TargetFramework.NET7_0)
+                                  .SetFramework(TargetFramework.NET10_0)
                                   .EnableNoLaunchProfile()
                                   .SetProjectFile(autoInstGenProj)
                                   .SetConfiguration(Configuration.Release);
