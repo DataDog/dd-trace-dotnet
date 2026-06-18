@@ -107,6 +107,19 @@ namespace Datadog.Trace.DuckTyping
         /// </summary>
         /// <param name="proxyDefinitionType">Duck typing proxy definition type.</param>
         /// <param name="targetType">Runtime target type.</param>
+        /// <param name="failureThrower">Static failure thrower delegate.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
+        public static void RegisterAotProxyFailure(Type proxyDefinitionType, Type targetType, Action failureThrower)
+        {
+            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
+            DuckTypeAotEngine.RegisterProxyFailure(proxyDefinitionType, targetType, failureThrower);
+        }
+
+        /// <summary>
+        /// Registers a forward mapping failure in AOT mode using a generated thrower.
+        /// </summary>
+        /// <param name="proxyDefinitionType">Duck typing proxy definition type.</param>
+        /// <param name="targetType">Runtime target type.</param>
         /// <param name="throwerMethodHandle">Static failure thrower method handle.</param>
         [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
         public static void RegisterAotProxyFailure(Type proxyDefinitionType, Type targetType, RuntimeMethodHandle throwerMethodHandle)
@@ -126,6 +139,19 @@ namespace Datadog.Trace.DuckTyping
         {
             EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
             DuckTypeAotEngine.RegisterReverseProxyFailure(typeToDeriveFrom, delegationType, exceptionType);
+        }
+
+        /// <summary>
+        /// Registers a reverse mapping failure in AOT mode using a generated thrower.
+        /// </summary>
+        /// <param name="typeToDeriveFrom">Type to derive the reverse proxy from.</param>
+        /// <param name="delegationType">Type that provides delegated implementations.</param>
+        /// <param name="failureThrower">Static reverse failure thrower delegate.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
+        public static void RegisterAotReverseProxyFailure(Type typeToDeriveFrom, Type delegationType, Action failureThrower)
+        {
+            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
+            DuckTypeAotEngine.RegisterReverseProxyFailure(typeToDeriveFrom, delegationType, failureThrower);
         }
 
         /// <summary>
@@ -178,6 +204,12 @@ namespace Datadog.Trace.DuckTyping
         {
             DuckTypeAotEngine.ResetForTests();
             DuckTypeCache.Clear();
+            DuckTypeReverseCache.Clear();
+            Volatile.Write(ref _nonGenericForwardFastPath, null);
+            Volatile.Write(ref _nonGenericReverseFastPath, null);
+            Interlocked.Increment(ref _runtimeFastPathVersion);
+            Volatile.Write(ref _nonGenericFastPathRuntimeVersion, -1);
+            Volatile.Write(ref _nonGenericFastPathAotCacheVersion, -1);
             lock (Locker)
             {
                 ActiveBuilders.Clear();
@@ -245,7 +277,7 @@ namespace Datadog.Trace.DuckTyping
         {
             DuckTypeAotDiscoveryRecorder.Record(typeToDeriveFrom, delegationType, reverse: true);
 
-            return DuckTypeCache.GetOrAdd(
+            return DuckTypeReverseCache.GetOrAdd(
                 new TypesTuple(typeToDeriveFrom, delegationType),
                 key => new Lazy<CreateTypeResult>(() =>
                 {

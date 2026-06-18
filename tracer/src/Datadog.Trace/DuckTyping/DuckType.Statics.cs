@@ -29,10 +29,11 @@ namespace Datadog.Trace.DuckTyping
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly ConcurrentDictionary<TypesTuple, Lazy<CreateTypeResult>> DuckTypeCache;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly ConcurrentDictionary<TypesTuple, Lazy<CreateTypeResult>> DuckTypeReverseCache;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly Dictionary<Assembly, ModuleBuilder> ActiveBuilders;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly Dictionary<ModuleBuilder, HashSet<string>> IgnoresAccessChecksToAssembliesSetDictionary;
-
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly MethodInfo? _getTypeFromHandleMethodInfo;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -57,6 +58,16 @@ namespace Datadog.Trace.DuckTyping
 #endif
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static NonGenericFastPathEntry? _nonGenericForwardFastPath;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static NonGenericFastPathEntry? _nonGenericReverseFastPath;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static int _runtimeFastPathVersion;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static int _nonGenericFastPathRuntimeVersion = -1;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static int _nonGenericFastPathAotCacheVersion = -1;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _assemblyCount;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _typeCount;
@@ -65,6 +76,7 @@ namespace Datadog.Trace.DuckTyping
         {
             Locker = new();
             DuckTypeCache = new();
+            DuckTypeReverseCache = new();
             ActiveBuilders = new();
             IgnoresAccessChecksToAssembliesSetDictionary = new();
 
@@ -341,6 +353,19 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+        private readonly struct FastPathVersionSnapshot
+        {
+            public FastPathVersionSnapshot(int runtimeVersion, int aotCacheVersion)
+            {
+                RuntimeVersion = runtimeVersion;
+                AotCacheVersion = aotCacheVersion;
+            }
+
+            public int RuntimeVersion { get; }
+
+            public int AotCacheVersion { get; }
+        }
+
         /// <summary>
         /// DynamicMethods delegates cache
         /// </summary>
@@ -373,6 +398,22 @@ namespace Datadog.Trace.DuckTyping
                 _delegate = (TProxyDelegate)ILHelpersExtensions.GetDynamicMethodForIndex(index)
                     .CreateDelegate(typeof(TProxyDelegate));
             }
+        }
+
+        private sealed class NonGenericFastPathEntry
+        {
+            public NonGenericFastPathEntry(Type proxyDefinitionType, Type targetType, CreateTypeResult result)
+            {
+                ProxyDefinitionType = proxyDefinitionType;
+                TargetType = targetType;
+                Result = result;
+            }
+
+            public Type ProxyDefinitionType { get; }
+
+            public Type TargetType { get; }
+
+            public CreateTypeResult Result { get; }
         }
     }
 }

@@ -255,6 +255,17 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Registers a forward AOT mapping failure using a static thrower delegate.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="failureThrower">The static failure thrower delegate.</param>
+        internal static void RegisterProxyFailure(Type proxyDefinitionType, Type targetType, Action failureThrower)
+        {
+            RegisterFailure(proxyDefinitionType, targetType, failureThrower, reverse: false);
+        }
+
+        /// <summary>
         /// Registers a reverse AOT mapping failure that should rethrow a dynamic-equivalent ducktyping exception.
         /// </summary>
         /// <param name="typeToDeriveFrom">The type to derive from value.</param>
@@ -274,6 +285,17 @@ namespace Datadog.Trace.DuckTyping
         internal static void RegisterReverseProxyFailure(Type typeToDeriveFrom, Type delegationType, RuntimeMethodHandle throwerMethodHandle)
         {
             RegisterFailure(typeToDeriveFrom, delegationType, throwerMethodHandle, reverse: true);
+        }
+
+        /// <summary>
+        /// Registers a reverse AOT mapping failure using a static thrower delegate.
+        /// </summary>
+        /// <param name="typeToDeriveFrom">The type to derive from value.</param>
+        /// <param name="delegationType">The delegation type value.</param>
+        /// <param name="failureThrower">The static failure thrower delegate.</param>
+        internal static void RegisterReverseProxyFailure(Type typeToDeriveFrom, Type delegationType, Action failureThrower)
+        {
+            RegisterFailure(typeToDeriveFrom, delegationType, failureThrower, reverse: true);
         }
 
         /// <summary>
@@ -576,6 +598,10 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="reverse">Whether the registration belongs to the reverse registry.</param>
         private static void RegisterFailure(Type proxyDefinitionType, Type targetType, Action failureThrower, bool reverse)
         {
+            if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
+            if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
+            if (failureThrower is null) { ThrowHelper.ThrowArgumentNullException(nameof(failureThrower)); }
+
             var key = new TypesTuple(proxyDefinitionType, targetType);
             var createTypeResult = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, failureThrower);
 

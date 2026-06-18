@@ -472,8 +472,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 mappingResolutionResult.TargetAssemblyPathsByName);
             StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.BuildRuntimeTypeResolutionMapSeconds += seconds);
             phaseStopwatch = StartProfilePhase();
-            var queriedTargetTypeNames = BuildQueriedTargetTypeNames(mappingResolutionResult.Mappings);
-            var targetTypeIndex = BuildTargetTypeIndex(targetModulesByAssemblyName, queriedTargetTypeNames);
+            var queriedTargetTypeKeys = BuildQueriedTargetTypeKeys(mappingResolutionResult.Mappings);
+            var targetTypeIndex = BuildTargetTypeIndex(targetModulesByAssemblyName, queriedTargetTypeKeys);
             StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.BuildTargetTypeIndexSeconds += seconds);
             var bootstrapRegistrationMethods = new List<MethodDef>();
             var canonicalMappingsByKey = mappingResolutionResult.Mappings.ToDictionary(mapping => mapping.Key, StringComparer.Ordinal);
@@ -671,19 +671,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 $"ducktype-aot emitter profile: importTypeDefOrRef={profile.ImportTypeDefOrRefSeconds:F3}s importTypeSig={profile.ImportTypeSigSeconds:F3}s importMethod={profile.ImportMethodSeconds:F3}s importField={profile.ImportFieldSeconds:F3}s");
         }
 
-        private static ISet<string> BuildQueriedTargetTypeNames(IReadOnlyList<DuckTypeAotMapping> mappings)
+        private static ISet<string> BuildQueriedTargetTypeKeys(IReadOnlyList<DuckTypeAotMapping> mappings)
         {
-            var names = new HashSet<string>(StringComparer.Ordinal);
+            var keys = new HashSet<string>(StringComparer.Ordinal);
             foreach (var mapping in mappings)
             {
                 if (!DuckTypeAotNameHelpers.IsClosedGenericTypeName(mapping.TargetTypeName) &&
+                    !string.IsNullOrWhiteSpace(mapping.TargetAssemblyName) &&
                     !string.IsNullOrWhiteSpace(mapping.TargetTypeName))
                 {
-                    _ = names.Add(mapping.TargetTypeName);
+                    _ = keys.Add(BuildAssemblyTypeCacheKey(mapping.TargetAssemblyName, mapping.TargetTypeName));
                 }
             }
 
-            return names;
+            return keys;
         }
 
         /// <summary>
@@ -782,13 +783,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="targetModulesByAssemblyName">The target modules by assembly name value.</param>
         /// <returns>The resulting target-type index.</returns>
-        private static TargetTypeIndex BuildTargetTypeIndex(IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName, ISet<string> queriedTargetTypeNames)
+        private static TargetTypeIndex BuildTargetTypeIndex(IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName, ISet<string> queriedTargetTypeKeys)
         {
             var typeByAssemblyAndName = new Dictionary<string, TypeDef>(StringComparer.Ordinal);
             var assignableForwardTypesByAncestor = new Dictionary<string, List<TargetTypeIndexEntry>>(StringComparer.Ordinal);
             var assignableReverseTypesByAncestor = new Dictionary<string, List<TargetTypeIndexEntry>>(StringComparer.Ordinal);
-            var assignableTypeNamesByType = new Dictionary<TypeDef, IReadOnlyList<string>>(ReferenceIdentityComparer<TypeDef>.Instance);
-            var assignableTypeNamesInProgress = new HashSet<TypeDef>(ReferenceIdentityComparer<TypeDef>.Instance);
+            var assignableTypeKeysByType = new Dictionary<TypeDef, IReadOnlyList<string>>(ReferenceIdentityComparer<TypeDef>.Instance);
+            var assignableTypeKeysInProgress = new HashSet<TypeDef>(ReferenceIdentityComparer<TypeDef>.Instance);
 
             foreach (var entry in targetModulesByAssemblyName)
             {
@@ -814,12 +815,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     }
 
                     var candidateEntry = new TargetTypeIndexEntry(assemblyName, candidateType);
-                    foreach (var ancestorTypeName in GetAssignableTypeNames(candidateType, queriedTargetTypeNames, assignableTypeNamesByType, assignableTypeNamesInProgress))
+                    foreach (var ancestorTypeKey in GetAssignableTypeKeys(candidateType, queriedTargetTypeKeys, assignableTypeKeysByType, assignableTypeKeysInProgress))
                     {
-                        AddTargetTypeIndexEntry(assignableForwardTypesByAncestor, ancestorTypeName, candidateEntry);
+                        AddTargetTypeIndexEntry(assignableForwardTypesByAncestor, ancestorTypeKey, candidateEntry);
                         if (!candidateType.IsValueType)
                         {
-                            AddTargetTypeIndexEntry(assignableReverseTypesByAncestor, ancestorTypeName, candidateEntry);
+                            AddTargetTypeIndexEntry(assignableReverseTypesByAncestor, ancestorTypeKey, candidateEntry);
                         }
                     }
                 }
@@ -948,30 +949,30 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
-        /// Enumerates assignable type names reachable from a concrete candidate type.
+        /// Enumerates assignable assembly/type keys reachable from a concrete candidate type.
         /// </summary>
         /// <param name="candidateType">The candidate type value.</param>
-        /// <returns>The reachable assignable type-name sequence.</returns>
-        private static IReadOnlyList<string> GetAssignableTypeNames(
+        /// <returns>The reachable assignable assembly/type key sequence.</returns>
+        private static IReadOnlyList<string> GetAssignableTypeKeys(
             TypeDef candidateType,
-            ISet<string> queriedTargetTypeNames,
-            IDictionary<TypeDef, IReadOnlyList<string>> assignableTypeNamesByType,
-            ISet<TypeDef> assignableTypeNamesInProgress)
+            ISet<string> queriedTargetTypeKeys,
+            IDictionary<TypeDef, IReadOnlyList<string>> assignableTypeKeysByType,
+            ISet<TypeDef> assignableTypeKeysInProgress)
         {
-            if (assignableTypeNamesByType.TryGetValue(candidateType, out var cachedTypeNames))
+            if (assignableTypeKeysByType.TryGetValue(candidateType, out var cachedTypeKeys))
             {
-                return cachedTypeNames;
+                return cachedTypeKeys;
             }
 
-            if (!assignableTypeNamesInProgress.Add(candidateType))
+            if (!assignableTypeKeysInProgress.Add(candidateType))
             {
                 return Array.Empty<string>();
             }
 
-            var assignableTypeNames = new List<string>();
-            var seenTypeNames = new HashSet<string>(StringComparer.Ordinal);
-            AddAssignableTypeName(candidateType.FullName);
-            AddAssignableTypeName(candidateType.ReflectionFullName);
+            var assignableTypeKeys = new List<string>();
+            var seenTypeKeys = new HashSet<string>(StringComparer.Ordinal);
+            AddAssignableTypeName(candidateType, candidateType.FullName);
+            AddAssignableTypeName(candidateType, candidateType.ReflectionFullName);
 
             AppendAssignableTypeNames(candidateType.BaseType?.ResolveTypeDef());
             foreach (var interfaceImpl in candidateType.Interfaces)
@@ -979,9 +980,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 AppendAssignableTypeNames(interfaceImpl.Interface.ResolveTypeDef());
             }
 
-            assignableTypeNamesInProgress.Remove(candidateType);
-            assignableTypeNamesByType[candidateType] = assignableTypeNames;
-            return assignableTypeNames;
+            assignableTypeKeysInProgress.Remove(candidateType);
+            assignableTypeKeysByType[candidateType] = assignableTypeKeys;
+            return assignableTypeKeys;
 
             void AppendAssignableTypeNames(TypeDef? type)
             {
@@ -990,27 +991,37 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     return;
                 }
 
-                foreach (var assignableTypeName in GetAssignableTypeNames(type, queriedTargetTypeNames, assignableTypeNamesByType, assignableTypeNamesInProgress))
+                foreach (var assignableTypeKey in GetAssignableTypeKeys(type, queriedTargetTypeKeys, assignableTypeKeysByType, assignableTypeKeysInProgress))
                 {
-                    AddAssignableTypeName(assignableTypeName);
+                    AddAssignableTypeKey(assignableTypeKey);
                 }
             }
 
-            void AddAssignableTypeName(string? typeName)
+            void AddAssignableTypeName(TypeDef type, string? typeName)
             {
                 if (string.IsNullOrWhiteSpace(typeName))
                 {
                     return;
                 }
 
-                var nonNullTypeName = typeName!;
-                if (!seenTypeNames.Add(nonNullTypeName) ||
-                    !queriedTargetTypeNames.Contains(nonNullTypeName))
+                var assemblyName = ResolveTypeDefAssemblyName(type);
+                if (string.IsNullOrWhiteSpace(assemblyName))
                 {
                     return;
                 }
 
-                assignableTypeNames.Add(nonNullTypeName);
+                AddAssignableTypeKey(BuildAssemblyTypeCacheKey(assemblyName, typeName!));
+            }
+
+            void AddAssignableTypeKey(string typeKey)
+            {
+                if (!seenTypeKeys.Add(typeKey) ||
+                    !queriedTargetTypeKeys.Contains(typeKey))
+                {
+                    return;
+                }
+
+                assignableTypeKeys.Add(typeKey);
             }
         }
 
@@ -1018,17 +1029,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// Adds a target-type entry to an ancestor index.
         /// </summary>
         /// <param name="index">The ancestor index value.</param>
-        /// <param name="ancestorTypeName">The ancestor type name value.</param>
+        /// <param name="ancestorTypeKey">The ancestor assembly/type key value.</param>
         /// <param name="entry">The entry value.</param>
         private static void AddTargetTypeIndexEntry(
             IDictionary<string, List<TargetTypeIndexEntry>> index,
-            string ancestorTypeName,
+            string ancestorTypeKey,
             TargetTypeIndexEntry entry)
         {
-            if (!index.TryGetValue(ancestorTypeName, out var entries))
+            if (!index.TryGetValue(ancestorTypeKey, out var entries))
             {
                 entries = [];
-                index[ancestorTypeName] = entries;
+                index[ancestorTypeKey] = entries;
             }
 
             entries.Add(entry);
@@ -1048,7 +1059,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var orderedTargets = entry.Value
                                           .OrderBy(item => item.AssemblyName, StringComparer.OrdinalIgnoreCase)
                                           .ThenBy(item => item.Type.FullName, StringComparer.Ordinal)
-                                          .Select(item => new TargetAliasTargetInfo(item.AssemblyName, item.Type.FullName))
+                                          .Select(item => new TargetAliasTargetInfo(item.AssemblyName, item.Type.ReflectionFullName))
                                           .ToList();
                 result[entry.Key] = orderedTargets;
             }
@@ -1098,15 +1109,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
+        /// Resolves the normalized assembly name for a dnlib type definition.
+        /// </summary>
+        /// <param name="type">The type definition value.</param>
+        /// <returns>The normalized assembly name, or an empty string when it cannot be resolved.</returns>
+        private static string ResolveTypeDefAssemblyName(TypeDef type)
+        {
+            return DuckTypeAotNameHelpers.NormalizeAssemblyName(type.Module?.Assembly?.Name?.String ?? string.Empty);
+        }
+
+        /// <summary>
         /// Determines whether an indexed alias target resolves to the canonical target type itself.
         /// </summary>
         /// <param name="canonicalTargetType">The canonical target type value.</param>
+        /// <param name="candidateAssemblyName">The candidate assembly name value.</param>
         /// <param name="candidateTypeName">The candidate type name value.</param>
         /// <returns>true when the candidate is the canonical target; otherwise, false.</returns>
-        private static bool IsCanonicalTargetAliasTarget(TypeDef canonicalTargetType, string candidateTypeName)
+        private static bool IsCanonicalTargetAliasTarget(TypeDef canonicalTargetType, string candidateAssemblyName, string candidateTypeName)
         {
-            return string.Equals(candidateTypeName, canonicalTargetType.FullName, StringComparison.Ordinal) ||
-                   string.Equals(candidateTypeName, canonicalTargetType.ReflectionFullName, StringComparison.Ordinal);
+            return string.Equals(candidateAssemblyName, ResolveTypeDefAssemblyName(canonicalTargetType), StringComparison.OrdinalIgnoreCase) &&
+                   (string.Equals(candidateTypeName, canonicalTargetType.FullName, StringComparison.Ordinal) ||
+                    string.Equals(candidateTypeName, canonicalTargetType.ReflectionFullName, StringComparison.Ordinal));
         }
 
         /// <summary>
@@ -1366,12 +1389,38 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(targetType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(failureThrowerMethod));
+            EmitActionDelegate(initializeMethod.Body, importedMembers, failureThrowerMethod);
             initializeMethod.Body.Instructions.Add(
                 OpCodes.Call.ToInstruction(
                     mode == DuckTypeAotMappingMode.Reverse
                         ? importedMembers.RegisterAotReverseProxyFailureMethod
                         : importedMembers.RegisterAotProxyFailureMethod));
+        }
+
+        /// <summary>
+        /// Emits a direct <see cref="Func{T, TResult}"/> delegate to a generated static object activator.
+        /// </summary>
+        /// <param name="body">The target method body.</param>
+        /// <param name="importedMembers">The imported member cache.</param>
+        /// <param name="method">The generated static method.</param>
+        private static void EmitFuncObjectObjectDelegate(CilBody body, ImportedMembers importedMembers, MethodDef method)
+        {
+            body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
+            body.Instructions.Add(OpCodes.Ldftn.ToInstruction(method));
+            body.Instructions.Add(OpCodes.Newobj.ToInstruction(importedMembers.FuncObjectObjectCtor));
+        }
+
+        /// <summary>
+        /// Emits a direct <see cref="Action"/> delegate to a generated static failure thrower.
+        /// </summary>
+        /// <param name="body">The target method body.</param>
+        /// <param name="importedMembers">The imported member cache.</param>
+        /// <param name="method">The generated static method.</param>
+        private static void EmitActionDelegate(CilBody body, ImportedMembers importedMembers, MethodDef method)
+        {
+            body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
+            body.Instructions.Add(OpCodes.Ldftn.ToInstruction(method));
+            body.Instructions.Add(OpCodes.Newobj.ToInstruction(importedMembers.ActionCtor));
         }
 
         private static MethodDef GetOrCreateFailureThrowerMethod(
@@ -1459,13 +1508,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var registrationActivatorMethod = new MethodDefUser(
                 $"ActivateProxy_{mappingIndex:D4}",
-                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
+                MethodSig.CreateStatic(moduleDef.CorLibTypes.Object, moduleDef.CorLibTypes.Object),
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
             registrationActivatorMethod.Body = new CilBody();
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Unbox_Any.ToInstruction(importedAliasTargetType));
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(activatorMethod));
+            if (proxyRuntimeType.IsValueType)
+            {
+                registrationActivatorMethod.Body.Instructions.Add(OpCodes.Box.ToInstruction(importedProxyType));
+            }
+
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             bootstrapType.Methods.Add(registrationActivatorMethod);
 
@@ -1475,7 +1529,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(registrationActivatorMethod));
+            EmitFuncObjectObjectDelegate(initializeMethod.Body, importedMembers, registrationActivatorMethod);
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.RegisterAotProxyMethod));
 
             if (emissionWarnings is not null)
@@ -2326,7 +2380,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var registrationActivatorMethod = new MethodDefUser(
                 $"ActivateProxy_{mappingIndex:D4}",
-                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
+                MethodSig.CreateStatic(moduleDef.CorLibTypes.Object, moduleDef.CorLibTypes.Object),
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
             registrationActivatorMethod.Body = new CilBody();
@@ -2334,6 +2388,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             // Bootstrap registration stays object-based while preserving a typed activator method for normal execution paths.
             registrationActivatorMethod.Body.Instructions.Add((targetType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass).ToInstruction(importedTargetType));
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(activatorMethod));
+            if (proxyType.IsValueType)
+            {
+                registrationActivatorMethod.Body.Instructions.Add(OpCodes.Box.ToInstruction(ImportTypeDefOrRefCached(moduleDef, proxyType, $"proxy type '{proxyType.FullName}'")));
+            }
+
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             bootstrapType.Methods.Add(registrationActivatorMethod);
 
@@ -2341,11 +2400,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            // Avoid forcing eager load of every generated proxy type during bootstrap on older runtimes.
-            // The activator still creates the generated implementation when the mapping is actually used.
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(ImportTypeDefOrRefCached(moduleDef, proxyType, $"alias proxy type '{proxyType.FullName}'")));
+            // Registration must preserve the generated implementation type because runtime duplicate detection uses it.
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(generatedType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(registrationActivatorMethod));
+            EmitFuncObjectObjectDelegate(initializeMethod.Body, importedMembers, registrationActivatorMethod);
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(isReverseMapping ? importedMembers.RegisterAotReverseProxyMethod : importedMembers.RegisterAotProxyMethod));
 
             return DuckTypeAotMappingEmissionResult.Compatible(
@@ -2797,7 +2855,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var registrationActivatorMethod = new MethodDefUser(
                 $"ActivateProxy_{mappingIndex:D4}",
-                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
+                MethodSig.CreateStatic(moduleDef.CorLibTypes.Object, moduleDef.CorLibTypes.Object),
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
             registrationActivatorMethod.Body = new CilBody();
@@ -2805,6 +2863,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             // Bootstrap registration stays object-based while preserving a typed activator method for normal execution paths.
             registrationActivatorMethod.Body.Instructions.Add((targetIsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass).ToInstruction(importedTargetType));
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(activatorMethod));
+            if (proxyType.IsValueType)
+            {
+                registrationActivatorMethod.Body.Instructions.Add(OpCodes.Box.ToInstruction(ImportTypeDefOrRefCached(moduleDef, proxyType, $"proxy type '{proxyType.FullName}'")));
+            }
+
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             bootstrapType.Methods.Add(registrationActivatorMethod);
 
@@ -2812,11 +2875,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedTargetType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            // Avoid forcing eager load of every generated proxy type during bootstrap on older runtimes.
-            // The activator still creates the generated implementation when the mapping is actually used.
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(ImportTypeDefOrRefCached(moduleDef, proxyType, $"alias proxy type '{proxyType.FullName}'")));
+            // Registration must preserve the generated implementation type because runtime duplicate detection uses it.
+            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(generatedType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(registrationActivatorMethod));
+            EmitFuncObjectObjectDelegate(initializeMethod.Body, importedMembers, registrationActivatorMethod);
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(isReverseMapping ? importedMembers.RegisterAotReverseProxyMethod : importedMembers.RegisterAotProxyMethod));
 
             return DuckTypeAotMappingEmissionResult.Compatible(
@@ -2994,13 +3056,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var registrationActivatorMethod = new MethodDefUser(
                 $"ActivateProxy_{mappingIndex:D4}",
-                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
+                MethodSig.CreateStatic(moduleDef.CorLibTypes.Object, moduleDef.CorLibTypes.Object),
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
             registrationActivatorMethod.Body = new CilBody();
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
             registrationActivatorMethod.Body.Instructions.Add((resolvedTargetRuntimeType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass).ToInstruction(importedTargetType));
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(activatorMethod));
+            if (resolvedProxyRuntimeType.IsValueType)
+            {
+                registrationActivatorMethod.Body.Instructions.Add(OpCodes.Box.ToInstruction(importedProxyType));
+            }
+
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             bootstrapType.Methods.Add(registrationActivatorMethod);
 
@@ -3010,7 +3077,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(registrationActivatorMethod));
+            EmitFuncObjectObjectDelegate(initializeMethod.Body, importedMembers, registrationActivatorMethod);
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(isReverseMapping ? importedMembers.RegisterAotReverseProxyMethod : importedMembers.RegisterAotProxyMethod));
 
             return DuckTypeAotMappingEmissionResult.Compatible(
@@ -3686,13 +3753,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var registrationActivatorMethod = new MethodDefUser(
                 $"ActivateProxy_{mappingIndex:D4}",
-                MethodSig.CreateStatic(importedProxyTypeSig, moduleDef.CorLibTypes.Object),
+                MethodSig.CreateStatic(moduleDef.CorLibTypes.Object, moduleDef.CorLibTypes.Object),
                 MethodImplAttributes.IL | MethodImplAttributes.Managed,
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig);
             registrationActivatorMethod.Body = new CilBody();
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ldarg_0.ToInstruction());
             registrationActivatorMethod.Body.Instructions.Add((targetIsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass).ToInstruction(importedTargetType));
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(activatorMethod));
+            registrationActivatorMethod.Body.Instructions.Add(OpCodes.Box.ToInstruction(importedProxyType));
             registrationActivatorMethod.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             bootstrapType.Methods.Add(registrationActivatorMethod);
 
@@ -3702,7 +3770,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
             initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(importedProxyType));
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.GetTypeFromHandleMethod));
-            initializeMethod.Body.Instructions.Add(OpCodes.Ldtoken.ToInstruction(registrationActivatorMethod));
+            EmitFuncObjectObjectDelegate(initializeMethod.Body, importedMembers, registrationActivatorMethod);
             initializeMethod.Body.Instructions.Add(OpCodes.Call.ToInstruction(importedMembers.RegisterAotProxyMethod));
 
             return DuckTypeAotMappingEmissionResult.Compatible(
@@ -10518,36 +10586,48 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     throw new InvalidOperationException("Unable to resolve Type.GetTypeFromHandle(RuntimeTypeHandle).");
                 }
 
+                var funcObjectObjectCtor = typeof(Func<object?, object?>).GetConstructor(new[] { typeof(object), typeof(IntPtr) });
+                if (funcObjectObjectCtor is null)
+                {
+                    throw new InvalidOperationException("Unable to resolve Func<object?, object?> constructor.");
+                }
+
+                var actionCtor = typeof(Action).GetConstructor(new[] { typeof(object), typeof(IntPtr) });
+                if (actionCtor is null)
+                {
+                    throw new InvalidOperationException("Unable to resolve Action constructor.");
+                }
+
                 var registerAotProxyMethod = typeof(DuckType).GetMethod(
                     nameof(DuckType.RegisterAotProxy),
-                    new[] { typeof(Type), typeof(Type), typeof(Type), typeof(RuntimeMethodHandle) });
+                    new[] { typeof(Type), typeof(Type), typeof(Type), typeof(Func<object?, object?>) });
                 if (registerAotProxyMethod is null)
                 {
-                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotProxy(Type, Type, Type, RuntimeMethodHandle).");
+                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotProxy(Type, Type, Type, Func<object?, object?>).");
                 }
 
                 var registerAotReverseProxyMethod = typeof(DuckType).GetMethod(
                     nameof(DuckType.RegisterAotReverseProxy),
-                    new[] { typeof(Type), typeof(Type), typeof(Type), typeof(RuntimeMethodHandle) });
+                    new[] { typeof(Type), typeof(Type), typeof(Type), typeof(Func<object?, object?>) });
                 if (registerAotReverseProxyMethod is null)
                 {
-                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotReverseProxy(Type, Type, Type, RuntimeMethodHandle).");
+                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotReverseProxy(Type, Type, Type, Func<object?, object?>).");
                 }
 
                 var registerAotProxyFailureMethod = typeof(DuckType).GetMethod(
                     nameof(DuckType.RegisterAotProxyFailure),
-                    new[] { typeof(Type), typeof(Type), typeof(RuntimeMethodHandle) });
+                    new[] { typeof(Type), typeof(Type), typeof(Action) });
                 if (registerAotProxyFailureMethod is null)
                 {
-                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotProxyFailure(Type, Type, RuntimeMethodHandle).");
+                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotProxyFailure(Type, Type, Action).");
                 }
 
                 var registerAotReverseProxyFailureMethod = typeof(DuckType).GetMethod(
                     nameof(DuckType.RegisterAotReverseProxyFailure),
-                    new[] { typeof(Type), typeof(Type), typeof(RuntimeMethodHandle) });
+                    new[] { typeof(Type), typeof(Type), typeof(Action) });
                 if (registerAotReverseProxyFailureMethod is null)
                 {
-                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotReverseProxyFailure(Type, Type, RuntimeMethodHandle).");
+                    throw new InvalidOperationException("Unable to resolve DuckType.RegisterAotReverseProxyFailure(Type, Type, Action).");
                 }
 
                 var enableAotModeMethod = typeof(DuckType).GetMethod(nameof(DuckType.EnableAotMode), Type.EmptyTypes);
@@ -10613,6 +10693,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 GetTypeFromHandleMethod = moduleDef.Import(getTypeFromHandleMethod);
+                FuncObjectObjectCtor = moduleDef.Import(funcObjectObjectCtor);
+                ActionCtor = moduleDef.Import(actionCtor);
                 RegisterAotProxyMethod = moduleDef.Import(registerAotProxyMethod);
                 RegisterAotReverseProxyMethod = moduleDef.Import(registerAotReverseProxyMethod);
                 RegisterAotProxyFailureMethod = moduleDef.Import(registerAotProxyFailureMethod);
@@ -10638,6 +10720,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// </summary>
             /// <value>The get type from handle method value.</value>
             internal IMethod GetTypeFromHandleMethod { get; }
+
+            /// <summary>
+            /// Gets Func&lt;object?, object?&gt; constructor.
+            /// </summary>
+            internal IMethod FuncObjectObjectCtor { get; }
+
+            /// <summary>
+            /// Gets Action constructor.
+            /// </summary>
+            internal IMethod ActionCtor { get; }
 
             /// <summary>
             /// Gets register aot proxy method.
@@ -11118,12 +11210,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 var sourceIndex = mode == DuckTypeAotMappingMode.Reverse ? AssignableReverseTypesByAncestor : AssignableForwardTypesByAncestor;
-                if (!sourceIndex.TryGetValue(targetTypeName, out var rawTargets))
+                if (!sourceIndex.TryGetValue(BuildAssemblyTypeCacheKey(targetAssemblyName, targetTypeName), out var rawTargets))
                 {
                     return false;
                 }
 
-                aliasTargets = rawTargets.Where(target => !IsCanonicalTargetAliasTarget(canonicalTargetType, target.TypeName)).ToList();
+                aliasTargets = rawTargets
+                              .Where(target => !IsCanonicalTargetAliasTarget(canonicalTargetType, target.AssemblyName, target.TypeName))
+                              .ToList();
                 return aliasTargets.Count > 0;
             }
         }

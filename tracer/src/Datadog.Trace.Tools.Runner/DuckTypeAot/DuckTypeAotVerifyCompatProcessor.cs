@@ -53,7 +53,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
-            if (!useCanonicalMapContract && !string.IsNullOrWhiteSpace(options.MappingCatalogPath) && !File.Exists(options.MappingCatalogPath))
+            if (!string.IsNullOrWhiteSpace(options.MappingCatalogPath) && !File.Exists(options.MappingCatalogPath))
             {
                 Utils.WriteError($"--mapping-catalog file was not found: {options.MappingCatalogPath}");
                 return 1;
@@ -66,7 +66,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
-            if (!useCanonicalMapContract && !string.IsNullOrWhiteSpace(options.ScenarioInventoryPath) && !File.Exists(options.ScenarioInventoryPath))
+            if (!string.IsNullOrWhiteSpace(options.ScenarioInventoryPath) && !File.Exists(options.ScenarioInventoryPath))
             {
                 Utils.WriteError($"--scenario-inventory file was not found: {options.ScenarioInventoryPath}");
                 return 1;
@@ -179,17 +179,30 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
-            if (!useCanonicalMapContract && !string.IsNullOrWhiteSpace(options.MappingCatalogPath))
+            IReadOnlyList<string>? mappingCatalogScenarioIds = null;
+            if (!string.IsNullOrWhiteSpace(options.MappingCatalogPath))
             {
-                if (!ValidateMappingCatalog(matrix, options.MappingCatalogPath!))
+                if (!ValidateMappingCatalog(
+                    matrix,
+                    options.MappingCatalogPath!,
+                    enforceScenarioIdMatchesMatrix: !useCanonicalMapContract,
+                    enforceCatalogCoversMatrix: useCanonicalMapContract,
+                    out mappingCatalogScenarioIds))
                 {
                     return 1;
                 }
             }
 
-            if (!useCanonicalMapContract && !string.IsNullOrWhiteSpace(options.ScenarioInventoryPath))
+            if (!string.IsNullOrWhiteSpace(options.ScenarioInventoryPath))
             {
-                if (!ValidateScenarioInventory(matrix, options.ScenarioInventoryPath!))
+                if (useCanonicalMapContract && mappingCatalogScenarioIds is not null)
+                {
+                    if (!ValidateScenarioInventory(mappingCatalogScenarioIds, options.ScenarioInventoryPath!, "--mapping-catalog"))
+                    {
+                        return 1;
+                    }
+                }
+                else if (!ValidateScenarioInventory(matrix, options.ScenarioInventoryPath!))
                 {
                     return 1;
                 }
@@ -573,11 +586,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="matrix">The matrix value.</param>
         /// <param name="mappingCatalogPath">The mapping catalog path value.</param>
+        /// <param name="enforceScenarioIdMatchesMatrix">Whether required mapping scenario ids must match matrix ids.</param>
+        /// <param name="enforceCatalogCoversMatrix">Whether the catalog must cover every matrix mapping.</param>
+        /// <param name="scenarioIds">The scenario ids listed in the catalog.</param>
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ValidateMappingCatalog(
             DuckTypeAotCompatibilityMatrix matrix,
-            string mappingCatalogPath)
+            string mappingCatalogPath,
+            bool enforceScenarioIdMatchesMatrix,
+            bool enforceCatalogCoversMatrix,
+            out IReadOnlyList<string> scenarioIds)
         {
+            scenarioIds = Array.Empty<string>();
             var catalogResult = DuckTypeAotMappingCatalogParser.Parse(mappingCatalogPath);
             // Branch: take this path when (catalogResult.Errors.Count > 0) evaluates to true.
             if (catalogResult.Errors.Count > 0)
@@ -591,6 +611,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var errors = new List<string>();
+            var catalogScenarioIds = new List<string>();
+            var catalogMappingKeys = new HashSet<string>(StringComparer.Ordinal);
             var matrixMappingByKey = new Dictionary<string, DuckTypeAotCompatibilityMapping>(StringComparer.Ordinal);
             foreach (var matrixMapping in matrix.Mappings)
             {
@@ -611,6 +633,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             foreach (var requiredMappingExpectation in catalogResult.RequiredMappingExpectations)
             {
                 var requiredMapping = requiredMappingExpectation.Mapping;
+                _ = catalogMappingKeys.Add(requiredMapping.Key);
                 // Branch: take this path when (string.IsNullOrWhiteSpace(requiredMapping.ScenarioId)) evaluates to true.
                 if (string.IsNullOrWhiteSpace(requiredMapping.ScenarioId))
                 {
@@ -619,6 +642,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         $"mode={requiredMapping.Mode}, proxy={requiredMapping.ProxyTypeName}, target={requiredMapping.TargetTypeName}.");
                     continue;
                 }
+
+                catalogScenarioIds.Add(requiredMapping.ScenarioId!);
 
                 // Branch: take this path when (!matrixMappingByKey.TryGetValue(requiredMapping.Key, out var matrixMapping)) evaluates to true.
                 if (!matrixMappingByKey.TryGetValue(requiredMapping.Key, out var matrixMapping))
@@ -640,7 +665,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 // Branch: take this path when (!string.IsNullOrWhiteSpace(requiredMapping.ScenarioId) && evaluates to true.
-                if (!string.IsNullOrWhiteSpace(requiredMapping.ScenarioId) &&
+                if (enforceScenarioIdMatchesMatrix &&
+                    !string.IsNullOrWhiteSpace(requiredMapping.ScenarioId) &&
                     !string.Equals(matrixMapping.Id, requiredMapping.ScenarioId, StringComparison.Ordinal))
                 {
                     errors.Add(
@@ -649,9 +675,26 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
+            if (enforceCatalogCoversMatrix)
+            {
+                foreach (var matrixEntry in matrixMappingByKey)
+                {
+                    if (catalogMappingKeys.Contains(matrixEntry.Key))
+                    {
+                        continue;
+                    }
+
+                    var matrixMapping = matrixEntry.Value;
+                    errors.Add(
+                        $"--mapping-catalog is missing mapping declared in --map-file/--compat-matrix: " +
+                        $"mode={matrixMapping.Mode ?? "(null)"}, proxy={matrixMapping.ProxyType ?? "(null)"}, target={matrixMapping.TargetType ?? "(null)"}.");
+                }
+            }
+
             // Branch: take this path when (errors.Count == 0) evaluates to true.
             if (errors.Count == 0)
             {
+                scenarioIds = catalogScenarioIds;
                 return true;
             }
 
@@ -671,18 +714,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ValidateScenarioInventory(DuckTypeAotCompatibilityMatrix matrix, string scenarioInventoryPath)
         {
-            var inventoryResult = DuckTypeAotScenarioInventoryParser.Parse(scenarioInventoryPath);
-            // Branch: take this path when (inventoryResult.Errors.Count > 0) evaluates to true.
-            if (inventoryResult.Errors.Count > 0)
-            {
-                foreach (var error in inventoryResult.Errors)
-                {
-                    Utils.WriteError(error);
-                }
-
-                return false;
-            }
-
             var errors = new List<string>();
             var matrixScenarioIds = new HashSet<string>(StringComparer.Ordinal);
             for (var i = 0; i < matrix.Mappings.Count; i++)
@@ -700,22 +731,69 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 _ = matrixScenarioIds.Add(mapping.Id!);
             }
 
+            if (errors.Count > 0)
+            {
+                foreach (var error in errors)
+                {
+                    Utils.WriteError(error);
+                }
+
+                return false;
+            }
+
+            return ValidateScenarioInventory(matrixScenarioIds, scenarioInventoryPath, "--compat-matrix");
+        }
+
+        /// <summary>
+        /// Validates validate scenario inventory.
+        /// </summary>
+        /// <param name="scenarioIds">The scenario ids value.</param>
+        /// <param name="scenarioInventoryPath">The scenario inventory path value.</param>
+        /// <param name="scenarioSourceName">The scenario source name value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        private static bool ValidateScenarioInventory(IReadOnlyList<string> scenarioIds, string scenarioInventoryPath, string scenarioSourceName)
+        {
+            return ValidateScenarioInventory(new HashSet<string>(scenarioIds, StringComparer.Ordinal), scenarioInventoryPath, scenarioSourceName);
+        }
+
+        /// <summary>
+        /// Validates validate scenario inventory.
+        /// </summary>
+        /// <param name="scenarioIds">The scenario ids value.</param>
+        /// <param name="scenarioInventoryPath">The scenario inventory path value.</param>
+        /// <param name="scenarioSourceName">The scenario source name value.</param>
+        /// <returns>true if the operation succeeds; otherwise, false.</returns>
+        private static bool ValidateScenarioInventory(ISet<string> scenarioIds, string scenarioInventoryPath, string scenarioSourceName)
+        {
+            var inventoryResult = DuckTypeAotScenarioInventoryParser.Parse(scenarioInventoryPath);
+            // Branch: take this path when (inventoryResult.Errors.Count > 0) evaluates to true.
+            if (inventoryResult.Errors.Count > 0)
+            {
+                foreach (var error in inventoryResult.Errors)
+                {
+                    Utils.WriteError(error);
+                }
+
+                return false;
+            }
+
+            var errors = new List<string>();
             foreach (var requiredEntry in inventoryResult.RequiredScenarios)
             {
                 // Branch: take this path when (!IsScenarioCoveredByMatrix(requiredEntry, matrixScenarioIds)) evaluates to true.
-                if (!IsScenarioCoveredByMatrix(requiredEntry, matrixScenarioIds))
+                if (!IsScenarioCoveredByMatrix(requiredEntry, scenarioIds))
                 {
-                    errors.Add($"--compat-matrix is missing required scenario from --scenario-inventory: '{requiredEntry}'.");
+                    errors.Add($"{scenarioSourceName} is missing required scenario from --scenario-inventory: '{requiredEntry}'.");
                 }
             }
 
-            foreach (var matrixScenarioId in matrixScenarioIds)
+            foreach (var scenarioId in scenarioIds)
             {
                 // Branch: take this path when (!IsScenarioTrackedByInventory(matrixScenarioId, inventoryResult.RequiredScenarios)) evaluates to true.
-                if (!IsScenarioTrackedByInventory(matrixScenarioId, inventoryResult.RequiredScenarios))
+                if (!IsScenarioTrackedByInventory(scenarioId, inventoryResult.RequiredScenarios))
                 {
                     errors.Add(
-                        $"--compat-matrix contains scenario id '{matrixScenarioId}' that is not tracked by --scenario-inventory. " +
+                        $"{scenarioSourceName} contains scenario id '{scenarioId}' that is not tracked by --scenario-inventory. " +
                         "Add it to the inventory (or matching wildcard group) to avoid unreviewed scenario drift.");
                 }
             }

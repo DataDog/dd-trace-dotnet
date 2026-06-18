@@ -27,10 +27,10 @@ There are currently no expected non-compatible Bible scenarios.
 
 | Family | Scope | Dynamic | AOT | Status | Primary Coverage Signals |
 |---|---|---|---|---|---|
-| Forward proxies | Interface/class/abstract forwarding | Supported | Supported | Compatible | `A-01..E-42` parity inventory |
-| Reverse proxies | Delegation-based reverse implementation | Supported | Supported | Compatible | `A-01..E-42` parity inventory |
+| Forward proxies | Interface/class/abstract forwarding | Supported | Supported | Compatible | `A-01..E-41` strict parity inventory |
+| Reverse proxies | Delegation-based reverse implementation | Supported | Supported | Compatible | `A-01..E-41` strict parity inventory |
 | DuckCopy projection | Struct copy projection | Supported | Supported | Compatible | Bible scenario set + excerpts |
-| Proxy shape + activator bridge | Interface defaults to value-type proxy, `[DuckAsClass]` forces class proxy, runtime registration via method-handle activators | Supported | Supported | Compatible | `DuckTypeAotProcessorsTests` shape/activator checks |
+| Proxy shape + activator bridge | Interface defaults to value-type proxy, `[DuckAsClass]` forces class proxy, generated runtime registration via direct delegate activators | Supported | Supported | Compatible | `DuckTypeAotProcessorsTests` shape/activator checks |
 | Field/property mapping | Public/non-public mapping permutations | Supported | Supported | Compatible | `FG-*`, `FS-*`, `FF-*` |
 | Method mapping | Signatures, overload constraints, conversions | Supported | Supported | Compatible | `FM-*`, `RT-*` |
 | Return/argument conversion | Primitive/reference/value conversion paths | Supported | Supported | Compatible | `RT-*` scenarios |
@@ -56,10 +56,12 @@ These constraints are enforced by build-time generation and runtime contract che
 
 Coverage groups tracked by parity orchestration include:
 
-1. Bible core families: `A-01..E-42`.
+1. Bible core families: `A-01..E-41` in the strict generated-artifact contract.
 2. IL atlas families: `FG-*`, `FS-*`, `FF-*`, `FM-*`, `RT-*`.
 3. Bible examples: `EX-01..EX-20`.
 4. Test-adapted excerpts: `TX-A..TX-T`.
+
+`E-42` is intentionally kept out of the strict generated-artifact contract because it is a non-creatable reverse type-constraint guard rather than a compatible mapping. It remains covered by `DuckTypeAotDifferentialParityTests`.
 
 ## Compatibility Gates
 
