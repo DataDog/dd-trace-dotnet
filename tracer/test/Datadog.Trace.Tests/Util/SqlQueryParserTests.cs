@@ -79,7 +79,6 @@ public class SqlQueryParserTests
     [Theory]
     [InlineData("SELECT * FROM a, b WHERE a.id = b.id")]
     [InlineData("SELECT * FROM (SELECT id FROM inner_table) subq")]
-    [InlineData("WITH cte AS (SELECT 1) SELECT * FROM cte")]
     public void Parse_AmbiguousSelect_ReturnsNullTable(string input)
     {
         var (op, table) = SqlQueryParser.Parse(input);
@@ -91,6 +90,28 @@ public class SqlQueryParserTests
     public void Parse_SelectWithNoFrom_ReturnsNullTable()
     {
         var (op, table) = SqlQueryParser.Parse("SELECT 1 + 1");
+        op.Should().Be("SELECT");
+        table.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("WITH cte AS (SELECT 1) SELECT * FROM cte")]
+    [InlineData("WITH cte AS (SELECT 1) UPDATE users SET x=1")]
+    [InlineData("WITH cte AS (SELECT 1) INSERT INTO orders SELECT * FROM cte")]
+    public void Parse_WithCte_ReturnsNullOperation(string input)
+    {
+        var (op, table) = SqlQueryParser.Parse(input);
+        op.Should().BeNull();
+        table.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("SELECT * FROM users u JOIN orders o ON u.id=o.user_id")]
+    [InlineData("SELECT * FROM users INNER JOIN orders ON users.id=orders.user_id")]
+    [InlineData("SELECT * FROM users LEFT JOIN orders ON users.id=orders.user_id")]
+    public void Parse_JoinQuery_ReturnsNullTable(string input)
+    {
+        var (op, table) = SqlQueryParser.Parse(input);
         op.Should().Be("SELECT");
         table.Should().BeNull();
     }

@@ -25,35 +25,7 @@ namespace Datadog.Trace.Util
                 return (null, null);
             }
 
-            var verbUpper = verb.ToUpperInvariant();
-            string? operation = null;
-
-            if (verbUpper == "WITH")
-            {
-                // WITH is a CTE (Common Table Expression) prefix to SELECT
-                // Continue parsing to find the SELECT
-                operation = "SELECT";
-                // WITH queries are ambiguous, so we return null for the table
-                return (operation, null);
-            }
-
-            operation = verbUpper switch
-            {
-                "SELECT" => "SELECT",
-                "INSERT" => "INSERT",
-                "UPDATE" => "UPDATE",
-                "DELETE" => "DELETE",
-                "CREATE" => "CREATE",
-                "DROP" => "DROP",
-                "ALTER" => "ALTER",
-                "MERGE" => "MERGE",
-                "CALL" => "CALL",
-                "EXEC" => "EXEC",
-                "EXECUTE" => "EXECUTE",
-                "TRUNCATE" => "TRUNCATE",
-                _ => null
-            };
-
+            var operation = GetOperation(verb);
             if (operation is null)
             {
                 return (null, null);
@@ -61,6 +33,35 @@ namespace Datadog.Trace.Util
 
             var table = ExtractTable(commandText, operation);
             return (operation, table);
+        }
+
+        private static string? GetOperation(string verb)
+        {
+            if (verb.Equals("SELECT", StringComparison.OrdinalIgnoreCase)) { return "SELECT"; }
+
+            if (verb.Equals("INSERT", StringComparison.OrdinalIgnoreCase)) { return "INSERT"; }
+
+            if (verb.Equals("UPDATE", StringComparison.OrdinalIgnoreCase)) { return "UPDATE"; }
+
+            if (verb.Equals("DELETE", StringComparison.OrdinalIgnoreCase)) { return "DELETE"; }
+
+            if (verb.Equals("CREATE", StringComparison.OrdinalIgnoreCase)) { return "CREATE"; }
+
+            if (verb.Equals("DROP", StringComparison.OrdinalIgnoreCase)) { return "DROP"; }
+
+            if (verb.Equals("ALTER", StringComparison.OrdinalIgnoreCase)) { return "ALTER"; }
+
+            if (verb.Equals("MERGE", StringComparison.OrdinalIgnoreCase)) { return "MERGE"; }
+
+            if (verb.Equals("CALL", StringComparison.OrdinalIgnoreCase)) { return "CALL"; }
+
+            if (verb.Equals("EXEC", StringComparison.OrdinalIgnoreCase)) { return "EXEC"; }
+
+            if (verb.Equals("EXECUTE", StringComparison.OrdinalIgnoreCase)) { return "EXECUTE"; }
+
+            if (verb.Equals("TRUNCATE", StringComparison.OrdinalIgnoreCase)) { return "TRUNCATE"; }
+
+            return null;
         }
 
         private static string? ExtractTable(string text, string operation)
@@ -119,11 +120,40 @@ namespace Datadog.Trace.Util
                 return null;
             }
 
+            // JOIN check: if the next token (or the one after an alias) is a JOIN keyword, multiple tables are involved
+            var nextToken = ReadToken(text, afterTable, out var afterNext);
+            if (nextToken is not null && IsJoinKeyword(nextToken))
+            {
+                return null;
+            }
+
+            // Also check one more token ahead to handle optional table alias: FROM users u JOIN ...
+            if (nextToken is not null)
+            {
+                var tokenAfterAlias = ReadToken(text, afterNext, out _);
+                if (tokenAfterAlias is not null && IsJoinKeyword(tokenAfterAlias))
+                {
+                    return null;
+                }
+            }
+
             return NormalizeIdentifier(tableToken);
+        }
+
+        private static bool IsJoinKeyword(string token)
+        {
+            return token.Equals("JOIN", StringComparison.OrdinalIgnoreCase)
+                || token.Equals("INNER", StringComparison.OrdinalIgnoreCase)
+                || token.Equals("LEFT", StringComparison.OrdinalIgnoreCase)
+                || token.Equals("RIGHT", StringComparison.OrdinalIgnoreCase)
+                || token.Equals("CROSS", StringComparison.OrdinalIgnoreCase)
+                || token.Equals("FULL", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string? ExtractTableAfterInto(string text)
         {
+            // Known limitation: string literals in SQL are not handled. Tokens containing
+            // the word INTO inside a quoted string are unlikely but not excluded by the tokenizer.
             var pos = 0;
             while (true)
             {
