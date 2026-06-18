@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using NuGet.Versioning;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Logger = Serilog.Log;
@@ -178,11 +179,71 @@ namespace GeneratePackageVersions
                 }
             }
 
+            ReportNewMajorVersionsAvailable(entries, testedVersions);
+
             _latestMinors.Finish();
             _latestMajors.Finish();
             _latestSpecific.Finish();
             _strategyGenerator.Finish();
             return testedVersions;
+        }
+
+        /// <summary>
+        /// Records packages whose latest stable NuGet version is at or above their MaxVersionExclusive (a new
+        /// major outside the range we test), for the bump PR. Ceiling = highest MaxVersionExclusive per package.
+        /// </summary>
+        private void ReportNewMajorVersionsAvailable(IEnumerable<PackageVersionEntry> entries, List<TestedPackage> testedVersions)
+        {
+            // The entry that defines the highest upper bound for each package; its integration
+            // name labels the report row.
+            var ceilingByPackage = entries
+                .GroupBy(e => e.NugetPackageSearchName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderByDescending(e => NuGetVersion.Parse(e.MaxVersionExclusive)).First());
+
+            // Highest in-range version we selected to test this run, per package. Across split-range
+            // entries that share a package name we take the overall max.
+            var currentCapByPackage = testedVersions
+                .GroupBy(t => t.NugetPackageSearchName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Max(t => t.MaxVersion));
+
+            foreach (var packageName in QueriedVersions.Keys.OrderBy(k => k, StringComparer.Ordinal))
+            {
+                if (!ceilingByPackage.TryGetValue(packageName, out var entry))
+                {
+                    continue;
+                }
+
+                var maxVersionExclusive = NuGetVersion.Parse(entry.MaxVersionExclusive);
+
+                NuGetVersion latestAvailable = null;
+                foreach (var candidate in QueriedVersions[packageName])
+                {
+                    if (NuGetVersion.TryParse(candidate.Version, out var parsed)
+                        && (latestAvailable is null || parsed > latestAvailable))
+                    {
+                        latestAvailable = parsed;
+                    }
+                }
+
+                if (latestAvailable is not null && latestAvailable >= maxVersionExclusive)
+                {
+                    // Fall back to the exclusive bound only if nothing was tested in range (shouldn't
+                    // happen for a package that has in-range versions on NuGet).
+                    var currentCap = currentCapByPackage.TryGetValue(packageName, out var tested)
+                        ? tested.ToString()
+                        : entry.MaxVersionExclusive;
+
+                    BumpReport.AddMajorAvailable(new PackageBumpReport.MajorAvailableEntry(
+                        entry.NugetPackageSearchName,
+                        entry.IntegrationName,
+                        currentCap,
+                        latestAvailable.ToNormalizedString()));
+                }
+            }
         }
 
         /// <summary>

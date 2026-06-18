@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,17 +22,20 @@ public class PackageBumpReport
     private readonly int _cooldownDays;
     private readonly List<BumpEntry> _bumpedEntries = new();
     private readonly List<CooldownEntry> _cooldownEntries = new();
+    private readonly List<MajorAvailableEntry> _majorAvailableEntries = new();
 
     public PackageBumpReport(int cooldownDays)
     {
         _cooldownDays = cooldownDays;
     }
 
-    public bool HasEntries => _bumpedEntries.Count > 0 || _cooldownEntries.Count > 0;
+    public bool HasEntries => _bumpedEntries.Count > 0 || _cooldownEntries.Count > 0 || _majorAvailableEntries.Count > 0;
 
     public IReadOnlyList<BumpEntry> BumpedEntries => _bumpedEntries;
 
     public IReadOnlyList<CooldownEntry> CooldownEntries => _cooldownEntries;
+
+    public IReadOnlyList<MajorAvailableEntry> MajorAvailableEntries => _majorAvailableEntries;
 
     public void AddBump(BumpEntry entry)
     {
@@ -41,6 +45,11 @@ public class PackageBumpReport
     public void AddCooldown(CooldownEntry entry)
     {
         _cooldownEntries.Add(entry);
+    }
+
+    public void AddMajorAvailable(MajorAvailableEntry entry)
+    {
+        _majorAvailableEntries.Add(entry);
     }
 
     public string ToMarkdown()
@@ -70,6 +79,18 @@ public class PackageBumpReport
                 sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {previous} | {newVersion} | {published} |");
             }
 
+            sb.AppendLine();
+        }
+
+        if (_majorAvailableEntries.Count > 0)
+        {
+            sb.AppendLine("## New Major Versions Available");
+            sb.AppendLine();
+            sb.AppendLine("These have a new major outside our supported range. Review whether to widen the");
+            sb.AppendLine("integration's `MaximumVersion` and the definition's `MaxVersionExclusive`/`SpecificVersions`,");
+            sb.AppendLine("or add a new split entry, to adopt.");
+            sb.AppendLine();
+            AppendMajorAvailableTable(sb, _majorAvailableEntries);
             sb.AppendLine();
         }
 
@@ -107,6 +128,83 @@ public class PackageBumpReport
         }
     }
 
+    /// <summary>
+    /// Renders the pending-majors file, merging this run's majors with preserved rows for packages it
+    /// didn't inspect. Always returns content. See the Build.Utilities.cs call site for why it's committed.
+    /// </summary>
+    public string RenderPendingMajorsFile(string existingContent, ISet<string> inspectedPackages)
+    {
+        var merged = ParsePendingMajorsTable(existingContent)
+            .Where(r => !inspectedPackages.Contains(r.PackageName))
+            .Concat(_majorAvailableEntries)
+            .OrderBy(r => r.PackageName, StringComparer.Ordinal)
+            .ToList();
+
+        var sb = new StringBuilder();
+        sb.AppendLine("# Pending Major Versions");
+        sb.AppendLine();
+        sb.AppendLine("Integrations whose NuGet package has a new major outside the version range we currently test.");
+        sb.AppendLine("Maintained automatically by the `GeneratePackageVersions` build target; do not edit by hand.");
+        sb.AppendLine();
+
+        if (merged.Count == 0)
+        {
+            sb.AppendLine("_None: every integration's tested range covers the latest major available on NuGet._");
+            return sb.ToString();
+        }
+
+        AppendMajorAvailableTable(sb, merged);
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Parses the data rows out of a previously-rendered pending-majors file, skipping the header and
+    /// separator rows. Tolerates a missing or empty file (yields nothing).
+    /// </summary>
+    private static IEnumerable<MajorAvailableEntry> ParsePendingMajorsTable(string content)
+    {
+        if (string.IsNullOrEmpty(content))
+        {
+            yield break;
+        }
+
+        foreach (var rawLine in content.Split('\n'))
+        {
+            var line = rawLine.Trim();
+            if (!line.StartsWith('|'))
+            {
+                continue;
+            }
+
+            var cells = line.Trim('|').Split('|');
+            if (cells.Length != 4)
+            {
+                continue;
+            }
+
+            var package = cells[0].Trim();
+
+            // Skip the header row and the |---| separator row.
+            if (package is "Package" || package.StartsWith('-'))
+            {
+                continue;
+            }
+
+            yield return new MajorAvailableEntry(package, cells[1].Trim(), cells[2].Trim(), cells[3].Trim());
+        }
+    }
+
+    private static void AppendMajorAvailableTable(StringBuilder sb, IEnumerable<MajorAvailableEntry> entries)
+    {
+        sb.AppendLine("| Package | Integration | Current cap | Latest available |");
+        sb.AppendLine("|---------|-------------|-------------|------------------|");
+
+        foreach (var entry in entries)
+        {
+            sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {entry.CurrentCap} | {entry.LatestAvailable} |");
+        }
+    }
+
     public record BumpEntry(
         string PackageName,
         string IntegrationName,
@@ -122,4 +220,10 @@ public class PackageBumpReport
         string IntegrationName,
         string OverriddenVersion,
         DateTimeOffset? PublishedDate);
+
+    public record MajorAvailableEntry(
+        string PackageName,
+        string IntegrationName,
+        string CurrentCap,
+        string LatestAvailable);
 }
