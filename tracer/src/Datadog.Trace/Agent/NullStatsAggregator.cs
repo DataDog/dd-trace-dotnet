@@ -36,6 +36,15 @@ namespace Datadog.Trace.Agent
                 httpStatusCode = 0;
             }
 
+            if (httpStatusCode == 0)
+            {
+                var metricStatusCode = span.GetMetric("http.response.status_code");
+                if (metricStatusCode is { } httpStatusCodeValue)
+                {
+                    httpStatusCode = (int)httpStatusCodeValue;
+                }
+            }
+
             return new StatsAggregationKey(
                 span.ResourceName,
                 span.ServiceName,

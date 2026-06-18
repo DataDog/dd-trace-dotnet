@@ -288,6 +288,7 @@ internal static class OtlpMapper
                 }
 
                 _writeKeyValue(ref State, new KeyValue(key, value));
+
                 Count++;
             }
             else
@@ -313,7 +314,16 @@ internal static class OtlpMapper
                     }
                 }
 
-                _writeKeyValue(ref State, new KeyValue(key, value));
+                // Per OTel semantic conventions, these attributes must be int_value, not double_value.
+                if (key == "server.port" || key == "http.response.status_code")
+                {
+                    _writeKeyValue(ref State, new KeyValue(key, (long)value));
+                }
+                else
+                {
+                    _writeKeyValue(ref State, new KeyValue(key, (long)value));
+                }
+
                 Count++;
             }
             else

@@ -33,6 +33,7 @@ namespace Datadog.Trace.TestHelpers
             .IsOptional("error.msg")
             .IsOptional("error.type")
             .IsOptional("error.stack")
+            .IsOptional("http-client-handler-type")
             .IsOptional("_dd.git.repository_url")
             .IsOptional("_dd.git.commit.sha");
 

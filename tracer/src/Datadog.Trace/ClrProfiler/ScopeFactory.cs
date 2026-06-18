@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
@@ -120,11 +121,23 @@ namespace Datadog.Trace.ClrProfiler
                 span.Type = SpanTypes.Http;
                 span.ResourceName = $"{httpMethod} {resourceUrl}";
 
-                tags.HttpMethod = httpMethod?.ToUpperInvariant();
-                if (requestUri is not null)
+                if (tracer.Settings.OpenTelemetrySemanticsEnabled)
                 {
-                    tags.HttpUrl = HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);
-                    tags.Host = HttpRequestUtils.GetNormalizedHost(requestUri.Host);
+                    HttpOtelHelper.SetRequestMethod(span, httpMethod?.ToUpperInvariant());
+                    if (requestUri is not null)
+                    {
+                        HttpOtelHelper.SetClientUrl(span, HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager));
+                        HttpOtelHelper.SetServerAddress(span, HttpRequestUtils.GetNormalizedHost(requestUri.Host));
+                    }
+                }
+                else
+                {
+                    tags.HttpMethod = httpMethod?.ToUpperInvariant();
+                    if (requestUri is not null)
+                    {
+                        tags.HttpUrl = HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);
+                        tags.Host = HttpRequestUtils.GetNormalizedHost(requestUri.Host);
+                    }
                 }
 
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);

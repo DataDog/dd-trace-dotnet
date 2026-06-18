@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
@@ -303,13 +304,6 @@ namespace Datadog.Trace.DiagnosticListeners
             HttpContext httpContext,
             HttpRequest request)
         {
-            // Create a child span for the MVC action
-            var mvcSpanTags = new AspNetCoreMvcTags();
-            var mvcScope = tracer.StartActiveInternal(MvcOperationName, tags: mvcSpanTags);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            var span = mvcScope.Span;
-            span.Type = SpanTypes.Web;
-
             // StartMvcCoreSpan is only called with new route names, so parent tags are always AspNetCoreEndpointTags
             var rootSpan = trackingFeature.RootScope.Span;
             var rootSpanTags = (AspNetCoreEndpointTags)rootSpan.Tags;
@@ -381,7 +375,12 @@ namespace Datadog.Trace.DiagnosticListeners
                         actionName: actionName,
                         expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
 
-                    resourceName = $"{rootSpanTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    // HttpMethod is null in OTel mode (stored as "http.request.method" raw tag instead)
+                    // In OTel mode, use "HTTP" for unknown methods per OTel semantic conventions
+                    var httpMethod = tracer.Settings.OpenTelemetrySemanticsEnabled
+                        ? HttpOtelHelper.GetResourceNameMethod(request.Method)
+                        : (rootSpanTags.HttpMethod ?? request.Method?.ToUpperInvariant() ?? "UNKNOWN");
+                    resourceName = $"{httpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                 }
@@ -389,24 +388,47 @@ namespace Datadog.Trace.DiagnosticListeners
 
             // mirror the parent if we couldn't extract a route for some reason
             // (and the parent is not using the placeholder resource name)
-            span.ResourceName = resourceName
-                             ?? (string.IsNullOrEmpty(rootSpan.ResourceName)
-                                     ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request)
-                                     : rootSpan.ResourceName);
+            var effectiveResourceName = resourceName
+                                     ?? (string.IsNullOrEmpty(rootSpan.ResourceName)
+                                             ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request, tracer.Settings.OpenTelemetrySemanticsEnabled)
+                                             : rootSpan.ResourceName);
+
+            if (!isUsingEndpointRouting && isFirstExecution)
+            {
+                // If we're using endpoint routing or this is a pipeline re-execution,
+                // these will already be set correctly
+                if (tracer.Settings.OpenTelemetrySemanticsEnabled)
+                {
+                    rootSpanTags.HttpRoute = aspNetRoute;
+                }
+                else
+                {
+                    rootSpanTags.AspNetCoreRoute = aspNetRoute;
+                }
+
+                rootSpan.ResourceName = effectiveResourceName;
+            }
+
+            // In OTel semantics mode, a single server span is used: skip child span creation
+            if (tracer.Settings.OpenTelemetrySemanticsEnabled)
+            {
+                return null;
+            }
+
+            // Create a child span for the MVC action
+            var mvcSpanTags = new AspNetCoreMvcTags();
+            var mvcScope = tracer.StartActiveInternal(MvcOperationName, tags: mvcSpanTags);
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            var span = mvcScope.Span;
+            span.Type = SpanTypes.Web;
+
+            span.ResourceName = effectiveResourceName;
 
             mvcSpanTags.AspNetCoreAction = actionName;
             mvcSpanTags.AspNetCoreController = controllerName;
             mvcSpanTags.AspNetCoreArea = areaName;
             mvcSpanTags.AspNetCorePage = pagePath;
             mvcSpanTags.AspNetCoreRoute = aspNetRoute;
-
-            if (!isUsingEndpointRouting && isFirstExecution)
-            {
-                // If we're using endpoint routing or this is a pipeline re-execution,
-                // these will already be set correctly
-                rootSpanTags.AspNetCoreRoute = aspNetRoute;
-                rootSpan.ResourceName = span.ResourceName;
-            }
 
             return span;
         }
@@ -454,9 +476,10 @@ namespace Datadog.Trace.DiagnosticListeners
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
                 var routeTemplateResourceNamesEnabled = _tracer.Settings.RouteTemplateResourceNamesEnabled;
+                var otelSemanticsEnabled = _tracer.Settings.OpenTelemetrySemanticsEnabled;
                 var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
                 // Only modify tracking feature if _not_ using legacy feature names
-                if (isFirstExecution && routeTemplateResourceNamesEnabled)
+                if (isFirstExecution && (routeTemplateResourceNamesEnabled || otelSemanticsEnabled))
                 {
                     trackingFeature.IsUsingEndpointRouting = true;
                     trackingFeature.IsFirstPipelineExecution = false;
@@ -520,7 +543,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     Log.Debug("Could not extract type and method for endpoint code origin. Endpoint: {EndpointDisplayName}", routeEndpoint.Value.DisplayName);
                 }
 
-                if (!routeTemplateResourceNamesEnabled)
+                if (!routeTemplateResourceNamesEnabled && !otelSemanticsEnabled)
                 {
                     return;
                 }
@@ -531,7 +554,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                if (isFirstExecution)
+                if (isFirstExecution && !_tracer.Settings.OpenTelemetrySemanticsEnabled)
                 {
                     tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                 }
@@ -557,15 +580,24 @@ namespace Datadog.Trace.DiagnosticListeners
                                       ? raw as string
                                       : null;
 
-                var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
-                    routePattern,
-                    routeValues,
-                    areaName: areaName,
-                    controllerName: controllerName,
-                    actionName: actionName,
-                    _tracer.Settings.ExpandRouteTemplatesEnabled);
+                // In OTel semantics mode, use the raw route text so the resource name matches http.route
+                // (preserving type constraints like {id:int}). Fall back to SimplifyRoutePattern otherwise.
+                var resourcePathName = otelSemanticsEnabled && normalizedRoute is not null
+                    ? normalizedRoute
+                    : AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+                        routePattern,
+                        routeValues,
+                        areaName: areaName,
+                        controllerName: controllerName,
+                        actionName: actionName,
+                        _tracer.Settings.ExpandRouteTemplatesEnabled);
 
-                var resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                // HttpMethod is null in OTel mode (stored as "http.request.method" raw tag instead)
+                // In OTel mode, use "HTTP" for unknown methods per OTel semantic conventions
+                var httpMethod = otelSemanticsEnabled
+                    ? HttpOtelHelper.GetResourceNameMethod(request.Method)
+                    : (tags.HttpMethod ?? request.Method?.ToUpperInvariant() ?? "UNKNOWN");
+                var resourceName = $"{httpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
                 // NOTE: We could set the controller/action/area tags on the parent span
                 // But instead we re-extract them in the MVC endpoint as these are MVC
@@ -576,7 +608,14 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // Overwrite the route in the parent span
                     rootSpan.ResourceName = resourceName;
-                    tags.AspNetCoreRoute = normalizedRoute;
+                    if (_tracer.Settings.OpenTelemetrySemanticsEnabled)
+                    {
+                        tags.HttpRoute = normalizedRoute;
+                    }
+                    else
+                    {
+                        tags.AspNetCoreRoute = normalizedRoute;
+                    }
                 }
 
                 _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);

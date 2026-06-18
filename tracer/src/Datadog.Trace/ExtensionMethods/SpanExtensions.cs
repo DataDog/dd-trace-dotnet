@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -51,12 +52,20 @@ namespace Datadog.Trace.ExtensionMethods
             string host,
             string httpUrl,
             string userAgent,
-            WebTags tags)
+            WebTags tags,
+            bool otelSemanticsEnabled = false)
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
 
-            if (tags is not null)
+            if (otelSemanticsEnabled)
+            {
+                HttpOtelHelper.SetRequestMethod(span, method);
+                HttpOtelHelper.SetServerUrl(span, httpUrl);
+                HttpOtelHelper.SetServerAddress(span, host);
+                HttpOtelHelper.SetUserAgent(span, userAgent);
+            }
+            else if (tags is not null)
             {
                 tags.HttpMethod = method;
                 tags.HttpRequestHeadersHost = host;
@@ -93,7 +102,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, MutableSettings tracerSettings)
+        internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, MutableSettings tracerSettings, bool otelSemanticsEnabled = false)
         {
             if (statusCode < 100 || statusCode >= 600)
             {
@@ -103,7 +112,11 @@ namespace Datadog.Trace.ExtensionMethods
 
             string statusCodeString = ConvertStatusCodeToString(statusCode);
 
-            if (span.Tags is IHasStatusCode statusCodeTags)
+            if (otelSemanticsEnabled)
+            {
+                span.SetMetric("http.response.status_code", statusCode);
+            }
+            else if (span.Tags is IHasStatusCode statusCodeTags)
             {
                 statusCodeTags.HttpStatusCode = statusCodeString;
             }
@@ -117,9 +130,17 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 span.Error = true;
 
-                // if an error message already exists (e.g. from a previous exception), don't replace it
-                if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
+                if (otelSemanticsEnabled)
                 {
+                    // Don't clobber an error.type already set by an exception handler
+                    if (span.GetTag("error.type") is null)
+                    {
+                        span.SetTag("error.type", statusCodeString);
+                    }
+                }
+                else if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
+                {
+                    // if an error message already exists (e.g. from a previous exception), don't replace it
                     span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {statusCodeString}.");
                 }
             }

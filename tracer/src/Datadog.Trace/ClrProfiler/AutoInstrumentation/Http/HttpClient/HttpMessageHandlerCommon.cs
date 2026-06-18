@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 {
                     var statusCode = responseMessage.StatusCode;
 #endif
-                    scope.Span.SetHttpStatusCode(statusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                    scope.Span.SetHttpStatusCode(statusCode, false, Tracer.Instance.CurrentTraceSettings.Settings, Tracer.Instance.Settings.OpenTelemetrySemanticsEnabled);
                 }
 
                 if (exception != null)

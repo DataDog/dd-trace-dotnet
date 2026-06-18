@@ -130,7 +130,7 @@ namespace Datadog.Trace.Processors
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L136-L142
             if (span.Tags is IHasStatusCode statusCodeTags)
             {
-                if (!TraceUtil.IsValidStatusCode(statusCodeTags.HttpStatusCode))
+                if (!string.IsNullOrEmpty(statusCodeTags.HttpStatusCode) && !TraceUtil.IsValidStatusCode(statusCodeTags.HttpStatusCode))
                 {
                     Log.Debug("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={InvalidStatusCode}: {Span}", statusCodeTags.HttpStatusCode, span);
                     statusCodeTags.HttpStatusCode = string.Empty;

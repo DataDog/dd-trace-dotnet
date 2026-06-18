@@ -10,6 +10,7 @@ using System;
 using System.Reflection;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
@@ -256,19 +257,38 @@ namespace Datadog.Trace.DiagnosticListeners
                     // No need to ToLowerInvariant() these strings, as we lower case
                     // the whole route later
 
-                    var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
-                        routePattern,
-                        routeValues,
-                        _tracer.Settings.ExpandRouteTemplatesEnabled);
+                    var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
+
+                    // In OTel semantics mode, use the raw route text so the resource name matches http.route
+                    // (preserving type constraints like {id:int}). Fall back to SimplifyRoutePattern otherwise.
+                    var resourcePathName = _tracer.Settings.OpenTelemetrySemanticsEnabled && normalizedRoute is not null
+                        ? normalizedRoute
+                        : AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+                            routePattern,
+                            routeValues,
+                            _tracer.Settings.ExpandRouteTemplatesEnabled);
+
+                    // In OTel mode, HttpMethod is null (stored as "http.request.method" raw tag instead).
+                    // Use "HTTP" for unknown methods per OTel semantic conventions.
+                    var httpMethod = _tracer.Settings.OpenTelemetrySemanticsEnabled
+                        ? HttpOtelHelper.GetResourceNameMethod(request.Method)
+                        : (tags.HttpMethod ?? "UNKNOWN");
 
                     // If we have a PathBase, then we need to do a bunch of encoding etc which requires allocating buffers
                     // and various other things. We could look at optimizing that later by inlining ToUriComponent and using a ValueStringBuilder,
                     // but for now, we just fast-path the no-path base case
-                    rootSpan.ResourceName = !request.PathBase.HasValue && tags.HttpMethod.Length + 1 + resourcePathName.Length <= 1024
-                                                ? string.Create(null, stackalloc char[1024], $"{tags.HttpMethod} {resourcePathName}")
-                                                : $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    rootSpan.ResourceName = !request.PathBase.HasValue && httpMethod.Length + 1 + resourcePathName.Length <= 1024
+                                                ? string.Create(null, stackalloc char[1024], $"{httpMethod} {resourcePathName}")
+                                                : $"{httpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
-                    tags.AspNetCoreRoute = routePattern.RawText?.ToLowerInvariant();
+                    if (_tracer.Settings.OpenTelemetrySemanticsEnabled)
+                    {
+                        tags.HttpRoute = normalizedRoute;
+                    }
+                    else
+                    {
+                        tags.AspNetCoreRoute = normalizedRoute;
+                    }
                 }
 
                 // We check appsec enabled in here, but this avoids the method call if it's not needed

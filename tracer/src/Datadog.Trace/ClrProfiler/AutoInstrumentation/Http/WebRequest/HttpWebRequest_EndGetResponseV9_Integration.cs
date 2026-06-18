@@ -94,7 +94,7 @@ public sealed class HttpWebRequest_EndGetResponseV9_Integration
 
                     if (returnValue is HttpWebResponse response)
                     {
-                        scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false, Tracer.Instance.CurrentTraceSettings.Settings);
+                        scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false, Tracer.Instance.CurrentTraceSettings.Settings, Tracer.Instance.Settings.OpenTelemetrySemanticsEnabled);
                         scope.Dispose();
                     }
                     else if (exception is WebException { Status: WebExceptionStatus.ProtocolError, Response: HttpWebResponse exceptionResponse })
@@ -103,7 +103,7 @@ public sealed class HttpWebRequest_EndGetResponseV9_Integration
                         // SetHttpStatusCode will mark the span with an error if the StatusCode is within the configured range
                         scope.Span.SetException(exception, markAsError: false);
 
-                        scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, isServer: false, Tracer.Instance.CurrentTraceSettings.Settings);
+                        scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, isServer: false, Tracer.Instance.CurrentTraceSettings.Settings, Tracer.Instance.Settings.OpenTelemetrySemanticsEnabled);
                         scope.Dispose();
                     }
                     else

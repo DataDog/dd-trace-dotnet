@@ -457,7 +457,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 if (!span.HasHttpStatusCode())
                 {
-                    span.SetHttpStatusCode(statusCode: 500, isServer: true, settings);
+                    span.SetHttpStatusCode(statusCode: 500, isServer: true, settings, tracer.Settings.OpenTelemetrySemanticsEnabled);
                 }
 
                 span.SetException(exception);
