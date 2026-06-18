@@ -304,6 +304,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
+        /// Represents the binding plan kind used by assignable alias safety checks.
+        /// </summary>
+        private enum AliasSemanticBindingPlanKind
+        {
+            /// <summary>
+            /// The binding plan is not initialized.
+            /// </summary>
+            None,
+
+            /// <summary>
+            /// The binding plan delegates proxy methods to target members.
+            /// </summary>
+            Forward,
+
+            /// <summary>
+            /// The binding plan copies target members into a DuckCopy struct.
+            /// </summary>
+            StructCopy
+        }
+
+        /// <summary>
         /// Defines named constants for field resolution mode.
         /// </summary>
         private enum FieldResolutionMode
@@ -486,7 +507,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var canonicalMappingsByKey = mappingResolutionResult.Mappings.ToDictionary(mapping => mapping.Key, StringComparer.Ordinal);
             phaseStopwatch = StartProfilePhase();
             _currentExecutionContext = new EmitterExecutionContext(runtimeTypeResolutionAssemblyPathsByName, targetTypeIndex);
-            var runtimeRegistrations = BuildRuntimeRegistrations(mappingResolutionResult.Mappings, targetTypeIndex);
+            var runtimeRegistrations = BuildRuntimeRegistrations(
+                moduleDef,
+                mappingResolutionResult.Mappings,
+                targetTypeIndex,
+                proxyModulesByAssemblyName,
+                targetModulesByAssemblyName);
             StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.BuildRuntimeRegistrationsSeconds += seconds);
             try
             {
@@ -863,8 +889,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="targetTypeIndex">The target type index value.</param>
         /// <returns>The resulting runtime registration set.</returns>
         private static IReadOnlyList<DuckTypeAotRuntimeRegistration> BuildRuntimeRegistrations(
+            ModuleDef moduleDef,
             IReadOnlyList<DuckTypeAotMapping> canonicalMappings,
-            TargetTypeIndex targetTypeIndex)
+            TargetTypeIndex targetTypeIndex,
+            IReadOnlyDictionary<string, ModuleDefMD> proxyModulesByAssemblyName,
+            IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName)
         {
             var registrations = new List<DuckTypeAotRuntimeRegistration>();
             var seenKeys = new HashSet<string>(StringComparer.Ordinal);
@@ -912,16 +941,505 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         mapping.Mode,
                         mapping.Source);
                     if (canonicalKeys.Contains(aliasMapping.Key) ||
-                        !seenKeys.Add(aliasMapping.Key))
+                        seenKeys.Contains(aliasMapping.Key))
                     {
                         continue;
                     }
 
+                    if (mapping.Mode == DuckTypeAotMappingMode.Forward &&
+                        !IsAssignableAliasSemanticallySafe(
+                            moduleDef,
+                            mapping,
+                            aliasMapping,
+                            proxyModulesByAssemblyName,
+                            targetModulesByAssemblyName))
+                    {
+                        continue;
+                    }
+
+                    _ = seenKeys.Add(aliasMapping.Key);
                     registrations.Add(new DuckTypeAotRuntimeRegistration(aliasMapping, mapping.Key, DuckTypeAotRuntimeRegistrationKind.AssignableAlias));
                 }
             }
 
             return registrations;
+        }
+
+        /// <summary>
+        /// Determines whether an assignable target can safely reuse the canonical target proxy binding plan.
+        /// </summary>
+        /// <param name="moduleDef">The generated registry module.</param>
+        /// <param name="canonicalMapping">The canonical mapping value.</param>
+        /// <param name="aliasMapping">The alias mapping value.</param>
+        /// <param name="proxyModulesByAssemblyName">The proxy modules by assembly name value.</param>
+        /// <param name="targetModulesByAssemblyName">The target modules by assembly name value.</param>
+        /// <returns>true when the alias resolves to the same effective target members; otherwise, false.</returns>
+        private static bool IsAssignableAliasSemanticallySafe(
+            ModuleDef moduleDef,
+            DuckTypeAotMapping canonicalMapping,
+            DuckTypeAotMapping aliasMapping,
+            IReadOnlyDictionary<string, ModuleDefMD> proxyModulesByAssemblyName,
+            IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName)
+        {
+            return TryCollectAliasSemanticBindingPlan(
+                       moduleDef,
+                       canonicalMapping,
+                       proxyModulesByAssemblyName,
+                       targetModulesByAssemblyName,
+                       inheritedClosedGenericTargetTypeArguments: null,
+                       out var canonicalPlan) &&
+                   TryCollectAliasSemanticBindingPlan(
+                       moduleDef,
+                       aliasMapping,
+                       proxyModulesByAssemblyName,
+                       targetModulesByAssemblyName,
+                       canonicalPlan.ClosedGenericTargetTypeArguments,
+                       out var aliasPlan) &&
+                   AreAliasSemanticBindingPlansEquivalent(canonicalPlan, aliasPlan);
+        }
+
+        /// <summary>
+        /// Attempts to collect the regular AOT binding plan used for alias safety checks.
+        /// </summary>
+        /// <param name="moduleDef">The generated registry module.</param>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="proxyModulesByAssemblyName">The proxy modules by assembly name value.</param>
+        /// <param name="targetModulesByAssemblyName">The target modules by assembly name value.</param>
+        /// <param name="inheritedClosedGenericTargetTypeArguments">The inherited closed generic target type arguments.</param>
+        /// <param name="plan">The collected binding plan.</param>
+        /// <returns>true when the binding plan was collected; otherwise, false.</returns>
+        private static bool TryCollectAliasSemanticBindingPlan(
+            ModuleDef moduleDef,
+            DuckTypeAotMapping mapping,
+            IReadOnlyDictionary<string, ModuleDefMD> proxyModulesByAssemblyName,
+            IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName,
+            IReadOnlyList<TypeSig>? inheritedClosedGenericTargetTypeArguments,
+            out AliasSemanticBindingPlan plan)
+        {
+            plan = default;
+            if (!TryResolveAliasSemanticBindingTypes(
+                    moduleDef,
+                    mapping,
+                    proxyModulesByAssemblyName,
+                    targetModulesByAssemblyName,
+                    inheritedClosedGenericTargetTypeArguments,
+                    out var proxyType,
+                    out var targetType,
+                    out var closedGenericProxyTypeArguments,
+                    out var closedGenericTargetTypeArguments))
+            {
+                return false;
+            }
+
+            if (proxyType.IsValueType)
+            {
+                if (!TryCollectStructCopyBindings(
+                        mapping,
+                        proxyType,
+                        targetType,
+                        closedGenericTargetTypeArguments,
+                        out var structCopyBindings,
+                        out _))
+                {
+                    return false;
+                }
+
+                plan = AliasSemanticBindingPlan.ForStructCopy(structCopyBindings, closedGenericTargetTypeArguments);
+                return true;
+            }
+
+            if (!proxyType.IsInterface && !proxyType.IsClass)
+            {
+                return false;
+            }
+
+            if (!TryCollectForwardBindings(
+                    mapping,
+                    proxyType,
+                    targetType,
+                    closedGenericProxyTypeArguments,
+                    closedGenericTargetTypeArguments,
+                    proxyType.IsInterface,
+                    out var forwardBindings,
+                    out _))
+            {
+                return false;
+            }
+
+            plan = AliasSemanticBindingPlan.ForForward(forwardBindings, closedGenericTargetTypeArguments);
+            return true;
+        }
+
+        /// <summary>
+        /// Attempts to resolve proxy and target definitions plus closed generic arguments for alias checks.
+        /// </summary>
+        /// <param name="moduleDef">The generated registry module.</param>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="proxyModulesByAssemblyName">The proxy modules by assembly name value.</param>
+        /// <param name="targetModulesByAssemblyName">The target modules by assembly name value.</param>
+        /// <param name="inheritedClosedGenericTargetTypeArguments">The inherited closed generic target type arguments.</param>
+        /// <param name="proxyType">The resolved proxy type definition.</param>
+        /// <param name="targetType">The resolved target type definition.</param>
+        /// <param name="closedGenericProxyTypeArguments">The closed proxy generic type arguments.</param>
+        /// <param name="closedGenericTargetTypeArguments">The closed target generic type arguments.</param>
+        /// <returns>true when both type definitions were resolved; otherwise, false.</returns>
+        private static bool TryResolveAliasSemanticBindingTypes(
+            ModuleDef moduleDef,
+            DuckTypeAotMapping mapping,
+            IReadOnlyDictionary<string, ModuleDefMD> proxyModulesByAssemblyName,
+            IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName,
+            IReadOnlyList<TypeSig>? inheritedClosedGenericTargetTypeArguments,
+            out TypeDef proxyType,
+            out TypeDef targetType,
+            out IReadOnlyList<TypeSig>? closedGenericProxyTypeArguments,
+            out IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments)
+        {
+            proxyType = null!;
+            targetType = null!;
+            closedGenericProxyTypeArguments = null;
+            closedGenericTargetTypeArguments = null;
+
+            if (!proxyModulesByAssemblyName.TryGetValue(mapping.ProxyAssemblyName, out var proxyModule) ||
+                !targetModulesByAssemblyName.TryGetValue(mapping.TargetAssemblyName, out var targetModule))
+            {
+                return false;
+            }
+
+            var proxyTypeName = mapping.ProxyTypeName;
+            if (DuckTypeAotNameHelpers.IsClosedGenericTypeName(mapping.ProxyTypeName))
+            {
+                if (runtimeTypeResolutionAssemblyPathsByName is null ||
+                    !runtimeTypeResolutionAssemblyPathsByName.TryGetValue(mapping.ProxyAssemblyName, out var proxyAssemblyPath) ||
+                    !TryResolveRuntimeType(mapping.ProxyAssemblyName, proxyAssemblyPath, mapping.ProxyTypeName, out var proxyRuntimeType) ||
+                    proxyRuntimeType is null)
+                {
+                    return false;
+                }
+
+                proxyTypeName = proxyRuntimeType.IsGenericType
+                                    ? proxyRuntimeType.GetGenericTypeDefinition().FullName!
+                                    : mapping.ProxyTypeName;
+                closedGenericProxyTypeArguments = proxyRuntimeType.IsGenericType
+                                                      ? proxyRuntimeType.GetGenericArguments()
+                                                                        .Select(runtimeType => ImportRuntimeTypeSig(moduleDef, runtimeType))
+                                                                        .ToArray()
+                                                      : null;
+            }
+
+            var targetTypeName = mapping.TargetTypeName;
+            if (DuckTypeAotNameHelpers.IsClosedGenericTypeName(mapping.TargetTypeName))
+            {
+                if (runtimeTypeResolutionAssemblyPathsByName is null ||
+                    !runtimeTypeResolutionAssemblyPathsByName.TryGetValue(mapping.TargetAssemblyName, out var targetAssemblyPath) ||
+                    !TryResolveRuntimeType(mapping.TargetAssemblyName, targetAssemblyPath, mapping.TargetTypeName, out var targetRuntimeType) ||
+                    targetRuntimeType is null)
+                {
+                    return false;
+                }
+
+                var targetRuntimeTypeDefinition = targetRuntimeType.IsGenericType
+                                                      ? targetRuntimeType.GetGenericTypeDefinition()
+                                                      : targetRuntimeType;
+                targetTypeName = targetRuntimeTypeDefinition.FullName!;
+                closedGenericTargetTypeArguments = targetRuntimeType.IsGenericType
+                                                       ? targetRuntimeType.GetGenericArguments()
+                                                                          .Select(runtimeType => ImportRuntimeTypeSig(moduleDef, runtimeType))
+                                                                          .ToArray()
+                                                       : null;
+            }
+            else if (inheritedClosedGenericTargetTypeArguments is { Count: > 0 })
+            {
+                closedGenericTargetTypeArguments = inheritedClosedGenericTargetTypeArguments;
+            }
+
+            return TryResolveType(proxyModule, proxyTypeName, out proxyType) &&
+                   TryResolveType(targetModule, targetTypeName, out targetType);
+        }
+
+        /// <summary>
+        /// Determines whether two alias semantic binding plans are equivalent.
+        /// </summary>
+        /// <param name="canonicalPlan">The canonical binding plan.</param>
+        /// <param name="aliasPlan">The alias binding plan.</param>
+        /// <returns>true when both plans bind the same effective target members; otherwise, false.</returns>
+        private static bool AreAliasSemanticBindingPlansEquivalent(AliasSemanticBindingPlan canonicalPlan, AliasSemanticBindingPlan aliasPlan)
+        {
+            if (canonicalPlan.Kind != aliasPlan.Kind)
+            {
+                return false;
+            }
+
+            return canonicalPlan.Kind switch
+            {
+                AliasSemanticBindingPlanKind.Forward => AreForwardBindingSetsEquivalent(canonicalPlan.ForwardBindings!, aliasPlan.ForwardBindings!),
+                AliasSemanticBindingPlanKind.StructCopy => AreStructCopyBindingSetsEquivalent(canonicalPlan.StructCopyBindings!, aliasPlan.StructCopyBindings!),
+                _ => false
+            };
+        }
+
+        /// <summary>
+        /// Determines whether two forward binding sets target the same members with the same conversion plan.
+        /// </summary>
+        /// <param name="canonicalBindings">The canonical binding set.</param>
+        /// <param name="aliasBindings">The alias binding set.</param>
+        /// <returns>true when the binding sets are equivalent; otherwise, false.</returns>
+        private static bool AreForwardBindingSetsEquivalent(IReadOnlyList<ForwardBinding> canonicalBindings, IReadOnlyList<ForwardBinding> aliasBindings)
+        {
+            if (canonicalBindings.Count != aliasBindings.Count)
+            {
+                return false;
+            }
+
+            var canonicalByProxyMember = new Dictionary<string, ForwardBinding>(StringComparer.Ordinal);
+            foreach (var canonicalBinding in canonicalBindings)
+            {
+                if (!canonicalByProxyMember.TryAdd(BuildMethodIdentityKey(canonicalBinding.ProxyMethod), canonicalBinding))
+                {
+                    return false;
+                }
+            }
+
+            foreach (var aliasBinding in aliasBindings)
+            {
+                if (!canonicalByProxyMember.TryGetValue(BuildMethodIdentityKey(aliasBinding.ProxyMethod), out var canonicalBinding) ||
+                    canonicalBinding.Kind != aliasBinding.Kind)
+                {
+                    return false;
+                }
+
+                if (canonicalBinding.TargetMethod is not null || aliasBinding.TargetMethod is not null)
+                {
+                    if (canonicalBinding.TargetMethod is null ||
+                        aliasBinding.TargetMethod is null ||
+                        !AreMethodTargetsEquivalent(canonicalBinding.TargetMethod, aliasBinding.TargetMethod))
+                    {
+                        return false;
+                    }
+                }
+
+                if (canonicalBinding.TargetField is not null || aliasBinding.TargetField is not null)
+                {
+                    if (canonicalBinding.TargetField is null ||
+                        aliasBinding.TargetField is null ||
+                        !string.Equals(BuildFieldIdentityKey(canonicalBinding.TargetField), BuildFieldIdentityKey(aliasBinding.TargetField), StringComparison.Ordinal))
+                    {
+                        return false;
+                    }
+                }
+
+                if (!AreForwardMethodBindingInfosEquivalent(canonicalBinding.MethodBinding, aliasBinding.MethodBinding) ||
+                    !AreForwardFieldBindingInfosEquivalent(canonicalBinding.FieldBinding, aliasBinding.FieldBinding))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Determines whether two DuckCopy binding sets target the same members with the same conversion plan.
+        /// </summary>
+        /// <param name="canonicalBindings">The canonical binding set.</param>
+        /// <param name="aliasBindings">The alias binding set.</param>
+        /// <returns>true when the binding sets are equivalent; otherwise, false.</returns>
+        private static bool AreStructCopyBindingSetsEquivalent(IReadOnlyList<StructCopyFieldBinding> canonicalBindings, IReadOnlyList<StructCopyFieldBinding> aliasBindings)
+        {
+            if (canonicalBindings.Count != aliasBindings.Count)
+            {
+                return false;
+            }
+
+            var canonicalByProxyField = new Dictionary<string, StructCopyFieldBinding>(StringComparer.Ordinal);
+            foreach (var canonicalBinding in canonicalBindings)
+            {
+                if (!canonicalByProxyField.TryAdd(BuildFieldIdentityKey(canonicalBinding.ProxyField), canonicalBinding))
+                {
+                    return false;
+                }
+            }
+
+            foreach (var aliasBinding in aliasBindings)
+            {
+                if (!canonicalByProxyField.TryGetValue(BuildFieldIdentityKey(aliasBinding.ProxyField), out var canonicalBinding) ||
+                    canonicalBinding.SourceKind != aliasBinding.SourceKind ||
+                    !AreMethodReturnConversionsEquivalent(canonicalBinding.ReturnConversion, aliasBinding.ReturnConversion))
+                {
+                    return false;
+                }
+
+                if (canonicalBinding.SourceProperty is not null || aliasBinding.SourceProperty is not null)
+                {
+                    if (canonicalBinding.SourceProperty is null ||
+                        aliasBinding.SourceProperty is null ||
+                        !ArePropertyTargetsEquivalent(canonicalBinding.SourceProperty, aliasBinding.SourceProperty))
+                    {
+                        return false;
+                    }
+                }
+
+                if (canonicalBinding.SourceField is not null || aliasBinding.SourceField is not null)
+                {
+                    if (canonicalBinding.SourceField is null ||
+                        aliasBinding.SourceField is null ||
+                        !string.Equals(BuildFieldIdentityKey(canonicalBinding.SourceField), BuildFieldIdentityKey(aliasBinding.SourceField), StringComparison.Ordinal))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Determines whether two target methods represent the same effective dispatch target.
+        /// </summary>
+        /// <param name="canonicalMethod">The canonical target method.</param>
+        /// <param name="aliasMethod">The alias target method.</param>
+        /// <returns>true when the alias method is the same method or a virtual override; otherwise, false.</returns>
+        private static bool AreMethodTargetsEquivalent(MethodDef canonicalMethod, MethodDef aliasMethod)
+        {
+            if (string.Equals(BuildMethodIdentityKey(canonicalMethod), BuildMethodIdentityKey(aliasMethod), StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (!canonicalMethod.IsVirtual ||
+                !aliasMethod.IsVirtual ||
+                aliasMethod.IsNewSlot ||
+                canonicalMethod.DeclaringType is null ||
+                aliasMethod.DeclaringType is null ||
+                !IsAssignableFrom(canonicalMethod.DeclaringType, aliasMethod.DeclaringType))
+            {
+                return false;
+            }
+
+            return string.Equals(canonicalMethod.Name, aliasMethod.Name, StringComparison.Ordinal) &&
+                   string.Equals(canonicalMethod.MethodSig?.ToString(), aliasMethod.MethodSig?.ToString(), StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Determines whether two target properties represent the same effective dispatch target.
+        /// </summary>
+        /// <param name="canonicalProperty">The canonical target property.</param>
+        /// <param name="aliasProperty">The alias target property.</param>
+        /// <returns>true when the alias property is the same property or an accessor override; otherwise, false.</returns>
+        private static bool ArePropertyTargetsEquivalent(PropertyDef canonicalProperty, PropertyDef aliasProperty)
+        {
+            if (string.Equals(BuildPropertyIdentityKey(canonicalProperty), BuildPropertyIdentityKey(aliasProperty), StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (canonicalProperty.GetMethod is not null &&
+                aliasProperty.GetMethod is not null &&
+                AreMethodTargetsEquivalent(canonicalProperty.GetMethod, aliasProperty.GetMethod))
+            {
+                return true;
+            }
+
+            return canonicalProperty.SetMethod is not null &&
+                   aliasProperty.SetMethod is not null &&
+                   AreMethodTargetsEquivalent(canonicalProperty.SetMethod, aliasProperty.SetMethod);
+        }
+
+        /// <summary>
+        /// Determines whether two forward method binding descriptors are equivalent.
+        /// </summary>
+        /// <param name="canonicalBinding">The canonical binding descriptor.</param>
+        /// <param name="aliasBinding">The alias binding descriptor.</param>
+        /// <returns>true when both descriptors are equivalent; otherwise, false.</returns>
+        private static bool AreForwardMethodBindingInfosEquivalent(ForwardMethodBindingInfo? canonicalBinding, ForwardMethodBindingInfo? aliasBinding)
+        {
+            if (canonicalBinding is null || aliasBinding is null)
+            {
+                return canonicalBinding is null && aliasBinding is null;
+            }
+
+            var canonical = canonicalBinding.Value;
+            var alias = aliasBinding.Value;
+            if (canonical.TrailingOptionalTargetParameterCount != alias.TrailingOptionalTargetParameterCount ||
+                !string.Equals(BuildTypeSigSequenceCacheKey(canonical.ClosedGenericMethodArguments), BuildTypeSigSequenceCacheKey(alias.ClosedGenericMethodArguments), StringComparison.Ordinal) ||
+                !AreMethodReturnConversionsEquivalent(canonical.ReturnConversion, alias.ReturnConversion) ||
+                canonical.ParameterBindings.Count != alias.ParameterBindings.Count)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < canonical.ParameterBindings.Count; i++)
+            {
+                if (!AreMethodParameterBindingsEquivalent(canonical.ParameterBindings[i], alias.ParameterBindings[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Determines whether two forward field binding descriptors are equivalent.
+        /// </summary>
+        /// <param name="canonicalBinding">The canonical binding descriptor.</param>
+        /// <param name="aliasBinding">The alias binding descriptor.</param>
+        /// <returns>true when both descriptors are equivalent; otherwise, false.</returns>
+        private static bool AreForwardFieldBindingInfosEquivalent(ForwardFieldBindingInfo? canonicalBinding, ForwardFieldBindingInfo? aliasBinding)
+        {
+            if (canonicalBinding is null || aliasBinding is null)
+            {
+                return canonicalBinding is null && aliasBinding is null;
+            }
+
+            return AreMethodArgumentConversionsEquivalent(canonicalBinding.Value.ArgumentConversion, aliasBinding.Value.ArgumentConversion) &&
+                   AreMethodReturnConversionsEquivalent(canonicalBinding.Value.ReturnConversion, aliasBinding.Value.ReturnConversion);
+        }
+
+        /// <summary>
+        /// Determines whether two method parameter bindings are equivalent.
+        /// </summary>
+        /// <param name="canonicalBinding">The canonical binding descriptor.</param>
+        /// <param name="aliasBinding">The alias binding descriptor.</param>
+        /// <returns>true when both descriptors are equivalent; otherwise, false.</returns>
+        private static bool AreMethodParameterBindingsEquivalent(MethodParameterBinding canonicalBinding, MethodParameterBinding aliasBinding)
+        {
+            return canonicalBinding.IsByRef == aliasBinding.IsByRef &&
+                   canonicalBinding.UseLocalForByRef == aliasBinding.UseLocalForByRef &&
+                   canonicalBinding.IsOut == aliasBinding.IsOut &&
+                   string.Equals(BuildTypeSigCacheKey(canonicalBinding.ProxyTypeSig), BuildTypeSigCacheKey(aliasBinding.ProxyTypeSig), StringComparison.Ordinal) &&
+                   string.Equals(BuildTypeSigCacheKey(canonicalBinding.TargetTypeSig), BuildTypeSigCacheKey(aliasBinding.TargetTypeSig), StringComparison.Ordinal) &&
+                   string.Equals(BuildNullableTypeSigCacheKey(canonicalBinding.ProxyByRefElementTypeSig), BuildNullableTypeSigCacheKey(aliasBinding.ProxyByRefElementTypeSig), StringComparison.Ordinal) &&
+                   string.Equals(BuildNullableTypeSigCacheKey(canonicalBinding.TargetByRefElementTypeSig), BuildNullableTypeSigCacheKey(aliasBinding.TargetByRefElementTypeSig), StringComparison.Ordinal) &&
+                   AreMethodArgumentConversionsEquivalent(canonicalBinding.PreCallConversion, aliasBinding.PreCallConversion) &&
+                   AreMethodReturnConversionsEquivalent(canonicalBinding.PostCallConversion, aliasBinding.PostCallConversion);
+        }
+
+        /// <summary>
+        /// Determines whether two method argument conversion descriptors are equivalent.
+        /// </summary>
+        /// <param name="canonicalConversion">The canonical conversion descriptor.</param>
+        /// <param name="aliasConversion">The alias conversion descriptor.</param>
+        /// <returns>true when both descriptors are equivalent; otherwise, false.</returns>
+        private static bool AreMethodArgumentConversionsEquivalent(MethodArgumentConversion canonicalConversion, MethodArgumentConversion aliasConversion)
+        {
+            return canonicalConversion.Kind == aliasConversion.Kind &&
+                   string.Equals(BuildNullableTypeSigCacheKey(canonicalConversion.WrapperTypeSig), BuildNullableTypeSigCacheKey(aliasConversion.WrapperTypeSig), StringComparison.Ordinal) &&
+                   string.Equals(BuildNullableTypeSigCacheKey(canonicalConversion.InnerTypeSig), BuildNullableTypeSigCacheKey(aliasConversion.InnerTypeSig), StringComparison.Ordinal) &&
+                   string.Equals(BuildNullableTypeSigCacheKey(canonicalConversion.UnwrapWrapperTypeSig), BuildNullableTypeSigCacheKey(aliasConversion.UnwrapWrapperTypeSig), StringComparison.Ordinal) &&
+                   string.Equals(BuildNullableTypeSigCacheKey(canonicalConversion.UnwrapInnerTypeSig), BuildNullableTypeSigCacheKey(aliasConversion.UnwrapInnerTypeSig), StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Determines whether two method return conversion descriptors are equivalent.
+        /// </summary>
+        /// <param name="canonicalConversion">The canonical conversion descriptor.</param>
+        /// <param name="aliasConversion">The alias conversion descriptor.</param>
+        /// <returns>true when both descriptors are equivalent; otherwise, false.</returns>
+        private static bool AreMethodReturnConversionsEquivalent(MethodReturnConversion canonicalConversion, MethodReturnConversion aliasConversion)
+        {
+            return canonicalConversion.Kind == aliasConversion.Kind &&
+                   string.Equals(BuildNullableTypeSigCacheKey(canonicalConversion.WrapperTypeSig), BuildNullableTypeSigCacheKey(aliasConversion.WrapperTypeSig), StringComparison.Ordinal) &&
+                   string.Equals(BuildNullableTypeSigCacheKey(canonicalConversion.InnerTypeSig), BuildNullableTypeSigCacheKey(aliasConversion.InnerTypeSig), StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -6739,6 +7257,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return $"{assemblyName}::{field.FullName}";
         }
 
+        private static string BuildPropertyIdentityKey(PropertyDef property)
+        {
+            var assemblyName = property.DeclaringType?.DefinitionAssembly?.Name?.String ?? string.Empty;
+            return $"{assemblyName}::{property.DeclaringType?.FullName ?? "<synthetic>"}::{property.Name}::{property.PropertySig}";
+        }
+
+        private static string BuildNullableTypeSigCacheKey(TypeSig? typeSig)
+        {
+            return typeSig is null ? string.Empty : BuildTypeSigCacheKey(typeSig);
+        }
+
         private static string BuildTypeSigCacheKey(TypeSig typeSig)
         {
             switch (typeSig)
@@ -10713,6 +11242,73 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             using var sha256 = SHA256.Create();
             var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(value));
             return string.Concat(bytes.Take(4).Select(b => b.ToString("x2")));
+        }
+
+        /// <summary>
+        /// Represents the binding plan used to determine whether an assignable alias is safe.
+        /// </summary>
+        private readonly struct AliasSemanticBindingPlan
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="AliasSemanticBindingPlan"/> struct.
+            /// </summary>
+            /// <param name="kind">The binding plan kind.</param>
+            /// <param name="forwardBindings">The forward bindings.</param>
+            /// <param name="structCopyBindings">The DuckCopy bindings.</param>
+            /// <param name="closedGenericTargetTypeArguments">The closed generic target type arguments.</param>
+            private AliasSemanticBindingPlan(
+                AliasSemanticBindingPlanKind kind,
+                IReadOnlyList<ForwardBinding>? forwardBindings,
+                IReadOnlyList<StructCopyFieldBinding>? structCopyBindings,
+                IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments)
+            {
+                Kind = kind;
+                ForwardBindings = forwardBindings;
+                StructCopyBindings = structCopyBindings;
+                ClosedGenericTargetTypeArguments = closedGenericTargetTypeArguments;
+            }
+
+            /// <summary>
+            /// Gets the binding plan kind.
+            /// </summary>
+            internal AliasSemanticBindingPlanKind Kind { get; }
+
+            /// <summary>
+            /// Gets the forward bindings.
+            /// </summary>
+            internal IReadOnlyList<ForwardBinding>? ForwardBindings { get; }
+
+            /// <summary>
+            /// Gets the DuckCopy bindings.
+            /// </summary>
+            internal IReadOnlyList<StructCopyFieldBinding>? StructCopyBindings { get; }
+
+            /// <summary>
+            /// Gets the closed generic target type arguments.
+            /// </summary>
+            internal IReadOnlyList<TypeSig>? ClosedGenericTargetTypeArguments { get; }
+
+            /// <summary>
+            /// Creates a forward binding plan.
+            /// </summary>
+            /// <param name="bindings">The forward bindings.</param>
+            /// <param name="closedGenericTargetTypeArguments">The closed generic target type arguments.</param>
+            /// <returns>The created binding plan.</returns>
+            internal static AliasSemanticBindingPlan ForForward(IReadOnlyList<ForwardBinding> bindings, IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments)
+            {
+                return new AliasSemanticBindingPlan(AliasSemanticBindingPlanKind.Forward, bindings, structCopyBindings: null, closedGenericTargetTypeArguments: closedGenericTargetTypeArguments);
+            }
+
+            /// <summary>
+            /// Creates a DuckCopy binding plan.
+            /// </summary>
+            /// <param name="bindings">The DuckCopy bindings.</param>
+            /// <param name="closedGenericTargetTypeArguments">The closed generic target type arguments.</param>
+            /// <returns>The created binding plan.</returns>
+            internal static AliasSemanticBindingPlan ForStructCopy(IReadOnlyList<StructCopyFieldBinding> bindings, IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments)
+            {
+                return new AliasSemanticBindingPlan(AliasSemanticBindingPlanKind.StructCopy, forwardBindings: null, structCopyBindings: bindings, closedGenericTargetTypeArguments: closedGenericTargetTypeArguments);
+            }
         }
 
         /// <summary>
