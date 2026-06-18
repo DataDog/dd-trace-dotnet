@@ -13,6 +13,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.AccessControl;
+using System.Security.Cryptography;
+using System.Security.Principal;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -31,6 +35,17 @@ namespace Datadog.Trace.Tools.Runner
     internal class Utils
     {
         public const string Profilerid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
+
+        private const string CacheIntegrityFileName = ".dd-trace-runner-cache.integrity";
+        private const string CacheMarkerFileName = ".dd-trace-runner-cache";
+        private const string CacheIntegrityManifestVersion = "v2";
+        private const string CacheLockFileExtension = ".lock";
+        private const string CacheStagingDirectorySuffix = ".tmp.";
+        private const int CacheKeyLength = 64;
+        private const uint PosixDirectoryFileType = 0x4000;
+        private const uint PosixFileTypeMask = 0xF000;
+        private const uint PosixGroupOrOtherWrite = 0x12; // 022
+        private const uint PrivateDirectoryMode = 448; // 0700
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Utils));
 
@@ -513,17 +528,25 @@ namespace Datadog.Trace.Tools.Runner
             {
                 // Due to:
                 // https://developercommunity.visualstudio.com/t/vsotasksetvariable-contains-logging-command-keywor/1249340#T-N1253996
-                // We try to use reduce the length of the path using a temporary folder.
-                var tempFolder = Path.Combine(Path.GetTempPath(), "dd");
-                if (tempFolder.Length < tracerHome.Length)
+                // We reduce the path length using a user-local cache that can be reused safely across runs.
+                string cachedTracerHome = null;
+                try
                 {
-                    try
+                    var cacheRoot = GetTracerHomeCacheRoot();
+                    if (Path.Combine(cacheRoot, new string('0', CacheKeyLength)).Length < tracerHome.Length)
                     {
-                        CopyFilesRecursively(tracerHome, tempFolder);
-                        tracerHome = tempFolder;
+                        var cacheKey = GetTracerHomeCacheKey(tracerHome);
+                        cachedTracerHome = Path.Combine(cacheRoot, cacheKey);
+                        EnsureCachedTracerHome(tracerHome, cachedTracerHome, cacheKey);
+                        tracerHome = cachedTracerHome;
                     }
-                    catch
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "Unable to copy tracer home to a shorter temporary path.");
+                    if (cachedTracerHome is not null)
                     {
+                        TryDeleteDirectory(cachedTracerHome);
                     }
                 }
             }
@@ -976,18 +999,692 @@ namespace Datadog.Trace.Tools.Runner
 
         private static void CopyFilesRecursively(string sourcePath, string targetPath)
         {
-            // Now Create all of the directories
-            foreach (var dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories))
-            {
-                Directory.CreateDirectory(dirPath.Replace(sourcePath, targetPath));
-            }
+            sourcePath = Path.GetFullPath(sourcePath);
+            targetPath = Path.GetFullPath(targetPath);
 
-            // Copy all the files & Replaces any files with the same name
-            foreach (var newPath in Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories))
+            foreach (var entry in EnumerateTracerHomeEntries(sourcePath, ignoreRootCacheMetadata: false))
             {
-                File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
+                var targetEntryPath = GetPathFromRelativePath(targetPath, entry.RelativePath);
+                if (entry.IsDirectory)
+                {
+                    Directory.CreateDirectory(targetEntryPath);
+                    continue;
+                }
+
+                var parentDirectory = Path.GetDirectoryName(targetEntryPath);
+                if (!string.IsNullOrEmpty(parentDirectory))
+                {
+                    Directory.CreateDirectory(parentDirectory);
+                }
+
+                File.Copy(entry.FullPath, targetEntryPath, overwrite: true);
             }
         }
+
+        private static void EnsureCachedTracerHome(string tracerHome, string cachedTracerHome, string cacheKey)
+        {
+            var integrityManifest = CreateCacheIntegrityManifest(tracerHome);
+            var cacheParent = Path.GetDirectoryName(Path.GetFullPath(cachedTracerHome));
+            if (string.IsNullOrEmpty(cacheParent))
+            {
+                throw new IOException($"Unable to locate parent directory for cached tracer home '{cachedTracerHome}'.");
+            }
+
+            CreatePrivateDirectory(cacheParent);
+            using var cacheLock = AcquireCacheLock(cachedTracerHome);
+            if (IsCachedTracerHomeReady(cachedTracerHome, cacheKey, integrityManifest))
+            {
+                return;
+            }
+
+            var stagingTracerHome = cachedTracerHome + CacheStagingDirectorySuffix + Guid.NewGuid().ToString("N");
+            try
+            {
+                TryDeleteDirectory(stagingTracerHome);
+                CreatePrivateDirectory(stagingTracerHome);
+                CopyFilesRecursively(tracerHome, stagingTracerHome);
+                if (!ValidateCachedTracerHomeIntegrity(stagingTracerHome, integrityManifest))
+                {
+                    throw new IOException($"Cached tracer home '{stagingTracerHome}' failed integrity validation.");
+                }
+
+                File.WriteAllText(Path.Combine(stagingTracerHome, CacheIntegrityFileName), integrityManifest.Content);
+                // The marker is written last so interrupted copies are not reused by later runs.
+                File.WriteAllText(Path.Combine(stagingTracerHome, CacheMarkerFileName), cacheKey);
+
+                TryDeleteDirectory(cachedTracerHome);
+                if (Directory.Exists(cachedTracerHome))
+                {
+                    throw new IOException($"Unable to replace cached tracer home '{cachedTracerHome}'.");
+                }
+
+                Directory.Move(stagingTracerHome, cachedTracerHome);
+            }
+            finally
+            {
+                TryDeleteDirectory(stagingTracerHome);
+            }
+        }
+
+        private static bool IsCachedTracerHomeReady(string cachedTracerHome, string cacheKey, CacheIntegrityManifest integrityManifest)
+        {
+            if (!Directory.Exists(cachedTracerHome))
+            {
+                return false;
+            }
+
+            ValidateExistingPrivateDirectory(cachedTracerHome);
+            var markerPath = Path.Combine(cachedTracerHome, CacheMarkerFileName);
+            var integrityPath = Path.Combine(cachedTracerHome, CacheIntegrityFileName);
+            return FileContentEquals(markerPath, cacheKey) &&
+                   FileContentEquals(integrityPath, integrityManifest.Content) &&
+                   ValidateCachedTracerHomeIntegrity(cachedTracerHome, integrityManifest);
+        }
+
+        private static FileStream AcquireCacheLock(string cachedTracerHome)
+        {
+            var lockPath = cachedTracerHome + CacheLockFileExtension;
+            if (File.Exists(lockPath) && !IsRegularFile(lockPath))
+            {
+                throw new IOException($"Cache lock path '{lockPath}' must be a regular file.");
+            }
+
+            return new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        }
+
+        private static string GetTracerHomeCacheRoot()
+        {
+            // Keep the cache under a user-local root instead of shared temp to avoid cross-user path hijacking.
+            string cacheRoot = null;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                cacheRoot = Environment.GetEnvironmentVariable("LOCALAPPDATA");
+            }
+            else
+            {
+                cacheRoot = Environment.GetEnvironmentVariable("XDG_CACHE_HOME");
+            }
+
+            if (string.IsNullOrEmpty(cacheRoot))
+            {
+                cacheRoot = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            }
+
+            if (string.IsNullOrEmpty(cacheRoot))
+            {
+                throw new InvalidOperationException("Unable to locate a user-local cache directory.");
+            }
+
+            return Path.Combine(cacheRoot, "Datadog", "dd-trace", "runner", "tracer-home");
+        }
+
+        private static string GetTracerHomeCacheKey(string tracerHome)
+        {
+            // Include source file metadata so changed tracer homes use a different cache directory.
+            tracerHome = Path.GetFullPath(tracerHome);
+            var builder = StringBuilderCache.Acquire();
+            builder.Append(tracerHome);
+            builder.Append('|');
+            builder.Append(GetTracerHomeAssemblyVersion(tracerHome));
+            builder.Append('|');
+
+            foreach (var entry in EnumerateTracerHomeEntries(tracerHome, ignoreRootCacheMetadata: false).OrderBy(entry => entry.RelativePath, StringComparer.Ordinal))
+            {
+                builder.Append(entry.RelativePath);
+                builder.Append('|');
+                builder.Append(entry.IsDirectory ? 'd' : 'f');
+                builder.Append('|');
+                if (!entry.IsDirectory)
+                {
+                    var fileInfo = new FileInfo(entry.FullPath);
+                    builder.Append(fileInfo.Length);
+                    builder.Append('|');
+                    builder.Append(fileInfo.LastWriteTimeUtc.Ticks);
+                }
+
+                builder.Append(';');
+            }
+
+            using var sha256 = SHA256.Create();
+            var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(StringBuilderCache.GetStringAndRelease(builder)));
+            return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
+        }
+
+        private static string GetTracerHomeAssemblyVersion(string tracerHome)
+        {
+            var tracerAssemblyPath = Path.Combine(tracerHome, "netstandard2.0", "Datadog.Trace.dll");
+            if (!File.Exists(tracerAssemblyPath))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                return AssemblyName.GetAssemblyName(tracerAssemblyPath).Version?.ToString() ?? string.Empty;
+            }
+            catch (Exception ex) when (ex is BadImageFormatException or FileLoadException or IOException or UnauthorizedAccessException)
+            {
+                Log.Debug(ex, "Unable to read Datadog.Trace.dll version from tracer home.");
+                return string.Empty;
+            }
+        }
+
+        private static CacheIntegrityManifest CreateCacheIntegrityManifest(string tracerHome)
+        {
+            // Build the expected manifest from the source tracer home on every run; a cached manifest is never trusted by itself.
+            var entries = CreateCacheIntegrityEntries(tracerHome, ignoreRootCacheMetadata: false);
+
+            var builder = StringBuilderCache.Acquire();
+            builder.AppendLine(CacheIntegrityManifestVersion);
+            foreach (var entry in entries)
+            {
+                builder.Append(Convert.ToBase64String(Encoding.UTF8.GetBytes(entry.RelativePath)));
+                builder.Append('|');
+                builder.Append(entry.IsDirectory ? 'd' : 'f');
+                builder.Append('|');
+                builder.Append(entry.Length);
+                builder.Append('|');
+                builder.Append(entry.Sha256);
+                builder.AppendLine();
+            }
+
+            return new CacheIntegrityManifest(entries, StringBuilderCache.GetStringAndRelease(builder));
+        }
+
+        private static CacheIntegrityEntry[] CreateCacheIntegrityEntries(string tracerHome, bool ignoreRootCacheMetadata)
+        {
+            return EnumerateTracerHomeEntries(tracerHome, ignoreRootCacheMetadata)
+                  .Select(entry =>
+                   {
+                       if (entry.IsDirectory)
+                       {
+                           return new CacheIntegrityEntry(entry.RelativePath, true, 0, string.Empty);
+                       }
+
+                       var fileInfo = new FileInfo(entry.FullPath);
+                       return new CacheIntegrityEntry(entry.RelativePath, false, fileInfo.Length, ComputeSha256(entry.FullPath));
+                   })
+                  .OrderBy(entry => entry.RelativePath, StringComparer.Ordinal)
+                  .ToArray();
+        }
+
+        private static bool ValidateCachedTracerHomeIntegrity(string cachedTracerHome, CacheIntegrityManifest integrityManifest)
+        {
+            CacheIntegrityEntry[] actualEntries;
+            try
+            {
+                actualEntries = CreateCacheIntegrityEntries(cachedTracerHome, ignoreRootCacheMetadata: true);
+            }
+            catch
+            {
+                return false;
+            }
+
+            if (actualEntries.Length != integrityManifest.Entries.Length)
+            {
+                return false;
+            }
+
+            var actualByPath = actualEntries.ToDictionary(entry => entry.RelativePath, GetFileSystemRelativePathComparer());
+            foreach (var expectedEntry in integrityManifest.Entries)
+            {
+                if (!actualByPath.TryGetValue(expectedEntry.RelativePath, out var actualEntry))
+                {
+                    return false;
+                }
+
+                if (actualEntry.IsDirectory != expectedEntry.IsDirectory ||
+                    actualEntry.Length != expectedEntry.Length ||
+                    !string.Equals(actualEntry.Sha256, expectedEntry.Sha256, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool FileContentEquals(string path, string expectedContent)
+        {
+            return IsRegularFile(path) && File.ReadAllText(path) == expectedContent;
+        }
+
+        private static bool IsRegularFile(string path)
+        {
+            try
+            {
+                var attributes = File.GetAttributes(path);
+                return (attributes & FileAttributes.Directory) == 0 &&
+                       (attributes & FileAttributes.ReparsePoint) == 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string ComputeSha256(string path)
+        {
+            using var sha256 = SHA256.Create();
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var hash = sha256.ComputeHash(stream);
+            return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
+        }
+
+        private static string GetPathFromRelativePath(string rootPath, string relativePath)
+        {
+            return Path.Combine(new[] { rootPath }.Concat(relativePath.Split('/')).ToArray());
+        }
+
+        private static IEnumerable<TracerHomeEntry> EnumerateTracerHomeEntries(string rootPath, bool ignoreRootCacheMetadata)
+        {
+            rootPath = EnsureTrailingDirectorySeparator(Path.GetFullPath(rootPath));
+            var pendingDirectories = new Stack<string>();
+            pendingDirectories.Push(rootPath);
+
+            while (pendingDirectories.Count != 0)
+            {
+                var directoryPath = pendingDirectories.Pop();
+                foreach (var entryPath in Directory.EnumerateFileSystemEntries(directoryPath).OrderBy(path => path, StringComparer.Ordinal))
+                {
+                    var attributes = GetTracerHomeEntryAttributes(entryPath);
+                    if ((attributes & FileAttributes.ReparsePoint) != 0)
+                    {
+                        throw new IOException($"Tracer home entry '{entryPath}' must not be a symbolic link or reparse point.");
+                    }
+
+                    var isDirectory = (attributes & FileAttributes.Directory) != 0;
+                    var relativePath = GetRelativePath(rootPath, entryPath);
+                    if (IsCacheMetadataRelativePath(relativePath))
+                    {
+                        if (ignoreRootCacheMetadata && !isDirectory)
+                        {
+                            continue;
+                        }
+
+                        throw new IOException($"Tracer home entry '{entryPath}' conflicts with runner cache metadata.");
+                    }
+
+                    yield return new TracerHomeEntry(entryPath, relativePath, isDirectory);
+                    if (isDirectory)
+                    {
+                        pendingDirectories.Push(entryPath);
+                    }
+                }
+            }
+        }
+
+        private static FileAttributes GetTracerHomeEntryAttributes(string entryPath)
+        {
+            try
+            {
+                return File.GetAttributes(entryPath);
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or SystemException)
+            {
+                throw new IOException($"Unable to inspect tracer home entry '{entryPath}'.", ex);
+            }
+        }
+
+        private static bool IsCacheMetadataRelativePath(string relativePath)
+        {
+            return string.Equals(relativePath, CacheIntegrityFileName, StringComparison.Ordinal) ||
+                   string.Equals(relativePath, CacheMarkerFileName, StringComparison.Ordinal);
+        }
+
+        private static string GetRelativePath(string rootPath, string path)
+        {
+            rootPath = EnsureTrailingDirectorySeparator(Path.GetFullPath(rootPath));
+            path = Path.GetFullPath(path);
+            if (!path.StartsWith(rootPath, GetFileSystemPathComparison()))
+            {
+                throw new IOException($"Path '{path}' is not under root '{rootPath}'.");
+            }
+
+            var relativePath = path.Substring(rootPath.Length)
+                                   .Replace(Path.DirectorySeparatorChar, '/');
+            if (Path.AltDirectorySeparatorChar != Path.DirectorySeparatorChar)
+            {
+                relativePath = relativePath.Replace(Path.AltDirectorySeparatorChar, '/');
+            }
+
+            return relativePath;
+        }
+
+        private static string EnsureTrailingDirectorySeparator(string path)
+        {
+            return path.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) ||
+                   path.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal)
+                       ? path
+                       : path + Path.DirectorySeparatorChar;
+        }
+
+        private static StringComparer GetFileSystemRelativePathComparer()
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        }
+
+        private static StringComparison GetFileSystemPathComparison()
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        }
+
+        private static void CreatePrivateDirectory(string path)
+        {
+            path = Path.GetFullPath(path);
+            if (Directory.Exists(path))
+            {
+                ValidateExistingPrivateDirectory(path);
+                return;
+            }
+
+            var parentPath = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(parentPath) && !Directory.Exists(parentPath))
+            {
+                CreatePrivateDirectory(parentPath);
+            }
+            else if (!string.IsNullOrEmpty(parentPath))
+            {
+                ValidateExistingCacheParentDirectory(parentPath);
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                if (Directory.Exists(path))
+                {
+                    throw new IOException($"Temporary tracer home directory '{path}' already exists.");
+                }
+
+                Directory.CreateDirectory(path);
+                ValidateExistingPrivateDirectory(path);
+                return;
+            }
+
+            var result = Mkdir(path, PrivateDirectoryMode);
+            if (result != 0 && !Directory.Exists(path))
+            {
+                throw new IOException($"Unable to create directory '{path}'. errno: {Marshal.GetLastWin32Error()}");
+            }
+
+            ValidateExistingPrivateDirectory(path);
+        }
+
+        private static void TryDeleteDirectory(string path)
+        {
+            try
+            {
+                if (Directory.Exists(path))
+                {
+                    ValidateExistingPrivateDirectory(path);
+                    Directory.Delete(path, recursive: true);
+                }
+            }
+            catch
+            {
+                // Best effort cleanup only. The original tracer home remains in use when this fails.
+            }
+        }
+
+        private static void ValidateExistingPrivateDirectory(string path)
+        {
+            ValidateExistingDirectory(path, requireCurrentUserOwner: true, allowGroupOrOtherWrite: false);
+        }
+
+        private static void ValidateExistingCacheParentDirectory(string path)
+        {
+            ValidateExistingDirectory(path, requireCurrentUserOwner: !RuntimeInformation.IsOSPlatform(OSPlatform.Windows), allowGroupOrOtherWrite: false);
+        }
+
+        private static void ValidateExistingDirectory(string path, bool requireCurrentUserOwner, bool allowGroupOrOtherWrite)
+        {
+            var attributes = File.GetAttributes(path);
+            if ((attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                throw new IOException($"Directory '{path}' must not be a symbolic link or reparse point.");
+            }
+
+            if ((attributes & FileAttributes.Directory) == 0)
+            {
+                throw new IOException($"Path '{path}' must be a directory.");
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                ValidateWindowsDirectoryAccess(path, requireCurrentUserOwner, allowGroupOrOtherWrite);
+                return;
+            }
+
+            var directoryInfo = GetPosixDirectoryInfo(path);
+            if ((directoryInfo.Mode & PosixFileTypeMask) != PosixDirectoryFileType)
+            {
+                throw new IOException($"Path '{path}' must be a directory.");
+            }
+
+            if (requireCurrentUserOwner && directoryInfo.UserId != GetEffectiveUserId())
+            {
+                throw new IOException($"Directory '{path}' must be owned by the current user.");
+            }
+
+            if (!allowGroupOrOtherWrite && (directoryInfo.Mode & PosixGroupOrOtherWrite) != 0)
+            {
+                throw new IOException($"Directory '{path}' must not be writable by group or other users.");
+            }
+        }
+
+#pragma warning disable CA1416 // Windows ACL APIs are only called after a RuntimeInformation Windows guard.
+        private static void ValidateWindowsDirectoryAccess(string path, bool requireCurrentUserOwner, bool allowBroadWrite)
+        {
+            DirectorySecurity security;
+            try
+            {
+                security = FileSystemAclExtensions.GetAccessControl(new DirectoryInfo(path), AccessControlSections.Access | AccessControlSections.Owner);
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or SystemException)
+            {
+                throw new IOException($"Unable to inspect Windows access control for directory '{path}'.", ex);
+            }
+
+            var currentUser = WindowsIdentity.GetCurrent().User;
+            if (currentUser is null)
+            {
+                throw new IOException("Unable to determine the current Windows user.");
+            }
+
+            if (requireCurrentUserOwner)
+            {
+                var owner = security.GetOwner(typeof(SecurityIdentifier)) as SecurityIdentifier;
+                if (owner is null || !owner.Equals(currentUser))
+                {
+                    throw new IOException($"Directory '{path}' must be owned by the current user.");
+                }
+            }
+
+            if (allowBroadWrite)
+            {
+                return;
+            }
+
+            foreach (FileSystemAccessRule rule in security.GetAccessRules(includeExplicit: true, includeInherited: true, targetType: typeof(SecurityIdentifier)))
+            {
+                if (rule.AccessControlType != AccessControlType.Allow ||
+                    !GrantsWindowsWriteAccess(rule.FileSystemRights) ||
+                    rule.IdentityReference is not SecurityIdentifier securityIdentifier ||
+                    IsAllowedWindowsWriter(securityIdentifier, currentUser))
+                {
+                    continue;
+                }
+
+                throw new IOException($"Directory '{path}' must not grant write access to Windows identity '{securityIdentifier.Value}'.");
+            }
+        }
+
+        private static bool GrantsWindowsWriteAccess(FileSystemRights rights)
+        {
+            const FileSystemRights writeRights =
+                FileSystemRights.Write |
+                FileSystemRights.WriteData |
+                FileSystemRights.AppendData |
+                FileSystemRights.CreateFiles |
+                FileSystemRights.CreateDirectories |
+                FileSystemRights.WriteAttributes |
+                FileSystemRights.WriteExtendedAttributes |
+                FileSystemRights.Delete |
+                FileSystemRights.DeleteSubdirectoriesAndFiles |
+                FileSystemRights.ChangePermissions |
+                FileSystemRights.TakeOwnership |
+                FileSystemRights.Modify |
+                FileSystemRights.FullControl;
+
+            return (rights & writeRights) != 0;
+        }
+
+        private static bool IsAllowedWindowsWriter(SecurityIdentifier securityIdentifier, SecurityIdentifier currentUser)
+        {
+            return securityIdentifier.Equals(currentUser) ||
+                   securityIdentifier.IsWellKnown(WellKnownSidType.LocalSystemSid) ||
+                   securityIdentifier.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid);
+        }
+#pragma warning restore CA1416
+
+        private static PosixDirectoryInfo GetPosixDirectoryInfo(string path)
+        {
+            if (IsMacOs())
+            {
+                if (LStat(path, out MacStat macStat) != 0)
+                {
+                    throw new IOException($"Unable to inspect directory '{path}'. errno: {Marshal.GetLastWin32Error()}");
+                }
+
+                var directoryInfo = new PosixDirectoryInfo(macStat.Mode, macStat.UserId);
+                if ((directoryInfo.Mode & PosixFileTypeMask) == PosixDirectoryFileType)
+                {
+                    return directoryInfo;
+                }
+
+                // Older macOS runtimes can bind lstat to the legacy 32-bit-inode layout.
+                // If the modern layout does not decode the file type correctly, fall back to that layout.
+                if (LStat(path, out MacStatLegacy macStatLegacy) != 0)
+                {
+                    throw new IOException($"Unable to inspect directory '{path}'. errno: {Marshal.GetLastWin32Error()}");
+                }
+
+                return new PosixDirectoryInfo(macStatLegacy.Mode, macStatLegacy.UserId);
+            }
+
+            if (LStat(path, out LinuxStat linuxStat) != 0)
+            {
+                throw new IOException($"Unable to inspect directory '{path}'. errno: {Marshal.GetLastWin32Error()}");
+            }
+
+            return new PosixDirectoryInfo(linuxStat.Mode, linuxStat.UserId);
+        }
+
+        private static bool IsMacOs()
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ||
+                   string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.Ordinal) ||
+                   FrameworkDescription.Instance.OSDescription.StartsWith("Darwin", StringComparison.OrdinalIgnoreCase);
+        }
+
+        [DllImport("libc", EntryPoint = "mkdir", SetLastError = true)]
+        private static extern int Mkdir(string path, uint mode);
+
+        [DllImport("libc", EntryPoint = "geteuid")]
+        private static extern uint GetEffectiveUserId();
+
+        [DllImport("libc", EntryPoint = "lstat", SetLastError = true)]
+        private static extern int LStat(string path, out LinuxStat buffer);
+
+        [DllImport("libc", EntryPoint = "lstat", SetLastError = true)]
+        private static extern int LStat(string path, out MacStat buffer);
+
+        [DllImport("libc", EntryPoint = "lstat", SetLastError = true)]
+        private static extern int LStat(string path, out MacStatLegacy buffer);
+
+        private readonly record struct PosixDirectoryInfo(uint Mode, uint UserId);
+
+        private readonly record struct CacheIntegrityEntry(string RelativePath, bool IsDirectory, long Length, string Sha256);
+
+        private readonly record struct TracerHomeEntry(string FullPath, string RelativePath, bool IsDirectory);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct LinuxStat
+        {
+            public ulong Device;
+            public ulong Inode;
+            public ulong LinkCount;
+            public uint Mode;
+            public uint UserId;
+            public uint GroupId;
+            public int Padding;
+            public ulong DeviceId;
+            public long Size;
+            public long BlockSize;
+            public long Blocks;
+            public Timespec AccessTime;
+            public Timespec ModifyTime;
+            public Timespec ChangeTime;
+            public long Reserved1;
+            public long Reserved2;
+            public long Reserved3;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MacStat
+        {
+            public int Device;
+            public ushort Mode;
+            public ushort LinkCount;
+            public ulong Inode;
+            public uint UserId;
+            public uint GroupId;
+            public int DeviceId;
+            public Timespec AccessTime;
+            public Timespec ModifyTime;
+            public Timespec ChangeTime;
+            public Timespec BirthTime;
+            public long Size;
+            public long Blocks;
+            public int BlockSize;
+            public uint Flags;
+            public uint Generation;
+            public int Spare;
+            public long Reserved1;
+            public long Reserved2;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MacStatLegacy
+        {
+            public int Device;
+            public uint Inode;
+            public ushort Mode;
+            public ushort LinkCount;
+            public uint UserId;
+            public uint GroupId;
+            public int DeviceId;
+            public Timespec AccessTime;
+            public Timespec ModifyTime;
+            public Timespec ChangeTime;
+            public Timespec BirthTime;
+            public long Size;
+            public long Blocks;
+            public int BlockSize;
+            public uint Flags;
+            public uint Generation;
+            public int Spare;
+            public long Reserved1;
+            public long Reserved2;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct Timespec
+        {
+            public long Seconds;
+            public long Nanoseconds;
+        }
+
+        private sealed record CacheIntegrityManifest(CacheIntegrityEntry[] Entries, string Content);
 
         public record CIVisibilityOptions(bool EnableGacInstallation, bool EnableVsTestConsoleConfigModification, bool ReducePathLength)
         {
