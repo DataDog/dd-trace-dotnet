@@ -204,7 +204,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             // An empty package version means we're in the sample,
             // which targets the latest version of the package.
-            if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version("13.1.0"))
+            if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version("16.0.0"))
+            {
+                return string.Empty;
+            }
+
+            if (new Version(packageVersion) >= new Version("13.1.0"))
             {
                 return string.Empty;
             }
