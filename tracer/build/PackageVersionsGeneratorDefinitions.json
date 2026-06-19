@@ -80,14 +80,22 @@
     "SampleProjectName": "Samples.Amazon.Lambda.RuntimeSupport",
     "NugetPackageSearchName": "Amazon.Lambda.RuntimeSupport",
     "MinVersion": "1.4.0",
-    "MaxVersionExclusive": "2.0.0",
+    "MaxVersionExclusive": "3.0.0",
     "SpecificVersions": [
-      "1.*.*"
+      "1.*.*",
+      "2.*.*"
     ],
-    "VersionConditions": [{
-      "MinVersion": "1.4.0",
-      "IncludeOnlyTargetFrameworks": ["net6.0","net7.0","net8.0"]
-    }]
+    "VersionConditions": [
+      {
+        "MinVersion": "1.4.0",
+        "MaxVersionExclusive": "2.0.0",
+        "IncludeOnlyTargetFrameworks": ["net6.0", "net7.0", "net8.0"]
+      },
+      {
+        "MinVersion": "2.0.0",
+        "IncludeOnlyTargetFrameworks": ["net8.0", "net9.0", "net10.0"]
+      }
+    ]
   },
   {
     "IntegrationName": "AwsSqs",

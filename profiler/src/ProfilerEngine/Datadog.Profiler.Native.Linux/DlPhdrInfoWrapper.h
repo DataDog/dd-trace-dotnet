@@ -7,7 +7,6 @@
 #include <memory>
 #include <stdlib.h>
 #include <string.h>
-#include <functional>
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
@@ -26,13 +25,28 @@ public:
 
     bool IsSame(struct dl_phdr_info const * other) const;
 
+    struct PmrDeleter
+    {
+        shared::pmr::memory_resource* allocator = nullptr;
+        std::size_t size = 0;
+        std::size_t alignment = 1;
+
+        void operator()(void* ptr) const
+        {
+            if (ptr != nullptr && allocator != nullptr)
+            {
+                allocator->deallocate(ptr, size, alignment);
+            }
+        }
+    };
+
 private:
+
     struct dl_phdr_info _info;
     void DeepCopy(struct dl_phdr_info& destination, struct dl_phdr_info const * source);
 
-    using custom_deleter = std::function<void(void*)>;
-    std::unique_ptr<ElfW(Phdr), custom_deleter> _phdr;
-    std::unique_ptr<char, custom_deleter> _name;
+    std::unique_ptr<ElfW(Phdr)[], PmrDeleter> _phdr;
+    std::unique_ptr<char[], PmrDeleter> _name;
     std::size_t _size;
     shared::pmr::memory_resource* _allocator;
 };
