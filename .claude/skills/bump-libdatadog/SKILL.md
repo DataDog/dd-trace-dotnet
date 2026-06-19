@@ -19,15 +19,15 @@ distribution of libdatadog (a minimal feature preset: `profiling`, `crashtracker
 > in that repo — e.g. libdatadog-dotnet `v1.3.5` is built from upstream libdatadog `v32.0.0`). Pin the
 > **libdatadog-dotnet** version here, not the upstream one.
 
-There are **two version pins** to update, both from the same libdatadog-dotnet release:
+There is a **single version pin** to update — everything in the build flows from one file, so a bump is
+a one-file change:
 
 | Platform | File | Hash type | Version format |
 |----------|------|-----------|----------------|
-| Linux/macOS | `build/cmake/FindLibdatadog.cmake` | SHA-256 | `v<MAJOR>.<MINOR>.<PATCH>` |
-| Windows | `build/vcpkg_local_ports/libdatadog/vcpkg.json` + `portfile.cmake` | SHA-512 | `<MAJOR>.<MINOR>.<PATCH>` (no `v` prefix) |
+| All platforms | `build/cmake/FindLibdatadog.cmake` | SHA-512 | `<MAJOR>.<MINOR>.<PATCH>` (no `v` prefix) |
 
-A libdatadog-dotnet release builds all 8 platform artifacts together, so the two pins should normally
-move to the **same** version in lockstep. Confirm with the user if they intend otherwise.
+The Windows vcpkg port has no version pin of its own — it inherits the version (and SHA-256 hashes) from
+the root `vcpkg.json`, so there is nothing to edit under `build/vcpkg_local_ports/`.
 
 ## Files to Modify
 
@@ -55,46 +55,36 @@ https://github.com/DataDog/libdatadog-dotnet/releases
 
 ### Step 2: Get hashes from the release page
 
-SHA-256 and SHA-512 checksums are published directly in the GitHub release notes. Either:
+The release notes publish checksums. You only need the **SHA512 checksums** section → these are the
+hashes for `FindLibdatadog.cmake` (the single file you pin). Either:
 
-1. Visit `https://github.com/DataDog/libdatadog-dotnet/releases/tag/v<VERSION>` and copy from the checksums sections, or
+1. Visit `https://github.com/DataDog/libdatadog-dotnet/releases/tag/v<VERSION>` and copy from the SHA512 section, or
 2. Run the helper script which fetches them via the GitHub API:
 
 ```bash
 bash .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh <VERSION>
 ```
 
-Where `<VERSION>` is without the `v` prefix (e.g. `1.3.5`).
-
-The release notes contain:
-- **SHA256 checksums** section → for `FindLibdatadog.cmake` (6 Linux/macOS artifacts)
-- **SHA512 checksums** section → for `portfile.cmake` (2 Windows artifacts)
+Where `<VERSION>` is without any `v` prefix (e.g. `1.3.5`).
 
 ### Step 3: Update `build/cmake/FindLibdatadog.cmake`
 
-1. Update `LIBDATADOG_VERSION` to `"v<VERSION>"`
-2. Replace each `SHA256_LIBDATADOG*` value with the new SHA-256 hash from the script output
+1. Update `LIBDATADOG_VERSION` to `"<VERSION>"` (no `v` prefix)
+2. Replace each `SHA512_LIBDATADOG*` value with the new SHA-512 hash from the script output
 
-### Step 4: Update `build/vcpkg_local_ports/libdatadog/vcpkg.json`
+### Step 4: Update `.gitlab/one-pipeline.locked.yml`
 
-Update `"version-string"` to the new version (no `v` prefix).
+Bump the `libdatadog` version field in this file by hand so CI uses the new binary.
 
-### Step 5: Update `build/vcpkg_local_ports/libdatadog/portfile.cmake`
+### Step 5: Update `vcpkg.json` (repo root)
 
-Replace the SHA-512 hashes for x64 and x86 Windows builds.
+Set the `libdatadog` version pin in the root `vcpkg.json`. The Windows vcpkg port reads its version and
+its SHA-256 hashes from here, so you don't touch the port files under `build/vcpkg_local_ports/`.
 
 ### Step 6: Verify
 
-- Confirm all 8 hashes were updated (6 for CMake SHA-256, 2 for vcpkg SHA-512)
-- Confirm version strings match in both files
-- Run the Nuke build targets to validate hashes:
-  ```bash
-  # Linux — validates CMake SHA-256 hashes during configure
-  ./tracer/build.sh CompileProfilerNativeSrc
-
-  # Windows — validates vcpkg SHA-512 hashes during install
-  .\tracer\build.cmd CompileProfilerNativeSrc
-  ```
+- Confirm the single version pin and its SHA-512 hashes were updated.
+- Build locally; CI will validate the hash on all platforms. Hash mismatches cause clear build failures.
 
 ## Files That May Need Regeneration
 
@@ -105,30 +95,24 @@ These don't contain version strings but may need refreshing after a bump if the 
 
 CI will fail if the symbol list changes — re-run the Alpine symbol validation step and accept the new snapshot.
 
-Because libdatadog-dotnet ships a reduced feature set (no `data-pipeline`, `log`, `telemetry`,
-`ddsketch`, or `ffe`), its exported symbols are a strict subset of upstream libdatadog — so these
-snapshots reflect that smaller set. The glibc cap in `Build.Profiler.Steps.cs`
-(`libdatadog_profiling` ≤ 2.15 on x64, ≤ 2.17 on arm64) still applies and is unchanged by the source
-switch — libdatadog-dotnet x64 builds are capped at GLIBC 2.15, same as upstream.
-
 ## Optional Updates (doc-comment SHAs)
 
 Several files under `tracer/src/Datadog.Trace/LibDatadog/` have XML doc comments linking to a specific upstream libdatadog git SHA (e.g. `60583218a8de6768f67d04fcd5bc6443f67f516b`). These are informational only and can be updated for traceability (use the upstream SHA the libdatadog-dotnet release was built from):
 - `VecU8.cs`, `CharSlice.cs`, `Error.cs`
 - `ServiceDiscovery/ResultTag.cs`, `ServiceDiscovery/TracerMemfdHandleResult.cs`
 
-## Related Files (no changes needed, but useful context)
+## Related Files
 
 - `profiler/Directory.Build.targets` — Windows link dependencies for libdatadog
 - `tracer/build/_build/Build.Steps.cs` — copies libdatadog binary to monitoring home
 - `tracer/build/_build/Build.Profiler.Steps.cs` — profiler build steps; glibc version expectations for Alpine
-- `.gitlab/one-pipeline.locked.yml` — CI pipeline (auto-generated, don't edit manually)
-- `vcpkg.json` (root) — declares dependency on libdatadog (no version pin here)
+- `.gitlab/one-pipeline.locked.yml` — CI pipeline; bump the `libdatadog` version field here when you bump
+- `vcpkg.json` (root) — declares the libdatadog dependency and holds its version pin
 - `vcpkg-configuration.json` — overlay ports config
 
 ## Verify
 
-- The CMake file uses **SHA-256** hashes; the vcpkg portfile uses **SHA-512** hashes. Both are published in the libdatadog-dotnet GitHub release notes (under `## Checksums`).
-- The CMake version has a `v` prefix (`v1.3.5`); vcpkg does not (`1.3.5`).
-- If a release doesn't have all platform artifacts, the bump may need to wait or be partial.
-- After bumping, CI will validate the hashes on all platforms. Hash mismatches cause clear build failures.
+- `FindLibdatadog.cmake` uses **SHA-512** hashes — there are no SHA-256 hashes to manage.
+- The version string has **no `v` prefix** anywhere (`1.3.5`).
+- There is a single version pin, so there is nothing to keep in lockstep across platforms.
+- After bumping, CI validates the hash on all platforms. Hash mismatches cause clear build failures.
