@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "!!0", "StackExchange.Redis.ServerEndPoint" },
         MinimumVersion = "2.0.0",  // 2.6.48, but dll uses 2.0.0
         MaximumVersion = "3.*.*",
-        TypeNames = new[] { "StackExchange.Redis.RedisBatch", "StackExchange.Redis.RedisTransaction" },
+        TypeNames = new[] { "StackExchange.Redis.RedisBase", "StackExchange.Redis.RedisBatch", "StackExchange.Redis.RedisTransaction" },
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
