@@ -111,6 +111,23 @@ Actions:
 3. Treat any non-compatible mapping as a regression until explicitly reviewed and approved.
 4. Re-run generation and verification with identical artifact inputs.
 
+### open generic rule did not expand
+
+Symptoms:
+
+1. Generator reports that a mapping contains an unresolved open generic type.
+
+Likely causes:
+
+1. Map file contains an open generic proxy/target rule.
+2. No matching closed `--generic-instantiations` root was provided for the open target definition.
+
+Actions:
+
+1. Add closed generic instantiations for each target type that must be generated.
+2. Use explicit closed map entries when the valid instantiations are known and fixed.
+3. Re-run generation and confirm the manifest contains closed mappings only.
+
 ### unsupported_closed_generic_mapping
 
 Symptoms:
