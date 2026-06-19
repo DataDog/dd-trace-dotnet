@@ -44,6 +44,29 @@ public class DuckTypeAotProcessorsTests
     private const string BibleKnownLimitationsFileName = "ducktype-aot-bible-known-limitations.json";
     private const string DuplicateAssignableBaseTargetTypeName = "Duplicate.Targets.SharedBaseTarget";
     private const string StrongNameKeyEnvironmentVariable = "DD_TRACE_DUCKTYPE_AOT_STRONG_NAME_KEY_FILE";
+#if NETCOREAPP2_1
+    private const string TemporaryTargetAssemblyFramework = "netcoreapp2.1";
+#elif NETCOREAPP3_0
+    private const string TemporaryTargetAssemblyFramework = "netcoreapp3.0";
+#elif NETCOREAPP3_1
+    private const string TemporaryTargetAssemblyFramework = "netcoreapp3.1";
+#elif NET5_0
+    private const string TemporaryTargetAssemblyFramework = "net5.0";
+#elif NET6_0
+    private const string TemporaryTargetAssemblyFramework = "net6.0";
+#elif NET7_0
+    private const string TemporaryTargetAssemblyFramework = "net7.0";
+#elif NET8_0
+    private const string TemporaryTargetAssemblyFramework = "net8.0";
+#elif NET9_0
+    private const string TemporaryTargetAssemblyFramework = "net9.0";
+#elif NET10_0
+    private const string TemporaryTargetAssemblyFramework = "net10.0";
+#else
+#error Unsupported test target framework.
+#endif
+
+    private static readonly string[] FrameworkAssemblyNames = { "System.Runtime", "System.Private.CoreLib", "mscorlib", "netstandard" };
 
     public DuckTypeAotProcessorsTests()
     {
@@ -1152,6 +1175,38 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void InterfaceTraversalShouldResolveBclInheritedInterfacesWhenDirectDnlibResolutionFails()
+    {
+        var moduleContext = ModuleDef.CreateModuleContext();
+        var systemRuntimeAssemblyRef = new AssemblyRefUser("System.Runtime", new Version(0, 0, 0, 0), new PublicKeyToken("b03f5f7f11d50"));
+        var module = new ModuleDefUser("DuckTypeAotIsolatedProxy.dll", Guid.NewGuid(), systemRuntimeAssemblyRef)
+        {
+            Context = moduleContext
+        };
+        var ownerType = new TypeDefUser("DuckTypeAotTests", "IsolatedProxy", module.CorLibTypes.Object.TypeDefOrRef);
+        module.Types.Add(ownerType);
+        var inheritedInterfaceReference = new TypeRefUser(
+            module,
+            "System.Runtime.CompilerServices",
+            nameof(ICriticalNotifyCompletion),
+            systemRuntimeAssemblyRef);
+        ownerType.Interfaces.Add(new InterfaceImplUser(inheritedInterfaceReference));
+
+        var resolveInterfaceMethod = GetEmitterStaticMethod(
+            "ResolveInterfaceTypeDefForTraversal",
+            typeof(TypeDef),
+            typeof(ITypeDefOrRef));
+
+        var resolvedInterface = (TypeDef?)resolveInterfaceMethod.Invoke(
+            obj: null,
+            parameters: new object[] { ownerType, inheritedInterfaceReference });
+
+        resolvedInterface.Should().NotBeNull("BCL inherited interface traversal must not depend only on dnlib's direct assembly resolver");
+        resolvedInterface!.FullName.Should().Be("System.Runtime.CompilerServices.ICriticalNotifyCompletion");
+        resolvedInterface.FindMethod(nameof(ICriticalNotifyCompletion.UnsafeOnCompleted)).Should().NotBeNull();
+    }
+
+    [Fact]
     public void RuntimeAssemblyPathResolverShouldPreferRootPathWhenSimpleNameMatches()
     {
         var tempDirectory = CreateTempDirectory();
@@ -1249,6 +1304,50 @@ public class DuckTypeAotProcessorsTests
         {
             TryDeleteDirectory(tempDirectory);
         }
+    }
+
+    [Fact]
+    public void GeneratedCorLibResolverShouldPreferProxyAssemblyOverTargetAssembly()
+    {
+        var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+        var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+        proxyAssemblyName.Should().NotBeNullOrWhiteSpace();
+
+        var targetAssemblyPath = GetDatadogTraceNetStandardAssemblyPath();
+        var targetAssemblyName = AssemblyName.GetAssemblyName(targetAssemblyPath).Name;
+        targetAssemblyName.Should().NotBeNullOrWhiteSpace();
+
+        var mappingResolutionResult = new DuckTypeAotMappingResolutionResult(
+            mappings: Array.Empty<DuckTypeAotMapping>(),
+            proxyAssemblyPathsByName: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                [proxyAssemblyName!] = proxyAssemblyPath
+            },
+            targetAssemblyPathsByName: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                [targetAssemblyName!] = targetAssemblyPath
+            },
+            genericTypeRoots: Array.Empty<DuckTypeAotTypeReference>(),
+            warnings: Array.Empty<string>(),
+            errors: Array.Empty<string>());
+
+        var resolveCorLibMethod = GetEmitterStaticMethod(
+            "ResolveGeneratedCorLibAssemblyRef",
+            typeof(DuckTypeAotMappingResolutionResult),
+            typeof(string));
+
+        var generatedCorLibAssemblyRef = (AssemblyRef)resolveCorLibMethod.Invoke(
+            obj: null,
+            parameters: new object[] { mappingResolutionResult, targetAssemblyPath })!;
+
+        using var proxyModule = ModuleDefMD.Load(proxyAssemblyPath);
+        using var targetModule = ModuleDefMD.Load(targetAssemblyPath);
+        proxyModule.CorLibTypes.AssemblyRef.FullName.Should().NotBe(
+            targetModule.CorLibTypes.AssemblyRef.FullName,
+            "the regression needs the target assembly to represent a different BCL context");
+        generatedCorLibAssemblyRef.FullName.Should().Be(
+            proxyModule.CorLibTypes.AssemblyRef.FullName,
+            "proxy assemblies define the registry load context and target assemblies may be compiled for a different TFM");
     }
 
     [Fact]
@@ -2386,6 +2485,8 @@ public class DuckTypeAotProcessorsTests
             matrix.Should().NotBeNull();
             matrix!.Mappings.Should().OnlyContain(mapping =>
                 string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            AssertInheritedCompletionContractMetadata(outputPath);
 
             var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-DuckTypeTask-NonGeneric", isCollectible: true);
             try
@@ -3586,6 +3687,8 @@ public class DuckTypeAotProcessorsTests
             matrix.Mappings.Should().OnlyContain(mapping =>
                 string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
 
+            AssertInheritedCompletionContractMetadata(outputPath);
+
             var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-DuckTypeTask-Generic", isCollectible: true);
             try
             {
@@ -3671,6 +3774,8 @@ public class DuckTypeAotProcessorsTests
             matrix.Should().NotBeNull();
             matrix!.Mappings.Should().ContainSingle(mapping =>
                 string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            AssertInheritedCompletionContractMetadata(outputPath);
 
             var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-ExternalInterfaceInheritance", isCollectible: true);
             try
@@ -12878,7 +12983,7 @@ public class DuckTypeAotProcessorsTests
             $"""
              <Project Sdk="Microsoft.NET.Sdk">
                <PropertyGroup>
-                 <TargetFramework>net8.0</TargetFramework>
+                 <TargetFramework>{TemporaryTargetAssemblyFramework}</TargetFramework>
                  <AssemblyName>{assemblyName}</AssemblyName>
                  <ImplicitUsings>disable</ImplicitUsings>
                  <Nullable>enable</Nullable>
@@ -12927,13 +13032,13 @@ public class DuckTypeAotProcessorsTests
             "-c",
             "Release",
             "-f",
-            "net8.0",
+            TemporaryTargetAssemblyFramework,
             "/nologo");
         buildResult.ExitCode.Should().Be(
             0,
             $"temporary duplicate target assembly should build.{Environment.NewLine}STDOUT:{Environment.NewLine}{buildResult.StandardOutput}{Environment.NewLine}STDERR:{Environment.NewLine}{buildResult.StandardError}");
 
-        var assemblyPath = Path.Combine(projectDirectory, "bin", "Release", "net8.0", $"{assemblyName}.dll");
+        var assemblyPath = Path.Combine(projectDirectory, "bin", "Release", TemporaryTargetAssemblyFramework, $"{assemblyName}.dll");
         File.Exists(assemblyPath).Should().BeTrue($"temporary duplicate target assembly should exist at '{assemblyPath}'");
         return assemblyPath;
     }
@@ -12948,7 +13053,7 @@ public class DuckTypeAotProcessorsTests
             $"""
              <Project Sdk="Microsoft.NET.Sdk">
                <PropertyGroup>
-                 <TargetFramework>net8.0</TargetFramework>
+                 <TargetFramework>{TemporaryTargetAssemblyFramework}</TargetFramework>
                  <AssemblyName>{assemblyName}</AssemblyName>
                  <ImplicitUsings>disable</ImplicitUsings>
                  <Nullable>enable</Nullable>
@@ -12992,13 +13097,13 @@ public class DuckTypeAotProcessorsTests
             "-c",
             "Release",
             "-f",
-            "net8.0",
+            TemporaryTargetAssemblyFramework,
             "/nologo");
         buildResult.ExitCode.Should().Be(
             0,
             $"temporary duplicate return target assembly should build.{Environment.NewLine}STDOUT:{Environment.NewLine}{buildResult.StandardOutput}{Environment.NewLine}STDERR:{Environment.NewLine}{buildResult.StandardError}");
 
-        var assemblyPath = Path.Combine(projectDirectory, "bin", "Release", "net8.0", $"{assemblyName}.dll");
+        var assemblyPath = Path.Combine(projectDirectory, "bin", "Release", TemporaryTargetAssemblyFramework, $"{assemblyName}.dll");
         File.Exists(assemblyPath).Should().BeTrue($"temporary duplicate return target assembly should exist at '{assemblyPath}'");
         return assemblyPath;
     }
@@ -13015,7 +13120,7 @@ public class DuckTypeAotProcessorsTests
             $"""
              <Project Sdk="Microsoft.NET.Sdk">
                <PropertyGroup>
-                 <TargetFramework>net8.0</TargetFramework>
+                 <TargetFramework>{TemporaryTargetAssemblyFramework}</TargetFramework>
                  <AssemblyName>{baseAssemblyName}</AssemblyName>
                  <ImplicitUsings>disable</ImplicitUsings>
                  <Nullable>enable</Nullable>
@@ -13053,7 +13158,7 @@ public class DuckTypeAotProcessorsTests
             $"""
              <Project Sdk="Microsoft.NET.Sdk">
                <PropertyGroup>
-                 <TargetFramework>net8.0</TargetFramework>
+                 <TargetFramework>{TemporaryTargetAssemblyFramework}</TargetFramework>
                  <AssemblyName>{derivedAssemblyName}</AssemblyName>
                  <ImplicitUsings>disable</ImplicitUsings>
                  <Nullable>enable</Nullable>
@@ -13090,14 +13195,14 @@ public class DuckTypeAotProcessorsTests
             "-c",
             "Release",
             "-f",
-            "net8.0",
+            TemporaryTargetAssemblyFramework,
             "/nologo");
         buildResult.ExitCode.Should().Be(
             0,
             $"temporary cross-assembly generic target assemblies should build.{Environment.NewLine}STDOUT:{Environment.NewLine}{buildResult.StandardOutput}{Environment.NewLine}STDERR:{Environment.NewLine}{buildResult.StandardError}");
 
-        var baseAssemblyPath = Path.Combine(baseProjectDirectory, "bin", "Release", "net8.0", $"{baseAssemblyName}.dll");
-        var derivedAssemblyPath = Path.Combine(derivedProjectDirectory, "bin", "Release", "net8.0", $"{derivedAssemblyName}.dll");
+        var baseAssemblyPath = Path.Combine(baseProjectDirectory, "bin", "Release", TemporaryTargetAssemblyFramework, $"{baseAssemblyName}.dll");
+        var derivedAssemblyPath = Path.Combine(derivedProjectDirectory, "bin", "Release", TemporaryTargetAssemblyFramework, $"{derivedAssemblyName}.dll");
         File.Exists(baseAssemblyPath).Should().BeTrue($"temporary base target assembly should exist at '{baseAssemblyPath}'");
         File.Exists(derivedAssemblyPath).Should().BeTrue($"temporary derived target assembly should exist at '{derivedAssemblyPath}'");
         return (baseAssemblyPath, derivedAssemblyPath);
@@ -13115,7 +13220,7 @@ public class DuckTypeAotProcessorsTests
             $"""
              <Project Sdk="Microsoft.NET.Sdk">
                <PropertyGroup>
-                 <TargetFramework>net8.0</TargetFramework>
+                 <TargetFramework>{TemporaryTargetAssemblyFramework}</TargetFramework>
                  <AssemblyName>{baseAssemblyName}</AssemblyName>
                  <ImplicitUsings>disable</ImplicitUsings>
                  <Nullable>enable</Nullable>
@@ -13153,7 +13258,7 @@ public class DuckTypeAotProcessorsTests
             $"""
              <Project Sdk="Microsoft.NET.Sdk">
                <PropertyGroup>
-                 <TargetFramework>net8.0</TargetFramework>
+                 <TargetFramework>{TemporaryTargetAssemblyFramework}</TargetFramework>
                  <AssemblyName>{derivedAssemblyName}</AssemblyName>
                  <ImplicitUsings>disable</ImplicitUsings>
                  <Nullable>enable</Nullable>
@@ -13190,14 +13295,14 @@ public class DuckTypeAotProcessorsTests
             "-c",
             "Release",
             "-f",
-            "net8.0",
+            TemporaryTargetAssemblyFramework,
             "/nologo");
         buildResult.ExitCode.Should().Be(
             0,
             $"temporary cross-assembly base field target assemblies should build.{Environment.NewLine}STDOUT:{Environment.NewLine}{buildResult.StandardOutput}{Environment.NewLine}STDERR:{Environment.NewLine}{buildResult.StandardError}");
 
-        var baseAssemblyPath = Path.Combine(baseProjectDirectory, "bin", "Release", "net8.0", $"{baseAssemblyName}.dll");
-        var derivedAssemblyPath = Path.Combine(derivedProjectDirectory, "bin", "Release", "net8.0", $"{derivedAssemblyName}.dll");
+        var baseAssemblyPath = Path.Combine(baseProjectDirectory, "bin", "Release", TemporaryTargetAssemblyFramework, $"{baseAssemblyName}.dll");
+        var derivedAssemblyPath = Path.Combine(derivedProjectDirectory, "bin", "Release", TemporaryTargetAssemblyFramework, $"{derivedAssemblyName}.dll");
         File.Exists(baseAssemblyPath).Should().BeTrue($"temporary base field target assembly should exist at '{baseAssemblyPath}'");
         File.Exists(derivedAssemblyPath).Should().BeTrue($"temporary derived field target assembly should exist at '{derivedAssemblyPath}'");
         return (baseAssemblyPath, derivedAssemblyPath);
@@ -13220,7 +13325,7 @@ public class DuckTypeAotProcessorsTests
             $"""
              <Project Sdk="Microsoft.NET.Sdk">
                <PropertyGroup>
-                 <TargetFramework>net8.0</TargetFramework>
+                 <TargetFramework>{TemporaryTargetAssemblyFramework}</TargetFramework>
                  <AssemblyName>{assemblyName}</AssemblyName>
                  <ImplicitUsings>disable</ImplicitUsings>
                  <Nullable>enable</Nullable>
@@ -13254,14 +13359,14 @@ public class DuckTypeAotProcessorsTests
             "-c",
             "Release",
             "-f",
-            "net8.0",
+            TemporaryTargetAssemblyFramework,
             "/nologo");
         buildResult.ExitCode.Should().Be(
             0,
             $"temporary constant-only optional target assembly should build.{Environment.NewLine}STDOUT:{Environment.NewLine}{buildResult.StandardOutput}{Environment.NewLine}STDERR:{Environment.NewLine}{buildResult.StandardError}");
 
-        var assemblyPath = Path.Combine(projectDirectory, "bin", "Release", "net8.0", $"{assemblyName}.dll");
-        var mutatedAssemblyPath = Path.Combine(projectDirectory, "bin", "Release", "net8.0", $"{assemblyName}.mutated.dll");
+        var assemblyPath = Path.Combine(projectDirectory, "bin", "Release", TemporaryTargetAssemblyFramework, $"{assemblyName}.dll");
+        var mutatedAssemblyPath = Path.Combine(projectDirectory, "bin", "Release", TemporaryTargetAssemblyFramework, $"{assemblyName}.mutated.dll");
         using (var module = ModuleDefMD.Load(assemblyPath))
         {
             var targetType = module.Find("ExternalOptional.ConstantOnlyOptionalParameterTarget", isReflectionName: false);
@@ -13290,7 +13395,7 @@ public class DuckTypeAotProcessorsTests
             $"""
              <Project Sdk="Microsoft.NET.Sdk">
                <PropertyGroup>
-                 <TargetFramework>net8.0</TargetFramework>
+                 <TargetFramework>{TemporaryTargetAssemblyFramework}</TargetFramework>
                  <AssemblyName>{dependencyAssemblyName}</AssemblyName>
                  <ImplicitUsings>disable</ImplicitUsings>
                  <Nullable>enable</Nullable>
@@ -13320,7 +13425,7 @@ public class DuckTypeAotProcessorsTests
             "-c",
             "Release",
             "-f",
-            "net8.0",
+            TemporaryTargetAssemblyFramework,
             "/nologo");
         dependencyBuildResult.ExitCode.Should().Be(
             0,
@@ -13335,7 +13440,7 @@ public class DuckTypeAotProcessorsTests
             $"""
              <Project Sdk="Microsoft.NET.Sdk">
                <PropertyGroup>
-                 <TargetFramework>net8.0</TargetFramework>
+                 <TargetFramework>{TemporaryTargetAssemblyFramework}</TargetFramework>
                  <AssemblyName>{targetAssemblyName}</AssemblyName>
                  <ImplicitUsings>disable</ImplicitUsings>
                  <Nullable>enable</Nullable>
@@ -13369,14 +13474,14 @@ public class DuckTypeAotProcessorsTests
             "-c",
             "Release",
             "-f",
-            "net8.0",
+            TemporaryTargetAssemblyFramework,
             "/nologo");
         targetBuildResult.ExitCode.Should().Be(
             0,
             $"temporary generic-parameter target assembly should build.{Environment.NewLine}STDOUT:{Environment.NewLine}{targetBuildResult.StandardOutput}{Environment.NewLine}STDERR:{Environment.NewLine}{targetBuildResult.StandardError}");
 
-        var targetAssemblyPath = Path.Combine(targetProjectDirectory, "bin", "Release", "net8.0", $"{targetAssemblyName}.dll");
-        var dependencyAssemblyPath = Path.Combine(dependencyProjectDirectory, "bin", "Release", "net8.0", $"{dependencyAssemblyName}.dll");
+        var targetAssemblyPath = Path.Combine(targetProjectDirectory, "bin", "Release", TemporaryTargetAssemblyFramework, $"{targetAssemblyName}.dll");
+        var dependencyAssemblyPath = Path.Combine(dependencyProjectDirectory, "bin", "Release", TemporaryTargetAssemblyFramework, $"{dependencyAssemblyName}.dll");
         File.Exists(targetAssemblyPath).Should().BeTrue($"temporary generic-parameter target assembly should exist at '{targetAssemblyPath}'");
         File.Exists(dependencyAssemblyPath).Should().BeTrue($"temporary generic-parameter dependency assembly should exist at '{dependencyAssemblyPath}'");
         return (targetAssemblyPath, dependencyAssemblyPath);
@@ -13699,11 +13804,28 @@ public class DuckTypeAotProcessorsTests
         var testsDirectory = Path.GetDirectoryName(sourceFilePath);
         testsDirectory.Should().NotBeNullOrWhiteSpace();
 
-        return Path.GetFullPath(
+        var repositoryRoot = Path.GetFullPath(
             Path.Combine(
                 testsDirectory!,
                 "..",
                 "..",
+                ".."));
+        var artifactsOutputPath = Path.Combine(
+            repositoryRoot,
+            "artifacts",
+            "bin",
+            "Datadog.Trace",
+            "release_netstandard2.0",
+            "Datadog.Trace.dll");
+        if (File.Exists(artifactsOutputPath))
+        {
+            return artifactsOutputPath;
+        }
+
+        return Path.GetFullPath(
+            Path.Combine(
+                repositoryRoot,
+                "tracer",
                 "src",
                 "Datadog.Trace",
                 "bin",
@@ -15056,6 +15178,61 @@ public class DuckTypeAotProcessorsTests
             IType type => type.FullName.StartsWith("System.Reflection.", StringComparison.Ordinal),
             _ => false
         };
+    }
+
+    private static void AssertInheritedCompletionContractMetadata(string outputPath)
+    {
+        using var generatedModule = ModuleDefMD.Load(outputPath);
+        var generatedProxyTypes = generatedModule.GetTypes()
+                                                 .Where(type => string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal))
+                                                 .ToList();
+        var completionProxyTypes = generatedProxyTypes
+                                  .Where(type => type.FindMethod(nameof(ICriticalNotifyCompletion.UnsafeOnCompleted)) is not null)
+                                  .ToList();
+        completionProxyTypes.Should().NotBeEmpty(
+            "awaiter-like proxy contracts must implement inherited completion interfaces directly. Generated proxies: {0}",
+            string.Join("; ", generatedProxyTypes.Select(DescribeGeneratedProxyType)));
+
+        foreach (var generatedProxyType in completionProxyTypes)
+        {
+            var criticalNotifyCompletionInterface = generatedProxyType.Interfaces
+                                                                     .Select(interfaceImpl => interfaceImpl.Interface)
+                                                                     .SingleOrDefault(interfaceType => string.Equals(interfaceType.FullName, "System.Runtime.CompilerServices.ICriticalNotifyCompletion", StringComparison.Ordinal));
+            criticalNotifyCompletionInterface.Should().NotBeNull();
+            GetDefinitionAssemblyName(criticalNotifyCompletionInterface!).Should().BeOneOf(FrameworkAssemblyNames);
+
+            var unsafeOnCompletedMethod = generatedProxyType.FindMethod(nameof(ICriticalNotifyCompletion.UnsafeOnCompleted));
+            unsafeOnCompletedMethod.Should().NotBeNull();
+            AssertFrameworkActionParameter(unsafeOnCompletedMethod!);
+
+            var unsafeOnCompletedOverride = unsafeOnCompletedMethod!.Overrides.SingleOrDefault(methodOverride =>
+                string.Equals(methodOverride.MethodDeclaration.Name, nameof(ICriticalNotifyCompletion.UnsafeOnCompleted), StringComparison.Ordinal) &&
+                string.Equals(methodOverride.MethodDeclaration.DeclaringType.FullName, "System.Runtime.CompilerServices.ICriticalNotifyCompletion", StringComparison.Ordinal));
+            unsafeOnCompletedOverride.Should().NotBeNull();
+            GetDefinitionAssemblyName(unsafeOnCompletedOverride!.MethodDeclaration.DeclaringType).Should().BeOneOf(FrameworkAssemblyNames);
+            AssertFrameworkActionParameter(unsafeOnCompletedOverride.MethodDeclaration);
+        }
+    }
+
+    private static string DescribeGeneratedProxyType(TypeDef type)
+    {
+        var methodNames = string.Join(",", type.Methods.Select(method => method.Name.String));
+        var interfaceNames = string.Join(",", type.Interfaces.Select(interfaceImpl => interfaceImpl.Interface.FullName));
+        return $"{type.FullName} methods=[{methodNames}] interfaces=[{interfaceNames}]";
+    }
+
+    private static void AssertFrameworkActionParameter(IMethod method)
+    {
+        method.MethodSig.Params.Should().ContainSingle();
+        var actionType = method.MethodSig.Params[0].ToTypeDefOrRef();
+        actionType.Should().NotBeNull();
+        actionType!.FullName.Should().Be("System.Action");
+        GetDefinitionAssemblyName(actionType).Should().BeOneOf(FrameworkAssemblyNames);
+    }
+
+    private static string GetDefinitionAssemblyName(ITypeDefOrRef typeDefOrRef)
+    {
+        return typeDefOrRef.DefinitionAssembly?.Name?.String ?? string.Empty;
     }
 
     private static (int Result, string Output) ProcessAndCapture(DuckTypeAotVerifyCompatOptions options)
