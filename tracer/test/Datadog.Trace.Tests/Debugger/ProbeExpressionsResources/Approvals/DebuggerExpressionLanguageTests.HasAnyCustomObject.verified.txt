@@ -71,7 +71,7 @@ Expression: (
 
                 nestedObject = enumerator.Current;
 
-                if (nestedObject.NestedString; == "hello";)
+                if (nestedObject.NestedString == "hello";)
                 {
                     anyResult = true;
                     break;

@@ -377,16 +377,13 @@ internal partial class ProbeExpressionParser<T>
                 return memberInfo.MemberType switch
                 {
                     MemberTypes.Field => Expression.Field(null, (FieldInfo)memberInfo),
-                    MemberTypes.Property => Expression.Block(BudgetCheck(), Expression.Property(null, (PropertyInfo)memberInfo)),
+                    MemberTypes.Property => Expression.Property(null, (PropertyInfo)memberInfo),
                     _ => throw new InvalidOperationException("Unsupported member type for static member access.")
                 };
             }
             else
             {
-                var member = Expression.PropertyOrField(expression, propertyOrFieldValue);
-                return member is MemberExpression { Member: PropertyInfo }
-                           ? Expression.Block(BudgetCheck(), member)
-                           : member;
+                return Expression.PropertyOrField(expression, propertyOrFieldValue);
             }
         }
         catch (Exception e)
