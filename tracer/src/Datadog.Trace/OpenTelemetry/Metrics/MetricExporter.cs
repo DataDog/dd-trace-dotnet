@@ -23,9 +23,11 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         public abstract Task<ExportResult> ExportAsync(IReadOnlyList<MetricPoint> metrics);
 
         /// <summary>
-        /// Shuts down the exporter.
+        /// Releases exporter resources. The final flush is driven by the caller
+        /// (MetricReader.StopAsync) and bounded by the export path's own timeout;
+        /// this method is not expected to block.
         /// </summary>
-        public abstract bool Shutdown(int timeoutMilliseconds);
+        public abstract bool Shutdown();
     }
 }
 #endif

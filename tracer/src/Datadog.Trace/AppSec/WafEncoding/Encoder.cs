@@ -101,8 +101,8 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 case string str:
                     ddwafObjectStruct = GetStringObject(ref context, str);
                     break;
-                case JValue:
-                    ddwafObjectStruct = GetStringObject(ref context, o?.ToString() ?? string.Empty);
+                case JValue jValue:
+                    ddwafObjectStruct = Encode(ref context, remainingDepth, key, jValue.Value);
                     break;
                 case null:
                     ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_NULL };
@@ -308,7 +308,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     var idx = 0;
                     foreach (var val in enumerable)
                     {
-                        if (idx > childrenCount)
+                        if (idx >= childrenCount)
                         {
                             break;
                         }
@@ -418,7 +418,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         (delegate*<KeyValuePair<string, string>, string?>)getKey,
                         (delegate*<KeyValuePair<string, string>, object?>)getValue,
                         childrenData,
-                        childrenCount);
+                        ref childrenCount);
                 }
                 else if (typeKVP == typeof(KeyValuePair<string, object>))
                 {
@@ -429,7 +429,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         (delegate*<KeyValuePair<string, object>, string?>)getKey,
                         (delegate*<KeyValuePair<string, object>, object?>)getValue,
                         childrenData,
-                        childrenCount);
+                        ref childrenCount);
                 }
                 else if (typeKVP == typeof(KeyValuePair<string, string[]>))
                 {
@@ -440,7 +440,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         (delegate*<KeyValuePair<string, string[]>, string?>)getKey,
                         (delegate*<KeyValuePair<string, string[]>, object?>)getValue,
                         childrenData,
-                        childrenCount);
+                        ref childrenCount);
                 }
                 else if (typeKVP == typeof(KeyValuePair<string, List<string>>))
                 {
@@ -451,7 +451,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         (delegate*<KeyValuePair<string, List<string>>, string?>)getKey,
                         (delegate*<KeyValuePair<string, List<string>>, object?>)getValue,
                         childrenData,
-                        childrenCount);
+                        ref childrenCount);
                 }
                 else if (typeKVP == typeof(KeyValuePair<string, JToken>))
                 {
@@ -462,7 +462,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         (delegate*<KeyValuePair<string, JToken>, string?>)getKey,
                         (delegate*<KeyValuePair<string, JToken>, object?>)getValue,
                         childrenData,
-                        childrenCount);
+                        ref childrenCount);
                 }
                 else
                 {
@@ -473,7 +473,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         (delegate*<KeyValuePair<string, TValue>, string?>)getKey,
                         (delegate*<KeyValuePair<string, TValue>, object?>)getValue,
                         childrenData,
-                        childrenCount);
+                        ref childrenCount);
                 }
             }
             else
@@ -510,7 +510,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static unsafe void EnumerateIDictionaryItems<TKey, TValue>(ref EncoderContext context, int remainingDepth, IDictionary enumerableDic, delegate*<KeyValuePair<TKey, TValue>, string?> getKey, delegate*<KeyValuePair<TKey, TValue>, object?> getValue, IntPtr childrenData, int childrenCount)
+        private static unsafe void EnumerateIDictionaryItems<TKey, TValue>(ref EncoderContext context, int remainingDepth, IDictionary enumerableDic, delegate*<KeyValuePair<TKey, TValue>, string?> getKey, delegate*<KeyValuePair<TKey, TValue>, object?> getValue, IntPtr childrenData, ref int childrenCount)
             where TKey : notnull
         {
             var itemData = childrenData;

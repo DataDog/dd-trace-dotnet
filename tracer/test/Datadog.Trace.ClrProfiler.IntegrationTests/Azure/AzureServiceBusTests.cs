@@ -48,7 +48,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
             // If you want to use a custom connection string, set it here
             // SetEnvironmentVariable("ASB_CONNECTION_STRING", null);

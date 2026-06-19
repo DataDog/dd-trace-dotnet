@@ -39,8 +39,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(List<>),
             typeof(ArrayList),
             typeof(LinkedList<>),
-            typeof(SortedList),
-            typeof(SortedList<,>),
             typeof(Stack),
             typeof(Stack<>),
             typeof(ConcurrentStack<>),
@@ -50,13 +48,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(HashSet<>),
             typeof(SortedSet<>),
             typeof(ConcurrentBag<>),
-            typeof(BlockingCollection<>),
-            typeof(ConditionalWeakTable<,>)
+            typeof(BlockingCollection<>)
         ];
 
         private static readonly Type[] AllowedDictionaryTypes =
         [
             typeof(Dictionary<,>),
+            typeof(SortedList),
+            typeof(SortedList<,>),
             typeof(SortedDictionary<,>),
             typeof(ConcurrentDictionary<,>),
             typeof(Hashtable)
@@ -191,11 +190,17 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal static Redaction Instance => _instnace;
 
-        internal static bool IsSafeToCallToString(Type type)
+        internal static bool IsSafeToCallToString(Type? type)
         {
-            return TypeExtensions.IsSimple(type) ||
-                   AllowedTypesSafeToCallToString.Contains(type) ||
-                   IsSupportedCollection(type);
+            if (type is null)
+            {
+                return false;
+            }
+
+            var effectiveType = Nullable.GetUnderlyingType(type) ?? type;
+
+            return TypeExtensions.IsSimple(effectiveType) ||
+                   IsAllowedTypeSafeToCallToString(effectiveType);
         }
 
         internal static bool IsSupportedDictionary(object? o)
@@ -205,8 +210,17 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return false;
             }
 
-            var type = o.GetType();
-            return AllowedDictionaryTypes.Any(whiteType => whiteType == type || (type.IsGenericType && whiteType == type.GetGenericTypeDefinition()));
+            return IsSupportedDictionary(o.GetType());
+        }
+
+        internal static bool IsSupportedDictionary(Type? type)
+        {
+            if (type == null)
+            {
+                return false;
+            }
+
+            return IsSupportedType(type, AllowedDictionaryTypes);
         }
 
         internal static bool IsSupportedCollection(object? o)
@@ -231,8 +245,54 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return true;
             }
 
-            return AllowedCollectionTypes.Any(whiteType => whiteType == type || (type.IsGenericType && whiteType == type.GetGenericTypeDefinition())) ||
-                   AllowedSpecialCasedCollectionTypeNames.Any(white => white.Equals(type.Name, StringComparison.OrdinalIgnoreCase));
+            if (IsSupportedType(type, AllowedCollectionTypes))
+            {
+                return true;
+            }
+
+            for (var i = 0; i < AllowedSpecialCasedCollectionTypeNames.Length; i++)
+            {
+                if (AllowedSpecialCasedCollectionTypeNames[i].Equals(type.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsSupportedType(Type type, Type[] allowedTypes)
+        {
+            Type? genericDefinition = null;
+            if (type.IsGenericType)
+            {
+                genericDefinition = type.GetGenericTypeDefinition();
+            }
+
+            for (var i = 0; i < allowedTypes.Length; i++)
+            {
+                var allowedType = allowedTypes[i];
+                if (allowedType == type ||
+                    (genericDefinition != null && allowedType == genericDefinition))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsAllowedTypeSafeToCallToString(Type type)
+        {
+            for (var i = 0; i < AllowedTypesSafeToCallToString.Length; i++)
+            {
+                if (AllowedTypesSafeToCallToString[i] == type)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         internal bool IsRedactedType(Type? type)
@@ -246,6 +306,13 @@ namespace Datadog.Trace.Debugger.Snapshots
         }
 
         private bool CheckForRedactedType(Type type)
+        {
+            return CheckForRedactedTypeCore(type) ||
+                   (Nullable.GetUnderlyingType(type) is { } underlyingType &&
+                    CheckForRedactedTypeCore(underlyingType));
+        }
+
+        private bool CheckForRedactedTypeCore(Type type)
         {
             Type? genericDefinition = null;
             if (type.IsGenericType)

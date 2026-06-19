@@ -80,7 +80,8 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// Configuration key for setting DBM propagation mode
-    /// Default value is disabled, expected values are either: disabled, service or full
+    /// Default value is disabled, expected values are either: disabled, service, dynamic_service or full
+    /// dynamic_service is equivalent to service with DD_DBM_INJECT_SQL_BASEHASH=true
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmPropagationMode"/>
     public const string DbmPropagationMode = "DD_DBM_PROPAGATION_MODE";
@@ -151,7 +152,7 @@ internal static partial class ConfigurationKeys
     public const string Environment = "DD_ENV";
 
     /// <summary>
-    /// Enables propagation of process-level tags across traces. Type: `boolean`. Default: `false`
+    /// Enables propagation of process-level tags across traces. Type: `boolean`. Default: `true`
     /// </summary>
     public const string PropagateProcessTags = "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED";
 
@@ -248,6 +249,13 @@ internal static partial class ConfigurationKeys
     /// Default value is <c>true</c> (enabled) on .NET 6+ and <c>false</c> (disabled) otherwise.
     /// </summary>
     public const string RuntimeMetricsEnabled = "DD_RUNTIME_METRICS_ENABLED";
+
+    /// <summary>
+    /// Overrides the default path to the serverless compatibility layer binary.
+    /// Default value in windows is <c>C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe</c>.
+    /// Default value in linux is <c>/bin/linux-amd64/datadog-serverless-compat</c>.
+    /// </summary>
+    public const string ServerlessCompatPath = "DD_SERVERLESS_COMPAT_PATH";
 
     /// <summary>
     /// Configuration key for the application's default service name.
@@ -415,12 +423,6 @@ internal static partial class ConfigurationKeys
     /// or in the <c>app.config</c>/<c>web.config</c> file.
     /// </summary>
     public const string ConfigurationFileName = "DD_TRACE_CONFIG_FILE";
-
-    /// <summary>
-    /// Use libdatadog data pipeline to send traces.
-    /// Default value is <c>false</c> (disabled).
-    /// </summary>
-    public const string TraceDataPipelineEnabled = "DD_TRACE_DATA_PIPELINE_ENABLED";
 
     /// <summary>
     /// Configuration key for enabling or disabling the Tracer's debug mode.

@@ -67,7 +67,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
             SetEnvironmentVariable("DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED", enableNewWcfInstrumentation ? "true" : "false");
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled, enableWcfObfuscation ? "true" : "false");
@@ -114,7 +113,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task WebHttp(string metadataSchemaVersion, bool enableNewWcfInstrumentation, bool enableWebHttpResourceNames)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
             // When using the WebHttpBinding (not a real binding) we don't
             // care about ofuscation really, as it on(it doesn't do anything)

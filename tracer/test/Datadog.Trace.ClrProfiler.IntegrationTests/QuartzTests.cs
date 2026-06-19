@@ -50,8 +50,6 @@ public class QuartzTests : TracingIntegrationTest
     [MemberData(nameof(GetData))]
     public async Task SubmitsTraces(string packageVersion)
     {
-        SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
-
         using (var telemetry = this.ConfigureTelemetry())
         using (var agent = EnvironmentHelper.GetMockAgent())
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))

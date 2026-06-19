@@ -7,7 +7,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
@@ -29,6 +31,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         private volatile bool _enqueueLogEnabled = true;
 
         protected BatchingSink(BatchingSinkOptions sinkOptions, Action? disableSinkAction, IDatadogLogger? log = null)
+            : this(sinkOptions, disableSinkAction, startBackgroundLoop: true, log)
+        {
+        }
+
+        internal BatchingSink(BatchingSinkOptions sinkOptions, Action? disableSinkAction, bool startBackgroundLoop, IDatadogLogger? log = null)
         {
             if (sinkOptions == null)
             {
@@ -55,14 +62,23 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
             _queue = new BoundedConcurrentQueue<T>(sinkOptions.QueueLimit);
             _circuitBreaker = new CircuitBreaker(sinkOptions.FailuresBeforeCircuitBreak);
 
-            _flushTask = Task.Run(FlushBuffersTaskLoopAsync);
-            _flushTask.ContinueWith(
-                t =>
-                {
-                    _log.Error(t.Exception, "Error in flush task");
-                    _disableSinkAction?.Invoke();
-                },
-                TaskContinuationOptions.OnlyOnFaulted);
+            if (startBackgroundLoop)
+            {
+                _flushTask = Task.Run(FlushBuffersTaskLoopAsync);
+                _flushTask.ContinueWith(
+                    t =>
+                    {
+                        _log.Error(t.Exception, "Error in flush task");
+                        _disableSinkAction?.Invoke();
+                    },
+                    CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted,
+                    TaskScheduler.Default);
+            }
+            else
+            {
+                _flushTask = Task.CompletedTask;
+            }
         }
 
         /// <summary>
@@ -141,47 +157,61 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 
             while (!_processExit.Task.IsCompleted)
             {
-                // Extract all the pending flush TCSs before the flush call
-                List<TaskCompletionSource<bool>>? flushSources = null;
-                while (_flushCompletionSources.TryDequeue(out var tcs))
-                {
-                    flushSources ??= new List<TaskCompletionSource<bool>>();
-                    flushSources.Add(tcs);
-                }
-
-                // Flush
-                var circuitStatus = await FlushLogs().ConfigureAwait(false);
-
-                // Set results on the pending flush TCSs
-                if (flushSources is not null)
-                {
-                    foreach (var tcs in flushSources)
-                    {
-                        tcs.TrySetResult(true);
-                    }
-                }
-
-                // Handle status (Note if there's a pending flush request we skip the delay)
-                await HandleCircuitStatus(circuitStatus, !_flushCompletionSources.IsEmpty).ConfigureAwait(false);
+                await RunOneIterationAsync(noDelay: false).ConfigureAwait(false);
             }
 
             _log.Debug("Terminating Log submission loop");
             if (_processExit.Task.Result)
             {
-                var maxShutDownDelay = Task.Delay(20_000);
-                var finalFlushTask = FlushLogs();
-                var completed = await Task.WhenAny(finalFlushTask, maxShutDownDelay).ConfigureAwait(false);
-
-                if (completed != finalFlushTask)
-                {
-                    _log.Warning("Could not finish flushing all logs before process end");
-                }
+                await RunFinalFlushAsync().ConfigureAwait(false);
             }
 
             // Set results on the pending flush TCSs before exiting
             while (_flushCompletionSources.TryDequeue(out var tcs))
             {
                 tcs.TrySetResult(true);
+            }
+        }
+
+        [TestingAndPrivateOnly]
+        internal async Task<CircuitStatus> RunOneIterationAsync(bool noDelay)
+        {
+            // Extract all the pending flush TCSs before the flush call
+            List<TaskCompletionSource<bool>>? flushSources = null;
+            while (_flushCompletionSources.TryDequeue(out var tcs))
+            {
+                flushSources ??= new List<TaskCompletionSource<bool>>();
+                flushSources.Add(tcs);
+            }
+
+            // Flush
+            var circuitStatus = await FlushLogs().ConfigureAwait(false);
+
+            // Set results on the pending flush TCSs
+            if (flushSources is not null)
+            {
+                foreach (var tcs in flushSources)
+                {
+                    tcs.TrySetResult(true);
+                }
+            }
+
+            // Handle status. The background loop skips the delay if there's another pending flush request.
+            // Explicit callers (tests) decide for themselves.
+            await HandleCircuitStatus(circuitStatus, noDelay || !_flushCompletionSources.IsEmpty).ConfigureAwait(false);
+            return circuitStatus;
+        }
+
+        [TestingAndPrivateOnly]
+        internal async Task RunFinalFlushAsync()
+        {
+            var maxShutDownDelay = Task.Delay(20_000);
+            var finalFlushTask = FlushLogs();
+            var completed = await Task.WhenAny(finalFlushTask, maxShutDownDelay).ConfigureAwait(false);
+
+            if (completed != finalFlushTask)
+            {
+                _log.Warning("Could not finish flushing all logs before process end");
             }
         }
 

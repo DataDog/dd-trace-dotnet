@@ -21,6 +21,7 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -84,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler
             var tracerSettings = tracer.Settings;
             var mutableSettings = tracerSettings.Manager.InitialMutableSettings;
 
-            NativeInterop.SharedConfig config = new NativeInterop.SharedConfig
+            var config = new NativeInterop.SharedConfig
             {
                 ProfilingEnabled = profilerSettings.ProfilerState switch
                 {
@@ -306,6 +307,10 @@ namespace Datadog.Trace.ClrProfiler
             }
 #endif
 
+            // Eagerly initialize the root session ID so child processes
+            // inherit it even if spawned before the first telemetry flush.
+            _ = RuntimeId.GetRootSessionId();
+
             try
             {
                 // ensure global instance is created if it's not already
@@ -520,13 +525,60 @@ namespace Datadog.Trace.ClrProfiler
         [Pure]
         private static bool SkipAspNetCoreDiagnosticObserver()
         {
-            // this is extremely simple now, but will get more complex soon...
-            return EnvironmentHelpers.IsAzureFunctions();
+            // Enable AspNetCoreDiagnosticObserver in:
+            // - outside Azure Functions
+            // - Isolated functions worker processes with extension v4
+            //   (to create aspnet_core.request spans that azure_functions.invoke can parent to)
+
+            // Skip AspNetCoreDiagnosticObserver in Azure Functions:
+            // - In-process functions (due to AssemblyLoadContext issues)
+            // - Isolated functions host process (to avoid duplicate spans)
+            // - Isolated functions worker process with extension v1 (FUNCTIONS_EXTENSION_VERSION="~1")
+
+            if (!AzureInfo.Instance.IsAzureFunction)
+            {
+                // We only skip AspNetCoreDiagnosticObserver in Azure Functions.
+                // Don't skip it outside Azure Functions.
+                return false;
+            }
+
+            // FUNCTIONS_WORKER_RUNTIME == "dotnet-isolated"
+            if (!AzureInfo.Instance.IsIsolatedFunction)
+            {
+                // Skip AspNetCoreDiagnosticObserver in in-process Azure Functions
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in an in-process Azure Function.");
+                return true;
+            }
+
+            if (AzureInfo.Instance.IsIsolatedFunctionHostProcess)
+            {
+                // Skip AspNetCoreDiagnosticObserver in Azure Functions _host_ processes
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in an isolated Azure Function host process.");
+                return true;
+            }
+
+            // FUNCTIONS_EXTENSION_VERSION
+            var azureFunctionsExtensionVersion = AzureInfo.Instance.AzureFunctionsExtensionVersion;
+
+            if (azureFunctionsExtensionVersion != "~4")
+            {
+                // Skip AspNetCoreDiagnosticObserver in v1 isolated functions (v2 and v3 are not supported at all)
+                // to keep the previous behavior
+                Log.Debug("Skipping AspNetCoreDiagnosticObserver: running in Azure Function with extension version {AzureFunctionsExtensionVersion}.", azureFunctionsExtensionVersion);
+                return true;
+            }
+
+            // do not skip when running in an isolated Azure Functions worker process with extension v4
+            return false;
         }
-#endif
+#endif // #if !NETFRAMEWORK
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {
+            // DebuggerManager construction is intentionally cheap: it only reads the default
+            // settings sources. The "should we actually start any debugger product?" decision
+            // is made here, at the call site, so when nothing is enabled we don't even allocate
+            // the Task/ContinueWith pair for UpdateConfiguration.
             var manager = DebuggerManager.Instance;
             var debuggerSettings = manager.DebuggerSettings;
 
@@ -536,21 +588,18 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
             }
 
-            if (!debuggerSettings.DynamicInstrumentationEnabled
-             && !debuggerSettings.CodeOriginForSpansEnabled
-             && !manager.ExceptionReplaySettings.Enabled)
+            if (!DebuggerManager.ShouldInitialize(tracerSettings, debuggerSettings, manager.ExceptionReplaySettings.Enabled))
             {
                 Log.Debug("Debugger products are not enabled");
+                return;
             }
-            else
-            {
-                _ = manager.UpdateConfiguration(tracerSettings)
-                           .ContinueWith(
-                                t => Log.Error(t?.Exception, "Error initializing debugger"),
-                                CancellationToken.None,
-                                TaskContinuationOptions.OnlyOnFaulted,
-                                TaskScheduler.Default);
-            }
+
+            _ = manager.UpdateConfiguration(tracerSettings)
+                       .ContinueWith(
+                            static t => Log.Error(t?.Exception, "Error initializing debugger"),
+                            CancellationToken.None,
+                            TaskContinuationOptions.OnlyOnFaulted,
+                            TaskScheduler.Default);
         }
 
         // /!\ This method is called by reflection in the SampleHelpers

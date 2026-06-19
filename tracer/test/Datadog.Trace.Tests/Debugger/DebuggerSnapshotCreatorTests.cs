@@ -4,10 +4,21 @@
 // </copyright>
 
 using System;
+using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using VerifyTests;
 using VerifyXunit;
@@ -21,6 +32,26 @@ namespace Datadog.Trace.Tests.Debugger
     [UsesVerify]
     public class DebuggerSnapshotCreatorTests(ITestOutputHelper output)
     {
+        public static IEnumerable<object[]> SupportedCollectionSamples()
+        {
+            yield return [new List<int> { 1 }, "List`1", 1];
+            yield return [new[] { 1 }, "Int32[]", 1];
+            yield return [new Queue<int>(new[] { 1 }), "Queue`1", 1];
+            yield return [new Stack<int>(new[] { 1 }), "Stack`1", 1];
+            yield return [new ConcurrentQueue<int>(new[] { 1 }), "ConcurrentQueue`1", 1];
+            yield return [new ConcurrentBag<int>(new[] { 1 }), "ConcurrentBag`1", 1];
+            yield return [new BlockingCollection<int>(new ConcurrentQueue<int>(new[] { 1 })), "BlockingCollection`1", 1];
+            yield return [new SortedSet<int> { 1 }, "SortedSet`1", 1];
+        }
+
+        public static IEnumerable<object[]> SupportedDictionarySamples()
+        {
+            yield return [new Dictionary<string, int> { { "one", 1 } }, "Dictionary`2", 1];
+            yield return [new SortedDictionary<string, int> { { "one", 1 } }, "SortedDictionary`2", 1];
+            yield return [new ConcurrentDictionary<string, int>(new[] { new KeyValuePair<string, int>("one", 1) }), "ConcurrentDictionary`2", 1];
+            yield return [new Hashtable { { "one", 1 } }, "Hashtable", 1];
+        }
+
         [Fact]
         public async Task Limits_LargeCollection()
         {
@@ -99,6 +130,84 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void Limits_CollectionAtCaptureLimit_DoesNotSetCollectionSizeReason()
+        {
+            var collection = new List<object> { 1, null, 2 };
+            var collectionJson = SerializeCollection(collection, maxCollectionSize: collection.Count);
+
+            Assert.Equal(collection.Count, collectionJson["size"]?.Value<int>());
+            Assert.Equal(2, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Null(collectionJson["notCapturedReason"]);
+        }
+
+        [Fact]
+        public void Limits_CollectionWithTooManyItems_SetsCollectionSizeReason()
+        {
+            var collectionJson = SerializeCollection(new List<object> { 1, null, 2, 3 }, maxCollectionSize: 3);
+
+            Assert.Equal("collectionSize", collectionJson["notCapturedReason"]?.Value<string>());
+            Assert.Equal(2, collectionJson["elements"]?.Value<JArray>()?.Count);
+        }
+
+        [Fact]
+        public void Limits_BoundedCaptureCollectionResultWithTruncation_SetsCollectionSizeReason()
+        {
+            var result = new BoundedCaptureCollectionResult<object>([1], wasTruncated: true, isDictionary: false);
+
+            var collectionJson = SerializeCollection(result, maxCollectionSize: 10, collectionCount: result.Count, wasTruncated: result.WasTruncated);
+
+            Assert.Equal(1, collectionJson["size"]?.Value<int>());
+            Assert.Equal(1, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Equal("collectionSize", collectionJson["notCapturedReason"]?.Value<string>());
+        }
+
+        [Fact]
+        public void Limits_BoundedCaptureCollectionResultCanceledBeforeVisitingAllItems_SetsTimeoutReason()
+        {
+            using var cts = new CancellationTokenSource();
+            var result = new BoundedCaptureCollectionResult<object>([1, 2], wasTruncated: true, isDictionary: false);
+
+            var collectionJson = SerializeCollection(new CancelingCollection([1, 2], cancelAfterVisitedItems: 1, cts), maxCollectionSize: 10, collectionCount: result.Count, wasTruncated: result.WasTruncated, cts: cts);
+
+            Assert.Equal(2, collectionJson["size"]?.Value<int>());
+            Assert.Equal(1, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Equal("timeout", collectionJson["notCapturedReason"]?.Value<string>());
+        }
+
+        [Fact]
+        public void Limits_BoundedCaptureCollectionResultWithoutTruncation_DoesNotSetCollectionSizeReason()
+        {
+            var result = new BoundedCaptureCollectionResult<object>([1], wasTruncated: false, isDictionary: false);
+
+            var collectionJson = SerializeCollection(result, maxCollectionSize: 10, collectionCount: result.Count, wasTruncated: result.WasTruncated);
+
+            Assert.Equal(1, collectionJson["size"]?.Value<int>());
+            Assert.Equal(1, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Null(collectionJson["notCapturedReason"]);
+        }
+
+        [Fact]
+        public void Limits_CollectionCanceledBeforeVisitingAllItems_SetsTimeoutReason()
+        {
+            using var cts = new CancellationTokenSource();
+            var collectionJson = SerializeCollection(new CancelingCollection([1, 2, 3], cancelAfterVisitedItems: 2, cts), maxCollectionSize: 10, cts);
+
+            Assert.Equal("timeout", collectionJson["notCapturedReason"]?.Value<string>());
+            Assert.Equal(2, collectionJson["elements"]?.Value<JArray>()?.Count);
+        }
+
+        [Fact]
+        public void Limits_CollectionCanceledAfterVisitingAllItems_DoesNotSetTimeoutReason()
+        {
+            using var cts = new CancellationTokenSource();
+            var collectionJson = SerializeCollection(new CancelingCollection([1, null, 2], cancelAfterVisitedItems: 3, cts), maxCollectionSize: 10, cts);
+
+            Assert.Equal(3, collectionJson["size"]?.Value<int>());
+            Assert.Equal(2, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Null(collectionJson["notCapturedReason"]);
+        }
+
+        [Fact]
         public async Task ObjectStructure_Null()
         {
             await ValidateSingleValue(null);
@@ -117,9 +226,392 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ObjectStructure_HashSet()
+        {
+            var local = GetLocalToken(new HashSet<int> { 1, 2 });
+
+            Assert.Equal("HashSet`1", local["type"]?.Value<string>());
+            Assert.Equal(2, local["size"]?.Value<int>());
+            Assert.Null(local["entries"]);
+
+            var elements = local["elements"] as JArray;
+            Assert.NotNull(elements);
+            Assert.Equal(2, elements!.Count);
+            Assert.Equal(new[] { 1, 2 }, elements.Select(e => e["value"]!.Value<int>()).OrderBy(i => i).ToArray());
+        }
+
+        [Theory]
+        [MemberData(nameof(SupportedCollectionSamples))]
+        public void ObjectStructure_SupportedCollections(object collection, string expectedType, int expectedSize)
+        {
+            var local = GetLocalToken(collection);
+
+            Assert.Equal(expectedType, local["type"]?.Value<string>());
+            Assert.Equal(expectedSize, local["size"]?.Value<int>());
+            Assert.NotNull(local["elements"]);
+            Assert.Null(local["entries"]);
+        }
+
+        [Theory]
+        [MemberData(nameof(SupportedDictionarySamples))]
+        public void ObjectStructure_SupportedDictionaries(object dictionary, string expectedType, int expectedSize)
+        {
+            var local = GetLocalToken(dictionary);
+
+            Assert.Equal(expectedType, local["type"]?.Value<string>());
+            Assert.Equal(expectedSize, local["size"]?.Value<int>());
+            Assert.NotNull(local["entries"]);
+            Assert.Null(local["elements"]);
+        }
+
+        [Fact]
+        public void ObjectStructure_ObjectTypedDictionaryEntries_UseRuntimeTypeAndNullFallback()
+        {
+            var local = GetLocalToken(new Dictionary<object, object> { { 42, null }, { "name", "value" } });
+
+            Assert.Equal("Dictionary`2", local["type"]?.Value<string>());
+            Assert.Equal(2, local["size"]?.Value<int>());
+            Assert.Null(local["elements"]);
+
+            var entries = local["entries"] as JArray;
+            Assert.NotNull(entries);
+            Assert.Equal(2, entries!.Count);
+            Assert.Contains(entries, entry =>
+                entry[0]?["type"]?.Value<string>() == "Int32" &&
+                entry[0]?["value"]?.Value<int>() == 42 &&
+                entry[1]?["type"]?.Value<string>() == "Object" &&
+                entry[1]?["isNull"]?.Value<string>() == "true");
+            Assert.Contains(entries, entry =>
+                entry[0]?["type"]?.Value<string>() == "String" &&
+                entry[0]?["value"]?.Value<string>() == "name" &&
+                entry[1]?["type"]?.Value<string>() == "String" &&
+                entry[1]?["value"]?.Value<string>() == "value");
+        }
+
+        [Fact]
+        public void ObjectStructure_DictionaryEntryValue_WithRedactedKey_IsRedacted()
+        {
+            object[] dictionaries =
+            [
+                new Dictionary<string, object> { { "password", "DD_SECRET_LEAK" }, { "name", "value" } },
+                new Dictionary<object, object> { { "password", "DD_SECRET_LEAK" }, { "name", "value" } },
+                new Hashtable { { "password", "DD_SECRET_LEAK" }, { "name", "value" } }
+            ];
+
+            foreach (var dictionary in dictionaries)
+            {
+                var local = GetLocalToken(dictionary);
+                var expectedType = dictionary is Hashtable ? "Hashtable" : "Dictionary`2";
+
+                Assert.Equal(expectedType, local["type"]?.Value<string>());
+                Assert.Equal(2, local["size"]?.Value<int>());
+                Assert.Null(local["elements"]);
+
+                var entries = local["entries"] as JArray;
+                Assert.NotNull(entries);
+                Assert.Equal(2, entries!.Count);
+                Assert.Contains(entries, entry =>
+                    entry[0]?["value"]?.Value<string>() == "password" &&
+                    entry[1]?["type"]?.Value<string>() == "String" &&
+                    entry[1]?["notCapturedReason"]?.Value<string>() == "redactedIdent" &&
+                    entry[1]?["value"] is null);
+                Assert.Contains(entries, entry =>
+                    entry[0]?["value"]?.Value<string>() == "name" &&
+                    entry[1]?["value"]?.Value<string>() == "value");
+            }
+        }
+
+        [Fact]
+        public void ObjectStructure_SortedList_IsSerializedAsDictionary()
+        {
+            var local = GetLocalToken(new SortedList { { "one", 1 }, { "two", 2 } });
+
+            Assert.Equal("SortedList", local["type"]?.Value<string>());
+            Assert.Equal(2, local["size"]?.Value<int>());
+            Assert.Null(local["elements"]);
+
+            var entries = local["entries"] as JArray;
+            Assert.NotNull(entries);
+            Assert.Equal(2, entries!.Count);
+            Assert.Contains(entries, entry => entry[0]?["value"]?.Value<string>() == "one" && entry[1]?["value"]?.Value<int>() == 1);
+            Assert.Contains(entries, entry => entry[0]?["value"]?.Value<string>() == "two" && entry[1]?["value"]?.Value<int>() == 2);
+        }
+
+        [Fact]
+        public void ObjectStructure_GenericSortedList_IsSerializedAsDictionary()
+        {
+            var local = GetLocalToken(new SortedList<string, int> { { "one", 1 }, { "two", 2 } });
+
+            Assert.Equal("SortedList`2", local["type"]?.Value<string>());
+            Assert.Equal(2, local["size"]?.Value<int>());
+            Assert.Null(local["elements"]);
+
+            var entries = local["entries"] as JArray;
+            Assert.NotNull(entries);
+            Assert.Equal(2, entries!.Count);
+            Assert.Contains(entries, entry => entry[0]?["value"]?.Value<string>() == "one" && entry[1]?["value"]?.Value<int>() == 1);
+            Assert.Contains(entries, entry => entry[0]?["value"]?.Value<string>() == "two" && entry[1]?["value"]?.Value<int>() == 2);
+        }
+
+        [Fact]
+        public void ObjectStructure_ConditionalWeakTable_IsNotSupportedCollection()
+        {
+            var table = new ConditionalWeakTable<object, object>();
+            table.Add(new object(), new object());
+
+            var local = GetLocalToken(table);
+
+            Assert.Equal("ConditionalWeakTable`2", local["type"]?.Value<string>());
+            Assert.Null(local["size"]);
+            Assert.Null(local["elements"]);
+            Assert.Null(local["entries"]);
+        }
+
+        [Fact]
+        public void Message_UsesFirstEvaluationError()
+        {
+            var captureLimitInfo = new CaptureLimitInfo(
+                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: false,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                hasCondition: true,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var evaluationResult = new ExpressionEvaluationResult
+            {
+                Template = "template message",
+                Errors =
+                [
+                    new EvaluationError { Expression = "badCondition", Message = "first evaluation error" },
+                    new EvaluationError { Expression = "other", Message = "second evaluation error" }
+                ]
+            };
+
+            snapshotCreator.SetEvaluationResult(ref evaluationResult);
+
+            var captureInfo = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.EntryEnd,
+                value: new object(),
+                method: typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
+
+            Assert.Equal("first evaluation error", snapshot["message"]?.Value<string>());
+            Assert.Equal("first evaluation error", snapshot.SelectToken("debugger.snapshot.evaluationErrors[0].message")?.Value<string>());
+        }
+
+        [Fact]
+        public void ConditionEvaluationErrors_OmitMethodCaptureData()
+        {
+            var captureLimitInfo = CreateCaptureLimitInfo();
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: true,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                hasCondition: true,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var method = typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!;
+            var entryStartCapture = new CaptureInfo<Type>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.EntryStart,
+                method: method,
+                type: typeof(DebuggerSnapshotCreatorTests),
+                invocationTargetType: typeof(DebuggerSnapshotCreatorTests),
+                localsCount: 1,
+                argumentsCount: 1);
+
+            snapshotCreator.DefineSnapshotBehavior(ref entryStartCapture, EvaluateAt.Entry, hasCondition: true);
+            snapshotCreator.AddScopeMember("arg", typeof(string), "argument-value", ScopeMemberKind.Argument);
+            snapshotCreator.AddScopeMember("local", typeof(string), "local-value", ScopeMemberKind.Local);
+
+            var entryEndCapture = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.EntryEnd,
+                value: new object(),
+                method: method,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This,
+                hasLocalOrArgument: true);
+
+            Assert.Equal(CaptureBehaviour.Evaluate, snapshotCreator.DefineSnapshotBehavior(ref entryEndCapture, EvaluateAt.Entry, hasCondition: true));
+
+            var evaluationResult = CreateConditionEvaluationErrorResult();
+            snapshotCreator.SetEvaluationResult(ref evaluationResult);
+
+            Assert.True(snapshotCreator.ProcessDelayedSnapshot(ref entryEndCapture, hasCondition: true));
+            snapshotCreator.CaptureEntryMethodEndMarker(entryEndCapture.Value, entryEndCapture.Type);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref entryEndCapture));
+
+            Assert.Equal("condition failed", snapshot.SelectToken("debugger.snapshot.evaluationErrors[0].message")?.Value<string>());
+            Assert.False(CapturesContainData(snapshot.SelectToken("debugger.snapshot.captures")));
+            Assert.NotNull(snapshot.SelectToken("debugger.snapshot.stack"));
+        }
+
+        [Fact]
+        public void ConditionEvaluationErrors_OmitLineCaptureData()
+        {
+            var captureLimitInfo = CreateCaptureLimitInfo();
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: true,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Line,
+                hasCondition: true,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var method = typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!;
+            var beginLineCapture = CreateLineCaptureInfo(MethodState.BeginLine, method);
+
+            snapshotCreator.DefineSnapshotBehavior(ref beginLineCapture, EvaluateAt.Entry, hasCondition: true);
+            snapshotCreator.AddScopeMember("arg", typeof(string), "argument-value", ScopeMemberKind.Argument);
+            snapshotCreator.AddScopeMember("local", typeof(string), "local-value", ScopeMemberKind.Local);
+
+            var endLineCapture = CreateLineCaptureInfo(MethodState.EndLine, method);
+
+            Assert.Equal(CaptureBehaviour.Evaluate, snapshotCreator.DefineSnapshotBehavior(ref endLineCapture, EvaluateAt.Entry, hasCondition: true));
+
+            var evaluationResult = CreateConditionEvaluationErrorResult();
+            snapshotCreator.SetEvaluationResult(ref evaluationResult);
+
+            Assert.True(snapshotCreator.ProcessDelayedSnapshot(ref endLineCapture, hasCondition: true));
+            snapshotCreator.CaptureEndLine(ref endLineCapture);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeLineSnapshot("probe-id", 1, ref endLineCapture));
+
+            Assert.Equal("condition failed", snapshot.SelectToken("debugger.snapshot.evaluationErrors[0].message")?.Value<string>());
+            Assert.False(CapturesContainData(snapshot.SelectToken("debugger.snapshot.captures")));
+            Assert.NotNull(snapshot.SelectToken("debugger.snapshot.stack"));
+        }
+
+        [Fact]
+        public void CaptureExpressions_AreWrittenWithoutArgumentsOrLocals()
+        {
+            var captureLimitInfo = new CaptureLimitInfo(
+                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: false,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                hasCondition: false,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var evaluationResult = new ExpressionEvaluationResult
+            {
+                CaptureExpressionCount = 2,
+                CaptureExpressions =
+                [
+                    new ExpressionEvaluationResult.CaptureExpressionResult("inputValue", "testValue", typeof(string), captureLimitInfo),
+                    new ExpressionEvaluationResult.CaptureExpressionResult("localValue", 9, typeof(int), captureLimitInfo)
+                ]
+            };
+
+            snapshotCreator.StartReturn();
+            snapshotCreator.CaptureCaptureExpressions(ref evaluationResult);
+            snapshotCreator.EndReturn();
+
+            var captureInfo = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.ExitEnd,
+                value: new object(),
+                method: typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
+            var captureExpressions = snapshot.SelectToken("debugger.snapshot.captures.return.captureExpressions");
+            Assert.NotNull(captureExpressions);
+            Assert.Equal("testValue", captureExpressions!["inputValue"]?["value"]?.Value<string>());
+            Assert.Equal("9", captureExpressions["localValue"]?["value"]?.Value<string>());
+            Assert.Null(snapshot.SelectToken("debugger.snapshot.captures.return.locals"));
+            Assert.Null(snapshot.SelectToken("debugger.snapshot.captures.return.arguments"));
+        }
+
+        [Fact]
+        public void CaptureExpressions_AreSkippedWhenNoValuesWereCaptured()
+        {
+            var captureLimitInfo = new CaptureLimitInfo(
+                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: false,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                hasCondition: false,
+                tags: [],
+                limitInfo: captureLimitInfo,
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var evaluationResult = new ExpressionEvaluationResult();
+            snapshotCreator.SetEvaluationResult(ref evaluationResult);
+
+            var captureInfo = new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.ExitEnd,
+                value: new object(),
+                method: typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This);
+
+            var snapshot = JObject.Parse(snapshotCreator.FinalizeMethodSnapshot("probe-id", 1, ref captureInfo));
+            Assert.Null(snapshot.SelectToken("debugger.snapshot.captures.return"));
+        }
+
+        [Fact]
         public async Task SpecialType_StringBuilder()
         {
             await ValidateSingleValue(new StringBuilder("hi from stringbuilder"));
+        }
+
+        [Fact]
+        public void SpecialType_NullableSafeToStringTypes_DoNotRecurseIntoFields()
+        {
+            var expectedDate = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var expectedDuration = TimeSpan.FromSeconds(3);
+            var snapshot = JObject.Parse(SnapshotHelper.GenerateSnapshot(new NullableSafeToStringHolder(), prettify: false));
+
+            var dateToken = snapshot.SelectToken("debugger.snapshot.captures.return.locals.local0.fields.Date");
+            Assert.NotNull(dateToken);
+            Assert.Equal("Nullable`1", dateToken["type"]?.Value<string>());
+            Assert.Equal(expectedDate.ToString(), dateToken["value"]?.Value<string>());
+            Assert.Null(dateToken["fields"]);
+
+            var durationToken = snapshot.SelectToken("debugger.snapshot.captures.return.locals.local0.fields.Duration");
+            Assert.NotNull(durationToken);
+            Assert.Equal("Nullable`1", durationToken["type"]?.Value<string>());
+            Assert.Equal(expectedDuration.ToString(), durationToken["value"]?.Value<string>());
+            Assert.Null(durationToken["fields"]);
+
+            Assert.Equal("Bar", snapshot.SelectToken("logger.name")?.Value<string>());
+            Assert.Equal("Foo", snapshot.SelectToken("logger.method")?.Value<string>());
         }
 
         [Fact]
@@ -148,6 +640,220 @@ namespace Datadog.Trace.Tests.Debugger
             verifierSettings.ScrubLinesContaining(new[] { "id", "timestamp", "duration" });
             var localVariableAsJson = JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return.locals");
             await Verifier.Verify(localVariableAsJson, verifierSettings);
+        }
+
+        private static JToken GetLocalToken(object local)
+        {
+            var snapshot = SnapshotHelper.GenerateSnapshot(local, prettify: false);
+            return JObject.Parse(snapshot).SelectToken("debugger.snapshot.captures.return.locals.local0");
+        }
+
+        private static void DummyMethod()
+        {
+        }
+
+        private static JObject SerializeCollection(ICollection collection, int maxCollectionSize, CancellationTokenSource cts = null)
+        {
+            return SerializeCollection(collection, maxCollectionSize, collection.Count, wasTruncated: false, cts);
+        }
+
+        private static JObject SerializeCollection(IEnumerable collection, int maxCollectionSize, int collectionCount, bool wasTruncated, CancellationTokenSource cts = null)
+        {
+            var ownsCancellationTokenSource = cts is null;
+            cts ??= new CancellationTokenSource();
+
+            try
+            {
+                var serializeEnumerable = typeof(DebuggerSnapshotSerializer).GetMethod("SerializeEnumerable", BindingFlags.NonPublic | BindingFlags.Static);
+                Assert.NotNull(serializeEnumerable);
+                var enumerableInfoType = typeof(DebuggerSnapshotSerializer).GetNestedType("SupportedEnumerableInfo", BindingFlags.NonPublic);
+                Assert.NotNull(enumerableInfoType);
+                var enumerableInfoConstructor = enumerableInfoType!.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, binder: null, types: [typeof(int), typeof(bool), typeof(bool)], modifiers: null);
+                Assert.NotNull(enumerableInfoConstructor);
+                var enumerableInfo = enumerableInfoConstructor!.Invoke([collectionCount, false, wasTruncated]);
+
+                var limitInfo = new CaptureLimitInfo(
+                    MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                    MaxCollectionSize: maxCollectionSize,
+                    MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                    MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+
+                using var stringWriter = new System.IO.StringWriter();
+                using var jsonWriter = new JsonTextWriter(stringWriter);
+                jsonWriter.WriteStartObject();
+                serializeEnumerable!.Invoke(
+                    null,
+                    [
+                        collection,
+                        collection.GetType(),
+                        jsonWriter,
+                        collection,
+                        enumerableInfo,
+                        0,
+                        cts,
+                        limitInfo,
+                        new HashSet<object>()
+                    ]);
+                jsonWriter.WriteEndObject();
+
+                return JObject.Parse(stringWriter.ToString());
+            }
+            finally
+            {
+                if (ownsCancellationTokenSource)
+                {
+                    cts.Dispose();
+                }
+            }
+        }
+
+        private static CaptureLimitInfo CreateCaptureLimitInfo()
+        {
+            return new CaptureLimitInfo(
+                MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,
+                MaxCollectionSize: DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy,
+                MaxLength: DebuggerSettings.DefaultMaxStringLength,
+                MaxFieldCount: DebuggerSettings.DefaultMaxNumberOfFieldsToCopy);
+        }
+
+        private static ExpressionEvaluationResult CreateConditionEvaluationErrorResult()
+        {
+            return new ExpressionEvaluationResult
+            {
+                Template = "template message",
+                HasConditionError = true,
+                Errors = [new EvaluationError { Expression = "definitelyDoesNotExist", Message = "condition failed" }]
+            };
+        }
+
+        private static CaptureInfo<object> CreateLineCaptureInfo(MethodState methodState, MethodInfo method)
+        {
+            return new CaptureInfo<object>(
+                methodMetadataIndex: 0,
+                methodState: methodState,
+                value: new object(),
+                method: method,
+                type: typeof(object),
+                invocationTargetType: typeof(object),
+                memberKind: ScopeMemberKind.This,
+                localsCount: 1,
+                argumentsCount: 1,
+                lineCaptureInfo: new LineCaptureInfo(42, "test-file.cs"));
+        }
+
+        private static bool CapturesContainData(JToken captures)
+        {
+            if (captures is not JObject capturesObject)
+            {
+                return false;
+            }
+
+            foreach (var property in capturesObject.Properties())
+            {
+                if (property.Name == "lines" && property.Value is JObject lines)
+                {
+                    foreach (var lineProperty in lines.Properties())
+                    {
+                        if (CapturePointContainsData(lineProperty.Value))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                else if (CapturePointContainsData(property.Value))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool CapturePointContainsData(JToken capturePoint)
+        {
+            if (capturePoint is not JObject capturePointObject)
+            {
+                return false;
+            }
+
+            return HasContent(capturePointObject["arguments"])
+                || HasContent(capturePointObject["locals"])
+                || HasContent(capturePointObject["staticFields"])
+                || HasContent(capturePointObject["throwable"]);
+        }
+
+        private static bool HasContent(JToken token)
+        {
+            return token != null && token.HasValues;
+        }
+
+        private sealed class CancelingCollection : ICollection
+        {
+            private readonly object[] _items;
+            private readonly int _cancelAfterVisitedItems;
+            private readonly CancellationTokenSource _cts;
+
+            public CancelingCollection(object[] items, int cancelAfterVisitedItems, CancellationTokenSource cts)
+            {
+                _items = items;
+                _cancelAfterVisitedItems = cancelAfterVisitedItems;
+                _cts = cts;
+            }
+
+            public int Count => _items.Length;
+
+            public bool IsSynchronized => false;
+
+            public object SyncRoot => this;
+
+            public void CopyTo(Array array, int index)
+            {
+                _items.CopyTo(array, index);
+            }
+
+            public IEnumerator GetEnumerator()
+            {
+                return new CancelingEnumerator(_items, _cancelAfterVisitedItems, _cts);
+            }
+
+            private sealed class CancelingEnumerator : IEnumerator
+            {
+                private readonly object[] _items;
+                private readonly int _cancelAfterVisitedItems;
+                private readonly CancellationTokenSource _cts;
+                private int _index = -1;
+
+                public CancelingEnumerator(object[] items, int cancelAfterVisitedItems, CancellationTokenSource cts)
+                {
+                    _items = items;
+                    _cancelAfterVisitedItems = cancelAfterVisitedItems;
+                    _cts = cts;
+                }
+
+                public object Current
+                {
+                    get
+                    {
+                        if (_index + 1 == _cancelAfterVisitedItems)
+                        {
+                            _cts.Cancel();
+                        }
+
+                        return _items[_index];
+                    }
+                }
+
+                public bool MoveNext()
+                {
+                    _index++;
+                    return _index < _items.Length;
+                }
+
+                public void Reset()
+                {
+                    _index = -1;
+                }
+            }
         }
 
         private class InfiniteRecursion
@@ -1164,6 +1870,13 @@ namespace Datadog.Trace.Tests.Debugger
             private readonly int _numField998 = 998;
             private readonly int _numField999 = 999;
             private readonly int _numField1000 = 1000;
+        }
+
+        private class NullableSafeToStringHolder
+        {
+            public DateTime? Date { get; } = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            public TimeSpan? Duration { get; } = TimeSpan.FromSeconds(3);
         }
 
         private class CollectionAtMaxDepth

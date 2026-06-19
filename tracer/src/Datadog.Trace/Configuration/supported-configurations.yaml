@@ -2,6 +2,7 @@ version: '2'
 supportedConfigurations:
   DD_AAS_DOTNET_EXTENSION_VERSION:
   - implementation: A
+    scope: managed
     type: string
     default: unknown
     product: AzureAppService
@@ -11,6 +12,7 @@ supportedConfigurations:
       This env var is set in the <c>applicationHost.xdt</c> file.
   DD_AAS_ENABLE_CUSTOM_METRICS:
   - implementation: A
+    scope: managed, native
     type: boolean
     default: 'false'
     product: AzureAppService
@@ -18,6 +20,7 @@ supportedConfigurations:
     documentation: Used to force the loader to start dogstatsd (in case automatic instrumentation is disabled)
   DD_AAS_ENABLE_CUSTOM_TRACING:
   - implementation: A
+    scope: managed, native
     type: boolean
     default: 'false'
     product: AzureAppService
@@ -25,6 +28,7 @@ supportedConfigurations:
     documentation: Used to force the loader to start the trace agent (in case automatic instrumentation is disabled)
   DD_AGENT_HOST:
   - implementation: D
+    scope: managed, native
     type: string
     default: localhost
     aliases:
@@ -38,6 +42,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
   DD_AGENT_FEATURE_POLLING_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     const_name: AgentFeaturePollingEnabled
@@ -47,12 +52,22 @@ supportedConfigurations:
       <seealso cref="TracerSettings.AgentFeaturePollingEnabled"/>
   DD_API_KEY:
   - implementation: A
+    scope: managed, native
     type: string
     default: null
     const_name: ApiKey
     documentation: Configuration key for setting the API key, used by the Agent.
+  DD_API_SECURITY_DOWNSTREAM_BODY_ANALYSIS_SAMPLE_RATE:
+  - implementation: A
+    scope: managed
+    type: decimal
+    default: '0.5'
+    product: AppSec
+    const_name: ApiSecurityDownstreamBodyAnalysisSampleRate
+    documentation: When RASP is enabled, defines the probability of a downstream request body being sampled, or said differently, defines the overall number of requests for which the request and response body should be sampled / analysed (50%).
   DD_API_SECURITY_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: AppSec
@@ -62,6 +77,7 @@ supportedConfigurations:
     documentation: When ASM is enabled, collects in spans endpoints apis schemas analyzed by the waf, default value is true.
   DD_API_SECURITY_ENDPOINT_COLLECTION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: AppSec
@@ -69,13 +85,23 @@ supportedConfigurations:
     documentation: with a default value of true, it allows a customer to disable the collection of endpoints for API Security.
   DD_API_SECURITY_ENDPOINT_COLLECTION_MESSAGE_LIMIT:
   - implementation: A
+    scope: managed
     type: int
     default: '300'
     product: AppSec
     const_name: ApiSecurityEndpointCollectionMessageLimit
     documentation: with a default value of 300, it defines the maximum number of endpoints to be collected (serialized) for API Security.
+  DD_API_SECURITY_MAX_DOWNSTREAM_REQUEST_BODY_ANALYSIS:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '1'
+    product: AppSec
+    const_name: ApiSecurityMaxDownstreamRequestBodyAnalysis
+    documentation: When RASP is enabled, defines the maximum number of downstream requests per request for which the request and response body should be analysed. default value of 1.
   DD_API_SECURITY_PARSE_RESPONSE_BODY:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: AppSec
@@ -83,6 +109,7 @@ supportedConfigurations:
     documentation: Enables the parsing of the response body in the API Security module. Defaults to true
   DD_API_SECURITY_SAMPLE_DELAY:
   - implementation: A
+    scope: managed
     type: decimal
     default: '30'
     product: AppSec
@@ -90,6 +117,7 @@ supportedConfigurations:
     documentation: Api security sample delay in seconds , should be a float. Set to 0 for testing purposes. default value of 30.
   DD_APM_ENABLE_RARE_SAMPLER:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     const_name: RareSamplerEnabled
@@ -97,6 +125,7 @@ supportedConfigurations:
       Enables rare trace sampling in the Datadog Agent. When enabled, the Agent can keep a small number of "rare" traces (up to 5 traces per second per Agent) that were not kept by head-based sampling
   DD_APM_RECEIVER_PORT:
   - implementation: A
+    scope: managed
     type: int
     default: '8126'
     const_name: TraceAgentPortKey
@@ -106,6 +135,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
   DD_APM_RECEIVER_SOCKET:
   - implementation: A
+    scope: managed
     type: string
     default: null
     const_name: TracesUnixDomainSocketPath
@@ -115,6 +145,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.ExporterSettings.TracesUnixDomainSocketPath"/>
   DD_APM_TRACING_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     const_name: ApmTracingEnabled
@@ -123,6 +154,7 @@ supportedConfigurations:
       Default value is true (enabled).
   DD_APPLICATION_MONITORING_CONFIG_FILE_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     const_name: ApplicationMonitoringConfigFileEnabled
@@ -131,6 +163,7 @@ supportedConfigurations:
       True by default
   DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING:
   - implementation: D
+    scope: managed
     type: string
     default: identification
     product: AppSec
@@ -145,13 +178,23 @@ supportedConfigurations:
       extended = ident
   DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE:
   - implementation: B
+    scope: managed
     type: string
     default: identification
     product: AppSec
     const_name: UserEventsAutoInstrumentationMode
     documentation: Automatic instrumentation of user event mode. Values can be ident, disabled, anon.
+  DD_APPSEC_BODY_PARSING_SIZE_LIMIT:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '10000000'
+    product: AppSec
+    const_name: AppSecBodyParsingSizeLimit
+    documentation: Configuration key for limiting the size of the request body being parsed. Default value is 10_000_000.
   DD_APPSEC_ENABLED:
   - implementation: A
+    scope: managed, native
     type: boolean
     default: 'false'
     product: AppSec
@@ -161,6 +204,7 @@ supportedConfigurations:
       Default value is false (disabled).
   DD_APPSEC_EXTRA_HEADERS:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: AppSec
@@ -170,6 +214,7 @@ supportedConfigurations:
       Default value is null.
   DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML:
   - implementation: B
+    scope: managed
     type: string
     default: null
     product: AppSec
@@ -177,6 +222,7 @@ supportedConfigurations:
     documentation: Blocking response template for HTML content. This template is used in combination with the status code to craft and send a response upon blocking the request.
   DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON:
   - implementation: B
+    scope: managed
     type: string
     default: null
     product: AppSec
@@ -184,6 +230,7 @@ supportedConfigurations:
     documentation: Blocking response template for Json content. This template is used in combination with the status code to craft and send a response upon blocking the request.
   DD_APPSEC_IPHEADER:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: AppSec
@@ -193,6 +240,7 @@ supportedConfigurations:
       Default value is null (do not override).
   DD_APPSEC_KEEP_TRACES:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: AppSec
@@ -203,6 +251,7 @@ supportedConfigurations:
       For internal testing only.
   DD_APPSEC_MAX_STACK_TRACE_DEPTH:
   - implementation: A
+    scope: managed
     type: int
     default: '32'
     product: AppSec
@@ -210,6 +259,7 @@ supportedConfigurations:
     documentation: with a default value of 32, defines the maximum depth of a stack trace to be reported due to RASP events. O for unlimited.
   DD_APPSEC_MAX_STACK_TRACE_DEPTH_TOP_PERCENT:
   - implementation: A
+    scope: managed
     type: int
     default: '75'
     product: AppSec
@@ -217,6 +267,7 @@ supportedConfigurations:
     documentation: with a default value of 75, defines the percentage of frames taken from the top of the stack when trimming. Min 0, Max 100
   DD_APPSEC_MAX_STACK_TRACES:
   - implementation: A
+    scope: managed
     type: int
     default: '2'
     product: AppSec
@@ -224,6 +275,7 @@ supportedConfigurations:
     documentation: with a default value of 2, defines the maximum number of stack traces to be reported due to RASP events. 0 for unlimited.
   DD_APPSEC_OBFUSCATION_PARAMETER_KEY_REGEXP:
   - implementation: E
+    scope: managed
     type: string
     default: (?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?)key)|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)|bearer|authorization
     product: AppSec
@@ -231,6 +283,7 @@ supportedConfigurations:
     documentation: The regex that will be used to obfuscate possible sensitive data in keys that are highlighted WAF as potentially malicious
   DD_APPSEC_OBFUSCATION_PARAMETER_VALUE_REGEXP:
   - implementation: F
+    scope: managed
     type: string
     default: (?i)(?:p(?:ass)?w(?:or)?d|pass(?:[_-]?phrase)?|secret(?:[_-]?key)?|(?:(?:api|private|public|access)[_-]?)key(?:[_-]?id)?|(?:(?:auth|access|id|refresh)[_-]?)?token|consumer[_-]?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?|jsessionid|phpsessid|asp\\.net(?:[_-]|-)sessionid|sid|jwt)(?:\\s*=([^;&]+)|\"\\s*:\\s*(\"[^\"]+\"|\\d+))|bearer\\s+([a-z0-9\\._\\-]+)|token\\s*:\\s*([a-z0-9]{13})|gh[opsu]_([0-9a-zA-Z]{36})|ey[I-L][\\w=-]+\\.(ey[I-L][\\w=-]+(?:\\.[\\w.+\\/=-]+)?)|[\\-]{5}BEGIN[a-z\\s]+PRIVATE\\sKEY[\\-]{5}([^\\-]+)[\\-]{5}END[a-z\\s]+PRIVATE\\sKEY|ssh-rsa\\s*([a-z0-9\\/\\.+]{100,})
     product: AppSec
@@ -238,6 +291,7 @@ supportedConfigurations:
     documentation: The regex that will be used to obfuscate possible sensitive data in values that are highlighted WAF as potentially malicious
   DD_APPSEC_RASP_ENABLED:
   - implementation: A
+    scope: managed, native
     type: boolean
     default: 'true'
     product: AppSec
@@ -245,6 +299,7 @@ supportedConfigurations:
     documentation: default value to true. Set to false to disable exploit prevention.
   DD_APPSEC_RULES:
   - implementation: B
+    scope: managed
     type: string
     default: null
     product: AppSec
@@ -254,6 +309,7 @@ supportedConfigurations:
       Default value is null (do not override).
   DD_APPSEC_SCA_ENABLED:
   - implementation: B
+    scope: managed
     type: boolean
     default: null
     product: AppSec
@@ -261,6 +317,7 @@ supportedConfigurations:
     documentation: Activate SCA (Software Composition Analysis), used in the backend
   DD_APPSEC_STACK_TRACE_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: AppSec
@@ -268,6 +325,7 @@ supportedConfigurations:
     documentation: with a default value of true, it allows a customer to disable the generation of stack traces, for any ASM-specific purpose such as RASP.
   DD_APPSEC_TRACE_RATE_LIMIT:
   - implementation: A
+    scope: managed
     type: int
     default: '100'
     product: AppSec
@@ -275,6 +333,7 @@ supportedConfigurations:
     documentation: Limits the amount of AppSec traces sent per second with an integer value, strictly positive.
   DD_APPSEC_WAF_DEBUG:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: AppSec
@@ -282,6 +341,7 @@ supportedConfigurations:
     documentation: Activate debug logs for the WAF
   DD_APPSEC_WAF_TIMEOUT:
   - implementation: B
+    scope: managed
     type: int
     default: '100000'
     product: AppSec
@@ -289,14 +349,26 @@ supportedConfigurations:
     documentation: WAF timeout in microseconds of each WAF execution (the timeout value passed to ddwaf_run).
   DD_AZURE_APP_SERVICES:
   - implementation: C
+    scope: managed, native
     type: string
     default: null
     product: AzureAppService
     const_name: AzureAppServicesContextKey
     documentation: |-
       Configuration key which is used as a flag to tell us whether we are instrumenting an Azure App Service using the AAS Site Extension
+  DD_CALLSITE_MANAGED_ACTIVATION_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Tracer
+    documentation: |-
+      Safety kill switch to deactivate hot-standby mode for call-site instrumentation in a support case.
+      When false, the native side skips managed activation for call-site rewriting.
+      Default is true.
   DD_CIVISIBILITY_AGENTLESS_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: CIVisibility
@@ -306,6 +378,7 @@ supportedConfigurations:
       Default value is false (disabled).
   DD_CIVISIBILITY_AGENTLESS_URL:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
@@ -313,6 +386,7 @@ supportedConfigurations:
     documentation: Configuration key for setting the agentless url endpoint
   DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER:
   - implementation: B
+    scope: managed
     type: boolean
     default: 'false'
     product: CIVisibility
@@ -321,6 +395,7 @@ supportedConfigurations:
       This is used to track which instrumentation method was used (e.g., single-step, manual, etc.).
   DD_CIVISIBILITY_CODE_COVERAGE_COLLECTORPATH:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
@@ -328,6 +403,7 @@ supportedConfigurations:
     documentation: Configuration key for setting the code coverage collector path
   DD_CIVISIBILITY_CODE_COVERAGE_ENABLED:
   - implementation: B
+    scope: managed
     type: boolean
     default: null
     product: CIVisibility
@@ -335,6 +411,7 @@ supportedConfigurations:
     documentation: Configuration key for enabling or disabling Code Coverage in CI Visibility.
   DD_CIVISIBILITY_CODE_COVERAGE_ENABLE_JIT_OPTIMIZATIONS:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: CIVisibility
@@ -342,6 +419,7 @@ supportedConfigurations:
     documentation: Configuration key for enabling or disabling jit optimizations in the Code Coverage
   DD_CIVISIBILITY_CODE_COVERAGE_MODE:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
@@ -349,6 +427,7 @@ supportedConfigurations:
     documentation: Configuration key for selecting the code coverage mode LineExecution or LineCallCount
   DD_CIVISIBILITY_CODE_COVERAGE_PATH:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
@@ -356,6 +435,7 @@ supportedConfigurations:
     documentation: Configuration key for setting the code coverage jsons destination path.
   DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
@@ -363,6 +443,7 @@ supportedConfigurations:
     documentation: Configuration key for re-signing assemblies after the Code Coverage modification.
   DD_CIVISIBILITY_DI_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: CIVisibility
@@ -370,6 +451,7 @@ supportedConfigurations:
     documentation: Configuration key for a kill-switch that allows to explicitly disable dynamic instrumentation even if the remote setting is enabled.
   DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED:
   - implementation: C
+    scope: managed
     type: boolean
     default: null
     product: CIVisibility
@@ -377,6 +459,7 @@ supportedConfigurations:
     documentation: Configuration key for enabling or disabling the early flake detection feature in CI Visibility
   DD_CIVISIBILITY_ENABLED:
   - implementation: B
+    scope: managed, native
     type: boolean
     default: null
     product: CIVisibility
@@ -386,6 +469,7 @@ supportedConfigurations:
       Default value is false (disabled).
   DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
@@ -393,6 +477,7 @@ supportedConfigurations:
     documentation: Configuration key for setting the external code coverage file path
   DD_CIVISIBILITY_FLAKY_RETRY_COUNT:
   - implementation: A
+    scope: managed
     type: int
     default: '5'
     product: CIVisibility
@@ -400,6 +485,7 @@ supportedConfigurations:
     documentation: Configuration key for the maximum number of retry attempts for a single test case.
   DD_CIVISIBILITY_FLAKY_RETRY_ENABLED:
   - implementation: B
+    scope: managed
     type: boolean
     default: null
     product: CIVisibility
@@ -407,6 +493,7 @@ supportedConfigurations:
     documentation: Configuration key for a kill-switch that allows to explicitly disable retries even if the remote setting is enabled.
   DD_CIVISIBILITY_FORCE_AGENT_EVP_PROXY:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
@@ -414,6 +501,7 @@ supportedConfigurations:
     documentation: Configuration key for forcing Agent's EVP Proxy
   DD_CIVISIBILITY_GAC_INSTALL_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: CIVisibility
@@ -421,6 +509,7 @@ supportedConfigurations:
     documentation: Configuration key for enabling or disabling Datadog.Trace GAC installation
   DD_CIVISIBILITY_GIT_UPLOAD_ENABLED:
   - implementation: B
+    scope: managed
     type: boolean
     default: null
     product: CIVisibility
@@ -430,6 +519,7 @@ supportedConfigurations:
       Default Value is false (disabled)
   DD_CIVISIBILITY_IMPACTED_TESTS_DETECTION_ENABLED:
   - implementation: B
+    scope: managed
     type: boolean
     default: null
     product: CIVisibility
@@ -437,6 +527,7 @@ supportedConfigurations:
     documentation: Configuration key for enabling Impacted Tests Detection.
   DD_CIVISIBILITY_ITR_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: CIVisibility
@@ -446,6 +537,7 @@ supportedConfigurations:
       Default Value is false (disabled)
   DD_CIVISIBILITY_KNOWN_TESTS_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: null
     product: CIVisibility
@@ -453,6 +545,7 @@ supportedConfigurations:
     documentation: Configuration key for enabling or disabling the known tests feature in CI Visibility
   DD_CIVISIBILITY_LOGS_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: CIVisibility
@@ -462,6 +555,7 @@ supportedConfigurations:
       Default value is false (disabled).
   DD_CIVISIBILITY_RUM_FLUSH_WAIT_MILLIS:
   - implementation: A
+    scope: managed
     type: int
     default: '500'
     product: CIVisibility
@@ -469,6 +563,7 @@ supportedConfigurations:
     documentation: Configuration key for set the rum flushing wait in milliseconds
   DD_CIVISIBILITY_TESTSSKIPPING_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: null
     product: CIVisibility
@@ -476,22 +571,53 @@ supportedConfigurations:
     documentation: Configuration key for enabling or disabling Intelligent Test Runner test skipping feature in CI Visibility
   DD_CIVISIBILITY_TOTAL_FLAKY_RETRY_COUNT:
   - implementation: A
+    scope: managed
     type: int
     default: '1000'
     product: CIVisibility
     const_name: TotalFlakyRetryCount
     documentation: Configuration key for the maximum number of retry attempts for the entire session.
-  DD_CODE_ORIGIN_FOR_SPANS_ENABLED:
-  - implementation: B
+  DD_CLR_DISABLE_OPTIMIZATIONS:
+  - implementation: A
+    scope: native
     type: boolean
     default: 'false'
+    product: Tracer
+    documentation: |-
+      When true, disables JIT optimizations for all methods, making stack traces easier to read.
+      Intended for debugging only; has a significant performance impact.
+      Default is false.
+  DD_CLR_ENABLE_INLINING:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Tracer
+    documentation: |-
+      Controls whether the JIT is allowed to inline method calls.
+      Default is true.
+  DD_CLR_ENABLE_NGEN:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Tracer
+    documentation: |-
+      Controls whether NGEN (pre-JIT) images are used by the runtime.
+      Default is true.
+  DD_CODE_ORIGIN_FOR_SPANS_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'true'
     product: Debugger
     const_name: CodeOriginForSpansEnabled
     documentation: |-
       Configuration key to enable tag code origin for span.
-      Default value is false.
+      Default value is true.
   DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES:
   - implementation: A
+    scope: managed
     type: int
     default: '8'
     product: Debugger
@@ -499,14 +625,41 @@ supportedConfigurations:
     documentation: |-
       Configuration key for setting the number of frames to be tagged in exit span code origin.
       Default value is <c>8</c>.
+  DD_CRASHTRACKING_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Tracer
+    documentation: |-
+      Controls whether crash tracking is enabled. Read by the native loader before managed code starts.
+      Default is true.
+  DD_COPY_ORIGINALS_MODULES_TO_DISK:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Tracer
+    documentation: |-
+      When true, the instrumented assembly generator saves a copy of each original (pre-rewrite)
+      module to disk alongside the rewritten IL. Only effective on Windows. Intended for debugging only. Default is false.
   DD_CUSTOM_TRACE_ID:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: Jenkins CI environment variable for custom trace ID correlation.
+  DD_CUSTOM_PARENT_ID:
+  - implementation: A
+    scope: managed
+    type: string
+    default: null
+    product: CIVisibility
+    documentation: Jenkins CI environment variable for custom parent ID correlation.
   DD_DATA_STREAMS_ENABLED:
   - implementation: B
+    scope: managed
     type: boolean
     default: 'true'
     product: DataStreamsMonitoring
@@ -516,6 +669,7 @@ supportedConfigurations:
       <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsMonitoringEnabled"/>
   DD_DATA_STREAMS_LEGACY_HEADERS:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: DataStreamsMonitoring
@@ -524,17 +678,30 @@ supportedConfigurations:
       Configuration key for enabling legacy binary headers in Data Streams Monitoring.
       false by default if DSM is in default state, true otherwise
       <see cref="Datadog.Trace.Configuration.TracerSettings.IsDataStreamsLegacyHeadersEnabled"/>
+  DD_DATA_STREAMS_TRANSACTION_EXTRACTORS:
+  - implementation: A
+    scope: managed
+    type: array
+    default: null
+    product: DataStreamsMonitoring
+    const_name: TransactionExtractors
+    documentation: |-
+      Configuration key for transaction extractors in Data Streams Monitoring.
+      <see cref="Datadog.Trace.Configuration.TracerSettings.DataStreamsTransactionExtractors"/>
   DD_DBM_PROPAGATION_MODE:
   - implementation: A
+    scope: managed
     type: string
     default: disabled
     const_name: DbmPropagationMode
     documentation: |-
       Configuration key for setting DBM propagation mode
-      Default value is disabled, expected values are either: disabled, service or full
+      Default value is disabled, expected values are either: disabled, service, dynamic_service or full
+      dynamic_service is equivalent to service with DD_DBM_INJECT_SQL_BASEHASH=true
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmPropagationMode"/>
   DD_DBM_INJECT_SQL_BASEHASH:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     const_name: DbmInjectSqlBasehash
@@ -544,6 +711,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.DbmInjectSqlBasehash"/>
   DD_DIAGNOSTIC_SOURCE_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     const_name: DiagnosticSourceEnabled
@@ -552,6 +720,7 @@ supportedConfigurations:
       Default value is <c>true</c> (enabled).
   DD_DISABLED_INTEGRATIONS:
   - implementation: A
+    scope: managed, native
     type: string
     default: null
     const_name: DisabledIntegrations
@@ -562,18 +731,21 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.DisabledIntegrationNames"/>
   DD_DOGSTATSD_ARGS:
   - implementation: A
+    scope: managed
     type: string
     default: null
     const_name: DogStatsDArgs
     documentation: Configuration key for arguments to pass to the DogStatsD process.
   DD_DOGSTATSD_PATH:
   - implementation: A
+    scope: managed
     type: string
     default: null
     const_name: DogStatsDPath
     documentation: Configuration key for when a standalone instance of DogStatsD needs to be started.
   DD_DOGSTATSD_PIPE_NAME:
   - implementation: A
+    scope: managed
     type: string
     default: null
     const_name: MetricsPipeName
@@ -583,6 +755,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.ExporterSettings.MetricsPipeName"/>
   DD_DOGSTATSD_PORT:
   - implementation: A
+    scope: managed
     type: int
     default: '8125'
     const_name: DogStatsdPort
@@ -592,6 +765,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.ExporterSettings.DogStatsdPort"/>
   DD_DOGSTATSD_SOCKET:
   - implementation: A
+    scope: managed
     type: string
     default: null
     const_name: MetricsUnixDomainSocketPath
@@ -601,6 +775,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.ExporterSettings.MetricsUnixDomainSocketPath"/>
   DD_DOGSTATSD_URL:
   - implementation: B
+    scope: managed
     type: string
     default: udp://127.0.0.1:8125
     const_name: MetricsUri
@@ -610,14 +785,25 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
   DD_DOTNET_TRACER_HOME:
   - implementation: A
+    scope: managed, native
     type: string
     default: null
     documentation: |-
       It indicates the home directory of the Datadog tracer.
       On Windows, it is often set to the installation path, such as C:\Program Files\Datadog\.NET Tracer.
       On Linux/Docker, it is typically set to /opt/datadog.
+  DD_DUMP_ILREWRITE_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Tracer
+    documentation: |-
+      When true, dumps the original and rewritten IL to the tracer log file for debugging.
+      Default is false.
   DD_DYNAMIC_INSTRUMENTATION_DIAGNOSTICS_INTERVAL:
   - implementation: A
+    scope: managed
     type: int
     default: '3600'
     product: Debugger
@@ -627,6 +813,7 @@ supportedConfigurations:
       Default value is 3600.
   DD_DYNAMIC_INSTRUMENTATION_ENABLED:
   - implementation: A
+    scope: managed, native
     type: boolean
     default: 'false'
     product: Debugger
@@ -634,8 +821,27 @@ supportedConfigurations:
     documentation: |-
       Configuration key for enabling or disabling Dynamic Instrumentation.
       Default value is false (disabled).
+  DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE:
+  - implementation: B
+    scope: managed
+    type: string
+    default: null
+    product: Debugger
+    const_name: DynamicInstrumentationProbeFile
+    documentation: Configuration key for loading Dynamic Instrumentation probe definitions from a local JSON file.
+  DD_DYNAMIC_INSTRUMENTATION_MANAGED_ACTIVATION_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Debugger
+    documentation: |-
+      Safety kill switch to deactivate hot-standby mode for Dynamic Instrumentation in a support case.
+      When false, the native side skips managed activation even if the feature is otherwise enabled.
+      Default is true.
   DD_DYNAMIC_INSTRUMENTATION_MAX_DEPTH_TO_SERIALIZE:
   - implementation: A
+    scope: managed
     type: int
     default: '3'
     product: Debugger
@@ -645,6 +851,7 @@ supportedConfigurations:
       Default value is 1.
   DD_DYNAMIC_INSTRUMENTATION_MAX_TIME_TO_SERIALIZE:
   - implementation: A
+    scope: managed
     type: int
     default: '200'
     product: Debugger
@@ -654,6 +861,7 @@ supportedConfigurations:
       Default value is 150 ms.
   DD_DYNAMIC_INSTRUMENTATION_REDACTED_EXCLUDED_IDENTIFIERS:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: Debugger
@@ -661,6 +869,7 @@ supportedConfigurations:
     documentation: Configuration key for set of identifiers that are excluded from redaction decisions.
   DD_DYNAMIC_INSTRUMENTATION_REDACTED_IDENTIFIERS:
   - implementation: A
+    scope: managed
     type: array
     default: ''
     product: Debugger
@@ -668,6 +877,7 @@ supportedConfigurations:
     documentation: Configuration key for set of identifiers that are used in redaction decisions.
   DD_DYNAMIC_INSTRUMENTATION_REDACTED_TYPES:
   - implementation: A
+    scope: managed
     type: array
     default: ''
     product: Debugger
@@ -675,6 +885,7 @@ supportedConfigurations:
     documentation: Configuration key for set of types that are used in redaction decisions.
   DD_DYNAMIC_INSTRUMENTATION_REDACTION_EXCLUDED_IDENTIFIERS:
   - implementation: B
+    scope: managed
     type: string
     default: null
     product: Debugger
@@ -682,6 +893,7 @@ supportedConfigurations:
     documentation: Configuration key for set of identifiers that are excluded from redaction decisions.
   DD_DYNAMIC_INSTRUMENTATION_UPLOAD_BATCH_SIZE:
   - implementation: A
+    scope: managed
     type: int
     default: '100'
     product: Debugger
@@ -691,6 +903,7 @@ supportedConfigurations:
       Default value is 100.
   DD_DYNAMIC_INSTRUMENTATION_UPLOAD_FLUSH_INTERVAL:
   - implementation: A
+    scope: managed
     type: int
     default: '0'
     product: Debugger
@@ -700,6 +913,7 @@ supportedConfigurations:
       Default value is 0 (dynamic).
   DD_ENV:
   - implementation: B
+    scope: managed, native
     type: string
     default: null
     const_name: Environment
@@ -708,6 +922,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.Environment"/>
   DD_EXCEPTION_REPLAY_CAPTURE_FULL_CALLSTACK_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: Debugger
@@ -717,6 +932,7 @@ supportedConfigurations:
       Default value is false.
   DD_EXCEPTION_REPLAY_CAPTURE_MAX_FRAMES:
   - implementation: B
+    scope: managed
     type: int
     default: '4'
     product: Debugger
@@ -724,6 +940,7 @@ supportedConfigurations:
     documentation: Configuration key for the maximum number of frames in a call stack we would like to capture values for.
   DD_EXCEPTION_REPLAY_ENABLED:
   - implementation: B
+    scope: managed, native
     type: boolean
     default: 'false'
     product: Debugger
@@ -735,6 +952,7 @@ supportedConfigurations:
       Default value is false (disabled).
   DD_EXCEPTION_REPLAY_AGENTLESS_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: Debugger
@@ -743,6 +961,7 @@ supportedConfigurations:
       Default value is false.
   DD_EXCEPTION_REPLAY_AGENTLESS_URL:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: Debugger
@@ -751,6 +970,7 @@ supportedConfigurations:
       Default value is derived from DD_SITE (https://debugger-intake.{site}/api/v2/debugger).
   DD_EXCEPTION_REPLAY_MAX_EXCEPTION_ANALYSIS_LIMIT:
   - implementation: A
+    scope: managed
     type: int
     default: '100'
     product: Debugger
@@ -758,8 +978,19 @@ supportedConfigurations:
     documentation: |-
       Configuration key for setting the maximum number of exceptions to be analyzed by Exception Replay within a 1-second time interval.
       Default value is <c>100</c>.
+  DD_EXCEPTION_REPLAY_MANAGED_ACTIVATION_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Debugger
+    documentation: |-
+      Safety kill switch to deactivate hot-standby mode for Exception Replay in a support case.
+      When false, the native side skips managed activation even if the feature is otherwise enabled.
+      Default is true.
   DD_EXCEPTION_REPLAY_RATE_LIMIT_SECONDS:
   - implementation: A
+    scope: managed
     type: int
     default: '3600'
     product: Debugger
@@ -769,68 +1000,87 @@ supportedConfigurations:
       Default value is <c>1</c>h.
   DD_EXPERIMENTAL_APPSEC_USE_UNSAFE_ENCODER:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: AppSec
     const_name: UseUnsafeEncoder
     documentation: Use new unsafe encoder for the waf
   DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED:
-  - implementation: A
+  - implementation: B
+    scope: managed
     type: boolean
-    default: 'false'
+    default: 'true'
     const_name: PropagateProcessTags
     documentation: |-
-      Enables propagation of process-level tags across traces. Type: `boolean`. Default: `false`
+      Enables propagation of process-level tags across traces. Type: `boolean`. Default: `true`
+  DD_GC_THREADS_CPUTIME_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Enables CPU time tracking on GC threads in the Continuous Profiler.
   DD_GIT_BRANCH:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: CI Visibility environment variable for git branch name.
   DD_GIT_COMMIT_AUTHOR_DATE:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: CI Visibility environment variable for git commit author date.
   DD_GIT_COMMIT_AUTHOR_EMAIL:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: CI Visibility environment variable for git commit author email.
   DD_GIT_COMMIT_AUTHOR_NAME:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: CI Visibility environment variable for git commit author name.
   DD_GIT_COMMIT_COMMITTER_DATE:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: CI Visibility environment variable for git commit committer date.
   DD_GIT_COMMIT_COMMITTER_EMAIL:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: CI Visibility environment variable for git commit committer email.
   DD_GIT_COMMIT_COMMITTER_NAME:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: CI Visibility environment variable for git commit committer name.
   DD_GIT_COMMIT_MESSAGE:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: CI Visibility environment variable for git commit message.
   DD_GIT_COMMIT_SHA:
   - implementation: A
+    scope: managed, native
     type: string
     default: null
     product: CIVisibility
@@ -840,18 +1090,21 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitCommitSha"/>
   DD_GIT_PULL_REQUEST_BASE_BRANCH:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: CI Visibility environment variable for pull request base branch.
   DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: CI Visibility environment variable for pull request base branch SHA.
   DD_GIT_REPOSITORY_URL:
   - implementation: A
+    scope: managed, native
     type: string
     default: null
     product: CIVisibility
@@ -861,12 +1114,22 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.GitRepositoryUrl"/>
   DD_GIT_TAG:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: CI Visibility environment variable for git tag.
+  DD_HOSTNAME:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Profiler
+    documentation: |-
+      Overrides the hostname reported to Datadog. When set, replaces the auto-detected hostname.
   DD_HTTP_CLIENT_ERROR_STATUSES:
   - implementation: A
+    scope: managed
     type: string
     default: 400-499
     const_name: DeprecatedHttpClientErrorStatusCodes
@@ -875,6 +1138,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
   DD_HTTP_SERVER_ERROR_STATUSES:
   - implementation: A
+    scope: managed
     type: string
     default: 500-599
     const_name: DeprecatedHttpServerErrorStatusCodes
@@ -883,6 +1147,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpServerErrorStatusCodes"/>
   DD_HTTP_SERVER_TAG_QUERY_STRING:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     const_name: QueryStringReportingEnabled
@@ -892,6 +1157,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.QueryStringReportingEnabled"/>
   DD_HTTP_SERVER_TAG_QUERY_STRING_SIZE:
   - implementation: A
+    scope: managed
     type: int
     default: '5000'
     const_name: QueryStringReportingSize
@@ -901,6 +1167,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.QueryStringReportingSize"/>
   DD_IAST_COOKIE_FILTER_PATTERN:
   - implementation: A
+    scope: managed
     type: string
     default: .*
     product: Iast
@@ -910,6 +1177,7 @@ supportedConfigurations:
       Default value is 1
   DD_IAST_DB_ROWS_TO_TAINT:
   - implementation: A
+    scope: managed
     type: int
     default: '1'
     product: Iast
@@ -919,6 +1187,7 @@ supportedConfigurations:
       Default value is 1
   DD_IAST_DEDUPLICATION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: Iast
@@ -929,6 +1198,7 @@ supportedConfigurations:
       instead of on every usage. Default value is true (enabled).
   DD_IAST_ENABLED:
   - implementation: B
+    scope: managed, native
     type: boolean
     default: 'false'
     product: Iast
@@ -938,6 +1208,7 @@ supportedConfigurations:
       Default value is false (disabled).
   DD_IAST_MAX_CONCURRENT_REQUESTS:
   - implementation: A
+    scope: managed
     type: int
     default: '2'
     product: Iast
@@ -947,6 +1218,7 @@ supportedConfigurations:
       to be analyzed by IAST concurrently. Defaults to 2.
   DD_IAST_MAX_RANGE_COUNT:
   - implementation: A
+    scope: managed
     type: int
     default: '10'
     product: Iast
@@ -956,6 +1228,7 @@ supportedConfigurations:
       a tainted object can hold. Defaults to 10.
   DD_IAST_REDACTION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: Iast
@@ -965,6 +1238,7 @@ supportedConfigurations:
       Default value is in TracerSettings
   DD_IAST_REDACTION_NAME_PATTERN:
   - implementation: C
+    scope: managed
     type: string
     default: (?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?|(?:sur|last)name|user(?:name)?|address|e?mail)
     product: Iast
@@ -974,6 +1248,7 @@ supportedConfigurations:
       Default value is in TracerSettings
   DD_IAST_REDACTION_VALUE_PATTERN:
   - implementation: C
+    scope: managed
     type: string
     default: (?i)(?:bearer\\s+[a-z0-9\\._\\-]+|glpat-[\\w\\-]{20}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\\w=\\-]+\\.ey[I-L][\\w=\\-]+(?:\\.[\\w.+/=\\-]+)?|(?:[\\-]{5}BEGIN[a-z\\s]+PRIVATE\\sKEY[\\-]{5}[^\\-]+[\\-]{5}END[a-z\\s]+PRIVATE\\sKEY[\\-]{5}|ssh-rsa\\s*[a-z0-9/\\.+]{100,})|[\\w\\.-]+@[a-zA-Z\\d\\.-]+\\.[a-zA-Z]{2,})
     product: Iast
@@ -983,6 +1258,7 @@ supportedConfigurations:
       Default value is in TracerSettings
   DD_IAST_REGEXP_TIMEOUT:
   - implementation: A
+    scope: managed
     type: decimal
     default: '200.0'
     product: Iast
@@ -992,6 +1268,7 @@ supportedConfigurations:
       Default value is 200ms
   DD_IAST_REQUEST_SAMPLING:
   - implementation: A
+    scope: managed
     type: int
     default: '30'
     product: Iast
@@ -999,8 +1276,18 @@ supportedConfigurations:
     documentation: |-
       Configuration key for controlling the percentage of requests
       to be analyzed by IAST, between 1 and 100. Defaults to 30.
+  DD_IAST_SECURITY_CONTROLS_CONFIGURATION:
+  - implementation: B
+    scope: native
+    type: string
+    default: null
+    product: Iast
+    documentation: |-
+      Specifies custom security controls that IAST should treat as sanitizers or validators.
+      Format is a semicolon-separated list of method descriptors.
   DD_IAST_TELEMETRY_VERBOSITY:
   - implementation: A
+    scope: managed
     type: string
     default: information
     product: Iast
@@ -1010,6 +1297,7 @@ supportedConfigurations:
       Default value is INFORMATION
   DD_IAST_TRUNCATION_MAX_VALUE_LENGTH:
   - implementation: A
+    scope: managed
     type: int
     default: '250'
     product: Iast
@@ -1019,6 +1307,7 @@ supportedConfigurations:
       Default value is 250
   DD_IAST_VULNERABILITIES_PER_REQUEST:
   - implementation: A
+    scope: managed
     type: int
     default: '2'
     product: Iast
@@ -1028,6 +1317,7 @@ supportedConfigurations:
       detect in a request. Defaults to 2.
   DD_IAST_WEAK_CIPHER_ALGORITHMS:
   - implementation: B
+    scope: managed
     type: string
     default: DES,TRIPLEDES,RC2
     product: Iast
@@ -1035,6 +1325,7 @@ supportedConfigurations:
     documentation: Configuration key for controlling which weak cipher algorithms are reported.
   DD_IAST_WEAK_HASH_ALGORITHMS:
   - implementation: C
+    scope: managed
     type: string
     default: HMACMD5,MD5,HMACSHA1,SHA1
     product: Iast
@@ -1042,12 +1333,14 @@ supportedConfigurations:
     documentation: Configuration key for controlling which weak hashing algorithms are reported.
   DD_INJECTION_ENABLED:
   - implementation: C
+    scope: managed, native
     type: string
     default: null
     const_name: SsiDeployed
     documentation: Configuration key for enabling or disabling the injection of products via single step instrumentation.
   DD_INJECT_FORCE:
   - implementation: B
+    scope: managed, native
     type: string
     default: null
     documentation: |-
@@ -1055,6 +1348,7 @@ supportedConfigurations:
       Used for correlation purposes in telemetry.
   DD_INSTRUMENTATION_INSTALL_ID:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: Telemetry
@@ -1063,6 +1357,7 @@ supportedConfigurations:
       Used for tracking and correlation purposes in telemetry.
   DD_INSTRUMENTATION_INSTALL_TIME:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: Telemetry
@@ -1071,6 +1366,7 @@ supportedConfigurations:
       Used for tracking installation timeline in telemetry.
   DD_INSTRUMENTATION_INSTALL_TYPE:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: Telemetry
@@ -1079,6 +1375,7 @@ supportedConfigurations:
       Used to determine the instrumentation source for telemetry.
   DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: Telemetry
@@ -1089,6 +1386,7 @@ supportedConfigurations:
       available. Enabled by default if <see cref="ConfigurationKeys.ApiKey"/> is available.
   DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: Telemetry
@@ -1099,6 +1397,7 @@ supportedConfigurations:
       is sent to agentless endpoint, based on <see cref="Datadog.Trace.Configuration.ConfigurationKeys.CIVisibility.AgentlessEnabled"/> setting.
   DD_INSTRUMENTATION_TELEMETRY_COMPRESSION_METHOD:
   - implementation: A
+    scope: managed
     type: string
     default: gzip
     product: Telemetry
@@ -1108,6 +1407,7 @@ supportedConfigurations:
       <see cref="Datadog.Trace.Telemetry.TelemetrySettings.CompressionMethod"/>
   DD_INSTRUMENTATION_TELEMETRY_ENABLED:
   - implementation: A
+    scope: managed, native
     type: boolean
     default: 'true'
     product: Telemetry
@@ -1117,6 +1417,7 @@ supportedConfigurations:
       Default value is <c>true</c> (enabled).
   DD_INSTRUMENTATION_TELEMETRY_URL:
   - implementation: A
+    scope: managed
     type: string
     default: https://instrumentation-telemetry-intake.datadoghq.com/
     product: Telemetry
@@ -1125,16 +1426,305 @@ supportedConfigurations:
       Configuration key for the telemetry URL where the Tracer sends telemetry. Only applies when agentless
       telemetry is in use (otherwise telemetry is sent to the agent using
       <see cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/> instead)
+  DD_INTERNAL_CIVISIBILITY_RUNTIMEID:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: CIVisibility
+    documentation: |-
+      Internal variable used by the CLR profiler to pass the CI Visibility runtime ID to child processes.
+  DD_INTERNAL_CIVISIBILITY_SPANID:
+  - implementation: A
+    scope: native
+    type: int
+    default: '0'
+    product: CIVisibility
+    documentation: |-
+      Internal span ID injected by CI Visibility into child processes for trace correlation.
+  DD_INTERNAL_CPU_PROFILER_TYPE:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Profiler
+    documentation: |-
+      Selects the CPU profiler implementation type. Defaults to ManualCpuTime on Windows and
+      TimerCreate on Linux/macOS. Used internally to switch between profiler backends.
+  DD_INTERNAL_CPU_PROFILING_INTERVAL:
+  - implementation: A
+    scope: native
+    type: int
+    default: '9'
+    product: Profiler
+    documentation: |-
+      Sampling interval in milliseconds for CPU profiling. Lower values increase resolution at the cost of overhead.
+  DD_INTERNAL_CRASHTRACKING_MINIDUMPNAME:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Tracer
+    documentation: |-
+      Internal variable used by the Linux crash-handling wrapper to carry the original minidump
+      name across the fork/exec boundary so a child process can restore it. Set programmatically;
+      not intended for manual configuration.
+  DD_INTERNAL_CRASHTRACKING_PASSTHROUGH:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: null
+    product: Tracer
+    documentation: |-
+      Internal flag set by the Linux crash-handling wrapper to tell dd-dotnet whether to forward
+      the crash to the runtime's createdump after handling it. Set programmatically;
+      not intended for manual configuration.
+  DD_INTERNAL_CUSTOM_CLR_PROFILER_PATH:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Tracer
+    documentation: |-
+      Set by the native loader to the path of the custom CLR profiler DLL after it has been loaded.
+      This is an output variable written by the loader for downstream consumers, not a user-settable override.
+  DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Debugger
+    documentation: |-
+      Enables 'instrument all' mode where Dynamic Instrumentation applies to every JIT-compiled method.
+      Only useful for testing. Default is false.
+  DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Debugger
+    documentation: |-
+      Enables line-level 'instrument all' mode for Dynamic Instrumentation. Only useful for testing. Default is false.
+  DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES_PATH:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Debugger
+    documentation: |-
+      Path to a file specifying which lines to instrument when DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES is enabled.
   DD_INTERNAL_DYNAMIC_INSTRUMENTATION_MAX_PROBES_PER_TYPE:
   - implementation: A
+    scope: managed
     type: int
     default: '0'
     product: Debugger
     documentation: |-
       Internal configuration key to optionally limit the maximum number of probes of each type.
       Default value is <c>0</c>, no probe-count limit is enforced.
+  DD_INTERNAL_ETW_LOGGING_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables ETW-based logging for the Continuous Profiler (Windows only).
+  DD_INTERNAL_ETW_REPLAY_ENDPOINT:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Profiler
+    documentation: |-
+      Endpoint for ETW replay, used in testing to simulate ETW events.
+  DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Internal flag to enable CPU time tracking on GC threads. Use DD_GC_THREADS_CPUTIME_ENABLED instead.
+  DD_INTERNAL_METRICS_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables internal profiler metrics collection for observability of the profiler itself.
+  DD_INTERNAL_OPERATIONAL_METRICS_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables operational metrics reporting for internal profiler health monitoring.
+  DD_INTERNAL_PROFILING_ALLOCATION_RECORDER_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables the allocation recorder component used for detailed allocation tracking.
+  DD_INTERNAL_PROFILING_ALLOCATION_SAMPLE_LIMIT:
+  - implementation: A
+    scope: native
+    type: int
+    default: '2000'
+    product: Profiler
+    documentation: |-
+      Maximum number of allocations sampled per second by the allocation profiler.
+  DD_INTERNAL_PROFILING_CODEHOTSPOTS_THREADS_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: '10'
+    product: Profiler
+    documentation: |-
+      Maximum number of threads sampled per code hotspot collection interval.
+  DD_INTERNAL_PROFILING_CONTENTION_DURATION_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: '100'
+    product: Profiler
+    documentation: |-
+      Minimum lock contention duration in milliseconds required to record a contention event.
+  DD_INTERNAL_PROFILING_CONTENTION_SAMPLE_LIMIT:
+  - implementation: A
+    scope: native
+    type: int
+    default: '3000'
+    product: Profiler
+    documentation: |-
+      Maximum number of lock contention events sampled per second.
+  DD_INTERNAL_PROFILING_CPUTIME_THREADS_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: '64'
+    product: Profiler
+    documentation: |-
+      Maximum number of threads sampled per CPU-time collection interval.
+  DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables collection of debug information in profiles for improved symbolication.
+  DD_INTERNAL_PROFILING_ETW_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Enables ETW (Event Tracing for Windows) as the profiling data source (Windows only).
+  DD_INTERNAL_PROFILING_EXCEPTION_SAMPLE_LIMIT:
+  - implementation: A
+    scope: native
+    type: int
+    default: '500'
+    product: Profiler
+    documentation: |-
+      Maximum number of exceptions sampled per second by the exception profiler.
+  DD_INTERNAL_PROFILING_FORCE_HTTP_SAMPLING:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Forces HTTP request sampling in the profiler. Used for testing only.
+  DD_INTERNAL_PROFILING_HEAPSNAPSHOT_CHECK_INTERVAL:
+  - implementation: A
+    scope: native
+    type: int
+    default: '250'
+    product: Profiler
+    documentation: |-
+      Interval in milliseconds between checks for heap snapshot trigger conditions.
+  DD_INTERNAL_PROFILING_HEAPSNAPSHOT_INTERVAL:
+  - implementation: A
+    scope: native
+    type: int
+    default: '5'
+    product: Profiler
+    documentation: |-
+      Interval in minutes between heap snapshot collections. Default is 5.
+  DD_INTERNAL_PROFILING_HEAPSNAPSHOT_MEMORY_PRESSURE_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: '85'
+    product: Profiler
+    documentation: |-
+      Memory pressure percentage threshold that triggers an automatic heap snapshot.
+  DD_INTERNAL_PROFILING_HEAPSNAPSHOT_REFERENCE_TREE_FORMAT:
+  - implementation: A
+    scope: native
+    type: int
+    default: '1'
+    product: Profiler
+    documentation: |-
+      Bitfield selecting the heap snapshot reference tree output format: 1 (binary), 2 (JSON), or 3 (both). Defaults to 1 (binary).
+  DD_INTERNAL_PROFILING_HEAPSNAPSHOT_SKIP_TRAVERSAL:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      When enabled, skips the heap snapshot reference-chain traversal. Default is false.
+  DD_INTERNAL_PROFILING_HEAP_HANDLE_LIMIT:
+  - implementation: A
+    scope: native
+    type: int
+    default: '4096'
+    product: Profiler
+    documentation: |-
+      Maximum number of heap object handles tracked during heap profiling.
+  DD_INTERNAL_PROFILING_HTTP_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Internal flag to enable HTTP request duration profiling. Use DD_PROFILING_HTTP_ENABLED instead.
+  DD_INTERNAL_PROFILING_HTTP_REQUEST_DURATION_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: '50'
+    product: Profiler
+    documentation: |-
+      Minimum HTTP request duration in milliseconds required to record a request in profiles.
+  DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: '30000'
+    product: Profiler
+    documentation: |-
+      Duration threshold in milliseconds used by SSI to classify a process as long-lived.
+  DD_INTERNAL_PROFILING_MEMORY_FOOTPRINT_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables tracking of the profiler's own memory footprint.
   DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH:
   - implementation: A
+    scope: managed, native
     type: string
     default: null
     product: ContinuousProfiler
@@ -1142,8 +1732,111 @@ supportedConfigurations:
       This variable is set by the native loader after trying to load the profiler.
       It means the profiler is _there_ though it may not be _loaded_. This only works
       on Windows at the moment. We assume that the CLR profiler must be attached in this scenario.
+  DD_INTERNAL_FAULT_TOLERANT_INSTRUMENTATION_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Tracer
+    documentation: |-
+      Determines if the Fault-Tolerant Instrumentation mechanism is enabled.
+      When enabled, instrumentation failures are caught and retried without the failing rewrite. Default is false.
+  DD_INTERNAL_NATIVE_LOADER_PATH:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Tracer
+    documentation: |-
+      Set by the native loader to its own file path at startup, for the tracer and profiler to
+      discover the loader location. This is an output variable written by the loader, not a user-settable override.
+  DD_INTERNAL_PROFILING_ENABLED_ARM64:
+  - implementation: A
+    scope: managed, native
+    type: string
+    default: 'false'
+    product: ContinuousProfiler
+    const_name: InternalProfilingEnabledArm64
+    documentation: |-
+      Internal gate: on Linux ARM64, the continuous profiler is only considered enabled in managed settings
+      when this is set to <c>true</c>. Must match the native profiler <c>DD_INTERNAL_PROFILING_ENABLED_ARM64</c> check.
+  DD_INTERNAL_PROFILING_OUTPUT_DIR:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Profiler
+    documentation: |-
+      Directory where the profiler writes profile files for local debugging. If unset, profiles are sent to the agent.
+  DD_INTERNAL_PROFILING_SAMPLING_RATE:
+  - implementation: A
+    scope: native
+    type: int
+    default: '9'
+    product: Profiler
+    documentation: |-
+      Sampling interval in milliseconds for CPU and wall-time profiling.
+  DD_INTERNAL_PROFILING_TEST_HEAPSNAPSHOT_INTERVAL:
+  - implementation: A
+    scope: native
+    type: int
+    default: '0'
+    product: Profiler
+    documentation: |-
+      Test-only override for the heap snapshot interval, in seconds. Default is 0 (disabled).
+  DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Adds sample timestamps as labels in profiles to enable time-based filtering.
+  DD_INTERNAL_PROFILING_USE_MANAGED_CODE_CACHE:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables the managed code cache in the profiler for improved method resolution performance.
+      Defaults to true on ARM64, false on all other architectures.
+  DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables wait handle profiling to track contention on OS synchronization primitives.
+  DD_INTERNAL_PROFILING_WALLTIME_THREADS_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: int
+    default: '5'
+    product: Profiler
+    documentation: |-
+      Maximum number of threads sampled per wall-time collection interval.
+  DD_INTERNAL_SKIP_METHOD_BODY_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Tracer
+    documentation: |-
+      Enables or disables the skip method body feature, which omits method body rewriting for certain methods.
+      Default is true.
+  DD_INTERNAL_SYSTEM_CALLS_SHIELD_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Enables the system calls shield to prevent profiler signal handlers from interfering with application syscalls. Default is true.
   DD_INTERNAL_TELEMETRY_DEBUG_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: Telemetry
@@ -1151,16 +1844,43 @@ supportedConfigurations:
     documentation: |-
       Configuration key for whether to enable debug mode of telemetry.
       <see cref="Datadog.Trace.Telemetry.TelemetrySettings.DebugEnabled"/>
+  DD_INTERNAL_THREAD_LIFETIME_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Internal flag to enable thread lifetime tracking. Use DD_THREAD_LIFETIME_ENABLED instead.
   DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH:
   - implementation: A
+    scope: managed, native
     type: string
     default: null
     documentation: |-
       This variable is set by the native loader after trying to load the profiler.
       It means the profiler is _there_ though it may not be _loaded_. This only works
       on Windows at the moment. We assume that the CLR profiler must be attached in this scenario
+  DD_INTERNAL_TRACE_VERSION_COMPATIBILITY:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Tracer
+    documentation: |-
+      Enables compatibility mode for interoperability with other versions of the Datadog .NET tracer.
+      Default is true.
+  DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables development configuration mode, which relaxes certain constraints during profiler development.
   DD_INTERNAL_WAIT_FOR_DEBUGGER_ATTACH:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     const_name: WaitForDebuggerAttach
@@ -1169,14 +1889,61 @@ supportedConfigurations:
       Default value is false (disabled).
   DD_INTERNAL_WAIT_FOR_NATIVE_DEBUGGER_ATTACH:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     const_name: WaitForNativeDebuggerAttach
     documentation: |-
       Configuration key for enabling or disabling the Tracer's native debugger mode.
       Default value is false (disabled).
+  DD_INTERNAL_WORKAROUND_77973_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Tracer
+    documentation: |-
+      Enables the workaround for dotnet/runtime issue 77973, which disables tiered compilation on
+      affected .NET runtimes (.NET 5, 6.0.0–6.0.12, 7.0.0–7.0.1). Default is false.
+  DD_LOADER_NGEN_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Tracer
+    documentation: |-
+      Controls whether the native loader allows NGEN images.
+      Default is true.
+  DD_LOADER_REWRITE_MODULE_ENTRYPOINT_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Tracer
+    documentation: |-
+      Controls whether the native loader rewrites module entry points.
+      Default is true.
+  DD_LOADER_REWRITE_MODULE_INITIALIZER_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Tracer
+    documentation: |-
+      Controls whether the native loader rewrites module initializers.
+      Default is true.
+  DD_LOADER_REWRITE_MSCORLIB_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Tracer
+    documentation: |-
+      Controls whether the native loader is allowed to rewrite mscorlib.
+      Default is true.
   DD_LOGS_DIRECT_SUBMISSION_AZURE_FUNCTIONS_HOST_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: DirectLogSubmission
@@ -1186,6 +1953,7 @@ supportedConfigurations:
       Default value is <c>false</c>.
   DD_LOGS_DIRECT_SUBMISSION_BATCH_PERIOD_SECONDS:
   - implementation: A
+    scope: managed
     type: int
     default: '2'
     product: DirectLogSubmission
@@ -1195,6 +1963,7 @@ supportedConfigurations:
       Default value is <c>2</c>s.
   DD_LOGS_DIRECT_SUBMISSION_HOST:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: DirectLogSubmission
@@ -1204,6 +1973,7 @@ supportedConfigurations:
       Required for direct logs submission (default is machine name).
   DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: DirectLogSubmission
@@ -1215,6 +1985,7 @@ supportedConfigurations:
       Supports multiple values separated with semi-colons.
   DD_LOGS_DIRECT_SUBMISSION_MAX_BATCH_SIZE:
   - implementation: A
+    scope: managed
     type: int
     default: '1000'
     product: DirectLogSubmission
@@ -1224,6 +1995,7 @@ supportedConfigurations:
       Default value is <c>1,000</c>, the maximum accepted by the Datadog log API
   DD_LOGS_DIRECT_SUBMISSION_MAX_QUEUE_SIZE:
   - implementation: A
+    scope: managed
     type: int
     default: '100000'
     product: DirectLogSubmission
@@ -1233,6 +2005,7 @@ supportedConfigurations:
       Default value is <c>100,000</c>.
   DD_LOGS_DIRECT_SUBMISSION_MINIMUM_LEVEL:
   - implementation: A
+    scope: managed
     type: string
     default: Information
     product: DirectLogSubmission
@@ -1243,6 +2016,7 @@ supportedConfigurations:
       Should be one of <c>Verbose</c>,<c>Debug</c>,<c>Information</c>,<c>Warning</c>,<c>Error</c>,<c>Fatal</c>
   DD_LOGS_DIRECT_SUBMISSION_SOURCE:
   - implementation: A
+    scope: managed
     type: string
     default: csharp
     product: DirectLogSubmission
@@ -1252,6 +2026,7 @@ supportedConfigurations:
       Default is 'csharp'
   DD_LOGS_DIRECT_SUBMISSION_TAGS:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: DirectLogSubmission
@@ -1263,6 +2038,7 @@ supportedConfigurations:
       <see cref="ConfigurationKeys.GlobalTags"/> are used instead
   DD_LOGS_DIRECT_SUBMISSION_URL:
   - implementation: A
+    scope: managed
     type: string
     default: https://http-intake.logs.datadoghq.com:443
     product: DirectLogSubmission
@@ -1273,6 +2049,7 @@ supportedConfigurations:
       <c>https://http-intake.logs.datadoghq.com:443</c>.
   DD_LOGS_INJECTION:
   - implementation: B
+    scope: managed
     type: boolean
     default: 'true'
     const_name: LogsInjectionEnabled
@@ -1282,6 +2059,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.LogsInjectionEnabled"/>
   DD_LOG_LEVEL:
   - implementation: B
+    scope: managed
     type: string
     default: null
     product: Agent
@@ -1289,6 +2067,7 @@ supportedConfigurations:
       Sets the Datadog Agent logging level. Valid values are trace, debug, info, warn, error, critical, or off
   DD_MAX_LOGFILE_SIZE:
   - implementation: A
+    scope: managed
     type: int
     default: '10485760'
     const_name: MaxLogFileSize
@@ -1298,6 +2077,7 @@ supportedConfigurations:
       Default value is 10 MB.
   DD_MAX_TRACES_PER_SECOND:
   - implementation: A
+    scope: managed
     type: int
     default: '100'
     const_name: MaxTracesSubmittedPerSecond
@@ -1307,6 +2087,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.MaxTracesSubmittedPerSecond"/>
   DD_METRICS_OTEL_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: FeatureFlags
@@ -1317,6 +2098,7 @@ supportedConfigurations:
       which is shipped in-box starting with .NET 6.
   DD_METRICS_OTEL_METER_NAMES:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: FeatureFlags
@@ -1324,18 +2106,159 @@ supportedConfigurations:
     documentation: List of meters to add to the metrics exporter for the experimental OpenTelemetry Metrics API support.
   DD_ACTION_EXECUTION_ID:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: AWS CodePipeline action execution ID for CI correlation.
+  DD_NATIVELOADER_CONFIGFILE:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Tracer
+    documentation: |-
+      Path to the native loader configuration file.
+      Used internally by the installer; not intended for manual configuration.
   DD_PIPELINE_EXECUTION_ID:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
     documentation: AWS CodePipeline pipeline execution ID for CI correlation.
+  DD_PROFILING_AGENTLESS:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables agentless mode, sending profiles directly to Datadog intake without a local agent. Requires DD_API_KEY.
+  DD_PROFILING_ALLOCATION_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables allocation profiling to track heap object allocations. Requires .NET 5+.
+  DD_PROFILING_CONTENTION_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Deprecated. Use DD_PROFILING_LOCK_ENABLED instead.
+  DD_PROFILING_CPU_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Enables CPU profiling. Default is true.
+  DD_PROFILING_EXCEPTION_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Enables exception profiling to track thrown exceptions and their call stacks.
+  DD_PROFILING_FRAMES_NATIVE_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables native frame collection in profiles, showing unmanaged call stacks.
+  DD_PROFILING_GC_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Enables garbage collection profiling to track GC pause times and frequencies. Default is true.
+  DD_PROFILING_HEAPSNAPSHOT_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables periodic heap snapshot collection for memory leak analysis.
+  DD_PROFILING_HEAP_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables heap profiling to track live heap object allocations and sizes.
+  DD_PROFILING_HTTP_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      Enables HTTP request duration profiling to track time spent in outbound HTTP calls.
+  DD_PROFILING_LOCK_ENABLED:
+  - implementation: B
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Enables lock contention profiling to track threads blocked waiting for locks. Default is true.
+  DD_PROFILING_LOG_DIR:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Profiler
+    documentation: |-
+      Deprecated. Use DD_TRACE_LOG_DIRECTORY instead. Sets the log directory for the Continuous Profiler.
+  DD_PROFILING_LOG_PATH:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Profiler
+    documentation: |-
+      Path to the Continuous Profiler log file. Used only when neither DD_PROFILING_LOG_DIR
+      nor DD_TRACE_LOG_DIRECTORY is set — it is the lowest-priority fallback, not an override.
+  DD_PROFILING_MIN_CORES_THRESHOLD:
+  - implementation: A
+    scope: native
+    type: decimal
+    default: '1.0'
+    product: Profiler
+    documentation: |-
+      Minimum number of CPU cores (fractional) required for the Continuous Profiler to activate. Default is 1.
+  DD_PROFILING_UPLOAD_PERIOD:
+  - implementation: A
+    scope: native
+    type: int
+    default: '60'
+    product: Profiler
+    documentation: |-
+      Interval in seconds between profile uploads to the agent or Datadog intake. Default is 60.
+  DD_PROFILING_WALLTIME_ENABLED:
+  - implementation: B
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Enables wall-time profiling. Default is true.
   DD_PROXY_HTTPS:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: Proxy
@@ -1343,6 +2266,7 @@ supportedConfigurations:
     documentation: Configuration key to set a proxy server for https requests.
   DD_PROXY_NO_PROXY:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: Proxy
@@ -1350,8 +2274,28 @@ supportedConfigurations:
     documentation: |-
       Configuration key to set a list of hosts that should bypass the proxy.
       The list is space-separated.
+  DD_PROFILER_EXCLUDE_PROCESSES:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Tracer
+    documentation: |-
+      Semicolon-separated list of process executable names that the Datadog SDK (CLR profiler /
+      auto-instrumentation) will not attach to.
+  DD_PROFILER_PROCESSES:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Tracer
+    documentation: |-
+      Semicolon-separated list of process executable names that the Datadog SDK (CLR profiler /
+      auto-instrumentation) will attach to. If set, only matching processes are instrumented;
+      all others are skipped.
   DD_PROFILING_CODEHOTSPOTS_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: Profiler
@@ -1360,6 +2304,7 @@ supportedConfigurations:
       Enables or disables code hotspots collection for the continuous profiler. When disabled, profiling data is not linked to tracing context for hotspot attribution
   DD_PROFILING_ENABLED:
   - implementation: B
+    scope: managed, native
     type: string
     default: 'false'
     product: Profiler
@@ -1368,6 +2313,7 @@ supportedConfigurations:
       Enables or disables the continuous profiler. Set to true (or 1) to start profiling, false (or 0) to disable, or auto to enable profiling but only start it after the process is long-lived and has created at least one span
   DD_PROFILING_ENDPOINT_COLLECTION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: Profiler
@@ -1376,6 +2322,7 @@ supportedConfigurations:
       Controls whether spans add a pprof label with the top-level request endpoint so profiles can be grouped by endpoint. Defaults to true
   DD_PROFILING_MANAGED_ACTIVATION_ENABLED:
   - implementation: A
+    scope: managed, native
     type: boolean
     default: 'true'
     product: Profiler
@@ -1384,6 +2331,7 @@ supportedConfigurations:
       Safety kill switch to be able to deactivate hotstandby mode for profiling in of a support case
   DD_REMOTE_CONFIGURATION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: Rcm
@@ -1394,6 +2342,7 @@ supportedConfigurations:
       intended for testing and for explicitly disabling RCM even though it is available.
   DD_REMOTE_CONFIG_POLL_INTERVAL_SECONDS:
   - implementation: B
+    scope: managed
     type: decimal
     default: '5.0'
     product: Rcm
@@ -1407,6 +2356,7 @@ supportedConfigurations:
       Minimum value is greater than 0 s
   DD_RUNTIME_METRICS_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     const_name: RuntimeMetricsEnabled
@@ -1415,6 +2365,7 @@ supportedConfigurations:
       Default value is <c>true</c> (enabled) on .NET 6+ and <c>false</c> (disabled) otherwise.
   DD_RUNTIME_METRICS_DIAGNOSTICS_METRICS_API_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     documentation: |-
@@ -1426,6 +2377,7 @@ supportedConfigurations:
       <c>false</c> (disabled).
   DD_SERVICE:
   - implementation: D
+    scope: managed, native
     type: string
     default: null
     aliases:
@@ -1438,6 +2390,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.ServiceName"/>
   DD_SITE:
   - implementation: C
+    scope: managed, native
     type: string
     default: datadoghq.com
     const_name: Site
@@ -1446,6 +2399,7 @@ supportedConfigurations:
       Defaults to "datadoghq.com".
   DD_SPAN_SAMPLING_RULES:
   - implementation: B
+    scope: managed
     type: string
     default: null
     const_name: SpanSamplingRules
@@ -1477,8 +2431,19 @@ supportedConfigurations:
       Match all spans that start with "cart" without any limits and any operation name.
           "[{"service": "cart*"}]"
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.SpanSamplingRules"/>
+  DD_SERVERLESS_COMPAT_PATH:
+  - implementation: A
+    scope: managed
+    type: string
+    default: null
+    const_name: ServerlessCompatPath
+    documentation: |-
+      Overrides the default path to the serverless compatibility layer binary.
+      Default value in windows is <c>C:\home\site\wwwroot\datadog\bin\windows-amd64\datadog-serverless-compat.exe</c>.
+      Default value in linux is <c>/bin/linux-amd64/datadog-serverless-compat</c>.
   DD_SYMBOL_DATABASE_BATCH_SIZE_BYTES:
   - implementation: A
+    scope: managed
     type: int
     default: '100000'
     product: Debugger
@@ -1488,6 +2453,7 @@ supportedConfigurations:
       Default value is 1 mb.
   DD_SYMBOL_DATABASE_COMPRESSION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: Debugger
@@ -1497,6 +2463,7 @@ supportedConfigurations:
       Default value is true (enabled).
   DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_EXCLUDES:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: Debugger
@@ -1506,6 +2473,7 @@ supportedConfigurations:
       Default value is empty.
   DD_SYMBOL_DATABASE_THIRD_PARTY_DETECTION_INCLUDES:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: Debugger
@@ -1515,6 +2483,7 @@ supportedConfigurations:
       Default value is empty.
   DD_SYMBOL_DATABASE_UPLOAD_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: Debugger
@@ -1524,6 +2493,7 @@ supportedConfigurations:
       Default value is true (enabled).
   DD_TAGS:
   - implementation: C
+    scope: managed, native
     type: map
     default: null
     aliases:
@@ -1536,6 +2506,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.GlobalTags"/>
   DD_TELEMETRY_DEPENDENCY_COLLECTION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: Telemetry
@@ -1544,8 +2515,18 @@ supportedConfigurations:
       Configuration key for whether dependency data is sent via telemetry.
       Required for some ASM features. Default value is <c>true</c> (enabled).
       <see cref="Datadog.Trace.Telemetry.TelemetrySettings.DependencyCollectionEnabled"/>
+  DD_TELEMETRY_FORWARDER_PATH:
+  - implementation: A
+    scope: native
+    type: string
+    default: null
+    product: Telemetry
+    documentation: |-
+      Path to the telemetry forwarder binary used for single-step instrumentation telemetry.
+      Set automatically by the single-step installer; not intended for manual configuration.
   DD_TELEMETRY_HEARTBEAT_INTERVAL:
   - implementation: B
+    scope: managed
     type: decimal
     default: '60.0'
     product: Telemetry
@@ -1556,6 +2537,7 @@ supportedConfigurations:
       <see cref="Datadog.Trace.Telemetry.TelemetrySettings.HeartbeatInterval"/>
   DD_TELEMETRY_EXTENDED_HEARTBEAT_INTERVAL:
   - implementation: A
+    scope: managed
     type: int
     default: '86400'
     product: Telemetry
@@ -1566,6 +2548,7 @@ supportedConfigurations:
       <see cref="Datadog.Trace.Telemetry.TelemetrySettings.ExtendedHeartbeatInterval"/>
   DD_TELEMETRY_LOG_COLLECTION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: Telemetry
@@ -1573,6 +2556,7 @@ supportedConfigurations:
     documentation: Configuration key for whether to enable redacted error log collection.
   DD_TELEMETRY_METRICS_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: Telemetry
@@ -1580,8 +2564,27 @@ supportedConfigurations:
     documentation: |-
       Configuration key for whether telemetry metrics should be sent.
       <see cref="Datadog.Trace.Telemetry.TelemetrySettings.MetricsEnabled"/>
+  DD_THREAD_LIFETIME_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Profiler
+    documentation: |-
+      Enables thread lifetime tracking to record when threads are created and destroyed.
+  _DD_ROOT_DOTNET_SESSION_ID:
+  - implementation: A
+    scope: managed
+    type: string
+    default: null
+    product: Telemetry
+    const_name: RootSessionId
+    documentation: |-
+      Internal env var for propagating the root session ID to child processes.
+      Set automatically by the tracer at init time; not user-configurable.
   DD_TEST_MANAGEMENT_ATTEMPT_TO_FIX_RETRIES:
   - implementation: A
+    scope: managed
     type: int
     default: null
     product: CIVisibility
@@ -1589,6 +2592,7 @@ supportedConfigurations:
     documentation: Configuration key for the number of retries to fix a flaky test.
   DD_TEST_MANAGEMENT_ENABLED:
   - implementation: B
+    scope: managed
     type: boolean
     default: null
     product: CIVisibility
@@ -1596,6 +2600,7 @@ supportedConfigurations:
     documentation: Configuration key for enabling or disabling the Test Management feature.
   DD_TEST_SESSION_NAME:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
@@ -1603,6 +2608,7 @@ supportedConfigurations:
     documentation: Configuration key for set the test session name
   DD_TESTSESSION_COMMAND:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
@@ -1612,6 +2618,7 @@ supportedConfigurations:
       This is used to track the command line that initiated the test session.
   DD_TESTSESSION_WORKINGDIRECTORY:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
@@ -1621,6 +2628,7 @@ supportedConfigurations:
       This is used to track the working directory where the test session was executed.
   DD_THIRD_PARTY_DETECTION_EXCLUDES:
   - implementation: A
+    scope: managed
     type: array
     default: '[]'
     product: Debugger
@@ -1630,6 +2638,7 @@ supportedConfigurations:
       Default value is empty.
   DD_THIRD_PARTY_DETECTION_INCLUDES:
   - implementation: A
+    scope: managed
     type: array
     default: '[]'
     product: Debugger
@@ -1639,6 +2648,7 @@ supportedConfigurations:
       Default value is empty.
   DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: FeatureFlags
@@ -1650,6 +2660,7 @@ supportedConfigurations:
       Default value is <c>true</c> (enabled).
   DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: FeatureFlags
@@ -1666,6 +2677,7 @@ supportedConfigurations:
       services may contain 128-bit trace ids.
   DD_TRACE_ACTIVITY_LISTENER_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: OpenTelemetry
@@ -1673,18 +2685,21 @@ supportedConfigurations:
     documentation: Configuration key to enable or disable the ActivityListener.
   DD_TRACE_AGENT_ARGS:
   - implementation: A
+    scope: managed
     type: string
     default: null
     const_name: TraceAgentArgs
     documentation: Configuration key for arguments to pass to the Trace Agent process.
   DD_TRACE_AGENT_PATH:
   - implementation: A
+    scope: managed
     type: string
     default: null
     const_name: TraceAgentPath
     documentation: Configuration key for when a standalone instance of the Trace Agent needs to be started.
   DD_TRACE_AGENT_PORT:
   - implementation: C
+    scope: managed, native
     type: int
     default: '8126'
     aliases:
@@ -1696,6 +2711,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
   DD_TRACE_AGENT_URL:
   - implementation: C
+    scope: managed, native
     type: string
     default: http://localhost:8126
     const_name: AgentUri
@@ -1705,14 +2721,25 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.ExporterSettings.AgentUri"/>
   DD_TRACE_ANALYTICS_ENABLED:
   - implementation: B
+    scope: managed
     type: boolean
     default: 'false'
     const_name: GlobalAnalyticsEnabled
     documentation: |-
       Configuration key for enabling or disabling default Analytics.
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.AnalyticsEnabled"/>
+  DD_TRACE_ANNOTATIONS_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Tracer
+    documentation: |-
+      Controls whether the native tracer applies [Trace] attribute instrumentation.
+      Default is true.
   DD_TRACE_AWS_ADD_SPAN_POINTERS:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     const_name: SpanPointersEnabled
@@ -1721,6 +2748,7 @@ supportedConfigurations:
       Default value is true
   DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     const_name: AzureEventHubsBatchLinksEnabled
@@ -1730,8 +2758,18 @@ supportedConfigurations:
       When disabled, TryAdd spans are not created, and therefore they are never linked to the send span.
       Default value is <c>true</c> (enabled).
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.AzureEventHubsBatchLinksEnabled"/>
+  DD_TRACE_AZURE_FUNCTIONS_ENABLED:
+  - implementation: B
+    scope: native
+    type: boolean
+    default: 'true'
+    product: Tracer
+    documentation: |-
+      Controls whether Azure Functions instrumentation is enabled.
+      Default is true.
   DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     const_name: AzureServiceBusBatchLinksEnabled
@@ -1742,6 +2780,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.AzureServiceBusBatchLinksEnabled"/>
   DD_TRACE_BAGGAGE_MAX_BYTES:
   - implementation: A
+    scope: managed
     type: int
     default: '8192'
     const_name: BaggageMaximumBytes
@@ -1752,6 +2791,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.BaggageMaximumBytes"/>
   DD_TRACE_BAGGAGE_MAX_ITEMS:
   - implementation: A
+    scope: managed
     type: int
     default: '64'
     const_name: BaggageMaximumItems
@@ -1762,6 +2802,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.BaggageMaximumItems"/>
   DD_TRACE_BAGGAGE_TAG_KEYS:
   - implementation: A
+    scope: managed
     type: array
     default: user.id, session.id, account.id
     const_name: BaggageTagKeys
@@ -1776,6 +2817,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.BaggageTagKeys"/>
   DD_TRACE_BATCH_INTERVAL:
   - implementation: A
+    scope: managed
     type: int
     default: '100'
     const_name: SerializationBatchInterval
@@ -1784,12 +2826,14 @@ supportedConfigurations:
       Set to 0 to disable.
   DD_TRACE_BUFFER_SIZE:
   - implementation: A
+    scope: managed
     type: int
     default: '10485760'
     const_name: BufferSize
     documentation: Configuration key for setting the size in bytes of the trace buffer
   DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: FeatureFlags
@@ -1798,6 +2842,7 @@ supportedConfigurations:
       When enabled, the request URL is built without using the cached HttpRequest.Url value to avoid triggering URL caching behavior. This can prevent issues in environments where caching the URL early can affect application behavior
   DD_TRACE_CLIENT_IP_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     const_name: IpHeaderEnabled
@@ -1806,6 +2851,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.IpHeaderEnabled"/>
   DD_TRACE_CLIENT_IP_HEADER:
   - implementation: C
+    scope: managed
     type: string
     default: null
     aliases:
@@ -1818,6 +2864,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.IpHeader"/>
   DD_TRACE_COMMANDS_COLLECTION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: FeatureFlags
@@ -1826,6 +2873,7 @@ supportedConfigurations:
       Controls whether command-line details are collected for process execution instrumentation. When enabled, the executable and arguments may be captured (truncated as needed); when disabled, command-line details are omitted
   DD_TRACE_CONFIG_FILE:
   - implementation: A
+    scope: managed
     type: string
     default: datadog.json
     aliases:
@@ -1835,16 +2883,9 @@ supportedConfigurations:
       Configuration key for the path to the configuration file.
       Can only be set with an environment variable
       or in the <c>app.config</c>/<c>web.config</c> file.
-  DD_TRACE_DATA_PIPELINE_ENABLED:
-  - implementation: A
-    type: boolean
-    default: 'false'
-    const_name: TraceDataPipelineEnabled
-    documentation: |-
-      Use libdatadog data pipeline to send traces.
-      Default value is <c>false</c> (disabled).
   DD_TRACE_DEBUG:
   - implementation: B
+    scope: managed, native
     type: boolean
     default: 'false'
     const_name: DebugEnabled
@@ -1853,6 +2894,7 @@ supportedConfigurations:
       Default value is false (disabled).
   DD_TRACE_DEBUG_LOOKUP_FALLBACK:
   - implementation: A
+    scope: managed
     type: boolean
     default: null
     product: Debug
@@ -1860,6 +2902,7 @@ supportedConfigurations:
     documentation: Configuration key for forcing the automatic instrumentation to only use the fallback method lookup mechanism.
   DD_TRACE_DEBUG_LOOKUP_MDTOKEN:
   - implementation: A
+    scope: managed
     type: boolean
     default: null
     product: Debug
@@ -1867,6 +2910,7 @@ supportedConfigurations:
     documentation: Configuration key for forcing the automatic instrumentation to only use the mdToken method lookup mechanism.
   DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: FeatureFlags
@@ -1877,6 +2921,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.DelayWcfInstrumentationEnabled"/>
   DD_TRACE_DISABLED_ACTIVITY_SOURCES:
   - implementation: A
+    scope: managed
     type: string
     default: null
     const_name: DisabledActivitySources
@@ -1914,6 +2959,7 @@ supportedConfigurations:
       </remarks>
   DD_TRACE_DISABLED_ADONET_COMMAND_TYPES:
   - implementation: A
+    scope: managed
     type: string
     default: InterceptableDbCommand,ProfiledDbCommand
     const_name: DisabledAdoNetCommandTypes
@@ -1924,6 +2970,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.DisabledAdoNetCommandTypes"/>
   DD_TRACE_ENABLED:
   - implementation: A
+    scope: managed, native
     type: boolean
     default: 'true'
     const_name: TraceEnabled
@@ -1933,6 +2980,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.TraceEnabled"/>
   DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     const_name: ExpandRouteTemplatesEnabled
@@ -1943,12 +2991,14 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.ExpandRouteTemplatesEnabled"/>
   DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED:
   - implementation: B
+    scope: managed
     type: string
     default: null
     const_name: ExperimentalFeaturesEnabled
     documentation: Configuration key to enable experimental features.
   DD_TRACE_GIT_METADATA_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     const_name: GitMetadataEnabled
@@ -1958,6 +3008,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.GitMetadataEnabled"/>
   DD_TRACE_GRAPHQL_ERROR_EXTENSIONS:
   - implementation: A
+    scope: managed
     type: array
     default: ''
     const_name: GraphQLErrorExtensions
@@ -1967,6 +3018,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.GraphQLErrorExtensions"/>
   DD_TRACE_GRPC_TAGS:
   - implementation: A
+    scope: managed
     type: string
     default: null
     const_name: GrpcTags
@@ -1976,6 +3028,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.HeaderTags"/>
   DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: FeatureFlags
@@ -1986,6 +3039,7 @@ supportedConfigurations:
       Default value is <c>true</c>.
   DD_TRACE_HEADER_TAGS:
   - implementation: A
+    scope: managed
     type: array
     default: ''
     const_name: HeaderTags
@@ -1995,6 +3049,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.HeaderTags"/>
   DD_TRACE_HTTP_CLIENT_ERROR_STATUSES:
   - implementation: A
+    scope: managed
     type: string
     default: 400-499
     aliases:
@@ -2005,6 +3060,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
   DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS:
   - implementation: A
+    scope: managed
     type: string
     default: null
     const_name: HttpClientExcludedUrlSubstrings
@@ -2013,6 +3069,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.HttpClientExcludedUrlSubstrings"/>
   DD_TRACE_HTTP_SERVER_ERROR_STATUSES:
   - implementation: A
+    scope: managed
     type: string
     default: 500-599
     aliases:
@@ -2023,6 +3080,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpServerErrorStatusCodes"/>
   DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: FeatureFlags
@@ -2031,6 +3089,7 @@ supportedConfigurations:
       Inferred proxy services: when enabled, registers the inferred-proxy propagator to extract `x-dd-proxy*` headers and start an inferred proxy span (currently supports `x-dd-proxy=aws-apigateway`) as a parent of the server span, using header values for service/resource/tags. Default: false
   DD_TRACE_INJECT_CONTEXT_INTO_STORED_PROCEDURES_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: FeatureFlags
@@ -2047,6 +3106,7 @@ supportedConfigurations:
       </ul>
   DD_EXPERIMENTAL_FLAGGING_PROVIDER_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: FeatureFlags
@@ -2056,6 +3116,7 @@ supportedConfigurations:
       Default value is <c>false</c> (disabled).
   DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     const_name: KafkaCreateConsumerScopeEnabled
@@ -2064,8 +3125,19 @@ supportedConfigurations:
       Consumer.Consume() call, and closing the scope on entering Consumer.Consume().
       Default value is <c>true</c> (enabled).
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.KafkaCreateConsumerScopeEnabled"/>
+  DD_TRACE_LOG_BUFFERING_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Tracer
+    documentation: |-
+      Controls log output buffering in the native loader. Only relevant under Windows
+      single-step instrumentation (SSI). Inside SSI the effective default is true (buffered);
+      outside SSI buffering is always disabled regardless of this setting.
   DD_TRACE_LOG_DIRECTORY:
   - implementation: B
+    scope: managed, native
     type: string
     default: /var/log/datadog/dotnet
     const_name: LogDirectory
@@ -2076,12 +3148,14 @@ supportedConfigurations:
       or "/var/log/datadog/dotnet/" on Linux.
   DD_TRACE_LOG_PATH:
   - implementation: A
+    scope: managed, native
     type: string
     default: null
     documentation: |-
       Deprecated, use DD_TRACE_LOG_DIRECTORY instead, and make sure it is a directory and not a file path
   DD_TRACE_LOG_SINKS:
   - implementation: A
+    scope: managed
     type: string
     default: file
     const_name: LogSinks
@@ -2091,12 +3165,14 @@ supportedConfigurations:
       Defaults to <c>file</c>
   DD_TRACE_LOGFILE_RETENTION_DAYS:
   - implementation: A
+    scope: managed
     type: int
     default: '32'
     const_name: LogFileRetentionDays
     documentation: Configuration key for setting in number of days when to delete log files based on their last writetime date.
   DD_TRACE_LOGGING_RATE:
   - implementation: A
+    scope: managed
     type: int
     default: '0'
     const_name: LogRateLimit
@@ -2106,6 +3182,7 @@ supportedConfigurations:
       Default value is 0 and setting to 0 disables rate limiting.
   DD_TRACE_METHODS:
   - implementation: B
+    scope: managed
     type: string
     default: ''
     const_name: TraceMethods
@@ -2114,6 +3191,7 @@ supportedConfigurations:
       Default value is "" (disabled).
   DD_TRACE_METRICS_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     const_name: TracerMetricsEnabled
@@ -2122,6 +3200,7 @@ supportedConfigurations:
       Default value is <c>false</c> (disabled).
   DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP:
   - implementation: D
+    scope: managed
     type: string
     default: (?:(?:\"|%22)?)(?:(?:old[-_]?|new[-_]?)?p(?:ass)?w(?:or)?d(?:1|2)?|pass(?:[-_]?phrase)?|secret|(?:api[-_]?|private[-_]?|public[-_]?|access[-_]?|secret[-_]?|app(?:lication)?[-_]?)key(?:[-_]?id)?|token|consumer[-_]?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:(?:\\s|%20)*(?:=|%3D)[^&]+|(?:\"|%22)(?:\\s|%20)*(?::|%3A)(?:\\s|%20)*(?:\"|%22)(?:%2[^2]|%[^2]|[^\"%])+(?:\"|%22))|(?:bearer(?:\\s|%20)+[a-z0-9._\\-]+|token(?::|%3A)[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L](?:[\\w=-]|%3D)+\\.ey[I-L](?:[\\w=-]|%3D)+(?:\\.(?:[\\w.+/=-]|%3D|%2F|%2B)+)?|-{5}BEGIN(?:[a-z\\s]|%20)+PRIVATE(?:\\s|%20)KEY-{5}[^\\-]+-{5}END(?:[a-z\\s]|%20)+PRIVATE(?:\\s|%20)KEY(?:-{5})?(?:\\n|%0A)?|(?:ssh-(?:rsa|dss)|ecdsa-[a-z0-9]+-[a-z0-9]+)(?:\\s|%20|%09)+(?:[a-z0-9/.+]|%2F|%5C|%2B){100,}(?:=|%3D)*(?:(?:\\s|%20|%09)+[a-z0-9._-]+)?)
     const_name: ObfuscationQueryStringRegex
@@ -2132,6 +3211,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.ObfuscationQueryStringRegex"/>
   DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT:
   - implementation: A
+    scope: managed
     type: decimal
     default: '200'
     const_name: ObfuscationQueryStringRegexTimeout
@@ -2141,6 +3221,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.ObfuscationQueryStringRegexTimeout"/>
   DD_TRACE_OTEL_ENABLED:
   - implementation: B
+    scope: managed
     type: boolean
     default: 'false'
     product: FeatureFlags
@@ -2150,18 +3231,21 @@ supportedConfigurations:
     documentation: Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
   DD_TRACE_PARTIAL_FLUSH_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     const_name: PartialFlushEnabled
     documentation: Configuration key to enable sending partial traces to the agent
   DD_TRACE_PARTIAL_FLUSH_MIN_SPANS:
   - implementation: C
+    scope: managed
     type: int
     default: '500'
     const_name: PartialFlushMinSpans
     documentation: Configuration key to set the minimum number of closed spans in a trace before it's partially flushed
   DD_TRACE_PEER_SERVICE_DEFAULTS_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     const_name: PeerServiceDefaultsEnabled
@@ -2172,6 +3256,7 @@ supportedConfigurations:
       Default value is false
   DD_TRACE_PEER_SERVICE_MAPPING:
   - implementation: A
+    scope: managed
     type: map
     default: ''
     const_name: PeerServiceNameMappings
@@ -2180,6 +3265,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.PeerServiceNameMappings"/>
   DD_TRACE_PIPE_NAME:
   - implementation: A
+    scope: managed, native
     type: string
     default: null
     const_name: TracesPipeName
@@ -2189,6 +3275,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.ExporterSettings.TracesPipeName"/>
   DD_TRACE_PIPE_TIMEOUT_MS:
   - implementation: A
+    scope: managed
     type: int
     default: '500'
     const_name: TracesPipeTimeoutMs
@@ -2198,6 +3285,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.ExporterSettings.TracesPipeTimeoutMs"/>
   DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT:
   - implementation: B
+    scope: managed
     type: string
     default: continue
     const_name: PropagationBehaviorExtract
@@ -2211,6 +3299,7 @@ supportedConfigurations:
       Default value is continue.
   DD_TRACE_PROPAGATION_EXTRACT_FIRST:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     const_name: PropagationExtractFirstOnly
@@ -2220,6 +3309,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.PropagationExtractFirstOnly"/>
   DD_TRACE_PROPAGATION_STYLE_EXTRACT:
   - implementation: D
+    scope: managed
     type: array
     default: datadog,tracecontext,baggage
     aliases:
@@ -2233,6 +3323,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.PropagationStyleExtract"/>
   DD_TRACE_PROPAGATION_STYLE_INJECT:
   - implementation: D
+    scope: managed
     type: array
     default: datadog,tracecontext,baggage
     aliases:
@@ -2246,6 +3337,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.PropagationStyleInject"/>
   DD_TRACE_RATE_LIMIT:
   - implementation: B
+    scope: managed
     type: int
     default: '100'
     aliases:
@@ -2257,6 +3349,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.MaxTracesSubmittedPerSecond"/>
   DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     const_name: RemoveClientServiceNamesEnabled
@@ -2267,6 +3360,7 @@ supportedConfigurations:
       Default value is false
   DD_TRACE_ROUTE_TEMPLATE_RESOURCE_NAMES_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: FeatureFlags
@@ -2278,12 +3372,14 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.RouteTemplateResourceNamesEnabled"/>
   DD_TRACE_SAMPLE_RATE:
   - implementation: B
+    scope: managed
     type: decimal
     default: null
     const_name: GlobalSamplingRate
     documentation: Configuration key for setting the global rate for the sampler.
   DD_TRACE_SAMPLING_RULES:
   - implementation: B
+    scope: managed
     type: string
     default: null
     const_name: CustomSamplingRules
@@ -2316,6 +3412,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.CustomSamplingRules"/>
   DD_TRACE_SAMPLING_RULES_FORMAT:
   - implementation: A
+    scope: managed
     type: string
     default: glob
     const_name: CustomSamplingRulesFormat
@@ -2325,6 +3422,7 @@ supportedConfigurations:
       If the value is not recognized, trace sampling rules are disabled.
   DD_TRACE_SERVICE_MAPPING:
   - implementation: A
+    scope: managed
     type: string
     default: null
     const_name: ServiceNameMappings
@@ -2333,6 +3431,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.ServiceNameMappings"/>
   DD_TRACE_SINGLE_SPAN_ASPNETCORE_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: FeatureFlags
@@ -2346,6 +3445,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.SingleSpanAspNetCoreEnabled"/>
   DD_TRACE_SPAN_ATTRIBUTE_SCHEMA:
   - implementation: B
+    scope: managed
     type: string
     default: v0
     const_name: MetadataSchemaVersion
@@ -2355,6 +3455,7 @@ supportedConfigurations:
       Default value is "v0"
   DD_TRACE_STARTUP_LOGS:
   - implementation: C
+    scope: managed
     type: boolean
     default: 'true'
     const_name: StartupDiagnosticLogEnabled
@@ -2363,12 +3464,14 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.StartupDiagnosticLogEnabled"/>
   DD_TRACE_STATS_COMPUTATION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     const_name: StatsComputationEnabled
     documentation: Configuration key for enabling computation of stats (aka trace metrics) on the tracer side
   DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: FeatureFlags
@@ -2380,6 +3483,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.WcfObfuscationEnabled"/>
   DD_TRACE_WCF_WEB_HTTP_RESOURCE_NAMES_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: FeatureFlags
@@ -2391,6 +3495,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.WcfWebHttpResourceNamesEnabled"/>
   DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH:
   - implementation: A
+    scope: managed
     type: int
     default: '512'
     product: TagPropagation
@@ -2403,14 +3508,25 @@ supportedConfigurations:
       </remarks>
   DD_VERSION:
   - implementation: B
+    scope: managed, native
     type: string
     default: null
     const_name: ServiceVersion
     documentation: |-
       Configuration key for the application's version. Sets the "version" tag on every <see cref="Span"/>.
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.ServiceVersion"/>
+  DD_WRITE_INSTRUMENTATION_TO_DISK:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Tracer
+    documentation: |-
+      When true, the instrumented assembly generator writes rewritten module IL to disk.
+      Only effective on Windows. Intended for debugging only. Default is false.
   DD_LOGS_OTEL_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: FeatureFlags
@@ -2420,6 +3536,7 @@ supportedConfigurations:
       This feature is available starting with .NET 3.1 when using Microsoft.Extensions.Logging
   OTEL_EXPORTER_OTLP_ENDPOINT:
   - implementation: C
+    scope: managed
     type: string
     default: http://localhost:4317/
     product: OpenTelemetry
@@ -2431,6 +3548,7 @@ supportedConfigurations:
       Default values: gRPC: http://localhost:4317, HTTP: http://localhost:4318
   OTEL_LOGS_EXPORTER:
   - implementation: B
+    scope: managed
     type: string
     default: otlp
     product: OpenTelemetry
@@ -2439,6 +3557,7 @@ supportedConfigurations:
       Datadog SDKs that support OTLP log export should default to otlp; all others should default to None/null
   OTEL_EXPORTER_OTLP_HEADERS:
   - implementation: A
+    scope: managed
     type: map
     default: ''
     product: OpenTelemetry
@@ -2449,6 +3568,7 @@ supportedConfigurations:
       Format: api-key=key,other=value.
   OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:
   - implementation: B
+    scope: managed
     type: string
     default: http://localhost:4317/
     product: OpenTelemetry
@@ -2461,6 +3581,7 @@ supportedConfigurations:
       Default values: gRPC: http://localhost:4317, HTTP: http://localhost:4318/v1/logs
   OTEL_EXPORTER_OTLP_LOGS_PROTOCOL:
   - implementation: C
+    scope: managed
     type: string
     default: grpc
     product: OpenTelemetry
@@ -2470,6 +3591,7 @@ supportedConfigurations:
       Specifies the OTLP transport protocol to be used for log data
   OTEL_EXPORTER_OTLP_LOGS_TIMEOUT:
   - implementation: B
+    scope: managed
     type: int
     default: '10000'
     product: OpenTelemetry
@@ -2482,6 +3604,7 @@ supportedConfigurations:
       Default value is 10000ms.
   OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:
   - implementation: C
+    scope: managed
     type: string
     default: http://localhost:4317/
     product: OpenTelemetry
@@ -2494,6 +3617,7 @@ supportedConfigurations:
       Default values: gRPC: http://localhost:4317, HTTP: http://localhost:4318/v1/metrics
   OTEL_EXPORTER_OTLP_METRICS_HEADERS:
   - implementation: C
+    scope: managed
     type: map
     default: null
     product: OpenTelemetry
@@ -2506,6 +3630,7 @@ supportedConfigurations:
       Format: api-key=key,other=value.
   OTEL_EXPORTER_OTLP_LOGS_HEADERS:
   - implementation: B
+    scope: managed
     type: map
     default: null
     product: OpenTelemetry
@@ -2518,6 +3643,7 @@ supportedConfigurations:
       Format: api-key=key,other=value.
   OTEL_EXPORTER_OTLP_METRICS_PROTOCOL:
   - implementation: C
+    scope: managed
     type: string
     default: grpc
     product: OpenTelemetry
@@ -2530,6 +3656,7 @@ supportedConfigurations:
       Valid values: grpc, http/protobuf, http/json, defaults to http/protobuf.
   OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE:
   - implementation: A
+    scope: managed
     type: string
     default: delta
     product: OpenTelemetry
@@ -2541,6 +3668,7 @@ supportedConfigurations:
       This deviates from OpenTelemetry specification default of cumulative.
   OTEL_EXPORTER_OTLP_METRICS_TIMEOUT:
   - implementation: C
+    scope: managed
     type: int
     default: '10000'
     product: OpenTelemetry
@@ -2553,6 +3681,7 @@ supportedConfigurations:
       Default value is 10000ms.
   OTEL_EXPORTER_OTLP_PROTOCOL:
   - implementation: C
+    scope: managed
     type: string
     default: grpc
     product: OpenTelemetry
@@ -2563,6 +3692,7 @@ supportedConfigurations:
       Valid values: grpc, http/protobuf, http/json, defaults to http/protobuf.
   OTEL_EXPORTER_OTLP_TIMEOUT:
   - implementation: A
+    scope: managed
     type: int
     default: '10000'
     product: OpenTelemetry
@@ -2573,6 +3703,7 @@ supportedConfigurations:
       Default value is 10000ms.
   OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:
   - implementation: B
+    scope: managed
     type: string
     default: null
     product: OpenTelemetry
@@ -2585,6 +3716,7 @@ supportedConfigurations:
       Default values: gRPC: http://localhost:4317, HTTP: http://localhost:4318/v1/traces
   OTEL_EXPORTER_OTLP_TRACES_HEADERS:
   - implementation: B
+    scope: managed
     type: map
     default: null
     product: OpenTelemetry
@@ -2597,6 +3729,7 @@ supportedConfigurations:
       Format: api-key=key,other=value.
   OTEL_EXPORTER_OTLP_TRACES_PROTOCOL:
   - implementation: B
+    scope: managed
     type: string
     default: http/json
     product: OpenTelemetry
@@ -2606,9 +3739,10 @@ supportedConfigurations:
     documentation: |-
       Configuration key to set the OTLP protocol for traces export.
       Takes precedence over <see cref="ExporterOtlpProtocol"/>.
-      Valid values: http/json. Default: http/json
+      Valid values: http/json, http/protobuf. Default: http/json
   OTEL_EXPORTER_OTLP_TRACES_TIMEOUT:
   - implementation: B
+    scope: managed
     type: int
     default: '10000'
     product: OpenTelemetry
@@ -2621,6 +3755,7 @@ supportedConfigurations:
       Default value is 10000ms.
   OTEL_LOG_LEVEL:
   - implementation: C
+    scope: managed
     type: string
     default: null
     product: OpenTelemetry
@@ -2628,6 +3763,7 @@ supportedConfigurations:
     documentation: Configuration key to set the log level.
   OTEL_METRIC_EXPORT_INTERVAL:
   - implementation: A
+    scope: managed
     type: int
     default: '10000'
     product: OpenTelemetry
@@ -2639,6 +3775,7 @@ supportedConfigurations:
       This deviates from OpenTelemetry specification default of 60000ms (60s).
   OTEL_METRIC_EXPORT_TIMEOUT:
   - implementation: A
+    scope: managed
     type: int
     default: '7500'
     product: OpenTelemetry
@@ -2650,6 +3787,7 @@ supportedConfigurations:
       This deviates from OpenTelemetry specification default of 30000ms (30s).
   OTEL_METRICS_EXPORTER:
   - implementation: A
+    scope: managed
     type: string
     default: otlp
     product: OpenTelemetry
@@ -2662,6 +3800,7 @@ supportedConfigurations:
       to false.
   OTEL_PROPAGATORS:
   - implementation: A
+    scope: managed
     type: array
     default: ''
     product: OpenTelemetry
@@ -2673,6 +3812,7 @@ supportedConfigurations:
       'b3 single header' Datadog propagator.
   OTEL_RESOURCE_ATTRIBUTES:
   - implementation: A
+    scope: managed
     type: map
     default: ''
     product: OpenTelemetry
@@ -2682,6 +3822,7 @@ supportedConfigurations:
       resource attributes. We currently map these to span tags.
   OTEL_SDK_DISABLED:
   - implementation: B
+    scope: managed
     type: boolean
     default: null
     product: OpenTelemetry
@@ -2689,6 +3830,7 @@ supportedConfigurations:
     documentation: Configuration key for disabling the OpenTelemetry API's.
   OTEL_SERVICE_NAME:
   - implementation: B
+    scope: managed
     type: string
     default: null
     product: OpenTelemetry
@@ -2696,6 +3838,7 @@ supportedConfigurations:
     documentation: Configuration key to set the application's default service name.
   OTEL_TRACES_EXPORTER:
   - implementation: G
+    scope: managed
     type: string
     default: null
     product: OpenTelemetry
@@ -2708,6 +3851,7 @@ supportedConfigurations:
       <see cref="ConfigurationKeys.TraceEnabled"/> to false.
   OTEL_TRACES_SAMPLER:
   - implementation: C
+    scope: managed
     type: string
     default: null
     product: OpenTelemetry
@@ -2717,6 +3861,7 @@ supportedConfigurations:
       to false.
   OTEL_TRACES_SAMPLER_ARG:
   - implementation: D
+    scope: managed
     type: decimal
     default: null
     product: OpenTelemetry
@@ -2727,6 +3872,7 @@ supportedConfigurations:
       to false.
   _DD_EXTENSION_ENDPOINT:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: Aws
@@ -2734,6 +3880,7 @@ supportedConfigurations:
       The _DD_EXTENSION_ENDPOINT isn't a standard, globally recognized AWS environment variable or service, but likely refers to a custom or specific endpoint for a DataDog (DD) integration/extension within AWS, often used in Lambda functions or containerized apps via ECS/Fargate to send metrics/logs to Datadog's services (Agent/API), especially when using Datadog's AWS integrations or extensions for seamless observability
   _DD_EXTENSION_PATH:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: Aws
@@ -2742,6 +3889,7 @@ supportedConfigurations:
       String constants for configuring the dotnet tracer with aws platform
   _DD_INTERNAL_IS_RUNNING_IN_CIVISIBILITY:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: CIVisibility
@@ -2749,6 +3897,7 @@ supportedConfigurations:
     documentation: An internal key used to "tell" tracer settings that we're running in CI Visibility mode
   _DD_INTERNAL_TOPT_RUNID:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: CIVisibility
@@ -2756,6 +3905,7 @@ supportedConfigurations:
     documentation: An internal key used to share a runtime ID across all the processes started in a test session
   _DD_TRACE_STATS_COMPUTATION_INTERVAL:
   - implementation: A
+    scope: managed
     type: int
     default: '10'
     const_name: StatsComputationInterval

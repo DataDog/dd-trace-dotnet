@@ -51,6 +51,11 @@ namespace Datadog.Trace.Coverage.Collector
             "Xunit.SkippableFact.dll",
         };
 
+        private static readonly string[] IgnoredAssemblyPrefixes =
+        {
+            "coverlet.",
+        };
+
         private readonly CoverageSettings _settings;
         private readonly ICollectorLogger _logger;
         private readonly string _assemblyFilePath;
@@ -97,21 +102,16 @@ namespace Datadog.Trace.Coverage.Collector
                 _logger.Debug($"Processing: {_assemblyFilePath}");
 
                 // Check if the assembly is in the ignored assemblies list.
-                var assemblyFullName = Path.GetFileName(_assemblyFilePath);
-                if (Array.Exists(IgnoredAssemblies, i => assemblyFullName == i))
+                var assemblyFileName = Path.GetFileName(_assemblyFilePath);
+                if (IsIgnoredAssembly(assemblyFileName))
                 {
+                    _logger.Debug($"Assembly: {FilePath}, ignored by assembly name.");
                     return;
                 }
 
-                // Open the assembly
-                var customResolver = new CustomResolver(_logger, _assemblyFilePath);
-                customResolver.AddSearchDirectory(Path.GetDirectoryName(_assemblyFilePath));
-                using var assemblyDefinition = AssemblyDefinition.ReadAssembly(_assemblyFilePath, new ReaderParameters
-                {
-                    ReadSymbols = true,
-                    ReadWrite = true,
-                    AssemblyResolver = customResolver,
-                });
+                using var assemblyResolver = new CoverageAssemblyResolver(_logger, _assemblyFilePath);
+                assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(_assemblyFilePath));
+                using var assemblyDefinition = ReadTargetAssembly(_assemblyFilePath, assemblyResolver);
 
                 var hasInternalsVisibleAttribute = false;
                 foreach (var cAttr in assemblyDefinition.CustomAttributes)
@@ -176,6 +176,18 @@ namespace Datadog.Trace.Coverage.Collector
                         _logger.Debug($"{snkFilePath} exists.");
                         _strongNameKeyBlob = File.ReadAllBytes(snkFilePath);
                         _logger.Debug($"{snkFilePath} loaded.");
+
+                        if (!TryGetStrongNamePublicKey(_strongNameKeyBlob, out _))
+                        {
+                            _logger.Warning($"Assembly: {FilePath}, the .snk file configured in {Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} could not be read. Skipping coverage instrumentation to avoid changing the assembly identity.");
+                            return;
+                        }
+
+                        if (!StrongNameKeyMatchesAssemblyPublicKey(assemblyDefinition.Name, _strongNameKeyBlob))
+                        {
+                            _logger.Warning($"Assembly: {FilePath}, is signed with a different strong-name key than the .snk file configured in {Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile}. Skipping coverage instrumentation to avoid changing the assembly identity.");
+                            return;
+                        }
                     }
                     else if (tracerTarget == TracerTarget.Net461)
                     {
@@ -191,7 +203,10 @@ namespace Datadog.Trace.Coverage.Collector
 
                 // We open the exact datadog assembly to be copied to the target, this is because the AssemblyReference lists
                 // differs depends on the target runtime. (netstandard, .NET 5.0 or .NET 4.6.2)
-                using var datadogTracerAssembly = AssemblyDefinition.ReadAssembly(GetDatadogTracer(tracerTarget));
+                using var datadogTracerAssembly = AssemblyDefinition.ReadAssembly(GetDatadogTracer(tracerTarget), new ReaderParameters
+                {
+                    InMemory = true
+                });
 
                 var isDirty = false;
                 var fileMetadataIndex = 0;
@@ -727,13 +742,9 @@ namespace Datadog.Trace.Coverage.Collector
 
                     // Create backup for dll and pdb and copy the Datadog.Trace assembly
                     var tracerAssemblyLocation = CopyRequiredAssemblies(assemblyDefinition, tracerTarget);
-                    customResolver.SetTracerAssemblyLocation(tracerAssemblyLocation);
+                    assemblyResolver.SetTracerAssemblyLocation(tracerAssemblyLocation);
 
-                    assemblyDefinition.Write(new WriterParameters
-                    {
-                        WriteSymbols = true,
-                        StrongNameKeyBlob = _strongNameKeyBlob
-                    });
+                    WriteTargetAssembly(assemblyDefinition, _assemblyFilePath, _strongNameKeyBlob);
                 }
 
                 _logger.Debug($"Done: {_assemblyFilePath} [Modified:{isDirty}]");
@@ -746,6 +757,202 @@ namespace Datadog.Trace.Coverage.Collector
             {
                 Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
             }
+        }
+
+        /// <summary>
+        /// Reads the target assembly into memory while holding only the target-path read lock.
+        /// </summary>
+        /// <param name="assemblyFilePath">The assembly path to read.</param>
+        /// <param name="assemblyResolver">The resolver used for Cecil metadata resolution.</param>
+        /// <returns>The in-memory assembly definition to rewrite.</returns>
+        internal static AssemblyDefinition ReadTargetAssembly(string assemblyFilePath, IAssemblyResolver assemblyResolver)
+        {
+            using var assemblyLock = CoverageAssemblyPathLock.EnterRead(assemblyFilePath);
+            return AssemblyDefinition.ReadAssembly(assemblyFilePath, new ReaderParameters
+            {
+                ReadSymbols = true,
+                InMemory = true,
+                AssemblyResolver = assemblyResolver,
+            });
+        }
+
+        /// <summary>
+        /// Writes the rewritten target assembly while holding the target-path write lock.
+        /// </summary>
+        /// <param name="assemblyDefinition">The rewritten assembly definition.</param>
+        /// <param name="assemblyFilePath">The assembly path to overwrite.</param>
+        /// <param name="strongNameKeyBlob">The optional strong-name key used when rewriting signed assemblies.</param>
+        internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob)
+        {
+            using var assemblyLock = CoverageAssemblyPathLock.EnterWrite(assemblyFilePath);
+            assemblyDefinition.Write(assemblyFilePath, new WriterParameters
+            {
+                WriteSymbols = true,
+                StrongNameKeyBlob = strongNameKeyBlob
+            });
+        }
+
+        internal static bool IsIgnoredAssembly(string? assemblyFileName)
+        {
+            if (assemblyFileName is not { Length: > 0 } fileName)
+            {
+                return false;
+            }
+
+            return Array.Exists(IgnoredAssemblies, ignoredAssembly => string.Equals(fileName, ignoredAssembly, StringComparison.OrdinalIgnoreCase)) ||
+                   Array.Exists(IgnoredAssemblyPrefixes, ignoredPrefix => fileName.StartsWith(ignoredPrefix, StringComparison.OrdinalIgnoreCase));
+        }
+
+        internal static bool IsIgnoredAssemblyDependencyManifest(string? depsJsonFileName)
+        {
+            const string depsJsonSuffix = ".deps.json";
+            if (depsJsonFileName is not { Length: > 0 } fileName ||
+                !fileName.EndsWith(depsJsonSuffix, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var assemblyFileName = fileName.Substring(0, fileName.Length - depsJsonSuffix.Length) + ".dll";
+            return IsIgnoredAssembly(assemblyFileName);
+        }
+
+        // Cecil derives the assembly identity from the strong-name public key blob before signing.
+        // Mirror that conversion so mismatched configured SNK files are detected before rewriting.
+        internal static bool StrongNameKeyMatchesAssemblyPublicKey(AssemblyNameDefinition assemblyName, byte[] strongNameKeyBlob)
+        {
+            return TryGetStrongNamePublicKey(strongNameKeyBlob, out var publicKey) &&
+                   assemblyName.PublicKey is { Length: > 0 } assemblyPublicKey &&
+                   assemblyPublicKey.SequenceEqual(publicKey);
+        }
+
+        internal static bool TryGetStrongNamePublicKey(byte[]? strongNameKeyBlob, out byte[] publicKey)
+        {
+            publicKey = Array.Empty<byte>();
+
+            if (strongNameKeyBlob is not { Length: > 20 })
+            {
+                return false;
+            }
+
+            if (IsStrongNamePublicKeyBlob(strongNameKeyBlob))
+            {
+                publicKey = strongNameKeyBlob;
+                return true;
+            }
+
+            byte[] capiPublicKeyBlob;
+            if (IsCapiPublicKeyBlob(strongNameKeyBlob))
+            {
+                capiPublicKeyBlob = strongNameKeyBlob;
+            }
+            else if (!TryGetCapiPublicKeyBlobFromPrivateKey(strongNameKeyBlob, out capiPublicKeyBlob))
+            {
+                return false;
+            }
+
+            publicKey = CreateStrongNamePublicKey(capiPublicKeyBlob);
+            return true;
+        }
+
+        private static bool IsStrongNamePublicKeyBlob(byte[] blob)
+        {
+            return blob.Length > 12 &&
+                   blob[0] == 0x00 &&
+                   blob[12] == 0x06 &&
+                   IsCapiPublicKeyBlob(blob, 12);
+        }
+
+        private static bool IsCapiPublicKeyBlob(byte[] blob, int offset = 0)
+        {
+            if (blob.Length < offset + 20 ||
+                blob[offset] != 0x06 ||
+                blob[offset + 1] != 0x02 ||
+                blob[offset + 2] != 0x00 ||
+                blob[offset + 3] != 0x00 ||
+                ReadUInt32LittleEndian(blob, offset + 8) != 0x31415352)
+            {
+                return false;
+            }
+
+            var bitLength = ReadInt32LittleEndian(blob, offset + 12);
+            if (bitLength <= 0 || bitLength % 8 != 0)
+            {
+                return false;
+            }
+
+            var keyLength = bitLength / 8;
+            return blob.Length >= offset + 20 + keyLength;
+        }
+
+        private static bool TryGetCapiPublicKeyBlobFromPrivateKey(byte[] privateKeyBlob, out byte[] publicKeyBlob)
+        {
+            publicKeyBlob = Array.Empty<byte>();
+
+            if (privateKeyBlob.Length < 20 ||
+                privateKeyBlob[0] != 0x07 ||
+                privateKeyBlob[1] != 0x02 ||
+                privateKeyBlob[2] != 0x00 ||
+                privateKeyBlob[3] != 0x00 ||
+                ReadUInt32LittleEndian(privateKeyBlob, 8) != 0x32415352)
+            {
+                return false;
+            }
+
+            var bitLength = ReadInt32LittleEndian(privateKeyBlob, 12);
+            if (bitLength <= 0 || bitLength % 8 != 0)
+            {
+                return false;
+            }
+
+            var keyLength = bitLength / 8;
+            if (privateKeyBlob.Length < 20 + keyLength)
+            {
+                return false;
+            }
+
+            publicKeyBlob = new byte[20 + keyLength];
+            publicKeyBlob[0] = 0x06;
+            publicKeyBlob[1] = 0x02;
+            publicKeyBlob[5] = 0x24;
+            publicKeyBlob[8] = 0x52;
+            publicKeyBlob[9] = 0x53;
+            publicKeyBlob[10] = 0x41;
+            publicKeyBlob[11] = 0x31;
+            Buffer.BlockCopy(privateKeyBlob, 12, publicKeyBlob, 12, 8);
+            Buffer.BlockCopy(privateKeyBlob, 20, publicKeyBlob, 20, keyLength);
+            return true;
+        }
+
+        private static byte[] CreateStrongNamePublicKey(byte[] capiPublicKeyBlob)
+        {
+            var publicKey = new byte[12 + capiPublicKeyBlob.Length];
+            Buffer.BlockCopy(capiPublicKeyBlob, 0, publicKey, 12, capiPublicKeyBlob.Length);
+            publicKey[1] = 0x24;
+            publicKey[4] = 0x04;
+            publicKey[5] = 0x80;
+            WriteInt32LittleEndian(publicKey, 8, capiPublicKeyBlob.Length);
+            return publicKey;
+        }
+
+        private static int ReadInt32LittleEndian(byte[] buffer, int offset)
+        {
+            return (int)ReadUInt32LittleEndian(buffer, offset);
+        }
+
+        private static uint ReadUInt32LittleEndian(byte[] buffer, int offset)
+        {
+            return buffer[offset] |
+                   ((uint)buffer[offset + 1] << 8) |
+                   ((uint)buffer[offset + 2] << 16) |
+                   ((uint)buffer[offset + 3] << 24);
+        }
+
+        private static void WriteInt32LittleEndian(byte[] buffer, int offset, int value)
+        {
+            buffer[offset] = (byte)value;
+            buffer[offset + 1] = (byte)(value >> 8);
+            buffer[offset + 2] = (byte)(value >> 16);
+            buffer[offset + 3] = (byte)(value >> 24);
         }
 
         private static void RemoveShortOpCodes(Instruction instruction)
@@ -947,126 +1154,6 @@ namespace Datadog.Trace.Coverage.Collector
 
             _logger.Debug("GetTracerTarget: Returning TracerTarget.Net461");
             return TracerTarget.Net461;
-        }
-
-        private class CustomResolver : BaseAssemblyResolver
-        {
-            private readonly ICollectorLogger _logger;
-            private DefaultAssemblyResolver _defaultResolver;
-            private string _tracerAssemblyLocation;
-            private string _assemblyFilePath;
-
-            public CustomResolver(ICollectorLogger logger, string assemblyFilePath)
-            {
-                _tracerAssemblyLocation = string.Empty;
-                _logger = logger;
-                _assemblyFilePath = assemblyFilePath;
-                _defaultResolver = new DefaultAssemblyResolver();
-            }
-
-            public override AssemblyDefinition? Resolve(AssemblyNameReference name)
-            {
-                AssemblyDefinition? assembly = null;
-                try
-                {
-                    assembly = _defaultResolver.Resolve(name);
-                }
-                catch (AssemblyResolutionException arEx)
-                {
-                    var tracerAssemblyName = TracerAssembly.GetName();
-                    if (name.Name == tracerAssemblyName.Name && name.Version == tracerAssemblyName.Version)
-                    {
-                        var cAssemblyLocation = !string.IsNullOrEmpty(_tracerAssemblyLocation) ? _tracerAssemblyLocation : TracerAssembly.Location;
-                        try
-                        {
-                            assembly = AssemblyDefinition.ReadAssembly(cAssemblyLocation);
-                        }
-                        catch (Exception innerAssemblyException)
-                        {
-                            _logger.Error(innerAssemblyException, $"Error reading the tracer assembly: {cAssemblyLocation}");
-                            throw;
-                        }
-                    }
-                    else
-                    {
-                        var folder = Path.GetDirectoryName(_assemblyFilePath);
-                        var pathTest = Path.Combine(folder ?? string.Empty, name.Name + ".dll");
-                        _logger.Debug($"Looking for: {pathTest}");
-                        if (File.Exists(pathTest))
-                        {
-                            try
-                            {
-                                return AssemblyDefinition.ReadAssembly(pathTest);
-                            }
-                            catch (Exception innerAssemblyException)
-                            {
-                                _logger.Error(innerAssemblyException, $"Error reading the assembly: {pathTest}");
-                                throw;
-                            }
-                        }
-
-                        if (name.Name == "mscorlib")
-                        {
-                            var path = GetMscorlibBasePath(name.Version);
-                            var file = Path.Combine(path, "mscorlib.dll");
-                            if (File.Exists(file))
-                            {
-                                return AssemblyDefinition.ReadAssembly(file);
-                            }
-                        }
-
-                        _logger.Error(arEx, $"Error in the Custom Resolver processing '{_assemblyFilePath}' for: {name.FullName}");
-                        throw;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.Error(ex, $"Error in the custom resolver when trying to resolve assembly: {name.FullName}");
-                }
-
-                return assembly;
-            }
-
-            public void SetTracerAssemblyLocation(string assemblyLocation)
-            {
-                _tracerAssemblyLocation = assemblyLocation;
-            }
-
-            private string GetMscorlibBasePath(Version version)
-            {
-                string? GetSubFolderForVersion()
-                    => version.Major switch
-                    {
-                        1 when version.MajorRevision == 3300 => "v1.0.3705",
-                        1 => "v1.1.4322",
-                        2 => "v2.0.50727",
-                        4 => "v4.0.30319",
-                        _ => throw new NotSupportedException("Version not supported: " + version),
-                    };
-
-                var rootPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Microsoft.NET");
-                string[] frameworkPaths =
-                [
-                    Path.Combine(rootPath, "Framework"),
-                    Path.Combine(rootPath, "Framework64")
-                ];
-
-                var folder = GetSubFolderForVersion();
-
-                if (folder != null)
-                {
-                    foreach (var path in frameworkPaths)
-                    {
-                        var basePath = Path.Combine(path, folder);
-                        if (Directory.Exists(basePath))
-                        {
-                            return basePath;
-                        }
-                    }
-                }
-
-                throw new NotSupportedException("Version not supported: " + version);
-            }
         }
 
 #pragma warning disable SA1201

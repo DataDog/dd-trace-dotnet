@@ -40,12 +40,11 @@ jobs:
   create_draft_release:
     runs-on: ubuntu-latest
     environment: publish-debug-symbols-env
-    # These permissions need to map to the ones demanded in create_normal_draft_release.yml and create_hotfix_draft_release.yml
+    # All GitHub API access goes through the dd-octo-sts token; see
+    # .github/chainguard/self.github.create-draft-release.sts.yaml
     permissions:
-      contents: write # create release
-      actions: read # read secrets
-      issues: write # change milestones 
-      id-token: write  # enable GitHub OIDC token issuance for this job
+      contents: read # actions/checkout uses the workflow token to clone
+      id-token: write # required for dd-octo-sts OIDC and NuGet trusted publishing
     env:
       # Have to use external token with explicit workflow permissions because we are creating
       # a release from an arbitrary SHA. For "reasons", the built-in token does not _always_
@@ -70,7 +69,7 @@ jobs:
           echo "Using sha $commitsha"
           echo "sha=${commitsha}" >> $GITHUB_OUTPUT
 
-      - uses: actions/setup-dotnet@baa11fbfe1d6520db94683bd5c7a3818018e4309 # v5.1.0
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
         with:
           global-json-file: global.json
 
@@ -81,7 +80,7 @@ jobs:
 
       # Use the ambient GitHub token to login to NuGet and retrieve an API key
       - name: NuGet login (OIDC → temp API key)
-        uses: NuGet/login@d22cc5f58ff5b88bf9bd452535b4335137e24544 # v1.0.0
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         id: nuget_login
         with:
           # Secret is your NuGet username (not email), e.g. andrewlock
@@ -112,7 +111,7 @@ jobs:
 
       - name: Get GitHub Token via dd-octo-sts
         id: generate-token
-        uses: DataDog/dd-octo-sts-action@acaa02eee7e3bb0839e4272dacb37b8f3b58ba80 # v1.0.3
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
         with:
           scope: DataDog/dd-trace-dotnet
           policy: self.github.create-draft-release
@@ -152,7 +151,7 @@ jobs:
           GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
 
       - name: Create Release
-        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           token: "${{ steps.generate-token.outputs.token }}"
           draft: true

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -15,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected TracingIntegrationTest(string sampleAppName, ITestOutputHelper output)
             : base(sampleAppName, output)
         {
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         protected TracingIntegrationTest(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)

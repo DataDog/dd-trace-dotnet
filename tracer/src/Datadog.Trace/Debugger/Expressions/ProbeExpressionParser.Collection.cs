@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Type = System.Type;
@@ -17,53 +18,97 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {
-    private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters)
+    private Dictionary<Expression, RedactedDictionaryValueExpression> _redactedDictionaryValues;
+    private bool _isBoundedFilterCapture;
+    private int _deferredFilterSourceArrayStack = -1;
+    private int _boundedFilterMaxCollectionSize;
+
+    private static bool ShouldRedactDictionaryKey(object key)
     {
-        var any = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.Any) && m.GetParameters().Length == 2);
-        return Predicate(reader, parameters, any);
+        var type = key?.GetType() ?? typeof(object);
+        var name = key switch
+        {
+            string stringKey => stringKey,
+            null => null,
+            _ when Redaction.IsSafeToCallToString(type) => key.ToString(),
+            _ => null
+        };
+
+        return Redaction.Instance.ShouldRedact(name, type, out _);
     }
 
-    private Expression HasAll(JsonTextReader reader, List<ParameterExpression> parameters)
+    private static Expression RedactedDictionaryOperationDefault(Type type)
+    {
+        if (type == typeof(bool))
+        {
+            return Expression.Constant(false);
+        }
+
+        return type == typeof(string)
+                   ? Expression.Constant("{REDACTED}")
+                   : Expression.Default(type);
+    }
+
+    private static bool IsDictionaryEntryType(Type type)
+    {
+        return type == typeof(DictionaryEntry) ||
+               (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>));
+    }
+
+    private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
+    {
+        var any = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.Any) && m.GetParameters().Length == 2);
+        return Predicate(reader, parameters, any, itParameter);
+    }
+
+    private Expression HasAll(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var all = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.All) && m.GetParameters().Length == 2);
-        return Predicate(reader, parameters, all);
+        return Predicate(reader, parameters, all, itParameter);
     }
 
     private Expression Filter(JsonTextReader reader, List<ParameterExpression> parameters)
     {
-        var where = typeof(Enumerable).GetMethods().Single(m => m.Name == nameof(Enumerable.Where) && m.GetParameters().Length == 2 && m.GetParameters()[1].ParameterType.GenericTypeArguments.Length == 2);
-        return Predicate(reader, parameters, where);
+        var shouldDefer = _deferredFilterSourceArrayStack == _arrayStack;
+        var filterExpression = ParseFilter(reader, parameters, shouldDefer);
+        if (filterExpression is not FilterExpression parsedFilterExpression)
+        {
+            return filterExpression;
+        }
+
+        if (shouldDefer)
+        {
+            return parsedFilterExpression;
+        }
+
+        return _isBoundedFilterCapture
+                   ? BoundedFilterExpression(parsedFilterExpression, _boundedFilterMaxCollectionSize)
+                   : MaterializeFilterExpression(parsedFilterExpression);
     }
 
-    private Expression Predicate(JsonTextReader reader, List<ParameterExpression> parameters, MethodInfo predicateMethod)
+    private Expression Predicate(JsonTextReader reader, List<ParameterExpression> parameters, MethodInfo predicateMethod, ParameterExpression outerItParameter)
     {
         Expression source = null;
         MethodCallExpression callExpression = null;
         try
         {
-            source = ParseTree(reader, parameters, null);
+            source = ParseTree(reader, parameters, outerItParameter);
+            if (source is GotoExpression)
+            {
+                return source;
+            }
+
             if (source.Type == ProbeExpressionParserHelper.UndefinedValueType)
             {
-                ReturnDefaultValueExpression();
+                return ReturnDefaultValueExpression();
             }
 
-            if (!IsSafeCollection(source.Type))
+            if (!IsSafeCollection(source.Type) && !IsSafeNonGenericDictionary(source.Type))
             {
-                throw new InvalidOperationException("Source must be an array or implement ICollection or IReadOnlyCollection");
+                throw new InvalidOperationException("Source must be an array or implement ICollection, IReadOnlyCollection, or IDictionary");
             }
 
-            Type itParameterType = null;
-            if (source.Type.IsArray)
-            {
-                itParameterType = source.Type.GetElementType();
-            }
-            else
-            {
-                if (source.Type.GetGenericArguments().Length > 0)
-                {
-                    itParameterType = source.Type.GetGenericArguments()[0];
-                }
-            }
+            var itParameterType = GetIteratorParameterType(source.Type);
 
             if (predicateMethod == null)
             {
@@ -71,10 +116,10 @@ internal partial class ProbeExpressionParser<T>
             }
 
             ParameterExpression itParameter = Expression.Parameter(itParameterType);
-            var predicate = ParseTree(reader, new List<ParameterExpression> { Expression.Parameter(source.Type) }, itParameter);
+            var predicate = ParseTree(reader, parameters, itParameter);
             var lambda = Expression.Lambda(predicate, itParameter);
             var genericPredicateMethod = predicateMethod.MakeGenericMethod(itParameterType);
-            callExpression = Expression.Call(null, genericPredicateMethod, source, lambda);
+            callExpression = Expression.Call(null, genericPredicateMethod, PredicateSource(source, itParameterType), lambda);
             if (IsIEnumerable(callExpression.Type))
             {
                 var toListMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.ToList), null);
@@ -89,6 +134,143 @@ internal partial class ProbeExpressionParser<T>
             AddError($"{source?.ToString() ?? "N/A"}[{callExpression?.ToString() ?? "N/A"}]", e.Message);
             return ReturnDefaultValueExpression();
         }
+    }
+
+    private Expression ParseFilter(JsonTextReader reader, List<ParameterExpression> parameters, bool isDeferredFilterSource = false)
+    {
+        Expression source = null;
+        try
+        {
+            var previousIsBoundedFilterCapture = _isBoundedFilterCapture;
+            var previousDeferredFilterSourceArrayStack = _deferredFilterSourceArrayStack;
+            _isBoundedFilterCapture = false;
+            _deferredFilterSourceArrayStack = previousIsBoundedFilterCapture || isDeferredFilterSource
+                                                  ? _arrayStack + 1
+                                                  : -1;
+            try
+            {
+                source = ParseTree(reader, parameters, null);
+            }
+            finally
+            {
+                _isBoundedFilterCapture = previousIsBoundedFilterCapture;
+                _deferredFilterSourceArrayStack = previousDeferredFilterSourceArrayStack;
+            }
+
+            if (source is GotoExpression)
+            {
+                return source;
+            }
+
+            if (source.Type == ProbeExpressionParserHelper.UndefinedValueType)
+            {
+                return ReturnDefaultValueExpression();
+            }
+
+            if (source is not FilterExpression && !IsSafeCollection(source.Type) && !IsSafeNonGenericDictionary(source.Type))
+            {
+                throw new InvalidOperationException("Source must be an array or implement ICollection, IReadOnlyCollection, or IDictionary");
+            }
+
+            var itParameterType = source is FilterExpression sourceFilterExpression
+                                      ? sourceFilterExpression.IteratorType
+                                      : GetIteratorParameterType(source.Type);
+            ParameterExpression itParameter = Expression.Parameter(itParameterType);
+            previousIsBoundedFilterCapture = _isBoundedFilterCapture;
+            previousDeferredFilterSourceArrayStack = _deferredFilterSourceArrayStack;
+            _isBoundedFilterCapture = false;
+            _deferredFilterSourceArrayStack = -1;
+            Expression predicate;
+            try
+            {
+                predicate = ParseTree(reader, parameters, itParameter);
+            }
+            finally
+            {
+                _isBoundedFilterCapture = previousIsBoundedFilterCapture;
+                _deferredFilterSourceArrayStack = previousDeferredFilterSourceArrayStack;
+            }
+
+            var lambda = Expression.Lambda(predicate, itParameter);
+            var isDictionary = source is FilterExpression filterSource
+                                   ? filterSource.IsDictionary
+                                   : IsSafeNonGenericDictionary(source.Type) || IsSupportedGenericDictionary(source.Type);
+            return new FilterExpression(source, lambda, itParameterType, isDictionary);
+        }
+        catch (Exception e)
+        {
+            AddError($"{source?.ToString() ?? "N/A"}[filter]", e.Message);
+            return ReturnDefaultValueExpression();
+        }
+    }
+
+    private MethodCallExpression MaterializeFilterExpression(FilterExpression filterExpression)
+    {
+        var genericWhere = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.Where), [typeof(IEnumerable<>), typeof(Func<,>)], [filterExpression.IteratorType]);
+        var source = filterExpression.Source is FilterExpression sourceFilterExpression
+                         ? MaterializeFilterExpression(sourceFilterExpression)
+                         : filterExpression.Source;
+        var whereCall = Expression.Call(null, genericWhere, PredicateSource(source, filterExpression.IteratorType), filterExpression.Predicate);
+        var toListMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.ToList), null);
+        var genericToListMethod = toListMethod.MakeGenericMethod(filterExpression.IteratorType);
+        return Expression.Call(null, genericToListMethod, whereCall);
+    }
+
+    private MethodCallExpression BoundedFilterExpression(FilterExpression filterExpression, int maxCollectionSize)
+    {
+        var helperMethod = ProbeExpressionParserHelper.GetMethodByReflection(
+            typeof(FilterEvaluationHelpers),
+            nameof(FilterEvaluationHelpers.FilterForCapture),
+            [typeof(IEnumerable<>), typeof(Func<,>), typeof(int), typeof(bool)],
+            [filterExpression.IteratorType]);
+        var source = FlattenFilterChain(filterExpression, out var predicate);
+
+        return Expression.Call(
+            null,
+            helperMethod,
+            PredicateSource(source, filterExpression.IteratorType),
+            PredicateArgument(predicate, filterExpression.IteratorType),
+            Expression.Constant(maxCollectionSize),
+            Expression.Constant(filterExpression.IsDictionary));
+    }
+
+    private Expression FlattenFilterChain(FilterExpression filterExpression, out LambdaExpression predicate)
+    {
+        var source = filterExpression.Source;
+        predicate = filterExpression.Predicate;
+        while (source is FilterExpression sourceFilterExpression && sourceFilterExpression.IteratorType == filterExpression.IteratorType)
+        {
+            predicate = CombineFilterPredicates(sourceFilterExpression.Predicate, predicate);
+            source = sourceFilterExpression.Source;
+        }
+
+        return source;
+    }
+
+    private LambdaExpression CombineFilterPredicates(LambdaExpression firstPredicate, LambdaExpression secondPredicate)
+    {
+        var parameter = firstPredicate.Parameters[0];
+        var secondPredicateBody = new ParameterReplacingVisitor(secondPredicate.Parameters[0], parameter).Visit(secondPredicate.Body);
+        return Expression.Lambda(Expression.AndAlso(firstPredicate.Body, secondPredicateBody), parameter);
+    }
+
+    private Expression PredicateArgument(LambdaExpression predicate, Type iteratorType)
+    {
+        return ReferencesOuterParameter(predicate)
+                   ? predicate
+                   : CompiledPredicateConstant(predicate, iteratorType);
+    }
+
+    private bool ReferencesOuterParameter(LambdaExpression predicate)
+    {
+        var visitor = new OuterParameterReferenceVisitor(predicate.Parameters[0]);
+        visitor.Visit(predicate.Body);
+        return visitor.Found;
+    }
+
+    private ConstantExpression CompiledPredicateConstant(LambdaExpression predicate, Type iteratorType)
+    {
+        return Expression.Constant(predicate.Compile(), typeof(Func<,>).MakeGenericType(iteratorType, typeof(bool)));
     }
 
     private Expression GetItemAtIndex(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -169,12 +351,19 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var getItemCall = Expression.Call(source, getItemMethod, indexOrKey);
+        Expression result;
         if (getItemCall.Type == convertToType)
         {
-            return getItemCall;
+            result = getItemCall;
+        }
+        else
+        {
+            result = Expression.Convert(getItemCall, convertToType);
         }
 
-        return Expression.Convert(getItemCall, convertToType);
+        return IsDictionaryEntryType(result.Type)
+                   ? TrackRedactedDictionaryEntry(result)
+                   : result;
     }
 
     private Expression Length(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -188,7 +377,7 @@ internal partial class ProbeExpressionParser<T>
                 return ReturnDefaultValueExpression();
             }
 
-            return CollectionAndStringLengthExpression(source);
+            return RedactDictionaryOperation(source, CollectionAndStringLengthExpression(source));
         }
         catch (Exception e)
         {
@@ -215,6 +404,217 @@ internal partial class ProbeExpressionParser<T>
         return Expression.Call(source, countOrLength);
     }
 
+    private Type GetIteratorParameterType(Type sourceType)
+    {
+        if (sourceType.IsArray)
+        {
+            return sourceType.GetElementType();
+        }
+
+        var genericDictionaryType = sourceType.IsGenericType && sourceType.GetGenericTypeDefinition() == typeof(IDictionary<,>)
+                                        ? sourceType
+                                        : sourceType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>));
+
+        if (genericDictionaryType != null)
+        {
+            return typeof(KeyValuePair<,>).MakeGenericType(genericDictionaryType.GetGenericArguments());
+        }
+
+        if (typeof(IDictionary).IsAssignableFrom(sourceType))
+        {
+            return typeof(DictionaryEntry);
+        }
+
+        var enumerableType = sourceType.IsGenericType && sourceType.GetGenericTypeDefinition() == typeof(IEnumerable<>)
+                                 ? sourceType
+                                 : sourceType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+
+        if (enumerableType != null)
+        {
+            return enumerableType.GetGenericArguments()[0];
+        }
+
+        throw new InvalidOperationException("Fail to determined the iterator parameter type");
+    }
+
+    private Expression PredicateSource(Expression source, Type itParameterType)
+    {
+        if (itParameterType != typeof(DictionaryEntry) || !IsSafeNonGenericDictionary(source.Type))
+        {
+            return source;
+        }
+
+        var castMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.Cast), [typeof(IEnumerable)], [typeof(DictionaryEntry)]);
+        return Expression.Call(null, castMethod, source);
+    }
+
+    private bool TryGetCollectionIteratorProperty(ParameterExpression itParameter, string propertyName, out Expression propertyExpression)
+    {
+        propertyExpression = null;
+
+        if (itParameter.Type == typeof(DictionaryEntry))
+        {
+            var property = Expression.Property(itParameter, propertyName);
+            propertyExpression = propertyName switch
+            {
+                nameof(KeyValuePair<int, int>.Key) => property,
+                nameof(KeyValuePair<int, int>.Value) when TryRedactDictionaryValueMember(itParameter, out var redactedValue) => redactedValue,
+                _ => property,
+            };
+            return true;
+        }
+
+        if (itParameter.Type.IsGenericType && itParameter.Type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+        {
+            var property = Expression.Property(itParameter, propertyName);
+            propertyExpression = propertyName switch
+            {
+                nameof(KeyValuePair<int, int>.Key) => property,
+                nameof(KeyValuePair<int, int>.Value) when TryRedactDictionaryValueMember(itParameter, out var redactedValue) => redactedValue,
+                _ => property,
+            };
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool TryRedactDictionaryValueMember(Expression dictionaryEntryExpression, out Expression redactedValue)
+    {
+        redactedValue = null;
+
+        if (!IsDictionaryEntryType(dictionaryEntryExpression.Type))
+        {
+            return false;
+        }
+
+        var valueExpression = Expression.Property(dictionaryEntryExpression, nameof(KeyValuePair<int, int>.Value));
+        var keyExpression = Expression.Property(dictionaryEntryExpression, nameof(KeyValuePair<int, int>.Key));
+        redactedValue = TrackRedactedDictionaryValue(valueExpression, keyExpression);
+        return true;
+    }
+
+    private Expression TrackRedactedDictionaryEntry(Expression dictionaryEntryExpression)
+    {
+        var keyExpression = Expression.Property(dictionaryEntryExpression, nameof(KeyValuePair<int, int>.Key));
+        TrackRedactedDictionaryExpression(dictionaryEntryExpression, keyExpression);
+        return dictionaryEntryExpression;
+    }
+
+    private MemberExpression TrackRedactedDictionaryValue(MemberExpression valueExpression, MemberExpression keyExpression)
+    {
+        TrackRedactedDictionaryExpression(valueExpression, keyExpression);
+        return valueExpression;
+    }
+
+    private void TrackRedactedDictionaryExpression(Expression expression, Expression keyExpression)
+    {
+        var shouldRedactKeyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(ShouldRedactDictionaryKey), [typeof(object)]);
+        var shouldRedactCall = Expression.Call(null, shouldRedactKeyMethod, Expression.Convert(keyExpression, typeof(object)));
+        (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())
+           .Add(expression, new RedactedDictionaryValueExpression(shouldRedactCall, expression));
+    }
+
+    private bool TryGetRedactedDictionaryValue(Expression expression, out RedactedDictionaryValueExpression redactedDictionaryValue)
+    {
+        while (expression != null)
+        {
+            if (_redactedDictionaryValues != null && _redactedDictionaryValues.TryGetValue(expression, out redactedDictionaryValue))
+            {
+                return true;
+            }
+
+            if (expression is not UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked } unaryExpression)
+            {
+                break;
+            }
+
+            expression = unaryExpression.Operand;
+        }
+
+        redactedDictionaryValue = default;
+        return false;
+    }
+
+    private MemberExpression RedactedDictionaryValueMember(RedactedDictionaryValueExpression redactedDictionaryValue, string propertyOrFieldValue)
+    {
+        var valueExpression = redactedDictionaryValue.ValueExpression;
+        var memberExpression = Expression.PropertyOrField(valueExpression, propertyOrFieldValue);
+        (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())
+           .Add(memberExpression, new RedactedDictionaryValueExpression(redactedDictionaryValue.ShouldRedactExpression, memberExpression));
+        return memberExpression;
+    }
+
+    private Expression RedactDictionaryBinaryOperation(Expression left, Expression right, Expression comparison)
+    {
+        Expression shouldRedact = null;
+        if (TryGetRedactedDictionaryValue(left, out var leftRedactedDictionaryValue))
+        {
+            shouldRedact = leftRedactedDictionaryValue.ShouldRedactExpression;
+        }
+
+        if (TryGetRedactedDictionaryValue(right, out var rightRedactedDictionaryValue))
+        {
+            shouldRedact = shouldRedact == null
+                               ? rightRedactedDictionaryValue.ShouldRedactExpression
+                               : Expression.OrElse(shouldRedact, rightRedactedDictionaryValue.ShouldRedactExpression);
+        }
+
+        return RedactDictionaryOperationWithGuard(shouldRedact, comparison);
+    }
+
+    private Expression RedactDictionaryOperation(Expression source, Expression operation)
+    {
+        return TryGetRedactedDictionaryValue(source, out var redactedDictionaryValue)
+                   ? RedactDictionaryOperationWithGuard(redactedDictionaryValue.ShouldRedactExpression, operation)
+                   : operation;
+    }
+
+    private Expression RedactDictionaryOperationWithGuard(Expression shouldRedact, Expression operation)
+    {
+        if (shouldRedact == null)
+        {
+            return operation;
+        }
+
+        var redactedOperation = Expression.Condition(shouldRedact, RedactedDictionaryOperationDefault(operation.Type), operation);
+        (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())
+           .Add(redactedOperation, new RedactedDictionaryValueExpression(shouldRedact, redactedOperation));
+        return redactedOperation;
+    }
+
+    private Expression RedactDictionaryValueForReturn(RedactedDictionaryValueExpression redactedDictionaryValue, Expression finalExpr, List<ParameterExpression> scopeMembers)
+    {
+        var redactedValue = RedactedValue();
+        if (typeof(T) == typeof(object))
+        {
+            return Expression.Condition(
+                redactedDictionaryValue.ShouldRedactExpression,
+                Expression.Convert(redactedValue, typeof(object)),
+                Expression.Convert(finalExpr, typeof(object)));
+        }
+
+        if (typeof(T) == typeof(string))
+        {
+            var valueAsString = finalExpr.Type == typeof(string)
+                                    ? finalExpr
+                                    : DumpExpression(finalExpr, scopeMembers);
+            return Expression.Condition(redactedDictionaryValue.ShouldRedactExpression, redactedValue, valueAsString);
+        }
+
+        if (typeof(T) == typeof(bool) && finalExpr.Type == typeof(bool))
+        {
+            return Expression.Condition(redactedDictionaryValue.ShouldRedactExpression, Expression.Constant(false), finalExpr);
+        }
+
+        if (typeof(T).IsNumeric() && TryConvertToNumericType<T>(finalExpr, out var numericResult))
+        {
+            return Expression.Condition(redactedDictionaryValue.ShouldRedactExpression, Expression.Constant(default(T), typeof(T)), numericResult);
+        }
+
+        return finalExpr;
+    }
+
     private bool IsSafeCollection(Type type)
     {
         if (type == null)
@@ -223,6 +623,19 @@ internal partial class ProbeExpressionParser<T>
         }
 
         return type.IsArray || (IsMicrosoftType(type) && IsCollection(type));
+    }
+
+    private bool IsSafeNonGenericDictionary(Type type)
+    {
+        return type != null && IsMicrosoftType(type) && typeof(IDictionary).IsAssignableFrom(type);
+    }
+
+    private bool IsSupportedGenericDictionary(Type type)
+    {
+        return type != null &&
+               IsMicrosoftType(type) &&
+               ((type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IDictionary<,>)) ||
+                type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>)));
     }
 
     private bool IsIEnumerable(Type type)
@@ -277,5 +690,60 @@ internal partial class ProbeExpressionParser<T>
 
         assignableFrom = null;
         return false;
+    }
+
+    private readonly struct RedactedDictionaryValueExpression(Expression shouldRedactExpression, Expression valueExpression)
+    {
+        internal Expression ShouldRedactExpression { get; } = shouldRedactExpression;
+
+        internal Expression ValueExpression { get; } = valueExpression;
+    }
+
+    private sealed class OuterParameterReferenceVisitor : ExpressionVisitor
+    {
+        private readonly List<ParameterExpression> _localParameters;
+
+        internal OuterParameterReferenceVisitor(ParameterExpression iteratorParameter)
+        {
+            _localParameters = [iteratorParameter];
+        }
+
+        internal bool Found { get; private set; }
+
+        protected override Expression VisitBlock(BlockExpression node)
+        {
+            var previousCount = _localParameters.Count;
+            foreach (var variable in node.Variables)
+            {
+                _localParameters.Add(variable);
+            }
+
+            Visit(node.Expressions);
+            _localParameters.RemoveRange(previousCount, _localParameters.Count - previousCount);
+            return node;
+        }
+
+        protected override Expression VisitLambda<TDelegate>(Expression<TDelegate> node)
+        {
+            var previousCount = _localParameters.Count;
+            foreach (var parameter in node.Parameters)
+            {
+                _localParameters.Add(parameter);
+            }
+
+            Visit(node.Body);
+            _localParameters.RemoveRange(previousCount, _localParameters.Count - previousCount);
+            return node;
+        }
+
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            if (!_localParameters.Contains(node))
+            {
+                Found = true;
+            }
+
+            return node;
+        }
     }
 }

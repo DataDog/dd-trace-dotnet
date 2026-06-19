@@ -32,6 +32,7 @@ public class ConfigurationTests
                 "DD_ENTITY_ID", // Datadog.Trace.Vendors.StatsdClient.StatsdConfig.EntityIdEnvVar (we don't use this, it was just vendored in)
                 // CIapp extracts  directly from env var, and no reason to think that will change
                 "DD_CUSTOM_TRACE_ID",
+                "DD_CUSTOM_PARENT_ID",
                 "DD_GIT_BRANCH",
                 "DD_GIT_TAG",
                 "DD_GIT_REPOSITORY_URL",
@@ -51,7 +52,13 @@ public class ConfigurationTests
                 "DD_TESTSESSION_WORKINGDIRECTORY",
                 "DD_CIVISIBILITY_CODE_COVERAGE_MODE",
                 "DD_CIVISIBILITY_AUTO_INSTRUMENTATION_PROVIDER",
+                // Internal CI Visibility coverage backfill variables used to exchange state between testhost and coverage tool processes.
+                "DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_ACTUAL_SKIP",
+                "DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_COMMAND",
+                "DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_PATH",
+                "DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_RUN_FOLDER",
                 // Internal env vars that we only ever read from environment
+                "_DD_ROOT_DOTNET_SESSION_ID",
                 "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH",
                 "DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH",
                 "DD_DOTNET_TRACER_HOME",

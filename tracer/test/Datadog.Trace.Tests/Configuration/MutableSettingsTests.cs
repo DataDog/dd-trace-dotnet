@@ -703,7 +703,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData(false)]
         public void ProcessTagsEnabledIfPropagationEnabled(bool propagateTags)
         {
-            var source = propagateTags ? CreateConfigurationSource((ConfigurationKeys.PropagateProcessTags, "true")) : CreateConfigurationSource();
+            var source = CreateConfigurationSource((ConfigurationKeys.PropagateProcessTags, propagateTags.ToString()));
             var settings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, settings);
 

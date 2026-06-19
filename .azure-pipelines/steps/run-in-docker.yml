@@ -32,6 +32,8 @@ parameters:
     default: 0
 
 steps:
+- template: ensure-docker-ready.yml
+
 - ${{ if eq(parameters.build, true) }}:
   - script: |
       if [ -z "${{ parameters.useNativeSdkVersion }}" ]; then
@@ -59,6 +61,30 @@ steps:
 
     echo "Using SDK version $sdkVersion"
 
+    # Retry wrapper for transient Docker daemon errors (e.g., D-Bus/cgroup flakes).
+    # Exit code 125 = Docker daemon error (container creation failure, not a test/build failure).
+    docker_run_with_retry() {
+      local max_retries=3
+      local retry_delay=10
+      local attempt=1
+      while [ "$attempt" -le "$max_retries" ]; do
+        "$@"
+        local exit_code=$?
+        if [ "$exit_code" -eq 0 ]; then
+          return 0
+        fi
+        echo "##[warning][docker-retry] docker run failed with exit code ${exit_code} on attempt ${attempt}/${max_retries}."
+        if [ "$exit_code" -eq 125 ] && [ "$attempt" -lt "$max_retries" ]; then
+          echo "##[warning][docker-retry] Exit code 125 indicates a Docker daemon error. Retrying in ${retry_delay}s..."
+          sleep "$retry_delay"
+          attempt=$((attempt + 1))
+          continue
+        fi
+        return "$exit_code"
+      done
+    }
+
+    docker_run_with_retry \
     docker run --rm \
         --cap-add=SYS_PTRACE \
         --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \

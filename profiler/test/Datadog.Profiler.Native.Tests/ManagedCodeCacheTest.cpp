@@ -68,8 +68,12 @@ TEST_F(ManagedCodeCacheTest, AddFunction_SingleRange_GetFunctionIdReturnsCorrect
     EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + codeSize - 1).value_or(0));
 
     // IPs outside range should return nullopt
-    EXPECT_FALSE(cache->GetFunctionId(codeStart - 1).has_value());
-    EXPECT_FALSE(cache->GetFunctionId(codeStart + codeSize).has_value());
+    auto beforeStartIp = cache->GetFunctionId(codeStart - 1);
+    EXPECT_TRUE(beforeStartIp.has_value());
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, *beforeStartIp);
+    auto borderIp = cache->GetFunctionId(codeStart + codeSize);
+    EXPECT_TRUE(borderIp.has_value());
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, *borderIp);
 }
 
 // Test: Multiple ranges (tiered JIT simulation)
@@ -113,8 +117,12 @@ TEST_F(ManagedCodeCacheTest, IsManaged_ValidManagedIP_ReturnsTrue) {
 
 // Test: IsManaged for invalid IP
 TEST_F(ManagedCodeCacheTest, IsManaged_InvalidIP_ReturnsFalse) {
-    EXPECT_FALSE(cache->IsManaged(0xDEADBEEF));
-    EXPECT_FALSE(cache->IsManaged(0));
+    auto deadbeef = cache->IsManaged(0xDEADBEEF);
+    EXPECT_TRUE(deadbeef.has_value());
+    EXPECT_FALSE(deadbeef.value());
+    auto zero = cache->IsManaged(0);
+    EXPECT_TRUE(zero.has_value());
+    EXPECT_FALSE(zero.value());
 }
 
 // Test: Multiple functions don't interfere
@@ -136,7 +144,9 @@ TEST_F(ManagedCodeCacheTest, AddFunction_MultipleFunctions_NoInterference) {
     EXPECT_EQ(func2, cache->GetFunctionId(code2Start + 0x50).value_or(0));
 
     // No cross-contamination
-    EXPECT_FALSE(cache->GetFunctionId(code1Start + codeSize + 10).has_value());
+    auto outside = cache->GetFunctionId(code1Start + codeSize + 10);
+    EXPECT_TRUE(outside.has_value());
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, outside.value());
 }
 
 // Test: Thread safety (concurrent AddFunction calls)
@@ -190,8 +200,12 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ConcurrentCalls_ThreadSafe) {
     }
 
     // Verify an IP outside all registered ranges returns empty
-    EXPECT_FALSE(cache->GetFunctionId(0xDEAD).has_value());
-    EXPECT_FALSE(cache->IsManaged(0xDEAD));
+    auto outside = cache->GetFunctionId(0xDEAD);
+    EXPECT_TRUE(outside.has_value());
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, outside.value());
+    auto outsideIsManaged = cache->IsManaged(0xDEAD);
+    EXPECT_TRUE(outsideIsManaged.has_value());
+    EXPECT_FALSE(outsideIsManaged.value());
 }
 
 // Test: IsManaged (no blocking)
@@ -242,12 +256,21 @@ TEST_F(ManagedCodeCacheTest, GetFunctionId_BoundaryIPs_CorrectBehavior) {
     EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + codeSize - 1).value_or(0));  // Last byte (inclusive)
 
     // Just outside boundaries
-    EXPECT_FALSE(cache->GetFunctionId(codeStart - 1).has_value());
-    EXPECT_FALSE(cache->GetFunctionId(codeStart + codeSize).has_value());
+    auto beforeStartIp = cache->GetFunctionId(codeStart - 1);
+    EXPECT_TRUE(beforeStartIp.has_value());
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, *beforeStartIp);
+    auto borderIp = cache->GetFunctionId(codeStart + codeSize);
+    EXPECT_TRUE(borderIp.has_value());
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, *borderIp);
 }
 
-// Test: Zero-sized code range
-TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRange_HandledGracefully) {
+// Regression: GetCodeRanges used `startAddress + size - 1` without guarding
+// size==0.  For startAddress==0 this gives endAddress==UINTPTR_MAX and the
+// page-insertion loop `for (page=0; page<=UINTPTR_MAX/pageSize; ++page)` runs
+// for billions of iterations, permanently hanging the background worker.
+// For non-zero startAddress the loop silently skips (endPage < startPage) but
+// the degenerate CodeRange still pollutes the sorted range vector.
+TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRange_DoesNotPolluteCacheNonZeroBase) {
     FunctionID testFuncId = 777;
     uintptr_t codeStart = 0x9000;
     ULONG32 codeSize = 0;
@@ -256,10 +279,38 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRange_HandledGracefully) {
     cache->AddFunction(testFuncId);
     WaitForWorkerThread();
 
-    // Should not crash, but may not find the function
-    auto result = cache->GetFunctionId(codeStart);
-    // Result is implementation-dependent, just verify no crash
-    (void)result;
+    // A zero-size range has no valid code; no IP should be reported as managed.
+    auto codeStartIp = cache->IsManaged(codeStart);
+    EXPECT_TRUE(codeStartIp.has_value());
+    EXPECT_FALSE(codeStartIp.value())
+        << "IP at startAddress of a size-0 range must not be managed";
+    auto codeStartMinusOne = cache->IsManaged(codeStart - 1);
+    EXPECT_TRUE(codeStartMinusOne.has_value());
+    EXPECT_FALSE(codeStartMinusOne.value())
+        << "IP just before startAddress must not be managed";
+    auto codeStartPlusOneThousand = cache->IsManaged(codeStart + 0x1000);
+    EXPECT_TRUE(codeStartPlusOneThousand.has_value());
+    EXPECT_FALSE(codeStartPlusOneThousand.value())
+        << "Unrelated IP above a size-0 range must not be managed";
+}
+
+// For startAddress==0 with size==0 the page loop would run from page 0 to
+// ~UINTPTR_MAX/pageSize, hanging the worker forever.  After the fix the worker
+// must complete within the normal wait and IsManaged must return false.
+TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRangeAtAddressZero_WorkerDoesNotHang) {
+    FunctionID testFuncId = 778;
+    uintptr_t codeStart = 0;
+    ULONG32 codeSize = 0;
+
+    SetupMockCodeInfo(testFuncId, codeStart, codeSize);
+    cache->AddFunction(testFuncId);
+
+    // If the worker is stuck this call blocks until the test times out.
+    WaitForWorkerThread(200);
+    auto codeStartPlusOneThousand = cache->IsManaged(0x1000);
+    EXPECT_TRUE(codeStartPlusOneThousand.has_value());
+    EXPECT_FALSE(codeStartPlusOneThousand.value())
+        << "Unrelated IP above a size-0 range must not be managed";
 }
 
 // Test: Very large code range
@@ -280,7 +331,9 @@ TEST_F(ManagedCodeCacheTest, AddFunction_LargeCodeRange_WorksCorrectly) {
 
 // Test: Null IP
 TEST_F(ManagedCodeCacheTest, GetFunctionId_NullIP_ReturnsEmpty) {
-    EXPECT_FALSE(cache->GetFunctionId(0).has_value());
+    auto nullIp = cache->GetFunctionId(0);
+    EXPECT_TRUE(nullIp.has_value());
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, nullIp.value());
 }
 
 // Test: GetCodeInfo2 failure handling
@@ -294,5 +347,145 @@ TEST_F(ManagedCodeCacheTest, AddFunction_GetCodeInfo2Fails_HandledGracefully) {
     WaitForWorkerThread();
 
     // Should not crash
-    EXPECT_FALSE(cache->GetFunctionId(0x1000).has_value());
+    auto nullIp = cache->GetFunctionId(0x1000);
+    EXPECT_TRUE(nullIp.has_value());
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, nullIp.value());
+}
+
+#ifdef _WINDOWS
+// Test: On Windows, GetFunctionFromIP can crash (e.g. module unloaded concurrently).
+// The SEH __try/__except in GetFunctionFromIP_Original must catch the access violation
+// and GetFunctionId must return std::nullopt to signal the failure to the caller.
+TEST_F(ManagedCodeCacheTest, GetFunctionId_GetFunctionFromIPRaisesAccessViolation_ReturnsNullopt) {
+    // Register an R2R module range so that GetFunctionId falls through to
+    // GetFunctionFromIP_Original (which wraps the ICorProfilerInfo call in __try/__except).
+    uintptr_t r2rCodeStart = 0xB0000000;
+    uintptr_t r2rCodeEnd   = 0xB000FFFF;
+    uintptr_t ipInR2R      = r2rCodeStart + 0x500;
+
+    std::vector<ModuleCodeRange> moduleRanges;
+    moduleRanges.emplace_back(r2rCodeStart, r2rCodeEnd);
+    cache->AddModuleRangesToCache(std::move(moduleRanges));
+
+    // Simulate a crash during GetFunctionFromIP by raising an access violation.
+    // This mirrors the real-world scenario where the CLR unloads the module containing
+    // the target symbol while we are resolving the IP.
+    EXPECT_CALL(*mockProfiler, GetFunctionFromIP(reinterpret_cast<LPCBYTE>(ipInR2R), _))
+        .WillOnce([](LPCBYTE, FunctionID*) -> HRESULT {
+            ::RaiseException(EXCEPTION_ACCESS_VIOLATION, 0, 0, nullptr);
+            return S_OK; // unreachable
+        });
+
+    auto result = cache->GetFunctionId(ipInR2R);
+    EXPECT_FALSE(result.has_value())
+        << "GetFunctionId should return std::nullopt when GetFunctionFromIP raises an access violation";
+}
+#endif
+
+// Test: IsManaged is signal-safe - it must return std::nullopt rather than block
+// when another thread holds the writer lock on the pages mutex. This guards the
+// contract relied on by the HybridUnwinder in a signal handler on ARM64.
+TEST_F(ManagedCodeCacheTest, IsManaged_WriterHoldsPagesMutex_ReturnsNullopt) {
+    FunctionID testFuncId = 321;
+    uintptr_t codeStart = 0xC000;
+    ULONG32 codeSize = 0x100;
+
+    SetupMockCodeInfo(testFuncId, codeStart, codeSize);
+    cache->AddFunction(testFuncId);
+    WaitForWorkerThread();
+
+    // Sanity: with no contention, IsManaged returns a concrete value.
+    auto baseline = cache->IsManaged(codeStart + 0x50);
+    ASSERT_TRUE(baseline.has_value());
+    EXPECT_TRUE(baseline.value());
+
+    // Simulate signal-handler contention: another thread holds the pages mutex
+    // exclusively. IsManaged must fail the try_to_lock and return std::nullopt
+    // instead of blocking (which would deadlock if called from a signal handler).
+    std::atomic<bool> writerHoldsLock{false};
+    std::atomic<bool> readerDone{false};
+    std::thread writer([&]() {
+        auto lock = cache->LockPagesMutexExclusiveForTest();
+        writerHoldsLock.store(true);
+        // Hold the lock until the reader side of the test has observed the nullopt.
+        while (!readerDone.load())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    });
+
+    // Wait for the writer to actually hold the lock before probing.
+    while (!writerHoldsLock.load())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    auto contended = cache->IsManaged(codeStart + 0x50);
+    EXPECT_FALSE(contended.has_value())
+        << "IsManaged must return nullopt under writer-lock contention so the "
+           "signal handler can back off instead of deadlocking.";
+
+    readerDone.store(true);
+    writer.join();
+
+    // Sanity: once contention clears, IsManaged resumes normal behavior.
+    auto afterRelease = cache->IsManaged(codeStart + 0x50);
+    ASSERT_TRUE(afterRelease.has_value());
+    EXPECT_TRUE(afterRelease.value());
+}
+
+// Test: IsManaged must also return nullopt when the writer holds the modules
+// mutex exclusively and the probed IP is not in any JIT page (i.e. the code path
+// falls through to IsCodeInR2RModule(ip, /*signalSafe*/true)).
+TEST_F(ManagedCodeCacheTest, IsManaged_WriterHoldsModulesMutex_ReturnsNullopt) {
+    // Probe an IP that is not covered by any registered JIT range, so IsManaged
+    // falls through to IsCodeInR2RModule which try_to_locks _modulesMutex.
+    const uintptr_t ipOutsideJit = 0xDEADBEEF;
+
+    std::atomic<bool> writerHoldsLock{false};
+    std::atomic<bool> readerDone{false};
+    std::thread writer([&]() {
+        auto lock = cache->LockModulesMutexExclusiveForTest();
+        writerHoldsLock.store(true);
+        while (!readerDone.load())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    });
+
+    while (!writerHoldsLock.load())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    auto contended = cache->IsManaged(ipOutsideJit);
+    EXPECT_FALSE(contended.has_value())
+        << "IsManaged must return nullopt when the modules-mutex writer is active "
+           "and the IP is not in any JIT page (R2R fallback path).";
+
+    readerDone.store(true);
+    writer.join();
+}
+
+// Test: IsManaged falls back to R2R module check when IP is not in the JIT page map
+TEST_F(ManagedCodeCacheTest, IsManaged_IPInR2RModule_NotInPageMap_ReturnsTrue) {
+    // Register an R2R module range directly (bypassing PE parsing)
+    // Use an address that has no JIT-compiled code registered on its page
+    uintptr_t r2rCodeStart = 0xA0000000;
+    uintptr_t r2rCodeEnd   = 0xA000FFFF;
+
+    std::vector<ModuleCodeRange> moduleRanges;
+    moduleRanges.emplace_back(r2rCodeStart, r2rCodeEnd);
+
+    cache->AddModuleRangesToCache(std::move(moduleRanges));
+
+    // An IP within the R2R range but with no JIT page entry should still be detected as managed
+    uintptr_t ipInR2R = r2rCodeStart + 0x500;
+    EXPECT_TRUE(cache->IsManaged(ipInR2R))
+        << "IsManaged should return true for an IP in an R2R module even when the JIT page map has no entry for that page";
+
+    // An IP outside both the JIT page map and any R2R module should still be false
+    auto outsideIsManaged = cache->IsManaged(0xDEADBEEF);
+    EXPECT_TRUE(outsideIsManaged.has_value());
+    EXPECT_FALSE(outsideIsManaged.value());
 }

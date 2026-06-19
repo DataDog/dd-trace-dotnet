@@ -4,9 +4,12 @@
 // </copyright>
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 // ReSharper disable once RedundantUsingDirective
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Snapshots;
 using FluentAssertions;
 using Xunit;
@@ -15,16 +18,64 @@ namespace Datadog.Trace.Tests.Debugger
 {
     public class SupportedTypesServiceTests
     {
-        private static readonly object[] Objects = { 3, DateTime.MinValue, TimeSpan.FromSeconds(3), DateTimeOffset.MinValue, Guid.Empty, "Hello", new int?(5), new DateTime?(DateTime.MinValue), ConsoleColor.Blue };
+        private static readonly Type[] Types =
+        {
+            typeof(int),
+            typeof(DateTime),
+            typeof(TimeSpan),
+            typeof(DateTimeOffset),
+            typeof(Guid),
+            typeof(string),
+            typeof(int?),
+            typeof(DateTime?),
+            typeof(TimeSpan?),
+            typeof(DateTimeOffset?),
+            typeof(ConsoleColor)
+        };
 
         [Fact]
         public void TestCanCallToString()
         {
-            foreach (var obj in Objects)
+            foreach (var type in Types)
             {
-                var type = obj.GetType();
                 Redaction.IsSafeToCallToString(type).Should().BeTrue($"Type {type} should be safe to call ToString on");
             }
+        }
+
+        [Theory]
+        [InlineData(typeof(List<int>))]
+        [InlineData(typeof(HashSet<int>))]
+        [InlineData(typeof(Dictionary<string, int>))]
+        [InlineData(typeof(Hashtable))]
+        [InlineData(typeof(ConditionalWeakTable<object, object>))]
+        public void CollectionTypesAreNotSafeToCallToString(Type type)
+        {
+            Redaction.IsSafeToCallToString(type).Should().BeFalse($"Type {type} should use structural handling instead of ToString()");
+        }
+
+        [Theory]
+        [InlineData(typeof(List<int>), true)]
+        [InlineData(typeof(HashSet<int>), true)]
+        [InlineData(typeof(SortedList), false)]
+        [InlineData(typeof(SortedList<string, int>), false)]
+        [InlineData(typeof(Dictionary<string, int>), false)]
+        [InlineData(typeof(ConditionalWeakTable<object, object>), false)]
+        public void SupportedCollectionTypes(Type type, bool expected)
+        {
+            Redaction.IsSupportedCollection(type).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(typeof(Dictionary<string, int>), true)]
+        [InlineData(typeof(SortedDictionary<string, int>), true)]
+        [InlineData(typeof(SortedList), true)]
+        [InlineData(typeof(SortedList<string, int>), true)]
+        [InlineData(typeof(Hashtable), true)]
+        [InlineData(typeof(List<int>), false)]
+        [InlineData(typeof(HashSet<int>), false)]
+        public void SupportedDictionaryTypes(Type type, bool expected)
+        {
+            Redaction.IsSupportedDictionary(type).Should().Be(expected);
         }
     }
 }

@@ -56,12 +56,18 @@
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #ifdef LINUX
+#ifdef ARM64
+#include "HybridUnwinder.h"
+#else
 #include "Backtrace2Unwinder.h"
+#endif
+#include "UnwindingRecorderFactory.h"
 #include "ProfilerSignalManager.h"
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
 #include "LibrariesInfoCache.h"
 #include "CpuSampleProvider.h"
+#include <pthread.h>
 #endif
 
 #include "shared/src/native-src/pal.h"
@@ -176,8 +182,7 @@ void CorProfilerCallback::InitializeServices()
     // Like the SystemCallsShield, this service must be started before any profiler.
     // For now we asked for a memory resource that will have maximum 100 blocks of 1KiB per block.
     // (before it uses the default memory resource a.k.a new/delete for allocation)
-    // TODO add metrics to measure if it's ok or not
-    RegisterService<LibrariesInfoCache>(_memoryResourceManager.GetSynchronizedPool(100, 1024));
+    RegisterService<LibrariesInfoCache>(_pConfiguration.get(), _memoryResourceManager.GetSynchronizedPool(100, 1024), _metricsRegistry);
 #endif
 
     _pFrameStore = std::make_unique<FrameStore>(
@@ -396,7 +401,8 @@ void CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _metricsRegistry,
-                _pNativeThreadList
+                _pNativeThreadList,
+                _pRuntimeInfo.get()
                 );
 
             if (_pConfiguration->IsMemoryFootprintEnabled())
@@ -457,6 +463,8 @@ void CorProfilerCallback::InitializeServices()
             }
         }
 
+        IGCDumpListener* pGCDumpListener = _pHeapSnapshotManager;
+
         // TODO: add new CLR events-based providers to the event parser
         _pEventPipeEventsManager = std::make_unique<EventPipeEventsManager>(
             _pCorProfilerInfoEvents,
@@ -464,7 +472,8 @@ void CorProfilerCallback::InitializeServices()
             _pContentionProvider,
             _pStopTheWorldProvider,
             _pNetworkProvider,
-            _pHeapSnapshotManager
+            _pConfiguration.get(),
+            pGCDumpListener
         );
 
         if (_pGarbageCollectionProvider != nullptr)
@@ -617,10 +626,22 @@ void CorProfilerCallback::InitializeServices()
         _metricsRegistry,
         CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)));
 
+#ifdef ARM64
+    if (Log::IsDebugEnabled())
+    {
+        // For now just 50 is a magic number. We should size based on the number of
+        // cores + extra.
+        _pUnwindingRecorderFactory = std::make_unique<UnwindingRecorderFactory>(50);
+    }
+#endif
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
+#ifdef ARM64
+        _pUnwinder = std::make_unique<HybridUnwinder>(_managedCodeCache.get());
+#else
         _pUnwinder = std::make_unique<Backtrace2Unwinder>();
+#endif
         // Other alternative in case of crash-at-shutdown, do not register it as a service
         // we will have to start it by hand (already stopped by hand)
         _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
@@ -629,7 +650,8 @@ void CorProfilerCallback::InitializeServices()
             _pManagedThreadList,
             _pCpuSampleProvider,
             _metricsRegistry,
-            _pUnwinder.get());
+            _pUnwinder.get(),
+            _pUnwindingRecorderFactory.get());
     }
 #endif
 
@@ -1449,6 +1471,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     COR_PRF_RUNTIME_TYPE runtimeType;
     CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor, runtimeType);
 
+#if !defined(_WINDOWS) && defined(ARM64)
+    if (major < 5)
+    {
+        Log::Warn("The Continuous Profiler has been disabled on arm64 Linux: .NET 5.0 or greater is required.");
+        return E_FAIL;
+    }
+#endif
     // We only need to get the complete version for .NET Framework
     // For the other runtimes, no need to wait for mscorlib to be loaded
     if (runtimeType != COR_PRF_DESKTOP_CLR)
@@ -1545,6 +1574,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             return E_FAIL;
         }
     }
+
+    OsSpecificApi::InitializeUnwinder(_managedCodeCache.get());
 
     // create services without starting them
     InitializeServices();
@@ -1790,6 +1821,18 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
     _pStackSamplerLoopManager->Stop();
 
+
+#ifdef LINUX
+if (_pCpuProfiler != nullptr)
+{
+    // if we failed at stopping the time_create-based CPU profiler,
+    // it's safer to not release the memory.
+    // Otherwise, we might crash the application.
+    // Reason: one thread could be executing the signal handler and accessing some field
+    auto success = _pCpuProfiler->Stop();
+    LogServiceStop(success, _pCpuProfiler->GetName());
+}
+#endif
     // TODO: maybe move the following 2 lines AFTER stopping the providers
     // --> to ensure that the last samples are collected
     _pSamplesCollector->Stop();
@@ -2080,7 +2123,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationStarted(FunctionID 
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationFinished(FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (_managedCodeCache != nullptr)
+    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus))
     {
         _managedCodeCache->AddFunction(functionId);
     }
@@ -2257,7 +2300,23 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     _pManagedThreadList->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
 
 #ifdef LINUX
-    // This call must be made *after* we assigne the SetThreadOsInfo function call.
+    {
+        pthread_attr_t attr;
+        if (pthread_getattr_np(pthread_self(), &attr) == 0)
+        {
+            void* stackAddr;
+            size_t stackSize;
+            if (pthread_attr_getstack(&attr, &stackAddr, &stackSize) == 0)
+            {
+                auto stackBase = reinterpret_cast<std::uintptr_t>(stackAddr);
+                auto stackEnd = stackBase + stackSize;
+                threadInfo->SetStackBounds(stackBase, stackEnd);
+            }
+            pthread_attr_destroy(&attr);
+        }
+    }
+
+    // This call must be made *after* we assign the SetThreadOsInfo function call.
     // Otherwise the threadInfo won't have it's OsThread field set and timer_create
     // will have random behavior.
     if (_pCpuProfiler != nullptr)
@@ -2277,16 +2336,22 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     }
 
     // TL;DR prevent the profiler from deadlocking application thread on malloc
-    // Backtrace2Unwinder relies on libunwind. We need to call it to make sure
+    // The unwinder relies on libunwind. We need to call it to make sure
     // libunwind allocates and initializes TLS (Thread Local Storage) data structures for the current
     // thread.
     // Initialization of TLS object does call malloc. Unfortunately, if those calls to malloc
     // occurs in our profiler signal handler, we end up deadlocking the application.
-    // To prevent that, we call unw_backtrace here for the current thread, to force libunwind
+    // To prevent that, we call the unwinder here for the current thread, to force libunwind
     // initializing the TLS'd data structures for the current thread.
-    Backtrace2Unwinder bt2;
+#ifdef ARM64
+    HybridUnwinder warmup(_managedCodeCache.get());
+#else
+    Backtrace2Unwinder warmup;
+#endif
     uintptr_t tab[1];
-    bt2.Unwind(nullptr, tab, 1);
+    Callstack callstack(shared::span<std::uintptr_t>(tab, 1));
+    auto [stackBase, stackEnd] = threadInfo->GetStackBounds();
+    warmup.Unwind(nullptr, callstack, stackBase, stackEnd);
 
     // check if SIGUSR1 signal is blocked for current thread
     sigset_t currentMask;
@@ -2601,7 +2666,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::GetReJITParameters(ModuleID modul
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ReJITCompilationFinished(FunctionID functionId, ReJITID rejitId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (_managedCodeCache != nullptr)
+    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus))
     {
         _managedCodeCache->AddFunction(functionId);
     }
@@ -2646,7 +2711,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationStarte
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationFinished(FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock)
 {
-    if (_managedCodeCache != nullptr)
+    if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus))
     {
         _managedCodeCache->AddFunction(functionId);
     }

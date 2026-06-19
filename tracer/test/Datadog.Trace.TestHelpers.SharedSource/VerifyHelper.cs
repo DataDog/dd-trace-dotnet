@@ -38,8 +38,12 @@ namespace Datadog.Trace.TestHelpers
             (new(@"http.useragent: grpc-dotnet\/(.)*(?=,)", RegOptions), "http.useragent: grpc-dotnet/123"),
             (new(@"git.commit.sha: [0-9a-f]{40}", RegOptions), "git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb"),
             (new(@"_dd\.p\.tid: [0-9a-f]{16}", RegOptions), "_dd.p.tid: 1234567890abcdef"),
+            (new(@"(_dd\.code_origin\.frames\.\d+\.line:\s*)\d+", RegOptions), "${1}0"),
+            (new(@"(_dd\.code_origin\.frames\.\d+\.column:\s*)\d+", RegOptions), "${1}0"),
             (new("x-datadog-trace-id\":\\[\\[\\[8,({\"category\":\"pii\",\"type\":\"vin\"})\\]\\]", RegOptions), "x-datadog-trace-id\":[[[8]]") // api security, sometimes we can get "x-datadog-trace-id":[[[8,{"category":"pii","type":"vin"}]], and not everytime depending on the number, should be removed with waf 1.15.1, bug is fixed
         };
+
+        private static readonly Regex CodeOriginFilePathRegex = new(@"(?<prefix>_dd\.code_origin\.frames\.\d+\.file:\s*)(?<path>[^,\r\n]+)", RegOptions);
 
         /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
@@ -124,6 +128,7 @@ namespace Datadog.Trace.TestHelpers
                 settings.AddRegexScrubber(regexPattern, replacement);
             }
 
+            settings.AddScrubber(ScrubCodeOriginFilePaths);
             settings.ScrubInlineGuids();
             settings.ScrubEmptyLines();
             VerifyDiffPlex.UseDiffPlex(settings);
@@ -206,10 +211,15 @@ namespace Datadog.Trace.TestHelpers
                   // remove propagated tags because their positions in the snapshots are not stable
                   // with our span ordering. correct position (first span in every trace chunk) is covered by other tests.
                  ?.Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
-                  // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
-                  // no matter what. That means we have unstable snapshot results.
-                  // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
-                  .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha && kvp.Key != Tags.LastParentId)
+                  .Where(kvp =>
+                             // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
+                             // no matter what. That means we have unstable snapshot results.
+                             kvp.Key != Tags.GitRepositoryUrl
+                          && kvp.Key != Tags.GitCommitSha
+                             // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
+                          && kvp.Key != Tags.LastParentId
+                             // same as git related tags above, process tags are only added to the first span of each payload, which makes snapshots unstable.
+                          && kvp.Key != Tags.ProcessTags)
                   .Select(
                        kvp => kvp.Key switch
                        {
@@ -238,10 +248,15 @@ namespace Datadog.Trace.TestHelpers
                   // remove propagated tags because their positions in the snapshots are not stable
                   // with our span ordering. correct position (first span in every trace chunk) is covered by other tests.
                  ?.Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
-                  // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
-                  // no matter what. That means we have unstable snapshot results.
-                  // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
-                  .Where(kvp => kvp.Key != Tags.GitRepositoryUrl && kvp.Key != Tags.GitCommitSha && kvp.Key != Tags.LastParentId)
+                 .Where(kvp =>
+                            // We must ignore both `_dd.git.repository_url` and `_dd.git.commit.sha` because we are only setting it on the first span of a trace
+                            // no matter what. That means we have unstable snapshot results.
+                            kvp.Key != Tags.GitRepositoryUrl
+                         && kvp.Key != Tags.GitCommitSha
+                            // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
+                         && kvp.Key != Tags.LastParentId
+                            // same as git related tags above, process tags are only added to the first span of each payload, which makes snapshots unstable.
+                         && kvp.Key != Tags.ProcessTags)
                   .Select(
                        kvp => kvp.Key switch
                        {
@@ -329,10 +344,47 @@ namespace Datadog.Trace.TestHelpers
                 });
         }
 
+        internal static string NormalizeCodeOriginFilePaths(string value)
+        {
+            return CodeOriginFilePathRegex.Replace(
+                value,
+                static match =>
+                {
+                    var path = match.Groups["path"].Value;
+                    var tracerIndex = path.IndexOf("tracer\\", StringComparison.OrdinalIgnoreCase);
+                    if (tracerIndex < 0)
+                    {
+                        tracerIndex = path.IndexOf("tracer/", StringComparison.OrdinalIgnoreCase);
+                    }
+
+                    if (tracerIndex < 0)
+                    {
+                        return match.Value;
+                    }
+
+                    var normalizedPath = path.Substring(tracerIndex).Replace('/', '\\');
+                    return match.Groups["prefix"].Value + normalizedPath;
+                });
+        }
+
         private static void ReplaceRegex(StringBuilder builder, Regex regex, string replacement)
         {
             var value = builder.ToString();
             var result = regex.Replace(value, replacement);
+
+            if (value.Equals(result, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            builder.Clear();
+            builder.Append(result);
+        }
+
+        private static void ScrubCodeOriginFilePaths(StringBuilder builder)
+        {
+            var value = builder.ToString();
+            var result = NormalizeCodeOriginFilePaths(value);
 
             if (value.Equals(result, StringComparison.Ordinal))
             {

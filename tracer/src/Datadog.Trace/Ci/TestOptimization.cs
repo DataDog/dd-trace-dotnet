@@ -617,9 +617,9 @@ internal sealed class TestOptimization : ITestOptimization
                 FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
                 DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
                 KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
-                EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings);
+                EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, KnownTestsFeature);
                 ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, CIValues);
-                SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
+                SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client, this);
                 TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
 
                 if (settings.CodeCoverageEnabled == null && remoteSettings.CodeCoverage.HasValue)
@@ -669,9 +669,9 @@ internal sealed class TestOptimization : ITestOptimization
         FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
         DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
         KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
-        EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings);
+        EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, KnownTestsFeature);
         ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, environmentValues);
-        SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
+        SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client, this);
         TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
     }
 }

@@ -6,16 +6,17 @@
 #nullable enable
 
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
-using Datadog.Trace.Debugger.Caching;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.SpanCodeOrigin
 {
@@ -23,8 +24,14 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanCodeOrigin));
 
-        private readonly ConcurrentAdaptiveCache<Assembly, AssemblyPdbInfo?> _assemblyPdbCache = new();
-        private readonly ConcurrentDictionary<Assembly, bool> _assemblySkipCache = new();
+        // ConditionalWeakTable keys are weak, so a collectible AssemblyLoadContext can unload without being rooted by this cache.
+        // Per-assembly Lazy<T> deduplicates concurrent first-touches on the *same* assembly while allowing *different* assemblies to scan in parallel.
+
+        // Per-assembly analysis results (skip decision + sequence points), keyed weakly by Assembly.
+        private readonly ConditionalWeakTable<Assembly, Lazy<AssemblyAnalysis>> _assemblyCache = new();
+
+        // Cached factory delegate passed to ConditionalWeakTable.GetValue to avoid allocating a new delegate on each miss.
+        private readonly ConditionalWeakTable<Assembly, Lazy<AssemblyAnalysis>>.CreateValueCallback _createAnalysisLazy;
         private readonly CodeOriginTags _tags;
 
         internal SpanCodeOrigin(DebuggerSettings settings)
@@ -32,6 +39,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             Log.Information("Initializing Code Origin for Spans");
             Settings = settings;
             _tags = new CodeOriginTags(Settings.CodeOriginMaxUserFrames);
+            _createAnalysisLazy = assembly => new Lazy<AssemblyAnalysis>(() => ComputeAnalysis(assembly));
         }
 
         internal DebuggerSettings Settings { get; }
@@ -56,7 +64,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 return;
             }
 
-            if (span.GetTag(_tags.Type) != null)
+            if (HasCodeOrigin(span))
             {
                 Log.Debug("Span {SpanID} has already code origin tags. Resource: {ResourceName}, Operation: {OperationName}", span.SpanId, span.ResourceName, span.OperationName);
                 return;
@@ -68,7 +76,8 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
         private bool ShouldSkipExitSpan()
         {
             // Exit span code origin has been disabled since tracer version 3.28.0.
-            // when it will be enabled, update SpanCodeOriginTests.ExitSpanTests
+            // The call from Tracer.StartSpan was also removed to avoid per-span overhead.
+            // When re-enabling, restore the call in Tracer.StartSpan and update SpanCodeOriginTests.ExitSpanTests.
             return true;
         }
 
@@ -91,6 +100,17 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             AddEntrySpanTags(span, type, method);
         }
 
+        internal bool HasCodeOrigin(Span? span)
+        {
+            return span?.Tags switch
+            {
+                AspNetCoreTags { CodeOriginType: not null } => true,
+                AspNetCoreSingleSpanTags { CodeOriginType: not null } => true,
+                { } tags => tags.GetTag(_tags.Type) is not null,
+                _ => false,
+            };
+        }
+
         private void AddEntrySpanTags(Span span, Type type, MethodInfo method)
         {
             try
@@ -103,51 +123,60 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 }
 
                 var assembly = type.Assembly;
-                if (ShouldSkipAssembly(assembly))
+                var analysis = GetOrComputeAnalysis(assembly);
+                if (analysis.ShouldSkip)
                 {
                     return;
                 }
 
-                var sp = GetPdbInfo(assembly, method);
+                var sp = TryGetSequencePoint(analysis, method);
 
                 // Add code origin tags to entry span
                 // Adds 4 tags always (type, index, method, typename) + 3 tags if PDB available (file, line, column)
                 // Size: ~210-300 bytes without PDB, ~250-500 bytes with PDB
-                if (span.Tags is TagsList tagsList)
+                if (span.Tags is AspNetCoreTags aspNetCoreTags)
                 {
-                    if (sp is { } cached)
-                    {
-                        tagsList.SetTags(
-                            new(_tags.Type, "entry"),
-                            new(_tags.Index[0], "0"),
-                            new(_tags.Method[0], methodName),
-                            new(_tags.TypeName[0], typeFullName),
-                            new(_tags.File[0], cached.Url),
-                            new(_tags.Line[0], cached.Line),
-                            new(_tags.Column[0], cached.Column));
-                    }
-                    else
-                    {
-                        tagsList.SetTags(
-                            new(_tags.Type, "entry"),
-                            new(_tags.Index[0], "0"),
-                            new(_tags.Method[0], methodName),
-                            new(_tags.TypeName[0], typeFullName));
-                    }
-                }
-                else
-                {
-                    span.Tags.SetTag(_tags.Type, "entry");
-                    span.Tags.SetTag(_tags.Index[0], "0");
-                    span.Tags.SetTag(_tags.Method[0], methodName);
-                    span.Tags.SetTag(_tags.TypeName[0], typeFullName);
+                    aspNetCoreTags.CodeOriginType = "entry";
+                    aspNetCoreTags.CodeOriginFrameIndex = "0";
+                    aspNetCoreTags.CodeOriginFrameMethod = methodName;
+                    aspNetCoreTags.CodeOriginFrameType = typeFullName;
 
-                    if (sp is { } cached)
+                    if (sp.HasValue)
                     {
-                        span.Tags.SetTag(_tags.File[0], cached.Url);
-                        span.Tags.SetTag(_tags.Line[0], cached.Line);
-                        span.Tags.SetTag(_tags.Column[0], cached.Column);
+                        var cached = sp.Value;
+                        aspNetCoreTags.CodeOriginFrameFile = cached.Url;
+                        aspNetCoreTags.CodeOriginFrameLine = cached.Line;
+                        aspNetCoreTags.CodeOriginFrameColumn = cached.Column;
                     }
+
+                    return;
+                }
+
+                if (span.Tags is AspNetCoreSingleSpanTags aspNetCoreSingleSpanTags)
+                {
+                    aspNetCoreSingleSpanTags.CodeOriginType = "entry";
+                    aspNetCoreSingleSpanTags.CodeOriginFrameIndex = "0";
+                    aspNetCoreSingleSpanTags.CodeOriginFrameMethod = methodName;
+                    aspNetCoreSingleSpanTags.CodeOriginFrameType = typeFullName;
+
+                    if (sp.HasValue)
+                    {
+                        var cached = sp.Value;
+                        aspNetCoreSingleSpanTags.CodeOriginFrameFile = cached.Url;
+                        aspNetCoreSingleSpanTags.CodeOriginFrameLine = cached.Line;
+                        aspNetCoreSingleSpanTags.CodeOriginFrameColumn = cached.Column;
+                    }
+
+                    return;
+                }
+
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug(
+                        "Unexpected tags type for entry span {SpanID}: {TagsType}. Skipping code origin tags. Operation: {OperationName}",
+                        property0: span.SpanId,
+                        property1: span.Tags?.GetType().FullName ?? "<null>",
+                        property2: span.OperationName);
                 }
             }
             catch (Exception ex)
@@ -156,86 +185,94 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             }
         }
 
-        private CachedSequencePoint? GetPdbInfo(Assembly assembly, MethodInfo method)
+        // Design Decision: Read ALL detected endpoint sequence points upfront per assembly (one PDB open).
+        //
+        // Alternatives considered:
+        // - Lazy per-method: Would reopen PDB once per unique endpoint (each open prefetches metadata + paying
+        //   sequence-point parse cost). Total I/O grows linearly with unique endpoints called.
+        // - Keep PDB open across calls: File handle and memory leaks, resource limits, complex lifecycle.
+        // - Background/async population: Race conditions, thundering herd, harder testing.
+        //
+        // Trade-off: Slightly higher first-request latency for simplicity, predictability, and no resource leaks.
+        // Memory cost: 50-200 endpoints x ~200 bytes = 10-40 KB per assembly.
+        //
+        // Per-assembly Lazy<T> serializes the scan for the *same* assembly only - concurrent first-touches on
+        // *different* assemblies run in parallel (unlike the previous global write-lock design).
+        //
+        // ConditionalWeakTable.GetValue already performs the lock-free fast-path lookup internally
+        // (TryGetValue first, then create-under-lock on miss), so calling GetValue directly is equivalent
+        // to an explicit TryGetValue+GetValue split and saves one redundant lookup on miss.
+        private AssemblyAnalysis GetOrComputeAnalysis(Assembly assembly)
         {
-            // Design Decision: Read ALL endpoint sequence points upfront per assembly
-            //
-            // Current approach: Opens PDB once, reads all endpoint sequence points (~50-200 methods),
-            // closes immediately. One-time cost per assembly, then instant cache hits.
-            //
-            // Alternatives considered:
-            // - Lazy loading: Would reopen PDB repeatedly (expensive I/O, unpredictable latency spikes)
-            // - Keep PDB open: File handle leaks, resource limits, complex lifecycle management
-            // - Background/async: Race conditions, thundering herd, testing complexity
-            //
-            // Trade-off: Slightly higher first-request latency for simplicity, predictability, and no resource leaks.
-            // Memory cost is negligible: 50-200 endpoints × ~150 bytes = 7.5-30 KB per assembly.
-            //
-            // Note: Will revisit if profiling shows significant performance impact.
+            return _assemblyCache.GetValue(assembly, _createAnalysisLazy).Value;
+        }
 
-            var pdbInfo = _assemblyPdbCache.GetOrAdd(
-                assembly,
-                asm =>
+        private AssemblyAnalysis ComputeAnalysis(Assembly assembly)
+        {
+            // This method is invoked by Lazy<AssemblyAnalysis> with the default
+            // ExecutionAndPublication mode, which caches any exception the factory throws.
+            // To prevent permanently poisoning the cache entry for an assembly, the entire
+            // body is wrapped in a catch-all that falls back to AssemblyAnalysis.Skipped.
+            // The two inner try/catches stay in place so we still get diagnostic-rich logs
+            // for the two expected failure points (filter evaluation and PDB scan).
+            try
+            {
+                bool shouldSkip;
+                try
                 {
-                    using var reader = DatadogMetadataReader.CreatePdbReader(asm);
-                    if (reader is not { IsPdbExist: true })
+                    // Single-file assemblies have no Assembly.Location. We still want the
+                    // reflection-derived tags; PDB-backed file/line/column tags will be absent.
+                    shouldSkip = AssemblyFilter.ShouldSkipAssembly(
+                        assembly,
+                        Settings.ThirdPartyDetectionExcludes,
+                        Settings.ThirdPartyDetectionIncludes,
+                        requireAssemblyLocation: false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to evaluate assembly filter for {AssemblyName}", assembly.FullName);
+                    return AssemblyAnalysis.Skipped;
+                }
+
+                if (shouldSkip)
+                {
+                    return AssemblyAnalysis.Skipped;
+                }
+
+                Dictionary<int, CachedSequencePoint>? sequencePoints = null;
+                try
+                {
+                    // metadataOnly: true avoids PrefetchEntireImage, which would otherwise read the full DLL into memory.
+                    // We only need MetadataReader (for type/method enumeration) and the PDB reader (for sequence points).
+                    using var reader = DatadogMetadataReader.CreatePdbReader(assembly, metadataOnly: true);
+                    if (reader is { IsPdbExist: true })
                     {
-                        return null;
+                        sequencePoints = new Dictionary<int, CachedSequencePoint>();
+                        var consumer = new SequencePointTokenConsumer(reader, sequencePoints, assembly);
+                        EndpointDetector.GetEndpointMethodTokens(reader, ref consumer);
                     }
+                }
+                catch (Exception ex)
+                {
+                    Log.Debug(ex, "Error while getting endpoints for {AssemblyName} in location: {AssemblyLocation}", assembly.FullName, assembly.Location);
+                    sequencePoints = null;
+                }
 
-                    try
-                    {
-                        var endpointMethodTokens = EndpointDetector.GetEndpointMethodTokens(reader);
+                return new AssemblyAnalysis(shouldSkip: false, sequencePoints);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Unexpected error analyzing assembly {AssemblyName}", assembly.FullName);
+                return AssemblyAnalysis.Skipped;
+            }
+        }
 
-                        // Build dictionary of sequence points for ALL detected endpoint methods in one pass
-                        // This avoids reopening the PDB file on subsequent endpoint calls
-                        var builder = ImmutableDictionary.CreateBuilder<int, CachedSequencePoint?>();
-
-                        foreach (var token in endpointMethodTokens)
-                        {
-                            try
-                            {
-                                var sequencePoint = reader.GetMethodSourceLocation(token);
-                                if (sequencePoint is { } sp)
-                                {
-                                    // If we don't have a source URL, the sequence point isn't useful for code origin tags
-                                    // (line/column without a file doesn't provide actionable info).
-                                    if (StringUtil.IsNullOrEmpty(sp.URL))
-                                    {
-                                        builder.Add(token, null);
-                                        continue;
-                                    }
-
-                                    // Precompute string representations once during per-assembly cache population (stored per endpoint token)
-                                    // to avoid per-span allocations (ToString()) for line/column.
-                                    builder.Add(
-                                        token,
-                                        new CachedSequencePoint(
-                                            sp.URL,
-                                            sp.StartLine.ToString(CultureInfo.InvariantCulture),
-                                            sp.StartColumn.ToString(CultureInfo.InvariantCulture)));
-                                }
-                                else
-                                {
-                                    builder.Add(token, null);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error(ex, "Failed to get sequence point for method token {Token} in assembly {AssemblyName}", property0: token, asm.FullName);
-                                // Add null to dictionary to avoid retrying on every call
-                                builder.Add(token, null);
-                            }
-                        }
-
-                        return new AssemblyPdbInfo(builder.ToImmutable());
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error while getting endpoints for assembly: {AssemblyName}", asm.Location);
-                        return null;
-                    }
-                });
+        private CachedSequencePoint? TryGetSequencePoint(AssemblyAnalysis analysis, MethodInfo method)
+        {
+            if (analysis.SequencePoints is null)
+            {
+                return null;
+            }
 
             int metadataToken;
             try
@@ -248,7 +285,12 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                 return null;
             }
 
-            return pdbInfo?.MethodSequencePoints.GetValueOrDefault<CachedSequencePoint?>(metadataToken);
+            if (analysis.SequencePoints.TryGetValue(metadataToken, out var sp))
+            {
+                return sp;
+            }
+
+            return null;
         }
 
         private void AddExitSpanTags(Span span)
@@ -328,7 +370,7 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
                     continue;
                 }
 
-                if (ShouldSkipAssembly(assembly))
+                if (GetOrComputeAnalysis(assembly).ShouldSkip)
                 {
                     continue;
                 }
@@ -339,23 +381,70 @@ namespace Datadog.Trace.Debugger.SpanCodeOrigin
             return count;
         }
 
-        private bool ShouldSkipAssembly(Assembly assembly)
-        {
-            return _assemblySkipCache.GetOrAdd(
-                assembly,
-                asm => AssemblyFilter.ShouldSkipAssembly(
-                    asm,
-                    Settings.ThirdPartyDetectionExcludes,
-                    Settings.ThirdPartyDetectionIncludes));
-        }
-
         private readonly record struct FrameInfo(int FrameIndex, StackFrame Frame);
 
         private readonly record struct CachedSequencePoint(string Url, string Line, string Column);
 
-        private sealed class AssemblyPdbInfo(ImmutableDictionary<int, CachedSequencePoint?> sequencePoints)
+        private readonly struct SequencePointTokenConsumer : EndpointDetector.IEndpointMethodTokenConsumer
         {
-            public ImmutableDictionary<int, CachedSequencePoint?> MethodSequencePoints { get; } = sequencePoints;
+            private readonly DatadogMetadataReader _reader;
+            private readonly Dictionary<int, CachedSequencePoint> _sequencePoints;
+            private readonly Assembly _assembly;
+
+            public SequencePointTokenConsumer(DatadogMetadataReader reader, Dictionary<int, CachedSequencePoint> sequencePoints, Assembly assembly)
+            {
+                _reader = reader;
+                _sequencePoints = sequencePoints;
+                _assembly = assembly;
+            }
+
+            public void OnEndpointMethodToken(int token)
+            {
+                try
+                {
+                    var sequencePoint = _reader.GetMethodSourceLocation(token);
+                    if (sequencePoint is { } sp)
+                    {
+                        // If we don't have a source URL, the sequence point isn't useful for code origin tags
+                        // (line/column without a file doesn't provide actionable info).
+                        if (StringUtil.IsNullOrEmpty(sp.URL))
+                        {
+                            return;
+                        }
+
+                        // Precompute per-assembly string values to avoid per-span ToString() allocations.
+                        // Normalize paths to the same forward-slash form used by Dynamic Instrumentation.
+                        var url = sp.URL.IndexOf('\\') >= 0 ? sp.URL.Replace('\\', '/') : sp.URL;
+                        _sequencePoints.Add(
+                            token,
+                            new CachedSequencePoint(
+                                url,
+                                sp.StartLine.ToString(CultureInfo.InvariantCulture),
+                                sp.StartColumn.ToString(CultureInfo.InvariantCulture)));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to get sequence point for method token {Token} in assembly {AssemblyName}", property0: token, _assembly.FullName);
+                }
+            }
+        }
+
+        private sealed class AssemblyAnalysis
+        {
+            // Singleton for "skipped" assemblies: no sequence points to remember, just the skip flag.
+            // Reuse one instance per filter decision to avoid an allocation per skipped assembly cache entry.
+            internal static readonly AssemblyAnalysis Skipped = new(shouldSkip: true, sequencePoints: null);
+
+            internal AssemblyAnalysis(bool shouldSkip, Dictionary<int, CachedSequencePoint>? sequencePoints)
+            {
+                ShouldSkip = shouldSkip;
+                SequencePoints = sequencePoints;
+            }
+
+            internal bool ShouldSkip { get; }
+
+            internal Dictionary<int, CachedSequencePoint>? SequencePoints { get; }
         }
 
         /// <summary>

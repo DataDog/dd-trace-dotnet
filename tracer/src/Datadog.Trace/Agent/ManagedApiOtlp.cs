@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET6_0_OR_GREATER
-
 #nullable enable
 
 using System;
@@ -34,7 +32,7 @@ internal sealed class ManagedApiOtlp : IApi
         [MemberNotNull(nameof(_api))]
         void UpdateApi(TracerSettings settings, ExporterSettings exporterSettings)
         {
-            var apiRequestFactory = TracesTransportStrategy.Get(exporterSettings);
+            var apiRequestFactory = OtlpTransportStrategy.GetTraces(exporterSettings);
             var api = new ApiOtlp(apiRequestFactory, settings, exporterSettings);
             Interlocked.Exchange(ref _api!, api);
         }
@@ -47,8 +45,6 @@ internal sealed class ManagedApiOtlp : IApi
     public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
         => Volatile.Read(ref _api).SendTracesAsync(traces, numberOfTraces, statsComputationEnabled, numberOfDroppedP0Traces, numberOfDroppedP0Spans, apmTracingEnabled);
 
-    public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
-        => Volatile.Read(ref _api).SendStatsAsync(stats, bucketDuration);
+    public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
+        => Volatile.Read(ref _api).SendStatsAsync(stats, bucketDuration, tracerObfuscationVersion);
 }
-
-#endif

@@ -17,7 +17,7 @@ namespace Datadog.Trace.DuckTyping.Tests;
 public class DuckTypeTaskTests
 {
     [Fact]
-    public void NonGenericTaskDuckTypeExposesCompletionAndAwaiter()
+    public void NonGenericTaskDuckTypeExposesAwaiter()
     {
         var task = new Task(static () => { });
         task.RunSynchronously();
@@ -25,7 +25,6 @@ public class DuckTypeTaskTests
         var proxy = task.DuckCast<IDuckTypeTask>();
         var awaiter = proxy.GetAwaiter();
 
-        proxy.IsCompletedSuccessfully.Should().BeTrue();
         awaiter.IsCompleted.Should().BeTrue();
         awaiter.GetResult();
 
@@ -41,7 +40,6 @@ public class DuckTypeTaskTests
         var proxy = task.DuckCast<IDuckTypeTask<string>>();
         var awaiter = proxy.GetAwaiter();
 
-        proxy.IsCompletedSuccessfully.Should().BeTrue();
         proxy.Result.Should().Be("completed");
         awaiter.IsCompleted.Should().BeTrue();
         awaiter.GetResult().Should().Be("completed");

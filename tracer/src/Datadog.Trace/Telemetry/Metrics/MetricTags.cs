@@ -81,6 +81,7 @@ internal static class MetricTags
         [Description("reason:overfull_buffer")] OverfullBuffer,
         [Description("reason:serialization_error")] SerializationError,
         [Description("reason:api_error")] ApiError,
+        [Description("reason:trace_filter")] TraceFilter,
     }
 
     internal enum StatusCode
@@ -162,6 +163,8 @@ internal static class MetricTags
     {
         [Description("truncation_reason:baggage_item_count_exceeded")]BaggageItemCountExceeded,
         [Description("truncation_reason:baggage_byte_count_exceeded")]BaggageByteCountExceeded,
+        [Description("truncation_reason:baggage_extract_item_exceeded")]BaggageExtractItemExceeded,
+        [Description("truncation_reason:baggage_extract_byte_exceeded")]BaggageExtractByteExceeded,
     }
 
     public enum ContextHeaderMalformed
@@ -183,6 +186,51 @@ internal static class MetricTags
         [Description("component_name:iast")] Iast,
         [Description("component_name:iast_derived")] IastDerived,
         [Description("component_name:iast_aspects")] IastAspects,
+    }
+
+    internal enum DebuggerMemoryPressureState
+    {
+        [Description("state:enter")] Enter,
+        [Description("state:exit")] Exit,
+    }
+
+    internal enum DebuggerMemoryPressureTrigger
+    {
+        [Description("trigger:none")] None,
+        [Description("trigger:memory")] Memory,
+        [Description("trigger:gc")] Gc,
+        [Description("trigger:both")] Both,
+    }
+
+    internal enum DebuggerMemoryPressureDisabledReason
+    {
+        [Description("reason:no_signals")] NoSignals,
+        [Description("reason:error")] Error,
+    }
+
+    internal enum DebuggerMemoryPressureMemoryBucket
+    {
+        [Description("bucket:lt_70")] LessThan70,
+        [Description("bucket:70_80")] From70To80,
+        [Description("bucket:80_85")] From80To85,
+        [Description("bucket:85_90")] From85To90,
+        [Description("bucket:gte_90")] GreaterThanOrEqual90,
+    }
+
+    internal enum DebuggerMemoryPressureGcBucket
+    {
+        [Description("bucket:lt_1")] LessThan1,
+        [Description("bucket:1_2")] From1To2,
+        [Description("bucket:2_5")] From2To5,
+        [Description("bucket:gte_5")] GreaterThanOrEqual5,
+    }
+
+    internal enum DebuggerMemoryPressureDurationBucket
+    {
+        [Description("bucket:lt_1s")] LessThan1Second,
+        [Description("bucket:1_5s")] From1To5Seconds,
+        [Description("bucket:5_30s")] From5To30Seconds,
+        [Description("bucket:gte_30s")] GreaterThanOrEqual30Seconds,
     }
 
     internal enum IntegrationName
@@ -277,7 +325,8 @@ internal static class MetricTags
         [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
         [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection,
         [Description("integration_name:protobuf")] Protobuf,
-        [Description("integration_name:hangfire")] Hangfire
+        [Description("integration_name:hangfire")] Hangfire,
+        [Description("integration_name:serverlesscompat")] ServerlessCompat
     }
 
     public enum InstrumentationError

@@ -58,7 +58,7 @@ internal sealed class EncoderLegacy : IEncoder
             {
                 null => CreateNativeNull(wafLibraryInvoker),
                 string s => CreateNativeString(s, applyLimits, wafLibraryInvoker),
-                JValue jv => CreateNativeString(jv.Value?.ToString() ?? string.Empty, applyLimits, wafLibraryInvoker),
+                JValue jv => EncodeInternal(jv.Value, remainingDepth, applyLimits, wafLibraryInvoker),
                 int i => CreateNativeLong(i, wafLibraryInvoker),
                 uint i => CreateNativeUlong(i, wafLibraryInvoker),
                 long i => CreateNativeLong(i, wafLibraryInvoker),
@@ -166,7 +166,7 @@ internal sealed class EncoderLegacy : IEncoder
         foreach (var o in objDictEnumerator)
         {
             var name = o.Key;
-            if (name != null)
+            if (!StringUtil.IsNullOrEmpty(name))
             {
                 var value = EncodeInternal(o.Value, remainingDepth, applyLimits, wafLibraryInvoker);
                 wafLibraryInvoker.ObjectMapAdd(ref mapNat, name, Convert.ToUInt64(name.Length), ref value);

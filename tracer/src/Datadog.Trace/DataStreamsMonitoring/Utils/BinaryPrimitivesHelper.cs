@@ -13,6 +13,11 @@ namespace Datadog.Trace.DataStreamsMonitoring.Utils;
 
 internal static class BinaryPrimitivesHelper
 {
+#if NETCOREAPP3_1_OR_GREATER
+    public static void WriteUInt64LittleEndian(Span<byte> bytes, ulong value)
+        => System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(bytes, value);
+#endif
+
     public static void WriteUInt64LittleEndian(byte[] bytes, ulong value)
     {
 #if NETCOREAPP3_1_OR_GREATER

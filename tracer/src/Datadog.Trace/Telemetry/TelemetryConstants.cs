@@ -21,6 +21,9 @@ namespace Datadog.Trace.Telemetry
         public const string ClientLibraryLanguageHeader = "DD-Client-Library-Language";
         public const string ClientLibraryVersionHeader = "DD-Client-Library-Version";
 
+        public const string SessionIdHeader = "DD-Session-ID";
+        public const string RootSessionIdHeader = "DD-Root-Session-ID";
+
         public const string CloudProviderHeader = "DD-Cloud-Provider";
         public const string CloudResourceTypeHeader = "DD-Cloud-Resource-Type";
         public const string CloudResourceIdentifierHeader = "DD-Cloud-Resource-Identifier";

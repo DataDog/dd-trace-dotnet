@@ -51,8 +51,8 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <CharacterSet>Unicode</CharacterSet>
-    <OutDir>bin\$(Configuration)\x86\</OutDir>
-    <IntDir>obj\$(Configuration)\x86\</IntDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Trace.ClrProfiler.Native\$(Configuration)\x86\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Trace.ClrProfiler.Native\$(Configuration)\x86\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
@@ -62,8 +62,8 @@
     <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <OutDir>bin\$(Configuration)\x86\</OutDir>
-    <IntDir>obj\$(Configuration)\x86\</IntDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Trace.ClrProfiler.Native\$(Configuration)\x86\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Trace.ClrProfiler.Native\$(Configuration)\x86\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
@@ -72,8 +72,8 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <CharacterSet>Unicode</CharacterSet>
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
@@ -83,8 +83,8 @@
     <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
@@ -93,8 +93,8 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <CharacterSet>Unicode</CharacterSet>
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
@@ -104,8 +104,8 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>..\..\..\artifacts\native-bin\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</OutDir>
+    <IntDir>..\..\..\artifacts\native-obj\Datadog.Trace.ClrProfiler.Native\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
@@ -154,6 +154,20 @@
   <PropertyGroup Condition="'$(Platform)'=='ARM64EC'">
     <BuildAsX>true</BuildAsX>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- spdlog 1.17 (and the bundled fmt 11+) need two build flags:
+           - FMT_UNICODE=0: fmt 11+ static_asserts that narrow string literals are UTF-8.
+             We don't compile with /utf-8 (would change the encoding of every narrow string in
+             the codebase) and we only log ASCII via std::string, so disabling Unicode is safe.
+           - DD_SPDLOG_NO_MDC: spdlog 1.13's MDC feature uses `thread_local std::map`, which on
+             the Linux universal build breaks linking against static libc++abi. We don't use MDC;
+             this macro pairs with a vendored-source patch that gates MDC behind it (see
+             PatchSpdlogFile in tracer/build/_build/UpdateVendors/VendoredDependency.cs).
+             Defined here on Windows for consistency. -->
+      <PreprocessorDefinitions>FMT_UNICODE=0;DD_SPDLOG_NO_MDC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>

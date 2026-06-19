@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
@@ -25,6 +24,8 @@ internal partial class ProbeExpressionParser<T>
     private const string @Exceptions = "@exception";
     private const string @Duration = "@duration";
     private const string @It = "@it";
+    private const string @Key = "@key";
+    private const string @Value = "@value";
     private const string @This = "this";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeExpressionParser<T>));
@@ -37,6 +38,8 @@ internal partial class ProbeExpressionParser<T>
 
     private List<EvaluationError> _errors;
     private int _arrayStack;
+    private ParserContext _parserContext;
+    private CaptureLimitInfo? _captureLimitInfo;
 
     static ProbeExpressionParser()
     {
@@ -47,6 +50,11 @@ internal partial class ProbeExpressionParser<T>
                 return (T)(object)true;
             }
 
+            if (typeof(T) == typeof(object))
+            {
+                return (T)(object)Expressions.UndefinedValue.Instance;
+            }
+
             return default;
         };
     }
@@ -55,9 +63,16 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression ParseRoot(
         JsonTextReader reader,
-        List<ParameterExpression> parameters)
+        List<ParameterExpression> parameters,
+        ParameterExpression itParameter = null)
     {
         var readerValue = reader.Value?.ToString();
+        if (_parserContext == ParserContext.CaptureExpression && readerValue == "filter")
+        {
+            _isBoundedFilterCapture = true;
+            _boundedFilterMaxCollectionSize = _captureLimitInfo.GetValueOrDefault().MaxCollectionSize;
+        }
+
         switch (reader.TokenType)
         {
             case JsonToken.PropertyName:
@@ -65,27 +80,27 @@ internal partial class ProbeExpressionParser<T>
                 {
                     case "and":
                         {
-                            return ConditionalOperator(reader, Expression.AndAlso, parameters);
+                            return ConditionalOperator(reader, Expression.AndAlso, parameters, itParameter);
                         }
 
                     case "or":
                         {
-                            return ConditionalOperator(reader, Expression.OrElse, parameters);
+                            return ConditionalOperator(reader, Expression.OrElse, parameters, itParameter);
                         }
 
                     default:
-                        return ParseTree(reader, parameters, null, false);
+                        return ParseTree(reader, parameters, itParameter, false);
                 }
         }
 
         return null;
     }
 
-    private Expression ConditionalOperator(JsonTextReader reader, Combiner combiner, List<ParameterExpression> parameters)
+    private Expression ConditionalOperator(JsonTextReader reader, Combiner combiner, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         _arrayStack++;
         reader.Read();
-        var right = ParseTree(reader, parameters, null);
+        var right = ParseTree(reader, parameters, itParameter);
         var left = Combine(null, right, combiner);
 
         while (reader.Read())
@@ -111,7 +126,7 @@ internal partial class ProbeExpressionParser<T>
                 break;
             }
 
-            right = ParseTree(reader, parameters, null, false);
+            right = ParseTree(reader, parameters, itParameter, false);
             left = Combine(left, right, combiner);
         }
 
@@ -153,14 +168,14 @@ internal partial class ProbeExpressionParser<T>
                                 case "and":
                                 case "&&":
                                     {
-                                        var right = ParseRoot(reader, parameters);
+                                        var right = ParseRoot(reader, parameters, itParameter);
                                         return right;
                                     }
 
                                 case "or":
                                 case "||":
                                     {
-                                        var right = ParseRoot(reader, parameters);
+                                        var right = ParseRoot(reader, parameters, itParameter);
                                         return right;
                                     }
 
@@ -247,14 +262,14 @@ internal partial class ProbeExpressionParser<T>
                                 // backward compability
                                 case "hasAny":
                                     {
-                                        return HasAny(reader, parameters);
+                                        return HasAny(reader, parameters, itParameter);
                                     }
 
                                 case "all":
                                 // backward compability
                                 case "hasAll":
                                     {
-                                        return HasAll(reader, parameters);
+                                        return HasAll(reader, parameters, itParameter);
                                     }
 
                                 case "filter":
@@ -358,6 +373,40 @@ internal partial class ProbeExpressionParser<T>
                                 return itParameter;
                             }
 
+                            if (readerValue == Key)
+                            {
+                                if (itParameter == null)
+                                {
+                                    AddError(readerValue, "current item in iterator is null");
+                                    return UndefinedValue();
+                                }
+
+                                if (TryGetCollectionIteratorProperty(itParameter, nameof(KeyValuePair<int, int>.Key), out var keyExpression))
+                                {
+                                    return keyExpression;
+                                }
+
+                                AddError(readerValue, $"{readerValue} is only supported when iterating over dictionary entries");
+                                return UndefinedValue();
+                            }
+
+                            if (readerValue == Value)
+                            {
+                                if (itParameter == null)
+                                {
+                                    AddError(readerValue, "current item in iterator is null");
+                                    return UndefinedValue();
+                                }
+
+                                if (TryGetCollectionIteratorProperty(itParameter, nameof(KeyValuePair<int, int>.Value), out var valueExpression))
+                                {
+                                    return valueExpression;
+                                }
+
+                                AddError(readerValue, $"{readerValue} is only supported when iterating over dictionary entries");
+                                return UndefinedValue();
+                            }
+
                             return Expression.Constant(readerValue);
                         }
 
@@ -441,6 +490,11 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression HandleReturnType(Expression finalExpr, List<ParameterExpression> scopeMembers)
     {
+        if (TryGetRedactedDictionaryValue(finalExpr, out var redactedDictionaryValue))
+        {
+            return RedactDictionaryValueForReturn(redactedDictionaryValue, finalExpr, scopeMembers);
+        }
+
         if (typeof(T).IsAssignableFrom(finalExpr.Type))
         {
             // If the expression type is already exactly T, return as-is.
@@ -486,6 +540,11 @@ internal partial class ProbeExpressionParser<T>
             // If declared type is Int32 but actual value is Int64, using declared type
             // would cause InvalidCastException when the lambda is executed.
             var runtimeType = argOrLocal.Value?.GetType() ?? argOrLocal.Type;
+            if (runtimeType.ContainsGenericParameters)
+            {
+                runtimeType = CloseOpenGenericType(runtimeType);
+            }
+
             var variable = Expression.Variable(runtimeType, argOrLocal.Name);
             scopeMembers.Add(variable);
 
@@ -507,6 +566,7 @@ internal partial class ProbeExpressionParser<T>
         var argsOrLocals = methodScopeMembers.Members;
         var @this = methodScopeMembers.InvocationTarget;
         var thisType = thisTypeOverride;
+
         if (string.IsNullOrEmpty(expressionJson) || argsOrLocals == null || thisType == null)
         {
             var ex = new ArgumentException("Method has been called with an invalid argument");
@@ -573,12 +633,18 @@ internal partial class ProbeExpressionParser<T>
             body = body.ReduceAndCheck();
         }
 
+        _redactedDictionaryValues = null;
         return new ExpressionBodyAndParameters(body, thisParameterExpression, returnParameterExpression, durationParameterExpression, exceptionParameterExpression, argsOrLocalsParameterExpression);
     }
 
     private ParameterExpression AddParameterAndVariable(ScopeMember scopeMember, Type type, string name, List<Expression> expressions, List<ParameterExpression> scopeMembers)
     {
         var parameterExpression = Expression.Parameter(scopeMember.GetType());
+        if (type.ContainsGenericParameters)
+        {
+            type = CloseOpenGenericType(scopeMember.Value?.GetType() ?? type);
+        }
+
         var variable = Expression.Variable(type, name);
         var valueField = Expression.Field(parameterExpression, "Value");
 
@@ -620,7 +686,32 @@ internal partial class ProbeExpressionParser<T>
 
     internal static CompiledExpression<T> ParseExpression(string expressionJson, MethodScopeMembers scopeMembers, Type thisTypeOverride)
     {
+        return ParseExpression(expressionJson, scopeMembers, thisTypeOverride, ParserContext.Default, captureLimitInfo: null);
+    }
+
+    internal static CompiledExpression<T> ParseCaptureExpression(string expressionJson, MethodScopeMembers scopeMembers, CaptureLimitInfo captureLimitInfo)
+    {
+        if (typeof(T) != typeof(object))
+        {
+            throw new InvalidOperationException("Capture expressions must be compiled with an object return type.");
+        }
+
+        // Extract thisType here to ensure consistency - use runtime type over declared type
+        var thisType = scopeMembers.InvocationTarget.Value?.GetType() ?? scopeMembers.InvocationTarget.Type ?? typeof(object);
+        return ParseExpression(expressionJson, scopeMembers, thisType, ParserContext.CaptureExpression, captureLimitInfo);
+    }
+
+    private static CompiledExpression<T> ParseExpression(
+        string expressionJson,
+        MethodScopeMembers scopeMembers,
+        Type thisTypeOverride,
+        ParserContext parserContext,
+        CaptureLimitInfo? captureLimitInfo)
+    {
         var parser = new ProbeExpressionParser<T>();
+        parser._parserContext = parserContext;
+        parser._captureLimitInfo = captureLimitInfo;
+
         ExpressionBodyAndParameters parsedExpression = default;
         try
         {

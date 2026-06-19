@@ -462,7 +462,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var datadogTraceAssemblyVersion = AssemblyName.GetAssemblyName(datadogTraceAssemblyPath).Version?.ToString() ?? "0.0.0.0";
             var datadogTraceAssemblyMvid = ResolveAssemblyMvid(datadogTraceAssemblyPath);
             _ = AddAssemblyReference(moduleDef, assemblyReferences, datadogTraceAssemblyPath);
-            AddIgnoresAccessChecksToAttributes(assemblyDef, moduleDef, importedMembers.IgnoresAccessChecksToAttributeCtor, mappingResolutionResult);
 
             var bootstrapType = new TypeDefUser(
                 BootstrapNamespace,
@@ -510,6 +509,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.BuildTargetTypeIndexSeconds += seconds);
             var bootstrapRegistrationMethods = new List<MethodDef>();
             var canonicalMappingsByKey = mappingResolutionResult.Mappings.ToDictionary(mapping => mapping.Key, StringComparer.Ordinal);
+            IReadOnlyCollection<string> requiredAccessCheckAssemblyNames = Array.Empty<string>();
             phaseStopwatch = StartProfilePhase();
             _currentExecutionContext = new EmitterExecutionContext(runtimeTypeResolutionAssemblyPathsByName, targetTypeIndex);
             var runtimeRegistrations = BuildRuntimeRegistrations(
@@ -597,6 +597,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.EmitLoopSeconds += seconds);
+                requiredAccessCheckAssemblyNames = _currentExecutionContext.RequiredAccessCheckAssemblyNames.ToArray();
             }
             finally
             {
@@ -632,6 +633,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             moduleInitializer.Body.Instructions.Add(OpCodes.Call.ToInstruction(initializeMethod));
             moduleInitializer.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
             moduleDef.GlobalType.Methods.Add(moduleInitializer);
+
+            AddIgnoresAccessChecksToAttributes(assemblyDef, moduleDef, importedMembers.IgnoresAccessChecksToAttributeCtor, mappingResolutionResult, requiredAccessCheckAssemblyNames);
 
             var writeOptions = new ModuleWriterOptions(moduleDef);
             if (!string.IsNullOrWhiteSpace(options.StrongNameKeyFile))
@@ -10187,6 +10190,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var phaseStopwatch = StartProfilePhase();
             try
             {
+                AddRequiredAccessCheckAssemblyName(method.DeclaringType);
                 if (_currentExecutionContext?.TryGetImportedMethod(method, out var cachedMethod) == true)
                 {
                     if (_currentProfile is not null)
@@ -10225,6 +10229,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var phaseStopwatch = StartProfilePhase();
             try
             {
+                AddRequiredAccessCheckAssemblyName(field.DeclaringType);
                 if (_currentExecutionContext?.TryGetImportedField(field, out var cachedField) == true)
                 {
                     if (_currentProfile is not null)
@@ -10249,6 +10254,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.ImportFieldSeconds += seconds);
             }
+        }
+
+        private static void AddRequiredAccessCheckAssemblyName(ITypeDefOrRef? declaringType)
+        {
+            var assemblyName = declaringType?.DefinitionAssembly?.Name?.String;
+            _currentExecutionContext?.AddRequiredAccessCheckAssemblyName(assemblyName);
         }
 
         private static void EmitTrailingOptionalTargetArguments(
@@ -12635,7 +12646,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             AssemblyDef assemblyDef,
             ModuleDef moduleDef,
             ICustomAttributeType ignoresAccessChecksToAttributeCtor,
-            DuckTypeAotMappingResolutionResult mappingResolutionResult)
+            DuckTypeAotMappingResolutionResult mappingResolutionResult,
+            IReadOnlyCollection<string> requiredAccessCheckAssemblyNames)
         {
             var assemblyNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -12650,6 +12662,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             foreach (var assemblyName in mappingResolutionResult.TargetAssemblyPathsByName.Keys)
+            {
+                if (!string.IsNullOrWhiteSpace(assemblyName))
+                {
+                    _ = assemblyNames.Add(assemblyName);
+                }
+            }
+
+            foreach (var assemblyName in requiredAccessCheckAssemblyNames)
             {
                 if (!string.IsNullOrWhiteSpace(assemblyName))
                 {
@@ -14090,6 +14110,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             private readonly Dictionary<string, IMethodDefOrRef> _duckTypeCreateCacheCreateMethodRefsByKey = new(StringComparer.Ordinal);
             private readonly Dictionary<string, IMethod> _duckTypeCreateCacheCreateFromMethodRefsByKey = new(StringComparer.Ordinal);
             private readonly Dictionary<string, IMethodDefOrRef> _nullableCtorRefsByKey = new(StringComparer.Ordinal);
+            private readonly HashSet<string> _requiredAccessCheckAssemblyNames = new(StringComparer.OrdinalIgnoreCase);
             private readonly Dictionary<string, MethodDef> _failureThrowerMethodsByKey = new(StringComparer.Ordinal);
             private readonly Dictionary<TypeDef, ReverseCustomAttributePlan> _reverseCustomAttributePlansByType = new();
             private readonly Dictionary<TypeDef, IReadOnlyList<MethodDef>> _duckIncludeMethodsByTargetType = new();
@@ -14107,6 +14128,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal TargetTypeIndex TargetTypeIndex { get; }
 
             internal IReadOnlyList<Assembly> LoadedRuntimeAssemblies { get; }
+
+            internal IReadOnlyCollection<string> RequiredAccessCheckAssemblyNames => _requiredAccessCheckAssemblyNames;
+
+            internal void AddRequiredAccessCheckAssemblyName(string? assemblyName)
+            {
+                if (!string.IsNullOrWhiteSpace(assemblyName))
+                {
+                    _ = _requiredAccessCheckAssemblyNames.Add(assemblyName!);
+                }
+            }
 
             internal IReadOnlyDictionary<string, TypeDef> GetOrCreateTypeLookup(ModuleDef module)
             {

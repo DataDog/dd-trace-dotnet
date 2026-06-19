@@ -103,12 +103,11 @@ internal static class FnvHash64
                ? GenerateV1Hash(data, initialHash)
                : GenerateV1AHash(data, initialHash);
 
-#if NETCOREAPP
     /// <summary>
     /// Generates the 64-bit FNV hash of <paramref name="data"/> using hash version <paramref name="version"/>.
     /// </summary>
     /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
-    public static ulong GenerateHash(Span<byte> data, Version version)
+    public static ulong GenerateHash(ReadOnlySpan<byte> data, Version version)
         => GenerateHash(data, version, OffsetBasis);
 
     /// <summary>
@@ -117,47 +116,17 @@ internal static class FnvHash64
     /// the two data values and subsequently calling GenerateHash.
     /// </summary>
     /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
-    public static ulong GenerateHash(Span<byte> data, Version version, ulong initialHash)
+    public static ulong GenerateHash(ReadOnlySpan<byte> data, Version version, ulong initialHash)
         => version == Version.V1
                ? GenerateV1Hash(data, initialHash)
                : GenerateV1AHash(data, initialHash);
-#endif
 
     private static ulong GenerateV1Hash(byte[] bytes, ulong hash)
-    {
-        // for each octet_of_data to be hashed
-        foreach (var b in bytes)
-        {
-            unchecked
-            {
-                // hash = hash * FNV_prime
-                hash *= FnvPrime;
-                // hash = hash xor octet_of_data
-                hash ^= b;
-            }
-        }
-
-        return hash;
-    }
+        => GenerateV1Hash(bytes.AsSpan(), hash);
 
     private static ulong GenerateV1AHash(byte[] bytes, ulong hash)
-    {
-        // for each octet_of_data to be hashed
-        foreach (var b in bytes)
-        {
-            unchecked
-            {
-                // hash = hash xor octet_of_data
-                hash ^= b;
-                // hash = hash * FNV_prime
-                hash *= FnvPrime;
-            }
-        }
+        => GenerateV1AHash(bytes.AsSpan(), hash);
 
-        return hash;
-    }
-
-#if NETCOREAPP
     private static ulong GenerateV1Hash(ReadOnlySpan<byte> bytes, ulong hash)
     {
         // for each octet_of_data to be hashed
@@ -191,5 +160,4 @@ internal static class FnvHash64
 
         return hash;
     }
-#endif
 }

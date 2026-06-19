@@ -28,10 +28,31 @@ namespace Datadog.Trace.Debugger.Models
     {
         None,
         MissingSourceFile,
-        AssemblyNotLoadedOrSourceFileMismatch,
+        AssemblyNotLoadedOrSymbolsUnavailable,
+        LoadedAssemblySourceFileMismatch,
         MissingPdb,
         InvalidLineNumber,
         MissingSequencePoint,
         UnexpectedException
+    }
+
+    internal enum LineProbePathMatchType
+    {
+        ExactSuffixMatch,
+        FallbackTrailingSuffixMatch
+    }
+
+    internal enum LineProbeFallbackFailureReason
+    {
+        None,
+        NoSameFileNameCandidates,
+        NoQualifiedSuffixMatch,
+        AmbiguousQualifiedMatches
+    }
+
+    internal enum LineProbeDiagnosticLevel
+    {
+        Minimal,
+        Full
     }
 }

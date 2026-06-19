@@ -52,7 +52,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 // Verify all characters between are digits
                 for (var i = digitStart; i < secondSlash; i++)
                 {
-                    if (path[i] is < '0' or > '9')
+                    if (!char.IsAsciiDigit(path[i]))
                     {
                         ThrowHelper.ThrowException($"Error parsing path: {path}");
                     }

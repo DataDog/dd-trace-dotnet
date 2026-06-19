@@ -17,6 +17,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
+    [IterationTime(500)]
     public class AgentWriterBenchmark
     {
         private const int SpanCount = 1000;
@@ -117,7 +118,7 @@ namespace Benchmarks.Trace
                 return endpoint.ToString();
             }
 
-            public Uri GetEndpoint(string relativePath) => UriHelpers.Combine(_baseEndpointUri, relativePath);
+            public Uri GetEndpoint(string relativePath) => relativePath is null ? _baseEndpointUri : UriHelpers.Combine(_baseEndpointUri, relativePath);
 
             public IApiRequest Create(Uri endpoint)
             {
@@ -230,7 +231,7 @@ namespace Benchmarks.Trace
                     return Task.FromResult(true);
                 }
 
-                public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+                public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
                 {
                     return Task.FromResult(true);
                 }

@@ -126,11 +126,13 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
         }
 
         /// <summary>
-        /// Shuts down the exporter and ensures all pending exports complete.
+        /// Releases the exporter's HTTP resources. The final export already ran
+        /// synchronously in MetricReader.StopAsync and is bounded by the HTTP
+        /// request timeout (OTEL_EXPORTER_OTLP_METRICS_TIMEOUT), so there is
+        /// nothing further to wait on here.
         /// </summary>
-        /// <param name="timeoutMilliseconds">Maximum time to wait for shutdown</param>
         /// <returns>True if shutdown completed successfully, false otherwise</returns>
-        public override bool Shutdown(int timeoutMilliseconds)
+        public override bool Shutdown()
         {
             try
             {
@@ -146,7 +148,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
         /// <summary>
         /// Creates an HttpClient with Unix Domain Socket support if the endpoint uses unix:// scheme.
-        /// For TCP/IP endpoints (http:// or https://), creates a standard HttpClient with HTTP/2.
+        /// For TCP/IP endpoints (http:// or https://), creates a standard HttpClient.
         /// </summary>
         private static HttpClient CreateHttpClient(Uri endpoint)
         {
@@ -168,11 +170,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                     }
                 };
 
-                return new HttpClient(handler)
-                {
-                    DefaultRequestVersion = HttpVersion.Version20,
-                    DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher
-                };
+                return new HttpClient(handler);
             }
 
             // Standard TCP/IP endpoint
@@ -181,11 +179,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
             };
 
-            return new HttpClient(tcpHandler)
-            {
-                DefaultRequestVersion = HttpVersion.Version20,
-                DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher
-            };
+            return new HttpClient(tcpHandler);
         }
 
         private async Task<bool> SendOtlpRequest(IReadOnlyList<MetricPoint> metrics)

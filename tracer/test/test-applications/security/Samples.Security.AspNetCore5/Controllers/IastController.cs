@@ -815,12 +815,21 @@ namespace Samples.Security.AspNetCore5.Controllers
 
         [HttpGet("SsrfAttack")]
         [Route("SsrfAttack")]
-        public ActionResult SsrfAttack(string host)
+        public ActionResult SsrfAttack(string host, string body = null)
         {
             string result = string.Empty;
             try
             {
-                result = new HttpClient().GetStringAsync("https://" + host + "/path").Result;
+                if (!string.IsNullOrEmpty(body))
+                {
+                    var httpClient = new HttpClient();
+                    var content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
+                    result = httpClient.PostAsync("https://" + host + "/path", content).Result.Content.ReadAsStringAsync().Result;
+                }
+                else
+                {
+                    result = new HttpClient().GetStringAsync("https://" + host + "/path").Result;
+                }
             }
             catch (HttpRequestException ex)
             {

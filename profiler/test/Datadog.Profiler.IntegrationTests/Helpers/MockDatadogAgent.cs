@@ -21,6 +21,7 @@ namespace Datadog.Profiler.IntegrationTests
         private readonly CancellationTokenSource _cancellationTokenSource = new();
         private readonly ManualResetEventSlim _readinessNotifier = new();
         private AgentEtwProxy _etwProxy = null;
+        private int _nbCallsOnProfilingEndpoint;
 
         public event EventHandler<EventArgs<HttpListenerContext>> ProfilerRequestReceived;
         public event EventHandler<EventArgs<HttpListenerContext>> TracerRequestReceived;
@@ -29,7 +30,7 @@ namespace Datadog.Profiler.IntegrationTests
         public event EventHandler<EventArgs<int>> EventsSent;
         public event EventHandler<EventArgs<int>> ProfilerUnregistered;
 
-        public int NbCallsOnProfilingEndpoint { get; private set; }
+        public int NbCallsOnProfilingEndpoint => Volatile.Read(ref _nbCallsOnProfilingEndpoint);
         public int ProfiledProcessId { get; set; }
 
         public bool IsReady => _readinessNotifier.Wait(TimeSpan.FromSeconds(30)); // wait for Agent being ready
@@ -155,7 +156,7 @@ namespace Datadog.Profiler.IntegrationTests
                         if (ctx.Request.RawUrl == ProfilesEndpoint)
                         {
                             OnProfilesRequestReceived(ctx);
-                            NbCallsOnProfilingEndpoint++;
+                            Interlocked.Increment(ref _nbCallsOnProfilingEndpoint);
                         }
 
                         if (ctx.Request.RawUrl == TracesEndpoint)
@@ -268,16 +269,67 @@ namespace Datadog.Profiler.IntegrationTests
                 _namedPipeServer?.Dispose();
             }
 
-            // For now just empty the pipe stream
+            // Reads each HTTP request from the pipe and writes back a canned HTTP response.
             private async Task HandleNamedPipeProfiles(NamedPipeServerStream ss, CancellationToken cancellationToken)
             {
                 Interlocked.Increment(ref _nbTime);
 
-                while (ss.IsConnected)
+                try
                 {
-                    _ = MockHttpParser.ReadRequest(ss);
-                    await ss.WriteAsync(_responseBytes, cancellationToken);
-                    NbCallsOnProfilingEndpoint++;
+                    while (ss.IsConnected && !cancellationToken.IsCancellationRequested)
+                    {
+                        // The exporter sends one HTTP request per connection (the response advertises
+                        // "Connection: close"). Await the read so end-of-stream is observed when the
+                        // client closes, then drain the body so the next iteration starts on a clean
+                        // request boundary instead of re-parsing the (binary) payload as a bogus request.
+                        var request = await MockHttpParser.ReadRequest(ss).ConfigureAwait(false);
+
+                        // Count on receipt (like HttpAgent does) so the call is recorded even if the
+                        // client tears the connection down before we finish writing the response.
+                        Interlocked.Increment(ref _nbCallsOnProfilingEndpoint);
+
+                        await DrainBodyAsync(ss, request.ContentLength, cancellationToken).ConfigureAwait(false);
+
+                        // The client may have closed the pipe between the read and the write.
+                        if (!ss.IsConnected)
+                        {
+                            break;
+                        }
+
+                        await ss.WriteAsync(_responseBytes, cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                catch (Exception ex) when (ex is IOException or InvalidOperationException or OperationCanceledException)
+                {
+                    // Expected when the client closes the connection after reading the response:
+                    // a clean close surfaces as InvalidOperationException (end of stream) while an
+                    // abrupt one surfaces as IOException ("Pipe is broken"); OperationCanceledException
+                    // happens during shutdown/dispose. These all mark the normal end of a
+                    // request/response cycle, so swallow them instead of surfacing an "Unexpected exception".
+                }
+            }
+
+            // The HTTP request body is left unread by MockHttpParser.ReadRequest, so consume the
+            // declared Content-Length bytes to keep the stream aligned for the next read.
+            private static async Task DrainBodyAsync(Stream stream, long? contentLength, CancellationToken cancellationToken)
+            {
+                if (contentLength is not > 0)
+                {
+                    return;
+                }
+
+                var remaining = contentLength.Value;
+                var buffer = new byte[8192];
+                while (remaining > 0)
+                {
+                    var toRead = (int)Math.Min(buffer.Length, remaining);
+                    var read = await stream.ReadAsync(buffer, 0, toRead, cancellationToken).ConfigureAwait(false);
+                    if (read == 0)
+                    {
+                        break;
+                    }
+
+                    remaining -= read;
                 }
             }
         }
@@ -292,6 +344,14 @@ namespace Datadog.Profiler.IntegrationTests
         internal class PipeServer : IDisposable
         {
             private const int ConcurrentInstanceCount = 5;
+
+            // Win32 error codes (wrapped by IOException as HRESULT_FROM_WIN32) that mean the client
+            // closed its end of the pipe. Matching on these is locale/version independent, unlike
+            // matching the English exception message text.
+            private const int ErrorBrokenPipe = 109;        // ERROR_BROKEN_PIPE ("Pipe is broken")
+            private const int ErrorNoData = 232;            // ERROR_NO_DATA ("The pipe is being closed")
+            private const int ErrorPipeNotConnected = 233;  // ERROR_PIPE_NOT_CONNECTED
+
             private readonly CancellationTokenSource _cancellationTokenSource;
             private readonly string _pipeName;
             private readonly PipeDirection _pipeDirection;
@@ -375,10 +435,10 @@ namespace Datadog.Profiler.IntegrationTests
                 {
                     _log("Execution canceled " + instance);
                 }
-                catch (IOException ex) when (ex.Message.Contains("The pipe is being closed"))
+                catch (IOException ex) when (IsExpectedPipeDisconnect(ex))
                 {
-                    // Likely interrupted by a dispose
-                    // Swallow the exception and let the test finish
+                    // Likely interrupted by a dispose, or the client closed its end of the pipe
+                    // after reading the response. Swallow the exception and let the test finish.
                     _log("Pipe closed " + instance);
                 }
                 catch (Exception ex)
@@ -389,6 +449,21 @@ namespace Datadog.Profiler.IntegrationTests
                     _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
                     m.Wait(5_000);
                 }
+            }
+
+            private static bool IsExpectedPipeDisconnect(IOException ex)
+            {
+                // IOExceptions raised for pipe I/O wrap a Win32 error code as an HRESULT
+                // (HRESULT_FROM_WIN32 => facility 7, code in the low 16 bits). Prefer matching the
+                // code; fall back to the message text if this isn't a Win32-derived HRESULT.
+                const int facilityWin32 = 7;
+                if (((ex.HResult >> 16) & 0x1FFF) == facilityWin32)
+                {
+                    var win32Code = ex.HResult & 0xFFFF;
+                    return win32Code is ErrorBrokenPipe or ErrorNoData or ErrorPipeNotConnected;
+                }
+
+                return ex.Message.Contains("The pipe is being closed") || ex.Message.Contains("Pipe is broken");
             }
         }
     }

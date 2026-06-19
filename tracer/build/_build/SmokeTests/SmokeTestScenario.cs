@@ -10,7 +10,7 @@ public abstract record SmokeTestScenario
     protected const string DefaultSnapshotIgnoredAttrs =
         "span_id" + ",trace_id" + ",parent_id" + ",duration" + ",start" + ",metrics.system.pid" + ",meta.runtime-id" + ","
         + "meta.network.client.ip" + ",meta.http.client_ip" + ",metrics.process_id" + ",meta._dd.p.dm" + ","
-        + "meta._dd.p.tid" + ",meta._dd.parent_id" + ",meta._dd.appsec.s.req.params" + ","
+        + "meta._dd.p.tid" + ",meta._dd.parent_id" + ",meta._dd.tags.process" + ",meta._dd.appsec.s.req.params" + ","
         + "meta._dd.appsec.s.res.body" + ",meta._dd.appsec.s.req.headers" + ","
         + "meta._dd.appsec.s.res.headers" + ",meta._dd.appsec.fp.http.endpoint" + ","
         + "meta._dd.appsec.fp.http.header" + ",meta._dd.appsec.fp.http.network";
@@ -119,6 +119,10 @@ public record TrimmingScenario : SmokeTestScenario
     public required string PackageName { get; init; }
     public string? PackageVersionSuffix { get; init; }
     public string InstallCommand => InstallType.GetInstallCommand();
+
+    // Single-file trimming publishes bundled user assemblies without Assembly.Location.
+    // Code Origin still emits reflection-derived frame tags, but PDB-backed file/line/column tags are unavailable.
+    public override string SnapshotFile => "smoke_test_snapshots_trimming";
 }
 
 public record WindowsMsiScenario : SmokeTestScenario

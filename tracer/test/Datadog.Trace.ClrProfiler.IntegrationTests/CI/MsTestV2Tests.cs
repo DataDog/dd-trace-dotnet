@@ -100,6 +100,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             targetSpan.Tags.Remove(Tags.GitCommitSha);
                             targetSpan.Tags.Remove(Tags.GitRepositoryUrl);
 
+                            // Remove process tags that get added to the first span of a payload
+                            targetSpan.Tags.Remove(Tags.ProcessTags);
+
                             // Remove EFD tags
                             targetSpan.Tags.Remove(TestTags.TestIsNew);
                             targetSpan.Tags.Remove(TestTags.TestIsRetry);
@@ -264,8 +267,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 case "My Custom 3|1: CustomMultipleResultsTestMethodAttributeTest":
                                 case "My Custom 3|2: CustomMultipleResultsTestMethodAttributeTest":
                                     AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusPass);
+                                    AssertTargetSpanEqual(
+                                        targetSpan,
+                                        TestTags.Parameters,
+                                        $"{{\"metadata\":{{\"test_name\":\"{targetSpan.Tags[TestTags.Name]}\"}},\"arguments\":{{}}}}");
                                     break;
                             }
+
+                            Assert.True(targetSpan.Tags.Remove(IntelligentTestRunnerTags.TestTestsSkippingEnabled));
 
                             // check remaining tag (only the name)
                             Assert.Single(targetSpan.Tags);

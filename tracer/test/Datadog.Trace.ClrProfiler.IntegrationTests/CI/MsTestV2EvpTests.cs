@@ -44,6 +44,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
+        public static IEnumerable<object[]> GetDataForParameterizedItrSkip()
+        {
+            foreach (var version in PackageVersions.MSTest)
+            {
+                var packageVersion = version[0] as string;
+                if (string.IsNullOrEmpty(packageVersion) ||
+                    packageVersion == "2.2.10" ||
+                    packageVersion == "3.11.1" ||
+                    packageVersion == "4.2.3")
+                {
+                    yield return version.Concat("evp_proxy/v4", false);
+                }
+            }
+        }
+
         [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1118:Parameter should not span multiple lines", Justification = "readability")]
         public static IEnumerable<object[]> GetDataForEarlyFlakeDetection()
         {
@@ -270,6 +285,138 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         }
 
         [SkippableTheory]
+        [MemberData(nameof(GetDataForParameterizedItrSkip))]
+        [Trait("Category", "EndToEnd")]
+        [Trait("Category", "TestIntegrations")]
+        public async Task ItrSkipForOneParameterizedRowDoesNotSkipOtherRows(string packageVersion, string evpVersionToRemove, bool expectedGzip)
+        {
+            const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
+            const string skippedRowParameters = "{\"metadata\":{},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}";
+
+            var tests = new List<MockCIVisibilityTest>();
+            var evpRequests = new List<string>();
+
+            InjectSession(
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out var runId);
+
+            Output.WriteLine("RunId: {0}", runId);
+
+            try
+            {
+                using var agent = EnvironmentHelper.GetMockAgent(useStatsD: !IsMacOS());
+                agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
+
+                agent.EventPlatformProxyPayloadReceived += (sender, e) =>
+                {
+                    lock (evpRequests)
+                    {
+                        evpRequests.Add($"{e.Value.PathAndQuery} ({e.Value.Headers["Content-Type"] ?? "unknown"})");
+                    }
+
+                    if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
+                    {
+                        e.Value.Response = new MockTracerResponse("""{"data":{"id":"b5a855bffe6c0b2ae5d150fb6ad674363464c816","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"efd_enabled":false,"flaky_test_retries_enabled":false,"itr_enabled":true,"require_git":false,"tests_skipping":true}}} """, 200);
+                        return;
+                    }
+
+                    if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
+                    {
+                        e.Value.Response = new MockTracerResponse(
+                            $$"""
+                              {
+                                "data": [
+                                  {
+                                    "id": "Samples.MSTestTests.TestSuite.SimpleParameterizedTest[1,1,2]",
+                                    "type": "test_params",
+                                    "attributes": {
+                                      "suite": "{{TestSuiteName}}",
+                                      "name": "SimpleParameterizedTest",
+                                      "parameters": "{{skippedRowParameters.Replace("\"", "\\\"")}}",
+                                      "_missing_line_code_coverage": false
+                                    }
+                                  }
+                                ],
+                                "meta": {
+                                  "correlation_id": "{{correlationId}}"
+                                }
+                              }
+                              """,
+                            200);
+                        return;
+                    }
+
+                    if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
+                    {
+                        e.Value.Headers["Content-Encoding"].Should().Be(expectedGzip ? "gzip" : null);
+
+                        var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                        if (payload?.Events?.Length > 0)
+                        {
+                            foreach (var @event in payload.Events)
+                            {
+                                if (@event.Type != SpanTypes.Test ||
+                                    @event.Content.ToString() is not { } eventContent ||
+                                    JsonConvert.DeserializeObject<MockCIVisibilityTest>(eventContent) is not { } test)
+                                {
+                                    continue;
+                                }
+
+                                lock (tests)
+                                {
+                                    tests.Add(test);
+                                }
+                            }
+                        }
+                    }
+                };
+
+                using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
+
+                MockCIVisibilityTest[] receivedTests;
+                lock (tests)
+                {
+                    receivedTests = tests.ToArray();
+                }
+
+                string[] receivedEvpRequests;
+                lock (evpRequests)
+                {
+                    receivedEvpRequests = evpRequests.ToArray();
+                }
+
+                var parameterizedRows = receivedTests
+                                       .Where(test => test.Meta.GetValueOrDefault(TestTags.Name) == "SimpleParameterizedTest")
+                                       .OrderBy(test => test.Meta.GetValueOrDefault(TestTags.Parameters))
+                                       .ToArray();
+                parameterizedRows.Should().HaveCount(3, "received EVP requests: {0}", string.Join(", ", receivedEvpRequests));
+
+                var skippedRow = parameterizedRows.Should()
+                                                  .ContainSingle(test => test.Meta.GetValueOrDefault(TestTags.Parameters) == skippedRowParameters)
+                                                  .Subject;
+                skippedRow.Meta[TestTags.Status].Should().Be(TestTags.StatusSkip);
+                skippedRow.Meta[IntelligentTestRunnerTags.SkippedBy].Should().Be("true");
+                skippedRow.Meta[TestTags.SkipReason].Should().Be(IntelligentTestRunnerTags.SkippedByReason);
+                skippedRow.CorrelationId.Should().Be(correlationId);
+
+                var executedRows = parameterizedRows.Where(test => !ReferenceEquals(test, skippedRow)).ToArray();
+                executedRows.Should().HaveCount(2);
+                executedRows.Should().OnlyContain(test => test.Meta.GetValueOrDefault(TestTags.Status) == TestTags.StatusPass);
+                executedRows.Should().OnlyContain(test => test.Meta.GetValueOrDefault(IntelligentTestRunnerTags.SkippedBy) != "true");
+            }
+            catch
+            {
+                WriteSpans(tests);
+                throw;
+            }
+        }
+
+        [SkippableTheory]
         [MemberData(nameof(GetData))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
@@ -375,6 +522,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         testSuites.SelectMany(s => s.Metrics)
                                   .Should()
                                   .ContainEquivalentOf(new KeyValuePair<string, double>(IntelligentTestRunnerTags.SkippingCount, 1));
+                        testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().Contain(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true"));
 
                         // Check Module
                         Assert.True(tests.All(t => t.TestModuleId == testSuite.TestModuleId));
@@ -383,6 +531,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         testModule.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
                         testModule.Meta.Should().Contain(IntelligentTestRunnerTags.SkippingType, IntelligentTestRunnerTags.SkippingTypeTest);
                         testModule.Meta.Should().Contain(IntelligentTestRunnerTags.TestsSkipped, "true");
+                        testModule.Meta.Should().Contain(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true");
+                        tests.Should().AllSatisfy(test => test.Meta.Should().Contain(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true"));
 
                         // Check Session
                         tests.Should().OnlyContain(t => t.TestSessionId == testSuite.TestSessionId);
@@ -411,6 +561,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                             // Remove user provided service tag
                             targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
+
+                            // Remove tags validated outside the per-span checklist
+                            Assert.True(targetTest.Meta.Remove(IntelligentTestRunnerTags.TestTestsSkippingEnabled));
 
                             // check the name
                             Assert.Equal("mstestv2.test", targetTest.Name);
@@ -558,6 +711,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 case "My Custom 3|1: CustomMultipleResultsTestMethodAttributeTest":
                                 case "My Custom 3|2: CustomMultipleResultsTestMethodAttributeTest":
                                     AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusPass);
+                                    AssertTargetSpanEqual(
+                                        targetTest,
+                                        TestTags.Parameters,
+                                        $"{{\"metadata\":{{\"test_name\":\"{targetTest.Meta[TestTags.Name]}\"}},\"arguments\":{{}}}}");
                                     break;
                             }
 

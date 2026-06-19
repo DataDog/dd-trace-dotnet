@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -141,6 +142,34 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             return size;
         }
 
+        // NOTE: tags must be sorted alphabetically — called only on edge-tag cache miss
+        private static string[] BuildConsumeEdgeTags(string groupId, string topic, string clusterId)
+        {
+            if (!StringUtil.IsNullOrEmpty(clusterId))
+            {
+                return StringUtil.IsNullOrEmpty(topic)
+                           ? ["direction:in", $"group:{groupId}", $"kafka_cluster_id:{clusterId}", "type:kafka"]
+                           : ["direction:in", $"group:{groupId}", $"kafka_cluster_id:{clusterId}", $"topic:{topic}", "type:kafka"];
+            }
+
+            return StringUtil.IsNullOrEmpty(topic)
+                       ? ["direction:in", $"group:{groupId}", "type:kafka"]
+                       : ["direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka"];
+        }
+
+        // NOTE: tags must be sorted alphabetically — called only on edge-tag cache miss
+        private static string[] BuildProduceEdgeTags(string clusterId, string topic)
+        {
+            if (!StringUtil.IsNullOrEmpty(clusterId))
+            {
+                return StringUtil.IsNullOrEmpty(topic)
+                           ? ["direction:out", $"kafka_cluster_id:{clusterId}", "type:kafka"]
+                           : ["direction:out", $"kafka_cluster_id:{clusterId}", $"topic:{topic}", "type:kafka"];
+            }
+
+            return ["direction:out", $"topic:{topic}", "type:kafka"];
+        }
+
         internal static Scope? CreateConsumerScope(
             Tracer tracer,
             DataStreamsManager dataStreamsManager,
@@ -233,9 +262,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (message?.Instance is not null && message.Timestamp.Type != 0)
                 {
-                    var consumeTime = span.StartTime.UtcDateTime;
-                    var produceTime = message.Timestamp.UtcDateTime;
-                    tags.MessageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
+                    try
+                    {
+                        var consumeTime = span.StartTime.UtcDateTime;
+                        var produceTime = message.Timestamp.UtcDateTime;
+                        tags.MessageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
+                    }
+                    catch (Exception)
+                    {
+                        // The stored timestamp resulted in an out-of-range value when converting to DateTime;
+                        // likely due to an invalid timestamp. Skip the tag rather than abort the whole scope.
+                        // Using Exception here, because the method could throw ArgumentOutOfRangeException or OverflowException
+                    }
                 }
 
                 if (message?.Instance is not null && message.Value is null)
@@ -255,21 +293,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    // TODO: we could pool these arrays to reduce allocations
                     // NOTE: the tags must be sorted in alphabetical order
-                    string[] edgeTags;
-                    if (!StringUtil.IsNullOrEmpty(consumerClusterId))
-                    {
-                        edgeTags = StringUtil.IsNullOrEmpty(topic)
-                                       ? new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", "type:kafka" }
-                                       : new[] { "direction:in", $"group:{groupId}", $"kafka_cluster_id:{consumerClusterId}", $"topic:{topic}", "type:kafka" };
-                    }
-                    else
-                    {
-                        edgeTags = StringUtil.IsNullOrEmpty(topic)
-                                       ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
-                                       : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
-                    }
+                    var cacheKey = new ConsumeEdgeTagCacheKey(
+                        groupId ?? string.Empty,
+                        topic ?? string.Empty,
+                        consumerClusterId ?? string.Empty);
+                    var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => BuildConsumeEdgeTags(k.GroupId, k.Topic, k.ClusterId));
 
                     span.SetDataStreamsCheckpoint(
                         dataStreamsManager,
@@ -279,7 +308,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs,
                         pathwayContext);
 
-                    message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext); // remove eventual junk
+                    // TemporaryBase64PathwayContext is only written by our consumer code when
+                    // KafkaCreateConsumerScopeEnabled=false. When it is true (the default), the
+                    // header is never present so the unconditional Remove performs a wasted O(n)
+                    // linear header scan on every message. Skip it when we know it can't be there.
+                    if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled)
+                    {
+                        message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext);
+                    }
+
                     if (!tracer.CurrentTraceSettings.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null && span.Context.PathwayContext != null)
                     {
                         // write the _new_ pathway (the "consume" checkpoint that we just set above) to the headers as a way to pass its value to an eventual
@@ -287,6 +324,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         // Note that this header only exists on the consume side, and Kafka never sees it.
                         var base64PathwayContext = Convert.ToBase64String(BitConverter.GetBytes(span.Context.PathwayContext.Value.Hash.Value));
                         message.Headers.Add(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext, Encoding.UTF8.GetBytes(base64PathwayContext));
+                    }
+
+                    if (dataStreamsManager.IsTransactionTrackingEnabled)
+                    {
+                        ApplyDataStreamsExtractors(span, dataStreamsManager, DataStreamsTransactionExtractor.ExtractorType.KafkaConsumeHeaders, message);
                     }
                 }
             }
@@ -324,6 +366,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             catch (Exception ex)
             {
                 Log.Error(ex, "Error closing Kafka consumer scope");
+            }
+        }
+
+        internal static void ApplyDataStreamsExtractors<TMessage>(
+            Span span,
+            DataStreamsManager dataStreamsManager,
+            DataStreamsTransactionExtractor.ExtractorType extractorType,
+            TMessage? message)
+            where TMessage : IMessage
+        {
+            if (message?.Instance == null)
+            {
+                return;
+            }
+
+            var extractors = dataStreamsManager.GetExtractorsByType(extractorType);
+            if (extractors != null && message.Headers != null)
+            {
+                foreach (var extractor in extractors)
+                {
+                    if (message.Headers.TryGetLastBytes(extractor.Value, out var transactionId))
+                    {
+                        span.TrackTransaction(dataStreamsManager, transactionId, extractor.Name);
+                    }
+                }
             }
         }
 
@@ -367,17 +434,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     ProducerCache.TryGetProducer(producer, out _, out var producerClusterId);
 
                     string[] edgeTags;
-                    if (!StringUtil.IsNullOrEmpty(producerClusterId))
+                    if (StringUtil.IsNullOrEmpty(topic) && StringUtil.IsNullOrEmpty(producerClusterId))
                     {
-                        edgeTags = StringUtil.IsNullOrEmpty(topic)
-                                       ? ["direction:out", $"kafka_cluster_id:{producerClusterId}", "type:kafka"]
-                                       : ["direction:out", $"kafka_cluster_id:{producerClusterId}", $"topic:{topic}", "type:kafka"];
+                        edgeTags = DefaultProduceEdgeTags;
                     }
                     else
                     {
-                        edgeTags = StringUtil.IsNullOrEmpty(topic)
-                                       ? DefaultProduceEdgeTags
-                                       : ["direction:out", $"topic:{topic}", "type:kafka"];
+                        var cacheKey = new ProduceEdgeTagCacheKey(producerClusterId ?? string.Empty, topic ?? string.Empty);
+                        edgeTags = dataStreamsManager.GetOrCreateEdgeTags(cacheKey, static k => BuildProduceEdgeTags(k.ClusterId, k.Topic));
                     }
 
                     var msgSize = dataStreamsManager.IsInDefaultState ? 0 : GetMessageSize(message);
@@ -392,6 +456,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     }
 
                     dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
+                    if (dataStreamsManager.IsTransactionTrackingEnabled)
+                    {
+                        ApplyDataStreamsExtractors(span, dataStreamsManager, DataStreamsTransactionExtractor.ExtractorType.KafkaProduceHeaders, message);
+                    }
                 }
             }
             catch (Exception ex)
@@ -462,32 +530,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             options.DuckCast<IDescribeClusterOptions>().RequestTimeout = TimeSpan.FromSeconds(2);
 
             var duckTask = adminClient.DescribeClusterAsync(options);
-            var describeResult = SafeGetResult<IDuckTypeTask<IDescribeClusterResult>, IDescribeClusterResult>(duckTask);
-            return describeResult?.ClusterId;
 
-            static TResult? SafeGetResult<TTask, TResult>(TTask task)
-                where TTask : IDuckTypeTask<TResult>
-                where TResult : IDescribeClusterResult
+            var originalContext = SynchronizationContext.Current;
+            try
             {
-                if (task.IsCompletedSuccessfully)
-                {
-                    return task.Result;
-                }
+                // Set the synchronization context to null to avoid deadlocks.
+                SynchronizationContext.SetSynchronizationContext(null);
 
-                var originalContext = SynchronizationContext.Current;
-                try
-                {
-                    // Set the synchronization context to null to avoid deadlocks.
-                    SynchronizationContext.SetSynchronizationContext(null);
-
-                    // Wait synchronously for the task to complete.
-                    return task.GetAwaiter().GetResult();
-                }
-                finally
-                {
-                    // Restore the original synchronization context.
-                    SynchronizationContext.SetSynchronizationContext(originalContext);
-                }
+                // Wait synchronously for the task to complete.
+                return duckTask.GetAwaiter().GetResult()?.ClusterId;
+            }
+            finally
+            {
+                // Restore the original synchronization context.
+                SynchronizationContext.SetSynchronizationContext(originalContext);
             }
         }
 

@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET6_0_OR_GREATER
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -33,11 +31,9 @@ namespace Datadog.Trace.Agent
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly TracesEncoding _tracesEncoding;
         private readonly Uri _tracesEndpoint;
-        private readonly KeyValuePair<string, string>[] _tracesHeaders;
         private readonly Uri _statsEndpoint; // This endpoint is passed for the _sendStats callback, but otherwise unused
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
-        private readonly Datadog.Trace.OpenTelemetry.Metrics.OtlpExporter _metricsExporter;
 
         public ApiOtlp(IApiRequestFactory apiRequestFactory, TracerSettings settings, ExporterSettings exporterSettings, IDatadogLogger log = null)
         {
@@ -49,12 +45,9 @@ namespace Datadog.Trace.Agent
 
             _apiRequestFactory = apiRequestFactory;
             _tracesEncoding = exporterSettings.TracesEncoding;
-            _tracesEndpoint = exporterSettings.OtlpTracesEndpoint;
-            _tracesHeaders = exporterSettings.OtlpTracesHeaders ?? [];
+            _tracesEndpoint = _apiRequestFactory.GetEndpoint(null); // The base endpoint for OTLP traces already includes the path component
             _statsEndpoint = exporterSettings.OtlpMetricsEndpoint;
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
-
-            _metricsExporter = new Datadog.Trace.OpenTelemetry.Metrics.OtlpExporter(settings, exporterSettings);
         }
 
         private delegate Task<SendResult> SendCallback<T>(IApiRequest request, bool isFinalTry, T state);
@@ -74,13 +67,14 @@ namespace Datadog.Trace.Agent
         // return true.
         public Task<bool> Ping() => Task.FromResult(true);
 
-        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
         {
             _log.Debug("Sending trace stats to the OTLP Metrics endpoint.");
 
-            var state = new SendStatsState(stats, bucketDuration);
+            var state = new SendStatsState(stats, bucketDuration, tracerObfuscationVersion);
 
-            return SendWithRetry(_statsEndpoint, _sendStats, state);
+            // We are supposed to be fire and forget for these stats, with no retries
+            return SendWithRetry(_statsEndpoint, _sendStats, state, retryLimit: 0);
         }
 
         public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
@@ -92,10 +86,9 @@ namespace Datadog.Trace.Agent
             return SendWithRetry(_tracesEndpoint, _sendTraces, state);
         }
 
-        private async Task<bool> SendWithRetry<T>(Uri endpoint, SendCallback<T> callback, T state)
+        private async Task<bool> SendWithRetry<T>(Uri endpoint, SendCallback<T> callback, T state, int retryLimit = 5)
         {
             // retry up to 5 times with exponential back-off
-            var retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
 
@@ -178,11 +171,6 @@ namespace Datadog.Trace.Agent
             var traces = state.Traces;
             var numberOfTraces = state.NumberOfTraces;
 
-            foreach (var header in _tracesHeaders)
-            {
-                request.AddHeader(header.Key, header.Value);
-            }
-
             // TODO: Determine if we need to send the following information somehow:
             // - DroppedP0Traces
             // - DroppedP0Spans
@@ -196,8 +184,13 @@ namespace Datadog.Trace.Agent
                 try
                 {
                     // TODO: Telemetry - Record OTLP Traces API submissions
-                    // TODO: Add more precise logic for "application/x-protobuf" vs "application/json"
-                    response = await request.PostAsync(traces, MimeTypes.Json).ConfigureAwait(false);
+                    var contentType = _tracesEncoding switch
+                    {
+                        TracesEncoding.OtlpProtobuf => MimeTypes.XProtobuf,
+                        _ => MimeTypes.Json,
+                    };
+
+                    response = await request.PostAsync(traces, contentType).ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
@@ -293,13 +286,14 @@ namespace Datadog.Trace.Agent
         {
             public readonly StatsBuffer Stats;
             public readonly long BucketDuration;
+            public readonly int TracerObfuscationVersion;
 
-            public SendStatsState(StatsBuffer stats, long bucketDuration)
+            public SendStatsState(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
             {
                 Stats = stats;
                 BucketDuration = bucketDuration;
+                TracerObfuscationVersion = tracerObfuscationVersion;
             }
         }
     }
 }
-#endif

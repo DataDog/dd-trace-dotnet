@@ -14,8 +14,6 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.FeatureFlags;
-using Datadog.Trace.LibDatadog;
-using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -118,19 +116,13 @@ namespace Datadog.Trace
                 Log.Warning(result.Exception, "Failed to create the global configuration source with status: {Status} and error message: {ErrorMessage}", result.Result.ToString(), result.ErrorMessage);
             }
 
-            var libdatadogAvailaibility = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
-            if (libdatadogAvailaibility.Exception is not null)
-            {
-                Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
-            }
-
             serviceRemappingHash ??= new ServiceRemappingHash(settings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags);
             discoveryService ??= GetDiscoveryService(settings, serviceRemappingHash);
             var telemetrySettings = CreateTelemetrySettings(settings);
             telemetry ??= CreateTelemetryController(settings, discoveryService, telemetrySettings);
 
             statsd ??= new StatsdManager(settings);
-            runtimeMetrics ??= settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer
+            runtimeMetrics ??= settings.RuntimeMetricsEnabled && !settings.OtlpRuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer
                                    ? new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService, settings.RuntimeMetricsDiagnosticsMetricsApiEnabled)
                                    : null;
 
@@ -293,7 +285,6 @@ namespace Datadog.Trace
 
         protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
-#if NET6_0_OR_GREATER
             if (settings.Manager.InitialExporterSettings.TracesEncoding is TracesEncoding.OtlpProtobuf or TracesEncoding.OtlpJson)
             {
                 var otlpApi = new ManagedApiOtlp(settings);
@@ -301,11 +292,7 @@ namespace Datadog.Trace
                 return new AgentWriter(otlpApi, otlpStatsAggregator, statsd, settings);
             }
 
-#endif
-            // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
-            IApi api = settings.DataPipelineEnabled && ManagedTraceExporter.TryCreateTraceExporter(settings, updateSampleRates, telemetrySettings, out var traceExporter)
-                           ? traceExporter
-                           : new ManagedApi(settings.Manager, statsd, updateSampleRates, updateConfigHash, settings.PartialFlushEnabled);
+            var api = new ManagedApi(settings.Manager, statsd, updateSampleRates, updateConfigHash, settings.PartialFlushEnabled);
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService, isOtlp: false);
 

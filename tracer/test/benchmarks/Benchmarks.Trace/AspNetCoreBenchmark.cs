@@ -33,6 +33,7 @@ namespace Benchmarks.Trace
 {
     [MemoryDiagnoser]
     [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
+    [IterationTime(500)]
     public class AspNetCoreBenchmark
     {
         private HttpClient _client;
@@ -50,7 +51,7 @@ namespace Benchmarks.Trace
             var settings = new TracerSettings(config, NullConfigurationTelemetry.Instance, new());
 
             _tracer = TracerHelper.CreateTracer(settings);
-            _security = new Security(new SecuritySettings(config, NullConfigurationTelemetry.Instance), null, new RcmSubscriptionManager());
+            _security = new Security(new SecuritySettings(config, NullConfigurationTelemetry.Instance), rcmSubscriptionManager: new RcmSubscriptionManager());
             _iast = new Datadog.Trace.Iast.Iast(new IastSettings(config, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
 
             var builder = new WebHostBuilder()
@@ -106,6 +107,7 @@ namespace Benchmarks.Trace
 #if NET6_0_OR_GREATER
     [MemoryDiagnoser]
     [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
+    [IterationTime(500)]
     public class SingleSpanAspNetCoreBenchmark
     {
         private HttpClient _client;
@@ -123,7 +125,7 @@ namespace Benchmarks.Trace
             var settings = new TracerSettings(config, NullConfigurationTelemetry.Instance, new());
 
             _tracer = TracerHelper.CreateTracer(settings);
-            _security = new Security(new SecuritySettings(config, NullConfigurationTelemetry.Instance), null, new RcmSubscriptionManager());
+            _security = new Security(new SecuritySettings(config, NullConfigurationTelemetry.Instance), rcmSubscriptionManager: new RcmSubscriptionManager());
             _iast = new Datadog.Trace.Iast.Iast(new IastSettings(config, NullConfigurationTelemetry.Instance), NullDiscoveryService.Instance);
 
             var builder = new WebHostBuilder()

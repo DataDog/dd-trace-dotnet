@@ -102,7 +102,7 @@ internal enum Count
     [TelemetryMetric<MetricTags.ContextHeaderStyle>("context_header_style.extracted")] ContextHeaderStyleExtracted,
 
     /// <summary>
-    /// The number of times a context propagation header is truncated, tagged by the reason for truncation (`truncation_reason:baggage_item_count_exceeded`, `truncation_reason:baggage_byte_count_exceeded`)
+    /// The number of times a context propagation header is truncated, tagged by the reason for truncation (`truncation_reason:baggage_item_count_exceeded`, `truncation_reason:baggage_byte_count_exceeded`, `truncation_reason:baggage_extract_item_exceeded`, `truncation_reason:baggage_extract_byte_exceeded`)
     /// </summary>
     [TelemetryMetric<MetricTags.ContextHeaderTruncationReason>("context_header.truncated")] ContextHeaderTruncated,
 
@@ -205,6 +205,33 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<MetricTags.ApiError>("direct_log_api.errors", isCommon: false)] DirectLogApiErrors,
 
+#endregion
+#region Live Debugger Namespace
+
+    /// <summary>
+    /// The number of Dynamic Instrumentation memory-pressure state transitions, tagged by state and the signal that triggered entry.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureTrigger>("memory_pressure.transitions", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureTransitions,
+
+    /// <summary>
+    /// The number of times the Dynamic Instrumentation memory-pressure monitor disabled itself, tagged by reason.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDisabledReason>("memory_pressure.disabled", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDisabled,
+
+    /// <summary>
+    /// Count of Dynamic Instrumentation memory-pressure transitions, tagged by memory load percentage bucket at the transition.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureMemoryBucket>("memory_pressure.memory_usage_pct", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureMemoryUsagePct,
+
+    /// <summary>
+    /// Count of Dynamic Instrumentation memory-pressure transitions, tagged by GC activity bucket at the transition.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureState, MetricTags.DebuggerMemoryPressureGcBucket>("memory_pressure.gc_activity", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureGcActivity,
+
+    /// <summary>
+    /// Count of Dynamic Instrumentation high-memory-pressure periods, incremented once on exit and tagged by duration bucket.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerMemoryPressureDurationBucket>("memory_pressure.duration", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDuration,
 #endregion
 #region AppSec Namespace
 

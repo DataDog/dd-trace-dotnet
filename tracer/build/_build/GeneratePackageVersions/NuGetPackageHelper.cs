@@ -17,19 +17,21 @@ namespace GeneratePackageVersions
     public class NuGetPackageHelper
     {
         /// <summary>
-        /// Returns all available versions for a package, unfiltered by version range.
+        /// Returns all available versions for a package with their publish dates, unfiltered by version range.
         /// Suitable for caching since the result is independent of any specific entry's version bounds.
         /// </summary>
-        public static async Task<List<string>> GetAllNugetPackageVersions(string packageName)
+        public static async Task<List<VersionWithDate>> GetAllNugetPackageVersions(string packageName)
         {
             var searchMetadata = await GetPackageMetadatas(packageName);
 
-            var packageVersions = new List<string>();
+            var packageVersions = new List<VersionWithDate>();
             foreach (var md in searchMetadata)
             {
                 if (md.Identity.HasVersion)
                 {
-                    packageVersions.Add(md.Identity.Version.ToNormalizedString());
+                    packageVersions.Add(new VersionWithDate(
+                        md.Identity.Version.ToNormalizedString(),
+                        md.Published));
                 }
             }
 
@@ -37,9 +39,10 @@ namespace GeneratePackageVersions
         }
 
         /// <summary>
-        /// Filters a list of version strings to only those within the entry's [MinVersion, MaxVersionExclusive) range.
+        /// Filters a list of versions to only those within the entry's [MinVersion, MaxVersionExclusive) range.
+        /// Preserves publish date metadata through the pipeline.
         /// </summary>
-        public static List<string> FilterVersions(IEnumerable<string> allVersions, IPackageVersionEntry entry)
+        public static List<VersionWithDate> FilterVersions(IEnumerable<VersionWithDate> allVersions, IPackageVersionEntry entry)
         {
             if (!NuGetVersion.TryParse(entry.MinVersion, out var minVersion))
             {
@@ -51,14 +54,14 @@ namespace GeneratePackageVersions
                 throw new ArgumentException($"MaxVersion {entry.MaxVersionExclusive} in integration {entry.IntegrationName} could not be parsed into a NuGet Version");
             }
 
-            var result = new List<string>();
-            foreach (var versionText in allVersions)
+            var result = new List<VersionWithDate>();
+            foreach (var item in allVersions)
             {
-                if (NuGetVersion.TryParse(versionText, out var version)
+                if (NuGetVersion.TryParse(item.Version, out var version)
                     && version.CompareTo(minVersion) >= 0
                     && version.CompareTo(maxVersionExclusive) < 0)
                 {
-                    result.Add(versionText);
+                    result.Add(item);
                 }
             }
 

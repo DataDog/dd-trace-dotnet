@@ -4,12 +4,12 @@
 // </copyright>
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
-using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
@@ -35,7 +35,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public MethodUniqueIdentifier Method { get; }
 
-        public bool ShouldProcess(in ProbeData probeData)
+        private bool ShouldProcess()
         {
             if (!ShadowStackHolder.IsShadowStackTrackingEnabled)
             {
@@ -55,6 +55,18 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return true;
         }
 
+        public bool TryBeginProcess(in ProbeData probeData, [NotNullWhen(true)] out IDebuggerSnapshotCreator? snapshotCreator)
+        {
+            if (!ShouldProcess())
+            {
+                snapshotCreator = null;
+                return false;
+            }
+
+            snapshotCreator = CreateSnapshotCreator();
+            return true;
+        }
+
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
         {
             var snapshotCreator = (ExceptionSnapshotCreator)inSnapshotCreator;
@@ -71,7 +83,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     case MethodState.EntryAsync:
                         shadowStack = ShadowStackHolder.EnsureShadowStackEnabled();
                         var currentFrame = shadowStack.CurrentStackFrameNode;
-                        snapshotCreator.EnterHash = Fnv1aHash.Combine(info.Method.MetadataToken, shadowStack.CurrentStackFrameNode?.EnterSequenceHash ?? Fnv1aHash.FnvOffsetBias);
+                        snapshotCreator.EnterHash = SimpleHash.Combine(info.Method.MetadataToken, shadowStack.CurrentStackFrameNode?.EnterSequenceHash ?? SimpleHash.FnvOffsetBias);
 
                         if (currentFrame?.Method == info.Method && _isMisleadingMethod)
                         {
@@ -246,7 +258,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return this;
         }
 
-        public IDebuggerSnapshotCreator CreateSnapshotCreator()
+        private ExceptionSnapshotCreator CreateSnapshotCreator()
         {
             // ReSharper disable once InconsistentlySynchronizedField
             return new ExceptionSnapshotCreator(_processors, ProbeId);

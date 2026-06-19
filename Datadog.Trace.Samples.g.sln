@@ -129,10 +129,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Generated", "Generated", "{
 		tracer\build\supported_calltargets.g.json = tracer\build\supported_calltargets.g.json
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibrary", "tracer\test\test-applications\integrations\dependency-libs\Samples.ExampleLibrary\Samples.ExampleLibrary.csproj", "{FDB5C8D0-018D-4FF9-9680-C6A5078F819B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibraryTracer", "tracer\test\test-applications\integrations\dependency-libs\Samples.ExampleLibraryTracer\Samples.ExampleLibraryTracer.csproj", "{4B243CF1-4269-45C6-A238-1A9BFA58B8CC}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.SqlServer", "tracer\test\test-applications\integrations\Samples.SqlServer\Samples.SqlServer.csproj", "{086FF8A0-9CEE-470A-9751-78B0F1340649}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch", "tracer\test\test-applications\integrations\Samples.Elasticsearch\Samples.Elasticsearch.csproj", "{C98950B1-DC4B-43DA-974F-EF2CF325EC2B}"
@@ -409,6 +405,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OpenTracing", "trac
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DataStreams.ManualAPI", "tracer\test\test-applications\integrations\Samples.DataStreams.ManualAPI\Samples.DataStreams.ManualAPI.csproj", "{5E290FA1-E87B-4782-B977-EB5FA6C96EFE}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DataStreams.HttpClient", "tracer\test\test-applications\integrations\Samples.DataStreams.HttpClient\Samples.DataStreams.HttpClient.csproj", "{1832E7E9-3835-440D-B69A-F38E820D4805}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.CIVisibilityIpc", "tracer\test\test-applications\integrations\Samples.CIVisibilityIpc\Samples.CIVisibilityIpc.csproj", "{BA9613FB-8458-4C78-98DE-AA45BBE62F64}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeMetricsShutdown", "tracer\test\test-applications\regression\RuntimeMetricsShutdown\RuntimeMetricsShutdown.csproj", "{C4ABF344-3263-45D5-A074-03FB206FF309}"
@@ -453,20 +451,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.OpenFeature", "trac
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.LifetimeManager.TerminationSignals", "tracer\test\test-applications\integrations\Samples.LifetimeManager.TerminationSignals\Samples.LifetimeManager.TerminationSignals.csproj", "{0E3E1069-80FF-99C9-D29F-936D96D5F516}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Ocelot.DistributedTracing", "tracer\test\test-applications\integrations\Samples.Ocelot.DistributedTracing\Samples.Ocelot.DistributedTracing.csproj", "{08C6510D-42DC-C8B4-CC79-26349F2D6DBB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{FDB5C8D0-018D-4FF9-9680-C6A5078F819B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FDB5C8D0-018D-4FF9-9680-C6A5078F819B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FDB5C8D0-018D-4FF9-9680-C6A5078F819B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FDB5C8D0-018D-4FF9-9680-C6A5078F819B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4B243CF1-4269-45C6-A238-1A9BFA58B8CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4B243CF1-4269-45C6-A238-1A9BFA58B8CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4B243CF1-4269-45C6-A238-1A9BFA58B8CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4B243CF1-4269-45C6-A238-1A9BFA58B8CC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{086FF8A0-9CEE-470A-9751-78B0F1340649}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{086FF8A0-9CEE-470A-9751-78B0F1340649}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{086FF8A0-9CEE-470A-9751-78B0F1340649}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1011,6 +1003,10 @@ Global
 		{5E290FA1-E87B-4782-B977-EB5FA6C96EFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E290FA1-E87B-4782-B977-EB5FA6C96EFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5E290FA1-E87B-4782-B977-EB5FA6C96EFE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1832E7E9-3835-440D-B69A-F38E820D4805}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1832E7E9-3835-440D-B69A-F38E820D4805}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1832E7E9-3835-440D-B69A-F38E820D4805}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1832E7E9-3835-440D-B69A-F38E820D4805}.Release|Any CPU.Build.0 = Release|Any CPU
 		{BA9613FB-8458-4C78-98DE-AA45BBE62F64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BA9613FB-8458-4C78-98DE-AA45BBE62F64}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BA9613FB-8458-4C78-98DE-AA45BBE62F64}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1099,6 +1095,10 @@ Global
 		{0E3E1069-80FF-99C9-D29F-936D96D5F516}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E3E1069-80FF-99C9-D29F-936D96D5F516}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E3E1069-80FF-99C9-D29F-936D96D5F516}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08C6510D-42DC-C8B4-CC79-26349F2D6DBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08C6510D-42DC-C8B4-CC79-26349F2D6DBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08C6510D-42DC-C8B4-CC79-26349F2D6DBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08C6510D-42DC-C8B4-CC79-26349F2D6DBB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{9518425A-36A5-4B8F-B0B8-6137DB88441D} = {8CEC2042-F11C-49F5-A674-2355793B600A}
@@ -1119,8 +1119,6 @@ Global
 		{16427BFB-B4C6-46A9-A290-8EA51FF73FEA} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{0884B566-D22E-498C-BAA9-26D50ABCAE3A} = {16427BFB-B4C6-46A9-A290-8EA51FF73FEA}
 		{E1B0F72C-991A-409D-9266-DE5ED1BD940E} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
-		{FDB5C8D0-018D-4FF9-9680-C6A5078F819B} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
-		{4B243CF1-4269-45C6-A238-1A9BFA58B8CC} = {8683D82A-2BBE-4199-9C36-C59F48804F90}
 		{086FF8A0-9CEE-470A-9751-78B0F1340649} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{C98950B1-DC4B-43DA-974F-EF2CF325EC2B} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{3493346B-44F6-4F50-8FB4-51D0090DF544} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
@@ -1259,6 +1257,7 @@ Global
 		{32193A01-04DD-463B-A84A-9A93167958A4} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{79A63F25-A5F9-441C-8C52-F8033A9F8ABA} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{5E290FA1-E87B-4782-B977-EB5FA6C96EFE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{1832E7E9-3835-440D-B69A-F38E820D4805} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{BA9613FB-8458-4C78-98DE-AA45BBE62F64} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{C4ABF344-3263-45D5-A074-03FB206FF309} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{3978A7D5-7B6E-4152-9C3A-5852F1F6E223} = {16427BFB-B4C6-46A9-A290-8EA51FF73FEA}
@@ -1281,5 +1280,6 @@ Global
 		{D5A8ABB9-CB23-974E-F338-5D9172D96CD8} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{021D714E-1764-D76B-15B5-C9114FE934C2} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{0E3E1069-80FF-99C9-D29F-936D96D5F516} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{08C6510D-42DC-C8B4-CC79-26349F2D6DBB} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 EndGlobal

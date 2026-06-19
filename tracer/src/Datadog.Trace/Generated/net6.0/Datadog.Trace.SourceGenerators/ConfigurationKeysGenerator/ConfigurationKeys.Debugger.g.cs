@@ -19,7 +19,7 @@ internal static partial class ConfigurationKeys
     {
         /// <summary>
         /// Configuration key to enable tag code origin for span.
-        /// Default value is false.
+        /// Default value is true.
         /// </summary>
         public const string CodeOriginForSpansEnabled = "DD_CODE_ORIGIN_FOR_SPANS_ENABLED";
 
@@ -52,6 +52,11 @@ internal static partial class ConfigurationKeys
         /// Default value is 150 ms.
         /// </summary>
         public const string MaxTimeToSerialize = "DD_DYNAMIC_INSTRUMENTATION_MAX_TIME_TO_SERIALIZE";
+
+        /// <summary>
+        /// Configuration key for loading Dynamic Instrumentation probe definitions from a local JSON file.
+        /// </summary>
+        public const string DynamicInstrumentationProbeFile = "DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE";
 
         /// <summary>
         /// Configuration key for set of identifiers that are excluded from redaction decisions.

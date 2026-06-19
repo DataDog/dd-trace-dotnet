@@ -48,7 +48,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private readonly Task _discoveryTask;
         private readonly IDisposable? _settingSubscription;
         private readonly ServiceRemappingHash _serviceRemappingHash;
-        private IApiRequestFactory _apiRequestFactory;
+        private ApiFactoryHolder _apiRequestFactory;
         private AgentConfiguration? _configuration;
         private string? _configurationHash;
         private string _agentConfigStateHash = string.Empty;
@@ -70,29 +70,35 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 if (changes.UpdatedExporter is { } exporter)
                 {
                     var newFactory = CreateApiRequestFactory(exporter, containerMetadata.ContainerId, tcpTimeout);
-                    Interlocked.Exchange(ref _apiRequestFactory!, newFactory);
+                    Interlocked.Exchange(ref _apiRequestFactory!, new(newFactory));
                 }
             });
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DiscoveryService"/> class.
-        /// Public for testing purposes
-        /// </summary>
-        public DiscoveryService(
+        [TestingAndPrivateOnly]
+        internal DiscoveryService(
             IApiRequestFactory apiRequestFactory,
             ServiceRemappingHash serviceRemappingHash,
             int initialRetryDelayMs,
             int maxRetryDelayMs,
-            int recheckIntervalMs)
+            int recheckIntervalMs,
+            bool autoStartLoop = true)
         {
-            _apiRequestFactory = apiRequestFactory;
+            _apiRequestFactory = new(apiRequestFactory);
             _serviceRemappingHash = serviceRemappingHash;
             _initialRetryDelayMs = initialRetryDelayMs;
             _maxRetryDelayMs = maxRetryDelayMs;
             _recheckIntervalMs = recheckIntervalMs;
-            _discoveryTask = Task.Run(FetchConfigurationLoopAsync);
-            _discoveryTask.ContinueWith(t => Log.Error(t.Exception, "Error in discovery task"), TaskContinuationOptions.OnlyOnFaulted);
+
+            if (autoStartLoop)
+            {
+                _discoveryTask = Task.Run(FetchConfigurationLoopAsync);
+                _discoveryTask.ContinueWith(t => Log.Error(t.Exception, "Error in discovery task"), TaskContinuationOptions.OnlyOnFaulted);
+            }
+            else
+            {
+                _discoveryTask = Task.CompletedTask;
+            }
         }
 
         /// <summary>
@@ -230,54 +236,56 @@ namespace Datadog.Trace.Agent.DiscoveryService
             }
         }
 
+        /// <summary>
+        /// Runs a single iteration of the discovery loop. Returns the retry duration that should
+        /// be passed into the next call: <c>null</c> when the iteration succeeded (or didn't need
+        /// to refresh) — the loop should sleep for <see cref="_recheckIntervalMs"/> in that case —
+        /// or a non-null value when the iteration failed, expressing both how long the loop should
+        /// wait before retrying and the basis for the next exponential-backoff step.
+        /// </summary>
+        [TestingAndPrivateOnly]
+        internal async Task<int?> RunOneIterationAsync(int? previousRetryDuration)
+        {
+            // do we already have an update from the agent? If so, we can skip the loop
+            if (!RequireRefresh(_configurationHash, DateTimeOffset.UtcNow))
+            {
+                // no need to re-check, so reset the retry state
+                return null;
+            }
+
+            try
+            {
+                Log.Debug("Agent features discovery refresh required, contacting agent");
+                var requestFactory = Volatile.Read(ref _apiRequestFactory);
+                var api = requestFactory.ApiFactory.Create(requestFactory.Uri);
+
+                using var response = await api.GetAsync().ConfigureAwait(false);
+                if (response.StatusCode is >= 200 and < 300)
+                {
+                    await ProcessDiscoveryResponse(response).ConfigureAwait(false);
+                    return null;
+                }
+
+                Log.Warning("Error discovering available agent services");
+                return GetNextRetryDuration(previousRetryDuration);
+            }
+            catch (Exception exception)
+            {
+                Log.Warning(exception, "Error discovering available agent services");
+                return GetNextRetryDuration(previousRetryDuration);
+            }
+
+            int GetNextRetryDuration(int? previousDuration) =>
+                previousDuration is null ? _initialRetryDelayMs : Math.Min(previousDuration.Value * 2, _maxRetryDelayMs);
+        }
+
         private async Task FetchConfigurationLoopAsync()
         {
-            var requestFactory = _apiRequestFactory;
-            var uri = requestFactory.GetEndpoint("info");
-
-            var sleepDuration = _recheckIntervalMs;
-
+            int? retryDuration = null;
             while (!_processExit.Task.IsCompleted)
             {
-                // do we already have an update from the agent? If so, we can skip the loop
-                if (RequireRefresh(_configurationHash, DateTimeOffset.UtcNow))
-                {
-                    try
-                    {
-                        Log.Debug("Agent features discovery refresh required, contacting agent");
-                        // If the exporter settings have been updated, refresh the endpoint
-                        var updatedFactory = Volatile.Read(ref _apiRequestFactory);
-                        if (requestFactory != updatedFactory)
-                        {
-                            requestFactory = updatedFactory;
-                            uri = requestFactory.GetEndpoint("info");
-                        }
-
-                        var api = requestFactory.Create(uri);
-
-                        using var response = await api.GetAsync().ConfigureAwait(false);
-                        if (response.StatusCode is >= 200 and < 300)
-                        {
-                            await ProcessDiscoveryResponse(response).ConfigureAwait(false);
-                            sleepDuration = _recheckIntervalMs;
-                        }
-                        else
-                        {
-                            Log.Warning("Error discovering available agent services");
-                            sleepDuration = GetNextSleepDuration(sleepDuration);
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        Log.Warning(exception, "Error discovering available agent services");
-                        sleepDuration = GetNextSleepDuration(sleepDuration);
-                    }
-                }
-                else
-                {
-                    // no need to re-check, so reset the check interval
-                    sleepDuration = _recheckIntervalMs;
-                }
+                retryDuration = await RunOneIterationAsync(retryDuration).ConfigureAwait(false);
+                var sleepDuration = retryDuration ?? _recheckIntervalMs;
 
                 try
                 {
@@ -289,9 +297,6 @@ namespace Datadog.Trace.Agent.DiscoveryService
             }
 
             Log.Debug("Discovery service exiting");
-
-            int GetNextSleepDuration(int? previousDuration) =>
-                previousDuration is null ? _initialRetryDelayMs : Math.Min(previousDuration.Value * 2, _maxRetryDelayMs);
         }
 
         [TestingAndPrivateOnly]
@@ -348,6 +353,23 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var clientDropP0 = jObject["client_drop_p0s"]?.Value<bool>() ?? false;
             var spanMetaStructs = jObject["span_meta_structs"]?.Value<bool>() ?? false;
             var spanEvents = jObject["span_events"]?.Value<bool>() ?? false;
+            var peerTags = (jObject["peer_tags"] as JArray)?.Values<string>().ToList();
+            var obfuscationVersion = jObject["obfuscation_version"]?.Value<int>() ?? 0;
+
+            // Parse trace filter configuration
+            var filterTags = jObject["filter_tags"];
+            var filterTagsRegex = jObject["filter_tags_regex"];
+            var ignoreResources = (jObject["ignore_resources"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsRequire = (filterTags?["require"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsReject = (filterTags?["reject"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsRegexRequire = (filterTagsRegex?["require"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            var filterTagsRegexReject = (filterTagsRegex?["reject"] as JArray)?.Values<string>().Where(x => !string.IsNullOrEmpty(x)).ToList();
+
+            AgentTraceFilterConfig? traceFilterConfig = null;
+            if (ignoreResources is not null || filterTagsRequire is not null || filterTagsReject is not null || filterTagsRegexRequire is not null || filterTagsRegexReject is not null)
+            {
+                traceFilterConfig = new AgentTraceFilterConfig(filterTagsRequire!, filterTagsReject!, filterTagsRegexRequire!, filterTagsRegexReject!, ignoreResources!);
+            }
 
             var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
             string? configurationEndpoint = null;
@@ -436,7 +458,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 containerTagsHash: _serviceRemappingHash.ContainerTagsHash, // either the value just received, or the one we stored before (prevents overriding with null)
                 clientDropP0: clientDropP0,
                 spanMetaStructs: spanMetaStructs,
-                spanEvents: spanEvents);
+                spanEvents: spanEvents,
+                peerTags: peerTags!,
+                obfuscationVersion: obfuscationVersion,
+                traceFilterConfig: traceFilterConfig);
 
             // Save the hash, whether the details we care about changed or not
             _configurationHash = HexString.ToHexString(sha256.Hash);
@@ -468,6 +493,13 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 productName: "discovery",
                 tcpTimeout: tcpTimeout,
                 httpHeaderHelper: containerId is null ? MinimalAgentHeaderHelper.Instance : new MinimalWithContainerIdAgentHeaderHelper(containerId));
+        }
+
+        private sealed class ApiFactoryHolder(IApiRequestFactory apiFactory)
+        {
+            public IApiRequestFactory ApiFactory { get; } = apiFactory;
+
+            public Uri Uri { get; } = apiFactory.GetEndpoint("info");
         }
     }
 }

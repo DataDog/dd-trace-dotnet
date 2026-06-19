@@ -7,12 +7,54 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
 internal sealed partial class ProbeExpressionParser<T>
 {
+    private static bool SafeEquals(object left, object right)
+    {
+        if (ReferenceEquals(left, right))
+        {
+            return true;
+        }
+
+        if (left is null || right is null)
+        {
+            return false;
+        }
+
+        var leftType = left.GetType();
+        var rightType = right.GetType();
+        if (leftType != rightType || !IsSafeToCallEquals(leftType))
+        {
+            return false;
+        }
+
+        return left.Equals(right);
+    }
+
+    private static bool IsSafeToCallEquals(Type type)
+    {
+        var effectiveType = Nullable.GetUnderlyingType(type) ?? type;
+        if (TypeExtensions.IsSimple(effectiveType))
+        {
+            return true;
+        }
+
+        foreach (var allowedType in Redaction.AllowedTypesSafeToCallToString)
+        {
+            if (allowedType == effectiveType)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private Expression NotEqual(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         return BinaryOperation(reader, parameters, itParameter, "!=");
@@ -62,14 +104,14 @@ internal sealed partial class ProbeExpressionParser<T>
 
             if (left.Type == typeof(string) && right.Type == typeof(string))
             {
-                return StringLexicographicComparison(left, right, operand);
+                return RedactDictionaryBinaryOperation(left, right, StringLexicographicComparison(left, right, operand));
             }
 
             HandleDurationBinaryOperation(ref left, ref right);
 
             NumericImplicitConversion(ref left, ref right);
 
-            return operand switch
+            var comparison = operand switch
             {
                 ">" => Expression.GreaterThan(left, right),
                 ">=" => Expression.GreaterThanOrEqual(left, right),
@@ -78,10 +120,25 @@ internal sealed partial class ProbeExpressionParser<T>
                 "==" or "!=" => EqualExpression(),
                 _ => throw new ArgumentException("Unknown operand" + operand, nameof(operand))
             };
+            return RedactDictionaryBinaryOperation(left, right, comparison);
         }
         catch (Exception e)
         {
-            AddError($"{left?.ToString() ?? "N/A"} {operand} {right?.ToString() ?? "N/A"}", e.Message);
+            var error = e.Message;
+            if (e is InvalidOperationException)
+            {
+                if ((IsNonNullableValueType(left) && IsReferenceType(right))
+                 || (IsNonNullableValueType(right) && IsReferenceType(left)))
+                {
+                    error = "A reference type cannot be compared to a not nullable value type.";
+                    if (right is ConstantExpression { Value: null } || left is ConstantExpression { Value: null })
+                    {
+                        error += " Did you mean to compare to 'default' instead of 'null'?";
+                    }
+                }
+            }
+
+            AddError($"{left?.ToString() ?? "N/A"} {operand} {right?.ToString() ?? "N/A"}", error);
             return ReturnDefaultValueExpression();
         }
 
@@ -114,8 +171,23 @@ internal sealed partial class ProbeExpressionParser<T>
                     : Expression.Not(Expression.ReferenceEqual(Expression.Constant(null, typeof(object)), rightAsObject));
             }
 
+            if (left.Type == typeof(object) || right.Type == typeof(object))
+            {
+                var leftAsObject = left.Type == typeof(object) ? left : Expression.Convert(left, typeof(object));
+                var rightAsObject = right.Type == typeof(object) ? right : Expression.Convert(right, typeof(object));
+                var safeEquals = Expression.Call(
+                    ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(SafeEquals), new[] { typeof(object), typeof(object) }),
+                    leftAsObject,
+                    rightAsObject);
+                return operand == "==" ? safeEquals : Expression.Not(safeEquals);
+            }
+
             return operand == "==" ? Expression.Equal(left, right) : Expression.NotEqual(left, right);
         }
+
+        static bool IsNonNullableValueType(Expression expression) => expression is not null && expression.Type.IsValueType && Nullable.GetUnderlyingType(expression.Type) is null;
+
+        static bool IsReferenceType(Expression expression) => expression is not null && !expression.Type.IsValueType;
     }
 
     private void NumericImplicitConversion(ref Expression left, ref Expression right)

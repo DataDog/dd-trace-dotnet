@@ -7,6 +7,7 @@
 
 using System.Text;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
 {
@@ -45,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
                 sb.Append(','); // Add a comma if it's not an empty object
             }
 
-            sb.AppendFormat(" \"{0}\": {{", StepFunctionsKey); // Add _datadog:" {
+            sb.Append($$""" "{{StepFunctionsKey}}": {"""); // Add _datadog:" {
             tracer.TracerManager.SpanContextPropagator.Inject(context, sb, default(StringBuilderCarrierSetter));
             sb.Remove(sb.Length - 1, 1); // remove trailing comma
             sb.Append("}}"); // re-add both closing braces one for original JSON and one for context
@@ -56,7 +57,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.StepFunctions
         {
             public void Set(StringBuilder carrier, string key, string value)
             {
-                carrier.AppendFormat("\"{0}\":\"{1}\",", key, value);
+                carrier.Append('"').Append(key).Append("\":\"");
+                JsonHelper.WriteEscapedJavaScriptString(carrier, value);
+                carrier.Append("\",");
             }
         }
     }

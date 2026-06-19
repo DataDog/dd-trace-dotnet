@@ -18,6 +18,12 @@ internal static partial class ConfigurationKeys
     internal static class Telemetry
     {
         /// <summary>
+        /// Internal env var for propagating the root session ID to child processes.
+        /// Set automatically by the tracer at init time; not user-configurable.
+        /// </summary>
+        public const string RootSessionId = "_DD_ROOT_DOTNET_SESSION_ID";
+
+        /// <summary>
         /// SSI variable that provides a unique identifier for the instrumentation installation.
         /// Used for tracking and correlation purposes in telemetry.
         /// </summary>

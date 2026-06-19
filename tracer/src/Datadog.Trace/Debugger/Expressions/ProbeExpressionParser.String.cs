@@ -16,8 +16,15 @@ internal partial class ProbeExpressionParser<T>
 {
     private Expression RegexMatches(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
-        var matchesMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Regex), nameof(Regex.Matches), new[] { typeof(string), typeof(string) });
-        return CallStringMethod(reader, parameters, itParameter, matchesMethod);
+        var matchesMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Regex), nameof(Regex.IsMatch), new[] { typeof(string), typeof(string) });
+        var source = ParseTree(reader, parameters, itParameter);
+        if (source.Type == ProbeExpressionParserHelper.UndefinedValueType)
+        {
+            return source;
+        }
+
+        var pattern = ParseTree(reader, parameters, itParameter);
+        return RedactDictionaryOperation(source, Expression.Call(null, matchesMethod, source, pattern));
     }
 
     private Expression Contains(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -50,7 +57,7 @@ internal partial class ProbeExpressionParser<T>
         var startIndex = ParseTree(reader, parameters, itParameter);
         var endIndex = ParseTree(reader, parameters, itParameter);
         var lengthExpr = Expression.Subtract(endIndex, startIndex);
-        return Expression.Call(source, substringMethod, startIndex, lengthExpr);
+        return RedactDictionaryOperation(source, Expression.Call(source, substringMethod, startIndex, lengthExpr));
     }
 
     private Expression IsEmpty(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -64,13 +71,13 @@ internal partial class ProbeExpressionParser<T>
         if (source.Type == typeof(string))
         {
             var emptyMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(string), nameof(string.IsNullOrEmpty), [typeof(string)]);
-            return Expression.Call(null, emptyMethod, source);
+            return RedactDictionaryOperation(source, Expression.Call(null, emptyMethod, source));
         }
 
         try
         {
             var collectionCount = CollectionAndStringLengthExpression(source);
-            return Expression.Equal(collectionCount, Expression.Constant(0));
+            return RedactDictionaryOperation(source, Expression.Equal(collectionCount, Expression.Constant(0)));
         }
         catch (InvalidOperationException e)
         {
@@ -88,6 +95,6 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var parameter = ParseTree(reader, parameters, itParameter);
-        return Expression.Call(source, method, parameter);
+        return RedactDictionaryOperation(source, Expression.Call(source, method, parameter));
     }
 }

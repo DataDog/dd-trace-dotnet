@@ -39,6 +39,7 @@ public class DataStreamsMonitoringAwsSnsTests : TestHelper
     public async Task SubmitsDsmMetrics(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.PropagateProcessTags, "0");
 
         using var telemetry = this.ConfigureTelemetry();
         using var agent = EnvironmentHelper.GetMockAgent();

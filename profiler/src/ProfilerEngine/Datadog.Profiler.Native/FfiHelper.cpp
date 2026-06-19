@@ -34,12 +34,102 @@ ddog_CharSlice to_char_slice(std::string_view str)
     return {str.data(), str.size()};
 }
 
-ddog_prof_ValueType CreateValueType(std::string const& type, std::string const& unit)
+bool IsCountUnit(std::string_view unit)
 {
-    auto valueType = ddog_prof_ValueType{};
-    valueType.type_ = to_char_slice(type);
-    valueType.unit = to_char_slice(unit);
-    return valueType;
+    return unit == "count" || unit == "counts";
+}
+
+bool IsBytesUnit(std::string_view unit)
+{
+    return unit == "byte" || unit == "bytes";
+}
+
+bool IsNanosecondsUnit(std::string_view unit)
+{
+    return unit == "nanosecond" || unit == "nanoseconds" || unit == "Nanosecond" || unit == "Nanoseconds";
+}
+
+bool TryCreateSampleType(std::string_view type, std::string_view unit, ddog_prof_SampleType& sampleType)
+{
+    if (type == "alloc-samples" && IsCountUnit(unit))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_ALLOC_SAMPLES;
+        return true;
+    }
+
+    if (type == "alloc-size" && IsBytesUnit(unit))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_ALLOC_SIZE;
+        return true;
+    }
+
+    if (type == "cpu" && IsNanosecondsUnit(unit))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_CPU_LEGACY;
+        return true;
+    }
+
+    if (type == "cpu-samples" && IsCountUnit(unit))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_CPU_SAMPLES;
+        return true;
+    }
+
+    if (type == "exception" && IsCountUnit(unit))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_EXCEPTION_LEGACY;
+        return true;
+    }
+
+    if (type == "inuse-objects" && IsCountUnit(unit))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_INUSE_OBJECTS;
+        return true;
+    }
+
+    if (type == "inuse-space" && IsBytesUnit(unit))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_INUSE_SPACE;
+        return true;
+    }
+
+    if (type == "lock-count" && IsCountUnit(unit))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_LOCK_COUNT;
+        return true;
+    }
+
+    if (type == "lock-time" && IsNanosecondsUnit(unit))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_LOCK_TIME;
+        return true;
+    }
+
+    if (type == "request-time" && IsNanosecondsUnit(unit))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_REQUEST_TIME;
+        return true;
+    }
+
+    if (type == "timeline" && IsNanosecondsUnit(unit))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_TIMELINE;
+        return true;
+    }
+
+    if (type == "wall" && IsNanosecondsUnit(unit))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_WALL_LEGACY;
+        return true;
+    }
+
+    if ((type == "wall-time" || type == "RealTime") && IsNanosecondsUnit(unit))
+    {
+        sampleType = DDOG_PROF_SAMPLE_TYPE_WALL_TIME;
+        return true;
+    }
+
+    return false;
 }
 
 std::string GetErrorMessage(ddog_Error& error)

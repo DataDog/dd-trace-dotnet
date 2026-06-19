@@ -14,7 +14,6 @@ namespace Datadog.Trace.AppSec
         public const string FileAccess = "server.io.fs.file";
         public const string DBStatement = "server.db.statement";
         public const string DBSystem = "server.db.system";
-        public const string UrlAccess = "server.io.net.url";
         public const string ShellInjection = "server.sys.shell.cmd";
         public const string CommandInjection = "server.sys.exec.cmd";
         public const string RequestMethod = "server.request.method";
@@ -31,6 +30,14 @@ namespace Datadog.Trace.AppSec
         public const string ResponseStatus = "server.response.status";
         public const string ResponseBody = "server.response.body";
         public const string ResponseHeaderNoCookies = "server.response.headers.no_cookies";
+
+        public const string DownstreamUrl = "server.io.net.url";
+        public const string DownstreamRequestHeaders = "server.io.net.request.headers";
+        public const string DownstreamRequestMethod = "server.io.net.request.method";
+        public const string DownstreamRequestBody = "server.io.net.request.body";
+        public const string DownstreamResponseStatus = "server.io.net.response.status";
+        public const string DownstreamResponseHeaders = "server.io.net.response.headers";
+        public const string DownstreamResponseBody = "server.io.net.response.body";
 
         public const string UserId = "usr.id";
         public const string UserLogin = "usr.login";

@@ -139,11 +139,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             try
             {
                 var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
-                var edgeTags = string.IsNullOrEmpty(tags.Exchange)
-                                   ?
-                                   // exchange can be empty for "direct"
-                                   new[] { "direction:out", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" }
-                                   : new[] { "direction:out", $"exchange:{tags.Exchange}", string.IsNullOrEmpty(tags.RoutingKey) ? "has_routing_key:false" : "has_routing_key:true", "type:rabbitmq" };
+                // exchange can be empty for "direct"; key encodes both cases without collision
+                var produceKey = new RabbitMQProduceEdgeTagCacheKey(
+                    tags.Exchange ?? string.Empty,
+                    string.IsNullOrEmpty(tags.Exchange) ? tags.Queue ?? tags.RoutingKey ?? string.Empty : string.Empty,
+                    !string.IsNullOrEmpty(tags.RoutingKey));
+                var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
+                    produceKey,
+                    static k => string.IsNullOrEmpty(k.Exchange)
+                        ? ["direction:out", $"topic:{k.TopicOrRoutingKey}", "type:rabbitmq"]
+                        : k.HasRoutingKey
+                            ? ["direction:out", $"exchange:{k.Exchange}", "has_routing_key:true", "type:rabbitmq"]
+                            : ["direction:out", $"exchange:{k.Exchange}", "has_routing_key:false", "type:rabbitmq"]);
                 var size = dataStreamsManager.IsInDefaultState ? messageSize : GetHeadersSize(headers) + messageSize;
                 span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, size, 0);
                 // DSM context will not be injected in default state if its size exceeds 128kb
@@ -171,7 +178,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             try
             {
                 var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
-                var edgeTags = new[] { "direction:in", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" };
+                var edgeTags = dataStreamsManager.GetOrCreateEdgeTags(
+                    new RabbitMQConsumeEdgeTagCacheKey(tags.Queue ?? tags.RoutingKey ?? string.Empty),
+                    static k => ["direction:in", $"topic:{k.TopicOrRoutingKey}", "type:rabbitmq"]);
                 var pathwayContext = dataStreamsManager.ExtractPathwayContext(headersAdapter);
                 span.SetDataStreamsCheckpoint(
                     dataStreamsManager,

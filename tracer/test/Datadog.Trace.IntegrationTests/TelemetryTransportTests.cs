@@ -14,6 +14,7 @@ using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -116,6 +117,12 @@ namespace Datadog.Trace.IntegrationTests
                 { "DD-Client-Library-Version", TracerConstants.AssemblyVersion },
             };
 
+            // DD-Session-ID is always present and equals the runtime ID
+            allExpected.Add(TelemetryConstants.SessionIdHeader, RuntimeId.Get());
+
+            // DD-Root-Session-ID is absent when rootSessionId == runtimeId (normal process)
+            // We can't assert absence in the loop below, so we check it separately after
+
             if (ContainerMetadata.Instance.ContainerId is { } containerId)
             {
                 allExpected.Add(AgentHttpHeaderNames.ContainerId, containerId);
@@ -147,6 +154,12 @@ namespace Datadog.Trace.IntegrationTests
                     {
                         headers[header.Key].Should().Be(header.Value);
                     }
+                }
+
+                // DD-Root-Session-ID should be absent in a normal (non-child) process
+                if (RuntimeId.GetRootSessionId() == RuntimeId.Get())
+                {
+                    headers.AllKeys.Should().NotContain(TelemetryConstants.RootSessionIdHeader);
                 }
 
                 // should have either content-length or chunked encoding

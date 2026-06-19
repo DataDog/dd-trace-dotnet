@@ -67,19 +67,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 if (Redaction.Instance.ShouldRedact(variableName, type, out var redactionReason))
                 {
-                    if (variableName != null)
-                    {
-                        jsonWriter.WritePropertyName(variableName);
-                    }
-
-                    var notCapturedReason = redactionReason == RedactionReason.Identifier ? NotCapturedReason.redactedIdent : NotCapturedReason.redactedType;
-
-                    jsonWriter.WriteStartObject();
-                    jsonWriter.WritePropertyName("type");
-                    jsonWriter.WriteValue(type.Name);
-                    WriteNotCapturedReason(jsonWriter, notCapturedReason);
-                    jsonWriter.WriteEndObject();
-
+                    WriteRedactedValue(jsonWriter, type, variableName, redactionReason);
                     return true;
                 }
 
@@ -94,8 +82,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                     return true;
                 }
 
-                if (source is IEnumerable enumerable && (Redaction.IsSupportedCollection(source) ||
-                                                         Redaction.IsSupportedDictionary(source)))
+                if (source is IEnumerable enumerable &&
+                    TryGetSupportedEnumerableInfo(source, out var enumerableInfo))
                 {
                     if (variableName != null)
                     {
@@ -103,7 +91,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     }
 
                     jsonWriter.WriteStartObject();
-                    SerializeEnumerable(source, type, jsonWriter, enumerable, currentDepth, cts, limitInfo, collectionsBeingSerialized);
+                    SerializeEnumerable(source, type, jsonWriter, enumerable, enumerableInfo, currentDepth, cts, limitInfo, collectionsBeingSerialized);
                     jsonWriter.WriteEndObject();
 
                     return true;
@@ -298,24 +286,19 @@ namespace Datadog.Trace.Debugger.Snapshots
             Type type,
             JsonWriter jsonWriter,
             IEnumerable enumerable,
+            SupportedEnumerableInfo enumerableInfo,
             int currentDepth,
             CancellationTokenSource cts,
             CaptureLimitInfo limitInfo,
             HashSet<object> collectionsBeingSerialized)
         {
-            if (source is not ICollection collection)
-            {
-                return;
-            }
-
             if (currentDepth >= limitInfo.MaxReferenceDepth)
             {
-                var isDictionary = Redaction.IsSupportedDictionary(source);
                 jsonWriter.WritePropertyName("type");
                 jsonWriter.WriteValue(type.Name);
                 jsonWriter.WritePropertyName("size");
-                jsonWriter.WriteValue(collection.Count);
-                jsonWriter.WritePropertyName(isDictionary ? "entries" : "elements");
+                jsonWriter.WriteValue(enumerableInfo.Count);
+                jsonWriter.WritePropertyName(enumerableInfo.IsDictionary ? "entries" : "elements");
                 jsonWriter.WriteStartArray();
                 jsonWriter.WriteEndArray();
                 WriteNotCapturedReason(jsonWriter, NotCapturedReason.depth);
@@ -324,12 +307,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             if (!collectionsBeingSerialized.Add(source))
             {
-                var isDictionary = Redaction.IsSupportedDictionary(source);
                 jsonWriter.WritePropertyName("type");
                 jsonWriter.WriteValue(type.Name);
                 jsonWriter.WritePropertyName("size");
-                jsonWriter.WriteValue(collection.Count);
-                jsonWriter.WritePropertyName(isDictionary ? "entries" : "elements");
+                jsonWriter.WriteValue(enumerableInfo.Count);
+                jsonWriter.WritePropertyName(enumerableInfo.IsDictionary ? "entries" : "elements");
                 jsonWriter.WriteStartArray();
                 jsonWriter.WriteEndArray();
                 WriteNotCapturedReason(jsonWriter, NotCapturedReason.depth);
@@ -341,33 +323,37 @@ namespace Datadog.Trace.Debugger.Snapshots
             NotCapturedReason? notCapturedReason = null;
             try
             {
-                var isDictionary = Redaction.IsSupportedDictionary(source);
+                var collectionCount = enumerableInfo.Count;
                 jsonWriter.WritePropertyName("type");
                 jsonWriter.WriteValue(type.Name);
                 jsonWriter.WritePropertyName("size");
-                jsonWriter.WriteValue(collection.Count);
-                jsonWriter.WritePropertyName(isDictionary ? "entries" : "elements");
+                jsonWriter.WriteValue(collectionCount);
+                jsonWriter.WritePropertyName(enumerableInfo.IsDictionary ? "entries" : "elements");
                 jsonWriter.WriteStartArray();
                 arrayOpened = true;
 
-                var itemIndex = 0;
+                var enumeratedItemCount = 0;
+                var enumerationCompleted = false;
+                var stoppedByTimeout = false;
                 enumerator = enumerable.GetEnumerator();
 
-                bool hasNext = false;
-                while (itemIndex < limitInfo.MaxCollectionSize)
+                while (!enumerationCompleted && enumeratedItemCount < limitInfo.MaxCollectionSize)
                 {
                     if (cts.IsCancellationRequested)
                     {
+                        stoppedByTimeout = true;
                         break;
                     }
 
                     try
                     {
-                        hasNext = enumerator.MoveNext();
-                        if (!hasNext)
+                        if (!enumerator.MoveNext())
                         {
+                            enumerationCompleted = true;
                             break;
                         }
+
+                        enumeratedItemCount++;
                     }
                     catch (InvalidOperationException e)
                     {
@@ -393,7 +379,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     }
 
                     bool serialized;
-                    if (isDictionary)
+                    if (enumerableInfo.IsDictionary)
                     {
                         serialized = SerializeKeyValuePair(current, jsonWriter, cts, currentDepth, limitInfo, collectionsBeingSerialized);
                     }
@@ -411,19 +397,29 @@ namespace Datadog.Trace.Debugger.Snapshots
                             collectionsBeingSerialized);
                     }
 
-                    itemIndex++;
                     if (!serialized)
                     {
+                        if (cts.IsCancellationRequested)
+                        {
+                            stoppedByTimeout = true;
+                        }
+
                         break;
                     }
                 }
 
-                // Track the reason but don't write yet if we're still inside the array
-                if (cts.IsCancellationRequested)
+                // Track the reason but don't write yet if we're still inside the array.
+                if (stoppedByTimeout && enumeratedItemCount < collectionCount)
                 {
                     notCapturedReason = NotCapturedReason.timeout;
                 }
-                else if (hasNext && itemIndex >= limitInfo.MaxCollectionSize)
+                else if (enumerableInfo.WasTruncated)
+                {
+                    notCapturedReason = NotCapturedReason.collectionSize;
+                }
+                else if (!enumerationCompleted &&
+                         enumeratedItemCount >= limitInfo.MaxCollectionSize &&
+                         enumeratedItemCount < collectionCount)
                 {
                     notCapturedReason = NotCapturedReason.collectionSize;
                 }
@@ -472,14 +468,44 @@ namespace Datadog.Trace.Debugger.Snapshots
             CaptureLimitInfo limitInfo,
             HashSet<object> collectionsBeingSerialized)
         {
-            var reflectionObject = ReflectionObject.Create(current.GetType(), "Key", "Value");
+            var descriptor = GetDictionaryEntryDescriptor(current.GetType());
             jsonWriter.WriteStartArray();
 
-            bool serializedKey = SerializeInternal(reflectionObject.GetValue(current, "Key"), reflectionObject.GetType("Key"), jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
-            bool serializedValue = SerializeInternal(reflectionObject.GetValue(current, "Value"), reflectionObject.GetType("Value"), jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
+            var key = descriptor.GetKey(current);
+            var keyType = key?.GetType() ?? descriptor.KeyType;
+            var value = descriptor.GetValue(current);
+            var valueType = value?.GetType() ?? descriptor.ValueType;
+
+            bool serializedKey = SerializeInternal(key, keyType, jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
+            bool serializedValue;
+            if (key is string keyName && Redaction.Instance.IsRedactedKeyword(keyName))
+            {
+                WriteRedactedValue(jsonWriter, valueType, variableName: null, redactionReason: RedactionReason.Identifier);
+                serializedValue = true;
+            }
+            else
+            {
+                serializedValue = SerializeInternal(value, valueType, jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
+            }
 
             jsonWriter.WriteEndArray();
-            return serializedKey;
+            return serializedKey && serializedValue;
+        }
+
+        private static void WriteRedactedValue(JsonWriter jsonWriter, Type type, string variableName, RedactionReason redactionReason)
+        {
+            if (variableName != null)
+            {
+                jsonWriter.WritePropertyName(variableName);
+            }
+
+            var notCapturedReason = redactionReason == RedactionReason.Identifier ? NotCapturedReason.redactedIdent : NotCapturedReason.redactedType;
+
+            jsonWriter.WriteStartObject();
+            jsonWriter.WritePropertyName("type");
+            jsonWriter.WriteValue(type.Name);
+            WriteNotCapturedReason(jsonWriter, notCapturedReason);
+            jsonWriter.WriteEndObject();
         }
 
         private static void WriteNotCapturedReason(JsonWriter writer, NotCapturedReason notCapturedReason)

@@ -76,7 +76,7 @@ namespace Honeypot
             NugetPackages.Add("System.Data.SQLite", new [] { "System.Data.SQLite" });
             NugetPackages.Add("StackExchange.Redis", new [] { "StackExchange.Redis" });
             NugetPackages.Add("StackExchange.Redis.StrongName", new [] { "StackExchange.Redis.StrongName" });
-            NugetPackages.Add("System.ServiceModel", new [] { "System.ServiceModel.Http" });
+            NugetPackages.Add("System.ServiceModel", new string[] { });
             NugetPackages.Add("System.Net.Requests", new [] { "System.Net.Requests" });
             NugetPackages.Add("xunit.execution.dotnet", new [] { "xunit.extensibility.execution" });
             NugetPackages.Add("xunit.execution.desktop", new [] { "xunit" });
@@ -108,6 +108,7 @@ namespace Honeypot
             NugetPackages.Add("Azure.Messaging.ServiceBus", new string[] { "Azure.Messaging.ServiceBus" });
             NugetPackages.Add("Azure.Messaging.EventHubs", new string[] { "Azure.Messaging.EventHubs" });
             NugetPackages.Add("amqmdnetstd", new [] { "IBMMQDotnetClient" });
+            NugetPackages.Add("Ocelot", new [] { "Ocelot" });
             NugetPackages.Add("Yarp.ReverseProxy", new [] { "Yarp.ReverseProxy" });
             NugetPackages.Add("Microsoft.AspNetCore.Html.Abstractions", new [] { "Microsoft.AspNetCore.Html.Abstractions" });
             NugetPackages.Add("dotnet", Array.Empty<string>());
@@ -120,19 +121,22 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.TestPlatform.PlatformAbstractions", Array.Empty<string>());
             NugetPackages.Add("Microsoft.VisualStudio.TraceDataCollector", Array.Empty<string>());
             NugetPackages.Add("Microsoft.TestPlatform.CrossPlatEngine", Array.Empty<string>());
-            NugetPackages.Add("MSTest.TestFramework", Array.Empty<string>());
+            NugetPackages.Add("MSTest.TestFramework", new [] { "MSTest.TestFramework" });
             NugetPackages.Add("MSTestAdapter.PlatformServices", Array.Empty<string>());
             NugetPackages.Add("RestSharp", Array.Empty<string>());
-            NugetPackages.Add("Hangfire.Core", new [] { "Hangfire" });
+            NugetPackages.Add("Hangfire.Core", new [] { "Hangfire.Core" });
 
             // Manual instrumentation
             NugetPackages.Add("Datadog.Trace", new string[] { });
             NugetPackages.Add("Datadog.Trace.Manual", new string[] { });
             NugetPackages.Add("Datadog.Trace.OpenTracing", new string[] { });
-            
+
+            // Serverless
+            NugetPackages.Add("Datadog.Serverless.Compat", new string[] { });
+
             // Feature Flags
-            NugetPackages.Add("Datadog.FeatureFlags.OpenFeature", new string[] { });
-            NugetPackages.Add("OpenFeature", new string[] { });
+            NugetPackages.Add("Datadog.FeatureFlags.OpenFeature", new [] { "OpenFeature" });
+            NugetPackages.Add("OpenFeature", Array.Empty<string>());
         }
 
         private IntegrationMap()

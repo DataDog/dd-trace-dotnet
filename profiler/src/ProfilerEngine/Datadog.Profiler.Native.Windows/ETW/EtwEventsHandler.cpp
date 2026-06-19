@@ -23,9 +23,9 @@ EtwEventsHandler::EtwEventsHandler()
 {
 }
 
-EtwEventsHandler::EtwEventsHandler(IIpcLogger* logger, IEtwEventsReceiver* pClrEventsReceiver, FILE* pEventsFile)
+EtwEventsHandler::EtwEventsHandler(std::shared_ptr<IIpcLogger> logger, IEtwEventsReceiver* pClrEventsReceiver, FILE* pEventsFile)
     :
-    _logger {logger},
+    _logger {std::move(logger)},
     _showMessages {false},
     _pReceiver {pClrEventsReceiver},
     _pEventsFile {pEventsFile}

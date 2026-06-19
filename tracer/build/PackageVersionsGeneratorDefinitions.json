@@ -80,14 +80,22 @@
     "SampleProjectName": "Samples.Amazon.Lambda.RuntimeSupport",
     "NugetPackageSearchName": "Amazon.Lambda.RuntimeSupport",
     "MinVersion": "1.4.0",
-    "MaxVersionExclusive": "2.0.0",
+    "MaxVersionExclusive": "3.0.0",
     "SpecificVersions": [
-      "1.*.*"
+      "1.*.*",
+      "2.*.*"
     ],
-    "VersionConditions": [{
-      "MinVersion": "1.4.0",
-      "IncludeOnlyTargetFrameworks": ["net6.0","net7.0","net8.0"]
-    }]
+    "VersionConditions": [
+      {
+        "MinVersion": "1.4.0",
+        "MaxVersionExclusive": "2.0.0",
+        "IncludeOnlyTargetFrameworks": ["net6.0", "net7.0", "net8.0"]
+      },
+      {
+        "MinVersion": "2.0.0",
+        "IncludeOnlyTargetFrameworks": ["net8.0", "net9.0", "net10.0"]
+      }
+    ]
   },
   {
     "IntegrationName": "AwsSqs",
@@ -968,11 +976,35 @@
     "IntegrationName": "OpenFeature",
     "SampleProjectName": "Samples.OpenFeature",
     "NugetPackageSearchName": "OpenFeature",
-    "MinVersion": "2.0.0",
+    "MinVersion": "2.3.0",
     "MaxVersionExclusive": "3.0.0",
     "SpecificVersions": [
-      "2.0.0",
+      "2.3.0",
       "2.10.0"
+    ]
+  },
+  {
+    "IntegrationName": "Ocelot",
+    "SampleProjectName": "Samples.Ocelot.DistributedTracing",
+    "NugetPackageSearchName": "Ocelot",
+    "MinVersion": "23.0.0",
+    "MaxVersionExclusive": "25.0.0",
+    "SpecificVersions": [
+      "23.0.*",
+      "23.4.*",
+      "24.0.*",
+      "24.1.*"
+    ],
+    "VersionConditions": [
+      {
+        "MinVersion": "23.0.0",
+        "MaxVersionExclusive": "24.0.0",
+        "ExcludeTargetFrameworks": ["net48", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0"]
+      },
+      {
+        "MinVersion": "24.0.0",
+        "ExcludeTargetFrameworks": ["net48", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0", "net7.0"]
+      }
     ]
   }
 ]

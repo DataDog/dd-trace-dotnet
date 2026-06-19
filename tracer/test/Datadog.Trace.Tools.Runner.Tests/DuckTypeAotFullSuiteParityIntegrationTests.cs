@@ -119,6 +119,59 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
            .ContainInOrder("net10.0", "net9.0", "net8.0", "net7.0", "net6.0");
     }
 
+    [Fact]
+    public void FullSuiteParityBuiltAssemblyResolverShouldPreferArtifactsOutput()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var legacyAssemblyPath = Path.Combine(tempDirectory, "tracer", "src", "Example", "bin", "Release", "net8.0", "Example.dll");
+            var artifactsAssemblyPath = Path.Combine(tempDirectory, "artifacts", "bin", "Example.Artifacts", "release_net8.0", "Example.dll");
+            Directory.CreateDirectory(Path.GetDirectoryName(legacyAssemblyPath)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(artifactsAssemblyPath)!);
+            File.WriteAllText(legacyAssemblyPath, "legacy");
+            File.WriteAllText(artifactsAssemblyPath, "artifacts");
+
+            ResolveBuiltAssemblyPath(
+                    tempDirectory,
+                    "Example.Artifacts",
+                    "net8.0",
+                    "Example.dll",
+                    legacyAssemblyPath)
+               .Should()
+               .Be(artifactsAssemblyPath);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void FullSuiteParityBuiltAssemblyResolverShouldFallbackToLegacyOutput()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var legacyAssemblyPath = Path.Combine(tempDirectory, "tracer", "src", "Example", "bin", "Release", "net8.0", "Example.dll");
+            Directory.CreateDirectory(Path.GetDirectoryName(legacyAssemblyPath)!);
+            File.WriteAllText(legacyAssemblyPath, "legacy");
+
+            ResolveBuiltAssemblyPath(
+                    tempDirectory,
+                    "Example.Artifacts",
+                    "net8.0",
+                    "Example.dll",
+                    legacyAssemblyPath)
+               .Should()
+               .Be(legacyAssemblyPath);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
     private static void RunFullSuiteParityForFramework(string framework, string dotNetExecutable)
     {
         var repositoryRoot = FindRepositoryRoot();
@@ -134,7 +187,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             "src",
             "Datadog.Trace.Tools.Runner",
             "Datadog.Trace.Tools.Runner.csproj");
-        var duckTypingTestsAssemblyPath = Path.Combine(
+        var duckTypingTestsLegacyAssemblyPath = Path.Combine(
             repositoryRoot,
             "tracer",
             "test",
@@ -143,7 +196,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             "Release",
             framework,
             "Datadog.Trace.DuckTyping.Tests.dll");
-        var runnerAssemblyPath = Path.Combine(
+        var runnerLegacyAssemblyPath = Path.Combine(
             repositoryRoot,
             "tracer",
             "src",
@@ -153,6 +206,18 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             "Tool",
             framework,
             "Datadog.Trace.Tools.Runner.dll");
+        var duckTypingTestsAssemblyPath = ResolveBuiltAssemblyPath(
+            repositoryRoot,
+            "Datadog.Trace.DuckTyping.Tests",
+            framework,
+            "Datadog.Trace.DuckTyping.Tests.dll",
+            duckTypingTestsLegacyAssemblyPath);
+        var runnerAssemblyPath = ResolveBuiltAssemblyPath(
+            repositoryRoot,
+            "Datadog.Trace.Tools.Runner.Tool",
+            framework,
+            "Datadog.Trace.Tools.Runner.dll",
+            runnerLegacyAssemblyPath);
 
         File.Exists(duckTypingTestsProjectPath).Should().BeTrue("the full-suite parity harness requires the duck typing tests project");
         File.Exists(runnerProjectPath).Should().BeTrue("the full-suite parity harness requires the runner project");
@@ -215,6 +280,12 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                     Environment.NewLine +
                     buildRunnerResult.StandardError;
                 buildRunnerResult.ExitCode.Should().Be(0, buildRunnerFailureMessage);
+                runnerAssemblyPath = ResolveBuiltAssemblyPath(
+                    repositoryRoot,
+                    "Datadog.Trace.Tools.Runner.Tool",
+                    framework,
+                    "Datadog.Trace.Tools.Runner.dll",
+                    runnerLegacyAssemblyPath);
             }
 
             File.Exists(runnerAssemblyPath).Should().BeTrue("the runner assembly should be available before registry generation");
@@ -1329,6 +1400,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             return false;
         }
 
+        _ = TryGetRepositoryAssemblyBuildInfo(repositoryRoot, assemblyName, out _, out _, out expectedAssemblyPath);
         if (!File.Exists(expectedAssemblyPath))
         {
             failure = $"Repository assembly '{assemblyName}' build succeeded but expected output '{expectedAssemblyPath}' was not found.";
@@ -1363,7 +1435,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
 
         buildFramework = "netstandard2.0";
         projectPath = Path.Combine(repositoryRoot, "tracer", "src", "Datadog.Trace.Manual", "Datadog.Trace.Manual.csproj");
-        expectedAssemblyPath = Path.Combine(
+        var legacyExpectedAssemblyPath = Path.Combine(
             repositoryRoot,
             "tracer",
             "src",
@@ -1372,6 +1444,12 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             "Release",
             buildFramework,
             $"{normalizedAssemblyName}.dll");
+        expectedAssemblyPath = ResolveBuiltAssemblyPath(
+            repositoryRoot,
+            "Datadog.Trace.Manual",
+            buildFramework,
+            $"{normalizedAssemblyName}.dll",
+            legacyExpectedAssemblyPath);
         return true;
     }
 
@@ -1386,8 +1464,10 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             }
 
             var frameworkMarker = $"{Path.DirectorySeparatorChar}{framework}{Path.DirectorySeparatorChar}";
+            var artifactsFrameworkMarker = $"{Path.DirectorySeparatorChar}release_{framework.ToLowerInvariant()}{Path.DirectorySeparatorChar}";
             var rootSearchDirectories = new[]
             {
+                Path.Combine(repositoryRoot, "artifacts", "bin"),
                 Path.Combine(repositoryRoot, "tracer", "src"),
                 Path.Combine(repositoryRoot, "tracer", "test")
             };
@@ -1426,7 +1506,9 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             var resolvedIndex = candidatePathsByAssemblyName.ToDictionary(
                 entry => entry.Key,
                 entry => entry.Value
-                    .OrderByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}Release{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}artifacts{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+                    .ThenByDescending(path => path.Contains(artifactsFrameworkMarker, StringComparison.OrdinalIgnoreCase))
+                    .ThenByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}Release{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
                     .ThenByDescending(path => path.Contains(frameworkMarker, StringComparison.OrdinalIgnoreCase))
                     .ThenByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}netstandard2.0{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
                     .ThenByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}net8.0{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
@@ -1526,6 +1608,34 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         }
 
         return false;
+    }
+
+    private static string ResolveBuiltAssemblyPath(
+        string repositoryRoot,
+        string artifactsProjectName,
+        string framework,
+        string assemblyFileName,
+        string legacyAssemblyPath)
+    {
+        var artifactsAssemblyPath = Path.Combine(
+            repositoryRoot,
+            "artifacts",
+            "bin",
+            artifactsProjectName,
+            $"release_{framework.ToLowerInvariant()}",
+            assemblyFileName);
+
+        if (File.Exists(artifactsAssemblyPath))
+        {
+            return artifactsAssemblyPath;
+        }
+
+        if (File.Exists(legacyAssemblyPath))
+        {
+            return legacyAssemblyPath;
+        }
+
+        return artifactsAssemblyPath;
     }
 
     private static string? TryResolveAssemblyPathFromDotNetRuntime(string dotNetExecutable, string framework, string assemblyName)
@@ -1763,6 +1873,16 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                            .Select(entry => new XElement(entry.Key, entry.Value))))));
 
         document.Save(path);
+    }
+
+    private static string CreateTempDirectory()
+    {
+        var tempDirectory = Path.Combine(
+            Path.GetTempPath(),
+            "dd-trace-ducktype-aot-full-suite-parity-tests",
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDirectory);
+        return tempDirectory;
     }
 
     private static void TryDeleteDirectory(string path)

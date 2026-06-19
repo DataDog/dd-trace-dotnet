@@ -2367,7 +2367,6 @@ public class DuckTypeAotProcessorsTests
                 proxy.Should().BeAssignableTo<IDuckTypeTask>();
 
                 var duckTask = (IDuckTypeTask)proxy!;
-                duckTask.IsCompletedSuccessfully.Should().BeTrue();
                 duckTask.GetAwaiter().IsCompleted.Should().BeTrue();
 #pragma warning disable xUnit1031 // The test intentionally exercises the duck-typed awaiter GetResult contract.
                 duckTask.GetAwaiter().GetResult();
@@ -3207,7 +3206,6 @@ public class DuckTypeAotProcessorsTests
                 proxy.Should().BeAssignableTo<IDuckTypeTask<string>>();
 
                 var duckTask = (IDuckTypeTask<string>)proxy!;
-                duckTask.IsCompletedSuccessfully.Should().BeTrue();
                 duckTask.Result.Should().Be("completed");
                 duckTask.GetAwaiter().IsCompleted.Should().BeTrue();
 #pragma warning disable xUnit1031 // The test intentionally exercises the duck-typed awaiter GetResult contract.
@@ -8920,6 +8918,116 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void GenerateProcessorShouldSupportCrossAssemblyPrivateBaseFieldWhenFallbackToBaseTypesIsEnabled()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            const string baseAssemblyName = "DuckTypeAotCrossAssemblyBaseFieldBase";
+            const string derivedAssemblyName = "DuckTypeAotCrossAssemblyBaseFieldDerived";
+            var proxyAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var (baseAssemblyPath, derivedAssemblyPath) = CreateCrossAssemblyBaseFieldTargetAssemblies(tempDirectory, baseAssemblyName, derivedAssemblyName);
+            var proxyAssemblyName = AssemblyName.GetAssemblyName(proxyAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.CrossAssemblyBaseField.Fallback.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-cross-assembly-base-field-fallback.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-cross-assembly-base-field-fallback.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-cross-assembly-base-field-fallback.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(ICrossAssemblyPrivateBaseFieldFallbackProxy).FullName,
+                        proxyAssembly = proxyAssemblyName,
+                        targetType = "CrossAssembly.Fields.FieldDerived",
+                        targetAssembly = derivedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { proxyAssemblyPath },
+                targetAssemblies: new[] { derivedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.CrossAssemblyBaseField.Fallback",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var compatibilityMatrixPath = $"{outputPath}.compat.json";
+            var matrix = JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(compatibilityMatrixPath));
+            matrix.Should().NotBeNull();
+            matrix!.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-CrossAssemblyBaseField-Fallback", isCollectible: true);
+            try
+            {
+                var baseAssemblyCopyPath = Path.Combine(Path.GetDirectoryName(derivedAssemblyPath)!, $"{baseAssemblyName}.dll");
+                if (!File.Exists(baseAssemblyCopyPath))
+                {
+                    baseAssemblyCopyPath = baseAssemblyPath;
+                }
+
+                _ = loadContext.LoadFromAssemblyPath(proxyAssemblyPath);
+                _ = loadContext.LoadFromAssemblyPath(baseAssemblyCopyPath);
+                var derivedAssembly = loadContext.LoadFromAssemblyPath(derivedAssemblyPath);
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+
+                var generatedProxyType = generatedAssembly.GetTypes().Single(type =>
+                    string.Equals(type.Namespace, "Datadog.Trace.DuckTyping.Generated.Proxies", StringComparison.Ordinal) &&
+                    type.GetInterfaces().Any(@interface => string.Equals(@interface.FullName, typeof(ICrossAssemblyPrivateBaseFieldFallbackProxy).FullName, StringComparison.Ordinal)));
+                var constructor = GetDuckProxyConstructor(generatedProxyType);
+                constructor.Should().NotBeNull();
+
+                var targetType = derivedAssembly.GetType("CrossAssembly.Fields.FieldDerived", throwOnError: true)!;
+                var targetCtor = targetType.GetConstructor([typeof(int)]);
+                targetCtor.Should().NotBeNull();
+                var targetInstance = targetCtor!.Invoke([47]);
+
+                var proxyInstance = constructor!.Invoke([targetInstance]);
+                var getHiddenMethod = generatedProxyType.GetMethod("get_Hidden", Type.EmptyTypes);
+                var setHiddenMethod = generatedProxyType.GetMethod("set_Hidden", [typeof(int)]);
+                getHiddenMethod.Should().NotBeNull();
+                setHiddenMethod.Should().NotBeNull();
+
+                var before = getHiddenMethod!.Invoke(proxyInstance, Array.Empty<object>());
+                before.Should().Be(47);
+
+                _ = setHiddenMethod!.Invoke(proxyInstance, [113]);
+
+                var after = getHiddenMethod.Invoke(proxyInstance, Array.Empty<object>());
+                after.Should().Be(113);
+
+                var readHiddenMethod = targetType.GetMethod("ReadHidden", BindingFlags.Instance | BindingFlags.Public);
+                readHiddenMethod.Should().NotBeNull();
+                var targetHidden = readHiddenMethod!.Invoke(targetInstance, Array.Empty<object>());
+                targetHidden.Should().Be(113);
+            }
+            finally
+            {
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void GenerateProcessorShouldResolveInheritedNonPrivateBasePropertyWithoutFallback()
     {
         var tempDirectory = CreateTempDirectory();
@@ -12600,6 +12708,106 @@ public class DuckTypeAotProcessorsTests
         return (baseAssemblyPath, derivedAssemblyPath);
     }
 
+    private static (string BaseAssemblyPath, string DerivedAssemblyPath) CreateCrossAssemblyBaseFieldTargetAssemblies(
+        string tempDirectory,
+        string baseAssemblyName,
+        string derivedAssemblyName)
+    {
+        var baseProjectDirectory = Path.Combine(tempDirectory, baseAssemblyName);
+        Directory.CreateDirectory(baseProjectDirectory);
+        var baseProjectPath = Path.Combine(baseProjectDirectory, $"{baseAssemblyName}.csproj");
+        var baseProjectContents =
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <TargetFramework>net8.0</TargetFramework>
+                 <AssemblyName>{baseAssemblyName}</AssemblyName>
+                 <ImplicitUsings>disable</ImplicitUsings>
+                 <Nullable>enable</Nullable>
+               </PropertyGroup>
+             </Project>
+             """;
+        File.WriteAllText(baseProjectPath, baseProjectContents);
+
+        var baseTargetsContents =
+            """
+            namespace CrossAssembly.Fields
+            {
+                public class FieldBase
+                {
+                    private int _hidden;
+
+                    protected FieldBase(int hidden)
+                    {
+                        _hidden = hidden;
+                    }
+
+                    public int ReadHidden()
+                    {
+                        return _hidden;
+                    }
+                }
+            }
+            """;
+        File.WriteAllText(Path.Combine(baseProjectDirectory, "Targets.cs"), baseTargetsContents);
+
+        var derivedProjectDirectory = Path.Combine(tempDirectory, derivedAssemblyName);
+        Directory.CreateDirectory(derivedProjectDirectory);
+        var derivedProjectPath = Path.Combine(derivedProjectDirectory, $"{derivedAssemblyName}.csproj");
+        var derivedProjectContents =
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <TargetFramework>net8.0</TargetFramework>
+                 <AssemblyName>{derivedAssemblyName}</AssemblyName>
+                 <ImplicitUsings>disable</ImplicitUsings>
+                 <Nullable>enable</Nullable>
+               </PropertyGroup>
+               <ItemGroup>
+                 <ProjectReference Include="{baseProjectPath}" />
+               </ItemGroup>
+             </Project>
+             """;
+        File.WriteAllText(derivedProjectPath, derivedProjectContents);
+
+        var derivedTargetsContents =
+            """
+            namespace CrossAssembly.Fields
+            {
+                public sealed class FieldDerived : FieldBase
+                {
+                    public FieldDerived(int hidden)
+                        : base(hidden)
+                    {
+                    }
+                }
+            }
+            """;
+        File.WriteAllText(Path.Combine(derivedProjectDirectory, "Targets.cs"), derivedTargetsContents);
+
+        var buildResult = RunProcess(
+            "dotnet",
+            derivedProjectDirectory,
+            timeoutMilliseconds: 120_000,
+            captureOutput: true,
+            "build",
+            derivedProjectPath,
+            "-c",
+            "Release",
+            "-f",
+            "net8.0",
+            "/nologo");
+        buildResult.ExitCode.Should().Be(
+            0,
+            $"temporary cross-assembly base field target assemblies should build.{Environment.NewLine}STDOUT:{Environment.NewLine}{buildResult.StandardOutput}{Environment.NewLine}STDERR:{Environment.NewLine}{buildResult.StandardError}");
+
+        var baseAssemblyPath = Path.Combine(baseProjectDirectory, "bin", "Release", "net8.0", $"{baseAssemblyName}.dll");
+        var derivedAssemblyPath = Path.Combine(derivedProjectDirectory, "bin", "Release", "net8.0", $"{derivedAssemblyName}.dll");
+        File.Exists(baseAssemblyPath).Should().BeTrue($"temporary base field target assembly should exist at '{baseAssemblyPath}'");
+        File.Exists(derivedAssemblyPath).Should().BeTrue($"temporary derived field target assembly should exist at '{derivedAssemblyPath}'");
+        return (baseAssemblyPath, derivedAssemblyPath);
+    }
+
     private static string BuildClosedGenericTypeName(string genericTypeFullName, Type genericArgument)
     {
         genericArgument.AssemblyQualifiedName.Should().NotBeNullOrWhiteSpace();
@@ -14245,6 +14453,12 @@ public class DuckTypeAotProcessorsTests
     private interface IFailureReplayReverseMissingPropertyProxy
     {
         string Value { get; set; }
+    }
+
+    private interface ICrossAssemblyPrivateBaseFieldFallbackProxy
+    {
+        [DuckField(Name = "_hidden", BindingFlags = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly, FallbackToBaseTypes = true)]
+        int Hidden { get; set; }
     }
 
     private sealed class FailureReplayReverseMissingPropertyTarget

@@ -335,6 +335,16 @@ namespace Datadog.Trace.TestHelpers
                 });
         }
 
+        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsTransactionsAsync(
+            int timeoutInMilliseconds = 20000)
+        {
+            return await WaitForDataStreamsAsync(
+                timeoutInMilliseconds,
+                stats => stats.Any(
+                    p => p.Stats != null &&
+                         p.Stats.Any(b => b.Transactions is { Length: > 0 })));
+        }
+
         public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsAsync(
             int payloadCount,
             int timeoutInMilliseconds = 20000)
@@ -558,6 +568,11 @@ namespace Datadog.Trace.TestHelpers
             {
                 HandleTracerFlarePayload(request);
                 responseType = MockTracerResponseType.TracerFlare;
+            }
+            else if (request.PathAndQuery.StartsWith("/symdb/v1/input"))
+            {
+                HandlePotentialSymbolDbData(request);
+                responseType = MockTracerResponseType.SymbolDb;
             }
             else
             {
@@ -869,6 +884,27 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        private void HandlePotentialSymbolDbData(MockHttpRequest request)
+        {
+            try
+            {
+                _ = request.ReadStreamBody();
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message.ToLowerInvariant();
+
+                if (message.Contains("beyond the end of the stream"))
+                {
+                    // Accept call is likely interrupted by a dispose
+                    // Swallow the exception and let the test finish
+                    return;
+                }
+
+                throw;
+            }
+        }
+
         private MockTracerResponse HandleEvpProxyPayload(MockHttpRequest request)
         {
             if (ShouldDeserializeTraces)
@@ -1072,13 +1108,16 @@ namespace Datadog.Trace.TestHelpers
             public bool ClientDropP0s { get; set; } = true;
 
             [JsonProperty("version")]
-            public string AgentVersion { get; set; }
+            public string AgentVersion { get; set; } = "7.65.0";
 
             [JsonProperty("span_meta_structs")]
             public bool SpanMetaStructs { get; set; } = true;
 
             [JsonProperty("span_events")]
             public bool SpanEvents { get; set; } = false;
+
+            [JsonProperty("obfuscation_version")]
+            public int ObfuscationVersion { get; set; } = 1;
         }
 
         public class TcpUdpAgent : MockTracerAgent

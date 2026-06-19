@@ -59,6 +59,9 @@ partial class Build
     [Parameter("Only update package versions for packages with the following names")]
     readonly string[] IncludePackages;
 
+    [Parameter("Minimum age in days a NuGet package version must have been published before auto-including. Defaults to 2. Ignored for packages named in --IncludePackages, which always bypass the cooldown.")]
+    readonly int? PackageVersionCooldownDays;
+
     [LazyLocalExecutable(@"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\gacutil.exe")]
     readonly Lazy<Tool> GacUtil;
     [LazyLocalExecutable(@"C:\Program Files\IIS Express\iisexpress.exe")]
@@ -116,7 +119,7 @@ partial class Build
 
            DotNetBuild(s => s
                            .SetDotnetPath(TargetPlatform)
-                           .SetFramework(TargetFramework.NET7_0)
+                           .SetFramework(TargetFramework.NET10_0)
                            .SetProjectFile(autoInstGenProj)
                            .SetConfiguration(Configuration.Release)
                            .SetNoWarnDotNetCore3());
@@ -125,7 +128,7 @@ partial class Build
            var dotnetRunSettings = new DotNetRunSettings()
                                   .SetDotnetPath(TargetPlatform)
                                   .SetNoBuild(true)
-                                  .SetFramework(TargetFramework.NET7_0)
+                                  .SetFramework(TargetFramework.NET10_0)
                                   .EnableNoLaunchProfile()
                                   .SetProjectFile(autoInstGenProj)
                                   .SetConfiguration(Configuration.Release);
@@ -139,6 +142,7 @@ partial class Build
         .Executes(() =>
         {
             MSBuild(s => s
+                .SetMSBuildPath()
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
                 .SetProjectFile(Solution.GetProject(SampleName)));
@@ -173,7 +177,8 @@ partial class Build
             envVars.Add("DD_PROFILER_EXCLUDE_PROCESSES", "dotnet.exe");
             AddExtraEnvVariables(envVars, ExtraEnvVars);
 
-            string project = Solution.GetProject(SampleName)?.Path;
+            // SampleName may resolve to a standalone sample (in SamplesSolution) or an aspnet/test-helper sample (in Solution).
+            string project = (SamplesSolution.GetProject(SampleName) ?? Solution.GetProject(SampleName))?.Path;
             if (project is not null)
             {
                 Logger.Information($"Running sample '{SampleName}'");
@@ -210,7 +215,7 @@ partial class Build
 
     Target GeneratePackageVersions => _ => _
        .Description("Regenerate the PackageVersions props and .cs files")
-       .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedTracer)
+       .DependsOn(Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedTracer)
        .Executes(async () =>
        {
            if (IncludePackages is not null)
@@ -228,29 +233,130 @@ partial class Build
            }
 
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
-           var dependabotFolder = TracerDirectory / "dependabot" / "integrations";
            var definitionsFile = BuildDirectory / FileNames.DefinitionsJson;
            var supportedVersionsPath = BuildDirectory / "supported_versions.json";
 
-           // Build the shouldQueryNuGet predicate from include/exclude filters
-           Func<string, bool> shouldUpdatePackage = (IncludePackages, ExcludePackages) switch
-           {
-               ({ } include, _) => name => include.Contains(name, StringComparer.OrdinalIgnoreCase),
-               (_, { } exclude) => name => !exclude.Contains(name, StringComparer.OrdinalIgnoreCase),
-               _ => _ => true
-           };
+           // Decides the cooldown treatment for each package by name. See CooldownMode for what each value does.
+           var getCooldownMode = BuildCooldownModeSelector(IncludePackages, ExcludePackages);
 
-           // Load caches for both pipelines
-           var cacheFilePath = BuildDirectory / "nuget_version_cache.json";
-           var previousVersionCache = await NuGetVersionCache.Load(cacheFilePath);
-           Logger.Information("Loaded NuGet version cache with {Count} entries", previousVersionCache.Count);
+           // Dependabot re-uses the previous entry verbatim for Freeze; Skip and Normal both refresh.
+           Func<string, bool> shouldUpdatePackage = name => getCooldownMode(name) is not CooldownMode.Freeze;
+
+           static Func<string, CooldownMode> BuildCooldownModeSelector(string[] includePackages, string[] excludePackages)
+           {
+               // No filter: every package goes through the normal cooldown filter.
+               if (includePackages is null && excludePackages is null)
+               {
+                   return _ => CooldownMode.Normal;
+               }
+
+               // --IncludePackages Foo Bar: update only the listed packages (bypassing cooldown);
+               // freeze every other package so it re-emits its previous output unchanged.
+               if (includePackages is not null)
+               {
+                   var targeted = new HashSet<string>(includePackages, StringComparer.OrdinalIgnoreCase);
+                   return name => targeted.Contains(name) ? CooldownMode.BypassCooldown : CooldownMode.Freeze;
+               }
+
+               // --ExcludePackages Foo Bar: freeze the listed packages; everything else updates normally.
+               var blocked = new HashSet<string>(excludePackages, StringComparer.OrdinalIgnoreCase);
+               return name => blocked.Contains(name) ? CooldownMode.Freeze : CooldownMode.Normal;
+           }
+
+           // supported_versions.json is still loaded for Pipeline B (dependabot + supported_versions.json
+           // regeneration). The cooldown filter in Pipeline A sources its previous-max data from the
+           // generated .g.cs files directly, because those retain per-major version history that
+           // supported_versions.json's single-max-per-package shape cannot represent.
            var previousSupportedVersions = await GenerateSupportMatrix.LoadPreviousVersions(supportedVersionsPath);
            Logger.Information("Loaded previous supported versions with {Count} entries", previousSupportedVersions.Count);
 
+           var effectiveCooldownDays = PackageVersionCooldownDays ?? 2;
+
            // Pipeline A: generate .g.props/.g.cs files
-           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, shouldUpdatePackage, previousVersionCache);
-           var testedVersions = await versionGenerator.GenerateVersions(Solution);
-           await NuGetVersionCache.Save(cacheFilePath, versionGenerator.VersionCache);
+           Logger.Information("Using package version cooldown of {Days} days", effectiveCooldownDays);
+           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, getCooldownMode, effectiveCooldownDays);
+           // Entries in the package versions JSON reference standalone sample projects, so they live in
+           // SamplesSolution (the default Solution = Datadog.Trace.Build.g.sln excludes samples).
+           var testedVersions = await versionGenerator.GenerateVersions(SamplesSolution);
+
+           // Log version changes: bumps, unchanged, and overridden
+           var queriedVersions = versionGenerator.QueriedVersions;
+           var bumped = 0;
+           var unchanged = 0;
+           foreach (var tested in testedVersions)
+           {
+               var packageName = tested.NugetPackageSearchName;
+               var previouslyTested = versionGenerator.GetPreviouslyTestedVersions(tested.IntegrationName);
+
+               foreach (var selected in tested.SelectedVersions)
+               {
+                   // Compare per-slot: entries can have multiple selected versions (one per glob or
+                   // per major), e.g. AWSSDK.Core's 3.3.*, 3.*.*, 4.*.*. Bound the predecessor search
+                   // to same-major and <= selected so each slot's previous max is found independently
+                   // -- a 3.x backport is visible even when the 4.x slot is unchanged.
+                   var previousMax = previouslyTested
+                       .Where(v => v.Major == selected.Major && v <= selected)
+                       .OrderByDescending(v => v)
+                       .FirstOrDefault();
+
+                   if (previousMax is null || selected > previousMax)
+                   {
+                       bumped++;
+                       DateTimeOffset? publishedDate = null;
+                       if (queriedVersions.TryGetValue(packageName, out var versionsForPackage))
+                       {
+                           var match = versionsForPackage.FirstOrDefault(v => v.Version == selected.ToString());
+                           publishedDate = match?.Published;
+                       }
+
+                       versionGenerator.BumpReport.AddBump(new PackageBumpReport.BumpEntry(
+                           packageName,
+                           tested.IntegrationName,
+                           previousMax,
+                           selected,
+                           publishedDate));
+
+                       Logger.Information(
+                           "  {Package} {Previous} -> {Current} (published {Date}, https://www.nuget.org/packages/{Package}/{Current})",
+                           packageName,
+                           previousMax?.ToString() ?? "(new)",
+                           selected,
+                           publishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "(unknown)",
+                           packageName,
+                           selected);
+                   }
+                   else
+                   {
+                       unchanged++;
+                   }
+               }
+           }
+
+           Logger.Information("{Bumped} package(s) bumped, {Unchanged} unchanged", bumped, unchanged);
+
+           if (versionGenerator.BumpReport.CooldownEntries.Count > 0)
+           {
+               Logger.Warning(
+                   "{Count} package version(s) were excluded due to the {Days}-day cooldown period",
+                   versionGenerator.BumpReport.CooldownEntries.Count,
+                   effectiveCooldownDays);
+
+               foreach (var entry in versionGenerator.BumpReport.CooldownEntries)
+               {
+                   Logger.Warning(
+                       "  {Package} {Version} overridden (published {Date})",
+                       entry.PackageName,
+                       entry.OverriddenVersion,
+                       entry.PublishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "unknown");
+               }
+           }
+
+           if (versionGenerator.BumpReport.HasEntries)
+           {
+               var reportPath = TemporaryDirectory / "bump_report.md";
+               await versionGenerator.BumpReport.SaveToFile(reportPath);
+               Logger.Information("Bump report saved to {Path}", reportPath);
+           }
 
            var assemblies = MonitoringHomeDirectory
                            .GlobFiles("**/Datadog.Trace.dll")
@@ -259,11 +365,11 @@ partial class Build
 
            var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies, definitionsFile);
 
-           // Pipeline B: generate dependabot files + supported_versions.json
+           // Pipeline B: generate supported_versions.json
+           // TestedVersions are cooldown-filtered but the previous max pins prevent downgrades,
+           // so they accurately reflect what we're testing.
            var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(
                integrations, testedVersions, shouldUpdatePackage, previousSupportedVersions);
-
-           await DependabotFileManager.UpdateIntegrations(dependabotFolder, distinctIntegrations);
 
            var outputPath = TracerDirectory / "build" / "supported_versions.json";
            await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
@@ -294,7 +400,7 @@ partial class Build
             var vendorDirectory = Solution.GetProject(Projects.DatadogTrace).Directory / "Vendors";
             var downloadDirectory = TemporaryDirectory / "Downloads";
             EnsureCleanDirectory(downloadDirectory);
-            await UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
+            await UpdateVendorsTool.UpdateVendors(downloadDirectory, RootDirectory, vendorDirectory);
        });
 
     Target UpdateVersion => _ => _
@@ -443,22 +549,40 @@ partial class Build
                         return;
                     }
                     
-                    // Create a copy of the "full solution"
-                    var sln = ProjectModelTasks.CreateSolution(
+                    // Create a copy of the "full solution" containing only the standalone test-application projects
+                    var samplesSln = ProjectModelTasks.CreateSolution(
                         fileName: RootDirectory / "Datadog.Trace.Samples.g.sln",
-                        solutions: new[] { Solution },
+                        solutions: new[] { FullSolution },
                         randomizeProjectIds: false);
 
-                    // Remove everything except the standalone test-application projects
-                    sln.AllProjects
+                    samplesSln.AllProjects
                        .Where(x => !IsTestApplication(x))
                        .ForEach(x =>
                         {
-                            Logger.Information("Removing project '{Name}'", x.Name);
-                            sln.RemoveProject(x);
+                            Logger.Information("Samples sln: removing project '{Name}'", x.Name);
+                            samplesSln.RemoveProject(x);
                         });
 
-                    sln.Save();
+                    samplesSln.Save();
+
+                    // Create a copy of the "full solution" containing everything EXCEPT the standalone test-application projects.
+                    // This is the inverse of Samples.g.sln; together they cover the full project graph with zero overlap.
+                    // It is the default Nuke Solution used by CI/build targets — restoring it does not pull in sample-only NuGet
+                    // dependencies (MongoDB, Elasticsearch, etc.), which dominate the local packages folder shipped via working-directory artifacts.
+                    var buildSln = ProjectModelTasks.CreateSolution(
+                        fileName: RootDirectory / "Datadog.Trace.Build.g.sln",
+                        solutions: new[] { FullSolution },
+                        randomizeProjectIds: false);
+
+                    buildSln.AllProjects
+                       .Where(IsTestApplication)
+                       .ForEach(x =>
+                        {
+                            Logger.Information("Build sln: removing project '{Name}'", x.Name);
+                            buildSln.RemoveProject(x);
+                        });
+
+                    buildSln.Save();
 
                     bool IsTestApplication(Project x)
                     {
@@ -466,6 +590,13 @@ partial class Build
                         // 1. They're a pain to build
                         // 2. They aren't actually run in the CI (something we should address in the future)
                         if (x.Name is "ExpenseItDemo" or "StackExchange.Redis.AssemblyConflict.LegacyProject" or "_build")
+                        {
+                            return false;
+                        }
+
+                        // These library projects are directly referenced via <ProjectReference> by Datadog.Tracer.Native.Tests.vcxproj,
+                        // so they must live in the build solution, not the samples solution.
+                        if (x.Name is "Samples.ExampleLibrary" or "Samples.ExampleLibraryTracer")
                         {
                             return false;
                         }

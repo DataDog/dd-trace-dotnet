@@ -9,6 +9,7 @@ using System;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -99,7 +100,7 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
             var span = scope.Span;
 
             span.Type = SpanTypes.Sql;
-            span.ResourceName = $"{operationTypeString} {resourceUriString}";
+            span.ResourceName = $"{operationTypeString} {NormalizeResourceUri(resourceUriString)}";
 
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.CosmosDb);
 
@@ -143,5 +144,59 @@ public sealed class RequestInvokerHandlerSendAsyncIntegration
 
         scope?.DisposeWithException(exception);
         return returnValue;
+    }
+
+    // Redacts ids keeping db/collection names
+    internal static string NormalizeResourceUri(string resourceUriString)
+    {
+        if (StringUtil.IsNullOrEmpty(resourceUriString))
+        {
+            return resourceUriString;
+        }
+
+        StringBuilder? sb = null;
+        var index = 0;
+        var redactNext = false;
+
+        foreach (var segment in resourceUriString.SplitIntoSpans('/'))
+        {
+            // Even segments are keys, odd ones are ids
+            var isKey = index % 2 == 0;
+            var redact = !isKey && redactNext && segment.Length > 0;
+
+            if (sb is null && redact)
+            {
+                // On the first redaction found, append everything from 0 until the start of that segment as-is
+                sb = StringBuilderCache.Acquire(resourceUriString.Length);
+                sb.Append(resourceUriString, 0, segment.StartIndex);
+            }
+            else if (sb is not null && index > 0)
+            {
+                sb.Append('/');
+            }
+
+            if (sb is not null)
+            {
+                if (redact)
+                {
+                    sb.Append('?');
+                }
+                else
+                {
+                    sb.Append(resourceUriString, segment.StartIndex, segment.Length);
+                }
+            }
+
+            if (isKey)
+            {
+                // Skip redacting ids for segments that come after dbs/colls
+                var keySpan = segment.AsSpan();
+                redactNext = !keySpan.SequenceEqual("dbs".AsSpan()) && !keySpan.SequenceEqual("colls".AsSpan());
+            }
+
+            index++;
+        }
+
+        return sb is null ? resourceUriString : StringBuilderCache.GetStringAndRelease(sb);
     }
 }

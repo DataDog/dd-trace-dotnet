@@ -164,11 +164,14 @@ namespace Datadog.Trace.Configuration
 
             if (!string.IsNullOrEmpty(generalEndpoint))
             {
-                if (protocol == OtlpProtocol.Grpc && TryGetOtlpUri(signal, generalEndpoint!, origin, protocol, agentHost, out var grpcSettings))
+                // For both grpc and unix:// endpoints, do not modify the URI path
+                // For UDS, the path will be added to requests as needed (e.g. /v1/{signal}) for non-grpc OTLP protocols.
+                var isUdsEndpoint = generalEndpoint!.StartsWith(UnixDomainSocketPrefix, StringComparison.OrdinalIgnoreCase);
+                if ((protocol == OtlpProtocol.Grpc || isUdsEndpoint) && TryGetOtlpUri(signal, generalEndpoint!, origin, protocol, agentHost, out var asIsSettings))
                 {
-                    return grpcSettings;
+                    return asIsSettings;
                 }
-                else if (protocol != OtlpProtocol.Grpc)
+                else if (protocol != OtlpProtocol.Grpc && !isUdsEndpoint)
                 {
                     if (generalEndpoint!.EndsWith("/") && TryGetOtlpUri(signal, $"{generalEndpoint!}v1/{signal}", origin, protocol, agentHost, out var httpSettings))
                     {

@@ -2,6 +2,7 @@
 #include "cor_profiler.h"
 #include "log.h"
 #include "util.h"
+#include <cassert>
 #ifndef _WIN32
 #include <fcntl.h>
 #include <unistd.h>
@@ -31,10 +32,13 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
 {
 #if _WIN32
     // For windows we combine the processPath and args into a single, space separated, string
-    // and pass null for the application name
-    // We assume that all the required escaping has been done etc
-
-    std::string combined = processPath;
+    // and pass null for the application name. The processPath is wrapped in quotes so that
+    // Windows' first-token parsing in lpCommandLine treats paths containing spaces as a single
+    // token (otherwise e.g. "C:\Program Files\foo.exe" could resolve to "C:\Program.exe").
+    // If the caller has already quoted the path, we leave it alone (assumption: starts with a
+    // quote => ends with a quote). Callers are responsible for any escaping required for args.
+    const bool alreadyQuoted = !processPath.empty() && processPath.front() == '"';
+    std::string combined = alreadyQuoted ? processPath : "\"" + processPath + "\"";
     for(const auto &arg: args)
     {
         combined += " " + arg;
@@ -105,7 +109,10 @@ bool ProcessHelper::RunProcess(const std::string& processPath,
     }    
 
     DWORD written;
-    WriteFile(hStdinWrite, input.c_str(), input.length(), &written, nullptr);
+    // WriteFile's nNumberOfBytesToWrite is DWORD (32-bit). RunProcess only ever feeds small
+    // command-line text payloads, so this should never trip; assert captures the assumption.
+    assert(input.length() <= MAXDWORD);
+    WriteFile(hStdinWrite, input.c_str(), static_cast<DWORD>(input.length()), &written, nullptr);
 
     CloseHandle(hStdinRead);
     CloseHandle(hStdinWrite);

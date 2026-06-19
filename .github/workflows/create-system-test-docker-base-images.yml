@@ -35,7 +35,7 @@ jobs:
       with:
         fetch-depth: 0
 
-    - uses: actions/setup-dotnet@baa11fbfe1d6520db94683bd5c7a3818018e4309 # v5.1.0
+    - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
       with:
         global-json-file: global.json
 
@@ -52,13 +52,15 @@ jobs:
     - name: "Sanitize branch name"
       id: image_tag
       run: |
-        BRANCH="${{github.event.inputs.branch_name}}"
+        BRANCH="$BRANCH_NAME_INPUT"
         if [[ -z "$BRANCH" ]]; then
           echo "ERROR: Missing required 'branch_name' input. Aborting docker image build."
           exit 1
         fi
         SAFE_TAG="${BRANCH//\//_}"
         echo "tag=$SAFE_TAG" >> $GITHUB_OUTPUT
+      env:
+        BRANCH_NAME_INPUT: "${{ github.event.inputs.branch_name }}"
 
     - uses: ./.github/actions/create-system-test-docker-base-images
       name: 'Create system test docker images'

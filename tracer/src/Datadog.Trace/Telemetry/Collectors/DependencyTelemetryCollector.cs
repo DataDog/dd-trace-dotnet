@@ -169,7 +169,7 @@ namespace Datadog.Trace.Telemetry
         {
             for (int i = assemblyName.Length - 1; i >= start; i--)
             {
-                if (!IsHexChar(assemblyName[i]))
+                if (!char.IsAsciiHexDigit(assemblyName[i]))
                 {
                     return false;
                 }
@@ -194,16 +194,6 @@ namespace Datadog.Trace.Telemetry
             }
         }
 
-        private static bool IsHexChar(char c)
-        {
-            return c switch
-            {
-                >= '0' and <= '9' => true,
-                >= 'a' and <= 'f' => true,
-                _ => false
-            };
-        }
-
         private static bool IsZeroVersionAssemblyPattern(string assemblyName)
         {
             // e.g.
@@ -211,6 +201,7 @@ namespace Datadog.Trace.Telemetry
             //    a43d8b99ea (10 hex chars)
             //    akkynf62 (8 base32 chars)
             //    dynamicclasses254
+            //    InMemoryAssembly
             return (assemblyName.Length == 8
                  && IsBase32Char(assemblyName[0])
                  && IsBase32Char(assemblyName[1])
@@ -220,6 +211,7 @@ namespace Datadog.Trace.Telemetry
                  && IsBase32Char(assemblyName[5])
                  && IsBase32Char(assemblyName[6])
                  && IsBase32Char(assemblyName[7]))
+                || assemblyName.Equals("InMemoryAssembly", StringComparison.OrdinalIgnoreCase)
                 || (assemblyName.Length is 10 or >= 32 && IsHexString(assemblyName, 0))
                 || IsDynamicClassesPattern(assemblyName);
         }
@@ -255,7 +247,7 @@ namespace Datadog.Trace.Telemetry
             // Verify remaining characters are all digits
             for (int i = 14; i < assemblyName.Length; i++)
             {
-                if (assemblyName[i] is < '0' or > '9')
+                if (!char.IsAsciiDigit(assemblyName[i]))
                 {
                     return false;
                 }

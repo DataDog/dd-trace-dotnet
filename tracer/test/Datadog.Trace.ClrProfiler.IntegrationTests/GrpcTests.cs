@@ -29,7 +29,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public GrpcLegacyTests(ITestOutputHelper output)
             : base("GrpcLegacy", output, usesAspNetCore: false)
         {
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
             // the sample uses protobuf, but we are only interested in testing the grpc instrumentation,
             // so we disable the proto one which would add unexpected tags to the spans.
             SetEnvironmentVariable("DD_TRACE_PROTOBUF_ENABLED", "false");
@@ -373,6 +372,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         {
                             // May be missing in some cases
                             span.Tags["http.status_code"] = "200";
+                            span.Tags["grpc.status_code"] = "4";
                         }
 
                         // there is a race between the server cancelling a deadline and the client cancelling it

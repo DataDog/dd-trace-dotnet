@@ -483,6 +483,60 @@ public class ProbesTests : TestHelper
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    [InlineData(typeof(CaptureExpressionsMethod))]
+    [InlineData(typeof(CaptureExpressionsLine))]
+    [InlineData(typeof(CaptureExpressionsComplex))]
+    [InlineData(typeof(CaptureExpressionsMultipleProbes))]
+    public async Task CaptureExpressionProbeTest(Type testType)
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(testType);
+        await RunCaptureExpressionProbeTest(testDescription);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task ConditionErrorFullSnapshotOmitsCaptureData()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(FullSnapshotWithConditionError));
+        var probes = GetProbeConfiguration(testDescription.TestType, unlisted: true, new DeterministicGuidGenerator());
+        var snapshotProbes = probes.Select(p => p.Probe).ToArray();
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher(nameof(ConditionErrorFullSnapshotOmitsCaptureData));
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        try
+        {
+            SetProbeConfiguration(agent, snapshotProbes);
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+
+            await sample.RunCodeSample();
+
+            var snapshots = await agent.WaitForSnapshots(snapshotProbes.Length);
+            Assert.Equal(snapshotProbes.Length, snapshots?.Length);
+
+            var snapshot = JToken.Parse(snapshots[0]);
+            var evaluationErrors = snapshot.SelectToken("debugger.snapshot.evaluationErrors") as JArray;
+            evaluationErrors.Should().NotBeNull();
+            evaluationErrors.Should().ContainSingle();
+            evaluationErrors![0]["expr"]?.Value<string>().Should().Be("this.undefined");
+            evaluationErrors[0]["message"]?.Value<string>().Should().NotBeNullOrEmpty();
+            snapshot.SelectToken("debugger.snapshot.captures.entry").Should().BeNull();
+            snapshot.SelectToken("debugger.snapshot.captures.return").Should().BeNull();
+            snapshot.SelectToken("debugger.snapshot.captures.lines").Should().BeNull();
+
+            await ApproveSnapshots(snapshots, testDescription, isMultiPhase: false, phaseNumber: 1);
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+
+    [SkippableTheory]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     [MemberData(nameof(SpanDecorationMemberData))]
     [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
     public async Task SpanDecorationTest(Type testType)
@@ -690,6 +744,9 @@ public class ProbesTests : TestHelper
 
         foreach (var span in spans)
         {
+            // Remove process tags that can be injected on the first span in a payload
+            span.Tags.Remove(global::Datadog.Trace.Tags.ProcessTags);
+
             var toSanitize = span.Tags.Where(tag => tag.Key.StartsWith(errorTagStartWith) && tag.Key.EndsWith(errorTagEndWith)).ToList();
             foreach (var keyValuePair in toSanitize)
             {
@@ -909,6 +966,61 @@ public class ProbesTests : TestHelper
         finally
         {
             await sample.StopSample();
+        }
+    }
+
+    private async Task RunCaptureExpressionProbeTest(ProbeTestDescription testDescription)
+    {
+        var probes = GetProbeConfiguration(testDescription.TestType, false, new DeterministicGuidGenerator());
+        var snapshotProbes = probes.Select(p => p.Probe).ToArray();
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher($"capture_expressions_{testDescription.TestType.Name}");
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        try
+        {
+            SetProbeConfiguration(agent, snapshotProbes);
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+
+            await sample.RunCodeSample();
+
+            var snapshots = await agent.WaitForSnapshots(snapshotProbes.Length);
+            Assert.Equal(snapshotProbes.Length, snapshots?.Length);
+            var captureExpressionNamesBySnapshot = new List<string[]>();
+            foreach (var snapshot in snapshots)
+            {
+                var token = JToken.Parse(snapshot);
+                var captureExpressionNames = GetCaptureExpressionNames(token);
+                captureExpressionNames.Should().NotBeEmpty();
+                captureExpressionNamesBySnapshot.Add(captureExpressionNames);
+                token.SelectToken("debugger.snapshot.captures.return.locals").Should().BeNull();
+                token.SelectToken("debugger.snapshot.captures.return.arguments").Should().BeNull();
+            }
+
+            if (snapshotProbes.Length > 1)
+            {
+                captureExpressionNamesBySnapshot
+                   .Select(names => string.Join(",", names))
+                   .Should()
+                   .OnlyHaveUniqueItems();
+            }
+
+            await ApproveSnapshots(snapshots, testDescription, isMultiPhase: false, phaseNumber: 1);
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+
+        static string[] GetCaptureExpressionNames(JToken token)
+        {
+            return token
+                  .SelectTokens("$..captureExpressions")
+                  .SelectMany(captureExpressions => captureExpressions.Children<JProperty>())
+                  .Select(property => property.Name)
+                  .OrderBy(name => name)
+                  .ToArray();
         }
     }
 

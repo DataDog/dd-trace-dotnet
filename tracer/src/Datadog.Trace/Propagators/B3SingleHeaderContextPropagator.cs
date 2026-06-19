@@ -62,7 +62,6 @@ namespace Datadog.Trace.Propagators
                     return false;
                 }
 
-#if NETCOREAPP
                 ReadOnlySpan<char> rawTraceId;
                 ReadOnlySpan<char> rawSpanId;
                 char rawSampled;
@@ -100,45 +99,6 @@ namespace Datadog.Trace.Propagators
 
                 var samplingPriority = rawSampled == '1' ? 1 : 0;
                 var spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId.ToString(), rawSpanId.ToString(), isRemote: true);
-#else
-                string? rawTraceId;
-                string? rawSpanId;
-                char rawSampled;
-
-                if (brValue.Length > 50 && brValue[32] == '-' && brValue[49] == '-')
-                {
-                    // 128-bit trace id
-                    rawTraceId = brValue.Substring(0, 32);
-                    rawSpanId = brValue.Substring(33, 16);
-                    rawSampled = brValue[50];
-                }
-                else if (brValue.Length > 34 && brValue[16] == '-' && brValue[33] == '-')
-                {
-                    // 64-bit trace id
-                    rawTraceId = brValue.Substring(0, 16);
-                    rawSpanId = brValue.Substring(17, 16);
-                    rawSampled = brValue[34];
-                }
-                else
-                {
-                    return false;
-                }
-
-                var success = HexString.TryParseTraceId(rawTraceId, out var traceId);
-
-                if (!success || traceId == TraceId.Zero)
-                {
-                    return false;
-                }
-
-                if (!HexString.TryParseUInt64(rawSpanId, out var parentId))
-                {
-                    parentId = 0;
-                }
-
-                var samplingPriority = rawSampled == '1' ? 1 : 0;
-                var spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId, isRemote: true);
-#endif
 
                 context = new PropagationContext(spanContext, baggage: null);
 

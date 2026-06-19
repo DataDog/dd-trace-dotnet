@@ -10,6 +10,7 @@
 extern "C"
 {
 #include "datadog/common.h"
+#include "datadog/profiling.h"
 }
 
 namespace libdatadog {
@@ -19,7 +20,7 @@ constexpr ddog_CharSlice to_char_slice(const char* str)
 {
     return {str, std::char_traits<char>::length(str)};
 }
-ddog_prof_ValueType CreateValueType(std::string const& type, std::string const& unit);
+bool TryCreateSampleType(std::string_view type, std::string_view unit, ddog_prof_SampleType& sampleType);
 
 std::string GetErrorMessage(ddog_Error& error);
 std::string GetErrorMessage(ddog_MaybeError& error);

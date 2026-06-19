@@ -66,20 +66,12 @@ public static partial class LogParser
                                 .Where(IsProblematic)
                                 .ToList();
 
-        var libdatadogFiles = logDirectory.GlobFiles("**/dotnet-tracer-libdatadog-*");
-        var libdatadogErrors = libdatadogFiles
-                              .SelectMany(ParseLibdatadogLogFiles) // native loader has same format as profiler
-                              .Where(IsProblematic)
-                              .ToList();
-
         var hasRequiredFiles = !allFilesMustExist
                             || (managedFiles.Count > 0
-                                // && libdatadogFiles.Count > 0 Libdatadog exporter is off by default, so we don't require it to be there
                              && nativeTracerFiles.Count > 0
-                             && (nativeProfilerFiles.Count > 0 || EnvironmentInfo.IsOsx || EnvironmentInfo.IsArm64) // profiler doesn't support mac or ARM64
+                             && (nativeProfilerFiles.Count > 0 || EnvironmentInfo.IsOsx) // profiler doesn't support mac
                              && nativeLoaderFiles.Count > 0);
         var hasErrors = managedErrors.Count != 0
-                     || libdatadogErrors.Count != 0
                      || nativeTracerErrors.Count != 0
                      || nativeProfilerErrors.Count != 0
                      || nativeLoaderErrors.Count != 0;
@@ -99,15 +91,14 @@ public static partial class LogParser
         if (!hasRequiredFiles)
         {
             Log.Error(
-                "Some log files were missing: managed: {ManagedFiles}, native tracer: {NativeTracerFiles}, native profiler: {NativeProfilerFiles}, native loader: {NativeLoaderFiles}, libdatadog {LibdatadogFiles}",
-                managedFiles.Count, nativeTracerFiles.Count, nativeProfilerFiles.Count, nativeLoaderFiles.Count, libdatadogFiles.Count);
+                "Some log files were missing: managed: {ManagedFiles}, native tracer: {NativeTracerFiles}, native profiler: {NativeProfilerFiles}, native loader: {NativeLoaderFiles}",
+                managedFiles.Count, nativeTracerFiles.Count, nativeProfilerFiles.Count, nativeLoaderFiles.Count);
         }
 
         if (hasErrors)
         {
             Log.Warning("Found the following problems in log files:");
             var allErrors = managedErrors
-                           .Concat(libdatadogErrors)
                            .Concat(nativeTracerErrors)
                            .Concat(nativeProfilerErrors)
                            .Concat(nativeLoaderErrors)
@@ -433,45 +424,6 @@ public static partial class LogParser
                     _ => LogLevel.Normal, // Concurrency issues can sometimes garble this so ignore it
                 };
         }
-
-    static List<ParsedLogLine> ParseLibdatadogLogFiles(AbsolutePath logFile)
-    {
-        var logs = new List<ParsedLogLine>();
-        using var reader = new StreamReader(logFile);
-        while (reader.ReadLine() is { } line)
-        {
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                continue;
-            }
-
-            var log = Build.LibdatadogLogParser.ParseEntry(line);
-            if (log is null)
-            {
-                continue;
-            }
-
-            logs.Add(new ParsedLogLine(
-                         log.Timestamp,
-                         ParseLibdatadogLogLevel(log.Level),
-                         string.Join(", ", log.Fields.Select(kvp => $"{kvp.Key}:{kvp.Value}")),
-                         logFile));
-
-        }
-
-        return logs;
-
-        static LogLevel ParseLibdatadogLogLevel(string value)
-            => value switch
-            {
-                "TRACE" => LogLevel.Trace,
-                "DEBUG" => LogLevel.Trace,
-                "INFO" => LogLevel.Normal,
-                "WARN" => LogLevel.Warning,
-                "ERROR" => LogLevel.Error,
-                _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Unknown log level")
-            };
-    }
 
     private record ParsedLogLine(DateTimeOffset Timestamp, LogLevel Level, string Message, AbsolutePath FileName);
 }
