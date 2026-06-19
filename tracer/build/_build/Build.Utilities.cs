@@ -142,6 +142,7 @@ partial class Build
         .Executes(() =>
         {
             MSBuild(s => s
+                .SetMSBuildPath()
                 .SetConfiguration(BuildConfiguration)
                 .SetTargetPlatform(TargetPlatform)
                 .SetProjectFile(Solution.GetProject(SampleName)));
