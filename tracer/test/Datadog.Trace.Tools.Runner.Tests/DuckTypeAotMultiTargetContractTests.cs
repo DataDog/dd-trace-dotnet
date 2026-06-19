@@ -28,18 +28,27 @@ public class DuckTypeAotMultiTargetContractTests
         var forwardMappings = result.Mappings.Where(m => m.ProxyTypeName.EndsWith("+TestContracts+IMultiForwardProxyContract", StringComparison.Ordinal)).ToList();
         var reverseMappings = result.Mappings.Where(m => m.ProxyTypeName.EndsWith("+TestContracts+IMultiReverseProxyContract", StringComparison.Ordinal)).ToList();
         var copyMappings = result.Mappings.Where(m => m.ProxyTypeName.EndsWith("+TestContracts+MultiCopyProxyContract", StringComparison.Ordinal)).ToList();
+        var compatibleCopyMappings = result.Mappings.Where(m => m.ProxyTypeName.EndsWith("+TestContracts+CompatibleCopyProxyContract", StringComparison.Ordinal)).ToList();
 
         forwardMappings.Should().HaveCount(2);
         forwardMappings.All(m => m.Mode == DuckTypeAotMappingMode.Forward).Should().BeTrue();
+        forwardMappings.All(m => m.Source == DuckTypeAotMappingSource.Attribute).Should().BeTrue();
         forwardMappings.Select(m => m.TargetTypeName).Should().Contain(new[] { typeof(TestContracts.MultiForwardProxyTargetA).FullName!, typeof(TestContracts.MultiForwardProxyTargetB).FullName! });
 
         reverseMappings.Should().HaveCount(2);
         reverseMappings.All(m => m.Mode == DuckTypeAotMappingMode.Reverse).Should().BeTrue();
+        reverseMappings.All(m => m.Source == DuckTypeAotMappingSource.Attribute).Should().BeTrue();
         reverseMappings.Select(m => m.TargetTypeName).Should().Contain(new[] { typeof(TestContracts.MultiReverseProxyTargetA).FullName!, typeof(TestContracts.MultiReverseProxyTargetB).FullName! });
 
         copyMappings.Should().HaveCount(2);
         copyMappings.All(m => m.Mode == DuckTypeAotMappingMode.Forward).Should().BeTrue();
+        copyMappings.All(m => m.Source == DuckTypeAotMappingSource.Attribute).Should().BeTrue();
         copyMappings.Select(m => m.TargetTypeName).Should().Contain(new[] { typeof(TestContracts.MultiCopyProxyTargetA).FullName!, typeof(TestContracts.MultiCopyProxyTargetB).FullName! });
+
+        compatibleCopyMappings.Should().ContainSingle();
+        compatibleCopyMappings[0].Mode.Should().Be(DuckTypeAotMappingMode.Forward);
+        compatibleCopyMappings[0].Source.Should().Be(DuckTypeAotMappingSource.Attribute);
+        compatibleCopyMappings[0].TargetTypeName.Should().Be(typeof(TestContracts.CompatibleCopyProxyTarget).FullName);
     }
 
     private static class TestContracts
@@ -66,6 +75,14 @@ public class DuckTypeAotMultiTargetContractTests
             [DuckField]
             public int Value { get; set; }
         }
+
+        [DuckCopy("Datadog.Trace.Tools.Runner.Tests.DuckTypeAotMultiTargetContractTests+TestContracts+CompatibleCopyProxyTarget", "Datadog.Trace.Tools.Runner.Tests")]
+#pragma warning disable CS0649
+        internal struct CompatibleCopyProxyContract
+        {
+            public int Value;
+        }
+#pragma warning restore CS0649
 
         internal class MultiForwardProxyTargetA
         {
@@ -95,6 +112,11 @@ public class DuckTypeAotMultiTargetContractTests
         internal class MultiCopyProxyTargetB
         {
             public int Value { get; } = 20;
+        }
+
+        internal class CompatibleCopyProxyTarget
+        {
+            public int Value { get; } = 30;
         }
     }
 }

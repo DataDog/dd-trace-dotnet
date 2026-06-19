@@ -48,12 +48,12 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Registers a forward AOT proxy using a method handle.
+        /// Registers a forward AOT proxy using an object-bridge method handle.
         /// </summary>
         /// <param name="proxyDefinitionType">Duck typing proxy definition type.</param>
         /// <param name="targetType">Runtime target type.</param>
         /// <param name="generatedProxyType">Generated proxy implementation type.</param>
-        /// <param name="activatorMethodHandle">Static activator method handle.</param>
+        /// <param name="activatorMethodHandle">Static activator method handle. The method must accept object and return a proxy-compatible value.</param>
         [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
         public static void RegisterAotProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
         {
@@ -76,12 +76,12 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Registers a reverse AOT proxy using a method handle.
+        /// Registers a reverse AOT proxy using an object-bridge method handle.
         /// </summary>
         /// <param name="typeToDeriveFrom">Type to derive the reverse proxy from.</param>
         /// <param name="delegationType">Type that provides delegated implementations.</param>
         /// <param name="generatedProxyType">Generated reverse proxy implementation type.</param>
-        /// <param name="activatorMethodHandle">Static reverse activator method handle.</param>
+        /// <param name="activatorMethodHandle">Static reverse activator method handle. The method must accept object and return a proxy-compatible value.</param>
         [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
         public static void RegisterAotReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
         {
