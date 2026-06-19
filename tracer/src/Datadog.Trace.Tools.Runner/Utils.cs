@@ -529,7 +529,8 @@ namespace Datadog.Trace.Tools.Runner
             {
                 // Due to:
                 // https://developercommunity.visualstudio.com/t/vsotasksetvariable-contains-logging-command-keywor/1249340#T-N1253996
-                // We reduce the path length using a user-local cache that can be reused safely across runs.
+                // ReducePathLength used to copy into a fixed temp directory. Keep the same path-shortening behavior,
+                // but only through a validated user-local cache so a co-tenant cannot pre-create the destination.
                 string cachedTracerHome = null;
                 try
                 {
@@ -1024,6 +1025,8 @@ namespace Datadog.Trace.Tools.Runner
 
         private static void EnsureCachedTracerHome(string tracerHome, string cachedTracerHome, string cacheKey)
         {
+            // Build the manifest before taking the cache lock so every reuse decision is based on the source
+            // tracer home observed by this run, not on metadata that may already exist in the cache.
             var integrityManifest = CreateCacheIntegrityManifest(tracerHome);
             var cacheParent = Path.GetDirectoryName(Path.GetFullPath(cachedTracerHome));
             if (string.IsNullOrEmpty(cacheParent))
@@ -1031,6 +1034,8 @@ namespace Datadog.Trace.Tools.Runner
                 throw new IOException($"Unable to locate parent directory for cached tracer home '{cachedTracerHome}'.");
             }
 
+            // The parent is validated before the lock file is opened; otherwise the lock itself could be created
+            // in a shared writable directory and used as an attacker-controlled synchronization point.
             CreatePrivateDirectory(cacheParent);
             using var cacheLock = AcquireCacheLock(cachedTracerHome);
             if (IsCachedTracerHomeReady(cachedTracerHome, cacheKey, integrityManifest))
@@ -1042,6 +1047,8 @@ namespace Datadog.Trace.Tools.Runner
             try
             {
                 TryDeleteDirectory(stagingTracerHome);
+                // Copy into a private staging directory and publish with a final rename. The child process only sees
+                // cachedTracerHome after the copy, integrity validation, and marker write have all succeeded.
                 CreatePrivateDirectory(stagingTracerHome);
                 CopyFilesRecursively(tracerHome, stagingTracerHome);
                 if (!ValidateCachedTracerHomeIntegrity(stagingTracerHome, integrityManifest))
@@ -1096,16 +1103,7 @@ namespace Datadog.Trace.Tools.Runner
         private static string GetTracerHomeCacheRoot()
         {
             // Keep the cache under a user-local root instead of shared temp to avoid cross-user path hijacking.
-            string cacheRoot = null;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                cacheRoot = Environment.GetEnvironmentVariable("LOCALAPPDATA");
-            }
-            else
-            {
-                cacheRoot = Environment.GetEnvironmentVariable("XDG_CACHE_HOME");
-            }
-
+            var cacheRoot = Environment.GetEnvironmentVariable(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "LOCALAPPDATA" : "XDG_CACHE_HOME");
             if (string.IsNullOrEmpty(cacheRoot))
             {
                 cacheRoot = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -1274,7 +1272,7 @@ namespace Datadog.Trace.Tools.Runner
 
         private static string GetPathFromRelativePath(string rootPath, string relativePath)
         {
-            return Path.Combine(new[] { rootPath }.Concat(relativePath.Split('/')).ToArray());
+            return Path.Combine(rootPath, relativePath.Replace('/', Path.DirectorySeparatorChar));
         }
 
         private static IEnumerable<TracerHomeEntry> EnumerateTracerHomeEntries(string rootPath, bool ignoreRootCacheMetadata)
@@ -1291,6 +1289,8 @@ namespace Datadog.Trace.Tools.Runner
                     var attributes = GetTracerHomeEntryAttributes(entryPath);
                     if ((attributes & FileAttributes.ReparsePoint) != 0)
                     {
+                        // Symlinks would let a source or cache entry escape the validated tree between enumeration
+                        // and copy/hash. Reject them instead of trying to canonicalize every possible target.
                         throw new IOException($"Tracer home entry '{entryPath}' must not be a symbolic link or reparse point.");
                     }
 
@@ -1379,6 +1379,8 @@ namespace Datadog.Trace.Tools.Runner
                 return;
             }
 
+            // Validate the nearest existing parent before creating the next segment. On POSIX this prevents
+            // creating our private cache below a group/world-writable directory such as /tmp.
             var parentPath = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(parentPath) && !Directory.Exists(parentPath))
             {
@@ -1401,6 +1403,8 @@ namespace Datadog.Trace.Tools.Runner
                 return;
             }
 
+            // Directory.CreateDirectory does not let us request 0700 on all supported TFMs, so call mkdir(2)
+            // directly and then validate the resulting owner/mode before trusting the path.
             var result = Mkdir(path, PrivateDirectoryMode);
             if (result != 0 && !Directory.Exists(path))
             {
@@ -1441,6 +1445,8 @@ namespace Datadog.Trace.Tools.Runner
             var attributes = File.GetAttributes(path);
             if ((attributes & FileAttributes.ReparsePoint) != 0)
             {
+                // A symlinked cache root can redirect the copy into an attacker-controlled tree even when the link
+                // itself sits below a trusted parent, so reject reparse points before permission checks.
                 throw new IOException($"Directory '{path}' must not be a symbolic link or reparse point.");
             }
 
@@ -1579,44 +1585,20 @@ namespace Datadog.Trace.Tools.Runner
 
         private static PosixDirectoryInfo GetPosixDirectoryInfo(string path)
         {
-            if (IsMacOs())
-            {
-                if (LStat(path, out MacStat macStat) != 0)
-                {
-                    throw new IOException($"Unable to inspect directory '{path}'. errno: {Marshal.GetLastWin32Error()}");
-                }
-
-                var directoryInfo = new PosixDirectoryInfo(macStat.Mode, macStat.UserId);
-                if ((directoryInfo.Mode & PosixFileTypeMask) == PosixDirectoryFileType)
-                {
-                    return directoryInfo;
-                }
-
-                // Older macOS runtimes can bind lstat to the legacy 32-bit-inode layout.
-                // If the modern layout does not decode the file type correctly, fall back to that layout.
-                if (LStat(path, out MacStatLegacy macStatLegacy) != 0)
-                {
-                    throw new IOException($"Unable to inspect directory '{path}'. errno: {Marshal.GetLastWin32Error()}");
-                }
-
-                return new PosixDirectoryInfo(macStatLegacy.Mode, macStatLegacy.UserId);
-            }
-
-            return GetLinuxDirectoryInfo(path);
-        }
-
-        private static PosixDirectoryInfo GetLinuxDirectoryInfo(string path)
-        {
-            // struct stat layout varies across libc and CPU architectures, so use stat(1) for the fields we need.
-            var statPath = File.Exists("/usr/bin/stat") ? "/usr/bin/stat" : "/bin/stat";
+            // struct stat layout varies across libc, CPU architectures, and macOS inode eras. The stat(1)
+            // output format is stable enough for the two fields we need: mode and owner uid.
+            var isMacOs = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ||
+                          string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.Ordinal) ||
+                          FrameworkDescription.Instance.OSDescription.StartsWith("Darwin", StringComparison.OrdinalIgnoreCase);
+            var statPath = isMacOs ? "/usr/bin/stat" : File.Exists("/usr/bin/stat") ? "/usr/bin/stat" : "/bin/stat";
             var processStartInfo = new ProcessStartInfo(statPath)
             {
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
             };
 
-            processStartInfo.ArgumentList.Add("-c");
-            processStartInfo.ArgumentList.Add("%f %u");
+            processStartInfo.ArgumentList.Add(isMacOs ? "-f" : "-c");
+            processStartInfo.ArgumentList.Add(isMacOs ? "%p %u" : "%f %u");
             processStartInfo.ArgumentList.Add(path);
 
             using var process = Process.Start(processStartInfo);
@@ -1634,21 +1616,22 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             var values = output.Trim().Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
-            if (values.Length != 2 ||
-                !uint.TryParse(values[0], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var mode) ||
-                !uint.TryParse(values[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var userId))
+            if (values.Length != 2 || !uint.TryParse(values[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var userId))
             {
                 throw new IOException($"Unable to inspect directory '{path}'. Unexpected stat output: '{output.Trim()}'.");
             }
 
-            return new PosixDirectoryInfo(mode, userId);
-        }
+            uint mode;
+            try
+            {
+                mode = Convert.ToUInt32(values[0], isMacOs ? 8 : 16);
+            }
+            catch (Exception ex) when (ex is FormatException or OverflowException)
+            {
+                throw new IOException($"Unable to inspect directory '{path}'. Unexpected stat mode: '{values[0]}'.", ex);
+            }
 
-        private static bool IsMacOs()
-        {
-            return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ||
-                   string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.Ordinal) ||
-                   FrameworkDescription.Instance.OSDescription.StartsWith("Darwin", StringComparison.OrdinalIgnoreCase);
+            return new PosixDirectoryInfo(mode, userId);
         }
 
         [DllImport("libc", EntryPoint = "mkdir", SetLastError = true)]
@@ -1657,72 +1640,11 @@ namespace Datadog.Trace.Tools.Runner
         [DllImport("libc", EntryPoint = "geteuid")]
         private static extern uint GetEffectiveUserId();
 
-        [DllImport("libc", EntryPoint = "lstat", SetLastError = true)]
-        private static extern int LStat(string path, out MacStat buffer);
-
-        [DllImport("libc", EntryPoint = "lstat", SetLastError = true)]
-        private static extern int LStat(string path, out MacStatLegacy buffer);
-
         private readonly record struct PosixDirectoryInfo(uint Mode, uint UserId);
 
         private readonly record struct CacheIntegrityEntry(string RelativePath, bool IsDirectory, long Length, string Sha256);
 
         private readonly record struct TracerHomeEntry(string FullPath, string RelativePath, bool IsDirectory);
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct MacStat
-        {
-            public int Device;
-            public ushort Mode;
-            public ushort LinkCount;
-            public ulong Inode;
-            public uint UserId;
-            public uint GroupId;
-            public int DeviceId;
-            public Timespec AccessTime;
-            public Timespec ModifyTime;
-            public Timespec ChangeTime;
-            public Timespec BirthTime;
-            public long Size;
-            public long Blocks;
-            public int BlockSize;
-            public uint Flags;
-            public uint Generation;
-            public int Spare;
-            public long Reserved1;
-            public long Reserved2;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct MacStatLegacy
-        {
-            public int Device;
-            public uint Inode;
-            public ushort Mode;
-            public ushort LinkCount;
-            public uint UserId;
-            public uint GroupId;
-            public int DeviceId;
-            public Timespec AccessTime;
-            public Timespec ModifyTime;
-            public Timespec ChangeTime;
-            public Timespec BirthTime;
-            public long Size;
-            public long Blocks;
-            public int BlockSize;
-            public uint Flags;
-            public uint Generation;
-            public int Spare;
-            public long Reserved1;
-            public long Reserved2;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct Timespec
-        {
-            public long Seconds;
-            public long Nanoseconds;
-        }
 
         private sealed record CacheIntegrityManifest(CacheIntegrityEntry[] Entries, string Content);
 

@@ -105,324 +105,64 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiUsesCachedTemporaryTracerHomeWhenReducingPathLength()
         {
-            var tempRoot = Path.Combine(Path.GetTempPath(), $"dd-trace-runner-temp-{Guid.NewGuid():N}");
-            var cacheHome = Path.Combine(tempRoot, "cache");
-            var tracerHome = Path.Combine(
-                tempRoot,
-                "long-tracer-home-path-for-reduce-path-length",
-                "very-long-segment-to-force-cache-path-selection",
-                "another-very-long-segment-to-force-cache-path-selection",
-                "home");
-            var fixedTempTracerHome = Path.GetFullPath(Path.Combine(tempRoot, "dd"));
-            var expectedCacheRoot = Path.GetFullPath(Path.Combine(cacheHome, "Datadog", "dd-trace", "runner", "tracer-home")) + Path.DirectorySeparatorChar;
+            using var setup = ConfigureCiTestSetup.Create(output);
+            setup.CreateTrustedCacheHome();
+            Directory.CreateDirectory(setup.FixedTempTracerHome);
+            setup.UseCacheHome();
+            setup.CreateTracerHome();
 
-            try
-            {
-                CreateTrustedCacheHome(cacheHome);
-                Directory.CreateDirectory(fixedTempTracerHome);
-                EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TEMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", cacheHome);
-                CreateTracerHome(tracerHome);
+            var environmentVariables = setup.RunConfigureCi();
+            var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
+            var cachedMetadata = Path.Combine(configuredTracerHome, "metadata.txt");
 
-                using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
-                var agentUrl = $"http://localhost:{agent.Port}";
-                var commandLine = $"ci configure jenkins --tracer-home {tracerHome} --agent-url {agentUrl}";
+            configuredTracerHome.Should().NotBe(setup.FixedTempTracerHome);
+            configuredTracerHome.Should().StartWith(setup.ExpectedCacheRoot);
+            File.Exists(cachedMetadata).Should().BeTrue();
+            environmentVariables["CORECLR_PROFILER_PATH_64"].Should().StartWith(configuredTracerHome);
 
-                using var console = ConsoleHelper.Redirect();
-                var result = Program.Main(commandLine.Split(' '));
-                result.Should().Be(0);
+            File.WriteAllText(cachedMetadata, "cached");
 
-                var environmentVariables = GetJenkinsEnvironmentVariables(console.ReadLines());
-                var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
-                var cachedMetadata = Path.Combine(configuredTracerHome, "metadata.txt");
-
-                configuredTracerHome.Should().NotBe(fixedTempTracerHome);
-                configuredTracerHome.Should().StartWith(expectedCacheRoot);
-                File.Exists(cachedMetadata).Should().BeTrue();
-                environmentVariables["CORECLR_PROFILER_PATH_64"].Should().StartWith(configuredTracerHome);
-
-                File.WriteAllText(cachedMetadata, "cached");
-
-                using var secondConsole = ConsoleHelper.Redirect();
-                var secondResult = Program.Main(commandLine.Split(' '));
-                secondResult.Should().Be(0);
-
-                var secondEnvironmentVariables = GetJenkinsEnvironmentVariables(secondConsole.ReadLines());
-                secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(configuredTracerHome);
-                File.ReadAllText(cachedMetadata).Should().Be("source");
-            }
-            finally
-            {
-                DeleteDirectory(tempRoot);
-            }
-        }
-
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
-        public void ConfigureCiRebuildsCachedTracerHomeWhenCachedProfilerIsModified()
-        {
-            var tempRoot = Path.Combine(Path.GetTempPath(), $"dd-trace-runner-temp-{Guid.NewGuid():N}");
-            var cacheHome = Path.Combine(tempRoot, "cache");
-            var tracerHome = Path.Combine(
-                tempRoot,
-                "long-tracer-home-path-for-reduce-path-length",
-                "very-long-segment-to-force-cache-path-selection",
-                "another-very-long-segment-to-force-cache-path-selection",
-                "home");
-
-            try
-            {
-                CreateTrustedCacheHome(cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TEMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", cacheHome);
-                CreateTracerHome(tracerHome);
-
-                using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
-                var agentUrl = $"http://localhost:{agent.Port}";
-                var commandLine = $"ci configure jenkins --tracer-home {tracerHome} --agent-url {agentUrl}";
-
-                using var console = ConsoleHelper.Redirect();
-                var result = Program.Main(commandLine.Split(' '));
-                result.Should().Be(0);
-
-                var environmentVariables = GetJenkinsEnvironmentVariables(console.ReadLines());
-                var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
-                var cachedProfilerPath = environmentVariables["CORECLR_PROFILER_PATH_64"];
-
-                cachedProfilerPath.Should().StartWith(configuredTracerHome);
-                File.WriteAllText(cachedProfilerPath, "tampered");
-
-                using var secondConsole = ConsoleHelper.Redirect();
-                var secondResult = Program.Main(commandLine.Split(' '));
-                secondResult.Should().Be(0);
-
-                var secondEnvironmentVariables = GetJenkinsEnvironmentVariables(secondConsole.ReadLines());
-                secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(configuredTracerHome);
-                File.ReadAllText(cachedProfilerPath).Should().Be("source");
-            }
-            finally
-            {
-                DeleteDirectory(tempRoot);
-            }
+            var secondEnvironmentVariables = setup.RunConfigureCi();
+            secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(configuredTracerHome);
+            File.ReadAllText(cachedMetadata).Should().Be("source");
         }
 
         [SkippableTheory]
         [Trait("RunOnWindows", "True")]
-        [InlineData("loader.conf")]
-        [InlineData("Datadog.Tracer.Native")]
+        [InlineData("profiler")]
+        [InlineData("loader-config")]
+        [InlineData("native-tracer")]
+        [InlineData("managed-dependency")]
+        [InlineData("profiler-engine")]
+        [InlineData("injected-file")]
         [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
-        public void ConfigureCiRebuildsCachedTracerHomeWhenCachedNativeLoaderFileIsModified(string cachedFileName)
+        public void ConfigureCiRebuildsCachedTracerHomeWhenCachedContentIsModified(string cachedContent)
         {
-            var tempRoot = Path.Combine(Path.GetTempPath(), $"dd-trace-runner-temp-{Guid.NewGuid():N}");
-            var cacheHome = Path.Combine(tempRoot, "cache");
-            var tracerHome = Path.Combine(
-                tempRoot,
-                "long-tracer-home-path-for-reduce-path-length",
-                "very-long-segment-to-force-cache-path-selection",
-                "another-very-long-segment-to-force-cache-path-selection",
-                "home");
-
-            try
+            using var setup = ConfigureCiTestSetup.Create(output);
+            setup.CreateTrustedCacheHome();
+            setup.UseCacheHome();
+            setup.CreateTracerHome();
+            if (cachedContent == "managed-dependency")
             {
-                CreateTrustedCacheHome(cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TEMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", cacheHome);
-                CreateTracerHome(tracerHome);
+                CreateFile(setup.TracerHome, "netstandard2.0", "Datadog.Trace.Dependency.dll");
+            }
 
-                using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
-                var agentUrl = $"http://localhost:{agent.Port}";
-                var commandLine = $"ci configure jenkins --tracer-home {tracerHome} --agent-url {agentUrl}";
+            var environmentVariables = setup.RunConfigureCi();
+            var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
+            var cachedFilePath = GetCachedContentPath(cachedContent, environmentVariables);
 
-                using var console = ConsoleHelper.Redirect();
-                var result = Program.Main(commandLine.Split(' '));
-                result.Should().Be(0);
+            File.WriteAllText(cachedFilePath, "tampered");
 
-                var environmentVariables = GetJenkinsEnvironmentVariables(console.ReadLines());
-                var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
-                var cachedProfilerDirectory = Path.GetDirectoryName(environmentVariables["CORECLR_PROFILER_PATH_64"]);
-                var cachedLoaderConfigPath = Path.Combine(cachedProfilerDirectory, "loader.conf");
-                var cachedNativeTracerPath = Path.Combine(cachedProfilerDirectory, GetNativeTracerFileName());
-                var cachedFilePath = cachedFileName == "loader.conf" ? cachedLoaderConfigPath : cachedNativeTracerPath;
+            var secondEnvironmentVariables = setup.RunConfigureCi();
+            secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(configuredTracerHome);
 
-                File.WriteAllText(cachedFilePath, "tampered");
-
-                using var secondConsole = ConsoleHelper.Redirect();
-                var secondResult = Program.Main(commandLine.Split(' '));
-                secondResult.Should().Be(0);
-
-                var secondEnvironmentVariables = GetJenkinsEnvironmentVariables(secondConsole.ReadLines());
-                secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(configuredTracerHome);
+            if (cachedContent == "injected-file")
+            {
+                File.Exists(cachedFilePath).Should().BeFalse();
+            }
+            else
+            {
                 File.ReadAllText(cachedFilePath).Should().Be("source");
-            }
-            finally
-            {
-                DeleteDirectory(tempRoot);
-            }
-        }
-
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
-        public void ConfigureCiRebuildsCachedTracerHomeWhenCachedManagedDependencyIsModified()
-        {
-            var tempRoot = Path.Combine(Path.GetTempPath(), $"dd-trace-runner-temp-{Guid.NewGuid():N}");
-            var cacheHome = Path.Combine(tempRoot, "cache");
-            var tracerHome = Path.Combine(
-                tempRoot,
-                "long-tracer-home-path-for-reduce-path-length",
-                "very-long-segment-to-force-cache-path-selection",
-                "another-very-long-segment-to-force-cache-path-selection",
-                "home");
-
-            try
-            {
-                CreateTrustedCacheHome(cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TEMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", cacheHome);
-                CreateTracerHome(tracerHome);
-                CreateFile(tracerHome, "netstandard2.0", "Datadog.Trace.Dependency.dll");
-
-                using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
-                var agentUrl = $"http://localhost:{agent.Port}";
-                var commandLine = $"ci configure jenkins --tracer-home {tracerHome} --agent-url {agentUrl}";
-
-                using var console = ConsoleHelper.Redirect();
-                var result = Program.Main(commandLine.Split(' '));
-                result.Should().Be(0);
-
-                var environmentVariables = GetJenkinsEnvironmentVariables(console.ReadLines());
-                var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
-                var cachedManagedDependency = Path.Combine(configuredTracerHome, "netstandard2.0", "Datadog.Trace.Dependency.dll");
-
-                File.WriteAllText(cachedManagedDependency, "tampered");
-
-                using var secondConsole = ConsoleHelper.Redirect();
-                var secondResult = Program.Main(commandLine.Split(' '));
-                secondResult.Should().Be(0);
-
-                var secondEnvironmentVariables = GetJenkinsEnvironmentVariables(secondConsole.ReadLines());
-                secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(configuredTracerHome);
-                File.ReadAllText(cachedManagedDependency).Should().Be("source");
-            }
-            finally
-            {
-                DeleteDirectory(tempRoot);
-            }
-        }
-
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
-        public void ConfigureCiRebuildsCachedTracerHomeWhenCachedProfilerEngineIsModified()
-        {
-            var tempRoot = Path.Combine(Path.GetTempPath(), $"dd-trace-runner-temp-{Guid.NewGuid():N}");
-            var cacheHome = Path.Combine(tempRoot, "cache");
-            var tracerHome = Path.Combine(
-                tempRoot,
-                "long-tracer-home-path-for-reduce-path-length",
-                "very-long-segment-to-force-cache-path-selection",
-                "another-very-long-segment-to-force-cache-path-selection",
-                "home");
-
-            try
-            {
-                CreateTrustedCacheHome(cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TEMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", cacheHome);
-                CreateTracerHome(tracerHome);
-
-                using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
-                var agentUrl = $"http://localhost:{agent.Port}";
-                var commandLine = $"ci configure jenkins --tracer-home {tracerHome} --agent-url {agentUrl}";
-
-                using var console = ConsoleHelper.Redirect();
-                var result = Program.Main(commandLine.Split(' '));
-                result.Should().Be(0);
-
-                var environmentVariables = GetJenkinsEnvironmentVariables(console.ReadLines());
-                var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
-                var cachedProfilerEngine = Path.Combine(configuredTracerHome, "linux-x64", "Datadog.Profiler.Native.so");
-
-                File.WriteAllText(cachedProfilerEngine, "tampered");
-
-                using var secondConsole = ConsoleHelper.Redirect();
-                var secondResult = Program.Main(commandLine.Split(' '));
-                secondResult.Should().Be(0);
-
-                var secondEnvironmentVariables = GetJenkinsEnvironmentVariables(secondConsole.ReadLines());
-                secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(configuredTracerHome);
-                File.ReadAllText(cachedProfilerEngine).Should().Be("source");
-            }
-            finally
-            {
-                DeleteDirectory(tempRoot);
-            }
-        }
-
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
-        public void ConfigureCiRebuildsCachedTracerHomeWhenExtraLoadableFileIsInjected()
-        {
-            var tempRoot = Path.Combine(Path.GetTempPath(), $"dd-trace-runner-temp-{Guid.NewGuid():N}");
-            var cacheHome = Path.Combine(tempRoot, "cache");
-            var tracerHome = Path.Combine(
-                tempRoot,
-                "long-tracer-home-path-for-reduce-path-length",
-                "very-long-segment-to-force-cache-path-selection",
-                "another-very-long-segment-to-force-cache-path-selection",
-                "home");
-
-            try
-            {
-                CreateTrustedCacheHome(cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TEMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", cacheHome);
-                CreateTracerHome(tracerHome);
-
-                using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
-                var agentUrl = $"http://localhost:{agent.Port}";
-                var commandLine = $"ci configure jenkins --tracer-home {tracerHome} --agent-url {agentUrl}";
-
-                using var console = ConsoleHelper.Redirect();
-                var result = Program.Main(commandLine.Split(' '));
-                result.Should().Be(0);
-
-                var environmentVariables = GetJenkinsEnvironmentVariables(console.ReadLines());
-                var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
-                var injectedFile = Path.Combine(configuredTracerHome, "netstandard2.0", "Injected.Dependency.dll");
-                File.WriteAllText(injectedFile, "tampered");
-
-                using var secondConsole = ConsoleHelper.Redirect();
-                var secondResult = Program.Main(commandLine.Split(' '));
-                secondResult.Should().Be(0);
-
-                var secondEnvironmentVariables = GetJenkinsEnvironmentVariables(secondConsole.ReadLines());
-                secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(configuredTracerHome);
-                File.Exists(injectedFile).Should().BeFalse();
-            }
-            finally
-            {
-                DeleteDirectory(tempRoot);
             }
         }
 
@@ -432,43 +172,15 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         {
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
-            var tempRoot = Path.Combine(Path.GetTempPath(), $"dd-trace-runner-temp-{Guid.NewGuid():N}");
-            var cacheHome = Path.Combine(tempRoot, "cache");
-            var tracerHome = Path.Combine(
-                tempRoot,
-                "long-tracer-home-path-for-reduce-path-length",
-                "very-long-segment-to-force-cache-path-selection",
-                "another-very-long-segment-to-force-cache-path-selection",
-                "home");
-            var expectedCacheRoot = Path.GetFullPath(Path.Combine(cacheHome, "Datadog", "dd-trace", "runner", "tracer-home")) + Path.DirectorySeparatorChar;
+            using var setup = ConfigureCiTestSetup.Create(output);
+            setup.CreateTrustedCacheHome();
+            setup.UseCacheHome();
+            setup.CreateTracerHome();
 
-            try
-            {
-                CreateTrustedCacheHome(cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TEMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", cacheHome);
-                CreateTracerHome(tracerHome);
-
-                using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
-                var agentUrl = $"http://localhost:{agent.Port}";
-                var commandLine = $"ci configure jenkins --tracer-home {tracerHome} --agent-url {agentUrl}";
-
-                using var console = ConsoleHelper.Redirect();
-                var result = Program.Main(commandLine.Split(' '));
-                result.Should().Be(0);
-
-                var environmentVariables = GetJenkinsEnvironmentVariables(console.ReadLines());
-                var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
-
-                configuredTracerHome.Should().StartWith(expectedCacheRoot);
-                GetDirectoryMode(configuredTracerHome).Should().Be("700");
-            }
-            finally
-            {
-                DeleteDirectory(tempRoot);
-            }
+            var environmentVariables = setup.RunConfigureCi();
+            var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
+            configuredTracerHome.Should().StartWith(setup.ExpectedCacheRoot);
+            GetDirectoryMode(configuredTracerHome).Should().Be("700");
         }
 
         [SkippableFact]
@@ -477,40 +189,32 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         {
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
-            var tempRoot = Path.Combine(Path.GetTempPath(), $"dd-trace-runner-temp-{Guid.NewGuid():N}");
-            var insecureCacheHome = Path.Combine(tempRoot, "shared-cache");
-            var tracerHome = Path.Combine(
-                tempRoot,
-                "long-tracer-home-path-for-reduce-path-length",
-                "very-long-segment-to-force-cache-path-selection",
-                "another-very-long-segment-to-force-cache-path-selection",
-                "home");
+            using var setup = ConfigureCiTestSetup.Create(output, "shared-cache");
+            Directory.CreateDirectory(setup.CacheHome);
+            SetDirectoryMode(setup.CacheHome, "777");
+            setup.UseCacheHome();
+            setup.CreateTracerHome();
 
-            try
-            {
-                Directory.CreateDirectory(insecureCacheHome);
-                SetDirectoryMode(insecureCacheHome, "777");
-                EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TEMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", insecureCacheHome);
-                CreateTracerHome(tracerHome);
+            var environmentVariables = setup.RunConfigureCi();
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(Path.GetFullPath(setup.TracerHome));
+        }
 
-                using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
-                var agentUrl = $"http://localhost:{agent.Port}";
-                var commandLine = $"ci configure jenkins --tracer-home {tracerHome} --agent-url {agentUrl}";
+        [SkippableFact]
+        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        public void ConfigureCiFallsBackToOriginalTracerHomeWhenCacheRootIsSymbolicLink()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
-                using var console = ConsoleHelper.Redirect();
-                var result = Program.Main(commandLine.Split(' '));
-                result.Should().Be(0);
+            using var setup = ConfigureCiTestSetup.Create(output, "cache-link");
+            var cacheTarget = Path.Combine(setup.TempRoot, "cache-target");
+            Directory.CreateDirectory(cacheTarget);
+            SetDirectoryMode(cacheTarget, "700");
+            RunProcess("ln", "-s", cacheTarget, setup.CacheHome);
+            setup.UseCacheHome();
+            setup.CreateTracerHome();
 
-                var environmentVariables = GetJenkinsEnvironmentVariables(console.ReadLines());
-                environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(Path.GetFullPath(tracerHome));
-            }
-            finally
-            {
-                DeleteDirectory(tempRoot);
-            }
+            var environmentVariables = setup.RunConfigureCi();
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(Path.GetFullPath(setup.TracerHome));
         }
 
         [SkippableFact]
@@ -520,41 +224,14 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         {
             SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
-            var tempRoot = Path.Combine(Path.GetTempPath(), $"dd-trace-runner-temp-{Guid.NewGuid():N}");
-            var insecureCacheHome = Path.Combine(tempRoot, "shared-cache");
-            var tracerHome = Path.Combine(
-                tempRoot,
-                "long-tracer-home-path-for-reduce-path-length",
-                "very-long-segment-to-force-cache-path-selection",
-                "another-very-long-segment-to-force-cache-path-selection",
-                "home");
+            using var setup = ConfigureCiTestSetup.Create(output, "shared-cache");
+            Directory.CreateDirectory(setup.CacheHome);
+            GrantWindowsModifyAccessToEveryone(setup.CacheHome);
+            setup.UseCacheHome();
+            setup.CreateTracerHome();
 
-            try
-            {
-                Directory.CreateDirectory(insecureCacheHome);
-                GrantWindowsModifyAccessToEveryone(insecureCacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", insecureCacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TEMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", insecureCacheHome);
-                CreateTracerHome(tracerHome);
-
-                using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
-                var agentUrl = $"http://localhost:{agent.Port}";
-                var commandLine = $"ci configure jenkins --tracer-home {tracerHome} --agent-url {agentUrl}";
-
-                using var console = ConsoleHelper.Redirect();
-                var result = Program.Main(commandLine.Split(' '));
-                result.Should().Be(0);
-
-                var environmentVariables = GetJenkinsEnvironmentVariables(console.ReadLines());
-                environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(Path.GetFullPath(tracerHome));
-            }
-            finally
-            {
-                DeleteDirectory(tempRoot);
-            }
+            var environmentVariables = setup.RunConfigureCi();
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(Path.GetFullPath(setup.TracerHome));
         }
 
         [SkippableFact]
@@ -562,54 +239,23 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiUsesDifferentCachedTracerHomeWhenTracerAssemblyVersionChanges()
         {
-            var tempRoot = Path.Combine(Path.GetTempPath(), $"dd-trace-runner-temp-{Guid.NewGuid():N}");
-            var cacheHome = Path.Combine(tempRoot, "cache");
-            var tracerHome = Path.Combine(
-                tempRoot,
-                "long-tracer-home-path-for-reduce-path-length",
-                "very-long-segment-to-force-cache-path-selection",
-                "another-very-long-segment-to-force-cache-path-selection",
-                "home");
             var assemblyTimestamp = DateTime.UtcNow.AddMinutes(-1);
+            using var setup = ConfigureCiTestSetup.Create(output);
+            setup.CreateTrustedCacheHome();
+            setup.UseCacheHome();
+            setup.CreateTracerHome(GetDummyAssemblyPath("V1"), assemblyTimestamp);
 
-            try
-            {
-                CreateTrustedCacheHome(cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", cacheHome);
-                EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("TEMP", tempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", cacheHome);
-                CreateTracerHome(tracerHome, GetDummyAssemblyPath("V1"), assemblyTimestamp);
+            var firstEnvironmentVariables = setup.RunConfigureCi();
+            var firstConfiguredTracerHome = firstEnvironmentVariables["DD_DOTNET_TRACER_HOME"];
 
-                using var agent = MockTracerAgent.Create(output, TcpPortProvider.GetOpenPort());
-                var agentUrl = $"http://localhost:{agent.Port}";
-                var commandLine = $"ci configure jenkins --tracer-home {tracerHome} --agent-url {agentUrl}";
+            CopyTracerAssembly(setup.TracerHome, GetDummyAssemblyPath("V2"), assemblyTimestamp);
 
-                using var console = ConsoleHelper.Redirect();
-                var result = Program.Main(commandLine.Split(' '));
-                result.Should().Be(0);
+            var secondEnvironmentVariables = setup.RunConfigureCi();
+            var secondConfiguredTracerHome = secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"];
+            var secondCachedTracerAssembly = Path.Combine(secondConfiguredTracerHome, "netstandard2.0", "Datadog.Trace.dll");
 
-                var firstEnvironmentVariables = GetJenkinsEnvironmentVariables(console.ReadLines());
-                var firstConfiguredTracerHome = firstEnvironmentVariables["DD_DOTNET_TRACER_HOME"];
-
-                CopyTracerAssembly(tracerHome, GetDummyAssemblyPath("V2"), assemblyTimestamp);
-
-                using var secondConsole = ConsoleHelper.Redirect();
-                var secondResult = Program.Main(commandLine.Split(' '));
-                secondResult.Should().Be(0);
-
-                var secondEnvironmentVariables = GetJenkinsEnvironmentVariables(secondConsole.ReadLines());
-                var secondConfiguredTracerHome = secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"];
-                var secondCachedTracerAssembly = Path.Combine(secondConfiguredTracerHome, "netstandard2.0", "Datadog.Trace.dll");
-
-                secondConfiguredTracerHome.Should().NotBe(firstConfiguredTracerHome);
-                AssemblyName.GetAssemblyName(secondCachedTracerAssembly).Version.Should().Be(new Version(2, 0, 0, 0));
-            }
-            finally
-            {
-                DeleteDirectory(tempRoot);
-            }
+            secondConfiguredTracerHome.Should().NotBe(firstConfiguredTracerHome);
+            AssemblyName.GetAssemblyName(secondCachedTracerAssembly).Version.Should().Be(new Version(2, 0, 0, 0));
         }
 
         [SkippableTheory]
@@ -658,6 +304,23 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                     Environment.SetEnvironmentVariable(envKey, (string)originalEnvVars[envKey]);
                 }
             }
+        }
+
+        private static string GetCachedContentPath(string cachedContent, Dictionary<string, string> environmentVariables)
+        {
+            var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
+            var cachedProfilerDirectory = Path.GetDirectoryName(environmentVariables["CORECLR_PROFILER_PATH_64"]);
+
+            return cachedContent switch
+            {
+                "profiler" => environmentVariables["CORECLR_PROFILER_PATH_64"],
+                "loader-config" => Path.Combine(cachedProfilerDirectory, "loader.conf"),
+                "native-tracer" => Path.Combine(cachedProfilerDirectory, GetNativeTracerFileName()),
+                "managed-dependency" => Path.Combine(configuredTracerHome, "netstandard2.0", "Datadog.Trace.Dependency.dll"),
+                "profiler-engine" => Path.Combine(configuredTracerHome, "linux-x64", "Datadog.Profiler.Native.so"),
+                "injected-file" => Path.Combine(configuredTracerHome, "netstandard2.0", "Injected.Dependency.dll"),
+                _ => throw new ArgumentOutOfRangeException(nameof(cachedContent), cachedContent, "Unsupported cached content target.")
+            };
         }
 
         private static Dictionary<string, string> GetJenkinsEnvironmentVariables(IEnumerable<string> lines)
@@ -751,46 +414,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         private static void SetDirectoryMode(string path, string mode)
         {
-            var processStartInfo = new ProcessStartInfo("chmod")
-            {
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-            };
-            processStartInfo.ArgumentList.Add(mode);
-            processStartInfo.ArgumentList.Add(path);
-
-            using var process = Process.Start(processStartInfo);
-            process.WaitForExit();
-            process.ExitCode.Should().Be(0, process.StandardError.ReadToEnd());
+            RunProcess("chmod", mode, path);
         }
 
         private static string GetDirectoryMode(string path)
         {
-            var processStartInfo = new ProcessStartInfo(RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "/usr/bin/stat" : "stat")
-            {
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-            };
-
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
-                processStartInfo.ArgumentList.Add("-f");
-                processStartInfo.ArgumentList.Add("%Lp");
-            }
-            else
-            {
-                processStartInfo.ArgumentList.Add("-c");
-                processStartInfo.ArgumentList.Add("%a");
+                return RunProcess("/usr/bin/stat", "-f", "%Lp", path).Trim();
             }
 
-            processStartInfo.ArgumentList.Add(path);
-
-            using var process = Process.Start(processStartInfo);
-            var output = process.StandardOutput.ReadToEnd();
-            var error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-            process.ExitCode.Should().Be(0, error);
-            return output.Trim();
+            return RunProcess("stat", "-c", "%a", path).Trim();
         }
 
         private static void CreateTrustedCacheHome(string path)
@@ -822,20 +456,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         private static string GetCurrentWindowsUserSid()
         {
-            var processStartInfo = new ProcessStartInfo("whoami")
-            {
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-            };
-
-            processStartInfo.ArgumentList.Add("/user");
-
-            using var process = Process.Start(processStartInfo);
-            var output = process.StandardOutput.ReadToEnd();
-            var error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-            process.ExitCode.Should().Be(0, output + error);
-
+            var output = RunProcess("whoami", "/user");
             var match = Regex.Match(output, @"S-\d(?:-\d+)+");
             match.Success.Should().BeTrue($"the current Windows user SID should be present in whoami output: {output}");
             return match.Value;
@@ -848,13 +469,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         private static void RunIcacls(string path, params string[] arguments)
         {
-            var processStartInfo = new ProcessStartInfo("icacls")
+            RunProcess("icacls", [path, .. arguments]);
+        }
+
+        private static string RunProcess(string fileName, params string[] arguments)
+        {
+            var processStartInfo = new ProcessStartInfo(fileName)
             {
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
             };
 
-            processStartInfo.ArgumentList.Add(path);
             foreach (var argument in arguments)
             {
                 processStartInfo.ArgumentList.Add(argument);
@@ -865,6 +490,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             var error = process.StandardError.ReadToEnd();
             process.WaitForExit();
             process.ExitCode.Should().Be(0, output + error);
+            return output;
         }
 
         private static void DeleteDirectory(string path)
@@ -892,6 +518,73 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             foreach (var environmentVariable in originalEnvironment)
             {
                 EnvironmentHelpers.SetEnvironmentVariable(environmentVariable.Key, environmentVariable.Value);
+            }
+        }
+
+        private sealed class ConfigureCiTestSetup : IDisposable
+        {
+            private readonly ITestOutputHelper _output;
+
+            private ConfigureCiTestSetup(ITestOutputHelper output, string cacheDirectoryName)
+            {
+                _output = output;
+                TempRoot = Path.Combine(Path.GetTempPath(), $"dd-trace-runner-temp-{Guid.NewGuid():N}");
+                CacheHome = Path.Combine(TempRoot, cacheDirectoryName);
+                TracerHome = Path.Combine(
+                    TempRoot,
+                    "long-tracer-home-path-for-reduce-path-length",
+                    "very-long-segment-to-force-cache-path-selection",
+                    "another-very-long-segment-to-force-cache-path-selection",
+                    "home");
+            }
+
+            public string TempRoot { get; }
+
+            public string CacheHome { get; }
+
+            public string TracerHome { get; }
+
+            public string FixedTempTracerHome => Path.GetFullPath(Path.Combine(TempRoot, "dd"));
+
+            public string ExpectedCacheRoot => Path.GetFullPath(Path.Combine(CacheHome, "Datadog", "dd-trace", "runner", "tracer-home")) + Path.DirectorySeparatorChar;
+
+            public static ConfigureCiTestSetup Create(ITestOutputHelper output, string cacheDirectoryName = "cache")
+            {
+                return new ConfigureCiTestSetup(output, cacheDirectoryName);
+            }
+
+            public void CreateTrustedCacheHome()
+            {
+                ConfigureCiCommandTests.CreateTrustedCacheHome(CacheHome);
+            }
+
+            public void CreateTracerHome(string tracerAssemblyPath = null, DateTime? tracerAssemblyLastWriteTimeUtc = null)
+            {
+                ConfigureCiCommandTests.CreateTracerHome(TracerHome, tracerAssemblyPath, tracerAssemblyLastWriteTimeUtc);
+            }
+
+            public void UseCacheHome()
+            {
+                EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", CacheHome);
+                EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", TempRoot + Path.DirectorySeparatorChar);
+                EnvironmentHelpers.SetEnvironmentVariable("TMP", TempRoot + Path.DirectorySeparatorChar);
+                EnvironmentHelpers.SetEnvironmentVariable("TEMP", TempRoot + Path.DirectorySeparatorChar);
+                EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", CacheHome);
+            }
+
+            public Dictionary<string, string> RunConfigureCi()
+            {
+                using var agent = MockTracerAgent.Create(_output, TcpPortProvider.GetOpenPort());
+                var commandLine = $"ci configure jenkins --tracer-home {TracerHome} --agent-url http://localhost:{agent.Port}";
+
+                using var console = ConsoleHelper.Redirect();
+                Program.Main(commandLine.Split(' ')).Should().Be(0);
+                return GetJenkinsEnvironmentVariables(console.ReadLines());
+            }
+
+            public void Dispose()
+            {
+                DeleteDirectory(TempRoot);
             }
         }
     }
