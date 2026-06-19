@@ -808,16 +808,37 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         private static void RestrictWindowsDirectoryToTrustedWriters(string path)
         {
-            var currentUser = $@"{Environment.UserDomainName}\{Environment.UserName}";
-            currentUser.Should().NotBeNullOrWhiteSpace("the test cache directory needs an explicit ACE for the current user");
+            var currentUserSid = GetCurrentWindowsUserSid();
+            currentUserSid.Should().NotBeNullOrWhiteSpace("the test cache directory needs an explicit ACE for the current user");
 
             RunIcacls(
                 path,
                 "/inheritance:r",
                 "/grant:r",
-                $"{currentUser}:(OI)(CI)F",
+                $"*{currentUserSid}:(OI)(CI)F",
                 "*S-1-5-18:(OI)(CI)F",
                 "*S-1-5-32-544:(OI)(CI)F");
+        }
+
+        private static string GetCurrentWindowsUserSid()
+        {
+            var processStartInfo = new ProcessStartInfo("whoami")
+            {
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+            };
+
+            processStartInfo.ArgumentList.Add("/user");
+
+            using var process = Process.Start(processStartInfo);
+            var output = process.StandardOutput.ReadToEnd();
+            var error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            process.ExitCode.Should().Be(0, output + error);
+
+            var match = Regex.Match(output, @"S-\d(?:-\d+)+");
+            match.Success.Should().BeTrue($"the current Windows user SID should be present in whoami output: {output}");
+            return match.Value;
         }
 
         private static void GrantWindowsModifyAccessToEveryone(string path)

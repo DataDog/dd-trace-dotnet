@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -1571,12 +1572,46 @@ namespace Datadog.Trace.Tools.Runner
                 return new PosixDirectoryInfo(macStatLegacy.Mode, macStatLegacy.UserId);
             }
 
-            if (LStat(path, out LinuxStat linuxStat) != 0)
+            return GetLinuxDirectoryInfo(path);
+        }
+
+        private static PosixDirectoryInfo GetLinuxDirectoryInfo(string path)
+        {
+            // struct stat layout varies across libc and CPU architectures, so use stat(1) for the fields we need.
+            var statPath = File.Exists("/usr/bin/stat") ? "/usr/bin/stat" : "/bin/stat";
+            var processStartInfo = new ProcessStartInfo(statPath)
             {
-                throw new IOException($"Unable to inspect directory '{path}'. errno: {Marshal.GetLastWin32Error()}");
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+            };
+
+            processStartInfo.ArgumentList.Add("-c");
+            processStartInfo.ArgumentList.Add("%f %u");
+            processStartInfo.ArgumentList.Add(path);
+
+            using var process = Process.Start(processStartInfo);
+            if (process is null)
+            {
+                throw new IOException($"Unable to inspect directory '{path}'.");
             }
 
-            return new PosixDirectoryInfo(linuxStat.Mode, linuxStat.UserId);
+            var output = process.StandardOutput.ReadToEnd();
+            var error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            if (process.ExitCode != 0)
+            {
+                throw new IOException($"Unable to inspect directory '{path}'. {error}");
+            }
+
+            var values = output.Trim().Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
+            if (values.Length != 2 ||
+                !uint.TryParse(values[0], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var mode) ||
+                !uint.TryParse(values[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var userId))
+            {
+                throw new IOException($"Unable to inspect directory '{path}'. Unexpected stat output: '{output.Trim()}'.");
+            }
+
+            return new PosixDirectoryInfo(mode, userId);
         }
 
         private static bool IsMacOs()
@@ -1593,9 +1628,6 @@ namespace Datadog.Trace.Tools.Runner
         private static extern uint GetEffectiveUserId();
 
         [DllImport("libc", EntryPoint = "lstat", SetLastError = true)]
-        private static extern int LStat(string path, out LinuxStat buffer);
-
-        [DllImport("libc", EntryPoint = "lstat", SetLastError = true)]
         private static extern int LStat(string path, out MacStat buffer);
 
         [DllImport("libc", EntryPoint = "lstat", SetLastError = true)]
@@ -1606,28 +1638,6 @@ namespace Datadog.Trace.Tools.Runner
         private readonly record struct CacheIntegrityEntry(string RelativePath, bool IsDirectory, long Length, string Sha256);
 
         private readonly record struct TracerHomeEntry(string FullPath, string RelativePath, bool IsDirectory);
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct LinuxStat
-        {
-            public ulong Device;
-            public ulong Inode;
-            public ulong LinkCount;
-            public uint Mode;
-            public uint UserId;
-            public uint GroupId;
-            public int Padding;
-            public ulong DeviceId;
-            public long Size;
-            public long BlockSize;
-            public long Blocks;
-            public Timespec AccessTime;
-            public Timespec ModifyTime;
-            public Timespec ChangeTime;
-            public long Reserved1;
-            public long Reserved2;
-            public long Reserved3;
-        }
 
         [StructLayout(LayoutKind.Sequential)]
         private struct MacStat
