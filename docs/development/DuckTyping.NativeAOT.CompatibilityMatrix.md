@@ -34,7 +34,7 @@ There are currently no expected non-compatible Bible scenarios.
 | Field/property mapping | Public/non-public mapping permutations | Supported | Supported | Compatible | `FG-*`, `FS-*`, `FF-*` |
 | Method mapping | Signatures, overload constraints, conversions | Supported | Supported | Compatible | `FM-*`, `RT-*` |
 | Return/argument conversion | Primitive/reference/value conversion paths | Supported | Supported | Compatible | `RT-*` scenarios |
-| Generic mapping closure | Closed generic mappings in scope | Supported | Supported | Conditional | Requires resolvable closed generic mappings |
+| Generic mapping closure | Open map rules expanded to closed mappings; closed mappings in registry | Supported | Supported | Conditional | Requires matching closed `--generic-instantiations` roots |
 | Mode isolation | Dynamic vs AOT mode immutability | Supported | Supported | Compatible | `DuckTypeAotEngineTests` isolation suite |
 | Concurrency initialization | Parallel registration/init behavior | Supported | Supported | Compatible | AOT engine concurrency tests |
 | NativeAOT publish runtime | No runtime emit/no dynamic proxy generation | Not applicable | Supported | Compatible | `DuckTypeAotNativeAotPublishIntegrationTests` |
@@ -44,7 +44,7 @@ There are currently no expected non-compatible Bible scenarios.
 The following are compatibility-sensitive constraints:
 
 1. Mappings must be declared/resolved before runtime use.
-2. Closed generic mappings must be resolvable and supported by generator rules.
+2. Open generic rules must resolve from matching closed `--generic-instantiations` roots; runtime registry entries remain closed.
 3. Runtime must load one registry assembly identity per process.
 4. Registry/runtime contract fingerprints must match expected validation rules.
 5. Any non-compatible status in strict Bible gating is treated as a regression unless explicitly approved.

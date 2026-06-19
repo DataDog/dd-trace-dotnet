@@ -194,6 +194,7 @@ Notes:
 1. `mode` defaults to `forward`.
 2. Valid modes: `forward`, `reverse`.
 3. `proxyType` and `targetType` can be assembly-qualified; if so, assembly can be inferred.
+4. Open generic map rules are allowed only when they can be expanded from matching closed `--generic-instantiations` roots before registry emission.
 
 ## Generic Instantiation Roots
 
@@ -215,6 +216,7 @@ Rules:
 
 1. Entries must be closed generic types.
 2. Open generic forms are rejected.
+3. Closed roots may expand matching open generic map rules into closed registry mappings.
 
 ## Running the Generator
 
@@ -278,7 +280,7 @@ Generator fails if:
 1. No `--proxy-assembly` is provided.
 2. No `--target-folder` is provided.
 3. Required file/directory paths do not exist (except `--map-file` when `--discover-mappings` is set).
-4. Open generic mappings remain unresolved.
+4. Open generic map rules cannot be expanded to closed mappings.
 5. No compatible mappings are resolved from the canonical map file.
 
 ## Generated Artifacts
@@ -892,12 +894,25 @@ Actions:
 Cause:
 
 1. Closed generic mapping requires unsupported adaptation pattern.
+2. Open generic rule expanded successfully, but the resulting closed mapping uses an unsupported shape.
 
 Actions:
 
 1. Prefer direct assignable closed generic pair.
 2. Refactor mapping/proxy shape.
 3. Add compatible closed generic roots where needed.
+
+### Open generic rule did not expand
+
+Cause:
+
+1. Map file contains an open generic proxy/target rule.
+2. No matching closed `--generic-instantiations` root was provided for the open target definition.
+
+Actions:
+
+1. Add closed generic roots for each target instantiation that must be emitted.
+2. Replace the open map rule with explicit closed mappings when the supported instantiations are fixed.
 
 ### Missing assembly resolution during generation
 

@@ -336,6 +336,62 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
+        /// Gets the generic arity declared by a reflection type name.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <returns>The declared generic arity.</returns>
+        internal static int GetDeclaredGenericArity(string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(typeName))
+            {
+                return 0;
+            }
+
+            var genericArgumentsStart = typeName.IndexOf("[[", StringComparison.Ordinal);
+            if (genericArgumentsStart < 0)
+            {
+                genericArgumentsStart = typeName.Length;
+            }
+
+            return CountDeclaredGenericArity(typeName, genericArgumentsStart);
+        }
+
+        /// <summary>
+        /// Attempts to split a closed generic reflection type name into its generic definition and argument suffix.
+        /// </summary>
+        /// <param name="typeName">The closed generic type name value.</param>
+        /// <param name="genericTypeDefinitionName">The generic type definition name.</param>
+        /// <param name="genericArgumentsSuffix">The generic arguments suffix, including brackets.</param>
+        /// <param name="genericArgumentCount">The generic argument count.</param>
+        /// <returns>true when the type name is a closed generic type name; otherwise, false.</returns>
+        internal static bool TrySplitClosedGenericTypeName(
+            string typeName,
+            out string genericTypeDefinitionName,
+            out string genericArgumentsSuffix,
+            out int genericArgumentCount)
+        {
+            genericTypeDefinitionName = string.Empty;
+            genericArgumentsSuffix = string.Empty;
+            genericArgumentCount = 0;
+
+            if (!IsClosedGenericTypeName(typeName))
+            {
+                return false;
+            }
+
+            var genericArgumentsStart = typeName.IndexOf("[[", StringComparison.Ordinal);
+            if (genericArgumentsStart < 0)
+            {
+                return false;
+            }
+
+            genericTypeDefinitionName = typeName.Substring(0, genericArgumentsStart);
+            genericArgumentsSuffix = typeName.Substring(genericArgumentsStart);
+            genericArgumentCount = CountTopLevelGenericArguments(typeName, genericArgumentsStart);
+            return genericArgumentCount > 0;
+        }
+
+        /// <summary>
         /// Executes find top level comma.
         /// </summary>
         /// <param name="value">The value value.</param>

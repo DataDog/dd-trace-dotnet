@@ -130,6 +130,43 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void MapFileParserShouldAcceptOpenGenericMapRulesForBuildTimeExpansion()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyName = typeof(DuckTypeAotProcessorsTests).Assembly.GetName().Name;
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-open-generic-parser.json");
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IClosedGenericDuckProxy<>).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(ClosedGenericDuckTarget<>).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var parseResult = DuckTypeAotMapFileParser.Parse(mapFilePath);
+
+            parseResult.Errors.Should().BeEmpty();
+            parseResult.Mappings.Should().ContainSingle(mapping =>
+                string.Equals(mapping.ProxyTypeName, typeof(IClosedGenericDuckProxy<>).FullName, StringComparison.Ordinal) &&
+                string.Equals(mapping.TargetTypeName, typeof(ClosedGenericDuckTarget<>).FullName, StringComparison.Ordinal));
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void BibleMappingCatalogFileShouldParseAndContainRequiredSeedScenarios()
     {
         var catalogPath = GetDuckTypingAotCompatibilityFilePath(BibleMappingCatalogFileName);
@@ -2457,6 +2494,364 @@ public class DuckTypeAotProcessorsTests
                 DuckTypeAotEngine.ResetForTests();
                 loadContext.Unload();
             }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldExpandOpenGenericMappingsFromClosedGenericInstantiations()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            DuckType.ResetRuntimeModeForTests();
+
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.OpenGeneric.Expanded.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-open-generic-expanded.json");
+            var genericInstantiationsPath = Path.Combine(tempDirectory, "ducktype-aot-open-generic-expanded-instantiations.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-open-generic-expanded.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-open-generic-expanded.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IClosedGenericDuckProxy<>).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(ClosedGenericDuckTarget<>).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var genericInstantiationsDocument = new
+            {
+                instantiations = new object[]
+                {
+                    new
+                    {
+                        type = typeof(ClosedGenericDuckTarget<int>).FullName,
+                        assembly = sharedAssemblyName
+                    },
+                    new
+                    {
+                        type = typeof(ClosedGenericDuckTarget<string>).FullName,
+                        assembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(genericInstantiationsPath, JsonConvert.SerializeObject(genericInstantiationsDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: genericInstantiationsPath,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.OpenGeneric.Expanded",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(0);
+
+            var manifestPath = $"{outputPath}.manifest.json";
+            var manifest = JsonConvert.DeserializeObject<DuckTypeAotManifest>(File.ReadAllText(manifestPath));
+            manifest.Should().NotBeNull();
+            manifest!.Mappings.Should().HaveCount(2);
+            manifest.Mappings.Should().Contain(mapping =>
+                string.Equals(mapping.ProxyType, typeof(IClosedGenericDuckProxy<int>).FullName, StringComparison.Ordinal) &&
+                string.Equals(mapping.TargetType, typeof(ClosedGenericDuckTarget<int>).FullName, StringComparison.Ordinal));
+            manifest.Mappings.Should().Contain(mapping =>
+                string.Equals(mapping.ProxyType, typeof(IClosedGenericDuckProxy<string>).FullName, StringComparison.Ordinal) &&
+                string.Equals(mapping.TargetType, typeof(ClosedGenericDuckTarget<string>).FullName, StringComparison.Ordinal));
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-OpenGeneric-Expanded", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                var bootstrapType = generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap");
+                bootstrapType.Should().NotBeNull();
+                var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
+                initializeMethod.Should().NotBeNull();
+                _ = initializeMethod!.Invoke(obj: null, parameters: null);
+
+                var intProxy = DuckType.Create(typeof(IClosedGenericDuckProxy<int>), new ClosedGenericDuckTarget<int>(42));
+                intProxy.Should().BeAssignableTo<IClosedGenericDuckProxy<int>>();
+                ((IClosedGenericDuckProxy<int>)intProxy!).Value.Should().Be(42);
+
+                var stringProxy = DuckType.Create(typeof(IClosedGenericDuckProxy<string>), new ClosedGenericDuckTarget<string>("closed"));
+                stringProxy.Should().BeAssignableTo<IClosedGenericDuckProxy<string>>();
+                ((IClosedGenericDuckProxy<string>)stringProxy!).Value.Should().Be("closed");
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldFailWhenOpenGenericMappingsCannotBeExpanded()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.OpenGeneric.Unexpanded.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-open-generic-unexpanded.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-open-generic-unexpanded.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-open-generic-unexpanded.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IClosedGenericDuckProxy<>).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(ClosedGenericDuckTarget<>).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.OpenGeneric.Unexpanded",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(1);
+            File.Exists(outputPath).Should().BeFalse();
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldNotUseClosedMappingsAsOpenGenericExpansionRoots()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.OpenGeneric.ExplicitClosedMapping.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-open-generic-explicit-closed-mapping.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-open-generic-explicit-closed-mapping.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-open-generic-explicit-closed-mapping.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IClosedGenericDuckProxy<>).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(ClosedGenericDuckTarget<>).FullName,
+                        targetAssembly = sharedAssemblyName
+                    },
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IClosedGenericDuckProxy<int>).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(ClosedGenericDuckTarget<int>).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.OpenGeneric.ExplicitClosedMapping",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(1);
+            File.Exists(outputPath).Should().BeFalse();
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldFailWhenOpenGenericMappingArityDiffers()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.OpenGeneric.ArityMismatch.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-open-generic-arity-mismatch.json");
+            var genericInstantiationsPath = Path.Combine(tempDirectory, "ducktype-aot-open-generic-arity-mismatch-instantiations.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-open-generic-arity-mismatch.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-open-generic-arity-mismatch.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IClosedGenericDuckProxy<>).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(OpenGenericDuckTargetWithTwoArguments<,>).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var genericInstantiationsDocument = new
+            {
+                instantiations = new object[]
+                {
+                    new
+                    {
+                        type = typeof(OpenGenericDuckTargetWithTwoArguments<int, string>).FullName,
+                        assembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(genericInstantiationsPath, JsonConvert.SerializeObject(genericInstantiationsDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: genericInstantiationsPath,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.OpenGeneric.ArityMismatch",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var (exitCode, output) = ProcessAndCapture(options);
+            exitCode.Should().Be(1);
+            output.Should().Contain("open generic rule with incompatible arity");
+            File.Exists(outputPath).Should().BeFalse();
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GenerateProcessorShouldNotExpandOpenGenericMappingsFromUnrelatedClosedGenericInstantiations()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.OpenGeneric.UnrelatedRoot.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-open-generic-unrelated-root.json");
+            var genericInstantiationsPath = Path.Combine(tempDirectory, "ducktype-aot-open-generic-unrelated-root-instantiations.json");
+            var trimmerDescriptorPath = Path.Combine(tempDirectory, "ducktype-aot-open-generic-unrelated-root.linker.xml");
+            var propsPath = Path.Combine(tempDirectory, "ducktype-aot-open-generic-unrelated-root.props");
+
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IClosedGenericDuckProxy<>).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(ClosedGenericDuckTarget<>).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var genericInstantiationsDocument = new
+            {
+                instantiations = new object[]
+                {
+                    new
+                    {
+                        type = typeof(List<int>).FullName,
+                        assembly = typeof(List<int>).Assembly.GetName().Name
+                    }
+                }
+            };
+            File.WriteAllText(genericInstantiationsPath, JsonConvert.SerializeObject(genericInstantiationsDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { sharedAssemblyPath },
+                targetAssemblies: new[] { sharedAssemblyPath, typeof(List<int>).Assembly.Location },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: genericInstantiationsPath,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.OpenGeneric.UnrelatedRoot",
+                trimmerDescriptorPath: trimmerDescriptorPath,
+                propsPath: propsPath);
+
+            var exitCode = DuckTypeAotGenerateProcessor.Process(options);
+            exitCode.Should().Be(1);
+            File.Exists(outputPath).Should().BeFalse();
         }
         finally
         {
@@ -14002,6 +14397,19 @@ public class DuckTypeAotProcessorsTests
         }
     }
 
+    private sealed class OpenGenericDuckTargetWithTwoArguments<TFirst, TSecond>
+    {
+        public OpenGenericDuckTargetWithTwoArguments(TFirst first, TSecond second)
+        {
+            First = first;
+            Second = second;
+        }
+
+        public TFirst First { get; }
+
+        public TSecond Second { get; }
+    }
+
     internal abstract class NonPublicClassProxy
     {
         internal NonPublicClassProxy()
@@ -14654,6 +15062,13 @@ public class DuckTypeAotProcessorsTests
     {
         using var capture = ConsoleOutputCapture.Redirect();
         var result = DuckTypeAotVerifyCompatProcessor.Process(options);
+        return (result, capture.Output);
+    }
+
+    private static (int Result, string Output) ProcessAndCapture(DuckTypeAotGenerateOptions options)
+    {
+        using var capture = ConsoleOutputCapture.Redirect();
+        var result = DuckTypeAotGenerateProcessor.Process(options);
         return (result, capture.Output);
     }
 
