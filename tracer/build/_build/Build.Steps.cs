@@ -1490,6 +1490,7 @@ partial class Build
 
     Target RunDuckTypeAotCompatibilityGate => _ => _
         .Unlisted()
+        .OnlyWhenStatic(() => ShouldRunDuckTypeAotGatesInCurrentJob())
         .After(BuildRunnerTool)
         .DependsOn(BuildRunnerTool)
         .Executes(() =>
@@ -1498,7 +1499,7 @@ partial class Build
                                    ?? throw new Exception($"Could not resolve project '{Projects.DdTrace}'.");
             var duckTypingTestsProject = Solution.GetProject(Projects.DuckTypingTests)
                                        ?? throw new Exception($"Could not resolve project '{Projects.DuckTypingTests}'.");
-            DotnetBuild(duckTypingTestsProject, framework: Framework, noRestore: false, noDependencies: false);
+            DotnetBuild(duckTypingTestsProject, framework: TargetFramework.NET8_0, noRestore: false, noDependencies: false);
 
             var frameworkPreferences = BuildDuckTypeAotFrameworkPreferences();
             var runnerToolAssemblyPath = ResolveBuiltAssemblyPath(
@@ -1600,6 +1601,7 @@ partial class Build
 
     Target RunDuckTypeAotGates => _ => _
         .Unlisted()
+        .OnlyWhenStatic(() => ShouldRunDuckTypeAotGatesInCurrentJob())
         .DependsOn(RunDuckTypeAotCompatibilityGate)
         .DependsOn(RunDuckTypeAotProcessorGate)
         .DependsOn(RunDuckTypeAotFullSuiteParityGate)
@@ -1607,6 +1609,7 @@ partial class Build
 
     Target RunDuckTypeAotProcessorGate => _ => _
         .Unlisted()
+        .OnlyWhenStatic(() => ShouldRunDuckTypeAotGatesInCurrentJob())
         .After(RunDuckTypeAotCompatibilityGate)
         .After(BuildRunnerTool)
         .DependsOn(BuildRunnerTool)
@@ -1628,6 +1631,7 @@ partial class Build
 
     Target RunDuckTypeAotNativeAotPublishGate => _ => _
         .Unlisted()
+        .OnlyWhenStatic(() => ShouldRunDuckTypeAotGatesInCurrentJob())
         .After(RunDuckTypeAotFullSuiteParityGate)
         .After(BuildRunnerTool)
         .DependsOn(BuildRunnerTool)
@@ -1644,12 +1648,13 @@ partial class Build
                 .SetProjectFile(runnerTestsProjectPath)
                 .SetFramework("net8.0")
                 .SetFilter("FullyQualifiedName~DuckTypeAotNativeAotPublishIntegrationTests")
-                .When(IsServerBuild, o => o.SetProcessEnvironmentVariable("DD_DUCKTYPE_AOT_NATIVEAOT_REQUIRE_TOOLCHAIN", "1"))
+                .When(IsAzurePipelineEnvironment(), o => o.SetProcessEnvironmentVariable("DD_DUCKTYPE_AOT_NATIVEAOT_REQUIRE_TOOLCHAIN", "1"))
                 .WithDatadogLogger());
         });
 
     Target RunDuckTypeAotFullSuiteParityGate => _ => _
         .Unlisted()
+        .OnlyWhenStatic(() => ShouldRunDuckTypeAotGatesInCurrentJob())
         .After(RunDuckTypeAotCompatibilityGate)
         .After(BuildRunnerTool)
         .DependsOn(BuildRunnerTool)
@@ -2947,26 +2952,49 @@ partial class Build
 
     private IReadOnlyList<string> BuildDuckTypeAotFrameworkPreferences()
     {
-        var preferences = new List<string>();
-        if (Framework is not null)
+        // The AOT gate runs as part of every managed-unit matrix job, including legacy TFMs.
+        // Keep the generator host on a modern runtime that exists on all CI platforms.
+        return new[] { "net8.0" };
+    }
+
+    private bool ShouldRunDuckTypeAotGatesInCurrentJob()
+    {
+        if (!IsAzurePipelineEnvironment())
         {
-            preferences.Add(Framework.ToString());
+            return true;
         }
 
-        preferences.AddRange(new[]
-        {
-            "net10.0",
-            "net9.0",
-            "net8.0",
-            "net7.0",
-            "net6.0",
-            "net5.0",
-            "netcoreapp3.1",
-            "netcoreapp3.0",
-            "netcoreapp2.1",
-        });
+        // CI runs managed unit tests across OS, libc, architecture, and framework shards.
+        // The DuckType AOT gates are CI coverage gates, so run them once in a stable shard
+        // with the full Linux x64 glibc NativeAOT toolchain.
+        return IsLinux && !IsRunningOnAlpine() && !IsArm64 && Framework == TargetFramework.NET9_0;
+    }
 
-        return preferences.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    private bool IsRunningOnAlpine()
+    {
+        return IsAlpine || (IsLinux && File.Exists("/etc/alpine-release"));
+    }
+
+    private static bool IsAzurePipelineEnvironment()
+    {
+        return IsTruthyEnvironmentVariable("TF_BUILD")
+            || HasEnvironmentVariable("BUILD_BUILDID")
+            || HasEnvironmentVariable("SYSTEM_COLLECTIONID")
+            || HasEnvironmentVariable("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI")
+            || HasEnvironmentVariable("DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH")
+            || HasEnvironmentVariable("DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID");
+
+        static bool HasEnvironmentVariable(string name)
+        {
+            return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(name));
+        }
+
+        static bool IsTruthyEnvironmentVariable(string name)
+        {
+            var value = Environment.GetEnvironmentVariable(name);
+            return string.Equals(value, "1", StringComparison.Ordinal)
+                || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     private AbsolutePath ResolveBuiltAssemblyPath(

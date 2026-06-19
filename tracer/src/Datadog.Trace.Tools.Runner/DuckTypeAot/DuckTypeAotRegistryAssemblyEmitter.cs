@@ -435,9 +435,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var deterministicMvid = ComputeDeterministicMvid(generatedAssemblyName, mappingResolutionResult.Mappings);
             var generatedAssemblyVersion = new Version(1, 0, 0, 0);
             var generatedAssemblyFullName = new AssemblyName(generatedAssemblyName) { Version = generatedAssemblyVersion }.FullName ?? generatedAssemblyName;
+            var datadogTraceAssemblyPath = ResolveDatadogTraceAssemblyPath(mappingResolutionResult.TargetAssemblyPathsByName);
+            var generatedCorLibAssemblyRef = ResolveGeneratedCorLibAssemblyRef(mappingResolutionResult, datadogTraceAssemblyPath);
 
             var assemblyDef = new AssemblyDefUser(generatedAssemblyName, generatedAssemblyVersion);
-            var moduleDef = new ModuleDefUser(Path.GetFileName(artifactPaths.OutputAssemblyPath), deterministicMvid)
+            var moduleDef = new ModuleDefUser(Path.GetFileName(artifactPaths.OutputAssemblyPath), deterministicMvid, generatedCorLibAssemblyRef)
             {
                 Kind = ModuleKind.Dll
             };
@@ -458,7 +460,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 AddAssemblyReference(moduleDef, assemblyReferences, targetAssemblyPath);
             }
 
-            var datadogTraceAssemblyPath = ResolveDatadogTraceAssemblyPath(mappingResolutionResult.TargetAssemblyPathsByName);
             var datadogTraceAssemblyVersion = AssemblyName.GetAssemblyName(datadogTraceAssemblyPath).Version?.ToString() ?? "0.0.0.0";
             var datadogTraceAssemblyMvid = ResolveAssemblyMvid(datadogTraceAssemblyPath);
             _ = AddAssemblyReference(moduleDef, assemblyReferences, datadogTraceAssemblyPath);
@@ -790,6 +791,70 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return typeof(Datadog.Trace.Tracer).Assembly.Location;
+        }
+
+        /// <summary>
+        /// Resolves the core library assembly reference for the generated registry assembly.
+        /// </summary>
+        /// <param name="mappingResolutionResult">The mapping resolution result value.</param>
+        /// <param name="datadogTraceAssemblyPath">The Datadog.Trace assembly path value.</param>
+        /// <returns>The resulting assembly reference.</returns>
+        private static AssemblyRef ResolveGeneratedCorLibAssemblyRef(
+            DuckTypeAotMappingResolutionResult mappingResolutionResult,
+            string datadogTraceAssemblyPath)
+        {
+            foreach (var assemblyPath in EnumerateGeneratedCorLibCandidateAssemblyPaths(mappingResolutionResult, datadogTraceAssemblyPath))
+            {
+                if (string.IsNullOrWhiteSpace(assemblyPath) ||
+                    !File.Exists(assemblyPath))
+                {
+                    continue;
+                }
+
+                using var module = ModuleDefMD.Load(assemblyPath);
+                var corLibAssemblyRef = module.CorLibTypes.AssemblyRef;
+                if (corLibAssemblyRef is not null)
+                {
+                    return new AssemblyRefUser(corLibAssemblyRef);
+                }
+            }
+
+            throw new InvalidOperationException("Unable to resolve a core library assembly reference for the generated duck type AOT registry assembly.");
+        }
+
+        /// <summary>
+        /// Enumerates assemblies that can define the generated registry load context.
+        /// </summary>
+        /// <param name="mappingResolutionResult">The mapping resolution result value.</param>
+        /// <param name="datadogTraceAssemblyPath">The Datadog.Trace assembly path value.</param>
+        /// <returns>The assembly paths in lookup order.</returns>
+        private static IEnumerable<string> EnumerateGeneratedCorLibCandidateAssemblyPaths(
+            DuckTypeAotMappingResolutionResult mappingResolutionResult,
+            string datadogTraceAssemblyPath)
+        {
+            var yieldedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var proxyAssemblyPath in mappingResolutionResult.ProxyAssemblyPathsByName.Values.OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+            {
+                if (yieldedPaths.Add(proxyAssemblyPath))
+                {
+                    yield return proxyAssemblyPath;
+                }
+            }
+
+            if (yieldedPaths.Add(datadogTraceAssemblyPath))
+            {
+                yield return datadogTraceAssemblyPath;
+            }
+
+            // Target assemblies may be higher-TFM third-party libraries; they must not force the registry corlib.
+            foreach (var targetAssemblyPath in mappingResolutionResult.TargetAssemblyPathsByName.Values.OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+            {
+                if (yieldedPaths.Add(targetAssemblyPath))
+                {
+                    yield return targetAssemblyPath;
+                }
+            }
         }
 
         /// <summary>
@@ -3685,19 +3750,26 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             generatedType.Methods.Add(generatedConstructor);
 
             EmitIDuckTypeImplementation(moduleDef, generatedType, importedTargetType, targetField, importedMembers, targetType.IsValueType);
+            var proxyTypePlan = _currentExecutionContext?.GetOrCreateProxyTypePlan(proxyType);
             var generatedInterfaceProperties = new Dictionary<string, PropertyDef>(StringComparer.Ordinal);
+            var generatedInterfaceImplementations = new HashSet<string>(StringComparer.Ordinal)
+            {
+                BuildTypeDefOrRefIdentityKey(proxyType)
+            };
 
             foreach (var binding in bindings!)
             {
                 var proxyMethod = binding.ProxyMethod;
+                var interfaceMethodContract = isInterfaceProxy ? proxyTypePlan?.GetInterfaceMethodContract(proxyMethod) : null;
 
                 var generatedMethod = new MethodDefUser(
                     proxyMethod.Name,
-                    CreateGeneratedProxyMethodSig(moduleDef, proxyMethod, closedGenericProxyTypeArguments: null),
+                    CreateGeneratedProxyMethodSig(moduleDef, proxyMethod, closedGenericProxyTypeArguments: null, interfaceMethodContract),
                     MethodImplAttributes.IL | MethodImplAttributes.Managed,
                     isInterfaceProxy ? GetInterfaceMethodAttributes(proxyMethod) : GetClassOverrideMethodAttributes(proxyMethod));
 
                 CopyMethodGenericParameters(moduleDef, proxyMethod, generatedMethod);
+                AddInterfaceMethodOverride(moduleDef, generatedType, generatedInterfaceImplementations, isInterfaceProxy, proxyType, generatedMethod, proxyMethod, interfaceMethodContract, closedGenericProxyTypeArguments: null);
                 generatedMethod.Body = new CilBody();
                 switch (binding.Kind)
                 {
@@ -4201,19 +4273,26 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             generatedType.Methods.Add(generatedConstructor);
 
             EmitIDuckTypeImplementation(moduleDef, generatedType, importedTargetType, targetField, importedMembers, targetIsValueType);
+            var proxyTypePlan = _currentExecutionContext?.GetOrCreateProxyTypePlan(proxyType);
             var generatedInterfaceProperties = new Dictionary<string, PropertyDef>(StringComparer.Ordinal);
+            var generatedInterfaceImplementations = new HashSet<string>(StringComparer.Ordinal)
+            {
+                BuildTypeDefOrRefIdentityKey(proxyType)
+            };
 
             foreach (var binding in bindings!)
             {
                 var proxyMethod = binding.ProxyMethod;
+                var interfaceMethodContract = isInterfaceProxy ? proxyTypePlan?.GetInterfaceMethodContract(proxyMethod) : null;
 
                 var generatedMethod = new MethodDefUser(
                     proxyMethod.Name,
-                    CreateGeneratedProxyMethodSig(moduleDef, proxyMethod, closedGenericProxyTypeArguments),
+                    CreateGeneratedProxyMethodSig(moduleDef, proxyMethod, closedGenericProxyTypeArguments, interfaceMethodContract),
                     MethodImplAttributes.IL | MethodImplAttributes.Managed,
                     isInterfaceProxy ? GetInterfaceMethodAttributes(proxyMethod) : GetClassOverrideMethodAttributes(proxyMethod));
 
                 CopyMethodGenericParameters(moduleDef, proxyMethod, generatedMethod);
+                AddInterfaceMethodOverride(moduleDef, generatedType, generatedInterfaceImplementations, isInterfaceProxy, proxyType, generatedMethod, proxyMethod, interfaceMethodContract, closedGenericProxyTypeArguments);
                 generatedMethod.Body = new CilBody();
                 switch (binding.Kind)
                 {
@@ -6156,9 +6235,24 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="moduleDef">The destination module definition.</param>
         /// <param name="proxyMethod">The source proxy method definition.</param>
         /// <param name="closedGenericProxyTypeArguments">The closed proxy generic type arguments.</param>
+        /// <param name="interfaceMethodContract">The interface contract that declared the method.</param>
         /// <returns>The emitted method signature.</returns>
-        private static MethodSig CreateGeneratedProxyMethodSig(ModuleDef moduleDef, MethodDef proxyMethod, IReadOnlyList<TypeSig>? closedGenericProxyTypeArguments)
+        private static MethodSig CreateGeneratedProxyMethodSig(
+            ModuleDef moduleDef,
+            MethodDef proxyMethod,
+            IReadOnlyList<TypeSig>? closedGenericProxyTypeArguments,
+            InterfaceMethodContract? interfaceMethodContract)
         {
+            if (interfaceMethodContract is not null &&
+                interfaceMethodContract.RequiresExplicitInterfaceImplementation)
+            {
+                return CreateImportedInterfaceContractMethodSig(
+                    moduleDef,
+                    interfaceMethodContract.MethodSig,
+                    closedGenericProxyTypeArguments,
+                    $"inherited interface method '{proxyMethod.FullName}'");
+            }
+
             if (closedGenericProxyTypeArguments is null || closedGenericProxyTypeArguments.Count == 0)
             {
                 return ImportMethodCached(moduleDef, proxyMethod, $"proxy method '{proxyMethod.FullName}'").MethodSig;
@@ -6176,6 +6270,51 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     moduleDef,
                     SubstituteTypeAndMethodGenericTypeArguments(sourceSig.Params[parameterIndex], closedGenericProxyTypeArguments, closedGenericMethodArguments: null),
                     $"closed generic proxy method parameter '{proxyMethod.FullName}'");
+            }
+
+            MethodSig generatedSig;
+            if (sourceSig.Generic)
+            {
+                generatedSig = sourceSig.HasThis
+                                   ? MethodSig.CreateInstanceGeneric(sourceSig.GenParamCount, returnType, parameterTypes)
+                                   : MethodSig.CreateStaticGeneric(sourceSig.GenParamCount, returnType, parameterTypes);
+            }
+            else
+            {
+                generatedSig = sourceSig.HasThis
+                                   ? MethodSig.CreateInstance(returnType, parameterTypes)
+                                   : MethodSig.CreateStatic(returnType, parameterTypes);
+            }
+
+            generatedSig.ExplicitThis = sourceSig.ExplicitThis;
+            return generatedSig;
+        }
+
+        /// <summary>
+        /// Creates the generated proxy method signature for an inherited interface contract.
+        /// </summary>
+        /// <param name="moduleDef">The destination module definition.</param>
+        /// <param name="sourceSig">The source method signature.</param>
+        /// <param name="closedGenericProxyTypeArguments">The closed proxy generic type arguments.</param>
+        /// <param name="context">The operation context.</param>
+        /// <returns>The emitted method signature.</returns>
+        private static MethodSig CreateImportedInterfaceContractMethodSig(
+            ModuleDef moduleDef,
+            MethodSig sourceSig,
+            IReadOnlyList<TypeSig>? closedGenericProxyTypeArguments,
+            string context)
+        {
+            var returnType = ImportInterfaceContractTypeSig(
+                moduleDef,
+                SubstituteTypeAndMethodGenericTypeArguments(sourceSig.RetType, closedGenericProxyTypeArguments, closedGenericMethodArguments: null),
+                $"{context} return type");
+            var parameterTypes = new TypeSig[sourceSig.Params.Count];
+            for (var parameterIndex = 0; parameterIndex < parameterTypes.Length; parameterIndex++)
+            {
+                parameterTypes[parameterIndex] = ImportInterfaceContractTypeSig(
+                    moduleDef,
+                    SubstituteTypeAndMethodGenericTypeArguments(sourceSig.Params[parameterIndex], closedGenericProxyTypeArguments, closedGenericMethodArguments: null),
+                    $"{context} parameter type");
             }
 
             MethodSig generatedSig;
@@ -7282,6 +7421,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static MethodAttributes GetInterfaceMethodAttributes(MethodDef proxyMethod)
         {
             var attributes = MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.Final;
+            if (proxyMethod.DeclaringType?.IsInterface == true)
+            {
+                attributes |= MethodAttributes.NewSlot;
+            }
+
             if (proxyMethod.IsSpecialName)
             {
                 attributes |= MethodAttributes.SpecialName;
@@ -7293,6 +7437,79 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return attributes;
+        }
+
+        /// <summary>
+        /// Adds an explicit interface method override for inherited non-generic interface methods.
+        /// </summary>
+        /// <param name="moduleDef">The module definition value.</param>
+        /// <param name="generatedType">The generated type value.</param>
+        /// <param name="generatedInterfaceImplementations">The generated interface implementation keys.</param>
+        /// <param name="isInterfaceProxy">The is interface proxy value.</param>
+        /// <param name="proxyType">The proxy type value.</param>
+        /// <param name="generatedMethod">The generated method value.</param>
+        /// <param name="proxyMethod">The proxy method value.</param>
+        /// <param name="interfaceMethodContract">The interface contract that declared the method.</param>
+        /// <param name="closedGenericProxyTypeArguments">The closed proxy generic type arguments.</param>
+        private static void AddInterfaceMethodOverride(
+            ModuleDef moduleDef,
+            TypeDef generatedType,
+            HashSet<string> generatedInterfaceImplementations,
+            bool isInterfaceProxy,
+            TypeDef proxyType,
+            MethodDef generatedMethod,
+            MethodDef proxyMethod,
+            InterfaceMethodContract? interfaceMethodContract,
+            IReadOnlyList<TypeSig>? closedGenericProxyTypeArguments)
+        {
+            if (!isInterfaceProxy ||
+                interfaceMethodContract is null ||
+                !interfaceMethodContract.RequiresExplicitInterfaceImplementation)
+            {
+                return;
+            }
+
+            var inheritedInterface = ImportInterfaceContractTypeDefOrRef(
+                moduleDef,
+                interfaceMethodContract,
+                closedGenericProxyTypeArguments,
+                $"inherited interface contract '{interfaceMethodContract.InterfaceType.FullName}'");
+            if (generatedInterfaceImplementations.Add(BuildTypeDefOrRefIdentityKey(inheritedInterface)))
+            {
+                generatedType.Interfaces.Add(new InterfaceImplUser(inheritedInterface));
+            }
+
+            var importedProxyMethodSig = CreateImportedInterfaceContractMethodSig(
+                moduleDef,
+                interfaceMethodContract.MethodSig,
+                closedGenericProxyTypeArguments,
+                $"inherited interface method '{proxyMethod.FullName}'");
+            var importedProxyMethod = new MemberRefUser(
+                moduleDef,
+                proxyMethod.Name,
+                importedProxyMethodSig,
+                inheritedInterface);
+            generatedMethod.Overrides.Add(new MethodOverride(generatedMethod, moduleDef.UpdateRowId(importedProxyMethod)));
+        }
+
+        private static ITypeDefOrRef ImportInterfaceContractTypeDefOrRef(
+            ModuleDef moduleDef,
+            InterfaceMethodContract interfaceMethodContract,
+            IReadOnlyList<TypeSig>? closedGenericProxyTypeArguments,
+            string context)
+        {
+            if (closedGenericProxyTypeArguments is null || closedGenericProxyTypeArguments.Count == 0)
+            {
+                return ImportTypeDefOrRefCached(moduleDef, interfaceMethodContract.InterfaceReference, context);
+            }
+
+            var substitutedInterfaceTypeSig = SubstituteTypeAndMethodGenericTypeArguments(
+                interfaceMethodContract.InterfaceTypeSig,
+                closedGenericProxyTypeArguments,
+                closedGenericMethodArguments: null);
+            var importedInterfaceTypeSig = ImportInterfaceContractTypeSig(moduleDef, substitutedInterfaceTypeSig, context);
+            return importedInterfaceTypeSig.ToTypeDefOrRef()
+                ?? throw new InvalidOperationException($"Unable to import interface contract type for {context}.");
         }
 
         /// <summary>
@@ -10159,7 +10376,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var phaseStopwatch = StartProfilePhase();
             try
             {
-                var cacheKey = typeSig.FullName ?? context;
+                var cacheKey = BuildTypeSigCacheKey(typeSig);
                 if (_currentExecutionContext?.TryGetImportedTypeSig(cacheKey, out var cachedTypeSig) == true)
                 {
                     if (_currentProfile is not null)
@@ -10183,6 +10400,132 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 StopProfilePhase(phaseStopwatch, seconds => _currentProfile!.ImportTypeSigSeconds += seconds);
             }
+        }
+
+        /// <summary>
+        /// Imports a proxy interface contract signature using the generated module's framework assembly identity.
+        /// </summary>
+        /// <param name="moduleDef">The module def value.</param>
+        /// <param name="typeSig">The source type signature.</param>
+        /// <param name="context">The operation context.</param>
+        /// <returns>The imported type signature.</returns>
+        private static TypeSig ImportInterfaceContractTypeSig(ModuleDef moduleDef, TypeSig typeSig, string context)
+        {
+            if (TryCreateGeneratedCorLibTypeSig(moduleDef, typeSig, out var generatedCorLibTypeSig))
+            {
+                return generatedCorLibTypeSig!;
+            }
+
+            if (typeSig is GenericInstSig genericInstSig)
+            {
+                var importedGenericType = ImportInterfaceContractClassOrValueTypeSig(moduleDef, genericInstSig.GenericType, context);
+                var importedGenericArguments = new TypeSig[genericInstSig.GenericArguments.Count];
+                for (var i = 0; i < importedGenericArguments.Length; i++)
+                {
+                    importedGenericArguments[i] = ImportInterfaceContractTypeSig(moduleDef, genericInstSig.GenericArguments[i], context);
+                }
+
+                return new GenericInstSig(importedGenericType, importedGenericArguments);
+            }
+
+            if (typeSig is PtrSig ptrSig)
+            {
+                return new PtrSig(ImportInterfaceContractTypeSig(moduleDef, ptrSig.Next, context));
+            }
+
+            if (typeSig is ByRefSig byRefSig)
+            {
+                return new ByRefSig(ImportInterfaceContractTypeSig(moduleDef, byRefSig.Next, context));
+            }
+
+            if (typeSig is SZArraySig szArraySig)
+            {
+                return new SZArraySig(ImportInterfaceContractTypeSig(moduleDef, szArraySig.Next, context));
+            }
+
+            if (typeSig is ArraySig arraySig)
+            {
+                return new ArraySig(
+                    ImportInterfaceContractTypeSig(moduleDef, arraySig.Next, context),
+                    arraySig.Rank,
+                    arraySig.Sizes,
+                    arraySig.LowerBounds);
+            }
+
+            if (typeSig is CModReqdSig requiredModifierSig)
+            {
+                var importedModifier = ImportTypeDefOrRefCached(moduleDef, requiredModifierSig.Modifier, $"required modifier for {context}");
+                return new CModReqdSig(importedModifier, ImportInterfaceContractTypeSig(moduleDef, requiredModifierSig.Next, context));
+            }
+
+            if (typeSig is CModOptSig optionalModifierSig)
+            {
+                var importedModifier = ImportTypeDefOrRefCached(moduleDef, optionalModifierSig.Modifier, $"optional modifier for {context}");
+                return new CModOptSig(importedModifier, ImportInterfaceContractTypeSig(moduleDef, optionalModifierSig.Next, context));
+            }
+
+            if (typeSig is PinnedSig pinnedSig)
+            {
+                return new PinnedSig(ImportInterfaceContractTypeSig(moduleDef, pinnedSig.Next, context));
+            }
+
+            if (typeSig is ValueArraySig valueArraySig)
+            {
+                return new ValueArraySig(ImportInterfaceContractTypeSig(moduleDef, valueArraySig.Next, context), valueArraySig.Size);
+            }
+
+            if (typeSig is ModuleSig moduleSig)
+            {
+                return new ModuleSig(moduleSig.Index, ImportInterfaceContractTypeSig(moduleDef, moduleSig.Next, context));
+            }
+
+            return ImportTypeSigCached(moduleDef, typeSig, context);
+        }
+
+        private static ClassOrValueTypeSig ImportInterfaceContractClassOrValueTypeSig(ModuleDef moduleDef, ClassOrValueTypeSig typeSig, string context)
+        {
+            if (TryCreateGeneratedCorLibTypeSig(moduleDef, typeSig, out var generatedCorLibTypeSig) &&
+                generatedCorLibTypeSig is ClassOrValueTypeSig generatedClassOrValueTypeSig)
+            {
+                return generatedClassOrValueTypeSig;
+            }
+
+            var importedTypeDefOrRef = ImportTypeDefOrRefCached(moduleDef, typeSig.TypeDefOrRef, context);
+            return typeSig.ElementType == ElementType.ValueType ? new ValueTypeSig(importedTypeDefOrRef) : new ClassSig(importedTypeDefOrRef);
+        }
+
+        private static bool TryCreateGeneratedCorLibTypeSig(ModuleDef moduleDef, TypeSig typeSig, out TypeSig? generatedCorLibTypeSig)
+        {
+            generatedCorLibTypeSig = null;
+            if (typeSig is not TypeDefOrRefSig typeDefOrRefSig ||
+                !IsFrameworkImplementationType(typeDefOrRefSig.TypeDefOrRef))
+            {
+                return false;
+            }
+
+            var namespaceName = typeDefOrRefSig.TypeDefOrRef.Namespace ?? string.Empty;
+            var typeName = typeDefOrRefSig.TypeDefOrRef.Name ?? string.Empty;
+            if (StringUtil.IsNullOrEmpty(namespaceName) || StringUtil.IsNullOrEmpty(typeName))
+            {
+                return false;
+            }
+
+            var generatedTypeRef = moduleDef.CorLibTypes.GetTypeRef(namespaceName, typeName);
+            generatedCorLibTypeSig = typeSig.ElementType == ElementType.ValueType
+                                         ? new ValueTypeSig(generatedTypeRef)
+                                         : typeSig.ElementType == ElementType.Class
+                                             ? new ClassSig(generatedTypeRef)
+                                             : generatedTypeRef.ToTypeSig();
+            return true;
+        }
+
+        private static bool IsFrameworkImplementationType(ITypeDefOrRef typeDefOrRef)
+        {
+            var assemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(typeDefOrRef.DefinitionAssembly?.Name?.String ?? string.Empty);
+            return string.Equals(assemblyName, "System.Private.CoreLib", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(assemblyName, "System.Runtime", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(assemblyName, "mscorlib", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(assemblyName, "netstandard", StringComparison.OrdinalIgnoreCase);
         }
 
         private static IMethod ImportMethodCached(ModuleDef moduleDef, IMethod method, string context)
@@ -11498,6 +11841,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+#if NET6_0_OR_GREATER
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "The ducktype AOT runner reflects over loaded assemblies as part of build-time compatibility analysis.")]
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2057", Justification = "Type names are supplied by mapping metadata and validated by discovery before emission.")]
+#endif
         private static bool TryResolveRuntimeTypeByName(string typeName, string normalizedAssemblyName, string assemblyPath, out Type? runtimeType)
         {
             var normalizedAssemblyPath = NormalizeRuntimeAssemblyPathForCache(assemblyPath);
@@ -12633,6 +12980,56 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     string.Equals(candidate.FullName, typeName, StringComparison.Ordinal))!;
 
             return type is not null;
+        }
+
+        /// <summary>
+        /// Resolves an inherited interface type for proxy traversal.
+        /// </summary>
+        /// <param name="ownerType">The type that owns the interface reference.</param>
+        /// <param name="interfaceReference">The interface reference.</param>
+        /// <returns>The resolved interface definition when available; otherwise, null.</returns>
+        private static TypeDef? ResolveInterfaceTypeDefForTraversal(TypeDef ownerType, ITypeDefOrRef interfaceReference)
+        {
+            var resolvedInterface = interfaceReference.ResolveTypeDef();
+            if (resolvedInterface is not null)
+            {
+                return resolvedInterface;
+            }
+
+            var interfaceTypeName = interfaceReference.ReflectionFullName?.Replace('/', '+')
+                                 ?? interfaceReference.FullName.Replace('/', '+');
+            var interfaceAssemblyName = interfaceReference.DefinitionAssembly?.Name?.String ?? string.Empty;
+            if (!TryResolveRuntimeType(interfaceAssemblyName, assemblyPath: string.Empty, interfaceTypeName, out var runtimeInterfaceType) ||
+                runtimeInterfaceType is null)
+            {
+                return null;
+            }
+
+            var runtimeInterfaceDefinition = GetRuntimeTypeDefinition(runtimeInterfaceType);
+            var runtimeAssemblyPath = runtimeInterfaceDefinition.Assembly.Location;
+            if (string.IsNullOrWhiteSpace(runtimeAssemblyPath) ||
+                !File.Exists(runtimeAssemblyPath))
+            {
+                return null;
+            }
+
+            var moduleContext = ownerType.Module?.Context ?? ModuleDef.CreateModuleContext();
+            if (moduleContext.AssemblyResolver is AssemblyResolver assemblyResolver)
+            {
+                AddAssemblyResolverSearchPath(assemblyResolver, Path.GetDirectoryName(runtimeAssemblyPath));
+            }
+
+            var runtimeModule = ModuleDefMD.Load(runtimeAssemblyPath, moduleContext);
+            runtimeModule.EnableTypeDefFindCache = true;
+            if (moduleContext.AssemblyResolver is AssemblyResolver resolver)
+            {
+                resolver.AddToCache(runtimeModule);
+            }
+
+            var runtimeMetadataName = runtimeInterfaceDefinition.FullName?.Replace('+', '/') ?? interfaceTypeName.Replace('+', '/');
+            return TryResolveType(runtimeModule, runtimeMetadataName, out var runtimeInterfaceDefinitionType)
+                       ? runtimeInterfaceDefinitionType
+                       : null;
         }
 
         /// <summary>
@@ -15299,25 +15696,76 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         private sealed class InterfaceTraversalEntry
         {
-            internal InterfaceTraversalEntry(TypeDef interfaceType, IReadOnlyList<TypeSig>? genericArguments)
+            internal InterfaceTraversalEntry(TypeDef interfaceType, ITypeDefOrRef interfaceReference, TypeSig interfaceTypeSig, bool isProxyType, IReadOnlyList<TypeSig>? genericArguments)
             {
                 InterfaceType = interfaceType;
+                InterfaceReference = interfaceReference;
+                InterfaceTypeSig = interfaceTypeSig;
+                IsProxyType = isProxyType;
                 GenericArguments = genericArguments;
             }
 
             internal TypeDef InterfaceType { get; }
 
+            internal ITypeDefOrRef InterfaceReference { get; }
+
+            internal TypeSig InterfaceTypeSig { get; }
+
+            internal bool IsProxyType { get; }
+
             internal IReadOnlyList<TypeSig>? GenericArguments { get; }
+        }
+
+        private sealed class InterfaceMethodContract
+        {
+            internal InterfaceMethodContract(TypeDef interfaceType, ITypeDefOrRef interfaceReference, TypeSig interfaceTypeSig, bool isDeclaredOnProxyType, MethodSig methodSig)
+            {
+                InterfaceType = interfaceType;
+                InterfaceReference = interfaceReference;
+                InterfaceTypeSig = interfaceTypeSig;
+                IsDeclaredOnProxyType = isDeclaredOnProxyType;
+                MethodSig = methodSig;
+            }
+
+            internal TypeDef InterfaceType { get; }
+
+            internal ITypeDefOrRef InterfaceReference { get; }
+
+            internal TypeSig InterfaceTypeSig { get; }
+
+            internal bool IsDeclaredOnProxyType { get; }
+
+            internal bool RequiresExplicitInterfaceImplementation => !IsDeclaredOnProxyType &&
+                                                                     InterfaceType.GenericParameters.Count == 0 &&
+                                                                     InterfaceReference is not TypeSpec;
+
+            internal MethodSig MethodSig { get; }
+        }
+
+        private sealed class InterfaceMethodCollection
+        {
+            internal InterfaceMethodCollection(IReadOnlyList<MethodDef> methods, IReadOnlyDictionary<MethodDef, InterfaceMethodContract> contractsByMethod)
+            {
+                Methods = methods;
+                ContractsByMethod = contractsByMethod;
+            }
+
+            internal IReadOnlyList<MethodDef> Methods { get; }
+
+            internal IReadOnlyDictionary<MethodDef, InterfaceMethodContract> ContractsByMethod { get; }
         }
 
         private sealed class ProxyTypePlan
         {
             private readonly Dictionary<MethodDef, ProxyMethodPlan> _methodPlans = new(ReferenceIdentityComparer<MethodDef>.Instance);
+            private readonly IReadOnlyDictionary<MethodDef, InterfaceMethodContract> _interfaceMethodContractsByMethod;
             private readonly IReadOnlyDictionary<MethodDef, PropertyDef> _propertiesByAccessorMethod;
 
             internal ProxyTypePlan(TypeDef proxyType)
             {
-                InterfaceMethods = BuildInterfaceMethods(proxyType);
+                var interfaceMethods = BuildInterfaceMethods(proxyType);
+                InterfaceMethods = interfaceMethods.Methods;
+                _interfaceMethodContractsByMethod = interfaceMethods.ContractsByMethod;
                 ClassMethods = BuildClassMethods(proxyType);
                 SupportedBaseConstructor = BuildSupportedBaseConstructor(proxyType);
                 _propertiesByAccessorMethod = BuildAccessorPropertyMap(proxyType);
@@ -15332,6 +15780,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal bool TryGetPropertyFromAccessor(MethodDef accessorMethod, out PropertyDef property)
                 => _propertiesByAccessorMethod.TryGetValue(accessorMethod, out property!);
 
+            internal InterfaceMethodContract? GetInterfaceMethodContract(MethodDef method)
+                => _interfaceMethodContractsByMethod.TryGetValue(method, out var contract) ? contract : null;
+
             internal ProxyMethodPlan GetOrCreateMethodPlan(MethodDef proxyMethod)
             {
                 if (_methodPlans.TryGetValue(proxyMethod, out var cachedPlan))
@@ -15344,13 +15795,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return plan;
             }
 
-            private static IReadOnlyList<MethodDef> BuildInterfaceMethods(TypeDef interfaceType)
+            private static InterfaceMethodCollection BuildInterfaceMethods(TypeDef interfaceType)
             {
                 var results = new List<MethodDef>();
+                var contractsByMethod = new Dictionary<MethodDef, InterfaceMethodContract>(ReferenceIdentityComparer<MethodDef>.Instance);
                 var visitedTypes = new HashSet<string>(StringComparer.Ordinal);
                 var visitedMethods = new HashSet<string>(StringComparer.Ordinal);
                 var stack = new Stack<InterfaceTraversalEntry>();
-                stack.Push(new InterfaceTraversalEntry(interfaceType, genericArguments: null));
+                stack.Push(new InterfaceTraversalEntry(interfaceType, interfaceType, interfaceType.ToTypeSig(), isProxyType: true, genericArguments: null));
 
                 while (stack.Count > 0)
                 {
@@ -15376,23 +15828,33 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             if (visitedMethods.Add(key))
                             {
                                 results.Add(resolvedMethod);
+                                contractsByMethod[resolvedMethod] = new InterfaceMethodContract(
+                                    current.InterfaceType,
+                                    current.InterfaceReference,
+                                    current.InterfaceTypeSig,
+                                    current.IsProxyType,
+                                    resolvedMethod.MethodSig);
                             }
                         }
                     }
 
                     foreach (var interfaceImpl in currentType.Interfaces)
                     {
-                        var resolvedInterface = interfaceImpl.Interface.ResolveTypeDef();
+                        var resolvedInterface = ResolveInterfaceTypeDefForTraversal(currentType, interfaceImpl.Interface);
                         if (resolvedInterface is not null)
                         {
+                            var interfaceTypeSig = interfaceImpl.Interface.ToTypeSig();
                             stack.Push(new InterfaceTraversalEntry(
                                 resolvedInterface,
-                                ResolveInterfaceGenericArguments(interfaceImpl.Interface.ToTypeSig(), current.GenericArguments)));
+                                interfaceImpl.Interface,
+                                interfaceTypeSig,
+                                isProxyType: false,
+                                ResolveInterfaceGenericArguments(interfaceTypeSig, current.GenericArguments)));
                         }
                     }
                 }
 
-                return results;
+                return new InterfaceMethodCollection(results, contractsByMethod);
             }
 
             private static string BuildInterfaceTraversalKey(InterfaceTraversalEntry entry)
@@ -15603,7 +16065,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                     foreach (var interfaceImpl in currentType.Interfaces)
                     {
-                        var resolvedInterface = interfaceImpl.Interface.ResolveTypeDef();
+                        var resolvedInterface = ResolveInterfaceTypeDefForTraversal(currentType, interfaceImpl.Interface);
                         if (resolvedInterface is not null)
                         {
                             typesToInspect.Push(resolvedInterface);
