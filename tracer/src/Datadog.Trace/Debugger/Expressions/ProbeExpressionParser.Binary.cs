@@ -184,9 +184,7 @@ internal sealed partial class ProbeExpressionParser<T>
                     ProbeExpressionParserHelper.GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(SafeEquals), new[] { typeof(object), typeof(object) }),
                     leftAsObject,
                     rightAsObject);
-                return Expression.Block(
-                    BudgetCheck(),
-                    operand == "==" ? safeEquals : Expression.Not(safeEquals));
+                return operand == "==" ? safeEquals : Expression.Not(safeEquals);
             }
 
             return operand == "==" ? Expression.Equal(left, right) : Expression.NotEqual(left, right);

@@ -49,4 +49,4 @@ Expressions: (
 }
 Result: The result of the expression is: 
 Errors:
-EvaluationError { Expression = { ... }), Message = Object reference not set to an instance of an object. }
+EvaluationError { Expression = this.Null.NestedString), Message = Object reference not set to an instance of an object. }
