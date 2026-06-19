@@ -1011,23 +1011,7 @@ namespace Datadog.Trace.DuckTyping
                     }
                 }
 
-                propertiesThatShouldBeImplemented.RemoveAll(prop =>
-                {
-                    if (duckAttribute.Name.IndexOf(',') == -1)
-                    {
-                        return duckAttribute.Name == prop.Name;
-                    }
-
-                    foreach (var name in duckAttribute.Name.Split(','))
-                    {
-                        if (name == prop.Name)
-                        {
-                            return true;
-                        }
-                    }
-
-                    return false;
-                });
+                propertiesThatShouldBeImplemented.RemoveAll(prop => GetDuckAttributeCandidateNames(duckAttribute.Name).Any(name => name == prop.Name));
             }
 
             if (propertiesThatShouldBeImplemented.Count > 0)

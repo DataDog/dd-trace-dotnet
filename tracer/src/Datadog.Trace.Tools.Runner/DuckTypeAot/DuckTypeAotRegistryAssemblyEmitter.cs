@@ -407,6 +407,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             DuckChainToProxy,
 
             /// <summary>
+            /// Represents extract duck type instance.
+            /// </summary>
+            ExtractDuckTypeInstance,
+
+            /// <summary>
             /// Represents type conversion.
             /// </summary>
             TypeConversion
@@ -3276,6 +3281,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return exceptionTypeName is not null;
             }
 
+            if (string.Equals(failure.DiagnosticCode, StatusCodeUnsupportedProxyConstructor, StringComparison.Ordinal))
+            {
+                exceptionTypeName = typeof(DuckTypeException).FullName;
+                return exceptionTypeName is not null;
+            }
+
             if (detail.IndexOf("cannot be abstract or interface", StringComparison.Ordinal) >= 0)
             {
                 exceptionTypeName = typeof(DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException).FullName;
@@ -3582,11 +3593,25 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var baseConstructor = FindSupportedProxyBaseConstructor(proxyType);
                 if (baseConstructor is null)
                 {
-                    return DuckTypeAotMappingEmissionResult.NotCompatible(
+                    var constructorFailure = DuckTypeAotMappingEmissionResult.NotCompatible(
                         mapping,
                         DuckTypeAotCompatibilityStatuses.UnsupportedProxyConstructor,
                         StatusCodeUnsupportedProxyConstructor,
                         $"Proxy class '{mapping.ProxyTypeName}' must provide a parameterless constructor.");
+                    TryEmitKnownFailureRegistration(
+                        moduleDef,
+                        bootstrapType,
+                        initializeMethod,
+                        importedMembers,
+                        mapping,
+                        mappingIndex,
+                        proxyType,
+                        targetType,
+                        constructorFailure,
+                        proxyAssemblyPathsByName,
+                        targetAssemblyPathsByName,
+                        emissionWarnings);
+                    return constructorFailure;
                 }
 
                 baseCtorToCall = ImportMethodCached(moduleDef, baseConstructor, $"base constructor for proxy '{proxyType.FullName}'");
@@ -4071,11 +4096,25 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var baseConstructor = FindSupportedProxyBaseConstructor(proxyType);
                 if (baseConstructor is null)
                 {
-                    return DuckTypeAotMappingEmissionResult.NotCompatible(
+                    var constructorFailure = DuckTypeAotMappingEmissionResult.NotCompatible(
                         mapping,
                         DuckTypeAotCompatibilityStatuses.UnsupportedProxyConstructor,
                         StatusCodeUnsupportedProxyConstructor,
                         $"Proxy class '{mapping.ProxyTypeName}' must provide a parameterless constructor.");
+                    TryEmitKnownFailureRegistration(
+                        moduleDef,
+                        bootstrapType,
+                        initializeMethod,
+                        importedMembers,
+                        mapping,
+                        mappingIndex,
+                        proxyType,
+                        importedTargetType,
+                        constructorFailure,
+                        proxyAssemblyPathsByName,
+                        targetAssemblyPathsByName,
+                        emissionWarnings);
+                    return constructorFailure;
                 }
 
                 baseCtorToCall = ImportMethodCached(moduleDef, baseConstructor, $"base constructor for proxy '{proxyType.FullName}'");
@@ -6314,6 +6353,23 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         conversion.WrapperTypeSig!,
                         conversion.InnerTypeSig!,
                         context);
+                    return;
+                }
+
+                if (conversion.Kind == MethodReturnConversionKind.ExtractDuckTypeInstance)
+                {
+                    var hasValueLabel = Instruction.Create(OpCodes.Nop);
+                    var endLabel = Instruction.Create(OpCodes.Nop);
+                    methodBody.Instructions.Add(OpCodes.Dup.ToInstruction());
+                    methodBody.Instructions.Add(OpCodes.Brtrue_S.ToInstruction(hasValueLabel));
+                    methodBody.Instructions.Add(OpCodes.Pop.ToInstruction());
+                    methodBody.Instructions.Add(OpCodes.Ldnull.ToInstruction());
+                    methodBody.Instructions.Add(OpCodes.Br_S.ToInstruction(endLabel));
+                    methodBody.Instructions.Add(hasValueLabel);
+                    methodBody.Instructions.Add(OpCodes.Castclass.ToInstruction(importedMembers.IDuckTypeType));
+                    methodBody.Instructions.Add(OpCodes.Callvirt.ToInstruction(importedMembers.IDuckTypeInstanceGetter));
+                    methodBody.Instructions.Add(endLabel);
+                    EmitObjectToExpectedTypeConversion(moduleDef, methodBody, conversion.InnerTypeSig!, context);
                 }
             }
             finally
@@ -9120,7 +9176,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     return false;
                 }
 
-                if (!MatchesDynamicMethodParameterSelectionRule(proxyByRefElementTypeSig!, targetByRefElementTypeSig!))
+                if (!MatchesByRefDynamicMethodParameterSelectionRule(proxyByRefElementTypeSig!, targetByRefElementTypeSig!, isReverseMapping))
                 {
                     failure = new MethodCompatibilityFailure(
                         $"Parameter type mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
@@ -9153,7 +9209,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     return false;
                 }
 
-                if (!TryCreateByRefPostCallConversion(proxyByRefElementTypeSig!, targetByRefElementTypeSig!, out var postCallConversion))
+                if (!TryCreateByRefPostCallConversion(proxyByRefElementTypeSig!, targetByRefElementTypeSig!, isReverseMapping, out var postCallConversion))
                 {
                     failure = new MethodCompatibilityFailure(
                         $"By-ref parameter mismatch between proxy method '{proxyMethod.FullName}' and target method '{targetMethod.FullName}'.");
@@ -9314,6 +9370,28 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return MatchesDynamicMethodParameterSelectionRuleFromMetadata(proxyParameterType, targetParameterType, proxyRuntimeType, targetRuntimeType);
+        }
+
+        /// <summary>
+        /// Determines whether by-ref element types satisfy dynamic method-candidate selection rules.
+        /// </summary>
+        /// <param name="proxyParameterElementType">The proxy parameter element type value.</param>
+        /// <param name="targetParameterElementType">The target parameter element type value.</param>
+        /// <param name="isReverseMapping">The is reverse mapping value.</param>
+        /// <returns>true when the by-ref candidate should remain eligible; otherwise, false.</returns>
+        private static bool MatchesByRefDynamicMethodParameterSelectionRule(
+            TypeSig proxyParameterElementType,
+            TypeSig targetParameterElementType,
+            bool isReverseMapping)
+        {
+            if (MatchesDynamicMethodParameterSelectionRule(proxyParameterElementType, targetParameterElementType))
+            {
+                return true;
+            }
+
+            return isReverseMapping &&
+                   (IsDuckChainingRequired(targetParameterElementType, proxyParameterElementType) ||
+                    IsDuckChainingRequired(proxyParameterElementType, targetParameterElementType));
         }
 
         /// <summary>
@@ -9588,11 +9666,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="proxyParameterElementType">The proxy parameter element type value.</param>
         /// <param name="targetParameterElementType">The target parameter element type value.</param>
+        /// <param name="isReverseMapping">The is reverse mapping value.</param>
         /// <param name="returnConversion">The return conversion value.</param>
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
-        private static bool TryCreateByRefPostCallConversion(TypeSig proxyParameterElementType, TypeSig targetParameterElementType, out MethodReturnConversion returnConversion)
+        private static bool TryCreateByRefPostCallConversion(TypeSig proxyParameterElementType, TypeSig targetParameterElementType, bool isReverseMapping, out MethodReturnConversion returnConversion)
         {
-            var conversionCacheKey = BuildMethodReturnConversionCacheKey(proxyParameterElementType, targetParameterElementType, isReverseMapping: false, discriminator: "byref");
+            var conversionCacheKey = BuildMethodReturnConversionCacheKey(proxyParameterElementType, targetParameterElementType, isReverseMapping, discriminator: "byref");
             if (_currentExecutionContext?.TryGetMethodReturnConversion(conversionCacheKey, out var cachedConversion) == true)
             {
                 if (_currentProfile is not null)
@@ -9615,7 +9694,38 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 _currentProfile.ConversionPlanCacheMisses++;
             }
 
-            if (TryCreateReturnConversion(proxyParameterElementType, targetParameterElementType, out returnConversion))
+            if (isReverseMapping)
+            {
+                if (AreTypesEquivalent(proxyParameterElementType, targetParameterElementType))
+                {
+                    returnConversion = MethodReturnConversion.None();
+                    _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry(returnConversion));
+                    return true;
+                }
+
+                if (ShouldUseDuckChainForReverseArgument(targetParameterElementType) &&
+                    IsDuckChainingRequired(proxyParameterElementType, targetParameterElementType))
+                {
+                    returnConversion = MethodReturnConversion.ExtractDuckTypeInstance(targetParameterElementType, proxyParameterElementType);
+                    _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry(returnConversion));
+                    return true;
+                }
+
+                if (IsDuckChainingRequired(targetParameterElementType, proxyParameterElementType))
+                {
+                    returnConversion = MethodReturnConversion.DuckChainToProxy(proxyParameterElementType, targetParameterElementType);
+                    _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry(returnConversion));
+                    return true;
+                }
+
+                if (CanUseTypeConversion(targetParameterElementType, proxyParameterElementType))
+                {
+                    returnConversion = MethodReturnConversion.TypeConversion(targetParameterElementType, proxyParameterElementType);
+                    _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry(returnConversion));
+                    return true;
+                }
+            }
+            else if (TryCreateReturnConversion(proxyParameterElementType, targetParameterElementType, out returnConversion))
             {
                 _currentExecutionContext?.CacheMethodReturnConversion(conversionCacheKey, new MethodReturnConversionCacheEntry(returnConversion));
                 return true;
@@ -13573,6 +13683,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             internal static MethodReturnConversion DuckChainToProxy(TypeSig wrapperTypeSig, TypeSig innerTypeSig)
             {
                 return new MethodReturnConversion(MethodReturnConversionKind.DuckChainToProxy, wrapperTypeSig, innerTypeSig);
+            }
+
+            /// <summary>
+            /// Creates a conversion that extracts IDuckType.Instance.
+            /// </summary>
+            /// <param name="wrapperTypeSig">The wrapper type sig value.</param>
+            /// <param name="innerTypeSig">The inner type sig value.</param>
+            /// <returns>The result produced by this operation.</returns>
+            internal static MethodReturnConversion ExtractDuckTypeInstance(TypeSig wrapperTypeSig, TypeSig innerTypeSig)
+            {
+                return new MethodReturnConversion(MethodReturnConversionKind.ExtractDuckTypeInstance, wrapperTypeSig, innerTypeSig);
             }
 
             /// <summary>

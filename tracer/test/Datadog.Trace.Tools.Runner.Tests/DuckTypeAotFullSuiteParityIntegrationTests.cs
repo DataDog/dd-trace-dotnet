@@ -1038,8 +1038,9 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                  ? Environment.NewLine + string.Join(Environment.NewLine, repositoryAssemblyBuildFailures.Distinct(StringComparer.Ordinal).Take(10))
                  : string.Empty));
 
+        var proxyAssemblyPathOverrides = BuildProxyAssemblyPathOverrides(runnerAssemblyPath);
         var proxyAssemblyPaths = filteredMappings
-                                .Select(mapping => assemblyPathIndex[mapping.ProxyAssemblyName])
+                                .Select(mapping => ResolveProxyAssemblyPathForGeneration(mapping.ProxyAssemblyName, assemblyPathIndex[mapping.ProxyAssemblyName], proxyAssemblyPathOverrides))
                                 .Distinct(StringComparer.OrdinalIgnoreCase)
                                 .ToList();
 
@@ -1130,6 +1131,52 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         var targetFolders = new List<string> { isolatedTargetAssemblyDirectory };
 
         return new GenerateInput(sanitizedMapPath, proxyAssemblyPaths, targetFolders, targetFilters, excludedMappings);
+    }
+
+    /// <summary>
+    /// Builds proxy assembly path overrides for assemblies already loaded by the generator process.
+    /// </summary>
+    /// <param name="runnerAssemblyPath">The runner assembly path used to execute generation.</param>
+    /// <returns>The proxy assembly path overrides keyed by normalized assembly name.</returns>
+    private static Dictionary<string, string> BuildProxyAssemblyPathOverrides(string runnerAssemblyPath)
+    {
+        var overrides = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var runnerDirectory = Path.GetDirectoryName(runnerAssemblyPath);
+        if (string.IsNullOrWhiteSpace(runnerDirectory))
+        {
+            return overrides;
+        }
+
+        var datadogTracePath = Path.Combine(runnerDirectory!, "Datadog.Trace.dll");
+        if (File.Exists(datadogTracePath))
+        {
+            overrides["Datadog.Trace"] = datadogTracePath;
+        }
+
+        return overrides;
+    }
+
+    /// <summary>
+    /// Resolves the proxy assembly path passed to registry generation.
+    /// </summary>
+    /// <param name="proxyAssemblyName">The proxy assembly name.</param>
+    /// <param name="resolvedProxyAssemblyPath">The resolved proxy assembly path from parity input discovery.</param>
+    /// <param name="proxyAssemblyPathOverrides">The proxy assembly path overrides keyed by normalized assembly name.</param>
+    /// <returns>The proxy assembly path to pass to generation.</returns>
+    private static string ResolveProxyAssemblyPathForGeneration(
+        string proxyAssemblyName,
+        string resolvedProxyAssemblyPath,
+        IReadOnlyDictionary<string, string> proxyAssemblyPathOverrides)
+    {
+        var normalizedProxyAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(proxyAssemblyName);
+        if (!string.IsNullOrWhiteSpace(normalizedProxyAssemblyName) &&
+            proxyAssemblyPathOverrides.TryGetValue(normalizedProxyAssemblyName, out var overridePath) &&
+            File.Exists(overridePath))
+        {
+            return overridePath;
+        }
+
+        return resolvedProxyAssemblyPath;
     }
 
     private static Dictionary<string, string> BuildAssemblyPathIndex(IEnumerable<string> searchDirectories, bool includeCurrentProcessAssemblies)
