@@ -60,6 +60,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
+            ExpandOpenGenericMappings(resolvedMappings, genericTypeRoots.Values, errors);
             Measure(profile, static p => p.ValidateGenericClosureSeconds, static (p, value) => p.ValidateGenericClosureSeconds = value, () => ValidateGenericClosure(resolvedMappings.Values, errors));
 
             Measure(profile, static p => p.ValidateResolvedAssemblyReferencesSeconds, static (p, value) => p.ValidateResolvedAssemblyReferencesSeconds = value, () =>
@@ -199,6 +200,110 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
+        /// Expands open generic map-file rules into concrete closed mappings from closed generic roots.
+        /// </summary>
+        /// <param name="resolvedMappings">The resolved mappings value.</param>
+        /// <param name="genericTypeRoots">The closed generic type roots value.</param>
+        /// <param name="errors">The errors value.</param>
+        private static void ExpandOpenGenericMappings(
+            IDictionary<string, DuckTypeAotMapping> resolvedMappings,
+            IEnumerable<DuckTypeAotTypeReference> genericTypeRoots,
+            ICollection<string> errors)
+        {
+            var closedGenericTypeRoots = genericTypeRoots
+                                        .Where(root => DuckTypeAotNameHelpers.IsClosedGenericTypeName(root.TypeName))
+                                        .ToList();
+            if (closedGenericTypeRoots.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var mapping in resolvedMappings.Values.ToList())
+            {
+                if (!DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.ProxyTypeName) &&
+                    !DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.TargetTypeName))
+                {
+                    continue;
+                }
+
+                var expandedMappings = ExpandOpenGenericMapping(mapping, closedGenericTypeRoots, errors);
+                if (expandedMappings.Count == 0)
+                {
+                    continue;
+                }
+
+                _ = resolvedMappings.Remove(mapping.Key);
+                foreach (var expandedMapping in expandedMappings)
+                {
+                    resolvedMappings[expandedMapping.Key] = expandedMapping;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Expands one open generic mapping into closed mappings from matching closed generic target roots.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="closedGenericTypeRoots">The closed generic type roots value.</param>
+        /// <param name="errors">The errors value.</param>
+        /// <returns>The expanded closed mappings.</returns>
+        private static IReadOnlyList<DuckTypeAotMapping> ExpandOpenGenericMapping(
+            DuckTypeAotMapping mapping,
+            IReadOnlyList<DuckTypeAotTypeReference> closedGenericTypeRoots,
+            ICollection<string> errors)
+        {
+            var proxyIsOpen = DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.ProxyTypeName);
+            var targetIsOpen = DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.TargetTypeName);
+            if (!proxyIsOpen || !targetIsOpen)
+            {
+                return Array.Empty<DuckTypeAotMapping>();
+            }
+
+            var proxyArity = DuckTypeAotNameHelpers.GetDeclaredGenericArity(mapping.ProxyTypeName);
+            var targetArity = DuckTypeAotNameHelpers.GetDeclaredGenericArity(mapping.TargetTypeName);
+            if (proxyArity == 0 ||
+                targetArity == 0 ||
+                proxyArity != targetArity)
+            {
+                errors.Add(
+                    $"Mapping '{mapping.Key}' contains an open generic rule with incompatible arity. " +
+                    "Build-time expansion requires open proxy and target definitions with the same generic arity.");
+                return Array.Empty<DuckTypeAotMapping>();
+            }
+
+            var expandedMappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
+            foreach (var typeRoot in closedGenericTypeRoots)
+            {
+                if (!string.Equals(typeRoot.AssemblyName, mapping.TargetAssemblyName, StringComparison.OrdinalIgnoreCase) ||
+                    !DuckTypeAotNameHelpers.TrySplitClosedGenericTypeName(
+                        typeRoot.TypeName,
+                        out var targetGenericDefinitionName,
+                        out var genericArgumentsSuffix,
+                        out var genericArgumentCount) ||
+                    !string.Equals(targetGenericDefinitionName, mapping.TargetTypeName, StringComparison.Ordinal) ||
+                    genericArgumentCount != targetArity)
+                {
+                    continue;
+                }
+
+                var closedProxyTypeName = string.Concat(mapping.ProxyTypeName, genericArgumentsSuffix);
+                var expandedMapping = new DuckTypeAotMapping(
+                    closedProxyTypeName,
+                    mapping.ProxyAssemblyName,
+                    typeRoot.TypeName,
+                    typeRoot.AssemblyName,
+                    mapping.Mode,
+                    mapping.Source,
+                    mapping.ScenarioId);
+                expandedMappings[expandedMapping.Key] = expandedMapping;
+            }
+
+            return expandedMappings.Values
+                                   .OrderBy(item => item.Key, StringComparer.Ordinal)
+                                   .ToList();
+        }
+
+        /// <summary>
         /// Validates validate generic closure.
         /// </summary>
         /// <param name="mappings">The mappings value.</param>
@@ -216,8 +321,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                 errors.Add(
                     $"Mapping '{mapping.Key}' contains an open generic type. " +
-                    "NativeAOT generation requires closed proxy and target types. " +
-                    "Provide closed concrete mappings in --map-file and use --generic-instantiations for additional closed-generic roots.");
+                    "NativeAOT registry emission requires closed proxy and target types. " +
+                    "Use matching closed --generic-instantiations roots so open map rules can be expanded before emission.");
             }
         }
 

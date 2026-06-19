@@ -61,6 +61,8 @@ Mapping entry fields:
 4. `targetType`: required target type full name or assembly-qualified name.
 5. `targetAssembly`: optional when inferable from `targetType` assembly-qualified value.
 
+Open generic proxy/target rules are accepted as map-file input only when generation can expand them into closed mappings from matching closed `--generic-instantiations` roots. Generated registries and compatibility artifacts contain closed mappings.
+
 Example:
 
 ```json
