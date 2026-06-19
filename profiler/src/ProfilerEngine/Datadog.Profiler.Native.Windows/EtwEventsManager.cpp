@@ -37,9 +37,10 @@ EtwEventsManager::EtwEventsManager(
     _agentReplayEndpoint = pConfiguration->GetEtwReplayEndpoint();
     _threadsInfo.reserve(256);
     _parser = std::make_unique<ClrEventsParser>(
-        nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
-        nullptr,  // to avoid duplicates with what is done in EtwEventsHandler
+        nullptr, // to avoid duplicates with what is done in EtwEventsHandler
+        nullptr, // to avoid duplicates with what is done in EtwEventsHandler
         pGCSuspensionsListener,
+        pConfiguration,
         nullptr // no GC dump for .NET Framework (TODO: how to trigger it from ETW?)
         );
     _logger = std::make_shared<ProfilerLogger>();

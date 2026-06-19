@@ -10,7 +10,7 @@ Json:
         "String"
       ]
     },
-    "string"
+    "Missing.Type"
   ]
 }
 Expression: (
@@ -47,10 +47,10 @@ Expression: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = false;
+    var $dd_el_result = InstanceOfHelper.IsInstanceOf(this.String, "Missing.Type");
 
     return $dd_el_result;
 }
-Result: False
+Result: True
 Errors:
-EvaluationError { Expression = this.String is string, Message = 'string' is unknown type }
+EvaluationError { Expression = IsInstanceOf(this.String, "Missing.Type")), Message = 'Missing.Type' is unknown type }

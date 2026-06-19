@@ -5,9 +5,10 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage;
 
@@ -18,7 +19,7 @@ namespace Datadog.Trace.Ci.Coverage;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class CoverageReporter
 {
-    private static CoverageEventHandler _handler = TestOptimization.Instance.Settings.TestsSkippingEnabled == true ? new DefaultCoverageEventHandler() : new DefaultWithGlobalCoverageEventHandler();
+    private static CoverageEventHandler _handler = CreateDefaultHandler(TestOptimization.Instance.Settings);
 
     /// <summary>
     /// Gets or sets coverage handler
@@ -35,4 +36,19 @@ public static class CoverageReporter
     internal static CoverageContextContainer? Container => _handler.Container;
 
     internal static CoverageContextContainer GlobalContainer => _handler.GlobalContainer;
+
+    /// <summary>
+    /// Creates the default coverage event handler for the current CI Visibility coverage mode.
+    /// </summary>
+    internal static CoverageEventHandler CreateDefaultHandler(TestOptimizationSettings settings)
+    {
+        if (settings is null)
+        {
+            throw new ArgumentNullException(nameof(settings));
+        }
+
+        return settings.TestsSkippingEnabled == true && StringUtil.IsNullOrWhiteSpace(settings.CodeCoveragePath)
+                   ? new DefaultCoverageEventHandler()
+                   : new DefaultWithGlobalCoverageEventHandler();
+    }
 }

@@ -9,14 +9,25 @@ description: >-
 
 ## Overview
 
-libdatadog is consumed as prebuilt native binaries from GitHub releases. There are **two independent version pins** that may need updating:
+The native library is consumed as prebuilt binaries from GitHub releases of
+[**`DataDog/libdatadog-dotnet`**](https://github.com/DataDog/libdatadog-dotnet) — the .NET-specific
+distribution of libdatadog (a minimal feature preset: `profiling`, `crashtracker`, `symbolizer`,
+`library-config`). This is **not** upstream `DataDog/libdatadog`.
+
+> **Version scheme:** the pinned version is libdatadog-dotnet's **own** release version (e.g. `v1.3.5`),
+> which is distinct from the upstream libdatadog version it is built from (tracked by `LIBDATADOG_VERSION`
+> in that repo — e.g. libdatadog-dotnet `v1.3.5` is built from upstream libdatadog `v32.0.0`). Pin the
+> **libdatadog-dotnet** version here, not the upstream one.
+
+There are **two version pins** to update, both from the same libdatadog-dotnet release:
 
 | Platform | File | Hash type | Version format |
 |----------|------|-----------|----------------|
 | Linux/macOS | `build/cmake/FindLibdatadog.cmake` | SHA-256 | `v<MAJOR>.<MINOR>.<PATCH>` |
 | Windows | `build/vcpkg_local_ports/libdatadog/vcpkg.json` + `portfile.cmake` | SHA-512 | `<MAJOR>.<MINOR>.<PATCH>` (no `v` prefix) |
 
-These versions can differ (Windows may lag behind Linux/macOS). Confirm with the user which platforms to update.
+A libdatadog-dotnet release builds all 8 platform artifacts together, so the two pins should normally
+move to the **same** version in lockstep. Confirm with the user if they intend otherwise.
 
 ## Files to Modify
 
@@ -55,21 +66,21 @@ Artifact filenames:
 
 Ask the user for the target version, or check the latest release:
 ```
-https://github.com/DataDog/libdatadog/releases
+https://github.com/DataDog/libdatadog-dotnet/releases
 ```
 
 ### Step 2: Get hashes from the release page
 
 SHA-256 and SHA-512 checksums are published directly in the GitHub release notes. Either:
 
-1. Visit `https://github.com/DataDog/libdatadog/releases/tag/v<VERSION>` and copy from the checksums sections, or
+1. Visit `https://github.com/DataDog/libdatadog-dotnet/releases/tag/v<VERSION>` and copy from the checksums sections, or
 2. Run the helper script which fetches them via the GitHub API:
 
 ```bash
 bash .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh <VERSION>
 ```
 
-Where `<VERSION>` is without the `v` prefix (e.g. `33.0.0`).
+Where `<VERSION>` is without the `v` prefix (e.g. `1.3.5`).
 
 The release notes contain:
 - **SHA256 checksums** section → for `FindLibdatadog.cmake` (6 Linux/macOS artifacts)
@@ -110,10 +121,16 @@ These don't contain version strings but may need refreshing after a bump if the 
 
 CI will fail if the symbol list changes — re-run the Alpine symbol validation step and accept the new snapshot.
 
+Because libdatadog-dotnet ships a reduced feature set (no `data-pipeline`, `log`, `telemetry`,
+`ddsketch`, or `ffe`), its exported symbols are a strict subset of upstream libdatadog — so these
+snapshots reflect that smaller set. The glibc cap in `Build.Profiler.Steps.cs`
+(`libdatadog_profiling` ≤ 2.15 on x64, ≤ 2.17 on arm64) still applies and is unchanged by the source
+switch — libdatadog-dotnet x64 builds are capped at GLIBC 2.15, same as upstream.
+
 ## Optional Updates (doc-comment SHAs)
 
-Several files under `tracer/src/Datadog.Trace/LibDatadog/` have XML doc comments linking to a specific libdatadog git SHA (e.g. `60583218a8de6768f67d04fcd5bc6443f67f516b`). These are informational only and can be updated for traceability:
-- `VecU8.cs`, `ByteSlice.cs`, `CharSlice.cs`, `Error.cs`
+Several files under `tracer/src/Datadog.Trace/LibDatadog/` have XML doc comments linking to a specific upstream libdatadog git SHA (e.g. `60583218a8de6768f67d04fcd5bc6443f67f516b`). These are informational only and can be updated for traceability (use the upstream SHA the libdatadog-dotnet release was built from):
+- `VecU8.cs`, `CharSlice.cs`, `Error.cs`
 - `ServiceDiscovery/ResultTag.cs`, `ServiceDiscovery/TracerMemfdHandleResult.cs`
 
 ## Related Files (no changes needed, but useful context)
@@ -127,7 +144,7 @@ Several files under `tracer/src/Datadog.Trace/LibDatadog/` have XML doc comments
 
 ## Important Notes
 
-- The CMake file uses **SHA-256** hashes; the vcpkg portfile uses **SHA-512** hashes. Both are published in the GitHub release notes.
-- The CMake version has a `v` prefix (`v32.0.0`); vcpkg does not (`30.0.0`).
+- The CMake file uses **SHA-256** hashes; the vcpkg portfile uses **SHA-512** hashes. Both are published in the libdatadog-dotnet GitHub release notes (under `## Checksums`).
+- The CMake version has a `v` prefix (`v1.3.5`); vcpkg does not (`1.3.5`).
 - If a release doesn't have all platform artifacts, the bump may need to wait or be partial.
 - After bumping, CI will validate the hashes on all platforms. Hash mismatches cause clear build failures.

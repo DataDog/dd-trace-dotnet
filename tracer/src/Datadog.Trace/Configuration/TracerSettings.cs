@@ -70,7 +70,11 @@ namespace Datadog.Trace.Configuration
                     {
                         null or "none" => new HashSet<string>(),
                         "all" => DefaultExperimentalFeatures,
-                        string s => new HashSet<string>(s.Split([','], StringSplitOptions.RemoveEmptyEntries)),
+#if NET6_0_OR_GREATER
+                        string s => new HashSet<string>(s.Split(commaSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)),
+#else
+                        string s => new HashSet<string>(s.Split(commaSeparator, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim())),
+#endif
                     };
 
             PropagateProcessTags = config

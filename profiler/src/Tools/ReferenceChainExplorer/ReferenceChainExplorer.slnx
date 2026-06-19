@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ReferenceChainExplorer/ReferenceChainExplorer.csproj" />
+  <Project Path="ReferenceChainModel/ReferenceChainModel.csproj" />
+</Solution>

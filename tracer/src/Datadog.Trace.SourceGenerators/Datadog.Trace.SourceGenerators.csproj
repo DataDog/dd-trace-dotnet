@@ -14,8 +14,16 @@
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
     <PackageReference Include="System.Text.Json" Version="10.0.7" PrivateAssets="all" />
   </ItemGroup>
-  <ItemGroup>    
-    <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />    
+  <ItemGroup>
+    <!-- YamlReader/EquatableArray live in the Nuke _build project so the native-config
+         validator (Build target) can compile them: _build's Docker build context COPYs only
+         _build, so the shared file must live there and be linked *into* this generator, not
+         the other way around (the reverse direction fails with CS2001 in build_* jobs). -->
+    <Compile Include="..\..\build\_build\NativeValidation\YamlReader.cs" Link="Helpers\YamlReader.cs" />
+    <Compile Include="..\..\build\_build\NativeValidation\EquatableArray.cs" Link="Helpers\EquatableArray.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Datadog.Trace\ClrProfiler\InstrumentationCategory.cs" Link="InstrumentationDefinitions\InstrumentationCategory.cs" />
     <Compile Include="..\Datadog.Trace\Vendors\MessagePack\Attributes.cs">
       <Link>MessagePack\Attributes.cs</Link>
     </Compile>

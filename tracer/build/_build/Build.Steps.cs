@@ -1611,6 +1611,7 @@ partial class Build
                           // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
                           // /nowarn:NETSDK1138 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
                           MSBuild(x => x
+                                      .SetMSBuildPath()
                                       .SetTargetPath(MsBuildProject)
                                       .SetTargets(target)
                                       .SetConfiguration(BuildConfiguration)
@@ -1643,6 +1644,7 @@ partial class Build
                   Logger.Information("Building sample {SampleName} with ApiVersion {ApiVersion} using MSBuild", SampleName, ApiVersion);
 
                   MSBuild(x => x.SetTargetPath(samples)
+                                .SetMSBuildPath()
                                 .SetTargets("Restore", "Build")
                                 .SetConfiguration(BuildConfiguration)
                                 .SetProperty("ApiVersion", ApiVersion)
