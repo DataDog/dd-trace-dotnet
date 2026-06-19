@@ -82,7 +82,7 @@ Current generated bootstrap behavior:
 
 1. It registers mappings by constructing direct `Func<object?, object?>` delegates for generated object bridge activators and calling the delegate overloads (`RegisterAotProxy(Type, Type, Type, Func<object?, object?>)` and `RegisterAotReverseProxy(Type, Type, Type, Func<object?, object?>)`).
 2. Failure registrations are emitted as generated throwers and registered through direct `Action` delegates.
-3. The `RuntimeMethodHandle` registration overloads remain for legacy/internal callers and focused engine tests, but the generated NativeAOT bootstrap intentionally does not use them.
+3. The `RuntimeMethodHandle` registration overloads remain for legacy/internal callers and focused engine tests. They accept object-bridge activator handles only; typed activator handles are rejected so NativeAOT does not depend on runtime generic binding or reflective invocation. The generated NativeAOT bootstrap intentionally does not use method handles.
 4. The public manual registration overloads remain for compatibility but are deprecated for application code. The supported model is generated bootstrap only.
 
 ## Proxy Definition Authoring
@@ -149,6 +149,10 @@ Reverse mappings are supported and are typically declared with type-level `[Duck
   "targetAssembly": "My.Target.Assembly"
 }
 ```
+
+### Base-Type Fallback
+
+NativeAOT generation preserves the dynamic duck-typing `FallbackToBaseTypes` behavior for property, field, and generated accessor binding paths. It does not extend fallback to arbitrary method binding. If a proxy method needs a private method declared on a base type, add an explicit supported mapping or expose the member through a property/field-style binding.
 
 ## Mapping Sources
 
@@ -811,6 +815,8 @@ Current diagnostic codes emitted by generator:
 5. `DTAOT0209` `incompatible_method_signature`
 6. `DTAOT0210` `unsupported_proxy_constructor`
 7. `DTAOT0211` `unsupported_closed_generic_mapping`
+8. `DTAOT0212` `missing_target_method` for proxy setters targeting read-only properties
+9. `DTAOT0214` `incompatible_method_signature` for reverse custom attribute named arguments
 
 Bible catalog `expectedStatus` overrides:
 
@@ -914,7 +920,9 @@ Use all of these gates together.
    1. `DD_RUN_DUCKTYPE_AOT_FULL_SUITE_PARITY=1 ... DuckTypeAotFullSuiteParityIntegrationTests`
 3. AOT processor and NativeAOT integration:
    1. `... --filter FullyQualifiedName~DuckTypeAot`
-4. Optional explicit verify-compat step against generated artifacts.
+4. AOT bootstrap performance guard:
+   1. `DuckTypeAotRegistryBootstrapBenchmark`
+5. Optional explicit verify-compat step against generated artifacts.
 
 ## Cross-Reference
 

@@ -510,6 +510,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var runtimeRegistrations = BuildRuntimeRegistrations(
                 moduleDef,
                 mappingResolutionResult.Mappings,
+                mappingResolutionResult.GenericTypeRoots,
                 targetTypeIndex,
                 proxyModulesByAssemblyName,
                 targetModulesByAssemblyName);
@@ -814,7 +815,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var normalizedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(entry.Key);
                 if (string.IsNullOrWhiteSpace(normalizedAssemblyName) ||
                     string.IsNullOrWhiteSpace(entry.Value) ||
-                    !File.Exists(entry.Value))
+                    !File.Exists(entry.Value) ||
+                    combinedPaths.ContainsKey(normalizedAssemblyName))
                 {
                     continue;
                 }
@@ -886,11 +888,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// Builds the full runtime registration set emitted into the generated registry.
         /// </summary>
         /// <param name="canonicalMappings">The canonical mappings value.</param>
+        /// <param name="genericTypeRoots">The closed generic type roots value.</param>
         /// <param name="targetTypeIndex">The target type index value.</param>
         /// <returns>The resulting runtime registration set.</returns>
         private static IReadOnlyList<DuckTypeAotRuntimeRegistration> BuildRuntimeRegistrations(
             ModuleDef moduleDef,
             IReadOnlyList<DuckTypeAotMapping> canonicalMappings,
+            IReadOnlyList<DuckTypeAotTypeReference> genericTypeRoots,
             TargetTypeIndex targetTypeIndex,
             IReadOnlyDictionary<string, ModuleDefMD> proxyModulesByAssemblyName,
             IReadOnlyDictionary<string, ModuleDefMD> targetModulesByAssemblyName)
@@ -910,7 +914,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var canonicalTargetKey = BuildCanonicalTargetCacheKey(mapping);
                 if (!aliasPlansByCanonicalTargetKey.TryGetValue(canonicalTargetKey, out var aliasPlan))
                 {
-                    aliasPlan = BuildCanonicalTargetAliasPlan(mapping, targetTypeIndex);
+                    aliasPlan = BuildCanonicalTargetAliasPlan(mapping, targetTypeIndex, genericTypeRoots);
                     aliasPlansByCanonicalTargetKey[canonicalTargetKey] = aliasPlan;
                 }
 
@@ -1044,7 +1048,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     return false;
                 }
 
-                plan = AliasSemanticBindingPlan.ForStructCopy(structCopyBindings, closedGenericTargetTypeArguments);
+                plan = AliasSemanticBindingPlan.ForStructCopy(targetType, structCopyBindings, closedGenericTargetTypeArguments);
                 return true;
             }
 
@@ -1066,7 +1070,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            plan = AliasSemanticBindingPlan.ForForward(forwardBindings, closedGenericTargetTypeArguments);
+            plan = AliasSemanticBindingPlan.ForForward(targetType, forwardBindings, closedGenericTargetTypeArguments);
             return true;
         }
 
@@ -1171,8 +1175,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             return canonicalPlan.Kind switch
             {
-                AliasSemanticBindingPlanKind.Forward => AreForwardBindingSetsEquivalent(canonicalPlan.ForwardBindings!, aliasPlan.ForwardBindings!),
-                AliasSemanticBindingPlanKind.StructCopy => AreStructCopyBindingSetsEquivalent(canonicalPlan.StructCopyBindings!, aliasPlan.StructCopyBindings!),
+                AliasSemanticBindingPlanKind.Forward => AreForwardBindingSetsEquivalent(
+                    canonicalPlan.TargetType,
+                    canonicalPlan.ForwardBindings!,
+                    canonicalPlan.ClosedGenericTargetTypeArguments,
+                    aliasPlan.TargetType,
+                    aliasPlan.ForwardBindings!,
+                    aliasPlan.ClosedGenericTargetTypeArguments),
+                AliasSemanticBindingPlanKind.StructCopy => AreStructCopyBindingSetsEquivalent(
+                    canonicalPlan.TargetType,
+                    canonicalPlan.StructCopyBindings!,
+                    canonicalPlan.ClosedGenericTargetTypeArguments,
+                    aliasPlan.TargetType,
+                    aliasPlan.StructCopyBindings!,
+                    aliasPlan.ClosedGenericTargetTypeArguments),
                 _ => false
             };
         }
@@ -1180,10 +1196,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <summary>
         /// Determines whether two forward binding sets target the same members with the same conversion plan.
         /// </summary>
+        /// <param name="canonicalTargetType">The canonical target type.</param>
         /// <param name="canonicalBindings">The canonical binding set.</param>
+        /// <param name="canonicalClosedGenericTargetTypeArguments">The canonical closed generic target type arguments.</param>
+        /// <param name="aliasTargetType">The alias target type.</param>
         /// <param name="aliasBindings">The alias binding set.</param>
+        /// <param name="aliasClosedGenericTargetTypeArguments">The alias closed generic target type arguments.</param>
         /// <returns>true when the binding sets are equivalent; otherwise, false.</returns>
-        private static bool AreForwardBindingSetsEquivalent(IReadOnlyList<ForwardBinding> canonicalBindings, IReadOnlyList<ForwardBinding> aliasBindings)
+        private static bool AreForwardBindingSetsEquivalent(
+            TypeDef canonicalTargetType,
+            IReadOnlyList<ForwardBinding> canonicalBindings,
+            IReadOnlyList<TypeSig>? canonicalClosedGenericTargetTypeArguments,
+            TypeDef aliasTargetType,
+            IReadOnlyList<ForwardBinding> aliasBindings,
+            IReadOnlyList<TypeSig>? aliasClosedGenericTargetTypeArguments)
         {
             if (canonicalBindings.Count != aliasBindings.Count)
             {
@@ -1211,7 +1237,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     if (canonicalBinding.TargetMethod is null ||
                         aliasBinding.TargetMethod is null ||
-                        !AreMethodTargetsEquivalent(canonicalBinding.TargetMethod, aliasBinding.TargetMethod))
+                        !AreMethodTargetsEquivalent(
+                            canonicalBinding.TargetMethod,
+                            canonicalTargetType,
+                            canonicalClosedGenericTargetTypeArguments,
+                            aliasBinding.TargetMethod,
+                            aliasTargetType,
+                            aliasClosedGenericTargetTypeArguments))
                     {
                         return false;
                     }
@@ -1228,6 +1260,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 if (!AreForwardMethodBindingInfosEquivalent(canonicalBinding.MethodBinding, aliasBinding.MethodBinding) ||
+                    !AreTrailingOptionalTargetDefaultsEquivalent(
+                        canonicalBinding.TargetMethod,
+                        canonicalBinding.MethodBinding,
+                        canonicalClosedGenericTargetTypeArguments,
+                        aliasBinding.TargetMethod,
+                        aliasBinding.MethodBinding,
+                        aliasClosedGenericTargetTypeArguments) ||
                     !AreForwardFieldBindingInfosEquivalent(canonicalBinding.FieldBinding, aliasBinding.FieldBinding))
                 {
                     return false;
@@ -1240,10 +1279,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <summary>
         /// Determines whether two DuckCopy binding sets target the same members with the same conversion plan.
         /// </summary>
+        /// <param name="canonicalTargetType">The canonical target type.</param>
         /// <param name="canonicalBindings">The canonical binding set.</param>
+        /// <param name="canonicalClosedGenericTargetTypeArguments">The canonical closed generic target type arguments.</param>
+        /// <param name="aliasTargetType">The alias target type.</param>
         /// <param name="aliasBindings">The alias binding set.</param>
+        /// <param name="aliasClosedGenericTargetTypeArguments">The alias closed generic target type arguments.</param>
         /// <returns>true when the binding sets are equivalent; otherwise, false.</returns>
-        private static bool AreStructCopyBindingSetsEquivalent(IReadOnlyList<StructCopyFieldBinding> canonicalBindings, IReadOnlyList<StructCopyFieldBinding> aliasBindings)
+        private static bool AreStructCopyBindingSetsEquivalent(
+            TypeDef canonicalTargetType,
+            IReadOnlyList<StructCopyFieldBinding> canonicalBindings,
+            IReadOnlyList<TypeSig>? canonicalClosedGenericTargetTypeArguments,
+            TypeDef aliasTargetType,
+            IReadOnlyList<StructCopyFieldBinding> aliasBindings,
+            IReadOnlyList<TypeSig>? aliasClosedGenericTargetTypeArguments)
         {
             if (canonicalBindings.Count != aliasBindings.Count)
             {
@@ -1272,7 +1321,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     if (canonicalBinding.SourceProperty is null ||
                         aliasBinding.SourceProperty is null ||
-                        !ArePropertyTargetsEquivalent(canonicalBinding.SourceProperty, aliasBinding.SourceProperty))
+                        !ArePropertyTargetsEquivalent(
+                            canonicalBinding.SourceProperty,
+                            canonicalTargetType,
+                            canonicalClosedGenericTargetTypeArguments,
+                            aliasBinding.SourceProperty,
+                            aliasTargetType,
+                            aliasClosedGenericTargetTypeArguments))
                     {
                         return false;
                     }
@@ -1296,11 +1351,32 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// Determines whether two target methods represent the same effective dispatch target.
         /// </summary>
         /// <param name="canonicalMethod">The canonical target method.</param>
+        /// <param name="canonicalTargetType">The canonical target type.</param>
+        /// <param name="canonicalClosedGenericTargetTypeArguments">The canonical closed generic target type arguments.</param>
         /// <param name="aliasMethod">The alias target method.</param>
-        /// <returns>true when the alias method is the same method or a virtual override; otherwise, false.</returns>
-        private static bool AreMethodTargetsEquivalent(MethodDef canonicalMethod, MethodDef aliasMethod)
+        /// <param name="aliasTargetType">The alias target type.</param>
+        /// <param name="aliasClosedGenericTargetTypeArguments">The alias closed generic target type arguments.</param>
+        /// <returns>true when the alias method is the same method, a virtual override, or a concrete implementation of the canonical interface method; otherwise, false.</returns>
+        private static bool AreMethodTargetsEquivalent(
+            MethodDef canonicalMethod,
+            TypeDef canonicalTargetType,
+            IReadOnlyList<TypeSig>? canonicalClosedGenericTargetTypeArguments,
+            MethodDef aliasMethod,
+            TypeDef aliasTargetType,
+            IReadOnlyList<TypeSig>? aliasClosedGenericTargetTypeArguments)
         {
             if (string.Equals(BuildMethodIdentityKey(canonicalMethod), BuildMethodIdentityKey(aliasMethod), StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (IsInterfaceImplementationMethodTargetEquivalent(
+                    canonicalMethod,
+                    canonicalTargetType,
+                    canonicalClosedGenericTargetTypeArguments,
+                    aliasMethod,
+                    aliasTargetType,
+                    aliasClosedGenericTargetTypeArguments))
             {
                 return true;
             }
@@ -1316,16 +1392,448 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return string.Equals(canonicalMethod.Name, aliasMethod.Name, StringComparison.Ordinal) &&
-                   string.Equals(canonicalMethod.MethodSig?.ToString(), aliasMethod.MethodSig?.ToString(), StringComparison.Ordinal);
+                   AreEffectiveMethodSignaturesEquivalent(
+                       canonicalMethod.MethodSig,
+                       canonicalClosedGenericTargetTypeArguments,
+                       aliasMethod.MethodSig,
+                       aliasClosedGenericTargetTypeArguments);
+        }
+
+        /// <summary>
+        /// Determines whether an alias target method is a concrete implementation of the canonical interface method.
+        /// </summary>
+        /// <param name="canonicalMethod">The canonical target method.</param>
+        /// <param name="canonicalTargetType">The canonical target type.</param>
+        /// <param name="canonicalClosedGenericTargetTypeArguments">The canonical closed generic target type arguments.</param>
+        /// <param name="aliasMethod">The alias target method.</param>
+        /// <param name="aliasTargetType">The alias target type.</param>
+        /// <param name="aliasClosedGenericTargetTypeArguments">The alias closed generic target type arguments.</param>
+        /// <returns>true when the alias method implements the canonical interface method shape; otherwise, false.</returns>
+        private static bool IsInterfaceImplementationMethodTargetEquivalent(
+            MethodDef canonicalMethod,
+            TypeDef canonicalTargetType,
+            IReadOnlyList<TypeSig>? canonicalClosedGenericTargetTypeArguments,
+            MethodDef aliasMethod,
+            TypeDef aliasTargetType,
+            IReadOnlyList<TypeSig>? aliasClosedGenericTargetTypeArguments)
+        {
+            if (!canonicalTargetType.IsInterface ||
+                !IsAssignableFrom(canonicalTargetType, aliasTargetType))
+            {
+                return false;
+            }
+
+            var canonicalMethodName = GetEffectiveInterfaceMethodName(canonicalMethod.Name);
+            var aliasMethodName = GetEffectiveInterfaceMethodName(aliasMethod.Name);
+            if (!string.Equals(canonicalMethodName, aliasMethodName, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (!AreEffectiveMethodSignaturesEquivalent(
+                    canonicalMethod.MethodSig,
+                    canonicalClosedGenericTargetTypeArguments,
+                    aliasMethod.MethodSig,
+                    aliasClosedGenericTargetTypeArguments))
+            {
+                return false;
+            }
+
+            return TryResolveInterfaceImplementationMethod(
+                       canonicalMethod,
+                       canonicalTargetType,
+                       canonicalClosedGenericTargetTypeArguments,
+                       aliasClosedGenericTargetTypeArguments,
+                       aliasTargetType,
+                       out var implementationMethod) &&
+                   string.Equals(BuildMethodIdentityKey(implementationMethod), BuildMethodIdentityKey(aliasMethod), StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Resolves the concrete method that implements a canonical interface method on an alias target type.
+        /// </summary>
+        /// <param name="canonicalMethod">The canonical interface method.</param>
+        /// <param name="canonicalTargetType">The canonical interface type.</param>
+        /// <param name="canonicalClosedGenericTargetTypeArguments">The canonical closed generic target type arguments.</param>
+        /// <param name="aliasClosedGenericTargetTypeArguments">The alias closed generic target type arguments.</param>
+        /// <param name="aliasTargetType">The alias target type.</param>
+        /// <param name="implementationMethod">The resolved implementation method.</param>
+        /// <returns>true when the implementing method can be resolved; otherwise, false.</returns>
+        private static bool TryResolveInterfaceImplementationMethod(
+            MethodDef canonicalMethod,
+            TypeDef canonicalTargetType,
+            IReadOnlyList<TypeSig>? canonicalClosedGenericTargetTypeArguments,
+            IReadOnlyList<TypeSig>? aliasClosedGenericTargetTypeArguments,
+            TypeDef aliasTargetType,
+            out MethodDef implementationMethod)
+        {
+            implementationMethod = null!;
+            if (!TryResolveInterfaceImplementationType(canonicalTargetType, aliasTargetType, out var implementationType))
+            {
+                return false;
+            }
+
+            foreach (var method in implementationType.Methods)
+            {
+                if (TryGetExplicitInterfaceImplementation(method, canonicalMethod, canonicalTargetType, canonicalClosedGenericTargetTypeArguments, out implementationMethod))
+                {
+                    return true;
+                }
+            }
+
+            if (TryResolveImplicitInterfaceImplementationMethod(
+                    canonicalMethod,
+                    canonicalClosedGenericTargetTypeArguments,
+                    aliasClosedGenericTargetTypeArguments,
+                    implementationType,
+                    out implementationMethod))
+            {
+                implementationMethod = ResolveMostDerivedVirtualOverride(implementationMethod, aliasTargetType, aliasClosedGenericTargetTypeArguments);
+                return true;
+            }
+
+            var currentType = implementationType.BaseType?.ResolveTypeDef();
+            while (currentType is not null)
+            {
+                foreach (var method in currentType.Methods)
+                {
+                    if (TryGetExplicitInterfaceImplementation(method, canonicalMethod, canonicalTargetType, canonicalClosedGenericTargetTypeArguments, out implementationMethod))
+                    {
+                        return true;
+                    }
+                }
+
+                currentType = currentType.BaseType?.ResolveTypeDef();
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Resolves the most-derived override for an implementation method on the alias target type.
+        /// </summary>
+        /// <param name="implementationMethod">The base implementation method.</param>
+        /// <param name="aliasTargetType">The alias target type.</param>
+        /// <param name="aliasClosedGenericTargetTypeArguments">The alias closed generic target type arguments.</param>
+        /// <returns>The most-derived override when one exists; otherwise the original implementation method.</returns>
+        private static MethodDef ResolveMostDerivedVirtualOverride(
+            MethodDef implementationMethod,
+            TypeDef aliasTargetType,
+            IReadOnlyList<TypeSig>? aliasClosedGenericTargetTypeArguments)
+        {
+            if (!implementationMethod.IsVirtual)
+            {
+                return implementationMethod;
+            }
+
+            var currentType = aliasTargetType;
+            while (currentType is not null && !ReferenceEquals(currentType, implementationMethod.DeclaringType))
+            {
+                foreach (var candidate in currentType.Methods)
+                {
+                    if (candidate.IsStatic ||
+                        !candidate.IsVirtual ||
+                        candidate.IsNewSlot ||
+                        !string.Equals(candidate.Name, implementationMethod.Name, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    if (AreEffectiveMethodSignaturesEquivalent(
+                            candidate.MethodSig,
+                            aliasClosedGenericTargetTypeArguments,
+                            implementationMethod.MethodSig,
+                            aliasClosedGenericTargetTypeArguments))
+                    {
+                        return candidate;
+                    }
+                }
+
+                currentType = currentType.BaseType?.ResolveTypeDef();
+            }
+
+            return implementationMethod;
+        }
+
+        /// <summary>
+        /// Resolves the type in the alias hierarchy that introduces the canonical interface contract.
+        /// </summary>
+        /// <param name="canonicalTargetType">The canonical interface type.</param>
+        /// <param name="aliasTargetType">The alias target type.</param>
+        /// <param name="implementationType">The implementation type.</param>
+        /// <returns>true when the implementation type can be resolved; otherwise, false.</returns>
+        private static bool TryResolveInterfaceImplementationType(TypeDef canonicalTargetType, TypeDef aliasTargetType, out TypeDef implementationType)
+        {
+            var currentType = aliasTargetType;
+            while (currentType is not null)
+            {
+                foreach (var interfaceImpl in currentType.Interfaces)
+                {
+                    var interfaceType = interfaceImpl.Interface.ResolveTypeDef();
+                    if (interfaceType is not null && IsAssignableFrom(canonicalTargetType, interfaceType))
+                    {
+                        implementationType = currentType;
+                        return true;
+                    }
+                }
+
+                currentType = currentType.BaseType?.ResolveTypeDef();
+            }
+
+            implementationType = null!;
+            return false;
+        }
+
+        /// <summary>
+        /// Resolves an explicit interface implementation method when it targets the canonical interface method.
+        /// </summary>
+        /// <param name="method">The method to inspect.</param>
+        /// <param name="canonicalMethod">The canonical interface method.</param>
+        /// <param name="canonicalTargetType">The canonical interface type.</param>
+        /// <param name="canonicalClosedGenericTargetTypeArguments">The canonical closed generic target type arguments.</param>
+        /// <param name="implementationMethod">The implementation method.</param>
+        /// <returns>true when the method explicitly implements the canonical interface method; otherwise, false.</returns>
+        private static bool TryGetExplicitInterfaceImplementation(
+            MethodDef method,
+            MethodDef canonicalMethod,
+            TypeDef canonicalTargetType,
+            IReadOnlyList<TypeSig>? canonicalClosedGenericTargetTypeArguments,
+            out MethodDef implementationMethod)
+        {
+            foreach (var methodOverride in method.Overrides)
+            {
+                if (DoesMethodOverrideTargetInterfaceMethod(
+                        methodOverride.MethodDeclaration,
+                        canonicalMethod,
+                        canonicalTargetType,
+                        canonicalClosedGenericTargetTypeArguments))
+                {
+                    implementationMethod = method;
+                    return true;
+                }
+            }
+
+            implementationMethod = null!;
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether a method override declaration targets the canonical interface method.
+        /// </summary>
+        /// <param name="methodDeclaration">The override method declaration.</param>
+        /// <param name="canonicalMethod">The canonical interface method.</param>
+        /// <param name="canonicalTargetType">The canonical interface type.</param>
+        /// <param name="canonicalClosedGenericTargetTypeArguments">The canonical closed generic target type arguments.</param>
+        /// <returns>true when the override declaration targets the canonical method; otherwise, false.</returns>
+        private static bool DoesMethodOverrideTargetInterfaceMethod(
+            IMethodDefOrRef methodDeclaration,
+            MethodDef canonicalMethod,
+            TypeDef canonicalTargetType,
+            IReadOnlyList<TypeSig>? canonicalClosedGenericTargetTypeArguments)
+        {
+            var declarationMethod = methodDeclaration.ResolveMethodDef();
+            if (declarationMethod?.DeclaringType is null ||
+                !IsAssignableFrom(canonicalTargetType, declarationMethod.DeclaringType))
+            {
+                return false;
+            }
+
+            return string.Equals(GetEffectiveInterfaceMethodName(declarationMethod.Name), GetEffectiveInterfaceMethodName(canonicalMethod.Name), StringComparison.Ordinal) &&
+                   AreEffectiveMethodSignaturesEquivalent(
+                       declarationMethod.MethodSig,
+                       canonicalClosedGenericTargetTypeArguments,
+                       canonicalMethod.MethodSig,
+                       canonicalClosedGenericTargetTypeArguments);
+        }
+
+        /// <summary>
+        /// Resolves the implicit public method that implements the canonical interface method.
+        /// </summary>
+        /// <param name="canonicalMethod">The canonical interface method.</param>
+        /// <param name="canonicalClosedGenericTargetTypeArguments">The canonical closed generic target type arguments.</param>
+        /// <param name="aliasClosedGenericTargetTypeArguments">The alias closed generic target type arguments.</param>
+        /// <param name="implementationType">The type that introduces the interface contract.</param>
+        /// <param name="implementationMethod">The implementation method.</param>
+        /// <returns>true when an implicit implementation can be resolved; otherwise, false.</returns>
+        private static bool TryResolveImplicitInterfaceImplementationMethod(
+            MethodDef canonicalMethod,
+            IReadOnlyList<TypeSig>? canonicalClosedGenericTargetTypeArguments,
+            IReadOnlyList<TypeSig>? aliasClosedGenericTargetTypeArguments,
+            TypeDef implementationType,
+            out MethodDef implementationMethod)
+        {
+            var currentType = implementationType;
+            while (currentType is not null)
+            {
+                foreach (var method in currentType.Methods)
+                {
+                    if (IsImplicitInterfaceImplementationMethod(method, canonicalMethod, canonicalClosedGenericTargetTypeArguments, aliasClosedGenericTargetTypeArguments))
+                    {
+                        implementationMethod = method;
+                        return true;
+                    }
+                }
+
+                currentType = currentType.BaseType?.ResolveTypeDef();
+            }
+
+            implementationMethod = null!;
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether a public method can implicitly implement the canonical interface method.
+        /// </summary>
+        /// <param name="method">The candidate implementation method.</param>
+        /// <param name="canonicalMethod">The canonical interface method.</param>
+        /// <param name="canonicalClosedGenericTargetTypeArguments">The canonical closed generic target type arguments.</param>
+        /// <param name="aliasClosedGenericTargetTypeArguments">The alias closed generic target type arguments.</param>
+        /// <returns>true when the method can implicitly implement the interface method; otherwise, false.</returns>
+        private static bool IsImplicitInterfaceImplementationMethod(
+            MethodDef method,
+            MethodDef canonicalMethod,
+            IReadOnlyList<TypeSig>? canonicalClosedGenericTargetTypeArguments,
+            IReadOnlyList<TypeSig>? aliasClosedGenericTargetTypeArguments)
+        {
+            return !method.IsStatic &&
+                   !method.IsConstructor &&
+                   method.IsPublic &&
+                   string.Equals(method.Name, canonicalMethod.Name, StringComparison.Ordinal) &&
+                   AreEffectiveMethodSignaturesEquivalent(
+                       method.MethodSig,
+                       aliasClosedGenericTargetTypeArguments,
+                       canonicalMethod.MethodSig,
+                       canonicalClosedGenericTargetTypeArguments);
+        }
+
+        /// <summary>
+        /// Gets the method name used to compare interface declarations with concrete or explicit implementations.
+        /// </summary>
+        /// <param name="methodName">The method name value.</param>
+        /// <returns>The effective method name.</returns>
+        private static string GetEffectiveInterfaceMethodName(string methodName)
+        {
+            var separatorIndex = methodName.LastIndexOf('.');
+            return separatorIndex < 0 || separatorIndex == methodName.Length - 1
+                       ? methodName
+                       : methodName.Substring(separatorIndex + 1);
+        }
+
+        /// <summary>
+        /// Determines whether two method signatures match after substituting closed generic target type arguments.
+        /// </summary>
+        /// <param name="leftMethodSig">The left method signature.</param>
+        /// <param name="leftClosedGenericTargetTypeArguments">The left closed generic target type arguments.</param>
+        /// <param name="rightMethodSig">The right method signature.</param>
+        /// <param name="rightClosedGenericTargetTypeArguments">The right closed generic target type arguments.</param>
+        /// <returns>true when the effective signatures are equivalent; otherwise, false.</returns>
+        private static bool AreEffectiveMethodSignaturesEquivalent(
+            MethodSig? leftMethodSig,
+            IReadOnlyList<TypeSig>? leftClosedGenericTargetTypeArguments,
+            MethodSig? rightMethodSig,
+            IReadOnlyList<TypeSig>? rightClosedGenericTargetTypeArguments)
+        {
+            if (leftMethodSig is null || rightMethodSig is null)
+            {
+                return leftMethodSig is null && rightMethodSig is null;
+            }
+
+            if (leftMethodSig.HasThis != rightMethodSig.HasThis ||
+                leftMethodSig.ExplicitThis != rightMethodSig.ExplicitThis ||
+                leftMethodSig.Generic != rightMethodSig.Generic ||
+                leftMethodSig.GenParamCount != rightMethodSig.GenParamCount ||
+                leftMethodSig.Params.Count != rightMethodSig.Params.Count)
+            {
+                return false;
+            }
+
+            var leftReturnType = SubstituteTypeAndMethodGenericTypeArguments(
+                leftMethodSig.RetType,
+                leftClosedGenericTargetTypeArguments,
+                closedGenericMethodArguments: null);
+            var rightReturnType = SubstituteTypeAndMethodGenericTypeArguments(
+                rightMethodSig.RetType,
+                rightClosedGenericTargetTypeArguments,
+                closedGenericMethodArguments: null);
+            if (!AreTypesEquivalent(leftReturnType, rightReturnType))
+            {
+                return false;
+            }
+
+            for (var parameterIndex = 0; parameterIndex < leftMethodSig.Params.Count; parameterIndex++)
+            {
+                var leftParameterType = SubstituteTypeAndMethodGenericTypeArguments(
+                    leftMethodSig.Params[parameterIndex],
+                    leftClosedGenericTargetTypeArguments,
+                    closedGenericMethodArguments: null);
+                var rightParameterType = SubstituteTypeAndMethodGenericTypeArguments(
+                    rightMethodSig.Params[parameterIndex],
+                    rightClosedGenericTargetTypeArguments,
+                    closedGenericMethodArguments: null);
+                if (!AreTypesEquivalent(leftParameterType, rightParameterType))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Builds a method signature key after substituting closed generic target type arguments.
+        /// </summary>
+        /// <param name="methodSig">The method signature.</param>
+        /// <param name="closedGenericTargetTypeArguments">The closed generic target type arguments.</param>
+        /// <returns>The effective method signature key.</returns>
+        private static string BuildEffectiveMethodSignatureKey(MethodSig? methodSig, IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments)
+        {
+            if (methodSig is null)
+            {
+                return string.Empty;
+            }
+
+            var returnType = SubstituteTypeAndMethodGenericTypeArguments(
+                methodSig.RetType,
+                closedGenericTargetTypeArguments,
+                closedGenericMethodArguments: null);
+
+            var parameterTypes = methodSig.Params.Select(
+                parameterType => SubstituteTypeAndMethodGenericTypeArguments(
+                    parameterType,
+                    closedGenericTargetTypeArguments,
+                    closedGenericMethodArguments: null));
+
+            return string.Concat(
+                methodSig.HasThis ? "instance" : "static",
+                "|",
+                methodSig.ExplicitThis ? "explicit" : "implicit",
+                "|",
+                methodSig.Generic ? "generic" : "non-generic",
+                "|",
+                methodSig.GenParamCount.ToString(CultureInfo.InvariantCulture),
+                "|",
+                BuildTypeSigCacheKey(returnType),
+                "|",
+                BuildTypeSigSequenceCacheKey(parameterTypes));
         }
 
         /// <summary>
         /// Determines whether two target properties represent the same effective dispatch target.
         /// </summary>
         /// <param name="canonicalProperty">The canonical target property.</param>
+        /// <param name="canonicalTargetType">The canonical target type.</param>
+        /// <param name="canonicalClosedGenericTargetTypeArguments">The canonical closed generic target type arguments.</param>
         /// <param name="aliasProperty">The alias target property.</param>
+        /// <param name="aliasTargetType">The alias target type.</param>
+        /// <param name="aliasClosedGenericTargetTypeArguments">The alias closed generic target type arguments.</param>
         /// <returns>true when the alias property is the same property or an accessor override; otherwise, false.</returns>
-        private static bool ArePropertyTargetsEquivalent(PropertyDef canonicalProperty, PropertyDef aliasProperty)
+        private static bool ArePropertyTargetsEquivalent(
+            PropertyDef canonicalProperty,
+            TypeDef canonicalTargetType,
+            IReadOnlyList<TypeSig>? canonicalClosedGenericTargetTypeArguments,
+            PropertyDef aliasProperty,
+            TypeDef aliasTargetType,
+            IReadOnlyList<TypeSig>? aliasClosedGenericTargetTypeArguments)
         {
             if (string.Equals(BuildPropertyIdentityKey(canonicalProperty), BuildPropertyIdentityKey(aliasProperty), StringComparison.Ordinal))
             {
@@ -1334,14 +1842,26 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             if (canonicalProperty.GetMethod is not null &&
                 aliasProperty.GetMethod is not null &&
-                AreMethodTargetsEquivalent(canonicalProperty.GetMethod, aliasProperty.GetMethod))
+                AreMethodTargetsEquivalent(
+                    canonicalProperty.GetMethod,
+                    canonicalTargetType,
+                    canonicalClosedGenericTargetTypeArguments,
+                    aliasProperty.GetMethod,
+                    aliasTargetType,
+                    aliasClosedGenericTargetTypeArguments))
             {
                 return true;
             }
 
             return canonicalProperty.SetMethod is not null &&
                    aliasProperty.SetMethod is not null &&
-                   AreMethodTargetsEquivalent(canonicalProperty.SetMethod, aliasProperty.SetMethod);
+                   AreMethodTargetsEquivalent(
+                       canonicalProperty.SetMethod,
+                       canonicalTargetType,
+                       canonicalClosedGenericTargetTypeArguments,
+                       aliasProperty.SetMethod,
+                       aliasTargetType,
+                       aliasClosedGenericTargetTypeArguments);
         }
 
         /// <summary>
@@ -1379,6 +1899,179 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
+        /// Determines whether two omitted trailing optional target arguments emit the same values.
+        /// </summary>
+        /// <param name="canonicalMethod">The canonical target method.</param>
+        /// <param name="canonicalBinding">The canonical binding descriptor.</param>
+        /// <param name="canonicalClosedGenericTargetTypeArguments">The canonical closed generic target type arguments.</param>
+        /// <param name="aliasMethod">The alias target method.</param>
+        /// <param name="aliasBinding">The alias binding descriptor.</param>
+        /// <param name="aliasClosedGenericTargetTypeArguments">The alias closed generic target type arguments.</param>
+        /// <returns>true when both bindings emit equivalent optional default arguments; otherwise, false.</returns>
+        private static bool AreTrailingOptionalTargetDefaultsEquivalent(
+            MethodDef? canonicalMethod,
+            ForwardMethodBindingInfo? canonicalBinding,
+            IReadOnlyList<TypeSig>? canonicalClosedGenericTargetTypeArguments,
+            MethodDef? aliasMethod,
+            ForwardMethodBindingInfo? aliasBinding,
+            IReadOnlyList<TypeSig>? aliasClosedGenericTargetTypeArguments)
+        {
+            if (canonicalBinding is null || aliasBinding is null)
+            {
+                return canonicalBinding is null && aliasBinding is null;
+            }
+
+            var canonical = canonicalBinding.Value;
+            var alias = aliasBinding.Value;
+            if (canonical.TrailingOptionalTargetParameterCount != alias.TrailingOptionalTargetParameterCount)
+            {
+                return false;
+            }
+
+            if (canonical.TrailingOptionalTargetParameterCount == 0)
+            {
+                return true;
+            }
+
+            if (canonicalMethod is null ||
+                aliasMethod is null ||
+                canonicalMethod.MethodSig.Params.Count < canonical.TrailingOptionalTargetParameterCount ||
+                aliasMethod.MethodSig.Params.Count < alias.TrailingOptionalTargetParameterCount)
+            {
+                return false;
+            }
+
+            var canonicalFirstOptionalParameterIndex = canonicalMethod.MethodSig.Params.Count - canonical.TrailingOptionalTargetParameterCount;
+            var aliasFirstOptionalParameterIndex = aliasMethod.MethodSig.Params.Count - alias.TrailingOptionalTargetParameterCount;
+            for (var offset = 0; offset < canonical.TrailingOptionalTargetParameterCount; offset++)
+            {
+                var canonicalParameterIndex = canonicalFirstOptionalParameterIndex + offset;
+                var aliasParameterIndex = aliasFirstOptionalParameterIndex + offset;
+                var canonicalParameterType = SubstituteTypeAndMethodGenericTypeArguments(
+                    canonicalMethod.MethodSig.Params[canonicalParameterIndex],
+                    canonicalClosedGenericTargetTypeArguments,
+                    canonical.ClosedGenericMethodArguments);
+                var aliasParameterType = SubstituteTypeAndMethodGenericTypeArguments(
+                    aliasMethod.MethodSig.Params[aliasParameterIndex],
+                    aliasClosedGenericTargetTypeArguments,
+                    alias.ClosedGenericMethodArguments);
+
+                if (!AreTypesEquivalent(canonicalParameterType, aliasParameterType) ||
+                    !AreOptionalParameterDefaultValuesEquivalent(canonicalMethod, canonicalParameterIndex, aliasMethod, aliasParameterIndex))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Determines whether two optional parameter metadata defaults are equivalent.
+        /// </summary>
+        /// <param name="canonicalMethod">The canonical target method.</param>
+        /// <param name="canonicalParameterIndex">The canonical method parameter index.</param>
+        /// <param name="aliasMethod">The alias target method.</param>
+        /// <param name="aliasParameterIndex">The alias method parameter index.</param>
+        /// <returns>true when both parameters have the same default metadata; otherwise, false.</returns>
+        private static bool AreOptionalParameterDefaultValuesEquivalent(
+            MethodDef canonicalMethod,
+            int canonicalParameterIndex,
+            MethodDef aliasMethod,
+            int aliasParameterIndex)
+        {
+            var canonicalHasConstant = TryGetOptionalParameterConstant(canonicalMethod, canonicalParameterIndex, out var canonicalConstantValue);
+            var aliasHasConstant = TryGetOptionalParameterConstant(aliasMethod, aliasParameterIndex, out var aliasConstantValue);
+            if (canonicalHasConstant != aliasHasConstant)
+            {
+                return IsMissingOptionalConstantEquivalentToDefault(canonicalMethod, canonicalParameterIndex, canonicalHasConstant, canonicalConstantValue) &&
+                       IsMissingOptionalConstantEquivalentToDefault(aliasMethod, aliasParameterIndex, aliasHasConstant, aliasConstantValue);
+            }
+
+            if (!canonicalHasConstant)
+            {
+                return true;
+            }
+
+            return canonicalConstantValue is null
+                       ? aliasConstantValue is null
+                       : canonicalConstantValue.Equals(aliasConstantValue);
+        }
+
+        /// <summary>
+        /// Determines whether an optional parameter without constant metadata emits the same value as an explicit default constant.
+        /// </summary>
+        /// <param name="method">The method that owns the parameter.</param>
+        /// <param name="parameterIndex">The method signature parameter index.</param>
+        /// <param name="hasConstant">Whether the parameter has constant metadata.</param>
+        /// <param name="constantValue">The constant metadata value.</param>
+        /// <returns>true when the parameter emits the default value; otherwise, false.</returns>
+        private static bool IsMissingOptionalConstantEquivalentToDefault(MethodDef method, int parameterIndex, bool hasConstant, object? constantValue)
+        {
+            if (!hasConstant)
+            {
+                return true;
+            }
+
+            if (method.MethodSig is null || parameterIndex < 0 || parameterIndex >= method.MethodSig.Params.Count)
+            {
+                return false;
+            }
+
+            return IsDefaultConstantValue(method.MethodSig.Params[parameterIndex], constantValue);
+        }
+
+        /// <summary>
+        /// Determines whether a metadata constant is equivalent to the emitted default value for a parameter type.
+        /// </summary>
+        /// <param name="parameterType">The parameter type.</param>
+        /// <param name="constantValue">The metadata constant value.</param>
+        /// <returns>true when the constant is the default value; otherwise, false.</returns>
+        private static bool IsDefaultConstantValue(TypeSig parameterType, object? constantValue)
+        {
+            if (constantValue is null)
+            {
+                return true;
+            }
+
+            var underlyingType = GetUnderlyingTypeForTypeConversion(parameterType);
+            if (IsTypeSigNamed(underlyingType, "System.Decimal"))
+            {
+                return constantValue is decimal decimalValue && decimalValue == decimal.Zero;
+            }
+
+            if (IsTypeSigNamed(underlyingType, "System.DateTime"))
+            {
+                return constantValue is DateTime dateTimeValue && dateTimeValue.Ticks == 0;
+            }
+
+            switch (underlyingType.ElementType)
+            {
+                case ElementType.Boolean:
+                    return constantValue is bool boolValue ? !boolValue : TryConvertConstantToLong(constantValue, out var boolNumber) && boolNumber == 0;
+                case ElementType.Char:
+                    return constantValue is char charValue ? charValue == '\0' : TryConvertConstantToLong(constantValue, out var charNumber) && charNumber == 0;
+                case ElementType.I1:
+                case ElementType.U1:
+                case ElementType.I2:
+                case ElementType.U2:
+                case ElementType.I4:
+                case ElementType.U4:
+                case ElementType.I8:
+                case ElementType.U8:
+                case ElementType.I:
+                case ElementType.U:
+                    return TryConvertConstantToLong(constantValue, out var integerNumber) && integerNumber == 0;
+                case ElementType.R4:
+                    return constantValue is float floatValue && floatValue == 0;
+                case ElementType.R8:
+                    return constantValue is double doubleValue && doubleValue == 0;
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
         /// Determines whether two forward field binding descriptors are equivalent.
         /// </summary>
         /// <param name="canonicalBinding">The canonical binding descriptor.</param>
@@ -1406,10 +2099,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return canonicalBinding.IsByRef == aliasBinding.IsByRef &&
                    canonicalBinding.UseLocalForByRef == aliasBinding.UseLocalForByRef &&
                    canonicalBinding.IsOut == aliasBinding.IsOut &&
-                   string.Equals(BuildTypeSigCacheKey(canonicalBinding.ProxyTypeSig), BuildTypeSigCacheKey(aliasBinding.ProxyTypeSig), StringComparison.Ordinal) &&
-                   string.Equals(BuildTypeSigCacheKey(canonicalBinding.TargetTypeSig), BuildTypeSigCacheKey(aliasBinding.TargetTypeSig), StringComparison.Ordinal) &&
-                   string.Equals(BuildNullableTypeSigCacheKey(canonicalBinding.ProxyByRefElementTypeSig), BuildNullableTypeSigCacheKey(aliasBinding.ProxyByRefElementTypeSig), StringComparison.Ordinal) &&
-                   string.Equals(BuildNullableTypeSigCacheKey(canonicalBinding.TargetByRefElementTypeSig), BuildNullableTypeSigCacheKey(aliasBinding.TargetByRefElementTypeSig), StringComparison.Ordinal) &&
+                   AreTypesEquivalent(canonicalBinding.ProxyTypeSig, aliasBinding.ProxyTypeSig) &&
+                   AreTypesEquivalent(canonicalBinding.TargetTypeSig, aliasBinding.TargetTypeSig) &&
+                   AreNullableTypeSigsEquivalent(canonicalBinding.ProxyByRefElementTypeSig, aliasBinding.ProxyByRefElementTypeSig) &&
+                   AreNullableTypeSigsEquivalent(canonicalBinding.TargetByRefElementTypeSig, aliasBinding.TargetByRefElementTypeSig) &&
                    AreMethodArgumentConversionsEquivalent(canonicalBinding.PreCallConversion, aliasBinding.PreCallConversion) &&
                    AreMethodReturnConversionsEquivalent(canonicalBinding.PostCallConversion, aliasBinding.PostCallConversion);
         }
@@ -1423,10 +2116,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static bool AreMethodArgumentConversionsEquivalent(MethodArgumentConversion canonicalConversion, MethodArgumentConversion aliasConversion)
         {
             return canonicalConversion.Kind == aliasConversion.Kind &&
-                   string.Equals(BuildNullableTypeSigCacheKey(canonicalConversion.WrapperTypeSig), BuildNullableTypeSigCacheKey(aliasConversion.WrapperTypeSig), StringComparison.Ordinal) &&
-                   string.Equals(BuildNullableTypeSigCacheKey(canonicalConversion.InnerTypeSig), BuildNullableTypeSigCacheKey(aliasConversion.InnerTypeSig), StringComparison.Ordinal) &&
-                   string.Equals(BuildNullableTypeSigCacheKey(canonicalConversion.UnwrapWrapperTypeSig), BuildNullableTypeSigCacheKey(aliasConversion.UnwrapWrapperTypeSig), StringComparison.Ordinal) &&
-                   string.Equals(BuildNullableTypeSigCacheKey(canonicalConversion.UnwrapInnerTypeSig), BuildNullableTypeSigCacheKey(aliasConversion.UnwrapInnerTypeSig), StringComparison.Ordinal);
+                   AreNullableTypeSigsEquivalent(canonicalConversion.WrapperTypeSig, aliasConversion.WrapperTypeSig) &&
+                   AreNullableTypeSigsEquivalent(canonicalConversion.InnerTypeSig, aliasConversion.InnerTypeSig) &&
+                   AreNullableTypeSigsEquivalent(canonicalConversion.UnwrapWrapperTypeSig, aliasConversion.UnwrapWrapperTypeSig) &&
+                   AreNullableTypeSigsEquivalent(canonicalConversion.UnwrapInnerTypeSig, aliasConversion.UnwrapInnerTypeSig);
         }
 
         /// <summary>
@@ -1438,8 +2131,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static bool AreMethodReturnConversionsEquivalent(MethodReturnConversion canonicalConversion, MethodReturnConversion aliasConversion)
         {
             return canonicalConversion.Kind == aliasConversion.Kind &&
-                   string.Equals(BuildNullableTypeSigCacheKey(canonicalConversion.WrapperTypeSig), BuildNullableTypeSigCacheKey(aliasConversion.WrapperTypeSig), StringComparison.Ordinal) &&
-                   string.Equals(BuildNullableTypeSigCacheKey(canonicalConversion.InnerTypeSig), BuildNullableTypeSigCacheKey(aliasConversion.InnerTypeSig), StringComparison.Ordinal);
+                   AreNullableTypeSigsEquivalent(canonicalConversion.WrapperTypeSig, aliasConversion.WrapperTypeSig) &&
+                   AreNullableTypeSigsEquivalent(canonicalConversion.InnerTypeSig, aliasConversion.InnerTypeSig);
+        }
+
+        private static bool AreNullableTypeSigsEquivalent(TypeSig? canonicalTypeSig, TypeSig? aliasTypeSig)
+        {
+            if (canonicalTypeSig is null || aliasTypeSig is null)
+            {
+                return canonicalTypeSig is null && aliasTypeSig is null;
+            }
+
+            return AreTypesEquivalent(canonicalTypeSig, aliasTypeSig);
         }
 
         /// <summary>
@@ -1447,10 +2150,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="mapping">The canonical mapping value.</param>
         /// <param name="targetTypeIndex">The target type index value.</param>
+        /// <param name="genericTypeRoots">The closed generic type roots value.</param>
         /// <returns>The cached alias plan.</returns>
         private static CanonicalTargetAliasPlan BuildCanonicalTargetAliasPlan(
             DuckTypeAotMapping mapping,
-            TargetTypeIndex targetTypeIndex)
+            TargetTypeIndex targetTypeIndex,
+            IReadOnlyList<DuckTypeAotTypeReference> genericTypeRoots)
         {
             NullableAliasTargetInfo? nullableAlias = null;
             if (mapping.Mode == DuckTypeAotMappingMode.Forward &&
@@ -1459,19 +2164,31 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 nullableAlias = nullableAliasTarget;
             }
 
-            if (DuckTypeAotNameHelpers.IsClosedGenericTypeName(mapping.TargetTypeName))
+            IReadOnlyList<TargetAliasTargetInfo> indexedAssignableTargets = [];
+            if (targetTypeIndex.TryGetAssignableTargets(mapping.Mode, mapping.TargetAssemblyName, mapping.TargetTypeName, out var discoveredAssignableTargets))
             {
-                return TryGetClosedGenericAssignableAliasTargets(mapping, targetTypeIndex, out var closedGenericAssignableTargets)
-                           ? new CanonicalTargetAliasPlan(nullableAlias, closedGenericAssignableTargets)
-                           : new CanonicalTargetAliasPlan(nullableAlias, []);
+                indexedAssignableTargets = discoveredAssignableTargets;
             }
 
-            if (!targetTypeIndex.TryGetAssignableTargets(mapping.Mode, mapping.TargetAssemblyName, mapping.TargetTypeName, out var assignableTargets))
+            var resolvedTargets = new List<TargetAliasTargetInfo>(indexedAssignableTargets);
+            if (TryGetRuntimeAssignableAliasTargets(mapping, targetTypeIndex, genericTypeRoots, out var runtimeAssignableTargets))
             {
-                return new CanonicalTargetAliasPlan(nullableAlias, []);
+                var seenKeys = resolvedTargets.Select(item => BuildAssemblyTypeCacheKey(item.AssemblyName, item.TypeName)).ToHashSet(StringComparer.Ordinal);
+                foreach (var runtimeAssignableTarget in runtimeAssignableTargets)
+                {
+                    if (seenKeys.Add(BuildAssemblyTypeCacheKey(runtimeAssignableTarget.AssemblyName, runtimeAssignableTarget.TypeName)))
+                    {
+                        resolvedTargets.Add(runtimeAssignableTarget);
+                    }
+                }
             }
 
-            return new CanonicalTargetAliasPlan(nullableAlias, assignableTargets);
+            return new CanonicalTargetAliasPlan(
+                nullableAlias,
+                resolvedTargets
+                   .OrderBy(item => item.AssemblyName, StringComparer.OrdinalIgnoreCase)
+                   .ThenBy(item => item.TypeName, StringComparer.Ordinal)
+                   .ToList());
         }
 
         /// <summary>
@@ -1496,15 +2213,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
-        /// Attempts to resolve assignable aliases for a closed generic canonical target.
+        /// Attempts to resolve runtime assignable aliases for canonical targets, including closed generic roots.
         /// </summary>
         /// <param name="mapping">The canonical mapping value.</param>
         /// <param name="targetTypeIndex">The target type index value.</param>
+        /// <param name="genericTypeRoots">The closed generic type roots value.</param>
         /// <param name="aliasTargets">The resulting alias targets.</param>
         /// <returns>true when at least one alias target was resolved; otherwise, false.</returns>
-        private static bool TryGetClosedGenericAssignableAliasTargets(
+        private static bool TryGetRuntimeAssignableAliasTargets(
             DuckTypeAotMapping mapping,
             TargetTypeIndex targetTypeIndex,
+            IReadOnlyList<DuckTypeAotTypeReference> genericTypeRoots,
             out IReadOnlyList<TargetAliasTargetInfo> aliasTargets)
         {
             aliasTargets = Array.Empty<TargetAliasTargetInfo>();
@@ -1517,6 +2236,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var resolvedAliases = new List<TargetAliasTargetInfo>();
+            var seenAliasKeys = new HashSet<string>(StringComparer.Ordinal);
             foreach (var candidateTarget in targetTypeIndex.AliasCandidateTargets)
             {
                 if (mapping.Mode == DuckTypeAotMappingMode.Reverse && candidateTarget.Type.IsValueType)
@@ -1524,7 +2244,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
-                var candidateTypeName = candidateTarget.Type.ReflectionFullName;
+                var candidateTypeName = GetRuntimeTypeName(candidateTarget.Type);
                 if (string.IsNullOrWhiteSpace(candidateTypeName) ||
                     !runtimeTypeResolutionAssemblyPathsByName.TryGetValue(candidateTarget.AssemblyName, out var candidateAssemblyPath) ||
                     !TryResolveRuntimeType(candidateTarget.AssemblyName, candidateAssemblyPath, candidateTypeName, out var candidateRuntimeType) ||
@@ -1535,7 +2255,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
-                resolvedAliases.Add(new TargetAliasTargetInfo(candidateTarget.AssemblyName, candidateTypeName));
+                AddResolvedAlias(candidateTarget.AssemblyName, candidateTypeName);
+            }
+
+            foreach (var genericTypeRoot in genericTypeRoots)
+            {
+                if (string.IsNullOrWhiteSpace(genericTypeRoot.TypeName) ||
+                    !DuckTypeAotNameHelpers.IsClosedGenericTypeName(genericTypeRoot.TypeName) ||
+                    !runtimeTypeResolutionAssemblyPathsByName.TryGetValue(genericTypeRoot.AssemblyName, out var genericTypeRootAssemblyPath) ||
+                    !TryResolveRuntimeType(genericTypeRoot.AssemblyName, genericTypeRootAssemblyPath, genericTypeRoot.TypeName, out var genericTypeRootRuntimeType) ||
+                    genericTypeRootRuntimeType is null ||
+                    genericTypeRootRuntimeType.ContainsGenericParameters ||
+                    (mapping.Mode == DuckTypeAotMappingMode.Reverse && genericTypeRootRuntimeType.IsValueType) ||
+                    genericTypeRootRuntimeType.IsInterface ||
+                    genericTypeRootRuntimeType.IsAbstract ||
+                    !canonicalRuntimeTargetType.IsAssignableFrom(genericTypeRootRuntimeType) ||
+                    genericTypeRootRuntimeType == canonicalRuntimeTargetType)
+                {
+                    continue;
+                }
+
+                AddResolvedAlias(genericTypeRoot.AssemblyName, genericTypeRoot.TypeName);
             }
 
             aliasTargets = resolvedAliases
@@ -1543,6 +2283,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                           .ThenBy(item => item.TypeName, StringComparer.Ordinal)
                           .ToList();
             return aliasTargets.Count > 0;
+
+            void AddResolvedAlias(string assemblyName, string typeName)
+            {
+                if (seenAliasKeys.Add(BuildAssemblyTypeCacheKey(assemblyName, typeName)))
+                {
+                    resolvedAliases.Add(new TargetAliasTargetInfo(assemblyName, typeName));
+                }
+            }
         }
 
         /// <summary>
@@ -1608,6 +2356,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 AddAssignableTypeKey(BuildAssemblyTypeCacheKey(assemblyName, typeName!));
+                var runtimeTypeName = typeName!.Replace('/', '+');
+                if (!string.Equals(runtimeTypeName, typeName, StringComparison.Ordinal))
+                {
+                    AddAssignableTypeKey(BuildAssemblyTypeCacheKey(assemblyName, runtimeTypeName));
+                }
             }
 
             void AddAssignableTypeKey(string typeKey)
@@ -1656,7 +2409,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var orderedTargets = entry.Value
                                           .OrderBy(item => item.AssemblyName, StringComparer.OrdinalIgnoreCase)
                                           .ThenBy(item => item.Type.FullName, StringComparer.Ordinal)
-                                          .Select(item => new TargetAliasTargetInfo(item.AssemblyName, item.Type.ReflectionFullName))
+                                          .Select(item => new TargetAliasTargetInfo(item.AssemblyName, GetRuntimeTypeName(item.Type)))
+                                          .Where(item => !string.IsNullOrWhiteSpace(item.TypeName))
                                           .ToList();
                 result[entry.Key] = orderedTargets;
             }
@@ -1713,6 +2467,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static string ResolveTypeDefAssemblyName(TypeDef type)
         {
             return DuckTypeAotNameHelpers.NormalizeAssemblyName(type.Module?.Assembly?.Name?.String ?? string.Empty);
+        }
+
+        private static string GetRuntimeTypeName(TypeDef type)
+        {
+            var reflectionFullName = type.ReflectionFullName;
+            if (!string.IsNullOrWhiteSpace(reflectionFullName))
+            {
+                return reflectionFullName!.Replace('/', '+');
+            }
+
+            return (type.FullName ?? string.Empty).Replace('/', '+');
         }
 
         /// <summary>
@@ -3919,7 +4684,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 #endif
         private static bool TryResolveRuntimeType(string assemblyName, string assemblyPath, string typeName, out Type? runtimeType)
         {
-            var normalizedAssemblyPath = assemblyPath ?? string.Empty;
+            var normalizedAssemblyPath = NormalizeRuntimeAssemblyPathForCache(assemblyPath);
             var normalizedTypeName = typeName ?? string.Empty;
             var cacheKey = string.Concat(
                 DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName).ToUpperInvariant(),
@@ -3945,12 +4710,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             runtimeType = null;
             try
             {
-                if (TryResolveRuntimeTypeByName(normalizedTypeName, out runtimeType))
-                {
-                    _currentExecutionContext?.CacheRuntimeType(cacheKey, runtimeType);
-                    return true;
-                }
-
                 var normalizedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName);
                 var candidateAssembly = TryResolvePreferredRuntimeAssembly(normalizedAssemblyName, normalizedAssemblyPath);
                 runtimeType = candidateAssembly?.GetType(normalizedTypeName, throwOnError: false, ignoreCase: false);
@@ -3963,7 +4722,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 foreach (var assemblyQualifiedTypeName in EnumerateAssemblyQualifiedTypeNames(normalizedTypeName, normalizedAssemblyName, candidateAssembly))
                 {
                     runtimeType = Type.GetType(assemblyQualifiedTypeName, throwOnError: false);
-                    if (runtimeType is not null)
+                    if (runtimeType is not null &&
+                        RuntimeTypeMatchesRequestedAssembly(runtimeType, normalizedAssemblyName, normalizedAssemblyPath))
                     {
                         if (_currentProfile is not null)
                         {
@@ -3982,28 +4742,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         requestedAssemblyName => ResolveRuntimeTypeAssembly(requestedAssemblyName, normalizedAssemblyName, normalizedAssemblyPath, candidateAssembly),
                         (requestedAssembly, requestedTypeName, ignoreCase) =>
                         {
-                            if (requestedAssembly is not null)
-                            {
-                                var resolvedFromRequestedAssembly = requestedAssembly.GetType(requestedTypeName, throwOnError: false, ignoreCase: ignoreCase);
-                                if (resolvedFromRequestedAssembly is not null)
-                                {
-                                    return resolvedFromRequestedAssembly;
-                                }
-                            }
-
-                            foreach (var loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
-                            {
-                                var resolvedFromLoadedAssembly = loadedAssembly.GetType(requestedTypeName, throwOnError: false, ignoreCase: ignoreCase);
-                                if (resolvedFromLoadedAssembly is not null)
-                                {
-                                    return resolvedFromLoadedAssembly;
-                                }
-                            }
-
-                            return null;
+                            return requestedAssembly?.GetType(requestedTypeName, throwOnError: false, ignoreCase: ignoreCase);
                         },
                         throwOnError: false);
-                    if (runtimeType is not null)
+                    if (runtimeType is not null &&
+                        RuntimeTypeMatchesRequestedAssembly(runtimeType, normalizedAssemblyName, normalizedAssemblyPath))
                     {
                         if (_currentProfile is not null)
                         {
@@ -4019,6 +4762,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     _currentExecutionContext?.CacheRuntimeType(cacheKey, runtimeType);
                     return true;
+                }
+
+                if (TryResolveRuntimeTypeByName(normalizedTypeName, normalizedAssemblyName, normalizedAssemblyPath, out runtimeType))
+                {
+                    if (runtimeType is not null)
+                    {
+                        _currentExecutionContext?.CacheRuntimeType(cacheKey, runtimeType);
+                        return true;
+                    }
+
+                    runtimeType = null;
                 }
             }
             catch
@@ -4085,14 +4839,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     normalizedGenericArgumentAssemblyName = normalizedRootAssemblyName;
                     genericArgumentAssemblyPath = assemblyPath;
                 }
+                else if (string.Equals(normalizedGenericArgumentAssemblyName, normalizedRootAssemblyName, StringComparison.OrdinalIgnoreCase))
+                {
+                    genericArgumentAssemblyPath = assemblyPath;
+                }
                 else if (runtimeTypeResolutionAssemblyPathsByName is not null &&
                          runtimeTypeResolutionAssemblyPathsByName.TryGetValue(normalizedGenericArgumentAssemblyName, out var resolvedAssemblyPath))
                 {
                     genericArgumentAssemblyPath = resolvedAssemblyPath;
-                }
-                else if (string.Equals(normalizedGenericArgumentAssemblyName, normalizedRootAssemblyName, StringComparison.OrdinalIgnoreCase))
-                {
-                    genericArgumentAssemblyPath = assemblyPath;
                 }
 
                 if (!TryResolveRuntimeType(normalizedGenericArgumentAssemblyName, genericArgumentAssemblyPath, genericArgumentTypeName, out var resolvedGenericArgumentType) ||
@@ -4185,25 +4939,41 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 #endif
         private static Assembly? TryResolvePreferredRuntimeAssembly(string normalizedAssemblyName, string assemblyPath)
         {
-            var cacheKey = string.Concat(normalizedAssemblyName.ToUpperInvariant(), "|", assemblyPath ?? string.Empty);
+            var normalizedAssemblyPath = NormalizeRuntimeAssemblyPathForCache(assemblyPath);
+            var cacheKey = string.Concat(normalizedAssemblyName.ToUpperInvariant(), "|", normalizedAssemblyPath);
             if (_currentExecutionContext?.TryGetPreferredRuntimeAssembly(cacheKey, out var cachedAssembly) == true)
             {
                 return cachedAssembly;
             }
 
             // Prefer the explicit path from mapping resolution to avoid cross-TFM collisions with already-loaded assemblies.
-            if (!string.IsNullOrWhiteSpace(assemblyPath) && File.Exists(assemblyPath))
+            if (!string.IsNullOrWhiteSpace(normalizedAssemblyPath) && File.Exists(normalizedAssemblyPath))
             {
+                foreach (var loadedAssembly in GetLoadedRuntimeAssemblies())
+                {
+                    if (AssemblyLocationOrIdentityMatchesPath(loadedAssembly, normalizedAssemblyPath))
+                    {
+                        _currentExecutionContext?.CachePreferredRuntimeAssembly(cacheKey, loadedAssembly);
+                        return loadedAssembly;
+                    }
+                }
+
                 try
                 {
-                    var assembly = Assembly.LoadFrom(assemblyPath);
-                    _currentExecutionContext?.CachePreferredRuntimeAssembly(cacheKey, assembly);
-                    return assembly;
+                    var assembly = Assembly.LoadFrom(normalizedAssemblyPath);
+                    if (AssemblyLocationOrIdentityMatchesPath(assembly, normalizedAssemblyPath))
+                    {
+                        _currentExecutionContext?.CachePreferredRuntimeAssembly(cacheKey, assembly);
+                        return assembly;
+                    }
                 }
                 catch
                 {
-                    // Continue with loaded-assembly fallback.
+                    // Continue with the safe fallback below.
                 }
+
+                _currentExecutionContext?.CachePreferredRuntimeAssembly(cacheKey, assembly: null);
+                return null;
             }
 
             foreach (var loadedAssembly in GetLoadedRuntimeAssemblies())
@@ -4227,6 +4997,303 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static IReadOnlyList<Assembly> GetLoadedRuntimeAssemblies()
         {
             return _currentExecutionContext?.LoadedRuntimeAssemblies ?? AppDomain.CurrentDomain.GetAssemblies();
+        }
+
+        /// <summary>
+        /// Normalizes an assembly path for runtime assembly resolution cache keys.
+        /// </summary>
+        /// <param name="assemblyPath">The assembly path value.</param>
+        /// <returns>The normalized path value.</returns>
+        private static string NormalizeRuntimeAssemblyPathForCache(string? assemblyPath)
+        {
+            if (string.IsNullOrWhiteSpace(assemblyPath))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                return Path.GetFullPath(assemblyPath!);
+            }
+            catch
+            {
+                return assemblyPath!;
+            }
+        }
+
+        /// <summary>
+        /// Gets the path comparison used for runtime assembly locations.
+        /// </summary>
+        /// <returns>The path comparison for the current platform.</returns>
+        private static StringComparison GetRuntimeAssemblyPathComparison()
+        {
+            return Path.DirectorySeparatorChar == '\\' ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        }
+
+        /// <summary>
+        /// Determines whether an assembly was loaded from a specific path.
+        /// </summary>
+        /// <param name="assembly">The assembly value.</param>
+        /// <param name="assemblyPath">The expected assembly path.</param>
+        /// <returns>true when the assembly location matches the expected path; otherwise, false.</returns>
+        private static bool AssemblyLocationMatchesPath(Assembly assembly, string assemblyPath)
+        {
+            if (string.IsNullOrWhiteSpace(assemblyPath))
+            {
+                return false;
+            }
+
+            try
+            {
+                var location = assembly.Location;
+                return !string.IsNullOrWhiteSpace(location) &&
+                       string.Equals(
+                           NormalizeRuntimeAssemblyPathForCache(location),
+                           NormalizeRuntimeAssemblyPathForCache(assemblyPath),
+                           GetRuntimeAssemblyPathComparison());
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether an assembly was loaded from a specific path or represents the same file identity.
+        /// </summary>
+        /// <param name="assembly">The assembly value.</param>
+        /// <param name="assemblyPath">The expected assembly path.</param>
+        /// <returns>true when the assembly location or MVID-backed identity matches the expected path; otherwise, false.</returns>
+        private static bool AssemblyLocationOrIdentityMatchesPath(Assembly assembly, string assemblyPath)
+        {
+            return AssemblyLocationMatchesPath(assembly, assemblyPath) || AssemblyIdentityMatchesPath(assembly, assemblyPath);
+        }
+
+        /// <summary>
+        /// Determines whether an already-loaded assembly has the same assembly identity and module version id as a file path.
+        /// </summary>
+        /// <param name="assembly">The assembly value.</param>
+        /// <param name="assemblyPath">The assembly path value.</param>
+        /// <returns>true when the assembly identity and MVID match; otherwise, false.</returns>
+        private static bool AssemblyIdentityMatchesPath(Assembly assembly, string assemblyPath)
+        {
+            if (string.IsNullOrWhiteSpace(assemblyPath) || !File.Exists(assemblyPath))
+            {
+                return false;
+            }
+
+            try
+            {
+                var requestedAssemblyName = AssemblyName.GetAssemblyName(assemblyPath).FullName;
+                if (!string.Equals(requestedAssemblyName, assembly.FullName, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                var requestedMvid = ResolveAssemblyMvidValue(assemblyPath);
+                return requestedMvid is not null && requestedMvid.Value == assembly.ManifestModule.ModuleVersionId;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Resolves the module version id for an assembly path.
+        /// </summary>
+        /// <param name="assemblyPath">The assembly path value.</param>
+        /// <returns>The module version id when available; otherwise, null.</returns>
+        private static Guid? ResolveAssemblyMvidValue(string assemblyPath)
+        {
+            try
+            {
+                using var module = ModuleDefMD.Load(assemblyPath);
+                return module.Mvid;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether a resolved runtime type belongs to the requested assembly identity.
+        /// </summary>
+        /// <param name="runtimeType">The resolved runtime type.</param>
+        /// <param name="normalizedAssemblyName">The normalized requested assembly name.</param>
+        /// <param name="assemblyPath">The preferred requested assembly path.</param>
+        /// <returns>true when the type belongs to the requested assembly; otherwise, false.</returns>
+        private static bool RuntimeTypeMatchesRequestedAssembly(Type runtimeType, string normalizedAssemblyName, string assemblyPath)
+        {
+            var typeAssembly = GetRuntimeTypeDefinitionAssembly(runtimeType);
+            if (!string.IsNullOrWhiteSpace(assemblyPath))
+            {
+                return AssemblyLocationOrIdentityMatchesPath(typeAssembly, assemblyPath) ||
+                       AssemblyPathForwardsRuntimeType(assemblyPath, runtimeType, typeAssembly);
+            }
+
+            var typeAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(typeAssembly.GetName().Name ?? string.Empty);
+            if (string.Equals(typeAssemblyName, normalizedAssemblyName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return TryResolveRuntimeResolutionAssemblyPath(normalizedAssemblyName, normalizedAssemblyName, assemblyPath: string.Empty, out var requestedAssemblyPath) &&
+                   AssemblyPathForwardsRuntimeType(requestedAssemblyPath, runtimeType, typeAssembly);
+        }
+
+        /// <summary>
+        /// Determines whether the requested assembly path forwards the runtime type to the resolved runtime assembly.
+        /// </summary>
+        /// <param name="assemblyPath">The requested assembly path.</param>
+        /// <param name="runtimeType">The resolved runtime type.</param>
+        /// <param name="runtimeTypeAssembly">The assembly defining the resolved runtime type.</param>
+        /// <returns>true when the requested assembly forwards the type to the resolved runtime assembly; otherwise, false.</returns>
+        private static bool AssemblyPathForwardsRuntimeType(string assemblyPath, Type runtimeType, Assembly runtimeTypeAssembly)
+            => AssemblyPathForwardsRuntimeType(
+                NormalizeRuntimeAssemblyPathForCache(assemblyPath),
+                runtimeType,
+                runtimeTypeAssembly,
+                new HashSet<string>(StringComparer.Ordinal));
+
+        /// <summary>
+        /// Determines whether the requested assembly path transitively forwards the runtime type to the resolved runtime assembly.
+        /// </summary>
+        /// <param name="assemblyPath">The requested assembly path.</param>
+        /// <param name="runtimeType">The resolved runtime type.</param>
+        /// <param name="runtimeTypeAssembly">The assembly defining the resolved runtime type.</param>
+        /// <param name="visitedAssemblyPaths">The visited assembly paths.</param>
+        /// <returns>true when the requested assembly transitively forwards the type to the resolved runtime assembly; otherwise, false.</returns>
+        private static bool AssemblyPathForwardsRuntimeType(
+            string assemblyPath,
+            Type runtimeType,
+            Assembly runtimeTypeAssembly,
+            HashSet<string> visitedAssemblyPaths)
+        {
+            if (string.IsNullOrWhiteSpace(assemblyPath) || !File.Exists(assemblyPath))
+            {
+                return false;
+            }
+
+            if (!visitedAssemblyPaths.Add(assemblyPath))
+            {
+                return false;
+            }
+
+            try
+            {
+                using var module = ModuleDefMD.Load(assemblyPath);
+                var runtimeTypeDefinition = GetRuntimeTypeDefinition(runtimeType);
+                var runtimeTypeName = runtimeTypeDefinition.FullName;
+                var runtimeTypeNameWithNestedSeparator = runtimeTypeName?.Replace('+', '/');
+                var runtimeTypeAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(runtimeTypeAssembly.GetName().Name ?? string.Empty);
+                var runtimeTypeAssemblyFullName = runtimeTypeAssembly.GetName().FullName;
+
+                foreach (var exportedType in module.ExportedTypes)
+                {
+                    if (!string.Equals(exportedType.FullName, runtimeTypeName, StringComparison.Ordinal) &&
+                        !string.Equals(exportedType.FullName, runtimeTypeNameWithNestedSeparator, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    if (exportedType.Implementation is not AssemblyRef forwardedAssembly)
+                    {
+                        continue;
+                    }
+
+                    var forwardedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(forwardedAssembly.Name.String);
+                    if (string.Equals(forwardedAssemblyName, runtimeTypeAssemblyName, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(forwardedAssembly.FullName, runtimeTypeAssemblyFullName, StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+
+                    if (TryResolveForwardedAssemblyPath(forwardedAssemblyName, assemblyPath, out var forwardedAssemblyPath) &&
+                        AssemblyPathForwardsRuntimeType(forwardedAssemblyPath, runtimeType, runtimeTypeAssembly, visitedAssemblyPaths))
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                // Type-forwarder probing is best-effort and must not weaken assembly identity checks on failure.
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Attempts to resolve the next assembly path in a type-forwarder chain.
+        /// </summary>
+        /// <param name="forwardedAssemblyName">The forwarded assembly simple name.</param>
+        /// <param name="currentAssemblyPath">The current assembly path.</param>
+        /// <param name="forwardedAssemblyPath">The resolved forwarded assembly path.</param>
+        /// <returns>true when a forwarded assembly path was found; otherwise, false.</returns>
+        private static bool TryResolveForwardedAssemblyPath(string forwardedAssemblyName, string currentAssemblyPath, out string forwardedAssemblyPath)
+        {
+            forwardedAssemblyPath = string.Empty;
+            if (string.IsNullOrWhiteSpace(forwardedAssemblyName))
+            {
+                return false;
+            }
+
+            if (runtimeTypeResolutionAssemblyPathsByName is not null &&
+                runtimeTypeResolutionAssemblyPathsByName.TryGetValue(forwardedAssemblyName, out var mappedAssemblyPath) &&
+                !string.IsNullOrWhiteSpace(mappedAssemblyPath) &&
+                File.Exists(mappedAssemblyPath))
+            {
+                forwardedAssemblyPath = NormalizeRuntimeAssemblyPathForCache(mappedAssemblyPath);
+                return true;
+            }
+
+            var currentDirectory = Path.GetDirectoryName(currentAssemblyPath);
+            if (!string.IsNullOrWhiteSpace(currentDirectory))
+            {
+                var siblingAssemblyPath = Path.Combine(currentDirectory!, forwardedAssemblyName + ".dll");
+                if (File.Exists(siblingAssemblyPath))
+                {
+                    forwardedAssemblyPath = NormalizeRuntimeAssemblyPathForCache(siblingAssemblyPath);
+                    return true;
+                }
+            }
+
+            if (TryResolveCurrentRuntimeDirectoryAssemblyPath(forwardedAssemblyName, out forwardedAssemblyPath))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Resolves the assembly that defines the underlying runtime type.
+        /// </summary>
+        /// <param name="runtimeType">The runtime type value.</param>
+        /// <returns>The assembly defining the type.</returns>
+        private static Assembly GetRuntimeTypeDefinitionAssembly(Type runtimeType)
+            => GetRuntimeTypeDefinition(runtimeType).Assembly;
+
+        /// <summary>
+        /// Resolves the underlying runtime type definition.
+        /// </summary>
+        /// <param name="runtimeType">The runtime type value.</param>
+        /// <returns>The underlying type definition.</returns>
+        private static Type GetRuntimeTypeDefinition(Type runtimeType)
+        {
+            while (runtimeType.HasElementType && runtimeType.GetElementType() is { } elementType)
+            {
+                runtimeType = elementType;
+            }
+
+            if (runtimeType.IsGenericType)
+            {
+                runtimeType = runtimeType.GetGenericTypeDefinition();
+            }
+
+            return runtimeType;
         }
 
         /// <summary>
@@ -4290,6 +5357,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             Assembly? candidateAssembly)
         {
             var requestedSimpleName = DuckTypeAotNameHelpers.NormalizeAssemblyName(requestedAssemblyName.Name ?? string.Empty);
+            var normalizedAssemblyPath = NormalizeRuntimeAssemblyPathForCache(assemblyPath);
             if (string.IsNullOrWhiteSpace(requestedSimpleName))
             {
                 return null;
@@ -4300,7 +5368,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 "|",
                 normalizedAssemblyName.ToUpperInvariant(),
                 "|",
-                assemblyPath ?? string.Empty);
+                normalizedAssemblyPath);
             if (_currentExecutionContext?.TryGetResolvedRuntimeAssembly(cacheKey, out var cachedAssembly) == true)
             {
                 return cachedAssembly;
@@ -4309,39 +5377,28 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             if (candidateAssembly is not null)
             {
                 var candidateSimpleName = DuckTypeAotNameHelpers.NormalizeAssemblyName(candidateAssembly.GetName().Name ?? string.Empty);
-                if (string.Equals(candidateSimpleName, requestedSimpleName, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(candidateSimpleName, requestedSimpleName, StringComparison.OrdinalIgnoreCase) &&
+                    (string.IsNullOrWhiteSpace(normalizedAssemblyPath) || AssemblyLocationOrIdentityMatchesPath(candidateAssembly, normalizedAssemblyPath)))
                 {
                     _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, candidateAssembly);
                     return candidateAssembly;
                 }
             }
 
-            foreach (var loadedAssembly in GetLoadedRuntimeAssemblies())
+            if (TryResolveRuntimeResolutionAssemblyPath(requestedSimpleName, normalizedAssemblyName, normalizedAssemblyPath, out var requestedAssemblyPath))
             {
-                var loadedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(loadedAssembly.GetName().Name ?? string.Empty);
-                if (string.Equals(loadedAssemblyName, requestedSimpleName, StringComparison.OrdinalIgnoreCase))
+                var resolvedAssembly = TryResolvePreferredRuntimeAssembly(requestedSimpleName, requestedAssemblyPath);
+                if (resolvedAssembly is not null)
                 {
-                    _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, loadedAssembly);
-                    return loadedAssembly;
+                    _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, resolvedAssembly);
+                    return resolvedAssembly;
                 }
-            }
 
-            var preferredDirectory = Path.GetDirectoryName(assemblyPath);
-            if (!string.IsNullOrWhiteSpace(preferredDirectory))
-            {
-                var requestedAssemblyPath = Path.Combine(preferredDirectory!, requestedSimpleName + ".dll");
-                if (File.Exists(requestedAssemblyPath))
+                if (runtimeTypeResolutionAssemblyPathsByName is not null &&
+                    runtimeTypeResolutionAssemblyPathsByName.ContainsKey(requestedSimpleName))
                 {
-                    try
-                    {
-                        var assembly = Assembly.LoadFrom(requestedAssemblyPath);
-                        _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, assembly);
-                        return assembly;
-                    }
-                    catch
-                    {
-                        // Continue with additional fallback probes.
-                    }
+                    _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, assembly: null);
+                    return null;
                 }
             }
 
@@ -4356,25 +5413,99 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 // Best-effort probe only.
             }
 
-            // Last-resort compatibility probe for malformed/partially-qualified names.
-            if (string.Equals(requestedSimpleName, normalizedAssemblyName, StringComparison.OrdinalIgnoreCase) &&
-                !string.IsNullOrWhiteSpace(assemblyPath) &&
-                File.Exists(assemblyPath))
+            foreach (var loadedAssembly in GetLoadedRuntimeAssemblies())
             {
-                try
+                var loadedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(loadedAssembly.GetName().Name ?? string.Empty);
+                if (string.Equals(loadedAssemblyName, requestedSimpleName, StringComparison.OrdinalIgnoreCase))
                 {
-                    var assembly = Assembly.LoadFrom(assemblyPath);
-                    _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, assembly);
-                    return assembly;
-                }
-                catch
-                {
-                    // Ignore.
+                    _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, loadedAssembly);
+                    return loadedAssembly;
                 }
             }
 
             _currentExecutionContext?.CacheResolvedRuntimeAssembly(cacheKey, assembly: null);
             return null;
+        }
+
+        /// <summary>
+        /// Attempts to resolve the preferred assembly path for a runtime assembly probe.
+        /// </summary>
+        /// <param name="requestedSimpleName">The requested assembly simple name.</param>
+        /// <param name="normalizedAssemblyName">The normalized root assembly name.</param>
+        /// <param name="assemblyPath">The normalized root assembly path.</param>
+        /// <param name="requestedAssemblyPath">The resolved assembly path.</param>
+        /// <returns>true when a concrete assembly path was found; otherwise, false.</returns>
+        private static bool TryResolveRuntimeResolutionAssemblyPath(
+            string requestedSimpleName,
+            string normalizedAssemblyName,
+            string assemblyPath,
+            out string requestedAssemblyPath)
+        {
+            requestedAssemblyPath = string.Empty;
+            if (string.Equals(requestedSimpleName, normalizedAssemblyName, StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(assemblyPath) &&
+                File.Exists(assemblyPath))
+            {
+                requestedAssemblyPath = assemblyPath;
+                return true;
+            }
+
+            if (runtimeTypeResolutionAssemblyPathsByName is not null &&
+                runtimeTypeResolutionAssemblyPathsByName.TryGetValue(requestedSimpleName, out var mappedAssemblyPath) &&
+                !string.IsNullOrWhiteSpace(mappedAssemblyPath) &&
+                File.Exists(mappedAssemblyPath))
+            {
+                requestedAssemblyPath = NormalizeRuntimeAssemblyPathForCache(mappedAssemblyPath);
+                return true;
+            }
+
+            var preferredDirectory = Path.GetDirectoryName(assemblyPath);
+            if (!string.IsNullOrWhiteSpace(preferredDirectory))
+            {
+                var dependencyAssemblyPath = Path.Combine(preferredDirectory!, requestedSimpleName + ".dll");
+                if (File.Exists(dependencyAssemblyPath))
+                {
+                    requestedAssemblyPath = NormalizeRuntimeAssemblyPathForCache(dependencyAssemblyPath);
+                    return true;
+                }
+            }
+
+            if (TryResolveCurrentRuntimeDirectoryAssemblyPath(requestedSimpleName, out requestedAssemblyPath))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Attempts to resolve a framework assembly from the runtime directory of the executing tool.
+        /// </summary>
+        /// <param name="assemblyName">The assembly simple name.</param>
+        /// <param name="assemblyPath">The resolved assembly path.</param>
+        /// <returns>true when the assembly exists in the runtime directory; otherwise, false.</returns>
+        private static bool TryResolveCurrentRuntimeDirectoryAssemblyPath(string assemblyName, out string assemblyPath)
+        {
+            assemblyPath = string.Empty;
+            if (string.IsNullOrWhiteSpace(assemblyName))
+            {
+                return false;
+            }
+
+            var runtimeDirectory = Path.GetDirectoryName(typeof(object).Assembly.Location);
+            if (string.IsNullOrWhiteSpace(runtimeDirectory))
+            {
+                return false;
+            }
+
+            var candidatePath = Path.Combine(runtimeDirectory!, assemblyName + ".dll");
+            if (!File.Exists(candidatePath))
+            {
+                return false;
+            }
+
+            assemblyPath = NormalizeRuntimeAssemblyPathForCache(candidatePath);
+            return true;
         }
 
         /// <summary>
@@ -5521,6 +6652,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                 return typeSig.ElementType switch
                 {
+                    ElementType.Void => typeof(void),
                     ElementType.Boolean => typeof(bool),
                     ElementType.Char => typeof(char),
                     ElementType.I1 => typeof(sbyte),
@@ -5577,20 +6709,31 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var assemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(typeDefOrRef.DefinitionAssembly?.Name.String ?? string.Empty);
             if (!string.IsNullOrWhiteSpace(assemblyName))
             {
-                var assemblyQualifiedName = $"{reflectionName}, {assemblyName}";
-                var resolvedFromAssembly = Type.GetType(assemblyQualifiedName, throwOnError: false);
-                if (resolvedFromAssembly is not null)
-                {
-                    return resolvedFromAssembly;
-                }
-
+                var assemblyPath = string.Empty;
                 if (runtimeTypeResolutionAssemblyPathsByName is not null &&
-                    runtimeTypeResolutionAssemblyPathsByName.TryGetValue(assemblyName, out var assemblyPath) &&
+                    runtimeTypeResolutionAssemblyPathsByName.TryGetValue(assemblyName, out assemblyPath) &&
                     TryResolveRuntimeType(assemblyName, assemblyPath, reflectionName, out var resolvedFromKnownAssemblyPath) &&
                     resolvedFromKnownAssemblyPath is not null)
                 {
                     return resolvedFromKnownAssemblyPath;
                 }
+
+                var normalizedAssemblyPath = NormalizeRuntimeAssemblyPathForCache(assemblyPath);
+                var assemblyQualifiedName = $"{reflectionName}, {assemblyName}";
+                var resolvedFromAssembly = Type.GetType(assemblyQualifiedName, throwOnError: false);
+                if (resolvedFromAssembly is not null &&
+                    RuntimeTypeMatchesRequestedAssembly(resolvedFromAssembly, assemblyName, normalizedAssemblyPath))
+                {
+                    return resolvedFromAssembly;
+                }
+
+                if (TryResolveRuntimeTypeByName(reflectionName, assemblyName, assemblyPath ?? string.Empty, out var resolvedByScopedName) &&
+                    resolvedByScopedName is not null)
+                {
+                    return resolvedByScopedName;
+                }
+
+                return null;
             }
 
             if (TryResolveRuntimeTypeByName(reflectionName, out var resolvedByName) &&
@@ -5799,7 +6942,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     importedPropertySig = CreateImportedPropertySig(moduleDef, proxyProperty.PropertySig, closedGenericProxyTypeArguments);
                     propertyName = proxyProperty.Name;
-                    propertyKey = $"{proxyProperty.FullName}::{BuildTypeSigSequenceCacheKey(closedGenericProxyTypeArguments)}";
+                    propertyKey = $"{BuildPropertyIdentityKey(proxyProperty)}::{BuildTypeSigSequenceCacheKey(closedGenericProxyTypeArguments)}";
                 }
                 else
                 {
@@ -5861,7 +7004,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 var currentType = typesToInspect.Pop();
                 // Graph walk includes base types and interfaces so inherited property metadata is preserved in emission.
-                if (!visitedTypes.Add(currentType.FullName))
+                if (!visitedTypes.Add(BuildTypeIdentityKey(currentType)))
                 {
                     continue;
                 }
@@ -5959,7 +7102,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 var importedReturnType = ImportTypeSigCached(moduleDef, SubstituteTypeAndMethodGenericTypeArguments(accessorMethod.MethodSig.RetType, closedGenericProxyTypeArguments, closedGenericMethodArguments: null), $"getter return type '{accessorMethod.FullName}'");
                 var importedParameterTypes = accessorMethod.MethodSig.Params.Select(parameterType => ImportTypeSigCached(moduleDef, SubstituteTypeAndMethodGenericTypeArguments(parameterType, closedGenericProxyTypeArguments, closedGenericMethodArguments: null), $"getter parameter type '{accessorMethod.FullName}'")).ToArray();
                 propertySig = new PropertySig(hasThis: true, importedReturnType, importedParameterTypes);
-                propertyKey = $"{accessorMethod.DeclaringType?.FullName ?? string.Empty}::{propertyName}::{propertySig}";
+                propertyKey = $"{(accessorMethod.DeclaringType is null ? string.Empty : BuildTypeIdentityKey(accessorMethod.DeclaringType))}::{propertyName}::{BuildPropertySignatureCacheKey(propertySig)}";
                 return true;
             }
 
@@ -5982,7 +7125,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                                             .Select(parameterType => ImportTypeSigCached(moduleDef, SubstituteTypeAndMethodGenericTypeArguments(parameterType, closedGenericProxyTypeArguments, closedGenericMethodArguments: null), $"setter parameter type '{accessorMethod.FullName}'"))
                                             .ToArray();
             propertySig = new PropertySig(hasThis: true, valueType, importedIndexParameters);
-            propertyKey = $"{accessorMethod.DeclaringType?.FullName ?? string.Empty}::{propertyName}::{propertySig}";
+            propertyKey = $"{(accessorMethod.DeclaringType is null ? string.Empty : BuildTypeIdentityKey(accessorMethod.DeclaringType))}::{propertyName}::{BuildPropertySignatureCacheKey(propertySig)}";
             return true;
         }
 
@@ -6009,7 +7152,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return true;
             }
 
-            return string.Equals(left.FullName, right.FullName, StringComparison.Ordinal);
+            return string.Equals(BuildMethodIdentityKey(left), BuildMethodIdentityKey(right), StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -6021,7 +7164,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static bool IsMethodDeclaredOnType(MethodDef method, TypeDef declaringType)
         {
             return ReferenceEquals(method.DeclaringType, declaringType) ||
-                   string.Equals(method.DeclaringType?.FullName, declaringType.FullName, StringComparison.Ordinal);
+                   (method.DeclaringType is not null &&
+                    string.Equals(BuildTypeIdentityKey(method.DeclaringType), BuildTypeIdentityKey(declaringType), StringComparison.Ordinal));
         }
 
         /// <summary>
@@ -6600,8 +7744,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     var hasSuccessfulMethodBinding = false;
                     var successfulMethodBinding = default(ForwardBinding);
                     MethodDef? successfulTargetMethod = null;
-                    foreach (var targetMethod in FindForwardTargetMethodCandidates(mapping, targetType, proxyMethodPlan, closedGenericMethodArguments, allowPrivateBaseMethodCandidates))
+                    var successfulMethodNameOrdinal = -1;
+                    foreach (var targetMethodCandidate in FindForwardTargetMethodCandidates(mapping, targetType, proxyMethodPlan, closedGenericMethodArguments, allowPrivateBaseMethodCandidates))
                     {
+                        var targetMethod = targetMethodCandidate.Method;
                         if (TryCreateForwardMethodBinding(proxyMethod, targetMethod, closedGenericProxyTypeArguments, closedGenericTargetTypeArguments, closedGenericMethodArguments, isReverseMapping, out var methodBinding, out var methodFailure))
                         {
                             if (TryGetStructMemberMutationFailureDetail(proxyMethod, targetMethod, out var structMutationFailureDetail))
@@ -6612,6 +7758,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                             if (hasSuccessfulMethodBinding)
                             {
+                                if (targetMethodCandidate.NameOrdinal > successfulMethodNameOrdinal)
+                                {
+                                    continue;
+                                }
+
                                 var candidateIsDeclaredOnTargetType = IsMethodDeclaredOnType(targetMethod, targetType);
                                 var successfulIsDeclaredOnTargetType = IsMethodDeclaredOnType(successfulTargetMethod!, targetType);
                                 if (candidateIsDeclaredOnTargetType != successfulIsDeclaredOnTargetType)
@@ -6620,6 +7771,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                                     {
                                         successfulMethodBinding = ForwardBinding.ForMethod(proxyMethod, targetMethod, methodBinding);
                                         successfulTargetMethod = targetMethod;
+                                        successfulMethodNameOrdinal = targetMethodCandidate.NameOrdinal;
                                     }
 
                                     continue;
@@ -6641,6 +7793,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                             successfulMethodBinding = ForwardBinding.ForMethod(proxyMethod, targetMethod, methodBinding);
                             successfulTargetMethod = targetMethod;
+                            successfulMethodNameOrdinal = targetMethodCandidate.NameOrdinal;
                             hasSuccessfulMethodBinding = true;
                             continue;
                         }
@@ -7046,7 +8199,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="closedGenericMethodArguments">The closed generic method arguments value.</param>
         /// <param name="allowPrivateBaseMembers">The allow private base members value.</param>
         /// <returns>The result produced by this operation.</returns>
-        private static IEnumerable<MethodDef> FindForwardTargetMethodCandidates(
+        private static IEnumerable<ForwardMethodCandidate> FindForwardTargetMethodCandidates(
             DuckTypeAotMapping mapping,
             TypeDef targetType,
             ProxyMethodPlan proxyMethodPlan,
@@ -7092,7 +8245,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     var reverseCandidateKey = GetMethodCandidateKey(reverseCandidate);
                     if (emittedCandidates.Add(reverseCandidateKey))
                     {
-                        yield return reverseCandidate;
+                        yield return new ForwardMethodCandidate(reverseCandidate, nameOrdinal: 0);
                     }
                 }
 
@@ -7134,7 +8287,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="expectedGenericArity">The expected generic arity value.</param>
         /// <param name="allowPrivateBaseMembers">The allow private base members value.</param>
         /// <returns>The result produced by this operation.</returns>
-        private static IEnumerable<MethodDef> FindDefaultTargetMethodCandidates(
+        private static IEnumerable<ForwardMethodCandidate> FindDefaultTargetMethodCandidates(
             TypeDef targetType,
             ProxyMethodPlan proxyMethodPlan,
             IReadOnlyList<string> explicitInterfaceTypeNames,
@@ -7165,8 +8318,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var proxyMethod = proxyMethodPlan.Method;
             var candidateMethodNames = proxyMethodPlan.ForwardTargetMethodNames;
             var proxyParameterCount = proxyMethod.MethodSig.Params.Count;
-            foreach (var candidateMethodName in candidateMethodNames)
+            for (var candidateMethodNameIndex = 0; candidateMethodNameIndex < candidateMethodNames.Count; candidateMethodNameIndex++)
             {
+                var candidateMethodName = candidateMethodNames[candidateMethodNameIndex];
                 foreach (var candidateEntry in Array.Empty<TargetMethodCandidate>())
                 {
                     var candidate = candidateEntry.Method;
@@ -7194,7 +8348,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         continue;
                     }
 
-                    yield return candidate;
+                    yield return new ForwardMethodCandidate(candidate, candidateMethodNameIndex);
                 }
             }
         }
@@ -7236,13 +8390,35 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The resulting string value.</returns>
         private static string GetMethodCandidateKey(MethodDef candidate)
         {
-            return $"{candidate.DeclaringType?.FullName ?? "<unknown>"}::{candidate.Name}::{candidate.MethodSig}";
+            return BuildMethodIdentityKey(candidate);
         }
 
         private static string BuildTypeIdentityKey(TypeDef type)
         {
             var assemblyName = type.DefinitionAssembly?.Name?.String ?? string.Empty;
             return $"{assemblyName}::{type.FullName}";
+        }
+
+        private static string BuildTypeDefOrRefIdentityKey(ITypeDefOrRef typeDefOrRef)
+        {
+            var assemblyName = typeDefOrRef.DefinitionAssembly?.FullName ?? typeDefOrRef.DefinitionAssembly?.Name?.String ?? string.Empty;
+            return $"{assemblyName}::{typeDefOrRef.FullName}";
+        }
+
+        private static string BuildTypeSigDefinitionIdentityKey(TypeSig typeSig)
+        {
+            var assemblyName = typeSig.DefinitionAssembly?.FullName ?? typeSig.DefinitionAssembly?.Name?.String ?? string.Empty;
+            return $"{assemblyName}::{typeSig.FullName ?? typeSig.ToString()}";
+        }
+
+        private static string BuildMethodDefOrRefIdentityKey(IMethodDefOrRef method)
+        {
+            return string.Concat(
+                method.DeclaringType is null ? string.Empty : BuildTypeDefOrRefIdentityKey(method.DeclaringType),
+                "::",
+                method.Name.String ?? method.Name.ToString(),
+                "::",
+                method.MethodSig?.ToString() ?? string.Empty);
         }
 
         private static string BuildMethodIdentityKey(MethodDef method)
@@ -7296,14 +8472,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 case GenericInstSig genericInstSig:
                     return string.Concat(
                         "generic(",
-                        genericInstSig.GenericType.FullName,
+                        genericInstSig.GenericType.TypeDefOrRef is not null ? BuildTypeDefOrRefIdentityKey(genericInstSig.GenericType.TypeDefOrRef) : BuildTypeSigDefinitionIdentityKey(genericInstSig.GenericType),
                         "<",
                         string.Join(",", genericInstSig.GenericArguments.Select(BuildTypeSigCacheKey)),
                         ">)");
                 case CModReqdSig requiredModifierSig:
-                    return string.Concat("modreq(", requiredModifierSig.Modifier.FullName, ":", BuildTypeSigCacheKey(requiredModifierSig.Next), ")");
+                    return string.Concat("modreq(", BuildTypeDefOrRefIdentityKey(requiredModifierSig.Modifier), ":", BuildTypeSigCacheKey(requiredModifierSig.Next), ")");
                 case CModOptSig optionalModifierSig:
-                    return string.Concat("modopt(", optionalModifierSig.Modifier.FullName, ":", BuildTypeSigCacheKey(optionalModifierSig.Next), ")");
+                    return string.Concat("modopt(", BuildTypeDefOrRefIdentityKey(optionalModifierSig.Modifier), ":", BuildTypeSigCacheKey(optionalModifierSig.Next), ")");
                 case PinnedSig pinnedSig:
                     return string.Concat("pinned(", BuildTypeSigCacheKey(pinnedSig.Next), ")");
                 case ValueArraySig valueArraySig:
@@ -7323,7 +8499,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 case FnPtrSig fnPtrSig:
                     return string.Concat("fnptr(", fnPtrSig.Signature?.ToString() ?? string.Empty, ")");
                 default:
-                    return string.Concat(typeSig.ElementType.ToString(), ":", typeSig.FullName ?? typeSig.ToString());
+                    return string.Concat(typeSig.ElementType.ToString(), ":", BuildTypeSigDefinitionIdentityKey(typeSig));
             }
         }
 
@@ -7432,9 +8608,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IReadOnlyList<TypeSig>? closedGenericMethodArguments)
         {
             return string.Concat(
-                importedTargetMethod.FullName,
+                BuildMethodDefOrRefIdentityKey(importedTargetMethod),
                 "|",
-                importedTargetType.FullName,
+                BuildTypeDefOrRefIdentityKey(importedTargetType),
                 "|",
                 generatedMethodGenericParameterCount.ToString(CultureInfo.InvariantCulture),
                 "|",
@@ -9019,11 +10195,84 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     return true;
                 }
 
+                if (parameter.ParamDef is not null &&
+                    TryGetOptionalParameterAttributeConstant(parameter.ParamDef, out constantValue))
+                {
+                    return true;
+                }
+
                 break;
             }
 
             constantValue = null;
             return false;
+        }
+
+        private static bool TryGetOptionalParameterAttributeConstant(ParamDef parameter, out object? constantValue)
+        {
+            foreach (var customAttribute in parameter.CustomAttributes)
+            {
+                if (string.Equals(customAttribute.TypeFullName, "System.Runtime.CompilerServices.DecimalConstantAttribute", StringComparison.Ordinal) &&
+                    TryGetDecimalConstantAttributeValue(customAttribute, out var decimalValue))
+                {
+                    constantValue = decimalValue;
+                    return true;
+                }
+
+                if (string.Equals(customAttribute.TypeFullName, "System.Runtime.CompilerServices.DateTimeConstantAttribute", StringComparison.Ordinal) &&
+                    TryGetDateTimeConstantAttributeValue(customAttribute, out var dateTimeValue))
+                {
+                    constantValue = dateTimeValue;
+                    return true;
+                }
+            }
+
+            constantValue = null;
+            return false;
+        }
+
+        private static bool TryGetDecimalConstantAttributeValue(CustomAttribute customAttribute, out decimal value)
+        {
+            value = default;
+            if (customAttribute.ConstructorArguments.Count != 5 ||
+                !TryGetCustomAttributeByte(customAttribute.ConstructorArguments[0], out var scale) ||
+                !TryGetCustomAttributeByte(customAttribute.ConstructorArguments[1], out var sign) ||
+                !TryGetCustomAttributeInt32Bits(customAttribute.ConstructorArguments[2], out var high) ||
+                !TryGetCustomAttributeInt32Bits(customAttribute.ConstructorArguments[3], out var middle) ||
+                !TryGetCustomAttributeInt32Bits(customAttribute.ConstructorArguments[4], out var low))
+            {
+                return false;
+            }
+
+            try
+            {
+                value = new decimal(low, middle, high, sign != 0, scale);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryGetDateTimeConstantAttributeValue(CustomAttribute customAttribute, out DateTime value)
+        {
+            value = default;
+            if (customAttribute.ConstructorArguments.Count != 1 ||
+                !TryGetCustomAttributeInt64(customAttribute.ConstructorArguments[0], out var ticks))
+            {
+                return false;
+            }
+
+            try
+            {
+                value = new DateTime(ticks);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private static bool TryEmitConstantValue(ModuleDef moduleDef, CilBody body, TypeSig parameterType, object? constantValue)
@@ -9035,6 +10284,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var underlyingType = GetUnderlyingTypeForTypeConversion(parameterType);
+            if (constantValue is decimal decimalValue && TryEmitDecimalConstantValue(moduleDef, body, underlyingType, decimalValue))
+            {
+                return true;
+            }
+
+            if (constantValue is DateTime dateTimeValue && TryEmitDateTimeConstantValue(moduleDef, body, underlyingType, dateTimeValue))
+            {
+                return true;
+            }
+
             switch (constantValue)
             {
                 case bool boolValue:
@@ -9107,6 +10366,43 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             return false;
         }
 
+        private static bool TryEmitDecimalConstantValue(ModuleDef moduleDef, CilBody body, TypeSig parameterType, decimal value)
+        {
+            if (!IsTypeSigNamed(parameterType, "System.Decimal"))
+            {
+                return false;
+            }
+
+            var bits = decimal.GetBits(value);
+            var flags = bits[3];
+            var scale = (byte)((flags >> 16) & 0x7F);
+            var isNegative = (flags & unchecked((int)0x80000000)) != 0;
+            var decimalCtor = typeof(decimal).GetConstructor(new[] { typeof(int), typeof(int), typeof(int), typeof(bool), typeof(byte) })
+                              ?? throw new InvalidOperationException("Unable to resolve decimal constant constructor.");
+
+            body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction(bits[0]));
+            body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction(bits[1]));
+            body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction(bits[2]));
+            body.Instructions.Add((isNegative ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0).ToInstruction());
+            body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction((int)scale));
+            body.Instructions.Add(OpCodes.Newobj.ToInstruction(moduleDef.Import(decimalCtor)));
+            return true;
+        }
+
+        private static bool TryEmitDateTimeConstantValue(ModuleDef moduleDef, CilBody body, TypeSig parameterType, DateTime value)
+        {
+            if (!IsTypeSigNamed(parameterType, "System.DateTime"))
+            {
+                return false;
+            }
+
+            var dateTimeCtor = typeof(DateTime).GetConstructor(new[] { typeof(long) })
+                               ?? throw new InvalidOperationException("Unable to resolve DateTime constant constructor.");
+            body.Instructions.Add(OpCodes.Ldc_I8.ToInstruction(value.Ticks));
+            body.Instructions.Add(OpCodes.Newobj.ToInstruction(moduleDef.Import(dateTimeCtor)));
+            return true;
+        }
+
         private static bool TryConvertConstantToLong(object value, out long result)
         {
             switch (value)
@@ -9139,6 +10435,103 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     result = default;
                     return false;
             }
+        }
+
+        private static bool TryGetCustomAttributeByte(CAArgument argument, out byte value)
+        {
+            switch (argument.Value)
+            {
+                case byte byteValue:
+                    value = byteValue;
+                    return true;
+                case sbyte sbyteValue when sbyteValue >= 0:
+                    value = (byte)sbyteValue;
+                    return true;
+                case short shortValue when shortValue >= byte.MinValue && shortValue <= byte.MaxValue:
+                    value = (byte)shortValue;
+                    return true;
+                case ushort ushortValue when ushortValue <= byte.MaxValue:
+                    value = (byte)ushortValue;
+                    return true;
+                case int intValue when intValue >= byte.MinValue && intValue <= byte.MaxValue:
+                    value = (byte)intValue;
+                    return true;
+                case uint uintValue when uintValue <= byte.MaxValue:
+                    value = (byte)uintValue;
+                    return true;
+                default:
+                    value = default;
+                    return false;
+            }
+        }
+
+        private static bool TryGetCustomAttributeInt32Bits(CAArgument argument, out int value)
+        {
+            switch (argument.Value)
+            {
+                case int intValue:
+                    value = intValue;
+                    return true;
+                case uint uintValue:
+                    value = unchecked((int)uintValue);
+                    return true;
+                case short shortValue:
+                    value = shortValue;
+                    return true;
+                case ushort ushortValue:
+                    value = ushortValue;
+                    return true;
+                case byte byteValue:
+                    value = byteValue;
+                    return true;
+                case sbyte sbyteValue:
+                    value = sbyteValue;
+                    return true;
+                default:
+                    value = default;
+                    return false;
+            }
+        }
+
+        private static bool TryGetCustomAttributeInt64(CAArgument argument, out long value)
+        {
+            switch (argument.Value)
+            {
+                case long longValue:
+                    value = longValue;
+                    return true;
+                case ulong ulongValue when ulongValue <= long.MaxValue:
+                    value = (long)ulongValue;
+                    return true;
+                case int intValue:
+                    value = intValue;
+                    return true;
+                case uint uintValue:
+                    value = uintValue;
+                    return true;
+                case short shortValue:
+                    value = shortValue;
+                    return true;
+                case ushort ushortValue:
+                    value = ushortValue;
+                    return true;
+                case byte byteValue:
+                    value = byteValue;
+                    return true;
+                case sbyte sbyteValue:
+                    value = sbyteValue;
+                    return true;
+                default:
+                    value = default;
+                    return false;
+            }
+        }
+
+        private static bool IsTypeSigNamed(TypeSig typeSig, string fullName)
+        {
+            var typeDefOrRef = typeSig.ToTypeDefOrRef();
+            return typeDefOrRef is not null &&
+                   string.Equals(typeDefOrRef.FullName, fullName, StringComparison.Ordinal);
         }
 
         private static void EmitDefaultValue(ModuleDef moduleDef, CilBody body, TypeSig typeSig, string context)
@@ -9367,6 +10760,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var fieldNames = new List<string>();
             var visitedNames = new HashSet<string>(StringComparer.Ordinal);
+            var hasConfiguredName = false;
 
             void AddNames(IEnumerable<string> names)
             {
@@ -9387,14 +10781,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             if (TryGetDuckAttributeNames(proxyMethod.CustomAttributes, out var methodAttributeNames))
             {
                 AddNames(methodAttributeNames);
+                hasConfiguredName = true;
             }
 
             if (TryGetDeclaringProperty(proxyMethod, out var declaringProperty) && TryGetDuckAttributeNames(declaringProperty!.CustomAttributes, out var propertyAttributeNames))
             {
                 AddNames(propertyAttributeNames);
+                hasConfiguredName = true;
             }
 
-            if (TryGetAccessorPropertyName(proxyMethod.Name.String ?? proxyMethod.Name.ToString(), out var propertyName))
+            if (!hasConfiguredName && TryGetAccessorPropertyName(proxyMethod.Name.String ?? proxyMethod.Name.ToString(), out var propertyName))
             {
                 AddNames(new[] { propertyName! });
             }
@@ -9777,6 +11173,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var methodNames = new List<string>();
             var visitedNames = new HashSet<string>(StringComparer.Ordinal);
+            var hasConfiguredName = false;
 
             void AddNames(IEnumerable<string> names)
             {
@@ -9804,14 +11201,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     AddNames(methodAttributeNames);
                 }
+
+                hasConfiguredName = true;
             }
 
             if (proxyMethod.IsSpecialName && TryGetDeclaringProperty(proxyMethod, out var declaringProperty) && TryGetDuckAttributeNames(declaringProperty!.CustomAttributes, out var propertyAttributeNames) && TryGetAccessorPrefix(proxyMethod.Name, out var propertyAccessorPrefix))
             {
                 AddNames(propertyAttributeNames.Select(name => $"{propertyAccessorPrefix}{name}"));
+                hasConfiguredName = true;
             }
 
-            AddNames(new[] { proxyMethod.Name.String ?? proxyMethod.Name.ToString() });
+            if (!hasConfiguredName)
+            {
+                AddNames(new[] { proxyMethod.Name.String ?? proxyMethod.Name.ToString() });
+            }
+
             return methodNames;
         }
 
@@ -9970,6 +11374,57 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             _currentExecutionContext?.CacheTypeByName(typeName, runtimeType: null);
+            return false;
+        }
+
+        private static bool TryResolveRuntimeTypeByName(string typeName, string normalizedAssemblyName, string assemblyPath, out Type? runtimeType)
+        {
+            var normalizedAssemblyPath = NormalizeRuntimeAssemblyPathForCache(assemblyPath);
+            var cacheKey = string.Concat(
+                typeName,
+                "|",
+                normalizedAssemblyName.ToUpperInvariant(),
+                "|",
+                normalizedAssemblyPath);
+            if (_currentExecutionContext?.TryGetTypeByName(cacheKey, out runtimeType) == true)
+            {
+                return runtimeType is not null;
+            }
+
+            runtimeType = Type.GetType(typeName, throwOnError: false);
+            if (runtimeType is not null &&
+                RuntimeTypeMatchesRequestedAssembly(runtimeType, normalizedAssemblyName, normalizedAssemblyPath))
+            {
+                _currentExecutionContext?.CacheTypeByName(cacheKey, runtimeType);
+                return true;
+            }
+
+            var (parsedTypeName, parsedAssemblyName) = DuckTypeAotNameHelpers.ParseTypeAndAssembly(typeName);
+            if (!string.IsNullOrWhiteSpace(parsedTypeName) &&
+                !string.IsNullOrWhiteSpace(parsedAssemblyName) &&
+                runtimeTypeResolutionAssemblyPathsByName is not null &&
+                runtimeTypeResolutionAssemblyPathsByName.TryGetValue(parsedAssemblyName!, out var parsedAssemblyPath) &&
+                TryResolveRuntimeType(parsedAssemblyName!, parsedAssemblyPath, parsedTypeName, out runtimeType) &&
+                runtimeType is not null &&
+                RuntimeTypeMatchesRequestedAssembly(runtimeType, normalizedAssemblyName, normalizedAssemblyPath))
+            {
+                _currentExecutionContext?.CacheTypeByName(cacheKey, runtimeType);
+                return true;
+            }
+
+            foreach (var loadedAssembly in GetLoadedRuntimeAssemblies())
+            {
+                runtimeType = loadedAssembly.GetType(typeName, throwOnError: false, ignoreCase: false);
+                if (runtimeType is not null &&
+                    RuntimeTypeMatchesRequestedAssembly(runtimeType, normalizedAssemblyName, normalizedAssemblyPath))
+                {
+                    _currentExecutionContext?.CacheTypeByName(cacheKey, runtimeType);
+                    return true;
+                }
+            }
+
+            runtimeType = null;
+            _currentExecutionContext?.CacheTypeByName(cacheKey, runtimeType: null);
             return false;
         }
 
@@ -10500,6 +11955,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return proxyMethodVar.Number == targetMethodVar.Number;
             }
 
+            var proxyRuntimeType = TryResolveRuntimeType(proxyType);
+            var targetRuntimeType = TryResolveRuntimeType(targetType);
+            if (proxyRuntimeType is not null && targetRuntimeType is not null)
+            {
+                return proxyRuntimeType == targetRuntimeType;
+            }
+
             if (proxyType is ByRefSig proxyByRef && targetType is ByRefSig targetByRef)
             {
                 return AreTypesEquivalent(proxyByRef.Next, targetByRef.Next);
@@ -10524,9 +11986,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             if (proxyType is GenericInstSig proxyGenericInst && targetType is GenericInstSig targetGenericInst)
             {
-                var proxyGenericTypeName = proxyGenericInst.GenericType.TypeDefOrRef?.FullName ?? proxyGenericInst.GenericType.FullName;
-                var targetGenericTypeName = targetGenericInst.GenericType.TypeDefOrRef?.FullName ?? targetGenericInst.GenericType.FullName;
-                if (!string.Equals(proxyGenericTypeName, targetGenericTypeName, StringComparison.Ordinal))
+                var proxyGenericTypeKey = proxyGenericInst.GenericType.TypeDefOrRef is not null ? BuildTypeDefOrRefIdentityKey(proxyGenericInst.GenericType.TypeDefOrRef) : BuildTypeSigDefinitionIdentityKey(proxyGenericInst.GenericType);
+                var targetGenericTypeKey = targetGenericInst.GenericType.TypeDefOrRef is not null ? BuildTypeDefOrRefIdentityKey(targetGenericInst.GenericType.TypeDefOrRef) : BuildTypeSigDefinitionIdentityKey(targetGenericInst.GenericType);
+                if (!string.Equals(proxyGenericTypeKey, targetGenericTypeKey, StringComparison.Ordinal))
                 {
                     return false;
                 }
@@ -10554,13 +12016,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             if (proxyType is CModReqdSig proxyRequiredModifier && targetType is CModReqdSig targetRequiredModifier)
             {
-                return string.Equals(proxyRequiredModifier.Modifier.FullName, targetRequiredModifier.Modifier.FullName, StringComparison.Ordinal) &&
+                return string.Equals(BuildTypeDefOrRefIdentityKey(proxyRequiredModifier.Modifier), BuildTypeDefOrRefIdentityKey(targetRequiredModifier.Modifier), StringComparison.Ordinal) &&
                     AreTypesEquivalent(proxyRequiredModifier.Next, targetRequiredModifier.Next);
             }
 
             if (proxyType is CModOptSig proxyOptionalModifier && targetType is CModOptSig targetOptionalModifier)
             {
-                return string.Equals(proxyOptionalModifier.Modifier.FullName, targetOptionalModifier.Modifier.FullName, StringComparison.Ordinal) &&
+                return string.Equals(BuildTypeDefOrRefIdentityKey(proxyOptionalModifier.Modifier), BuildTypeDefOrRefIdentityKey(targetOptionalModifier.Modifier), StringComparison.Ordinal) &&
                     AreTypesEquivalent(proxyOptionalModifier.Next, targetOptionalModifier.Next);
             }
 
@@ -10581,7 +12043,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     AreTypesEquivalent(proxyModule.Next, targetModule.Next);
             }
 
-            return string.Equals(proxyType.FullName, targetType.FullName, StringComparison.Ordinal);
+            return string.Equals(BuildTypeSigCacheKey(proxyType), BuildTypeSigCacheKey(targetType), StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -11253,16 +12715,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// Initializes a new instance of the <see cref="AliasSemanticBindingPlan"/> struct.
             /// </summary>
             /// <param name="kind">The binding plan kind.</param>
+            /// <param name="targetType">The target type.</param>
             /// <param name="forwardBindings">The forward bindings.</param>
             /// <param name="structCopyBindings">The DuckCopy bindings.</param>
             /// <param name="closedGenericTargetTypeArguments">The closed generic target type arguments.</param>
             private AliasSemanticBindingPlan(
                 AliasSemanticBindingPlanKind kind,
+                TypeDef targetType,
                 IReadOnlyList<ForwardBinding>? forwardBindings,
                 IReadOnlyList<StructCopyFieldBinding>? structCopyBindings,
                 IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments)
             {
                 Kind = kind;
+                TargetType = targetType;
                 ForwardBindings = forwardBindings;
                 StructCopyBindings = structCopyBindings;
                 ClosedGenericTargetTypeArguments = closedGenericTargetTypeArguments;
@@ -11272,6 +12737,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// Gets the binding plan kind.
             /// </summary>
             internal AliasSemanticBindingPlanKind Kind { get; }
+
+            /// <summary>
+            /// Gets the target type.
+            /// </summary>
+            internal TypeDef TargetType { get; }
 
             /// <summary>
             /// Gets the forward bindings.
@@ -11291,23 +12761,25 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// <summary>
             /// Creates a forward binding plan.
             /// </summary>
+            /// <param name="targetType">The target type.</param>
             /// <param name="bindings">The forward bindings.</param>
             /// <param name="closedGenericTargetTypeArguments">The closed generic target type arguments.</param>
             /// <returns>The created binding plan.</returns>
-            internal static AliasSemanticBindingPlan ForForward(IReadOnlyList<ForwardBinding> bindings, IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments)
+            internal static AliasSemanticBindingPlan ForForward(TypeDef targetType, IReadOnlyList<ForwardBinding> bindings, IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments)
             {
-                return new AliasSemanticBindingPlan(AliasSemanticBindingPlanKind.Forward, bindings, structCopyBindings: null, closedGenericTargetTypeArguments: closedGenericTargetTypeArguments);
+                return new AliasSemanticBindingPlan(AliasSemanticBindingPlanKind.Forward, targetType, bindings, structCopyBindings: null, closedGenericTargetTypeArguments: closedGenericTargetTypeArguments);
             }
 
             /// <summary>
             /// Creates a DuckCopy binding plan.
             /// </summary>
+            /// <param name="targetType">The target type.</param>
             /// <param name="bindings">The DuckCopy bindings.</param>
             /// <param name="closedGenericTargetTypeArguments">The closed generic target type arguments.</param>
             /// <returns>The created binding plan.</returns>
-            internal static AliasSemanticBindingPlan ForStructCopy(IReadOnlyList<StructCopyFieldBinding> bindings, IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments)
+            internal static AliasSemanticBindingPlan ForStructCopy(TypeDef targetType, IReadOnlyList<StructCopyFieldBinding> bindings, IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments)
             {
-                return new AliasSemanticBindingPlan(AliasSemanticBindingPlanKind.StructCopy, forwardBindings: null, structCopyBindings: bindings, closedGenericTargetTypeArguments: closedGenericTargetTypeArguments);
+                return new AliasSemanticBindingPlan(AliasSemanticBindingPlanKind.StructCopy, targetType, forwardBindings: null, structCopyBindings: bindings, closedGenericTargetTypeArguments: closedGenericTargetTypeArguments);
             }
         }
 
@@ -12201,6 +13673,35 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             /// </summary>
             /// <value>The detail value.</value>
             internal string Detail { get; }
+        }
+
+        /// <summary>
+        /// Represents a forward target method candidate and the configured proxy-name alternative that found it.
+        /// </summary>
+        private readonly struct ForwardMethodCandidate
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ForwardMethodCandidate"/> struct.
+            /// </summary>
+            /// <param name="method">The method value.</param>
+            /// <param name="nameOrdinal">The configured name ordinal value.</param>
+            internal ForwardMethodCandidate(MethodDef method, int nameOrdinal)
+            {
+                Method = method;
+                NameOrdinal = nameOrdinal;
+            }
+
+            /// <summary>
+            /// Gets method.
+            /// </summary>
+            /// <value>The method value.</value>
+            internal MethodDef Method { get; }
+
+            /// <summary>
+            /// Gets name ordinal.
+            /// </summary>
+            /// <value>The name ordinal value.</value>
+            internal int NameOrdinal { get; }
         }
 
         /// <summary>
@@ -13189,7 +14690,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             private readonly IReadOnlyDictionary<string, IReadOnlyList<TargetMethodCandidate>> _methodsBySimpleNameAndShape;
             private readonly IReadOnlyDictionary<string, IReadOnlyList<TargetPropertyCandidate>> _propertiesByName;
             private readonly IReadOnlyDictionary<string, IReadOnlyList<TargetFieldCandidate>> _fieldsByName;
-            private readonly Dictionary<string, IReadOnlyList<MethodDef>> _forwardMethodCandidatesByKey = new(StringComparer.Ordinal);
+            private readonly Dictionary<string, IReadOnlyList<ForwardMethodCandidate>> _forwardMethodCandidatesByKey = new(StringComparer.Ordinal);
             private bool _reverseMetadataInitialized;
             private bool _hasReverseMethodAttributes;
             private IReadOnlyList<MethodDef>? _declaredReverseImplementationMethods;
@@ -13310,7 +14811,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                       .SelectMany(kvp => kvp.Value);
             }
 
-            internal IReadOnlyList<MethodDef> GetForwardMethodCandidates(
+            internal IReadOnlyList<ForwardMethodCandidate> GetForwardMethodCandidates(
                 ProxyMethodPlan proxyMethodPlan,
                 IReadOnlyList<string> explicitInterfaceTypeNames,
                 bool useRelaxedNameComparison,
@@ -13358,9 +14859,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                     var proxyParameterCount = proxyMethodPlan.Method.MethodSig.Params.Count;
                     var emittedCandidates = new HashSet<string>(StringComparer.Ordinal);
-                    var candidates = new List<MethodDef>();
-                    foreach (var candidateMethodName in proxyMethodPlan.ForwardTargetMethodNames)
+                    var candidates = new List<ForwardMethodCandidate>();
+                    for (var candidateMethodNameIndex = 0; candidateMethodNameIndex < proxyMethodPlan.ForwardTargetMethodNames.Count; candidateMethodNameIndex++)
                     {
+                        var candidateMethodName = proxyMethodPlan.ForwardTargetMethodNames[candidateMethodNameIndex];
                         foreach (var candidateEntry in GetForwardMethodCandidateEntries(candidateMethodName, expectedGenericArity, proxyParameterCount, proxyMethodPlan.UseIgnoreCaseMemberMatching, allowTrailingOptionalTargetParameters))
                         {
                             if (profile is not null)
@@ -13433,7 +14935,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                                 profile.ForwardCandidateAcceptedCount++;
                             }
 
-                            candidates.Add(candidate);
+                            candidates.Add(new ForwardMethodCandidate(candidate, candidateMethodNameIndex));
                         }
                     }
 
