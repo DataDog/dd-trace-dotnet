@@ -852,6 +852,34 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void DifferentialParityC32CForwardValueWithTypeNullDelegateShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "C-32C";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IValueWithTypeNullDelegateProxy),
+                typeof(ValueWithTypeNullDelegateTarget),
+                typeof(ValueWithTypeNullDelegateAotProxy),
+                instance => new ValueWithTypeNullDelegateAotProxy((ValueWithTypeNullDelegateTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IValueWithTypeNullDelegateProxy), typeof(ValueWithTypeNullDelegateTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IValueWithTypeNullDelegateProxy), typeof(ValueWithTypeNullDelegateTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IValueWithTypeNullDelegateProxy>(new ValueWithTypeNullDelegateTarget());
+            var aotProxy = aotResult.CreateInstance<IValueWithTypeNullDelegateProxy>(new ValueWithTypeNullDelegateTarget());
+
+            var dynamicCallback = dynamicProxy.Callback;
+            var aotCallback = aotProxy.Callback;
+
+            ((object?)aotCallback.Value).Should().Be((object?)dynamicCallback.Value, $"scenario {scenarioId} should preserve null ValueWithType delegate values");
+            aotCallback.Type.Should().Be(dynamicCallback.Type, $"scenario {scenarioId} should preserve declared delegate type metadata");
+            aotCallback.Value.Should().BeNull($"scenario {scenarioId} test precondition should exercise null values");
+            aotCallback.Type.Should().Be(typeof(Action), $"scenario {scenarioId} should use the declared delegate type when the value is null");
+        }
+
+        [Fact]
         public void DifferentialParityC33ForwardEnumNormalizationShouldMatchBetweenDynamicAndAot()
         {
             const string scenarioId = "C-33";
@@ -1092,6 +1120,32 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             aotValue.Should().Be(dynamicValue, $"scenario {scenarioId} should preserve reverse ref behavior");
             aotDoubled.Should().Be(dynamicDoubled, $"scenario {scenarioId} should preserve reverse out behavior");
+        }
+
+        [Fact]
+        public void DifferentialParityRV05ReversePropertyAliasWhitespaceShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "RV-05";
+            DuckTypeAotEngine.RegisterReverseProxy(
+                typeof(IReverseAliasWhitespaceProxy),
+                typeof(ReverseAliasWhitespaceDelegation),
+                typeof(ReverseAliasWhitespaceAotProxy),
+                instance => new ReverseAliasWhitespaceAotProxy((ReverseAliasWhitespaceDelegation)instance!));
+
+            var dynamicResult = InvokeDynamicReverse(typeof(IReverseAliasWhitespaceProxy), typeof(ReverseAliasWhitespaceDelegation));
+            var aotResult = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseAliasWhitespaceProxy), typeof(ReverseAliasWhitespaceDelegation));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IReverseAliasWhitespaceProxy>(new ReverseAliasWhitespaceDelegation("alias"));
+            var aotProxy = aotResult.CreateInstance<IReverseAliasWhitespaceProxy>(new ReverseAliasWhitespaceDelegation("alias"));
+
+            aotProxy.Value.Should().Be(dynamicProxy.Value, $"scenario {scenarioId} should preserve reverse property alias binding");
+
+            dynamicProxy.Value = "updated";
+            aotProxy.Value = "updated";
+            aotProxy.Value.Should().Be(dynamicProxy.Value, $"scenario {scenarioId} should preserve reverse property alias setter binding");
         }
 
         [Fact]
@@ -3293,6 +3347,29 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ValueWithTypeNullDelegateTarget", "Datadog.Trace.DuckTyping.Tests")]
+        private interface IValueWithTypeNullDelegateProxy
+        {
+            ValueWithType<Action> Callback { get; }
+        }
+
+        private class ValueWithTypeNullDelegateTarget
+        {
+            public Action? Callback => null;
+        }
+
+        private class ValueWithTypeNullDelegateAotProxy : IValueWithTypeNullDelegateProxy
+        {
+            private readonly ValueWithTypeNullDelegateTarget _target;
+
+            public ValueWithTypeNullDelegateAotProxy(ValueWithTypeNullDelegateTarget target)
+            {
+                _target = target;
+            }
+
+            public ValueWithType<Action> Callback => ValueWithType<Action>.Create(_target.Callback!, typeof(Action));
+        }
+
         [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+EnumConversionTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEnumConversionProxy
         {
@@ -4964,6 +5041,39 @@ namespace Datadog.Trace.DuckTyping.Tests
             public void Normalize(ref int value, out int doubled)
             {
                 _delegation.Normalize(ref value, out doubled);
+            }
+        }
+
+        [DuckReverse("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ReverseAliasWhitespaceDelegation", "Datadog.Trace.DuckTyping.Tests")]
+        private interface IReverseAliasWhitespaceProxy
+        {
+            string Value { get; set; }
+        }
+
+        private class ReverseAliasWhitespaceDelegation
+        {
+            public ReverseAliasWhitespaceDelegation(string value)
+            {
+                Value = value;
+            }
+
+            [DuckReverseMethod(Name = "Missing, Value")]
+            public string Value { get; set; }
+        }
+
+        private class ReverseAliasWhitespaceAotProxy : IReverseAliasWhitespaceProxy
+        {
+            private readonly ReverseAliasWhitespaceDelegation _delegation;
+
+            public ReverseAliasWhitespaceAotProxy(ReverseAliasWhitespaceDelegation delegation)
+            {
+                _delegation = delegation;
+            }
+
+            public string Value
+            {
+                get => _delegation.Value;
+                set => _delegation.Value = value;
             }
         }
 
