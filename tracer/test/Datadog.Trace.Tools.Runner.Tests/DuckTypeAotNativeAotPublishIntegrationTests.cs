@@ -63,8 +63,10 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             var contractsSourcePath = Path.Combine(contractsDirectory, "ValueContracts.cs");
             var appProjectPath = Path.Combine(appDirectory, "SampleDuckNativeAotApp.csproj");
             var appSourcePath = Path.Combine(appDirectory, "Program.cs");
+            var datadogTraceAssemblyPath = typeof(Datadog.Trace.Tracer).Assembly.Location;
+            File.Exists(datadogTraceAssemblyPath).Should().BeTrue("Datadog.Trace assembly must exist for NativeAOT sample references");
 
-            File.WriteAllText(contractsProjectPath, BuildContractsProjectFile());
+            File.WriteAllText(contractsProjectPath, BuildContractsProjectFile(datadogTraceAssemblyPath));
             File.WriteAllText(contractsSourcePath, BuildContractsSourceFile());
 
             var buildContractsResult = RunProcess(
@@ -84,9 +86,6 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
 
             var contractsAssemblyPath = Path.Combine(contractsDirectory, "bin", "Release", "net8.0", "SampleDuckContracts.dll");
             File.Exists(contractsAssemblyPath).Should().BeTrue("contracts assembly must exist before ducktype-aot generation");
-
-            var datadogTraceAssemblyPath = typeof(Datadog.Trace.Tracer).Assembly.Location;
-            File.Exists(datadogTraceAssemblyPath).Should().BeTrue("Datadog.Trace assembly must exist for NativeAOT sample app reference");
 
             var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-nativeaot-map.json");
             var mapDocument = new
@@ -132,6 +131,30 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                         proxyAssembly = "SampleDuckContracts",
                         targetType = "SampleDuckContracts.ChainTarget",
                         targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = "SampleDuckContracts.KitchenSinkProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.KitchenSinkTarget",
+                        targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = "SampleDuckContracts.IFailureProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.FailureTarget",
+                        targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "reverse",
+                        proxyType = "SampleDuckContracts.IReverseFailureProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.ReverseFailureDelegation",
+                        targetAssembly = "SampleDuckContracts"
                     }
                 }
             };
@@ -172,10 +195,13 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
 
             generateResult.ExitCode.Should().Be(0, "ducktype-aot generation should succeed for the NativeAOT sample");
             File.Exists(outputAssemblyPath).Should().BeTrue();
+            File.Exists(trimmerDescriptorPath).Should().BeTrue();
             File.Exists(propsPath).Should().BeTrue();
+            File.ReadAllText(propsPath).Should().Contain("<TrimmerRootDescriptor Include=");
+            File.ReadAllText(propsPath).Should().Contain(EscapeXml(trimmerDescriptorPath));
 
             File.WriteAllText(appProjectPath, BuildAppProjectFile(datadogTraceAssemblyPath, contractsProjectPath));
-            File.WriteAllText(appSourcePath, BuildAppSourceFile());
+            File.WriteAllText(appSourcePath, BuildAppSourceFile(callBootstrapExplicitly: false));
 
             var publishOutputDirectory = Path.Combine(tempDirectory, "publish");
             var publishResult = RunProcess(
@@ -252,6 +278,7 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                 $"NativeAOT sample execution should succeed.{Environment.NewLine}STDOUT:{Environment.NewLine}{runResult.StandardOutput}{Environment.NewLine}STDERR:{Environment.NewLine}{runResult.StandardError}");
 
             runResult.StandardOutput.Should().Contain("CAN_CREATE:True");
+            runResult.StandardOutput.Should().Contain("BOOTSTRAP:ModuleInitializer");
             runResult.StandardOutput.Should().Contain("VALUE:42");
             runResult.StandardOutput.Should().Contain("CAN_CREATE_REVERSE:True");
             runResult.StandardOutput.Should().Contain("REVERSE_VALUE:42");
@@ -260,6 +287,17 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             runResult.StandardOutput.Should().Contain("CAN_CREATE_CHAIN:True");
             runResult.StandardOutput.Should().Contain("CHAIN_VALUE:native-aot");
             runResult.StandardOutput.Should().Contain("CHAIN_RECEIVED:True");
+            runResult.StandardOutput.Should().Contain("CAN_CREATE_KITCHEN:True");
+            runResult.StandardOutput.Should().Contain("KITCHEN_INDEXER:native-index");
+            runResult.StandardOutput.Should().Contain("KITCHEN_SECRET:native-secret");
+            runResult.StandardOutput.Should().Contain("KITCHEN_GENERIC:123");
+            runResult.StandardOutput.Should().Contain("KITCHEN_VALUE_WITH_TYPE:native-secret:native-index:String");
+            runResult.StandardOutput.Should().Contain("KITCHEN_STATIC:native-static");
+            runResult.StandardOutput.Should().Contain("TYPED_METHOD_HANDLE:ArgumentException");
+            runResult.StandardOutput.Should().Contain("FAILURE_REPLAY:DuckTypeTargetMethodNotFoundException");
+            runResult.StandardOutput.Should().Contain("FAILURE_NON_GENERIC_REPLAY:TargetInvocationException:DuckTypeTargetMethodNotFoundException");
+            runResult.StandardOutput.Should().Contain("REVERSE_FAILURE_NON_GENERIC_REPLAY:TargetInvocationException:DuckTypeReverseProxyMissingMethodImplementationException");
+            runResult.StandardOutput.Should().Contain("MISS_REPLAY:TargetInvocationException:DuckTypeAotMissingProxyRegistrationException");
             runResult.StandardOutput.Should().Contain("DYNAMIC_CODE:False");
             runResult.StandardOutput.Should().Contain("DYNAMIC_ASSEMBLIES:0");
         }
@@ -269,7 +307,7 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
         }
     }
 
-    private static string BuildContractsProjectFile()
+    private static string BuildContractsProjectFile(string datadogTraceAssemblyPath)
     {
         return
             "<Project Sdk=\"Microsoft.NET.Sdk\">" + Environment.NewLine +
@@ -277,104 +315,233 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             "    <TargetFramework>net8.0</TargetFramework>" + Environment.NewLine +
             "    <Nullable>enable</Nullable>" + Environment.NewLine +
             "  </PropertyGroup>" + Environment.NewLine +
+            "  <ItemGroup>" + Environment.NewLine +
+            "    <Reference Include=\"Datadog.Trace\">" + Environment.NewLine +
+            $"      <HintPath>{EscapeXml(datadogTraceAssemblyPath)}</HintPath>" + Environment.NewLine +
+            "      <Private>true</Private>" + Environment.NewLine +
+            "    </Reference>" + Environment.NewLine +
+            "  </ItemGroup>" + Environment.NewLine +
             "</Project>" + Environment.NewLine;
     }
 
     private static string BuildContractsSourceFile()
     {
-        return
-            "using System;" + Environment.NewLine +
-            Environment.NewLine +
-            "namespace Datadog.Trace.DuckTyping" + Environment.NewLine +
-            "{" + Environment.NewLine +
-            "    [AttributeUsage(AttributeTargets.Struct)]" + Environment.NewLine +
-            "    public sealed class DuckCopyAttribute : Attribute" + Environment.NewLine +
-            "    {" + Environment.NewLine +
-            "    }" + Environment.NewLine +
-            "}" + Environment.NewLine +
-            Environment.NewLine +
-            "namespace SampleDuckContracts" + Environment.NewLine +
-            "{" + Environment.NewLine +
-            "    public interface IValueProxy" + Environment.NewLine +
-            "    {" + Environment.NewLine +
-            "        int GetValue();" + Environment.NewLine +
-            "    }" + Environment.NewLine +
-            Environment.NewLine +
-            "    public interface IReverseValueProxy" + Environment.NewLine +
-            "    {" + Environment.NewLine +
-            "        int DoubleValue(int value);" + Environment.NewLine +
-            "    }" + Environment.NewLine +
-            Environment.NewLine +
-            "    public interface IInnerProxy" + Environment.NewLine +
-            "    {" + Environment.NewLine +
-            "        string Name { get; }" + Environment.NewLine +
-            "    }" + Environment.NewLine +
-            Environment.NewLine +
-            "    public interface IChainProxy" + Environment.NewLine +
-            "    {" + Environment.NewLine +
-            "        IInnerProxy Roundtrip(IInnerProxy value);" + Environment.NewLine +
-            "    }" + Environment.NewLine +
-            Environment.NewLine +
-            "    [Datadog.Trace.DuckTyping.DuckCopyAttribute]" + Environment.NewLine +
-            "    public struct ValueCopyProxy" + Environment.NewLine +
-            "    {" + Environment.NewLine +
-            "        public int Value;" + Environment.NewLine +
-            "    }" + Environment.NewLine +
-            Environment.NewLine +
-            "    public sealed class ValueTarget" + Environment.NewLine +
-            "    {" + Environment.NewLine +
-            "        private readonly int _value;" + Environment.NewLine +
-            Environment.NewLine +
-            "        public ValueTarget(int value)" + Environment.NewLine +
-            "        {" + Environment.NewLine +
-            "            _value = value;" + Environment.NewLine +
-            "        }" + Environment.NewLine +
-            Environment.NewLine +
-            "        public int GetValue()" + Environment.NewLine +
-            "        {" + Environment.NewLine +
-            "            return _value;" + Environment.NewLine +
-            "        }" + Environment.NewLine +
-            "    }" + Environment.NewLine +
-            Environment.NewLine +
-            "    public sealed class ReverseValueDelegation" + Environment.NewLine +
-            "    {" + Environment.NewLine +
-            "        public int DoubleValue(int value)" + Environment.NewLine +
-            "        {" + Environment.NewLine +
-            "            return value * 2;" + Environment.NewLine +
-            "        }" + Environment.NewLine +
-            "    }" + Environment.NewLine +
-            Environment.NewLine +
-            "    public sealed class ValueCopyTarget" + Environment.NewLine +
-            "    {" + Environment.NewLine +
-            "        public ValueCopyTarget(int value)" + Environment.NewLine +
-            "        {" + Environment.NewLine +
-            "            Value = value;" + Environment.NewLine +
-            "        }" + Environment.NewLine +
-            Environment.NewLine +
-            "        public int Value { get; set; }" + Environment.NewLine +
-            "    }" + Environment.NewLine +
-            Environment.NewLine +
-            "    public sealed class InnerTarget" + Environment.NewLine +
-            "    {" + Environment.NewLine +
-            "        public InnerTarget(string name)" + Environment.NewLine +
-            "        {" + Environment.NewLine +
-            "            Name = name;" + Environment.NewLine +
-            "        }" + Environment.NewLine +
-            Environment.NewLine +
-            "        public string Name { get; }" + Environment.NewLine +
-            "    }" + Environment.NewLine +
-            Environment.NewLine +
-            "    public sealed class ChainTarget" + Environment.NewLine +
-            "    {" + Environment.NewLine +
-            "        public InnerTarget? LastReceived { get; private set; }" + Environment.NewLine +
-            Environment.NewLine +
-            "        public InnerTarget Roundtrip(InnerTarget value)" + Environment.NewLine +
-            "        {" + Environment.NewLine +
-            "            LastReceived = value;" + Environment.NewLine +
-            "            return value;" + Environment.NewLine +
-            "        }" + Environment.NewLine +
-            "    }" + Environment.NewLine +
-            "}" + Environment.NewLine;
+        return string.Join(
+                   Environment.NewLine,
+                   new[]
+                   {
+                       "using System;",
+                       "using System.Collections.Generic;",
+                       "using System.Reflection;",
+                       "using Datadog.Trace.DuckTyping;",
+                       string.Empty,
+                       "namespace Datadog.Trace.DuckTyping",
+                       "{",
+                       "    [AttributeUsage(AttributeTargets.Struct)]",
+                       "    public sealed class DuckCopyAttribute : Attribute",
+                       "    {",
+                       "    }",
+                       string.Empty,
+                       "    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Method)]",
+                       "    public sealed class DuckFieldAttribute : Attribute",
+                       "    {",
+                       "        public string? Name { get; set; }",
+                       string.Empty,
+                       "        public BindingFlags BindingFlags { get; set; } = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy;",
+                       "    }",
+                       "}",
+                       string.Empty,
+                       "namespace SampleDuckContracts",
+                       "{",
+                       "    public interface IValueProxy",
+                       "    {",
+                       "        int GetValue();",
+                       "    }",
+                       string.Empty,
+                       "    public interface IReverseValueProxy",
+                       "    {",
+                       "        int DoubleValue(int value);",
+                       "    }",
+                       string.Empty,
+                       "    public interface IInnerProxy",
+                       "    {",
+                       "        string Name { get; }",
+                       "    }",
+                       string.Empty,
+                       "    public interface IChainProxy",
+                       "    {",
+                       "        IInnerProxy Roundtrip(IInnerProxy value);",
+                       "    }",
+                       string.Empty,
+                       "    public interface IFailureProxy",
+                       "    {",
+                       "        string Missing();",
+                       "    }",
+                       string.Empty,
+                       "    public interface IReverseFailureProxy",
+                       "    {",
+                       "        string Missing();",
+                       "    }",
+                       string.Empty,
+                       "    public interface IMissingProxy",
+                       "    {",
+                       "        string Value { get; }",
+                       "    }",
+                       string.Empty,
+                       "    public interface IManualHandleProxy",
+                       "    {",
+                       "        int GetValue();",
+                       "    }",
+                       string.Empty,
+                       "    [DuckCopy]",
+                       "    public struct ValueCopyProxy",
+                       "    {",
+                       "        public int Value;",
+                       "    }",
+                       string.Empty,
+                       "    public abstract class KitchenSinkProxy",
+                       "    {",
+                       "        public abstract string this[int index] { get; set; }",
+                       string.Empty,
+                       "        [DuckField(Name = \"_secret\")]",
+                       "        public abstract string Secret { get; set; }",
+                       string.Empty,
+                       "        [DuckField(Name = \"StaticText\", BindingFlags = BindingFlags.Public | BindingFlags.Static)]",
+                       "        public abstract string StaticValue { get; set; }",
+                       string.Empty,
+                       "        public abstract T Echo<T>(T value);",
+                       string.Empty,
+                       "        public abstract ValueWithType<string> Describe();",
+                       "    }",
+                       string.Empty,
+                       "    public sealed class ValueTarget",
+                       "    {",
+                       "        private readonly int _value;",
+                       string.Empty,
+                       "        public ValueTarget(int value)",
+                       "        {",
+                       "            _value = value;",
+                       "        }",
+                       string.Empty,
+                       "        public int GetValue()",
+                       "        {",
+                       "            return _value;",
+                       "        }",
+                       "    }",
+                       string.Empty,
+                       "    public sealed class ReverseValueDelegation",
+                       "    {",
+                       "        public int DoubleValue(int value)",
+                       "        {",
+                       "            return value * 2;",
+                       "        }",
+                       "    }",
+                       string.Empty,
+                       "    public sealed class ValueCopyTarget",
+                       "    {",
+                       "        public ValueCopyTarget(int value)",
+                       "        {",
+                       "            Value = value;",
+                       "        }",
+                       string.Empty,
+                       "        public int Value { get; set; }",
+                       "    }",
+                       string.Empty,
+                       "    public sealed class InnerTarget",
+                       "    {",
+                       "        public InnerTarget(string name)",
+                       "        {",
+                       "            Name = name;",
+                       "        }",
+                       string.Empty,
+                       "        public string Name { get; }",
+                       "    }",
+                       string.Empty,
+                       "    public sealed class ChainTarget",
+                       "    {",
+                       "        public InnerTarget? LastReceived { get; private set; }",
+                       string.Empty,
+                       "        public InnerTarget Roundtrip(InnerTarget value)",
+                       "        {",
+                       "            LastReceived = value;",
+                       "            return value;",
+                       "        }",
+                       "    }",
+                       string.Empty,
+                       "    public sealed class KitchenSinkTarget",
+                       "    {",
+                       "        private readonly Dictionary<int, string> _items = new Dictionary<int, string>();",
+                       "        private string _secret;",
+                       string.Empty,
+                       "        public KitchenSinkTarget(string secret, string item)",
+                       "        {",
+                       "            _secret = secret;",
+                       "            _items[7] = item;",
+                       "        }",
+                       string.Empty,
+                       "        public static string StaticText = \"initial-static\";",
+                       string.Empty,
+                       "        public string this[int index]",
+                       "        {",
+                       "            get => _items[index];",
+                       "            set => _items[index] = value;",
+                       "        }",
+                       string.Empty,
+                       "        public T Echo<T>(T value)",
+                       "        {",
+                       "            return value;",
+                       "        }",
+                       string.Empty,
+                       "        public string Describe()",
+                       "        {",
+                       "            return _secret + \":\" + _items[7];",
+                       "        }",
+                       "    }",
+                       string.Empty,
+                       "    public sealed class ManualHandleTarget",
+                       "    {",
+                       "        public ManualHandleTarget(int value)",
+                       "        {",
+                       "            Value = value;",
+                       "        }",
+                       string.Empty,
+                       "        public int Value { get; }",
+                       "    }",
+                       string.Empty,
+                       "    public sealed class ManualHandleGeneratedProxy : IManualHandleProxy",
+                       "    {",
+                       "        private readonly ManualHandleTarget _target;",
+                       string.Empty,
+                       "        public ManualHandleGeneratedProxy(ManualHandleTarget target)",
+                       "        {",
+                       "            _target = target;",
+                       "        }",
+                       string.Empty,
+                       "        public int GetValue()",
+                       "        {",
+                       "            return _target.Value;",
+                       "        }",
+                       string.Empty,
+                       "        public static IManualHandleProxy CreateTyped(ManualHandleTarget target)",
+                       "        {",
+                       "            return new ManualHandleGeneratedProxy(target);",
+                       "        }",
+                       "    }",
+                       string.Empty,
+                       "    public sealed class FailureTarget",
+                       "    {",
+                       "    }",
+                       string.Empty,
+                       "    public sealed class ReverseFailureDelegation",
+                       "    {",
+                       "    }",
+                       string.Empty,
+                       "    public sealed class MissingTarget",
+                       "    {",
+                       "        public string Value => \"missing\";",
+                       "    }",
+                       "}"
+                   }) + Environment.NewLine;
     }
 
     private static string BuildAppProjectFile(string datadogTraceAssemblyPath, string contractsProjectPath)
@@ -398,8 +565,12 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             "</Project>" + Environment.NewLine;
     }
 
-    private static string BuildAppSourceFile()
+    private static string BuildAppSourceFile(bool callBootstrapExplicitly)
     {
+        var bootstrapLine = callBootstrapExplicitly
+            ? "DuckTypeAotRegistryBootstrap.Initialize();"
+            : "_ = typeof(DuckTypeAotRegistryBootstrap).Assembly.FullName;";
+        var bootstrapMode = callBootstrapExplicitly ? "Explicit" : "ModuleInitializer";
         return
             "using System;" + Environment.NewLine +
             "using System.Runtime.CompilerServices;" + Environment.NewLine +
@@ -416,7 +587,8 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             "    }" + Environment.NewLine +
             "};" + Environment.NewLine +
             Environment.NewLine +
-            "DuckTypeAotRegistryBootstrap.Initialize();" + Environment.NewLine +
+            bootstrapLine + Environment.NewLine +
+            $"Console.WriteLine(\"BOOTSTRAP:{bootstrapMode}\");" + Environment.NewLine +
             Environment.NewLine +
             "var createTypeResult = DuckType.GetOrCreateProxyType(typeof(IValueProxy), typeof(ValueTarget));" + Environment.NewLine +
             "if (!createTypeResult.CanCreate())" + Environment.NewLine +
@@ -450,6 +622,14 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             "    return;" + Environment.NewLine +
             "}" + Environment.NewLine +
             Environment.NewLine +
+            "var createKitchenTypeResult = DuckType.GetOrCreateProxyType(typeof(KitchenSinkProxy), typeof(KitchenSinkTarget));" + Environment.NewLine +
+            "if (!createKitchenTypeResult.CanCreate())" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    Console.WriteLine(\"CAN_CREATE_KITCHEN:False\");" + Environment.NewLine +
+            "    Environment.ExitCode = 15;" + Environment.NewLine +
+            "    return;" + Environment.NewLine +
+            "}" + Environment.NewLine +
+            Environment.NewLine +
             "var proxy = createTypeResult.CreateInstance<IValueProxy>(new ValueTarget(42));" + Environment.NewLine +
             "var reverseProxy = (IReverseValueProxy)DuckType.CreateReverse(typeof(IReverseValueProxy), new ReverseValueDelegation());" + Environment.NewLine +
             "var copyProxy = createCopyTypeResult.CreateInstance<ValueCopyProxy>(new ValueCopyTarget(42));" + Environment.NewLine +
@@ -457,6 +637,13 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             "var chainProxy = createChainTypeResult.CreateInstance<IChainProxy>(chainTarget);" + Environment.NewLine +
             "var innerProxy = DuckType.Create<IInnerProxy>(new InnerTarget(\"native-aot\"));" + Environment.NewLine +
             "var chainResult = chainProxy.Roundtrip(innerProxy!);" + Environment.NewLine +
+            "var kitchenTarget = new KitchenSinkTarget(\"initial-secret\", \"initial-index\");" + Environment.NewLine +
+            "var kitchenProxy = createKitchenTypeResult.CreateInstance<KitchenSinkProxy>(kitchenTarget);" + Environment.NewLine +
+            "kitchenProxy[7] = \"native-index\";" + Environment.NewLine +
+            "kitchenProxy.Secret = \"native-secret\";" + Environment.NewLine +
+            "KitchenSinkTarget.StaticText = \"initial-static\";" + Environment.NewLine +
+            "kitchenProxy.StaticValue = \"native-static\";" + Environment.NewLine +
+            "var kitchenValueWithType = kitchenProxy.Describe();" + Environment.NewLine +
             "Console.WriteLine(\"CAN_CREATE:True\");" + Environment.NewLine +
             "Console.WriteLine($\"VALUE:{proxy.GetValue()}\");" + Environment.NewLine +
             "Console.WriteLine(\"CAN_CREATE_REVERSE:True\");" + Environment.NewLine +
@@ -466,6 +653,79 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             "Console.WriteLine(\"CAN_CREATE_CHAIN:True\");" + Environment.NewLine +
             "Console.WriteLine($\"CHAIN_VALUE:{chainResult.Name}\");" + Environment.NewLine +
             "Console.WriteLine($\"CHAIN_RECEIVED:{object.ReferenceEquals(chainTarget.LastReceived, ((IDuckType)innerProxy!).Instance)}\");" + Environment.NewLine +
+            "Console.WriteLine(\"CAN_CREATE_KITCHEN:True\");" + Environment.NewLine +
+            "Console.WriteLine($\"KITCHEN_INDEXER:{kitchenProxy[7]}\");" + Environment.NewLine +
+            "Console.WriteLine($\"KITCHEN_SECRET:{kitchenProxy.Secret}\");" + Environment.NewLine +
+            "Console.WriteLine($\"KITCHEN_GENERIC:{kitchenProxy.Echo(123)}\");" + Environment.NewLine +
+            "Console.WriteLine($\"KITCHEN_VALUE_WITH_TYPE:{kitchenValueWithType.Value}:{kitchenValueWithType.Type.Name}\");" + Environment.NewLine +
+            "Console.WriteLine($\"KITCHEN_STATIC:{KitchenSinkTarget.StaticText}\");" + Environment.NewLine +
+            "try" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    var typedHandle = ((Func<ManualHandleTarget, IManualHandleProxy>)ManualHandleGeneratedProxy.CreateTyped).Method.MethodHandle;" + Environment.NewLine +
+            "    DuckType.RegisterAotProxy(typeof(IManualHandleProxy), typeof(ManualHandleTarget), typeof(ManualHandleGeneratedProxy), typedHandle);" + Environment.NewLine +
+            "    Console.WriteLine(\"TYPED_METHOD_HANDLE:NoException\");" + Environment.NewLine +
+            "    Environment.ExitCode = 16;" + Environment.NewLine +
+            "    return;" + Environment.NewLine +
+            "}" + Environment.NewLine +
+            "catch (ArgumentException ex)" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    Console.WriteLine($\"TYPED_METHOD_HANDLE:{ex.GetType().Name}\");" + Environment.NewLine +
+            "}" + Environment.NewLine +
+            "var failureResult = DuckType.GetOrCreateProxyType(typeof(IFailureProxy), typeof(FailureTarget));" + Environment.NewLine +
+            "if (failureResult.CanCreate())" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    Console.WriteLine(\"FAILURE_REPLAY:CanCreate\");" + Environment.NewLine +
+            "    Environment.ExitCode = 17;" + Environment.NewLine +
+            "    return;" + Environment.NewLine +
+            "}" + Environment.NewLine +
+            Environment.NewLine +
+            "try" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    _ = failureResult.CreateInstance<IFailureProxy>(new FailureTarget());" + Environment.NewLine +
+            "    Console.WriteLine(\"FAILURE_REPLAY:NoException\");" + Environment.NewLine +
+            "    Environment.ExitCode = 18;" + Environment.NewLine +
+            "    return;" + Environment.NewLine +
+            "}" + Environment.NewLine +
+            "catch (Exception ex)" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    Console.WriteLine($\"FAILURE_REPLAY:{ex.GetType().Name}\");" + Environment.NewLine +
+            "}" + Environment.NewLine +
+            Environment.NewLine +
+            "try" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    _ = DuckType.Create(typeof(IFailureProxy), new FailureTarget());" + Environment.NewLine +
+            "    Console.WriteLine(\"FAILURE_NON_GENERIC_REPLAY:NoException\");" + Environment.NewLine +
+            "    Environment.ExitCode = 19;" + Environment.NewLine +
+            "    return;" + Environment.NewLine +
+                "}" + Environment.NewLine +
+                "catch (Exception ex)" + Environment.NewLine +
+                "{" + Environment.NewLine +
+                "    Console.WriteLine($\"FAILURE_NON_GENERIC_REPLAY:{ex.GetType().Name}:{ex.InnerException?.GetType().Name}\");" + Environment.NewLine +
+                "}" + Environment.NewLine +
+                Environment.NewLine +
+                "try" + Environment.NewLine +
+                "{" + Environment.NewLine +
+                "    _ = DuckType.CreateReverse(typeof(IReverseFailureProxy), new ReverseFailureDelegation());" + Environment.NewLine +
+                "    Console.WriteLine(\"REVERSE_FAILURE_NON_GENERIC_REPLAY:NoException\");" + Environment.NewLine +
+                "    Environment.ExitCode = 20;" + Environment.NewLine +
+                "    return;" + Environment.NewLine +
+                "}" + Environment.NewLine +
+                "catch (Exception ex)" + Environment.NewLine +
+                "{" + Environment.NewLine +
+                "    Console.WriteLine($\"REVERSE_FAILURE_NON_GENERIC_REPLAY:{ex.GetType().Name}:{ex.InnerException?.GetType().Name}\");" + Environment.NewLine +
+                "}" + Environment.NewLine +
+                Environment.NewLine +
+                "try" + Environment.NewLine +
+                "{" + Environment.NewLine +
+                "    _ = DuckType.Create(typeof(IMissingProxy), new MissingTarget());" + Environment.NewLine +
+                "    Console.WriteLine(\"MISS_REPLAY:NoException\");" + Environment.NewLine +
+                "    Environment.ExitCode = 21;" + Environment.NewLine +
+                "    return;" + Environment.NewLine +
+                "}" + Environment.NewLine +
+            "catch (Exception ex)" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    Console.WriteLine($\"MISS_REPLAY:{ex.GetType().Name}:{ex.InnerException?.GetType().Name}\");" + Environment.NewLine +
+            "}" + Environment.NewLine +
             "Console.WriteLine($\"DYNAMIC_CODE:{RuntimeFeature.IsDynamicCodeSupported}\");" + Environment.NewLine +
             "Console.WriteLine($\"DYNAMIC_ASSEMBLIES:{dynamicAssemblyLoads}\");" + Environment.NewLine;
     }

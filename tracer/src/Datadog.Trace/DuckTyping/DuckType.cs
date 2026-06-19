@@ -279,7 +279,7 @@ namespace Datadog.Trace.DuckTyping
                 }
                 catch (DuckTypeException ex)
                 {
-                    return new CreateTypeResult(proxyDefinitionType, null, targetType, null, ExceptionDispatchInfo.Capture(ex));
+                    return new CreateTypeResult(proxyDefinitionType, null, targetType, null, ExceptionDispatchInfo.Capture(ex), wrapNonGenericFailureInTargetInvocationException: true);
                 }
                 catch (Exception ex)
                 {
@@ -290,7 +290,7 @@ namespace Datadog.Trace.DuckTyping
                     }
                     catch (Exception ex2)
                     {
-                        return new CreateTypeResult(proxyDefinitionType, null, targetType, null, ExceptionDispatchInfo.Capture(ex2));
+                        return new CreateTypeResult(proxyDefinitionType, null, targetType, null, ExceptionDispatchInfo.Capture(ex2), wrapNonGenericFailureInTargetInvocationException: true);
                     }
                 }
             }
@@ -359,7 +359,7 @@ namespace Datadog.Trace.DuckTyping
                 }
                 catch (DuckTypeException ex)
                 {
-                    return new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, ExceptionDispatchInfo.Capture(ex));
+                    return new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, ExceptionDispatchInfo.Capture(ex), wrapNonGenericFailureInTargetInvocationException: true);
                 }
                 catch (Exception ex)
                 {
@@ -370,7 +370,7 @@ namespace Datadog.Trace.DuckTyping
                     }
                     catch (Exception ex2)
                     {
-                        return new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, ExceptionDispatchInfo.Capture(ex2));
+                        return new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, ExceptionDispatchInfo.Capture(ex2), wrapNonGenericFailureInTargetInvocationException: true);
                     }
                 }
             }
@@ -1222,7 +1222,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             PropertyInfo? targetProperty = null;
-            foreach (var name in propertyName.Split(','))
+            foreach (var name in GetDuckAttributeCandidateNames(propertyName))
             {
                 try
                 {
@@ -1252,7 +1252,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             PropertyInfo? targetProperty = null;
-            foreach (var name in propertyName.Split(','))
+            foreach (var name in GetDuckAttributeCandidateNames(propertyName))
             {
                 targetProperty = targetType.GetProperty(name, bindingFlags);
                 if (targetProperty is not null)
@@ -1272,7 +1272,7 @@ namespace Datadog.Trace.DuckTyping
             }
 
             FieldInfo? targetField = null;
-            foreach (var name in fieldName.Split(','))
+            foreach (var name in GetDuckAttributeCandidateNames(fieldName))
             {
                 targetField = targetType.GetField(name, bindingFlags);
                 if (targetField is not null)
@@ -1305,6 +1305,7 @@ namespace Datadog.Trace.DuckTyping
             private readonly ExceptionDispatchInfo? _exceptionInfo;
             private readonly Action? _failureThrower;
             private readonly bool _usesDynamicInvokeFallback;
+            private readonly bool _wrapNonGenericFailureInTargetInvocationException;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="CreateTypeResult"/> struct.
@@ -1314,11 +1315,13 @@ namespace Datadog.Trace.DuckTyping
             /// <param name="targetType">Target type</param>
             /// <param name="activator">Proxy activator</param>
             /// <param name="exceptionInfo">Exception dispatch info instance</param>
-            internal CreateTypeResult(Type proxyTypeDefinition, Type? proxyType, Type targetType, Delegate? activator, ExceptionDispatchInfo? exceptionInfo)
+            /// <param name="wrapNonGenericFailureInTargetInvocationException">Whether object-based creation should preserve the dynamic reflection invocation failure contract.</param>
+            internal CreateTypeResult(Type proxyTypeDefinition, Type? proxyType, Type targetType, Delegate? activator, ExceptionDispatchInfo? exceptionInfo, bool wrapNonGenericFailureInTargetInvocationException = false)
             {
                 _activator = activator;
                 _untypedActivator = activator as Func<object?, object?>;
                 _usesDynamicInvokeFallback = false;
+                _wrapNonGenericFailureInTargetInvocationException = wrapNonGenericFailureInTargetInvocationException;
                 if (_untypedActivator is null && activator is not null)
                 {
                     var objectActivator = TryCreateObjectActivator(activator);
@@ -1338,15 +1341,6 @@ namespace Datadog.Trace.DuckTyping
                 _failureThrower = null;
                 TargetType = targetType;
                 Success = proxyType != null && exceptionInfo == null;
-                if (exceptionInfo is not null)
-                {
-                    MethodInfo methodInfo = typeof(CreateTypeResult).GetMethod(nameof(ThrowOnError), BindingFlags.NonPublic | BindingFlags.Instance)!;
-                    _activator = methodInfo
-                        .MakeGenericMethod(proxyTypeDefinition)
-                        .CreateDelegate(
-                        typeof(CreateProxyInstance<>).MakeGenericType(proxyTypeDefinition),
-                        this);
-                }
             }
 
             /// <summary>
@@ -1357,11 +1351,13 @@ namespace Datadog.Trace.DuckTyping
             /// <param name="targetType">Target type</param>
             /// <param name="activator">Proxy activator</param>
             /// <param name="failureThrower">Failure thrower instance</param>
-            internal CreateTypeResult(Type proxyTypeDefinition, Type? proxyType, Type targetType, Delegate? activator, Action? failureThrower)
+            /// <param name="wrapNonGenericFailureInTargetInvocationException">Whether object-based creation should preserve the dynamic reflection invocation failure contract.</param>
+            internal CreateTypeResult(Type proxyTypeDefinition, Type? proxyType, Type targetType, Delegate? activator, Action? failureThrower, bool wrapNonGenericFailureInTargetInvocationException = false)
             {
                 _activator = activator;
                 _untypedActivator = activator as Func<object?, object?>;
                 _usesDynamicInvokeFallback = false;
+                _wrapNonGenericFailureInTargetInvocationException = wrapNonGenericFailureInTargetInvocationException;
                 if (_untypedActivator is null && activator is not null)
                 {
                     var objectActivator = TryCreateObjectActivator(activator);
@@ -1381,15 +1377,6 @@ namespace Datadog.Trace.DuckTyping
                 _failureThrower = failureThrower;
                 TargetType = targetType;
                 Success = proxyType != null && failureThrower == null;
-                if (failureThrower is not null)
-                {
-                    MethodInfo methodInfo = typeof(CreateTypeResult).GetMethod(nameof(ThrowOnError), BindingFlags.NonPublic | BindingFlags.Instance)!;
-                    _activator = methodInfo
-                        .MakeGenericMethod(proxyTypeDefinition)
-                        .CreateDelegate(
-                        typeof(CreateProxyInstance<>).MakeGenericType(proxyTypeDefinition),
-                        this);
-                }
             }
 
             /// <summary>
@@ -1472,6 +1459,15 @@ namespace Datadog.Trace.DuckTyping
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal object CreateInstance(object instance)
             {
+                if (_wrapNonGenericFailureInTargetInvocationException)
+                {
+                    ThrowFailureAsTargetInvocationException();
+                }
+                else
+                {
+                    ThrowFailureIfNeeded();
+                }
+
                 if (_untypedActivator is not null)
                 {
                     return _untypedActivator(instance)!;
@@ -1487,13 +1483,6 @@ namespace Datadog.Trace.DuckTyping
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private T? ThrowOnError<T>(object? instance)
-            {
-                ThrowFailureIfNeeded();
-                return default;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void ThrowFailureIfNeeded()
             {
                 _exceptionInfo?.Throw();
@@ -1501,9 +1490,28 @@ namespace Datadog.Trace.DuckTyping
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private void ThrowFailureAsTargetInvocationException()
+            {
+                try
+                {
+                    ThrowFailureIfNeeded();
+                }
+                catch (TargetInvocationException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    throw new TargetInvocationException(ex);
+                }
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             [return: NotNull]
             private T CreateInstanceCore<T>(object? instance)
             {
+                ThrowFailureIfNeeded();
+
                 if (_activator is CreateProxyInstance<T> typedActivator)
                 {
                     return typedActivator(instance);

@@ -217,8 +217,46 @@ namespace Datadog.Trace.DuckTyping.Tests
             var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IMissingProxy), typeof(MissingTarget));
 
             result.CanCreate().Should().BeFalse();
+            AssertFailureResultHasNoActivator(result);
             Action getProxyType = () => _ = result.ProxyType;
             getProxyType.Should().Throw<DuckTypeAotMissingProxyRegistrationException>();
+            Action createProxy = () => _ = result.CreateInstance<IMissingProxy>(new MissingTarget());
+            createProxy.Should().Throw<DuckTypeAotMissingProxyRegistrationException>();
+            DuckType.EnableAotMode();
+            Action createViaDuckType = () => _ = DuckType.Create(typeof(IMissingProxy), new MissingTarget());
+            createViaDuckType.Should().Throw<TargetInvocationException>()
+                             .WithInnerException<DuckTypeAotMissingProxyRegistrationException>();
+        }
+
+        [Fact]
+        public void MissingReverseMappingReturnsErrorResult()
+        {
+            var result = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseProxy), typeof(ReverseTarget));
+
+            result.CanCreate().Should().BeFalse();
+            AssertFailureResultHasNoActivator(result);
+            Action getProxyType = () => _ = result.ProxyType;
+            getProxyType.Should().Throw<DuckTypeAotMissingProxyRegistrationException>();
+            Action createProxy = () => _ = result.CreateInstance<IReverseProxy>(new ReverseTarget("missing"));
+            createProxy.Should().Throw<DuckTypeAotMissingProxyRegistrationException>();
+            DuckType.EnableAotMode();
+            Action createViaDuckType = () => _ = DuckType.CreateReverse(typeof(IReverseProxy), new ReverseTarget("missing"));
+            createViaDuckType.Should().Throw<TargetInvocationException>()
+                             .WithInnerException<DuckTypeAotMissingProxyRegistrationException>();
+        }
+
+        [Fact]
+        public void DynamicNonGenericFailureKeepsTargetInvocationExceptionContractWithoutActivator()
+        {
+            var result = DuckType.GetOrCreateProxyType(typeof(IDynamicFailureProxy), typeof(DynamicFailureTarget));
+
+            result.CanCreate().Should().BeFalse();
+            AssertFailureResultHasNoActivator(result);
+            Action createGeneric = () => _ = result.CreateInstance<IDynamicFailureProxy>(new DynamicFailureTarget());
+            createGeneric.Should().Throw<DuckTypeProxyAndTargetMethodReturnTypeMismatchException>();
+            Action createNonGeneric = () => _ = DuckType.Create(typeof(IDynamicFailureProxy), new DynamicFailureTarget());
+            createNonGeneric.Should().Throw<TargetInvocationException>()
+                            .WithInnerException<DuckTypeProxyAndTargetMethodReturnTypeMismatchException>();
         }
 
         [Fact]
@@ -271,47 +309,43 @@ namespace Datadog.Trace.DuckTyping.Tests
 
 #if NET6_0_OR_GREATER
         [Fact]
-        public void RegisterForwardProxyUsingMethodHandleAndResolve()
+        public void RegisterForwardProxyUsingTypedMethodHandleThrows()
         {
             var activatorMethod = typeof(DuckTypeAotEngineTests).GetMethod(
                 nameof(CreateForwardProxyWithMethodHandle),
                 BindingFlags.NonPublic | BindingFlags.Static);
             activatorMethod.Should().NotBeNull();
 
-            DuckTypeAotEngine.RegisterProxy(
+            Action register = () => DuckTypeAotEngine.RegisterProxy(
                 typeof(IForwardProxy),
                 typeof(ForwardTarget),
                 typeof(ForwardGeneratedProxy),
                 activatorMethod!.MethodHandle);
 
-            var target = new ForwardTarget("hello");
-            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
-
-            result.CanCreate().Should().BeTrue();
-            result.CreateInstance<IForwardProxy>(target).Value.Should().Be("hello");
+            register.Should()
+                    .Throw<ArgumentException>()
+                    .WithMessage("*must declare exactly one parameter of type 'object'*Typed method-handle activators are not supported*");
             DuckTypeAotEngine.DirectObjectActivatorHandleCount.Should().Be(0);
-            DuckTypeAotEngine.AdaptedTypedActivatorHandleCount.Should().Be(1);
         }
 
         [Fact]
-        public void RegisterReverseProxyUsingMethodHandleAndResolve()
+        public void RegisterReverseProxyUsingTypedMethodHandleThrows()
         {
             var activatorMethod = typeof(DuckTypeAotEngineTests).GetMethod(
                 nameof(CreateReverseProxyWithMethodHandle),
                 BindingFlags.NonPublic | BindingFlags.Static);
             activatorMethod.Should().NotBeNull();
 
-            DuckTypeAotEngine.RegisterReverseProxy(
+            Action register = () => DuckTypeAotEngine.RegisterReverseProxy(
                 typeof(IReverseProxy),
                 typeof(ReverseTarget),
                 typeof(ReverseGeneratedProxy),
                 activatorMethod!.MethodHandle);
 
-            var result = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseProxy), typeof(ReverseTarget));
-            result.CanCreate().Should().BeTrue();
-            result.CreateInstance<IReverseProxy>(new ReverseTarget("reverse")).Value.Should().Be("reverse");
+            register.Should()
+                    .Throw<ArgumentException>()
+                    .WithMessage("*must declare exactly one parameter of type 'object'*Typed method-handle activators are not supported*");
             DuckTypeAotEngine.DirectObjectActivatorHandleCount.Should().Be(0);
-            DuckTypeAotEngine.AdaptedTypedActivatorHandleCount.Should().Be(1);
         }
 
         [Fact]
@@ -335,7 +369,6 @@ namespace Datadog.Trace.DuckTyping.Tests
             result.UsesDynamicInvokeFallback.Should().BeFalse();
             result.CreateInstance<IForwardProxy>(target).Value.Should().Be("hello");
             DuckTypeAotEngine.DirectObjectActivatorHandleCount.Should().Be(1);
-            DuckTypeAotEngine.AdaptedTypedActivatorHandleCount.Should().Be(0);
 
             var activator = GetCreateTypeResultField<Delegate>(result, "_activator");
             var untypedActivator = GetCreateTypeResultField<Func<object?, object?>>(result, "_untypedActivator");
@@ -365,7 +398,6 @@ namespace Datadog.Trace.DuckTyping.Tests
             result.UsesDynamicInvokeFallback.Should().BeFalse();
             result.CreateInstance<IReverseProxy>(new ReverseTarget("reverse")).Value.Should().Be("reverse");
             DuckTypeAotEngine.DirectObjectActivatorHandleCount.Should().Be(1);
-            DuckTypeAotEngine.AdaptedTypedActivatorHandleCount.Should().Be(0);
 
             var activator = GetCreateTypeResultField<Delegate>(result, "_activator");
             var untypedActivator = GetCreateTypeResultField<Func<object?, object?>>(result, "_untypedActivator");
@@ -374,6 +406,26 @@ namespace Datadog.Trace.DuckTyping.Tests
             untypedActivator.Should().NotBeNull();
             untypedActivator!.Method.Name.Should().Be(activator.Method.Name);
             untypedActivator.Method.DeclaringType.Should().Be(activator.Method.DeclaringType);
+        }
+
+        [Fact]
+        public void RegisterValueTypeProxyUsingObjectBridgeMethodHandleThrows()
+        {
+            var activatorMethod = typeof(DuckTypeAotEngineTests).GetMethod(
+                nameof(CreateValueTypeProxyWithObjectMethodHandle),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            activatorMethod.Should().NotBeNull();
+
+            Action register = () => DuckTypeAotEngine.RegisterProxy(
+                typeof(ValueTypeDuckCopyProxy),
+                typeof(ValueTypeTarget),
+                typeof(ValueTypeDuckCopyProxy),
+                activatorMethod!.MethodHandle);
+
+            register.Should()
+                    .Throw<ArgumentException>()
+                    .WithMessage("*RuntimeMethodHandle activator methods are not supported for value-type proxy definition*Register a direct Func<object?, object?> delegate instead*");
+            DuckTypeAotEngine.DirectObjectActivatorHandleCount.Should().Be(0);
         }
 
         [Fact]
@@ -558,9 +610,46 @@ namespace Datadog.Trace.DuckTyping.Tests
             var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
 
             result.CanCreate().Should().BeFalse();
+            AssertFailureResultHasNoActivator(result);
             Action getProxyType = () => _ = result.ProxyType;
             getProxyType.Should().Throw<DuckTypeAotRegisteredFailureException>()
                         .WithMessage("*KnownDuckTypeFailure*missing-member*");
+            Action createProxy = () => _ = result.CreateInstance<IForwardProxy>(new ForwardTarget("failure"));
+            createProxy.Should().Throw<DuckTypeAotRegisteredFailureException>()
+                       .WithMessage("*KnownDuckTypeFailure*missing-member*");
+            DuckType.EnableAotMode();
+            Action createViaDuckType = () => _ = DuckType.Create(typeof(IForwardProxy), new ForwardTarget("failure"));
+            createViaDuckType.Should().Throw<TargetInvocationException>()
+                            .WithInnerException<DuckTypeAotRegisteredFailureException>();
+        }
+
+        [Fact]
+        public void RegisterReverseFailureUsingMethodHandleReplaysDeterministicFailureWithoutActivator()
+        {
+            var throwerMethod = typeof(DuckTypeAotEngineTests).GetMethod(
+                nameof(ThrowKnownRegisteredFailure),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            throwerMethod.Should().NotBeNull();
+
+            DuckTypeAotEngine.RegisterReverseProxyFailure(
+                typeof(IReverseProxy),
+                typeof(ReverseTarget),
+                throwerMethod!.MethodHandle);
+
+            var result = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseProxy), typeof(ReverseTarget));
+
+            result.CanCreate().Should().BeFalse();
+            AssertFailureResultHasNoActivator(result);
+            Action getProxyType = () => _ = result.ProxyType;
+            getProxyType.Should().Throw<DuckTypeAotRegisteredFailureException>()
+                        .WithMessage("*KnownDuckTypeFailure*missing-member*");
+            Action createProxy = () => _ = result.CreateInstance<IReverseProxy>(new ReverseTarget("failure"));
+            createProxy.Should().Throw<DuckTypeAotRegisteredFailureException>()
+                       .WithMessage("*KnownDuckTypeFailure*missing-member*");
+            DuckType.EnableAotMode();
+            Action createViaDuckType = () => _ = DuckType.CreateReverse(typeof(IReverseProxy), new ReverseTarget("failure"));
+            createViaDuckType.Should().Throw<TargetInvocationException>()
+                            .WithInnerException<DuckTypeAotRegisteredFailureException>();
         }
 
         [Fact]
@@ -583,7 +672,10 @@ namespace Datadog.Trace.DuckTyping.Tests
             Action getProxyType = () => _ = result.ProxyType;
             getProxyType.Should().Throw<DuckTypeAotRegisteredFailureException>()
                         .WithMessage("*KnownDuckTypeFailure*missing-member*");
-            knownFailureThrowerInvocationCount.Should().Be(1);
+            Action createProxy = () => _ = result.CreateInstance<IForwardProxy>(new ForwardTarget("failure"));
+            createProxy.Should().Throw<DuckTypeAotRegisteredFailureException>()
+                       .WithMessage("*KnownDuckTypeFailure*missing-member*");
+            knownFailureThrowerInvocationCount.Should().Be(2);
         }
 
         [Fact]
@@ -603,9 +695,107 @@ namespace Datadog.Trace.DuckTyping.Tests
             var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
 
             result.CanCreate().Should().BeFalse();
+            AssertFailureResultHasNoActivator(result);
             Action getProxyType = () => _ = result.ProxyType;
             getProxyType.Should().Throw<DuckTypeTargetMethodNotFoundException>()
                         .WithMessage(expectedMessage);
+            Action createProxy = () => _ = result.CreateInstance<IForwardProxy>(new ForwardTarget("failure"));
+            createProxy.Should().Throw<DuckTypeTargetMethodNotFoundException>()
+                       .WithMessage(expectedMessage);
+        }
+
+        [Fact]
+        public void RegisterFailureUsingExceptionTypeDoesNotDefineRegistryAssemblyIdentity()
+        {
+            DuckTypeAotEngine.RegisterProxyFailure(
+                typeof(IMissingProxy),
+                typeof(MissingTarget),
+                typeof(DuckTypePropertyCantBeWrittenException));
+
+            Action register = () => DuckTypeAotEngine.RegisterProxy(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                typeof(ForwardGeneratedProxy),
+                instance => new ForwardGeneratedProxy((ForwardTarget)instance!));
+
+            register.Should().NotThrow();
+            DuckType.EnableAotMode();
+            DuckType.Create<IForwardProxy>(new ForwardTarget("value"))!.Value.Should().Be("value");
+        }
+
+        [Fact]
+        public void RegisterProxyFailureFromDifferentRegistryAssemblyThrows()
+        {
+            DuckTypeAotEngine.RegisterProxyFailure(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                (Action)ThrowKnownRegisteredFailure);
+
+            var dynamicThrower = CreateSameSimpleNameDynamicAssemblyFailureThrower();
+            Action conflictingRegistryRegistration = () => DuckTypeAotEngine.RegisterProxyFailure(
+                typeof(ISingleRegistryConflictProxy),
+                typeof(SingleRegistryConflictTarget),
+                dynamicThrower);
+
+            conflictingRegistryRegistration.Should().Throw<DuckTypeAotMultipleRegistryAssembliesException>();
+        }
+
+        [Fact]
+        public async Task RegisterProxyFailureValidatesRegistryIdentityInsideRegistrationLock()
+        {
+            var registrationLock = GetDuckTypeAotRegistrationLock();
+            var registeredIdentityField = GetDuckTypeAotEngineStaticField("_registeredRegistryAssemblyIdentity");
+            using var started = new ManualResetEventSlim(initialState: false);
+
+            var registrationTask = Task.CompletedTask;
+            Monitor.Enter(registrationLock);
+            try
+            {
+                registrationTask = Task.Run(() =>
+                {
+                    started.Set();
+                    DuckTypeAotEngine.RegisterProxyFailure(
+                        typeof(IForwardProxy),
+                        typeof(ForwardTarget),
+                        (Action)ThrowKnownRegisteredFailure);
+                });
+
+                started.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
+                SpinWait.SpinUntil(
+                    () => registeredIdentityField.GetValue(null) is not null || registrationTask.IsCompleted,
+                    TimeSpan.FromMilliseconds(100));
+
+                registeredIdentityField.SetValue(
+                    null,
+                    $"Fake.DuckType.Registry, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null; MVID={Guid.NewGuid():D}");
+            }
+            finally
+            {
+                Monitor.Exit(registrationLock);
+            }
+
+            Func<Task> waitForRegistration = async () => await registrationTask;
+            await waitForRegistration.Should().ThrowAsync<DuckTypeAotMultipleRegistryAssembliesException>();
+        }
+
+        [Fact]
+        public void ValidateContractWithDifferentRegistryIdentityThenRegisterFailureThrows()
+        {
+            DuckTypeAotEngine.ValidateContract(
+                new DuckTypeAotContract(
+                    DuckTypeAotContract.CurrentSchemaVersion,
+                    CurrentDatadogTraceAssemblyVersion,
+                    CurrentDatadogTraceAssemblyMvid),
+                new DuckTypeAotAssemblyMetadata(
+                    "Fake.DuckType.Registry, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+                    Guid.NewGuid().ToString("D")));
+
+            Action register = () => DuckTypeAotEngine.RegisterProxyFailure(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                (Action)ThrowKnownRegisteredFailure);
+
+            register.Should().Throw<DuckTypeAotMultipleRegistryAssembliesException>();
         }
 
         [Fact]
@@ -694,6 +884,18 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         private class MissingTarget
         {
+        }
+
+        private interface IDynamicFailureProxy
+        {
+            string GetValue();
+        }
+
+        private class DynamicFailureTarget
+        {
+            public void GetValue()
+            {
+            }
         }
 
         private interface IForwardProxy
@@ -956,6 +1158,22 @@ namespace Datadog.Trace.DuckTyping.Tests
             public string Value => "reverse:" + _target.Value;
         }
 
+        [DuckCopy]
+        private struct ValueTypeDuckCopyProxy
+        {
+            public string Value;
+        }
+
+        private class ValueTypeTarget
+        {
+            public ValueTypeTarget(string value)
+            {
+                Value = value;
+            }
+
+            public string Value { get; }
+        }
+
         private interface IInvalidGeneratedProxy
         {
             string Value { get; }
@@ -1048,6 +1266,11 @@ namespace Datadog.Trace.DuckTyping.Tests
             return new ReverseGeneratedProxy((ReverseTarget)instance!);
         }
 
+        private static ValueTypeDuckCopyProxy CreateValueTypeProxyWithObjectMethodHandle(object? instance)
+        {
+            return new ValueTypeDuckCopyProxy { Value = ((ValueTypeTarget)instance!).Value };
+        }
+
         private static object CreateSingleRegistryConflictProxyInstance(object? instance)
         {
             return new SingleRegistryConflictGeneratedProxy((SingleRegistryConflictTarget)instance!);
@@ -1109,11 +1332,66 @@ namespace Datadog.Trace.DuckTyping.Tests
             return (Func<object?, object?>)Delegate.CreateDelegate(typeof(Func<object?, object?>), createMethod!);
         }
 
+        private static Action CreateSameSimpleNameDynamicAssemblyFailureThrower()
+        {
+            var currentAssemblySimpleName = typeof(DuckTypeAotEngineTests).Assembly.GetName().Name;
+            currentAssemblySimpleName.Should().NotBeNullOrEmpty();
+
+            var dynamicAssembly = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName(currentAssemblySimpleName!), AssemblyBuilderAccess.Run);
+            var dynamicModule = dynamicAssembly.DefineDynamicModule("MainModule");
+            var dynamicType = dynamicModule.DefineType(
+                "SingleRegistrySameNameFailureThrowerFactory",
+                TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed);
+            var dynamicMethod = dynamicType.DefineMethod(
+                "Throw",
+                MethodAttributes.Public | MethodAttributes.Static,
+                typeof(void),
+                Type.EmptyTypes);
+
+            var bridgeMethod = typeof(DuckTypeAotEngineTests).GetMethod(
+                nameof(ThrowKnownRegisteredFailure),
+                BindingFlags.NonPublic | BindingFlags.Static);
+            bridgeMethod.Should().NotBeNull();
+
+            var il = dynamicMethod.GetILGenerator();
+            il.Emit(OpCodes.Call, bridgeMethod!);
+            il.Emit(OpCodes.Ret);
+
+            var factoryType = dynamicType.CreateTypeInfo();
+            factoryType.Should().NotBeNull();
+
+            var throwMethod = factoryType!.GetMethod("Throw", BindingFlags.Public | BindingFlags.Static);
+            throwMethod.Should().NotBeNull();
+
+            return (Action)Delegate.CreateDelegate(typeof(Action), throwMethod!);
+        }
+
         private static TField? GetCreateTypeResultField<TField>(DuckType.CreateTypeResult result, string fieldName)
         {
             var field = typeof(DuckType.CreateTypeResult).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
             field.Should().NotBeNull();
             return (TField?)field!.GetValue(result);
+        }
+
+        private static object GetDuckTypeAotRegistrationLock()
+        {
+            var registrationLock = GetDuckTypeAotEngineStaticField("RegistrationLock").GetValue(null);
+            registrationLock.Should().NotBeNull();
+            return registrationLock!;
+        }
+
+        private static FieldInfo GetDuckTypeAotEngineStaticField(string fieldName)
+        {
+            var field = typeof(DuckTypeAotEngine).GetField(fieldName, BindingFlags.Static | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            return field!;
+        }
+
+        private static void AssertFailureResultHasNoActivator(DuckType.CreateTypeResult result)
+        {
+            result.UsesDynamicInvokeFallback.Should().BeFalse();
+            GetCreateTypeResultField<Delegate>(result, "_activator").Should().BeNull();
+            GetCreateTypeResultField<Func<object?, object?>>(result, "_untypedActivator").Should().BeNull();
         }
 
         private static string CurrentDatadogTraceAssemblyVersion => typeof(DuckTypeAotEngine).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";

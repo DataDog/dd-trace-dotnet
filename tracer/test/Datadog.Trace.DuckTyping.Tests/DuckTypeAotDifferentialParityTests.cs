@@ -829,6 +829,29 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void DifferentialParityC32BForwardValueWithTypeMethodParameterShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "C-32B";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IValueWithTypeMethodParameterProxy),
+                typeof(ValueWithTypeMethodParameterTarget),
+                typeof(ValueWithTypeMethodParameterAotProxy),
+                instance => new ValueWithTypeMethodParameterAotProxy((ValueWithTypeMethodParameterTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IValueWithTypeMethodParameterProxy), typeof(ValueWithTypeMethodParameterTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IValueWithTypeMethodParameterProxy), typeof(ValueWithTypeMethodParameterTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IValueWithTypeMethodParameterProxy>(new ValueWithTypeMethodParameterTarget());
+            var aotProxy = aotResult.CreateInstance<IValueWithTypeMethodParameterProxy>(new ValueWithTypeMethodParameterTarget());
+            var input = ValueWithType<string>.Create("input", typeof(string));
+
+            aotProxy.Consume(input).Should().Be(dynamicProxy.Consume(input), $"scenario {scenarioId} should preserve ValueWithType method parameter extraction");
+        }
+
+        [Fact]
         public void DifferentialParityC33ForwardEnumNormalizationShouldMatchBetweenDynamicAndAot()
         {
             const string scenarioId = "C-33";
@@ -848,6 +871,28 @@ namespace Datadog.Trace.DuckTyping.Tests
             var aotProxy = aotResult.CreateInstance<IEnumConversionProxy>(new EnumConversionTarget());
 
             aotProxy.Echo(EnumConversionValue.Two).Should().Be(dynamicProxy.Echo(EnumConversionValue.Two), $"scenario {scenarioId} should preserve enum underlying-type normalization");
+        }
+
+        [Fact]
+        public void DifferentialParityC33BForwardMethodAlternativeNamesShouldMatchBetweenDynamicAndAot()
+        {
+            const string scenarioId = "C-33B";
+            DuckTypeAotEngine.RegisterProxy(
+                typeof(IMethodAlternativeNamesProxy),
+                typeof(MethodAlternativeNamesTarget),
+                typeof(MethodAlternativeNamesAotProxy),
+                instance => new MethodAlternativeNamesAotProxy((MethodAlternativeNamesTarget)instance!));
+
+            var dynamicResult = InvokeDynamicForward(typeof(IMethodAlternativeNamesProxy), typeof(MethodAlternativeNamesTarget));
+            var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IMethodAlternativeNamesProxy), typeof(MethodAlternativeNamesTarget));
+
+            dynamicResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in dynamic mode");
+            aotResult.CanCreate().Should().BeTrue($"scenario {scenarioId} must be creatable in AOT mode");
+
+            var dynamicProxy = dynamicResult.CreateInstance<IMethodAlternativeNamesProxy>(new MethodAlternativeNamesTarget());
+            var aotProxy = aotResult.CreateInstance<IMethodAlternativeNamesProxy>(new MethodAlternativeNamesTarget());
+
+            aotProxy.Read().Should().Be(dynamicProxy.Read(), $"scenario {scenarioId} should preserve comma-separated method name fallback");
         }
 
         [Fact]
@@ -3218,6 +3263,36 @@ namespace Datadog.Trace.DuckTyping.Tests
             }
         }
 
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ValueWithTypeMethodParameterTarget", "Datadog.Trace.DuckTyping.Tests")]
+        private interface IValueWithTypeMethodParameterProxy
+        {
+            [Duck(Name = "Consume")]
+            string Consume(ValueWithType<string> value);
+        }
+
+        private class ValueWithTypeMethodParameterTarget
+        {
+            public string Consume(string value)
+            {
+                return "target:" + value;
+            }
+        }
+
+        private class ValueWithTypeMethodParameterAotProxy : IValueWithTypeMethodParameterProxy
+        {
+            private readonly ValueWithTypeMethodParameterTarget _target;
+
+            public ValueWithTypeMethodParameterAotProxy(ValueWithTypeMethodParameterTarget target)
+            {
+                _target = target;
+            }
+
+            public string Consume(ValueWithType<string> value)
+            {
+                return _target.Consume(value.Value!);
+            }
+        }
+
         [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+EnumConversionTarget", "Datadog.Trace.DuckTyping.Tests")]
         private interface IEnumConversionProxy
         {
@@ -3251,6 +3326,36 @@ namespace Datadog.Trace.DuckTyping.Tests
             public EnumConversionValue Echo(EnumConversionValue value)
             {
                 return (EnumConversionValue)_target.Echo((int)value);
+            }
+        }
+
+        [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+MethodAlternativeNamesTarget", "Datadog.Trace.DuckTyping.Tests")]
+        private interface IMethodAlternativeNamesProxy
+        {
+            [Duck(Name = "Missing, Actual")]
+            string Read();
+        }
+
+        private class MethodAlternativeNamesTarget
+        {
+            public string Actual()
+            {
+                return "actual";
+            }
+        }
+
+        private class MethodAlternativeNamesAotProxy : IMethodAlternativeNamesProxy
+        {
+            private readonly MethodAlternativeNamesTarget _target;
+
+            public MethodAlternativeNamesAotProxy(MethodAlternativeNamesTarget target)
+            {
+                _target = target;
+            }
+
+            public string Read()
+            {
+                return _target.Actual();
             }
         }
 

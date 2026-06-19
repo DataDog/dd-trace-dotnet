@@ -86,13 +86,6 @@ namespace Datadog.Trace.DuckTyping
         private static readonly string CurrentDatadogTraceAssemblyMvid = typeof(DuckTypeAotEngine).Assembly.ManifestModule.ModuleVersionId.ToString("D");
 
         /// <summary>
-        /// Cached helper used to construct typed-to-object activator bridges without runtime DynamicInvoke.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly MethodInfo CreateObjectBridgeActivatorFactoryMethod =
-            typeof(DuckTypeAotEngine).GetMethod(nameof(CreateObjectBridgeActivatorFactory), BindingFlags.NonPublic | BindingFlags.Static)!;
-
-        /// <summary>
         /// Test-only snapshot cache used to restore generated registry state without replaying the bootstrap on every test.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -125,12 +118,6 @@ namespace Datadog.Trace.DuckTyping
         private static int _directObjectActivatorHandleCount;
 
         /// <summary>
-        /// Counts method-handle registrations that require a one-time typed-to-object bridge.
-        /// </summary>
-        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
-        private static int _adaptedTypedActivatorHandleCount;
-
-        /// <summary>
         /// Gets cache version.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
@@ -140,11 +127,6 @@ namespace Datadog.Trace.DuckTyping
         /// Gets the number of method-handle registrations that resolved directly to object activators.
         /// </summary>
         internal static int DirectObjectActivatorHandleCount => Volatile.Read(ref _directObjectActivatorHandleCount);
-
-        /// <summary>
-        /// Gets the number of method-handle registrations adapted from typed activators to object activators.
-        /// </summary>
-        internal static int AdaptedTypedActivatorHandleCount => Volatile.Read(ref _adaptedTypedActivatorHandleCount);
 
         /// <summary>
         /// Gets the cached forward AOT registration result for a proxy/target pair.
@@ -195,12 +177,12 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="targetType">The target type value.</param>
         /// <param name="generatedProxyType">The generated proxy type value.</param>
         /// <param name="activatorMethodHandle">
-        /// Handle to a static generated activator method. The method must accept either <see cref="object"/>
-        /// or the exact target runtime type, and must return a type assignable to <paramref name="proxyDefinitionType"/>.
+        /// Handle to a static generated object-bridge activator method. The method must accept <see cref="object"/>
+        /// and must return a type assignable to <paramref name="proxyDefinitionType"/>.
         /// </param>
         internal static void RegisterProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
         {
-            Register(proxyDefinitionType, targetType, generatedProxyType, CreateTypedActivator(proxyDefinitionType, targetType, activatorMethodHandle), reverse: false);
+            Register(proxyDefinitionType, targetType, generatedProxyType, CreateObjectBridgeActivator(proxyDefinitionType, targetType, activatorMethodHandle), reverse: false);
         }
 
         /// <summary>
@@ -224,12 +206,12 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="delegationType">The delegation type value.</param>
         /// <param name="generatedProxyType">The generated proxy type value.</param>
         /// <param name="activatorMethodHandle">
-        /// Handle to a static generated activator method. The method must accept either <see cref="object"/>
-        /// or the exact delegation runtime type, and must return a type assignable to <paramref name="typeToDeriveFrom"/>.
+        /// Handle to a static generated object-bridge activator method. The method must accept <see cref="object"/>
+        /// and must return a type assignable to <paramref name="typeToDeriveFrom"/>.
         /// </param>
         internal static void RegisterReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, RuntimeMethodHandle activatorMethodHandle)
         {
-            Register(typeToDeriveFrom, delegationType, generatedProxyType, CreateTypedActivator(typeToDeriveFrom, delegationType, activatorMethodHandle), reverse: true);
+            Register(typeToDeriveFrom, delegationType, generatedProxyType, CreateObjectBridgeActivator(typeToDeriveFrom, delegationType, activatorMethodHandle), reverse: true);
         }
 
         /// <summary>
@@ -381,7 +363,6 @@ namespace Datadog.Trace.DuckTyping
                 _registeredRegistryAssemblyIdentity = null;
                 _validatedRegistryAssemblyIdentity = null;
                 Volatile.Write(ref _directObjectActivatorHandleCount, 0);
-                Volatile.Write(ref _adaptedTypedActivatorHandleCount, 0);
                 Interlocked.Increment(ref _cacheVersion);
             }
         }
@@ -458,7 +439,6 @@ namespace Datadog.Trace.DuckTyping
                 _registeredRegistryAssemblyIdentity = snapshot.RegisteredRegistryAssemblyIdentity;
                 _validatedRegistryAssemblyIdentity = snapshot.ValidatedRegistryAssemblyIdentity;
                 Volatile.Write(ref _directObjectActivatorHandleCount, 0);
-                Volatile.Write(ref _adaptedTypedActivatorHandleCount, 0);
                 Interlocked.Increment(ref _cacheVersion);
             }
 
@@ -571,7 +551,7 @@ namespace Datadog.Trace.DuckTyping
                 throw new ArgumentException($"Failure exception type '{exceptionType}' must derive from Exception.", nameof(exceptionType));
             }
 
-            RegisterFailure(proxyDefinitionType, targetType, CreateRegisteredFailureThrower(exceptionType), reverse);
+            RegisterFailure(proxyDefinitionType, targetType, CreateRegisteredFailureThrower(exceptionType), reverse, enforceRegistryIdentity: false);
         }
 
         /// <summary>
@@ -597,16 +577,24 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="failureThrower">The failure thrower for the registration.</param>
         /// <param name="reverse">Whether the registration belongs to the reverse registry.</param>
         private static void RegisterFailure(Type proxyDefinitionType, Type targetType, Action failureThrower, bool reverse)
+            => RegisterFailure(proxyDefinitionType, targetType, failureThrower, reverse, enforceRegistryIdentity: true);
+
+        private static void RegisterFailure(Type proxyDefinitionType, Type targetType, Action failureThrower, bool reverse, bool enforceRegistryIdentity)
         {
             if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
             if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
             if (failureThrower is null) { ThrowHelper.ThrowArgumentNullException(nameof(failureThrower)); }
 
             var key = new TypesTuple(proxyDefinitionType, targetType);
-            var createTypeResult = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, failureThrower);
+            var createTypeResult = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, failureThrower, wrapNonGenericFailureInTargetInvocationException: true);
 
             lock (RegistrationLock)
             {
+                if (enforceRegistryIdentity)
+                {
+                    EnsureSingleRegistryAssemblyPerProcess(failureThrower);
+                }
+
                 var registry = reverse ? ReverseRegistry : ForwardRegistry;
                 // A concrete registration always takes precedence over a failure registration.
                 if (registry.ContainsKey(key))
@@ -734,19 +722,15 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Materializes and validates a strongly typed activator delegate from a method handle.
+        /// Materializes and validates an object-bridge activator delegate from a method handle.
         /// </summary>
         /// <param name="proxyDefinitionType">The proxy definition type value.</param>
         /// <param name="targetType">The target type value.</param>
         /// <param name="activatorMethodHandle">The activator method handle value.</param>
         /// <returns>
-        /// A closed delegate compatible with the registration path:
-        /// <list type="bullet">
-        /// <item><description><see cref="CreateProxyInstance{T}"/> when parameter type is <see cref="object"/>.</description></item>
-        /// <item><description><see cref="Func{T1, T2}"/> adapted once into <see cref="Func{T, TResult}"/> for typed compatibility handles.</description></item>
-        /// </list>
+        /// A closed <see cref="CreateProxyInstance{T}"/> delegate compatible with the registration path.
         /// </returns>
-        private static Delegate CreateTypedActivator(Type proxyDefinitionType, Type targetType, RuntimeMethodHandle activatorMethodHandle)
+        private static Delegate CreateObjectBridgeActivator(Type proxyDefinitionType, Type targetType, RuntimeMethodHandle activatorMethodHandle)
         {
             if (proxyDefinitionType is null)
             {
@@ -794,13 +778,17 @@ namespace Datadog.Trace.DuckTyping
             }
 
             var parameters = activatorMethod.GetParameters();
-            // Support both generated activation models:
-            // 1) object bridge for registration entrypoints, 2) concrete typed parameter for lower-overhead paths.
-            if (parameters.Length != 1 ||
-                (parameters[0].ParameterType != typeof(object) && parameters[0].ParameterType != targetType))
+            if (parameters.Length != 1 || parameters[0].ParameterType != typeof(object))
             {
                 throw new ArgumentException(
-                    $"AOT duck typing activator method '{activatorMethod}' must declare exactly one parameter of type '{targetType}' or 'object'.",
+                    $"AOT duck typing RuntimeMethodHandle activator method '{activatorMethod}' must declare exactly one parameter of type 'object'. Typed method-handle activators are not supported; register a direct Func<object?, object?> delegate or an object-bridge method handle instead.",
+                    nameof(activatorMethodHandle));
+            }
+
+            if (proxyDefinitionType.IsValueType)
+            {
+                throw new ArgumentException(
+                    $"AOT duck typing RuntimeMethodHandle activator methods are not supported for value-type proxy definition '{proxyDefinitionType}'. Register a direct Func<object?, object?> delegate instead.",
                     nameof(activatorMethodHandle));
             }
 
@@ -812,62 +800,19 @@ namespace Datadog.Trace.DuckTyping
                     nameof(activatorMethodHandle));
             }
 
-            if (parameters[0].ParameterType == typeof(object))
-            {
-                var objectDelegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
-                try
-                {
-                    Interlocked.Increment(ref _directObjectActivatorHandleCount);
-                    return Delegate.CreateDelegate(objectDelegateType, activatorMethod);
-                }
-                catch (Exception ex)
-                {
-                    throw new ArgumentException(
-                        $"AOT duck typing activator method '{activatorMethod}' could not be converted to delegate '{objectDelegateType}'.",
-                        nameof(activatorMethodHandle),
-                        ex);
-                }
-            }
-
+            var objectDelegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
             try
             {
-                var bridgeFactory = CreateObjectBridgeActivatorFactoryMethod.MakeGenericMethod(targetType, proxyDefinitionType);
-                var adaptedActivator = bridgeFactory.Invoke(obj: null, parameters: [activatorMethod]) as Func<object?, object?>;
-                if (adaptedActivator is null)
-                {
-                    throw new InvalidOperationException("AOT duck typing activator bridge factory returned null.");
-                }
-
-                Interlocked.Increment(ref _adaptedTypedActivatorHandleCount);
-                return adaptedActivator;
-            }
-            catch (TargetInvocationException ex) when (ex.InnerException is not null)
-            {
-                throw new ArgumentException(
-                    $"AOT duck typing activator method '{activatorMethod}' could not be adapted to an object activator bridge.",
-                    nameof(activatorMethodHandle),
-                    ex.InnerException);
+                Interlocked.Increment(ref _directObjectActivatorHandleCount);
+                return Delegate.CreateDelegate(objectDelegateType, activatorMethod);
             }
             catch (Exception ex)
             {
                 throw new ArgumentException(
-                    $"AOT duck typing activator method '{activatorMethod}' could not be adapted to an object activator bridge.",
+                    $"AOT duck typing activator method '{activatorMethod}' could not be converted to delegate '{objectDelegateType}'.",
                     nameof(activatorMethodHandle),
                     ex);
             }
-        }
-
-        /// <summary>
-        /// Creates an object-callable bridge for a typed AOT activator method handle.
-        /// </summary>
-        /// <typeparam name="TTarget">The typed target/delegation input.</typeparam>
-        /// <typeparam name="TProxy">The proxy contract output.</typeparam>
-        /// <param name="activatorMethod">The typed activator method.</param>
-        /// <returns>An object-callable activator that performs only a cast/unbox and a direct delegate invocation.</returns>
-        private static Func<object?, object?> CreateObjectBridgeActivatorFactory<TTarget, TProxy>(MethodInfo activatorMethod)
-        {
-            var typedActivator = (Func<TTarget, TProxy>)Delegate.CreateDelegate(typeof(Func<TTarget, TProxy>), activatorMethod);
-            return instance => typedActivator((TTarget)instance!);
         }
 
         /// <summary>
@@ -991,7 +936,8 @@ namespace Datadog.Trace.DuckTyping
                     proxyType: null,
                     key.TargetType,
                     activator: null,
-                    ExceptionDispatchInfo.Capture(ex));
+                    ExceptionDispatchInfo.Capture(ex),
+                    wrapNonGenericFailureInTargetInvocationException: true);
             }
         }
 
