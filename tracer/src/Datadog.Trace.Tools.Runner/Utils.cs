@@ -1396,7 +1396,7 @@ namespace Datadog.Trace.Tools.Runner
                     throw new IOException($"Temporary tracer home directory '{path}' already exists.");
                 }
 
-                Directory.CreateDirectory(path);
+                CreateWindowsPrivateDirectory(path);
                 ValidateExistingPrivateDirectory(path);
                 return;
             }
@@ -1473,6 +1473,36 @@ namespace Datadog.Trace.Tools.Runner
         }
 
 #pragma warning disable CA1416 // Windows ACL APIs are only called after a RuntimeInformation Windows guard.
+        private static void CreateWindowsPrivateDirectory(string path)
+        {
+            var currentUser = WindowsIdentity.GetCurrent().User;
+            if (currentUser is null)
+            {
+                throw new IOException("Unable to determine the current Windows user.");
+            }
+
+            // Avoid inheriting broad write ACEs from user-configurable cache roots.
+            var security = new DirectorySecurity();
+            security.SetOwner(currentUser);
+            security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+            AddWindowsDirectoryFullControl(security, currentUser);
+            AddWindowsDirectoryFullControl(security, new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null));
+            AddWindowsDirectoryFullControl(security, new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null));
+
+            FileSystemAclExtensions.Create(new DirectoryInfo(path), security);
+        }
+
+        private static void AddWindowsDirectoryFullControl(DirectorySecurity security, SecurityIdentifier securityIdentifier)
+        {
+            security.AddAccessRule(
+                new FileSystemAccessRule(
+                    securityIdentifier,
+                    FileSystemRights.FullControl,
+                    InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                    PropagationFlags.None,
+                    AccessControlType.Allow));
+        }
+
         private static void ValidateWindowsDirectoryAccess(string path, bool requireCurrentUserOwner, bool allowBroadWrite)
         {
             DirectorySecurity security;
