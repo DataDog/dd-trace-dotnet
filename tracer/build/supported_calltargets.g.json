@@ -18535,7 +18535,8 @@
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
       "StackExchange.Redis.ResultProcessor`1[!!0]",
-      "StackExchange.Redis.ServerEndPoint"
+      "StackExchange.Redis.ServerEndPoint",
+      "!!0"
     ],
     "MinimumVersion": {
       "Item1": 1,
@@ -18543,11 +18544,11 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteSyncIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteSyncDefaultIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -18561,8 +18562,7 @@
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
       "StackExchange.Redis.ResultProcessor`1[!!0]",
-      "StackExchange.Redis.ServerEndPoint",
-      "!!0"
+      "StackExchange.Redis.ServerEndPoint"
     ],
     "MinimumVersion": {
       "Item1": 1,
@@ -18570,7 +18570,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 3,
+      "Item1": 2,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18828,7 +18828,8 @@
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
       "StackExchange.Redis.ResultProcessor`1[!!0]",
-      "StackExchange.Redis.ServerEndPoint"
+      "StackExchange.Redis.ServerEndPoint",
+      "!!0"
     ],
     "MinimumVersion": {
       "Item1": 1,
@@ -18836,11 +18837,11 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteSyncIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteSyncDefaultIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -18854,8 +18855,7 @@
     "TargetParameterTypes": [
       "StackExchange.Redis.Message",
       "StackExchange.Redis.ResultProcessor`1[!!0]",
-      "StackExchange.Redis.ServerEndPoint",
-      "!!0"
+      "StackExchange.Redis.ServerEndPoint"
     ],
     "MinimumVersion": {
       "Item1": 1,
@@ -18863,7 +18863,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 3,
+      "Item1": 2,
       "Item2": 65535,
       "Item3": 65535
     },
