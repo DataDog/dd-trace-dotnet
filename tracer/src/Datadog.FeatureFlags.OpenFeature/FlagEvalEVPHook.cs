@@ -38,6 +38,9 @@ internal sealed class FlagEvalEVPHook : Hook
     /// </summary>
     private const string MetadataAllocationKey = "__dd_allocation_key";
 
+    private const int MaxContextFields = 256;
+    private const int MaxFieldLength = 256;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="FlagEvalEVPHook"/> class.
     /// </summary>
@@ -89,7 +92,7 @@ internal sealed class FlagEvalEVPHook : Hook
                 evalTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             }
 
-            // Flatten context attributes to a string→object map for aggregation.
+            // Flatten and bound context attributes before handing them to the enqueue bridge.
             IDictionary<string, object?>? contextAttrs = ExtractContextAttrs(context.EvaluationContext);
 
             // Route via the static delegate bridge (wired from FeatureFlagsModule when EVP is enabled).
@@ -106,7 +109,7 @@ internal sealed class FlagEvalEVPHook : Hook
     }
 
     /// <summary>
-    /// Extracts context attributes from the OpenFeature evaluation context as a plain object map.
+    /// Extracts context attributes from the OpenFeature evaluation context as a bounded plain object map.
     /// Converts OpenFeature <see cref="Value"/> to native types for the aggregation layer.
     /// </summary>
     private static IDictionary<string, object?>? ExtractContextAttrs(EvaluationContext? ctx)
@@ -122,7 +125,7 @@ internal sealed class FlagEvalEVPHook : Hook
             return null;
         }
 
-        var result = new Dictionary<string, object?>();
+        var flattened = new Dictionary<string, object?>();
         foreach (var kv in pairs)
         {
             // Skip the targeting_key entry — it is captured separately via context.TargetingKey.
@@ -132,36 +135,91 @@ internal sealed class FlagEvalEVPHook : Hook
                 continue;
             }
 
-            result[kv.Key] = ValueToObject(kv.Value);
+            FlattenValue(kv.Key, kv.Value, flattened);
+        }
+
+        if (flattened.Count == 0)
+        {
+            return null;
+        }
+
+        var keys = new List<string>(flattened.Keys);
+        keys.Sort(StringComparer.Ordinal);
+
+        var result = new Dictionary<string, object?>(Math.Min(flattened.Count, MaxContextFields));
+        foreach (string key in keys)
+        {
+            if (result.Count >= MaxContextFields)
+            {
+                break;
+            }
+
+            object? value = flattened[key];
+            if (value is string s && s.Length > MaxFieldLength)
+            {
+                continue;
+            }
+
+            result[key] = value;
         }
 
         return result.Count > 0 ? result : null;
     }
 
-    private static object? ValueToObject(Value? v)
+    private static void FlattenValue(string prefix, Value? value, Dictionary<string, object?> output)
     {
-        if (v is null)
+        if (value is null || value.IsNull)
         {
-            return null;
+            output[prefix] = null;
+            return;
         }
 
-        if (v.IsBoolean)
+        if (value.IsStructure && value.AsStructure is { } structure)
         {
-            return v.AsBoolean;
+            foreach (var kv in structure.AsDictionary())
+            {
+                FlattenValue(prefix + "." + kv.Key, kv.Value, output);
+            }
+
+            return;
         }
 
-        if (v.IsString)
+        if (value.IsList && value.AsList is { } list)
         {
-            return v.AsString;
+            for (int i = 0; i < list.Count; i++)
+            {
+                FlattenValue(prefix + "." + i, list[i], output);
+            }
+
+            return;
         }
 
-        if (v.IsNumber)
+        output[prefix] = ValueToObject(value);
+    }
+
+    private static object? ValueToObject(Value value)
+    {
+        if (value.IsBoolean)
         {
-            return v.AsDouble;
+            return value.AsBoolean;
         }
 
-        // Nested objects / arrays: convert to string; handled via TagOther in canonical key.
-        return v.AsObject?.ToString();
+        if (value.IsString)
+        {
+            return value.AsString;
+        }
+
+        if (value.IsNumber)
+        {
+            return value.AsDouble;
+        }
+
+        if (value.IsDateTime)
+        {
+            return value.AsDateTime;
+        }
+
+        return value.AsObject?.ToString();
     }
 
     private static string ErrorTypeToString(ErrorType errorType) => errorType switch

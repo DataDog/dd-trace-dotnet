@@ -17,12 +17,13 @@ internal readonly struct DegradedKey : IEquatable<DegradedKey>
     /// <summary>
     /// Initializes a new instance of the <see cref="DegradedKey"/> struct.
     /// </summary>
-    public DegradedKey(string flagKey, string variant, string allocationKey, string errorMessage)
+    public DegradedKey(string flagKey, string variant, string allocationKey, string errorMessage, bool runtimeDefault)
     {
         FlagKey = flagKey;
         Variant = variant;
         AllocationKey = allocationKey;
         ErrorMessage = errorMessage;
+        RuntimeDefault = runtimeDefault;
     }
 
     /// <summary>Gets the flag key.</summary>
@@ -37,12 +38,16 @@ internal readonly struct DegradedKey : IEquatable<DegradedKey>
     /// <summary>Gets the schema-visible error message.</summary>
     public string ErrorMessage { get; }
 
+    /// <summary>Gets a value indicating whether the runtime default was used.</summary>
+    public bool RuntimeDefault { get; }
+
     /// <inheritdoc/>
     public bool Equals(DegradedKey other) =>
         FlagKey == other.FlagKey &&
         Variant == other.Variant &&
         AllocationKey == other.AllocationKey &&
-        ErrorMessage == other.ErrorMessage;
+        ErrorMessage == other.ErrorMessage &&
+        RuntimeDefault == other.RuntimeDefault;
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => obj is DegradedKey other && Equals(other);
@@ -56,6 +61,7 @@ internal readonly struct DegradedKey : IEquatable<DegradedKey>
             h = (h * 397) ^ (Variant?.GetHashCode() ?? 0);
             h = (h * 397) ^ (AllocationKey?.GetHashCode() ?? 0);
             h = (h * 397) ^ (ErrorMessage?.GetHashCode() ?? 0);
+            h = (h * 397) ^ RuntimeDefault.GetHashCode();
             return h;
         }
     }

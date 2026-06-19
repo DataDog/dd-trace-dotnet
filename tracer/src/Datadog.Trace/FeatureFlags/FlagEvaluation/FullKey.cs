@@ -17,12 +17,13 @@ internal readonly struct FullKey : IEquatable<FullKey>
     /// <summary>
     /// Initializes a new instance of the <see cref="FullKey"/> struct.
     /// </summary>
-    public FullKey(string flagKey, string variant, string allocationKey, string errorMessage, string targetingKey, string contextKey)
+    public FullKey(string flagKey, string variant, string allocationKey, string errorMessage, bool runtimeDefault, string targetingKey, string contextKey)
     {
         FlagKey = flagKey;
         Variant = variant;
         AllocationKey = allocationKey;
         ErrorMessage = errorMessage;
+        RuntimeDefault = runtimeDefault;
         TargetingKey = targetingKey;
         ContextKey = contextKey;
     }
@@ -39,6 +40,9 @@ internal readonly struct FullKey : IEquatable<FullKey>
     /// <summary>Gets the schema-visible error message.</summary>
     public string ErrorMessage { get; }
 
+    /// <summary>Gets a value indicating whether the runtime default was used.</summary>
+    public bool RuntimeDefault { get; }
+
     /// <summary>Gets the targeting key.</summary>
     public string TargetingKey { get; }
 
@@ -51,6 +55,7 @@ internal readonly struct FullKey : IEquatable<FullKey>
         Variant == other.Variant &&
         AllocationKey == other.AllocationKey &&
         ErrorMessage == other.ErrorMessage &&
+        RuntimeDefault == other.RuntimeDefault &&
         TargetingKey == other.TargetingKey &&
         ContextKey == other.ContextKey;
 
@@ -66,6 +71,7 @@ internal readonly struct FullKey : IEquatable<FullKey>
             h = (h * 397) ^ (Variant?.GetHashCode() ?? 0);
             h = (h * 397) ^ (AllocationKey?.GetHashCode() ?? 0);
             h = (h * 397) ^ (ErrorMessage?.GetHashCode() ?? 0);
+            h = (h * 397) ^ RuntimeDefault.GetHashCode();
             h = (h * 397) ^ (TargetingKey?.GetHashCode() ?? 0);
             h = (h * 397) ^ (ContextKey?.GetHashCode() ?? 0);
             return h;

@@ -58,7 +58,7 @@ public class FlagEvalEVPHookTests
     public void FlagEvaluationPath_IsCorrect()
     {
         Datadog.Trace.FeatureFlags.FlagEvaluation.FlagEvaluationApi.FlagEvaluationPath
-            .Should().Be("evp_proxy/v2/api/v2/flagevaluations");
+            .Should().Be("evp_proxy/v2/api/v2/flagevaluation");
     }
 
     private static TracerSettings CreateSettings(string? killswitch)

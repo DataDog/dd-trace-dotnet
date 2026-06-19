@@ -295,6 +295,36 @@ public class FlagEvaluationApiTests
             .Should().BeFalse("a present variant means the runtime default was not used");
     }
 
+    [Fact]
+    public void Aggregator_FullTier_SeparatesRuntimeDefaultFromEmptyVariant()
+    {
+        var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 5, degradedCap: 5);
+        long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        agg.Add(new FlagEvalEvent("flag-a", null, "alloc-1", "user-1", t, null));
+        agg.Add(new FlagEvalEvent("flag-a", string.Empty, "alloc-1", "user-1", t + 1, null));
+
+        var drained = agg.Drain();
+        drained.Full.Should().HaveCount(2, "runtime_default_used is schema-visible and must be part of full-tier identity");
+        drained.Full.Values.Count(e => e.RuntimeDefault).Should().Be(1);
+        drained.Full.Values.Count(e => !e.RuntimeDefault).Should().Be(1);
+    }
+
+    [Fact]
+    public void Aggregator_DegradedTier_SeparatesRuntimeDefaultFromEmptyVariant()
+    {
+        var agg = new FlagEvaluationAggregator(globalCap: 0, perFlagCap: 0, degradedCap: 10);
+        long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        agg.Add(new FlagEvalEvent("flag-a", null, "alloc-1", "user-1", t, null));
+        agg.Add(new FlagEvalEvent("flag-a", string.Empty, "alloc-1", "user-1", t + 1, null));
+
+        var drained = agg.Drain();
+        drained.Degraded.Should().HaveCount(2, "runtime_default_used is schema-visible and must be part of degraded-tier identity");
+        drained.Degraded.Values.Count(e => e.RuntimeDefault).Should().Be(1);
+        drained.Degraded.Values.Count(e => !e.RuntimeDefault).Should().Be(1);
+    }
+
     // -------------------------------------------------------------------------
     // BuildPayload — required fields, degraded omission, drain
     // -------------------------------------------------------------------------
@@ -302,7 +332,18 @@ public class FlagEvaluationApiTests
     [Fact]
     public void FlagEvaluationPath_IsCorrect()
     {
-        FlagEvaluationApi.FlagEvaluationPath.Should().Be("evp_proxy/v2/api/v2/flagevaluations");
+        FlagEvaluationApi.FlagEvaluationPath.Should().Be("evp_proxy/v2/api/v2/flagevaluation");
+    }
+
+    [Fact]
+    public void DefaultCapSizing_UsesNamedScaleConstants()
+    {
+        FlagEvaluationApi.EvalScaleFullBucketTarget.Should().Be(125_000);
+        FlagEvaluationApi.EvalScalePerFlagBucketTarget.Should().Be(10_000);
+        FlagEvaluationApi.EvalScaleDegradedBucketTarget.Should().Be(25_000);
+        FlagEvaluationApi.GlobalCap.Should().Be(131_072);
+        FlagEvaluationApi.PerFlagCap.Should().Be(10_000);
+        FlagEvaluationApi.DegradedCap.Should().Be(32_768);
     }
 
     [Fact]
@@ -319,7 +360,9 @@ public class FlagEvaluationApiTests
         long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", t, null));
 
+        long beforeBuild = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var payload = FlagEvaluationApi.BuildPayload(agg, service: "svc", env: "prod", version: "1.0");
+        long afterBuild = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         payload.Should().NotBeNull();
         payload!.FlagEvaluations.Should().HaveCount(1);
 
@@ -328,7 +371,7 @@ public class FlagEvaluationApiTests
         ev.EvaluationCount.Should().Be(1);
         ev.FirstEvaluation.Should().Be(t);
         ev.LastEvaluation.Should().Be(t);
-        ev.Timestamp.Should().Be(t);
+        ev.Timestamp.Should().BeInRange(beforeBuild, afterBuild);
     }
 
     [Fact]

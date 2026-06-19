@@ -22,21 +22,31 @@ namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 
 /// <summary>
 /// EVP flag evaluation writer — two-tier aggregation (full → degraded → drop-counted) with
-/// a comparable canonical-context key and periodic flush to evp_proxy/v2/api/v2/flagevaluations.
+/// a comparable canonical-context key and periodic flush to evp_proxy/v2/api/v2/flagevaluation.
 ///
-/// Design: two tiers (no ultra-degraded tier); a comparable canonical-context key (sorted,
-/// type-tagged, length-delimited — NOT a hash digest); context pruned to 256 fields / 256 chars;
-/// caps globalCap=131072 / perFlagCap=10000 / degradedCap=32768; eval-time read from the
-/// "dd.eval.timestamp_ms" metadata key (long) with a DateTimeOffset.UtcNow fallback; events
-/// captured by a FinallyAsync hook; gated by the DD_FLAGGING_EVALUATION_COUNTS_ENABLED killswitch;
-/// NullValueHandling.Ignore per tier so the degraded tier omits optional fields (schema-conformant).
+/// Design: a comparable canonical-context key (sorted, type-tagged, length-delimited — NOT a hash
+/// digest); context pruned to 256 fields / 256 chars; events captured by a FinallyAsync hook; gated
+/// by the DD_FLAGGING_EVALUATION_COUNTS_ENABLED killswitch; NullValueHandling.Ignore per tier so the
+/// degraded tier omits optional fields (schema-conformant).
 /// </summary>
 internal sealed class FlagEvaluationApi : IDisposable
 {
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FlagEvaluationApi));
 
     /// <summary>EVP proxy path for flagevaluation events.</summary>
-    public const string FlagEvaluationPath = "evp_proxy/v2/api/v2/flagevaluations";
+    public const string FlagEvaluationPath = "evp_proxy/v2/api/v2/flagevaluation";
+
+    internal const int EvalScaleTargetFlags = 2_500;
+    internal const int EvalScaleFullBucketsPerFlag = 50;
+    internal const int EvalScaleUsersPerFlag = 1_000;
+    internal const int EvalScalePerFlagHeadroomMultiplier = 10;
+    internal const int EvalScaleDegradedBucketsPerFlag = 10;
+    internal const int EvalScaleFullBucketTarget = EvalScaleTargetFlags * EvalScaleFullBucketsPerFlag;
+    internal const int EvalScalePerFlagBucketTarget = EvalScalePerFlagHeadroomMultiplier * EvalScaleUsersPerFlag;
+    internal const int EvalScaleDegradedBucketTarget = EvalScaleTargetFlags * EvalScaleDegradedBucketsPerFlag;
+    internal const int GlobalCap = 131_072;
+    internal const int PerFlagCap = EvalScalePerFlagBucketTarget;
+    internal const int DegradedCap = 32_768;
 
     /// <summary>
     /// Bounds the async hand-off queue between the (hot-path) Enqueue call and the background
@@ -61,9 +71,9 @@ internal sealed class FlagEvaluationApi : IDisposable
     private readonly TimeSpan _drainInterval = TimeSpan.FromMilliseconds(100);
 
     private readonly FlagEvaluationAggregator _aggregator = new(
-        globalCap: 131_072,
-        perFlagCap: 10_000,
-        degradedCap: 32_768);
+        globalCap: GlobalCap,
+        perFlagCap: PerFlagCap,
+        degradedCap: DegradedCap);
 
     // Async hand-off: Enqueue (hot path) does a cheap bounded ConcurrentQueue offer with an already
     // pruned event snapshot; the background send loop drains it into the aggregator.
@@ -246,6 +256,7 @@ internal sealed class FlagEvaluationApi : IDisposable
             return null;
         }
 
+        long flushTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var events = new List<FlagEvaluationEvent>(full.Count + degraded.Count);
 
         // Full tier: all fields present including targeting_key and context.
@@ -256,7 +267,7 @@ internal sealed class FlagEvaluationApi : IDisposable
 
             var ev = new FlagEvaluationEvent
             {
-                Timestamp = entry.LastEvaluationMs,
+                Timestamp = flushTimeMs,
                 Flag = new FlagEvalFlag { Key = key.FlagKey },
                 FirstEvaluation = entry.FirstEvaluationMs,
                 LastEvaluation = entry.LastEvaluationMs,
@@ -279,7 +290,7 @@ internal sealed class FlagEvaluationApi : IDisposable
 
             var ev = new FlagEvaluationEvent
             {
-                Timestamp = entry.LastEvaluationMs,
+                Timestamp = flushTimeMs,
                 Flag = new FlagEvalFlag { Key = key.FlagKey },
                 FirstEvaluation = entry.FirstEvaluationMs,
                 LastEvaluation = entry.LastEvaluationMs,

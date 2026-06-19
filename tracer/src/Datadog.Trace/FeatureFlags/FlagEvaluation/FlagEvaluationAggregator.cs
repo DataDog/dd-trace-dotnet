@@ -157,6 +157,7 @@ internal sealed class FlagEvaluationAggregator
             variant,
             ev.AllocationKey,
             ev.ErrorMessage,
+            runtimeDefault,
             ev.TargetingKey,
             contextKey);
 
@@ -222,7 +223,7 @@ internal sealed class FlagEvaluationAggregator
     // Called with _lock held.
     private void AddToDegraded(string flagKey, string variant, string allocationKey, string errorMessage, long evalTimeMs, bool runtimeDefault)
     {
-        var degKey = new DegradedKey(flagKey, variant, allocationKey, errorMessage);
+        var degKey = new DegradedKey(flagKey, variant, allocationKey, errorMessage, runtimeDefault);
         if (_degraded.TryGetValue(degKey, out EvaluationEntry? existing))
         {
             existing.Observe(evalTimeMs);
