@@ -5,7 +5,7 @@
 #nullable enable
 
 using System;
-using System.Reflection.Emit;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
 {
     private static readonly InvokeDelegate? _invokeDelegate;
+    private static readonly MethodInfo? _aotInvokeMethod;
     private static readonly ContinuationGenerator<TTarget, TReturn>? _continuationGenerator;
 
     static EndMethodHandler()
@@ -23,7 +24,11 @@ internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
         var returnType = typeof(TReturn);
         try
         {
-            if (IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget), returnType) is { } dynMethod)
+            if (CallTargetAot.IsAotMode())
+            {
+                _aotInvokeMethod = CallTargetAotEngine.GetEndRegistration(typeof(TIntegration), typeof(TTarget), returnType).Method;
+            }
+            else if (IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget), returnType) is { } dynMethod)
             {
                 _invokeDelegate = (InvokeDelegate)dynMethod.CreateDelegate(typeof(InvokeDelegate));
             }
@@ -33,17 +38,32 @@ internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
             throw new CallTargetInvokerException(ex);
         }
 
-        if (returnType.IsGenericType)
+        if (CallTargetAot.IsAotMode() && returnType.IsGenericType)
         {
             if (typeof(Task).IsAssignableFrom(returnType))
             {
-                // The type is a Task<>
+                _continuationGenerator = new AotTaskResultContinuationGenerator<TIntegration, TTarget, TReturn>();
+            }
+#if NETCOREAPP3_1_OR_GREATER
+            else if (ValueTaskHelper.IsGenericValueTask(returnType))
+            {
+                _continuationGenerator = new AotValueTaskResultContinuationGenerator<TIntegration, TTarget, TReturn>();
+            }
+#endif
+        }
+        else if (returnType.IsGenericType)
+        {
+            if (typeof(Task).IsAssignableFrom(returnType))
+            {
                 _continuationGenerator = (ContinuationGenerator<TTarget, TReturn>?)Activator.CreateInstance(typeof(TaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, ContinuationsHelper.GetResultType(returnType)));
             }
             else if (ValueTaskHelper.IsGenericValueTask(returnType))
             {
-                // The type is a ValueTask<>
+#if NETCOREAPP3_1_OR_GREATER
                 _continuationGenerator = (ContinuationGenerator<TTarget, TReturn>?)Activator.CreateInstance(typeof(ValueTaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, ContinuationsHelper.GetResultType(returnType)));
+#else
+                _continuationGenerator = (ContinuationGenerator<TTarget, TReturn>?)Activator.CreateInstance(typeof(ValueTaskContinuationGenerator<,,,>).MakeGenericType(typeof(TIntegration), typeof(TTarget), returnType, ContinuationsHelper.GetResultType(returnType)));
+#endif
             }
         }
         else
@@ -70,6 +90,11 @@ internal static class EndMethodHandler<TIntegration, TTarget, TReturn>
         {
             returnValue = _continuationGenerator.SetContinuation(instance, returnValue, exception, in state);
             IntegrationOptions.RestoreScopeFromAsyncExecution(in state);
+        }
+
+        if (_aotInvokeMethod != null)
+        {
+            returnValue = (TReturn?)_aotInvokeMethod.Invoke(null, [instance, returnValue, exception, state]);
         }
 
         if (_invokeDelegate != null)

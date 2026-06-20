@@ -19,24 +19,45 @@ internal sealed class ValueTaskContinuationGenerator<TIntegration, TTarget, TRet
 
     static ValueTaskContinuationGenerator()
     {
-        var result = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(TResult));
-        if (result.Method is not null)
+        if (CallTargetAot.IsAotMode())
         {
-            if (result.Method.ReturnType == typeof(Task) ||
-                (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType)))
+            var registration = CallTargetAotEngine.GetAsyncResultRegistration(typeof(TIntegration), typeof(TTarget), typeof(TResult));
+            if (!registration.HasHandler || registration.Method is null)
             {
-                var asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate));
-                Resolver = new AsyncCallbackHandler(asyncContinuation, result.PreserveContext);
+                Resolver = new NoOpCallbackHandler();
+            }
+            else if (registration.IsAsyncCallback)
+            {
+                var asyncContinuation = (AsyncContinuationMethodDelegate)registration.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate));
+                Resolver = new AsyncCallbackHandler(asyncContinuation, registration.PreserveContext);
             }
             else
             {
-                var continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
-                Resolver = new SyncCallbackHandler(continuation, result.PreserveContext);
+                var continuation = (ContinuationMethodDelegate)registration.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
+                Resolver = new SyncCallbackHandler(continuation, registration.PreserveContext);
             }
         }
         else
         {
-            Resolver = new NoOpCallbackHandler();
+            var result = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(TResult));
+            if (result.Method is not null)
+            {
+                if (result.Method.ReturnType == typeof(Task) ||
+                    (result.Method.ReturnType.IsGenericType && typeof(Task).IsAssignableFrom(result.Method.ReturnType)))
+                {
+                    var asyncContinuation = (AsyncContinuationMethodDelegate)result.Method.CreateDelegate(typeof(AsyncContinuationMethodDelegate));
+                    Resolver = new AsyncCallbackHandler(asyncContinuation, result.PreserveContext);
+                }
+                else
+                {
+                    var continuation = (ContinuationMethodDelegate)result.Method.CreateDelegate(typeof(ContinuationMethodDelegate));
+                    Resolver = new SyncCallbackHandler(continuation, result.PreserveContext);
+                }
+            }
+            else
+            {
+                Resolver = new NoOpCallbackHandler();
+            }
         }
 
         if (Log.IsEnabled(LogEventLevel.Debug))

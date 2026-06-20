@@ -119,6 +119,7 @@ namespace Datadog.Trace.Tools.Runner
             builder.Command.AddCommand(new RunCommand(applicationContext));
             builder.Command.AddCommand(new AotCommand { IsHidden = true });
             builder.Command.AddCommand(new DuckTypeAotCommand { IsHidden = true });
+            builder.Command.AddCommand(new CallTargetAotCommand());
             builder.Command.AddCommand(new AnalyzeInstrumentationErrorsCommand { IsHidden = true });
             builder.Command.AddCommand(new CoverageMergerCommand { IsHidden = true });
 
@@ -161,6 +162,11 @@ namespace Datadog.Trace.Tools.Runner
             catch (Exception ex)
             {
                 AnsiConsole.Write(new Markup($"[red]Error:[/] {ex.Message.EscapeMarkup()}{Environment.NewLine}"));
+                if (string.Equals(Environment.GetEnvironmentVariable("DD_TRACE_TOOLS_VERBOSE_ERRORS"), "1", StringComparison.Ordinal))
+                {
+                    AnsiConsole.Write(new Markup($"{ex.ToString().EscapeMarkup()}{Environment.NewLine}"));
+                }
+
                 return 1;
             }
         }

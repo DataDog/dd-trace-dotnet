@@ -345,10 +345,9 @@ namespace Datadog.Trace.Tools.Runner.Aot
             }
         }
 
-        private static bool ProcessDefinitions(ModuleDefinition moduleDefinition, List<DefinitionItem> definitions)
+        internal static bool ProcessDefinitions(ModuleDefinition moduleDefinition, List<DefinitionItem> definitions)
         {
             var typeReferenceCache = new Dictionary<Type, TypeReference>();
-            var methodReferenceCache = new Dictionary<MethodInfo, MethodReference>();
 
             var exceptionTypeReference = new TypeReference(typeof(Exception).Namespace, nameof(Exception), moduleDefinition, moduleDefinition.TypeSystem.CoreLibrary);
 
@@ -365,6 +364,11 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 var methodReturnTypeReference = methodDefinition.ReturnType;
 
                 var lstParameters = definition.TargetMethodDefinition.Parameters;
+                var useSlowBegin = lstParameters.Count > 8;
+                if (useSlowBegin && lstParameters.Any(static parameter => parameter.ParameterType.IsByReference))
+                {
+                    return false;
+                }
 
                 // CallTargetReturn
                 var isVoidReturn = definition.TargetMethodDefinition.ReturnType == moduleDefinition.TypeSystem.Void;
@@ -399,6 +403,10 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     }
 
                     var parameters = m.GetParameters();
+                    if (useSlowBegin)
+                    {
+                        return parameters.Length == 2 && parameters[1].ParameterType == typeof(object[]);
+                    }
 
                     if (parameters.Length != lstParameters.Count + 1)
                     {
@@ -416,9 +424,12 @@ namespace Datadog.Trace.Tools.Runner.Aot
                 var beginMethodMethodSpec = new GenericInstanceMethod(beginMethodMethodReference);
                 beginMethodMethodSpec.GenericArguments.Add(integrationTypeReference);
                 beginMethodMethodSpec.GenericArguments.Add(targetTypeDefinition);
-                foreach (var parameterDefinition in lstParameters)
+                if (!useSlowBegin)
                 {
-                    beginMethodMethodSpec.GenericArguments.Add(parameterDefinition.ParameterType);
+                    foreach (var parameterDefinition in lstParameters)
+                    {
+                        beginMethodMethodSpec.GenericArguments.Add(parameterDefinition.ParameterType);
+                    }
                 }
 
                 var callTargetStateTypeReference = beginMethodMethodSpec.ReturnType;
@@ -488,6 +499,13 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
                 var callTargetStateLocal = new VariableDefinition(callTargetStateTypeReference);
                 var exceptionLocal = new VariableDefinition(exceptionTypeReference);
+                VariableDefinition objectArrayLocal = null;
+                if (useSlowBegin)
+                {
+                    objectArrayLocal = new VariableDefinition(ImportTypeReference(typeof(object[])));
+                    methodBody.Variables.Add(objectArrayLocal);
+                }
+
                 methodBody.Variables.Add(callTargetStateLocal);
                 methodBody.Variables.Add(exceptionLocal);
 
@@ -538,15 +556,39 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     }
                 }
 
-                foreach (var mParameter in lstParameters)
+                if (useSlowBegin)
                 {
-                    if (mParameter.ParameterType.IsByReference)
+                    methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldc_I4, lstParameters.Count));
+                    methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Newarr, moduleDefinition.TypeSystem.Object));
+                    methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Stloc, objectArrayLocal));
+                    for (var parameterIndex = 0; parameterIndex < lstParameters.Count; parameterIndex++)
                     {
+                        var mParameter = lstParameters[parameterIndex];
+                        methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldloc, objectArrayLocal));
+                        methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldc_I4, parameterIndex));
                         methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldarg, mParameter));
+                        if (mParameter.ParameterType.IsValueType || mParameter.ParameterType.IsGenericParameter)
+                        {
+                            methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Box, mParameter.ParameterType));
+                        }
+
+                        methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Stelem_Ref));
                     }
-                    else
+
+                    methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldloc, objectArrayLocal));
+                }
+                else
+                {
+                    foreach (var mParameter in lstParameters)
                     {
-                        methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldarga, mParameter));
+                        if (mParameter.ParameterType.IsByReference)
+                        {
+                            methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldarg, mParameter));
+                        }
+                        else
+                        {
+                            methodBody.Instructions.Insert(index++, Instruction.Create(OpCodes.Ldarga, mParameter));
+                        }
                     }
                 }
 
@@ -734,13 +776,9 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
             MethodReference ImportMethodReference(MethodInfo methodInfo)
             {
-                if (!methodReferenceCache.TryGetValue(methodInfo, out var methodReference))
-                {
-                    methodReference = moduleDefinition.ImportReference(methodInfo);
-                    methodReferenceCache[methodInfo] = methodReference;
-                }
-
-                return methodReference;
+                // Method references are mutated later when concrete generic declaring types are assigned, so each caller
+                // must receive a fresh imported reference instead of sharing one cached instance across definitions.
+                return moduleDefinition.ImportReference(methodInfo);
             }
         }
     }

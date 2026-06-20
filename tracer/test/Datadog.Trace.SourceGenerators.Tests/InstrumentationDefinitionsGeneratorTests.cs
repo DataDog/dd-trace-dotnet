@@ -30,6 +30,37 @@ namespace MyTests
         }
 
         [Fact]
+        public void DoesNotGenerateDefinitionsForCallTargetNativeAotSamples()
+        {
+            const string input = @"
+using Datadog.Trace.ClrProfiler;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot;
+
+[InstrumentMethod(
+    AssemblyName = ""SampleCallTargetNativeAotApp"",
+    TypeName = ""SampleCallTargetNativeAotApp.InstrumentedTarget"",
+    MethodName = ""Execute"",
+    ReturnTypeName = ClrNames.Void,
+    ParameterTypeNames = new string[0],
+    MinimumVersion = ""1.0.0"",
+    MaximumVersion = ""9.0.0"",
+    IntegrationName = ""SampleCallTargetNativeAotIntegration"")]
+internal static class SampleCallTargetNativeAotIntegration
+{
+}";
+
+            // The dedicated CallTarget NativeAOT workflow discovers these sample integrations directly from Cecil
+            // metadata, so the normal source generator must ignore them completely.
+            var (diagnostics, output) = TestHelpers.GetGeneratedTrees<InstrumentationDefinitionsGenerator>(
+                [SourceHelper.InstrumentMethodAttribute, SourceHelper.ClrNames, input],
+                assertOutput: false);
+
+            Assert.Empty(output);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
         public void CanGenerateIntegrationDefinitionForStandardInstrumentation()
         {
             const string input = @"

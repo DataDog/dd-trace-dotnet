@@ -27,6 +27,10 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
     private const string AdoNetInstrumentAttribute = "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientInstrumentMethodsAttribute";
     private const string AdoNetTargetSignatureAttribute = AdoNetInstrumentAttribute + ".AdoNetTargetSignatureAttribute";
 
+    // CallTarget NativeAOT sample integrations are test-only inputs for the publish-integrated AOT workflow and must
+    // not appear in the normal product-generated instrumentation definitions.
+    private const string CallTargetNativeAotTestingNamespace = "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.CallTargetNativeAot";
+
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -115,6 +119,14 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
         if (classSymbol is null)
         {
             // nothing to do if this type isn't available
+            return new Result<EquatableArray<CallTargetDefinitionSource>>(default, default);
+        }
+
+        // The NativeAOT CallTarget sample integrations are test-only inputs for the publish-integrated AOT workflow.
+        // They must remain visible to the dedicated AOT discovery path, but they must not leak into the normal product
+        // instrumentation definitions, runtime calltarget registration, or configuration surface.
+        if (classSymbol.ContainingNamespace.ToDisplayString().StartsWith(CallTargetNativeAotTestingNamespace, StringComparison.Ordinal))
+        {
             return new Result<EquatableArray<CallTargetDefinitionSource>>(default, default);
         }
 
