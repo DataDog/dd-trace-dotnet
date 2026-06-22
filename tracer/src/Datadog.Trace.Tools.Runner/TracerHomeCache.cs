@@ -5,11 +5,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -26,6 +28,8 @@ internal static class TracerHomeCache
     private const string CacheLockFileExtension = ".lock";
     private const string CacheStagingDirectorySuffix = ".tmp.";
     private const int CacheKeyLength = 64;
+    private const int CacheLockAcquireTimeoutMilliseconds = 10_000;
+    private const int CacheLockRetryDelayMilliseconds = 50;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TracerHomeCache));
 
@@ -35,6 +39,17 @@ internal static class TracerHomeCache
     /// <param name="tracerHome">The source tracer home path.</param>
     /// <returns>The cached tracer home path, or <paramref name="tracerHome"/> when caching is unnecessary or unsafe.</returns>
     internal static string GetOrCreateCachedTracerHomeIfShorter(string tracerHome)
+    {
+        return GetOrCreateCachedTracerHomeIfShorter(tracerHome, Thread.Sleep);
+    }
+
+    /// <summary>
+    /// Returns a validated cached tracer home path when that cache path is shorter than the original path.
+    /// </summary>
+    /// <param name="tracerHome">The source tracer home path.</param>
+    /// <param name="cacheLockRetryDelay">The delay callback invoked between cache lock acquisition attempts.</param>
+    /// <returns>The cached tracer home path, or <paramref name="tracerHome"/> when caching is unnecessary or unsafe.</returns>
+    internal static string GetOrCreateCachedTracerHomeIfShorter(string tracerHome, Action<int> cacheLockRetryDelay)
     {
         string cachedTracerHome = null;
         try
@@ -47,13 +62,13 @@ internal static class TracerHomeCache
 
             var integrityManifest = CreateCacheIntegrityManifest(tracerHome);
             cachedTracerHome = Path.Combine(cacheRoot, integrityManifest.CacheKey);
-            Ensure(tracerHome, cachedTracerHome, integrityManifest);
+            Ensure(tracerHome, cachedTracerHome, integrityManifest, cacheLockRetryDelay);
             return cachedTracerHome;
         }
         catch (Exception ex)
         {
             Log.Debug(ex, "Unable to copy tracer home to a shorter temporary path.");
-            if (cachedTracerHome is not null)
+            if (cachedTracerHome is not null && ex is not CacheLockUnavailableException)
             {
                 TryDelete(cachedTracerHome);
             }
@@ -89,7 +104,8 @@ internal static class TracerHomeCache
     /// <param name="tracerHome">The source tracer home path.</param>
     /// <param name="cachedTracerHome">The target cached tracer home path.</param>
     /// <param name="integrityManifest">The expected cache identity and content manifest.</param>
-    private static void Ensure(string tracerHome, string cachedTracerHome, CacheIntegrityManifest integrityManifest)
+    /// <param name="cacheLockRetryDelay">The delay callback invoked between cache lock acquisition attempts.</param>
+    private static void Ensure(string tracerHome, string cachedTracerHome, CacheIntegrityManifest integrityManifest, Action<int> cacheLockRetryDelay)
     {
         var cacheParent = Path.GetDirectoryName(Path.GetFullPath(cachedTracerHome));
         if (string.IsNullOrEmpty(cacheParent))
@@ -100,7 +116,7 @@ internal static class TracerHomeCache
         // The parent is validated before the lock file is opened; otherwise the lock itself could be created
         // in a shared writable directory and used as an attacker-controlled synchronization point.
         CreatePrivateDirectory(cacheParent);
-        using var cacheLock = AcquireCacheLock(cachedTracerHome);
+        using var cacheLock = AcquireCacheLock(cachedTracerHome, cacheLockRetryDelay);
         if (IsCachedTracerHomeReady(cachedTracerHome, integrityManifest))
         {
             return;
@@ -211,16 +227,38 @@ internal static class TracerHomeCache
     /// Opens the per-cache lock file used to serialize cache reuse and replacement.
     /// </summary>
     /// <param name="cachedTracerHome">The cached tracer home path.</param>
+    /// <param name="cacheLockRetryDelay">The delay callback invoked between cache lock acquisition attempts.</param>
     /// <returns>An exclusive lock file stream held by the caller.</returns>
-    private static FileStream AcquireCacheLock(string cachedTracerHome)
+    private static FileStream AcquireCacheLock(string cachedTracerHome, Action<int> cacheLockRetryDelay)
     {
         var lockPath = cachedTracerHome + CacheLockFileExtension;
-        if (File.Exists(lockPath) && !IsRegularFile(lockPath))
+        var stopwatch = Stopwatch.StartNew();
+        while (true)
         {
-            throw new IOException($"Cache lock path '{lockPath}' must be a regular file.");
-        }
+            if (File.Exists(lockPath) && !IsRegularFile(lockPath))
+            {
+                throw new IOException($"Cache lock path '{lockPath}' must be a regular file.");
+            }
 
-        return new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            try
+            {
+                return new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                if (!IsRegularFile(lockPath))
+                {
+                    throw;
+                }
+
+                if (stopwatch.ElapsedMilliseconds >= CacheLockAcquireTimeoutMilliseconds)
+                {
+                    throw new CacheLockUnavailableException($"Timed out waiting for cache lock '{lockPath}'.", ex);
+                }
+
+                cacheLockRetryDelay(CacheLockRetryDelayMilliseconds);
+            }
+        }
     }
 
     /// <summary>
@@ -647,4 +685,15 @@ internal static class TracerHomeCache
     /// <param name="Entries">The sorted expected entries for copied-content validation.</param>
     /// <param name="Content">The serialized integrity manifest written into the cache.</param>
     private sealed record CacheIntegrityManifest(string CacheKey, CacheIntegrityEntry[] Entries, string Content);
+
+    /// <summary>
+    /// Signals that the cache lock could not be acquired because another runner kept it held.
+    /// </summary>
+    private sealed class CacheLockUnavailableException : IOException
+    {
+        public CacheLockUnavailableException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
 }

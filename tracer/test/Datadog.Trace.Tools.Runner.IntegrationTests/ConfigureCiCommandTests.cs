@@ -255,6 +255,30 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        public void ConfigureCiRetriesConcurrentCacheLock()
+        {
+            using var setup = ConfigureCiTestSetup.Create(output);
+            var cachedTracerHome = setup.CreateReadyCachedTracerHome();
+            var lockPath = cachedTracerHome + ".lock";
+            using var heldLock = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            var retryCount = 0;
+
+            var configuredTracerHome = TracerHomeCache.GetOrCreateCachedTracerHomeIfShorter(
+                setup.TracerHome,
+                _ =>
+                {
+                    retryCount++;
+                    heldLock.Dispose();
+                });
+
+            retryCount.Should().Be(1);
+            configuredTracerHome.Should().Be(cachedTracerHome);
+            Directory.Exists(cachedTracerHome).Should().BeTrue();
+        }
+
+        [SkippableFact]
         [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiFallsBackToOriginalTracerHomeWhenSourceTracerHomeContainsSymbolicLink()
         {
