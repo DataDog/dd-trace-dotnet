@@ -160,9 +160,13 @@ internal static class NUnitIntegration
     }
 
     internal static bool ShouldSkip(ITest currentTest, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>?>? traits = null)
+        => ShouldSkip(currentTest, out isUnskippable, out isForcedRun, out _, traits);
+
+    internal static bool ShouldSkip(ITest currentTest, out bool isUnskippable, out bool isForcedRun, out SkippableTest? skippableTest, Dictionary<string, List<string>?>? traits = null)
     {
         isUnskippable = false;
         isForcedRun = false;
+        skippableTest = null;
 
         if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled != true)
         {
@@ -176,15 +180,19 @@ internal static class NUnitIntegration
         }
 
         var testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
-        var itrShouldSkip = Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
+        var module = GetTestModuleFrom(currentTest);
+        var moduleName = module?.Tags.Bundle ?? module?.Tags.Module;
+        var itrShouldSkip = Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters(), out var matchedSkippableTest, moduleName, currentTest.Name);
         if (traits is null)
         {
             ExtractTraits(currentTest, ref traits);
         }
 
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
-        isForcedRun = itrShouldSkip && isUnskippable;
-        return itrShouldSkip && !isUnskippable;
+        isForcedRun = matchedSkippableTest is not null && isUnskippable;
+        var shouldSkip = itrShouldSkip && !isUnskippable;
+        skippableTest = shouldSkip ? matchedSkippableTest : null;
+        return shouldSkip;
     }
 
     internal static void GetExceptionAndMessage(ITestResult result, out string exceptionType, out string resultMessage)

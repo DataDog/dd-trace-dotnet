@@ -48,6 +48,86 @@
 
 
 
+
+## [Release 3.46.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.46.0)
+
+## Summary
+
+* [Profiler] Improve native unwinding performance and memory consumption on ARM64
+* [Dynamic Instrumentation] Various performance improvements and bug fixes
+* [Tracing] Fix OTLP traces being submitted to the wrong endpoint when an APM UDS socket is set
+* Performance improvements and bug fixes.
+
+## Changes
+
+### Tracer
+* Set `TokenImpersonationLevel.Anonymous` in `NamedPipeClient` (#8676)
+* Remove libdatadog-based trace exporter (#8703)
+* Use `TaskScheduler.Default` when calling `Task.Factory.StartNew` (#8779)
+
+### Continuous Profiler
+* [Profiler] Try fixing crashes in etw events based profiler (#8673)
+* [crashtracker] Libdatadog provides OS info (#8678)
+* [Profiler] Improve native unwinding performance on arm64 (#8689)
+* [Profiler] Fix coding issue (#8721)
+* [Profiler] Investigating `timer_create` failure on arm64/alpine (#8744)
+* [Profiler] fix flacky tests (#8745)
+* [Profiler] Measure LibrariesInfoCache performance (#8757)
+* Flaky test fixing (#8760)
+* [Profiler] Improve memory consumption `LibrariesInfoCache` (#8777)
+
+### CI Visibility
+* [CI Visibility] Fix Meta value length. (#8749)
+
+### Debugger
+* [Debugger] Add memory pressure monitoring telemetry for Dynamic Instrumentation (observe-only) (#7834)
+* [Dynamic Instrumentation] Rate limit condition evaluation error snapshots (#8725)
+* [Dynamic Instrumentation] Omit capture data for condition evaluation errors (#8728)
+* [Debugger] Fix probe file test waits (#8740)
+* [Debugger] Improve no capture reason in collection serializer (#8746)
+* [Debugger] Fix safe ToString handling for debugger collections (#8747)
+* [Debugger] Improve debugger collection serialization (#8753)
+* [Debugger] Avoid noisy async state machine metadata warnings (#8761)
+* [Debugger] Redact dictionary values by sensitive keys (#8768)
+* [Debugger] Minor Dynamic Instrumentation cleanups (#8770)
+* [Debugger] Avoid evaluating expressionless snapshot probes (#8771)
+* [Debugger] Avoid spurious timeout on empty collection serialization (#8741)
+
+### Fixes
+* fix(otel): Submit OTLP traces to correct endpoint when APM UDS socket is set (#8668)
+* [Native] Make GetTypeInfo Iterative to Prevent Native Stack Exhaustion (#8708)
+* fix(dsm): use TaskScheduler.Default for ProcessQueueLoop to avoid deadlock (#8767)
+
+### Build / Test
+* Update vendored OpenTelemetry.Exporter.OpenTelemetryProtocol (#8655)
+* Handle dotnet/runtime#127957 in integration tests (#8665)
+* Update more things to use artifacts output (#8680)
+* Update launchSettings.json files: monitoring-home path (#8681)
+* [Test Package Versions Bump] Updating package versions (#8715)
+* [CI] Point serverless-tools trigger at `main` to fix monitoring-home path (#8726)
+* Bump the gh-actions-packages group across 2 directories with 6 updates (#8734)
+* Capture smoke tests container after error (#8748)
+* No Clean before GeneratePackageVersions (#8752)
+* [CI] Retry docker pull of ddapm-test-agent image on transient failure (#8755)
+* [Test Package Versions Bump] Updating package versions (#8764)
+* [Test Package Versions Bump] Updating package versions (#8772)
+* Remove debugging blocks leaking environment variables in tests (#8781)
+* [Tests] Stabilize memory pressure monitor race tests (#8751)
+
+### Miscellaneous
+* [Crashtracker] Do not redact frames in crashtracker (#8675)
+* [crashtracker] Remove Telemetry check (#8677)
+* Update `DirectSubmissionLogSink` tests to be less flaky (#8714)
+* Update `OtlpSubmissionLogSink` tests to be less flaky (#8718)
+* [Config] Add scope field to all existing registry entries (1/3) (#8731)
+* [Config] Add scope field infrastructure to configuration registry (2/3) (#8732)
+* fix link to file in autoinstrumentation doc (#8738)
+* Exclude InMemoryAssembly from dependency collection (#8759)
+* [Stats] Fix partial_version exclusion: use >= 0 instead of > 0 (#8776)
+
+
+[Changes since 3.45.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.45.0...v3.46.0)
+
 ## [Release 3.45.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.45.0)
 
 ## Summary

@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Linq.Expressions;
 using System.Reflection;
+using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
 #nullable enable
@@ -78,6 +79,12 @@ namespace Datadog.Trace.Debugger.Snapshots
             object source,
             out SupportedEnumerableInfo enumerableInfo)
         {
+            if (source is IBoundedCaptureCollectionResult boundedCaptureCollectionResult)
+            {
+                enumerableInfo = new SupportedEnumerableInfo(boundedCaptureCollectionResult.Count, boundedCaptureCollectionResult.IsDictionary, boundedCaptureCollectionResult.WasTruncated);
+                return true;
+            }
+
             var runtimeType = source.GetType();
 
             if (source is ICollection collection)
@@ -89,7 +96,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     return false;
                 }
 
-                enumerableInfo = new SupportedEnumerableInfo(collection.Count, isDictionary);
+                enumerableInfo = new SupportedEnumerableInfo(collection.Count, isDictionary, wasTruncated: false);
                 return true;
             }
 
@@ -99,7 +106,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return false;
             }
 
-            enumerableInfo = new SupportedEnumerableInfo(descriptor.GetCount(source), descriptor.IsDictionary);
+            enumerableInfo = new SupportedEnumerableInfo(descriptor.GetCount(source), descriptor.IsDictionary, wasTruncated: false);
             return true;
         }
 
@@ -172,15 +179,18 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         private readonly struct SupportedEnumerableInfo
         {
-            internal SupportedEnumerableInfo(int count, bool isDictionary)
+            internal SupportedEnumerableInfo(int count, bool isDictionary, bool wasTruncated)
             {
                 Count = count;
                 IsDictionary = isDictionary;
+                WasTruncated = wasTruncated;
             }
 
             internal int Count { get; }
 
             internal bool IsDictionary { get; }
+
+            internal bool WasTruncated { get; }
         }
 
         private readonly struct SupportedEnumerableDescriptor
