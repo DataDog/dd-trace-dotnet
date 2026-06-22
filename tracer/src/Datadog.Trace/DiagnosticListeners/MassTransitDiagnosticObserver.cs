@@ -253,12 +253,33 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            // Duck cast once — reused for both message-type resolution and header extraction below.
-            // Fails for MessageConsumeContext<T> (the most common type) because it implements
-            // Headers as an explicit interface: `Headers MessageContext.Headers => _context.Headers`
-            // Duck typing only finds public class members, not explicit interface implementations.
-            // In that case TryDuckCast returns false and we fall back to reflection-based paths.
-            arg.TryDuckCast<IConsumeContext>(out var consumeContext);
+            // MessageConsumeContext<T> (the most common type) uses explicit interface implementations
+            // for all properties, so a direct duck cast to IConsumeContext fails for it.
+            // In that case, duck-cast to IMessageConsumeContextInner to reach the private _context
+            // field, which is a BaseConsumeContext-derived type whose properties are public and
+            // duck-cast successfully.
+            var directCastSucceeded = arg.TryDuckCast<IConsumeContext>(out var consumeContext);
+            if (!directCastSucceeded)
+            {
+                var innerCastSucceeded = arg.TryDuckCast<IMessageConsumeContextInner>(out var inner);
+                if (innerCastSucceeded && inner?.Context != null)
+                {
+                    var innerContextCastSucceeded = inner.Context.TryDuckCast<IConsumeContext>(out consumeContext);
+                    Log.Debug(
+                        "MassTransitDiagnosticObserver.OnConsumeStart: DirectCast=false, InnerContextType={InnerType}, InnerContextCast={InnerContextCast}",
+                        inner.Context.GetType().Name,
+                        innerContextCastSucceeded);
+                }
+                else
+                {
+                    Log.Warning(
+                        "MassTransitDiagnosticObserver.OnConsumeStart: All casts failed ArgType={ArgType}, DirectCast=false, InnerCast={InnerCast}, InnerContext={InnerContext}",
+                        arg.GetType().FullName,
+                        innerCastSucceeded,
+                        inner?.Context?.GetType().FullName ?? "null");
+                }
+            }
+
             var messageType = MassTransitCommon.GetConsumeMessageType(consumeContext);
 
             Log.Debug(
@@ -266,15 +287,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 messageType,
                 operationType);
 
-            PropagationContext parentContext;
+            PropagationContext parentContext = default;
             if (consumeContext?.Headers != null)
             {
                 var adapter = new ContextPropagationExtractAdapter(consumeContext.Headers);
                 parentContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(adapter);
-            }
-            else
-            {
-                parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, arg);
             }
 
             // Merge extracted baggage into ambient context. CreateProcessSpan only forwards
@@ -283,13 +300,7 @@ namespace Datadog.Trace.DiagnosticListeners
             // the incoming message would be dropped.
             parentContext = parentContext.MergeBaggageInto(Baggage.Current);
 
-            // Get InputAddress from ReceiveContext — via duck typing if available, reflection otherwise.
             var inputAddress = consumeContext?.ReceiveContext?.InputAddress?.ToString();
-            if (string.IsNullOrEmpty(inputAddress))
-            {
-                var rc = MassTransitCommon.TryGetProperty<object>(arg, "ReceiveContext");
-                inputAddress = rc != null ? MassTransitCommon.TryGetProperty<Uri>(rc, "InputAddress")?.ToString() : null;
-            }
 
             // For Process/Consume/Handle spans, check if there's an active Receive span to use as parent.
             var activeScope = Tracer.Instance.ActiveScope;
