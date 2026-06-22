@@ -169,10 +169,9 @@ public class ILAnalyzerTests
 
     private static void EmitAssembly(string path, string assemblyName, string source, params MetadataReference[] additionalReferences)
     {
-        var references = new MetadataReference[additionalReferences.Length + 2];
+        var references = new MetadataReference[additionalReferences.Length + 1];
         references[0] = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
-        references[1] = MetadataReference.CreateFromFile(Path.Combine(Path.GetDirectoryName(typeof(object).Assembly.Location)!, "System.Runtime.dll"));
-        Array.Copy(additionalReferences, 0, references, 2, additionalReferences.Length);
+        Array.Copy(additionalReferences, 0, references, 1, additionalReferences.Length);
 
         var compilation = CSharpCompilation.Create(
             assemblyName,
