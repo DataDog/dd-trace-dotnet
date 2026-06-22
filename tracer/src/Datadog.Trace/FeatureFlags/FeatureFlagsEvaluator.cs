@@ -26,11 +26,8 @@ namespace Datadog.Trace.FeatureFlags
     {
         internal const string MetadataAllocationKey = "__dd_allocation_key";
 
-        // Surfaced through OpenFeature ImmutableMetadata so the span-enrichment hook can
-        // read them via details.FlagMetadata.GetString(...). Values are strings because
-        // FeatureFlagsSdk.ToMetadata stores them as object-wrapped strings.
-        internal const string MetadataSplitSerialId = "__dd_split_serial_id";
-        internal const string MetadataDoLog = "__dd_do_log";
+        internal const string MetadataSplitSerialId = FeatureFlagMetadataKeys.SplitSerialId;
+        internal const string MetadataDoLog = FeatureFlagMetadataKeys.DoLog;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
 
@@ -661,12 +658,11 @@ namespace Datadog.Trace.FeatureFlags
             {
                 [MetadataAllocationKey] = allocation.Key,
 
-                // Always surface do_log (string "true"/"false") so the span-enrichment hook can
-                // decide whether to record a subject. Mirrors the frozen Node contract.
+                // Always surface do_log so the span-enrichment hook can decide whether to record a subject.
                 [MetadataDoLog] = doLog ? "true" : "false"
             };
 
-            // Surface the split serial id only when present (mirrors Node's __dd_split_serial_id).
+            // Surface the split serial id only when present.
             if (split.SerialId.HasValue)
             {
                 metadata[MetadataSplitSerialId] = split.SerialId.Value.ToString(CultureInfo.InvariantCulture);

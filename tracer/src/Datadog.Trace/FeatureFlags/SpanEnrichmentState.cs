@@ -10,18 +10,11 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.FeatureFlags
 {
-    /// <summary>
-    /// Per-root-span accumulator for FFE APM feature-flag span enrichment. Ported verbatim from
-    /// the frozen Node reference (dd-trace-js#8343): enforces the frozen limits, dedupes serial
-    /// ids structurally (a <see cref="SortedSet{T}"/>), SHA256-hex hashes subject targeting keys,
-    /// JSON-stringifies object runtime defaults (NOT ToString), and UTF-8-safe truncates default
-    /// values to 64 chars. Created lazily only when the gate is on and a serial id / default is
-    /// actually seen, so there is no idle per-span overhead when the gate is off.
-    /// </summary>
     internal sealed class SpanEnrichmentState
     {
         internal const int MaxSerialIds = 200;
@@ -41,22 +34,14 @@ namespace Datadog.Trace.FeatureFlags
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanEnrichmentState));
 
-        // Per-instance lock guarding every mutator AND the tag-production method. A single root
-        // span can legitimately accumulate from multiple concurrent flag evaluations (e.g. a
-        // Task.WhenAll fan-out of async resolves under one ambient root), and the same instance is
-        // handed to each by SpanEnrichmentStore.GetOrAdd. The collections below are not
-        // thread-safe; without this lock concurrent AddSerialId/AddSubject would corrupt the
-        // red-black trees, and a straggler Add racing Span.Finish's drain would throw
-        // "Collection was modified". The Node reference never had to solve this because the JS
-        // event loop serializes per request; the .NET port must add the synchronization the
-        // runtime requires.
+        // Per-instance lock guarding mutation and tag production. A single root span can accumulate
+        // from concurrent flag evaluations under the same trace.
         private readonly object _gate = new();
 
-        // Dedupe is structural (a sorted set), matching the Node Set<number>.
-        private readonly SortedSet<long> _serialIds = new();
+        private readonly HashSet<long> _serialIds = new();
 
         // SHA256(targetingKey) -> set of serial ids.
-        private readonly Dictionary<string, SortedSet<long>> _subjects = new();
+        private readonly Dictionary<string, HashSet<long>> _subjects = new();
 
         // flagKey -> value string (first-wins).
         private readonly Dictionary<string, string> _defaults = new();
@@ -99,17 +84,16 @@ namespace Datadog.Trace.FeatureFlags
                     return;
                 }
 
-                _subjects[hashed] = new SortedSet<long> { id };
+                _subjects[hashed] = [id];
             }
         }
 
         public void AddDefault(string flagKey, object? value)
         {
-            // Stringify outside the lock (pure, no shared state) to keep the critical section short.
             var valueStr = StringifyDefault(value);
             if (valueStr.Length > MaxDefaultValueLength)
             {
-                valueStr = TruncateUtf8Safe(valueStr, MaxDefaultValueLength);
+                valueStr = TruncateValue(valueStr, MaxDefaultValueLength);
             }
 
             lock (_gate)
@@ -130,7 +114,6 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        // subjects are NOT checked: AddSubject never runs without AddSerialId.
         public bool HasData()
         {
             lock (_gate)
@@ -139,19 +122,6 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        /// <summary>
-        /// Produces the contract-conformant <c>ffe_*</c> tags: <c>ffe_flags_enc</c> is a
-        /// bare base64 string; <c>ffe_subjects_enc</c> and <c>ffe_runtime_defaults</c> are
-        /// JSON-stringified objects. Empty components are omitted.
-        /// </summary>
-        /// <remarks>
-        /// This MUST materialize the result inside <see cref="_gate"/> and return a fully-built list,
-        /// NOT a deferred <c>yield</c> iterator: the caller (<c>Span.Finish()</c>) enumerates the
-        /// result in a <c>foreach</c>, and a deferred iterator would run its body — reading the live
-        /// <see cref="_serialIds"/>/<see cref="_subjects"/> collections — outside any lock, racing a
-        /// concurrent <c>Add</c>. Building the list under the lock makes the snapshot atomic.
-        /// </remarks>
-        /// <returns>The tag key/value pairs to write on the root span.</returns>
         public IReadOnlyList<KeyValuePair<string, string>> ToSpanTags()
         {
             var tags = new List<KeyValuePair<string, string>>(3);
@@ -189,25 +159,15 @@ namespace Datadog.Trace.FeatureFlags
 
         internal static string HashTargetingKey(string targetingKey)
         {
-            // SHA256 -> lowercase hex digest (frozen contract). Use a manual hex loop so the
-            // same code compiles across every supported TFM (Convert.ToHexStringLower is net9+).
 #if NET6_0_OR_GREATER
             Span<byte> hash = stackalloc byte[32];
             SHA256.HashData(Encoding.UTF8.GetBytes(targetingKey), hash);
+            return HexString.ToHexString(hash);
 #else
             using var sha = SHA256.Create();
             var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(targetingKey));
+            return HexString.ToHexString(hash);
 #endif
-            const string hexChars = "0123456789abcdef";
-            var chars = new char[hash.Length * 2];
-            for (var i = 0; i < hash.Length; i++)
-            {
-                var b = hash[i];
-                chars[(i * 2)] = hexChars[b >> 4];
-                chars[(i * 2) + 1] = hexChars[b & 0x0F];
-            }
-
-            return new string(chars);
         }
 
         // Object default -> JSON (matches Node's JSON.stringify); scalars -> their string form.
@@ -227,26 +187,18 @@ namespace Datadog.Trace.FeatureFlags
                 case float or double or decimal:
                     return Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
                 default:
-                    // Arrays / dictionaries / complex objects -> JSON (NOT ToString()).
                     return JsonHelper.SerializeObject(value);
             }
         }
 
-        // UTF-8-safe truncation: never split a surrogate pair when slicing to maxChars.
-        private static string TruncateUtf8Safe(string value, int maxChars)
+        private static string TruncateValue(string value, int maxChars)
         {
             if (value.Length <= maxChars)
             {
                 return value;
             }
 
-            var end = maxChars;
-            if (char.IsHighSurrogate(value[end - 1]))
-            {
-                end--;
-            }
-
-            return value.Substring(0, end);
+            return value.Substring(0, maxChars);
         }
     }
 }

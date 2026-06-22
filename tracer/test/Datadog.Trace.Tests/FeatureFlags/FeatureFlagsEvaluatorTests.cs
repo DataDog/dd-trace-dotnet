@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 using ValueType = Datadog.Trace.FeatureFlags.ValueType;
@@ -521,6 +522,26 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal("split-value", result.Value);
         Assert.Equal(EvaluationReason.Split, result.Reason);
         Assert.Equal("split-variant", result.Variant);
+    }
+
+    [Fact]
+    public void Split_DeserializesWithoutSerialId_ForOlderConfigs()
+    {
+        var split = JsonConvert.DeserializeObject<Split>("{\"variationKey\":\"on\",\"shards\":[]}");
+
+        split.Should().NotBeNull();
+        split!.VariationKey.Should().Be("on");
+        split.SerialId.Should().BeNull();
+    }
+
+    [Fact]
+    public void Split_DeserializesSerialId_FromUfcCamelCase()
+    {
+        var split = JsonConvert.DeserializeObject<Split>("{\"variationKey\":\"on\",\"serialId\":123,\"shards\":[]}");
+
+        split.Should().NotBeNull();
+        split!.VariationKey.Should().Be("on");
+        split.SerialId.Should().Be(123);
     }
 
     [Theory]
