@@ -55,6 +55,9 @@
  *   - dlsym(RTLD_NEXT, "open64") resolves the real *64 symbol on glibc. On a
  *     musl host these wrappers are simply never called (musl callers reference
  *     the base symbol), so the unused dlsym result is harmless.
+ *
+ * The same reasoning applies to the fortified (_FORTIFY_SOURCE) entry points
+ * (__read_chk, __open_2, ...) defined at the bottom of this file.
  */
 
 #define WRAPPED_FUNCTION(return_type, name, parameters)                           \
@@ -128,14 +131,22 @@ WRAPPED_FUNCTION(int, lstat, (const char*, pathname)(struct stat*, buf))
 WRAPPED_FUNCTION(int, fstatat, (int, dirfd)(const char*, pathname)(struct stat*, buf)(int, flags))
 
 /*
- * On glibc < 2.33 (e.g. CentOS 7), stat/lstat/fstatat are inline functions
- * in the header that call __xstat/__lxstat/__fxstatat with a version argument.
- * Applications compiled against older glibc will call __xstat, not stat.
+ * fstat operates on an already-open descriptor. The common open-then-fstat flow
+ * (open a CIFS file, then size/validate it) can still hit a Kerberos re-auth and
+ * receive EINTR, so it must be wrapped too -- path-based stat alone is not enough.
+ */
+WRAPPED_FUNCTION(int, fstat, (int, fd)(struct stat*, buf))
+
+/*
+ * On glibc < 2.33 (e.g. CentOS 7), stat/lstat/fstat/fstatat are inline functions
+ * in the header that call __xstat/__lxstat/__fxstat/__fxstatat with a version
+ * argument. Applications compiled against older glibc will call __xstat, not stat.
  * We wrap both unconditionally since this is a universal binary used on both
  * glibc and musl. On musl, these symbols are never called (apps use stat directly).
  */
 WRAPPED_FUNCTION(int, __xstat, (int, ver)(const char*, pathname)(struct stat*, buf))
 WRAPPED_FUNCTION(int, __lxstat, (int, ver)(const char*, pathname)(struct stat*, buf))
+WRAPPED_FUNCTION(int, __fxstat, (int, ver)(int, fd)(struct stat*, buf))
 WRAPPED_FUNCTION(int, __fxstatat, (int, ver)(int, dirfd)(const char*, pathname)(struct stat*, buf)(int, flags))
 
 /*
@@ -151,6 +162,7 @@ WRAPPED_FUNCTION_RENAMED(ssize_t, "pwrite64", __dd_pwrite64, (int, fd)(const voi
 
 WRAPPED_FUNCTION_RENAMED(int, "__xstat64", __dd_xstat64, (int, ver)(const char*, pathname)(struct stat*, buf))
 WRAPPED_FUNCTION_RENAMED(int, "__lxstat64", __dd_lxstat64, (int, ver)(const char*, pathname)(struct stat*, buf))
+WRAPPED_FUNCTION_RENAMED(int, "__fxstat64", __dd_fxstat64, (int, ver)(int, fd)(struct stat*, buf))
 WRAPPED_FUNCTION_RENAMED(int, "__fxstatat64", __dd_fxstatat64, (int, ver)(int, dirfd)(const char*, pathname)(struct stat*, buf)(int, flags))
 
 /*
@@ -337,3 +349,35 @@ int __dd_openat64(int dirfd, const char* pathname, int flags, ...)
     __dd_set_shared_memory(NULL);
     return rc;
 }
+
+/*
+ * Fortified (_FORTIFY_SOURCE) entry points.
+ *
+ * When an application's own code is compiled with -D_FORTIFY_SOURCE, glibc's
+ * headers redirect read/pread/open/openat to the fortified symbols below
+ * (__read_chk, __open_2, ...) instead of the plain ones. Without wrapping these
+ * too, a fortified caller doing SMB/CIFS I/O would bypass our interception and
+ * could still surface profiler-induced EINTR.
+ *
+ * All of these are non-variadic, so they go through WRAPPED_FUNCTION_RENAMED.
+ * Notes:
+ *   - The *_chk read variants carry a trailing buflen used by glibc to detect
+ *     buffer overflows. We forward to the REAL __read_chk/__pread_chk (passing
+ *     buflen through) so that bounds check is preserved -- we must NOT redirect
+ *     these to plain read/pread.
+ *   - __open_2 / __openat_2 are the non-variadic fortified forms used when no
+ *     mode argument is passed; glibc itself aborts if a mode would be required,
+ *     so we simply forward (no va_arg handling needed).
+ *   - These symbols only exist on glibc; on musl they are never referenced, but
+ *     we export them unconditionally (the universal binary is built on musl) via
+ *     the __asm__ rename so glibc consumers are covered. pread64 uses off_t,
+ *     which is ABI-identical to off64_t on our 64-bit targets.
+ */
+WRAPPED_FUNCTION_RENAMED(ssize_t, "__read_chk", __dd_read_chk, (int, fd)(void*, buf)(size_t, nbytes)(size_t, buflen))
+WRAPPED_FUNCTION_RENAMED(ssize_t, "__pread_chk", __dd_pread_chk, (int, fd)(void*, buf)(size_t, nbytes)(off_t, offset)(size_t, buflen))
+WRAPPED_FUNCTION_RENAMED(ssize_t, "__pread64_chk", __dd_pread64_chk, (int, fd)(void*, buf)(size_t, nbytes)(off_t, offset)(size_t, buflen))
+
+WRAPPED_FUNCTION_RENAMED(int, "__open_2", __dd_open_2, (const char*, pathname)(int, flags))
+WRAPPED_FUNCTION_RENAMED(int, "__open64_2", __dd_open64_2, (const char*, pathname)(int, flags))
+WRAPPED_FUNCTION_RENAMED(int, "__openat_2", __dd_openat_2, (int, dirfd)(const char*, pathname)(int, flags))
+WRAPPED_FUNCTION_RENAMED(int, "__openat64_2", __dd_openat64_2, (int, dirfd)(const char*, pathname)(int, flags))

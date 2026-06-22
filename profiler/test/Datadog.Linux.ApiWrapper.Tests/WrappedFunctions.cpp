@@ -70,9 +70,11 @@ INSTANTIATE_TEST_SUITE_P(
         // so (void*)::stat would resolve to a local inline, not our wrapper.
         dlsym(RTLD_DEFAULT, "stat"),
         dlsym(RTLD_DEFAULT, "lstat"),
+        dlsym(RTLD_DEFAULT, "fstat"),
         dlsym(RTLD_DEFAULT, "fstatat"),
         dlsym(RTLD_DEFAULT, "__xstat"),
         dlsym(RTLD_DEFAULT, "__lxstat"),
+        dlsym(RTLD_DEFAULT, "__fxstat"),
         dlsym(RTLD_DEFAULT, "__fxstatat"),
         // Large-file (*64) variants: the .NET runtime is compiled with
         // _FILE_OFFSET_BITS=64, so it references these symbols rather than the
@@ -85,6 +87,18 @@ INSTANTIATE_TEST_SUITE_P(
         dlsym(RTLD_DEFAULT, "pwrite64"),
         dlsym(RTLD_DEFAULT, "__xstat64"),
         dlsym(RTLD_DEFAULT, "__lxstat64"),
-        dlsym(RTLD_DEFAULT, "__fxstatat64")));
+        dlsym(RTLD_DEFAULT, "__fxstat64"),
+        dlsym(RTLD_DEFAULT, "__fxstatat64"),
+        // Fortified (_FORTIFY_SOURCE) entry points. Applications compiled with
+        // -D_FORTIFY_SOURCE bind read/pread/open/openat to these instead of the
+        // plain symbols. Exported unconditionally for the same universal-binary
+        // reason as the *64 variants above.
+        dlsym(RTLD_DEFAULT, "__read_chk"),
+        dlsym(RTLD_DEFAULT, "__pread_chk"),
+        dlsym(RTLD_DEFAULT, "__pread64_chk"),
+        dlsym(RTLD_DEFAULT, "__open_2"),
+        dlsym(RTLD_DEFAULT, "__open64_2"),
+        dlsym(RTLD_DEFAULT, "__openat_2"),
+        dlsym(RTLD_DEFAULT, "__openat64_2")));
 
 } // namespace WrappedFunctionsTest
