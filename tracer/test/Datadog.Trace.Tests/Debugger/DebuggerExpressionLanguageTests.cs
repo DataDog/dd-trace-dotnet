@@ -2580,6 +2580,30 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_UndefinedValueStringDump_PreservesLegacyMarker()
+        {
+            var scopeMembers = CreateScopeMembers();
+
+            const string json = """
+                                {
+                                  "ref": "missing"
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal(nameof(UndefinedValue), result);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Contains("The property or field does not exist", error.Message);
+        }
+
+        [Fact]
         public void ProbeExpressionParser_StaticConstantOnTypeWithCctor_StillEvaluatesWithoutInitializingType()
         {
             _staticExpressionInitializedCount = 0;

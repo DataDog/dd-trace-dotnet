@@ -19,6 +19,8 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {
+    private const string UndefinedValueDump = nameof(Expressions.UndefinedValue);
+
     private static FieldInfo[] GetSafeFieldsForDump(FieldInfo[] fields)
     {
         var writeIndex = 0;
@@ -48,6 +50,11 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
+        if (expression.Type == ProbeExpressionParserHelper.UndefinedValueType)
+        {
+            return Expression.Constant(UndefinedValueDump);
+        }
+
         if (Datadog.Trace.Debugger.Helpers.TypeExtensions.IsSimple(expression.Type) ||
             Redaction.AllowedTypesSafeToCallToString.Contains(expression.Type))
         {
@@ -241,6 +248,11 @@ internal partial class ProbeExpressionParser<T>
         if (!string.IsNullOrEmpty(name))
         {
             name += "=";
+        }
+
+        if (type == ProbeExpressionParserHelper.UndefinedValueType)
+        {
+            return $"{name}{UndefinedValueDump}";
         }
 
         if (IsSafeException(type))

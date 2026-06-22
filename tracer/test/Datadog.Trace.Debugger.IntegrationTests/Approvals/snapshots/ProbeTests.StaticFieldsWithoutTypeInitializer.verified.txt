@@ -1,0 +1,71 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "lastName": {
+                "type": "String",
+                "value": "Last name"
+              }
+            },
+            "staticFields": {
+              "_staticField": {
+                "type": "String",
+                "value": "Static Field"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "lastName": {
+                "type": "String",
+                "value": "Last name"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "Last name"
+              }
+            },
+            "staticFields": {
+              "_staticField": {
+                "type": "String",
+                "value": "Static Field"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.StaticFieldsWithoutTypeInitializer"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.StaticFieldsWithoutTypeInitializer",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]
