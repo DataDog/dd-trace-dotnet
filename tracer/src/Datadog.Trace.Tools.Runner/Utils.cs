@@ -9,14 +9,11 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Security.AccessControl;
 using System.Security.Cryptography;
-using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,10 +40,6 @@ namespace Datadog.Trace.Tools.Runner
         private const string CacheLockFileExtension = ".lock";
         private const string CacheStagingDirectorySuffix = ".tmp.";
         private const int CacheKeyLength = 64;
-        private const uint PosixDirectoryFileType = 0x4000;
-        private const uint PosixFileTypeMask = 0xF000;
-        private const uint PosixGroupOrOtherWrite = 0x12; // 022
-        private const uint PrivateDirectoryMode = 448; // 0700
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Utils));
 
@@ -1127,7 +1120,14 @@ namespace Datadog.Trace.Tools.Runner
             builder.Append(GetTracerHomeAssemblyVersion(tracerHome));
             builder.Append('|');
 
-            foreach (var entry in EnumerateTracerHomeEntries(tracerHome, ignoreRootCacheMetadata: false).OrderBy(entry => entry.RelativePath, StringComparer.Ordinal))
+            var entries = new List<TracerHomeEntry>();
+            foreach (var entry in EnumerateTracerHomeEntries(tracerHome, ignoreRootCacheMetadata: false))
+            {
+                entries.Add(entry);
+            }
+
+            entries.Sort((left, right) => string.Compare(left.RelativePath, right.RelativePath, StringComparison.Ordinal));
+            foreach (var entry in entries)
             {
                 builder.Append(entry.RelativePath);
                 builder.Append('|');
@@ -1192,19 +1192,21 @@ namespace Datadog.Trace.Tools.Runner
 
         private static CacheIntegrityEntry[] CreateCacheIntegrityEntries(string tracerHome, bool ignoreRootCacheMetadata)
         {
-            return EnumerateTracerHomeEntries(tracerHome, ignoreRootCacheMetadata)
-                  .Select(entry =>
-                   {
-                       if (entry.IsDirectory)
-                       {
-                           return new CacheIntegrityEntry(entry.RelativePath, true, 0, string.Empty);
-                       }
+            var entries = new List<CacheIntegrityEntry>();
+            foreach (var entry in EnumerateTracerHomeEntries(tracerHome, ignoreRootCacheMetadata))
+            {
+                if (entry.IsDirectory)
+                {
+                    entries.Add(new CacheIntegrityEntry(entry.RelativePath, true, 0, string.Empty));
+                    continue;
+                }
 
-                       var fileInfo = new FileInfo(entry.FullPath);
-                       return new CacheIntegrityEntry(entry.RelativePath, false, fileInfo.Length, ComputeSha256(entry.FullPath));
-                   })
-                  .OrderBy(entry => entry.RelativePath, StringComparer.Ordinal)
-                  .ToArray();
+                var fileInfo = new FileInfo(entry.FullPath);
+                entries.Add(new CacheIntegrityEntry(entry.RelativePath, false, fileInfo.Length, ComputeSha256(entry.FullPath)));
+            }
+
+            entries.Sort((left, right) => string.Compare(left.RelativePath, right.RelativePath, StringComparison.Ordinal));
+            return entries.ToArray();
         }
 
         private static bool ValidateCachedTracerHomeIntegrity(string cachedTracerHome, CacheIntegrityManifest integrityManifest)
@@ -1224,7 +1226,18 @@ namespace Datadog.Trace.Tools.Runner
                 return false;
             }
 
-            var actualByPath = actualEntries.ToDictionary(entry => entry.RelativePath, GetFileSystemRelativePathComparer());
+            var relativePathComparer = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+            var actualByPath = new Dictionary<string, CacheIntegrityEntry>(relativePathComparer);
+            foreach (var actualEntry in actualEntries)
+            {
+                if (actualByPath.ContainsKey(actualEntry.RelativePath))
+                {
+                    return false;
+                }
+
+                actualByPath.Add(actualEntry.RelativePath, actualEntry);
+            }
+
             foreach (var expectedEntry in integrityManifest.Entries)
             {
                 if (!actualByPath.TryGetValue(expectedEntry.RelativePath, out var actualEntry))
@@ -1284,7 +1297,9 @@ namespace Datadog.Trace.Tools.Runner
             while (pendingDirectories.Count != 0)
             {
                 var directoryPath = pendingDirectories.Pop();
-                foreach (var entryPath in Directory.EnumerateFileSystemEntries(directoryPath).OrderBy(path => path, StringComparer.Ordinal))
+                var entryPaths = new List<string>(Directory.EnumerateFileSystemEntries(directoryPath));
+                entryPaths.Sort(StringComparer.Ordinal);
+                foreach (var entryPath in entryPaths)
                 {
                     var attributes = GetTracerHomeEntryAttributes(entryPath);
                     if ((attributes & FileAttributes.ReparsePoint) != 0)
@@ -1337,7 +1352,8 @@ namespace Datadog.Trace.Tools.Runner
         {
             rootPath = EnsureTrailingDirectorySeparator(Path.GetFullPath(rootPath));
             path = Path.GetFullPath(path);
-            if (!path.StartsWith(rootPath, GetFileSystemPathComparison()))
+            var pathComparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            if (!path.StartsWith(rootPath, pathComparison))
             {
                 throw new IOException($"Path '{path}' is not under root '{rootPath}'.");
             }
@@ -1358,16 +1374,6 @@ namespace Datadog.Trace.Tools.Runner
                    path.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal)
                        ? path
                        : path + Path.DirectorySeparatorChar;
-        }
-
-        private static StringComparer GetFileSystemRelativePathComparer()
-        {
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-        }
-
-        private static StringComparison GetFileSystemPathComparison()
-        {
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         }
 
         private static void CreatePrivateDirectory(string path)
@@ -1398,19 +1404,14 @@ namespace Datadog.Trace.Tools.Runner
                     throw new IOException($"Temporary tracer home directory '{path}' already exists.");
                 }
 
-                CreateWindowsPrivateDirectory(path);
+                WindowsDirectoryAccess.CreatePrivateDirectory(path);
                 ValidateExistingPrivateDirectory(path);
                 return;
             }
 
             // Directory.CreateDirectory does not let us request 0700 on all supported TFMs, so call mkdir(2)
             // directly and then validate the resulting owner/mode before trusting the path.
-            var result = Mkdir(path, PrivateDirectoryMode);
-            if (result != 0 && !Directory.Exists(path))
-            {
-                throw new IOException($"Unable to create directory '{path}'. errno: {Marshal.GetLastWin32Error()}");
-            }
-
+            PosixDirectoryAccess.CreatePrivateDirectory(path);
             ValidateExistingPrivateDirectory(path);
         }
 
@@ -1457,190 +1458,12 @@ namespace Datadog.Trace.Tools.Runner
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                ValidateWindowsDirectoryAccess(path, requireCurrentUserOwner, allowGroupOrOtherWrite);
+                WindowsDirectoryAccess.ValidateDirectoryAccess(path, requireCurrentUserOwner, allowGroupOrOtherWrite);
                 return;
             }
 
-            var directoryInfo = GetPosixDirectoryInfo(path);
-            if ((directoryInfo.Mode & PosixFileTypeMask) != PosixDirectoryFileType)
-            {
-                throw new IOException($"Path '{path}' must be a directory.");
-            }
-
-            if (requireCurrentUserOwner && directoryInfo.UserId != GetEffectiveUserId())
-            {
-                throw new IOException($"Directory '{path}' must be owned by the current user.");
-            }
-
-            if (!allowGroupOrOtherWrite && (directoryInfo.Mode & PosixGroupOrOtherWrite) != 0)
-            {
-                throw new IOException($"Directory '{path}' must not be writable by group or other users.");
-            }
+            PosixDirectoryAccess.ValidateDirectoryAccess(path, requireCurrentUserOwner, allowGroupOrOtherWrite);
         }
-
-#pragma warning disable CA1416 // Windows ACL APIs are only called after a RuntimeInformation Windows guard.
-        private static void CreateWindowsPrivateDirectory(string path)
-        {
-            var currentUser = WindowsIdentity.GetCurrent().User;
-            if (currentUser is null)
-            {
-                throw new IOException("Unable to determine the current Windows user.");
-            }
-
-            // Avoid inheriting broad write ACEs from user-configurable cache roots.
-            var security = new DirectorySecurity();
-            security.SetOwner(currentUser);
-            security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
-            AddWindowsDirectoryFullControl(security, currentUser);
-            AddWindowsDirectoryFullControl(security, new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null));
-            AddWindowsDirectoryFullControl(security, new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null));
-
-            FileSystemAclExtensions.Create(new DirectoryInfo(path), security);
-        }
-
-        private static void AddWindowsDirectoryFullControl(DirectorySecurity security, SecurityIdentifier securityIdentifier)
-        {
-            security.AddAccessRule(
-                new FileSystemAccessRule(
-                    securityIdentifier,
-                    FileSystemRights.FullControl,
-                    InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
-                    PropagationFlags.None,
-                    AccessControlType.Allow));
-        }
-
-        private static void ValidateWindowsDirectoryAccess(string path, bool requireCurrentUserOwner, bool allowBroadWrite)
-        {
-            DirectorySecurity security;
-            try
-            {
-                security = FileSystemAclExtensions.GetAccessControl(new DirectoryInfo(path), AccessControlSections.Access | AccessControlSections.Owner);
-            }
-            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or SystemException)
-            {
-                throw new IOException($"Unable to inspect Windows access control for directory '{path}'.", ex);
-            }
-
-            var currentUser = WindowsIdentity.GetCurrent().User;
-            if (currentUser is null)
-            {
-                throw new IOException("Unable to determine the current Windows user.");
-            }
-
-            if (requireCurrentUserOwner)
-            {
-                var owner = security.GetOwner(typeof(SecurityIdentifier)) as SecurityIdentifier;
-                if (owner is null || !owner.Equals(currentUser))
-                {
-                    throw new IOException($"Directory '{path}' must be owned by the current user.");
-                }
-            }
-
-            if (allowBroadWrite)
-            {
-                return;
-            }
-
-            foreach (FileSystemAccessRule rule in security.GetAccessRules(includeExplicit: true, includeInherited: true, targetType: typeof(SecurityIdentifier)))
-            {
-                if (rule.AccessControlType != AccessControlType.Allow ||
-                    !GrantsWindowsWriteAccess(rule.FileSystemRights) ||
-                    rule.IdentityReference is not SecurityIdentifier securityIdentifier ||
-                    IsAllowedWindowsWriter(securityIdentifier, currentUser))
-                {
-                    continue;
-                }
-
-                throw new IOException($"Directory '{path}' must not grant write access to Windows identity '{securityIdentifier.Value}'.");
-            }
-        }
-
-        private static bool GrantsWindowsWriteAccess(FileSystemRights rights)
-        {
-            const FileSystemRights writeRights =
-                FileSystemRights.Write |
-                FileSystemRights.WriteData |
-                FileSystemRights.AppendData |
-                FileSystemRights.CreateFiles |
-                FileSystemRights.CreateDirectories |
-                FileSystemRights.WriteAttributes |
-                FileSystemRights.WriteExtendedAttributes |
-                FileSystemRights.Delete |
-                FileSystemRights.DeleteSubdirectoriesAndFiles |
-                FileSystemRights.ChangePermissions |
-                FileSystemRights.TakeOwnership |
-                FileSystemRights.Modify |
-                FileSystemRights.FullControl;
-
-            return (rights & writeRights) != 0;
-        }
-
-        private static bool IsAllowedWindowsWriter(SecurityIdentifier securityIdentifier, SecurityIdentifier currentUser)
-        {
-            return securityIdentifier.Equals(currentUser) ||
-                   securityIdentifier.IsWellKnown(WellKnownSidType.LocalSystemSid) ||
-                   securityIdentifier.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid);
-        }
-#pragma warning restore CA1416
-
-        private static PosixDirectoryInfo GetPosixDirectoryInfo(string path)
-        {
-            // struct stat layout varies across libc, CPU architectures, and macOS inode eras. The stat(1)
-            // output format is stable enough for the two fields we need: mode and owner uid.
-            var isMacOs = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ||
-                          string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.Ordinal) ||
-                          FrameworkDescription.Instance.OSDescription.StartsWith("Darwin", StringComparison.OrdinalIgnoreCase);
-            var statPath = isMacOs ? "/usr/bin/stat" : File.Exists("/usr/bin/stat") ? "/usr/bin/stat" : "/bin/stat";
-            var processStartInfo = new ProcessStartInfo(statPath)
-            {
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-            };
-
-            processStartInfo.ArgumentList.Add(isMacOs ? "-f" : "-c");
-            processStartInfo.ArgumentList.Add(isMacOs ? "%p %u" : "%f %u");
-            processStartInfo.ArgumentList.Add(path);
-
-            using var process = Process.Start(processStartInfo);
-            if (process is null)
-            {
-                throw new IOException($"Unable to inspect directory '{path}'.");
-            }
-
-            var output = process.StandardOutput.ReadToEnd();
-            var error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-            if (process.ExitCode != 0)
-            {
-                throw new IOException($"Unable to inspect directory '{path}'. {error}");
-            }
-
-            var values = output.Trim().Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
-            if (values.Length != 2 || !uint.TryParse(values[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var userId))
-            {
-                throw new IOException($"Unable to inspect directory '{path}'. Unexpected stat output: '{output.Trim()}'.");
-            }
-
-            uint mode;
-            try
-            {
-                mode = Convert.ToUInt32(values[0], isMacOs ? 8 : 16);
-            }
-            catch (Exception ex) when (ex is FormatException or OverflowException)
-            {
-                throw new IOException($"Unable to inspect directory '{path}'. Unexpected stat mode: '{values[0]}'.", ex);
-            }
-
-            return new PosixDirectoryInfo(mode, userId);
-        }
-
-        [DllImport("libc", EntryPoint = "mkdir", SetLastError = true)]
-        private static extern int Mkdir(string path, uint mode);
-
-        [DllImport("libc", EntryPoint = "geteuid")]
-        private static extern uint GetEffectiveUserId();
-
-        private readonly record struct PosixDirectoryInfo(uint Mode, uint UserId);
 
         private readonly record struct CacheIntegrityEntry(string RelativePath, bool IsDirectory, long Length, string Sha256);
 
