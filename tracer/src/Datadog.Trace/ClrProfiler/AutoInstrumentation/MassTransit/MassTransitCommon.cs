@@ -32,13 +32,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         private static readonly ConcurrentDictionary<PropertyCacheKey, PropertyInfo?> PropertyCache = new();
         private static readonly Func<PropertyCacheKey, PropertyInfo?> ResolvePropertyDelegate = ResolveProperty;
 
-        // Canonical message-type URN ("urn:message:Foo.Bar:Baz") is a pure function of the runtime Type,
-        // computed on every send/receive. Cache to avoid the substring/concat per message. The MassTransit
-        // message-type space is bounded by the application's message contracts, so unbounded growth is not
-        // a concern.
-        private static readonly ConcurrentDictionary<Type, string> CanonicalMessageTypeCache = new();
-        private static readonly Func<Type, string> BuildCanonicalMessageTypesDelegate = BuildCanonicalMessageTypes;
-
         /// <summary>
         /// Creates a produce (send) span for an outbound message.
         /// </summary>
@@ -373,88 +366,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         }
 
         /// <summary>
-        /// Resolves the canonical message type(s) for a MassTransit context object as a comma-separated
-        /// list of <c>urn:message:&lt;Namespace&gt;:&lt;Type&gt;</c> values matching MassTransit's own naming.
-        /// Strategies, in order:
-        ///   1. Read <c>SupportedMessageTypes</c> if MassTransit already produced the canonical URN list.
-        ///   2. Recursively unwrap nested <c>IContextContainer</c> / <c>IConsumeContextContainer</c> wrappers.
-        ///   3. Take the runtime type of the <c>Message</c> instance — <see cref="TryGetProperty{T}"/>
-        ///      walks the interface hierarchy so this resolves <c>ConsumeContext&lt;TMessage&gt;.Message</c>
-        ///      even on saga contexts where the first generic argument is the saga state type.
-        /// Returns <c>null</c> if no Message instance is reachable; the caller leaves the tag unset.
+        /// Resolves the message type for an inbound message from an already duck-typed consume context.
+        /// Returns null when <paramref name="consumeContext"/> is null (cast failed) or
+        /// <c>SupportedMessageTypes</c> is empty.
         /// </summary>
-        internal static string? GetMessageType(object? context)
-            => GetMessageType(context, depth: 0);
-
-        private static string? GetMessageType(object? context, int depth)
+        internal static string? GetConsumeMessageType(IConsumeContext? consumeContext)
         {
-            if (context is null || depth > 2)
-            {
-                return null;
-            }
-
-            try
-            {
-                var supportedMessageTypes = TryGetSupportedMessageTypes(context);
-                if (!string.IsNullOrEmpty(supportedMessageTypes))
-                {
-                    return supportedMessageTypes;
-                }
-
-                if (context.TryDuckCast<IContextContainer>(out var contextContainer) &&
-                    contextContainer.Context is { } nestedContext &&
-                    !ReferenceEquals(nestedContext, context))
-                {
-                    var nestedMessageType = GetMessageType(nestedContext, depth + 1);
-                    if (!string.IsNullOrEmpty(nestedMessageType))
-                    {
-                        return nestedMessageType;
-                    }
-                }
-
-                if (context.TryDuckCast<IConsumeContextContainer>(out var consumeContextContainer) &&
-                    consumeContextContainer.ConsumeContext is { } consumeContextProxy &&
-                    (consumeContextProxy as IDuckType)?.Instance is { } consumeContext &&
-                    !ReferenceEquals(consumeContext, context))
-                {
-                    var consumeMessageType = GetMessageType(consumeContext, depth + 1);
-                    if (!string.IsNullOrEmpty(consumeMessageType))
-                    {
-                        return consumeMessageType;
-                    }
-                }
-
-                // Prefer the concrete Message instance when available. TryGetProperty walks
-                // the interface hierarchy, so this resolves ConsumeContext<TMessage>.Message
-                // even on saga contexts whose first generic argument is the saga state type.
-                // If no Message instance is reachable, the message type is genuinely unknown
-                // and we leave the tag unset rather than guess from positional generic args.
-                var message = TryGetProperty<object>(context, "Message");
-                if (message is not null)
-                {
-                    return GetCanonicalMessageTypes(message.GetType());
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "MassTransitCommon.GetMessageType: Failed to get message type");
-            }
-
-            return null;
-        }
-
-        private static string? TryGetSupportedMessageTypes(object context)
-        {
-            if (context.TryDuckCast<IConsumeContext>(out var consumeContext) &&
-                consumeContext.SupportedMessageTypes is { } duckTypedSupportedMessageTypes)
-            {
-                return JoinMessageTypes(duckTypedSupportedMessageTypes);
-            }
-
-            var value = TryGetProperty<object>(context, "SupportedMessageTypes");
-            return value is IEnumerable enumerable
-                       ? JoinMessageTypes(enumerable)
-                       : null;
+            return consumeContext?.SupportedMessageTypes is { } types ? JoinMessageTypes(types) : null;
         }
 
         private static string? JoinMessageTypes(IEnumerable enumerable)
@@ -473,42 +391,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             return messageTypes is { Count: > 0 }
                        ? string.Join(",", messageTypes)
                        : null;
-        }
-
-        private static string GetCanonicalMessageTypes(Type messageType)
-            => CanonicalMessageTypeCache.GetOrAdd(messageType, BuildCanonicalMessageTypesDelegate);
-
-        private static string BuildCanonicalMessageTypes(Type messageType)
-        {
-            if (messageType.IsGenericType)
-            {
-                var genericDefinition = messageType.GetGenericTypeDefinition();
-                var genericDefinitionName = genericDefinition.Name;
-                if (string.Equals(genericDefinition.Namespace, "MassTransit", StringComparison.Ordinal) &&
-                    (genericDefinitionName == "Fault`1" || genericDefinitionName == "FaultEvent`1"))
-                {
-                    var innerType = messageType.GetGenericArguments()[0];
-                    var faultUrn = $"urn:message:MassTransit:Fault[[{GetMessageToken(innerType)}]]";
-                    return $"{faultUrn},urn:message:MassTransit:Fault";
-                }
-            }
-
-            return $"urn:message:{GetMessageToken(messageType)}";
-        }
-
-        private static string GetMessageToken(Type messageType)
-        {
-            var typeName = messageType.Name;
-            var tickIndex = typeName.IndexOf('`');
-            if (tickIndex >= 0)
-            {
-                typeName = typeName.Substring(0, tickIndex);
-            }
-
-            var typeNamespace = messageType.Namespace;
-            return !StringUtil.IsNullOrWhiteSpace(typeNamespace)
-                       ? $"{typeNamespace}:{typeName}"
-                       : typeName;
         }
 
         /// <summary>
@@ -619,32 +501,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 Log.Debug(ex, "MassTransitCommon.ExtractTraceContext: Failed to extract trace context");
                 return default;
-            }
-        }
-
-        /// <summary>
-        /// Closes a scope safely with logging.
-        /// </summary>
-        internal static void CloseScope(Scope? scope, string operationType)
-        {
-            if (scope is null)
-            {
-                Log.Debug("MassTransitCommon.CloseScope: No scope to close for {OperationType}", operationType);
-                return;
-            }
-
-            try
-            {
-                Log.Debug(
-                    "MassTransitCommon.CloseScope: Closing {OperationType} span with TraceId={TraceId}, SpanId={SpanId}",
-                    operationType,
-                    scope.Span?.TraceId,
-                    scope.Span?.SpanId);
-                scope.Dispose();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "MassTransitCommon.CloseScope: Error closing scope for {OperationType}", operationType);
             }
         }
 

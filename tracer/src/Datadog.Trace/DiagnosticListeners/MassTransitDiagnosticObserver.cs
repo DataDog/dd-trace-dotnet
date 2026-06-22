@@ -158,14 +158,11 @@ namespace Datadog.Trace.DiagnosticListeners
 
             // Extract metadata from SendContext — returns the duck-typed proxy for reuse
             var sendContextProxy = MassTransitCommon.ExtractSendContextMetadata(arg, out var destinationAddress, out var messageId, out var conversationId, out var correlationId);
-            var messageType = MassTransitCommon.GetMessageType(arg);
-
             Log.Debug(
-                "MassTransitDiagnosticObserver.OnSendStart: Destination={Destination}, MessageType={MessageType}",
-                destinationAddress,
-                messageType);
+                "MassTransitDiagnosticObserver.OnSendStart: Destination={Destination}",
+                destinationAddress);
 
-            var scope = MassTransitCommon.CreateProduceSpan(Tracer.Instance, destinationAddress, messageType);
+            var scope = MassTransitCommon.CreateProduceSpan(Tracer.Instance, destinationAddress, messageType: null);
 
             if (scope is not null)
             {
@@ -256,22 +253,23 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var messageType = MassTransitCommon.GetMessageType(arg);
+            // Duck cast once — reused for both message-type resolution and header extraction below.
+            // Fails for MessageConsumeContext<T> (the most common type) because it implements
+            // Headers as an explicit interface: `Headers MessageContext.Headers => _context.Headers`
+            // Duck typing only finds public class members, not explicit interface implementations.
+            // In that case TryDuckCast returns false and we fall back to reflection-based paths.
+            arg.TryDuckCast<IConsumeContext>(out var consumeContext);
+            var messageType = MassTransitCommon.GetConsumeMessageType(consumeContext);
 
             Log.Debug(
                 "MassTransitDiagnosticObserver.OnConsumeStart: MessageType={MessageType}, OperationType={OperationType}",
                 messageType,
                 operationType);
 
-            // Try duck casting to IConsumeContext to get Headers.
-            // Fails for MessageConsumeContext<T> (the most common type) because it implements
-            // Headers as an explicit interface: `Headers MessageContext.Headers => _context.Headers`
-            // Duck typing only finds public class members, not explicit interface implementations.
-            // In that case TryDuckCast returns false and we fall back to reflection-based ExtractTraceContext.
             PropagationContext parentContext;
-            if (arg.TryDuckCast<IConsumeContext>(out var consumeCtx) && consumeCtx.Headers != null)
+            if (consumeContext?.Headers != null)
             {
-                var adapter = new ContextPropagationExtractAdapter(consumeCtx.Headers);
+                var adapter = new ContextPropagationExtractAdapter(consumeContext.Headers);
                 parentContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(adapter);
             }
             else
@@ -286,7 +284,7 @@ namespace Datadog.Trace.DiagnosticListeners
             parentContext = parentContext.MergeBaggageInto(Baggage.Current);
 
             // Get InputAddress from ReceiveContext — via duck typing if available, reflection otherwise.
-            var inputAddress = consumeCtx?.ReceiveContext?.InputAddress?.ToString();
+            var inputAddress = consumeContext?.ReceiveContext?.InputAddress?.ToString();
             if (string.IsNullOrEmpty(inputAddress))
             {
                 var rc = MassTransitCommon.TryGetProperty<object>(arg, "ReceiveContext");
@@ -342,7 +340,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            MassTransitCommon.CloseScope(scope, operationType);
+            scope.Close();
             Log.Debug("MassTransitDiagnosticObserver.OnStop: Closed scope for {OperationType}", operationType);
         }
     }
