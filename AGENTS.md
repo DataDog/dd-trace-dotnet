@@ -233,8 +233,7 @@ The tracer runs in-process with customer applications and must have minimal perf
 
 Debugger code runs inside customer processes while inspecting live customer objects. Before changing debugger capture, expression evaluation, Exception Replay, Code Origin, or symbol-resolution paths, check:
 
-- **`docs/development/DebuggerReflectionLoadingAudit.md`** — guidance for reflection paths that may resolve customer assemblies/types/members early, trigger type initializers, or instantiate attributes.
-- **`docs/development/DebuggerCustomerCodeExecutionPolicy.md`** — policy for when capture and expression paths may execute customer code such as getters, enumerators, exception overrides, or `ToString()`.
+- **`docs/development/DebuggerSafetyBoundaries.md`** — guidance for reflection paths that may resolve customer assemblies/types/members early, trigger type initializers, instantiate attributes, or execute customer code such as getters, enumerators, exception overrides, or `ToString()`.
 
 ## Testing
 
@@ -270,8 +269,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - `docs/development/AzureFunctions.md` — Azure Functions integration
 - `docs/development/for-ai/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
 - `docs/development/AwsLambdaIntegrationTests.md` — AWS Lambda integration tests
-- `docs/development/DebuggerReflectionLoadingAudit.md` — Debugger reflection/type-loading safety guide
-- `docs/development/DebuggerCustomerCodeExecutionPolicy.md` — Debugger capture/expression customer-code execution policy
+- `docs/development/DebuggerSafetyBoundaries.md` — Debugger reflection/type-loading and customer-code execution safety guide
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)
 
