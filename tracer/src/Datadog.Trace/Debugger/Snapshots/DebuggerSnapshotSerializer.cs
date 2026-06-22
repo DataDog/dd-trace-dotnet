@@ -67,19 +67,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 if (Redaction.Instance.ShouldRedact(variableName, type, out var redactionReason))
                 {
-                    if (variableName != null)
-                    {
-                        jsonWriter.WritePropertyName(variableName);
-                    }
-
-                    var notCapturedReason = redactionReason == RedactionReason.Identifier ? NotCapturedReason.redactedIdent : NotCapturedReason.redactedType;
-
-                    jsonWriter.WriteStartObject();
-                    jsonWriter.WritePropertyName("type");
-                    jsonWriter.WriteValue(type.Name);
-                    WriteNotCapturedReason(jsonWriter, notCapturedReason);
-                    jsonWriter.WriteEndObject();
-
+                    WriteRedactedValue(jsonWriter, type, variableName, redactionReason);
                     return true;
                 }
 
@@ -425,6 +413,10 @@ namespace Datadog.Trace.Debugger.Snapshots
                 {
                     notCapturedReason = NotCapturedReason.timeout;
                 }
+                else if (enumerableInfo.WasTruncated)
+                {
+                    notCapturedReason = NotCapturedReason.collectionSize;
+                }
                 else if (!enumerationCompleted &&
                          enumeratedItemCount >= limitInfo.MaxCollectionSize &&
                          enumeratedItemCount < collectionCount)
@@ -485,10 +477,35 @@ namespace Datadog.Trace.Debugger.Snapshots
             var valueType = value?.GetType() ?? descriptor.ValueType;
 
             bool serializedKey = SerializeInternal(key, keyType, jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
-            bool serializedValue = SerializeInternal(value, valueType, jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
+            bool serializedValue;
+            if (key is string keyName && Redaction.Instance.IsRedactedKeyword(keyName))
+            {
+                WriteRedactedValue(jsonWriter, valueType, variableName: null, redactionReason: RedactionReason.Identifier);
+                serializedValue = true;
+            }
+            else
+            {
+                serializedValue = SerializeInternal(value, valueType, jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
+            }
 
             jsonWriter.WriteEndArray();
             return serializedKey && serializedValue;
+        }
+
+        private static void WriteRedactedValue(JsonWriter jsonWriter, Type type, string variableName, RedactionReason redactionReason)
+        {
+            if (variableName != null)
+            {
+                jsonWriter.WritePropertyName(variableName);
+            }
+
+            var notCapturedReason = redactionReason == RedactionReason.Identifier ? NotCapturedReason.redactedIdent : NotCapturedReason.redactedType;
+
+            jsonWriter.WriteStartObject();
+            jsonWriter.WritePropertyName("type");
+            jsonWriter.WriteValue(type.Name);
+            WriteNotCapturedReason(jsonWriter, notCapturedReason);
+            jsonWriter.WriteEndObject();
         }
 
         private static void WriteNotCapturedReason(JsonWriter writer, NotCapturedReason notCapturedReason)

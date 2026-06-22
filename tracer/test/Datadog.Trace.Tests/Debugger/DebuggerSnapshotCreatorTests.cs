@@ -150,6 +150,43 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void Limits_BoundedCaptureCollectionResultWithTruncation_SetsCollectionSizeReason()
+        {
+            var result = new BoundedCaptureCollectionResult<object>([1], wasTruncated: true, isDictionary: false);
+
+            var collectionJson = SerializeCollection(result, maxCollectionSize: 10, collectionCount: result.Count, wasTruncated: result.WasTruncated);
+
+            Assert.Equal(1, collectionJson["size"]?.Value<int>());
+            Assert.Equal(1, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Equal("collectionSize", collectionJson["notCapturedReason"]?.Value<string>());
+        }
+
+        [Fact]
+        public void Limits_BoundedCaptureCollectionResultCanceledBeforeVisitingAllItems_SetsTimeoutReason()
+        {
+            using var cts = new CancellationTokenSource();
+            var result = new BoundedCaptureCollectionResult<object>([1, 2], wasTruncated: true, isDictionary: false);
+
+            var collectionJson = SerializeCollection(new CancelingCollection([1, 2], cancelAfterVisitedItems: 1, cts), maxCollectionSize: 10, collectionCount: result.Count, wasTruncated: result.WasTruncated, cts: cts);
+
+            Assert.Equal(2, collectionJson["size"]?.Value<int>());
+            Assert.Equal(1, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Equal("timeout", collectionJson["notCapturedReason"]?.Value<string>());
+        }
+
+        [Fact]
+        public void Limits_BoundedCaptureCollectionResultWithoutTruncation_DoesNotSetCollectionSizeReason()
+        {
+            var result = new BoundedCaptureCollectionResult<object>([1], wasTruncated: false, isDictionary: false);
+
+            var collectionJson = SerializeCollection(result, maxCollectionSize: 10, collectionCount: result.Count, wasTruncated: result.WasTruncated);
+
+            Assert.Equal(1, collectionJson["size"]?.Value<int>());
+            Assert.Equal(1, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Null(collectionJson["notCapturedReason"]);
+        }
+
+        [Fact]
         public void Limits_CollectionCanceledBeforeVisitingAllItems_SetsTimeoutReason()
         {
             using var cts = new CancellationTokenSource();
@@ -249,6 +286,39 @@ namespace Datadog.Trace.Tests.Debugger
                 entry[0]?["value"]?.Value<string>() == "name" &&
                 entry[1]?["type"]?.Value<string>() == "String" &&
                 entry[1]?["value"]?.Value<string>() == "value");
+        }
+
+        [Fact]
+        public void ObjectStructure_DictionaryEntryValue_WithRedactedKey_IsRedacted()
+        {
+            object[] dictionaries =
+            [
+                new Dictionary<string, object> { { "password", "DD_SECRET_LEAK" }, { "name", "value" } },
+                new Dictionary<object, object> { { "password", "DD_SECRET_LEAK" }, { "name", "value" } },
+                new Hashtable { { "password", "DD_SECRET_LEAK" }, { "name", "value" } }
+            ];
+
+            foreach (var dictionary in dictionaries)
+            {
+                var local = GetLocalToken(dictionary);
+                var expectedType = dictionary is Hashtable ? "Hashtable" : "Dictionary`2";
+
+                Assert.Equal(expectedType, local["type"]?.Value<string>());
+                Assert.Equal(2, local["size"]?.Value<int>());
+                Assert.Null(local["elements"]);
+
+                var entries = local["entries"] as JArray;
+                Assert.NotNull(entries);
+                Assert.Equal(2, entries!.Count);
+                Assert.Contains(entries, entry =>
+                    entry[0]?["value"]?.Value<string>() == "password" &&
+                    entry[1]?["type"]?.Value<string>() == "String" &&
+                    entry[1]?["notCapturedReason"]?.Value<string>() == "redactedIdent" &&
+                    entry[1]?["value"] is null);
+                Assert.Contains(entries, entry =>
+                    entry[0]?["value"]?.Value<string>() == "name" &&
+                    entry[1]?["value"]?.Value<string>() == "value");
+            }
         }
 
         [Fact]
@@ -584,6 +654,11 @@ namespace Datadog.Trace.Tests.Debugger
 
         private static JObject SerializeCollection(ICollection collection, int maxCollectionSize, CancellationTokenSource cts = null)
         {
+            return SerializeCollection(collection, maxCollectionSize, collection.Count, wasTruncated: false, cts);
+        }
+
+        private static JObject SerializeCollection(IEnumerable collection, int maxCollectionSize, int collectionCount, bool wasTruncated, CancellationTokenSource cts = null)
+        {
             var ownsCancellationTokenSource = cts is null;
             cts ??= new CancellationTokenSource();
 
@@ -593,9 +668,9 @@ namespace Datadog.Trace.Tests.Debugger
                 Assert.NotNull(serializeEnumerable);
                 var enumerableInfoType = typeof(DebuggerSnapshotSerializer).GetNestedType("SupportedEnumerableInfo", BindingFlags.NonPublic);
                 Assert.NotNull(enumerableInfoType);
-                var enumerableInfoConstructor = enumerableInfoType!.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, binder: null, types: [typeof(int), typeof(bool)], modifiers: null);
+                var enumerableInfoConstructor = enumerableInfoType!.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, binder: null, types: [typeof(int), typeof(bool), typeof(bool)], modifiers: null);
                 Assert.NotNull(enumerableInfoConstructor);
-                var enumerableInfo = enumerableInfoConstructor!.Invoke([collection.Count, false]);
+                var enumerableInfo = enumerableInfoConstructor!.Invoke([collectionCount, false, wasTruncated]);
 
                 var limitInfo = new CaptureLimitInfo(
                     MaxReferenceDepth: DebuggerSettings.DefaultMaxDepthToSerialize,

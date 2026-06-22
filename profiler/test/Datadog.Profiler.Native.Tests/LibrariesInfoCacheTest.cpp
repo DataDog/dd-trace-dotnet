@@ -4,7 +4,9 @@
 #include "gtest/gtest.h"
 
 #include "MemoryResourceManager.h"
+#include "MetricsRegistry.h"
 #include "LibrariesInfoCache.h"
+#include "ProfilerMockedInterface.h"
 
 #include <chrono>
 #include <cstdlib>
@@ -39,7 +41,9 @@ struct ServiceWrapper
 // For that we need to use the default memory resource (new/delete)
 TEST(LibrariesInfoCacheTests, MakeSureWeDoNotLeakMemory)
 {
-    auto cache = LibrariesInfoCache(MemoryResourceManager::GetDefault());
+    testing::NiceMock<MockConfiguration> config;
+    MetricsRegistry metricsRegistry;
+    auto cache = LibrariesInfoCache(&config, MemoryResourceManager::GetDefault(), metricsRegistry);
 
     for(auto i = 0; i < 5; i++)
     {
@@ -76,7 +80,9 @@ TEST(LibrariesInfoCacheTests, CheckBehaviorAgainstDlIteratePhdr)
         &cache);
 
     std::vector<Info> cache2;
-    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    testing::NiceMock<MockConfiguration> config;
+    MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(&config, MemoryResourceManager::GetDefault(), metricsRegistry);
     ServiceWrapper serviceWrapper(&libCache);
     LibrariesInfoCache::DlIteratePhdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
@@ -121,7 +127,9 @@ __attribute__((noinline)) int KnownTestFunction_Third(int x, int y)
 
 TEST(LibrariesInfoCacheTests, GetProcNameReturnsCorrectOffsetForKnownFunction)
 {
-    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    testing::NiceMock<MockConfiguration> config;
+    MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(&config, MemoryResourceManager::GetDefault(), metricsRegistry);
     ServiceWrapper serviceWrapper(&libCache);
 
     auto ip = reinterpret_cast<unw_word_t>(&KnownTestFunction_ForGetProcNameTest);
@@ -138,7 +146,9 @@ TEST(LibrariesInfoCacheTests, GetProcNameReturnsCorrectOffsetForKnownFunction)
 
 TEST(LibrariesInfoCacheTests, GetProcNameReturnsCorrectOffsetForMultipleKnownFunctions)
 {
-    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    testing::NiceMock<MockConfiguration> config;
+    MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(&config, MemoryResourceManager::GetDefault(), metricsRegistry);
     ServiceWrapper serviceWrapper(&libCache);
 
     auto* as = static_cast<unw_addr_space_t>(LibrariesInfoCache::GetLocalAddressSpace());
@@ -167,7 +177,9 @@ TEST(LibrariesInfoCacheTests, GetProcNameReturnsCorrectOffsetForMultipleKnownFun
 
 TEST(LibrariesInfoCacheTests, GetProcNameReturnsOffsetForAddressInsideFunction)
 {
-    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    testing::NiceMock<MockConfiguration> config;
+    MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(&config, MemoryResourceManager::GetDefault(), metricsRegistry);
     ServiceWrapper serviceWrapper(&libCache);
 
     auto funcAddr = reinterpret_cast<unw_word_t>(&KnownTestFunction_Third);
@@ -185,7 +197,9 @@ TEST(LibrariesInfoCacheTests, GetProcNameReturnsOffsetForAddressInsideFunction)
 
 TEST(LibrariesInfoCacheTests, GetProcNameFailsForBogusAddress)
 {
-    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    testing::NiceMock<MockConfiguration> config;
+    MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(&config, MemoryResourceManager::GetDefault(), metricsRegistry);
     ServiceWrapper serviceWrapper(&libCache);
 
     unw_word_t ip = 0x1;
@@ -207,7 +221,9 @@ TEST(LibrariesInfoCacheTests, GetProcNameReplacesAndRestoresOriginalAccessor)
     auto originalGetProcName = acc->get_proc_name;
 
     {
-        LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+        testing::NiceMock<MockConfiguration> config;
+        MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(&config, MemoryResourceManager::GetDefault(), metricsRegistry);
         ServiceWrapper serviceWrapper(&libCache);
 
         ASSERT_EQ(acc->get_proc_name, &LibrariesInfoCache::GetProcName)
@@ -222,21 +238,25 @@ TEST(LibrariesInfoCacheTests, GetProcNameReplacesAndRestoresOriginalAccessor)
 
 TEST(LibrariesInfoCacheTests, BuildSymbolCacheProducesNoDuplicates)
 {
-    LibrariesInfoCache libCache(MemoryResourceManager::GetDefault());
+    auto* resource = MemoryResourceManager::GetDefault();
+    testing::NiceMock<MockConfiguration> config;
+    MetricsRegistry metricsRegistry;
+    LibrariesInfoCache libCache(&config, resource, metricsRegistry);
     ServiceWrapper serviceWrapper(&libCache);
 
-    std::vector<DlPhdrInfoWrapper> phdrCache;
-    
+    using PhdrVector = std::vector<DlPhdrInfoWrapper, shared::pmr::polymorphic_allocator<DlPhdrInfoWrapper>>;
+    PhdrVector phdrCache(resource);
+
     dl_iterate_phdr(
         [](struct dl_phdr_info* info, std::size_t size, void* data) {
-            auto* cache = static_cast<std::vector<DlPhdrInfoWrapper>*>(data);
+            auto* cache = static_cast<PhdrVector*>(data);
             cache->emplace_back(info, size, MemoryResourceManager::GetDefault());
             return 0;
         },
         &phdrCache);
 
-    std::vector<ModuleRegion> regions;
-    std::vector<FuncEntry> symbols;
+    std::vector<ModuleRegion, shared::pmr::polymorphic_allocator<ModuleRegion>> regions(resource);
+    std::vector<FuncEntry, shared::pmr::polymorphic_allocator<FuncEntry>> symbols(resource);
     libCache.BuildSymbolCache(phdrCache, regions, symbols);
 
     ASSERT_FALSE(symbols.empty()) << "Expected at least some symbols from the test binary";
@@ -248,13 +268,13 @@ TEST(LibrariesInfoCacheTests, BuildSymbolCacheProducesNoDuplicates)
         {
             auto idx = region.sym_offset + i;
             auto prev = region.sym_offset + i - 1;
-            bool isDuplicate = symbols[idx].start_ip == symbols[prev].start_ip &&
-                               symbols[idx].end_ip == symbols[prev].end_ip;
+            bool isDuplicate = symbols[idx].offset == symbols[prev].offset &&
+                               symbols[idx].size == symbols[prev].size;
             EXPECT_FALSE(isDuplicate)
                 << "Duplicate symbol entry in region " << r
                 << " at index " << i
-                << ": start_ip=0x" << std::hex << symbols[idx].start_ip
-                << " end_ip=0x" << symbols[idx].end_ip;
+                << ": offset=0x" << std::hex << symbols[idx].offset
+                << " size=0x" << symbols[idx].size;
         }
     }
 }

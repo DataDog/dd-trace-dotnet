@@ -87,6 +87,23 @@ public class ProbeProcessorTests
     }
 
     [Fact]
+    public void UnconditionalFullSnapshotWithoutExpressionsDoesNotEvaluate()
+    {
+        var processor = new ProbeProcessor(CreateLogProbe("probe-id", captureSnapshot: true));
+        var sampler = new TestAdaptiveSampler(true);
+        var probeData = new ProbeData("probe-id", sampler, processor);
+        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
+        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
+
+        Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
+        Assert.True(ProcessEntryEnd(processor, snapshotCreator, in probeData, method));
+
+        var snapshot = JObject.Parse(FinalizeMethodSnapshot(snapshotCreator, "probe-id", method));
+
+        Assert.Null(snapshot.SelectToken("debugger.snapshot.evaluationErrors"));
+    }
+
+    [Fact]
     public void ConditionEvaluationExceptionsBypassSampler()
     {
         var processor = CreateConditionalProbeProcessor();

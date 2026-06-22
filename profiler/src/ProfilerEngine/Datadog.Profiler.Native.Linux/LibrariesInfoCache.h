@@ -8,7 +8,6 @@
 #include "DlPhdrInfoWrapper.h"
 
 #include "AutoResetEvent.h"
-#include "MemoryResourceManager.h"
 #include "ServiceBase.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
@@ -23,8 +22,8 @@
 #ifdef ARM64
 struct FuncEntry
 {
-    unw_word_t start_ip;
-    unw_word_t end_ip;
+    uint32_t offset; // relative to ModuleRegion::addr_low
+    uint32_t size;   // function size (end_ip - start_ip)
 };
 
 struct ModuleRegion
@@ -36,10 +35,14 @@ struct ModuleRegion
 };
 #endif
 
+class IConfiguration;
+class MetricsRegistry;
+struct FootprintTracker;
+
 class LibrariesInfoCache : public ServiceBase
 {
 public:
-    LibrariesInfoCache(shared::pmr::memory_resource* resource);
+    LibrariesInfoCache(IConfiguration* configuration, shared::pmr::memory_resource* resource, MetricsRegistry& metricsRegistry);
     ~LibrariesInfoCache();
 
     LibrariesInfoCache(LibrariesInfoCache const&) = delete;
@@ -77,9 +80,9 @@ private:
 #ifdef DD_TEST
 public:
 #endif
-    void BuildSymbolCache(std::vector<DlPhdrInfoWrapper>& phdrCache,
-                          std::vector<ModuleRegion>& outRegions,
-                          std::vector<FuncEntry>& outSymbols);
+    void BuildSymbolCache(std::vector<DlPhdrInfoWrapper, shared::pmr::polymorphic_allocator<DlPhdrInfoWrapper>>& phdrCache,
+                          std::vector<ModuleRegion, shared::pmr::polymorphic_allocator<ModuleRegion>>& outRegions,
+                          std::vector<FuncEntry, shared::pmr::polymorphic_allocator<FuncEntry>>& outSymbols);
 #ifdef DD_TEST
 private:
 #endif
@@ -93,15 +96,21 @@ private:
 
     static std::atomic<LibrariesInfoCache*> s_instance;
 
+    std::unique_ptr<FootprintTracker> _tracker;
+    shared::pmr::memory_resource* _wrappersAllocator;
+
     std::shared_mutex _cacheLock;
-    std::vector<DlPhdrInfoWrapper> _librariesInfo;
+    std::vector<DlPhdrInfoWrapper, shared::pmr::polymorphic_allocator<DlPhdrInfoWrapper>> _librariesInfo;
+    std::vector<DlPhdrInfoWrapper, shared::pmr::polymorphic_allocator<DlPhdrInfoWrapper>> _newCache;
 
 #ifdef ARM64
 #ifdef DD_TEST
 public:
 #endif
-    std::vector<ModuleRegion> _moduleRegions;
-    std::vector<FuncEntry> _symbols;
+    std::vector<ModuleRegion, shared::pmr::polymorphic_allocator<ModuleRegion>> _moduleRegions;
+    std::vector<FuncEntry, shared::pmr::polymorphic_allocator<FuncEntry>> _symbols;
+    std::vector<ModuleRegion, shared::pmr::polymorphic_allocator<ModuleRegion>> _newRegions;
+    std::vector<FuncEntry, shared::pmr::polymorphic_allocator<FuncEntry>> _newSymbols;
 #ifdef DD_TEST
 private:
 #endif
@@ -113,5 +122,4 @@ private:
     std::thread _worker;
     std::atomic<bool> _stopRequested;
     AutoResetEvent _event;
-    shared::pmr::memory_resource* _wrappersAllocator;
 };

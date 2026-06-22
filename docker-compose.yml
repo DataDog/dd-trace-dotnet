@@ -401,6 +401,14 @@ services:
       LDAP_ADMIN_PASSWORD: "Passw0rd"
       LDAP_BASE_DN: "dc=dd-trace-dotnet,dc=com"
 
+  StartDependencies.Profiler:
+    image: andrewlock/wait-for-dependencies
+    depends_on:
+      - openldap
+    environment:
+      - TIMEOUT_LENGTH=120
+    command: openldap-server:389
+
   ProfilerIntegrationTests:
     build:
       context: ./tracer/build/_build/
