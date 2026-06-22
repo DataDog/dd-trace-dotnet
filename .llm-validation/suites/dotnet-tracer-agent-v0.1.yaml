@@ -139,7 +139,7 @@ cases:
     expected_criteria:
       - Identifies that auto-instrumentation targets each library individually (CallTarget) so an unsupported/under-instrumented provider yields no spans.
       - Checks whether the specific library/method has an [InstrumentMethod] definition under ClrProfiler/AutoInstrumentation and appears in the supported-integrations list.
-      - Looks in the native log for "Method enqueued for ReJIT" (newer) or "JITCompilationStarted() replaced" (older) for the relevant method to confirm it was instrumented.
+      - Looks in the native log for "Method enqueued for ReJIT" for the relevant method to confirm the instrumentation (ReJIT) was actually applied.
       - Suggests reproducing with a targeted integration test rather than a broad run.
     bad_signals:
       - Recommends permanently disabling instrumentation or downgrading without diagnosis.
@@ -155,7 +155,7 @@ cases:
     expected_criteria:
       - Source location is the InstrumentMethod attribute definitions under tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ (plus generated definitions).
       - Runtime proof is in the native log, not the managed log.
-      - Names the proof line ("Method enqueued for ReJIT" on newer versions, or "*** JITCompilationStarted() replaced ...").
+      - Names the native-log proof line for the relevant method ("Method enqueued for ReJIT").
     bad_signals:
       - Claims the managed log shows the JIT/ReJIT instrumentation replacement.
       - Invents a configuration file that lists instrumented methods.

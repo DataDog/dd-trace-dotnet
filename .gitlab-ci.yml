@@ -12,10 +12,10 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   # LLM Validation gate: reusable job shipped BY the platform repo — only the local .llm-validation/ suite
-  # stays in this repo now. `ref` and the LLMVAL_PLATFORM_REF override below must point at the same platform
-  # branch (it must carry ci/ + the CLI on the gitlab.ddbuild.io mirror). Switch both to `main` once merged.
+  # stays in this repo. Pinned to the platform repo's `main` (carries ci/ + the CLI on the gitlab.ddbuild.io
+  # mirror); the job clones the same ref to build the CLI (LLMVAL_PLATFORM_REF defaults to `main`).
   - project: 'DataDog/llm-validation-platform'
-    ref: nacho/initialImplementation
+    ref: main
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
@@ -41,13 +41,6 @@ variables:
   LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 43000000
   SLS_CI_BRANCH: main
   WINDOWS_BUILD_IMAGE_BASE: "registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build"
-
-# LLM Validation: merge into the included "llm validation" job to pin the platform CLI/run.sh clone to the
-# same ref as the include above (job-level vars beat global vars, so this must be set on the job, not in
-# `variables:`). Remove this block once the platform code is merged to the platform repo's `main`.
-"llm validation":
-  variables:
-    LLMVAL_PLATFORM_REF: nacho/initialImplementation
 
 build-windows-ci-image:
   stage: build
