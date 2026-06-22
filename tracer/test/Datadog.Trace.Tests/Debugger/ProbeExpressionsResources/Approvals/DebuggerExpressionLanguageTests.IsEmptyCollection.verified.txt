@@ -1,4 +1,4 @@
-﻿Condition:
+Condition:
 Json:
 {
   "isEmpty": [
