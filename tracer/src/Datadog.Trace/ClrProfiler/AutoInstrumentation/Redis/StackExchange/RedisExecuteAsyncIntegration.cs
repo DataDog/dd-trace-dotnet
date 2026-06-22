@@ -22,17 +22,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         ReturnTypeName = "System.Threading.Tasks.Task`1<!!0>",
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" },
         MinimumVersion = "1.0.0",
-        MaximumVersion = "2.*.*",
-        TypeNames = new[] { "StackExchange.Redis.RedisBase", "StackExchange.Redis.RedisBatch", "StackExchange.Redis.RedisTransaction" },
-        IntegrationName = IntegrationName)]
-    [InstrumentMethod(
-        AssemblyNames = ["StackExchange.Redis"],
-        MethodName = "ExecuteAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<!!0>",
-        ParameterTypeNames = ["StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint"],
-        MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
-        TypeName = "StackExchange.Redis.RedisBase",
+        TypeNames = new[] { "StackExchange.Redis.RedisBase", "StackExchange.Redis.RedisBatch", "StackExchange.Redis.RedisTransaction" },
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

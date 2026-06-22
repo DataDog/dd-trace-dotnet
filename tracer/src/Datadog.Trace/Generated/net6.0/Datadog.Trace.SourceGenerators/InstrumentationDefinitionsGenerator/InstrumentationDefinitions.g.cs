@@ -646,7 +646,6 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.ConnectionMultiplexerExecuteSyncImplIntegration_2_6_45"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.ConnectionMultiplexerSelectServerIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration_2_6_48"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteSyncDefaultIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteSyncIntegration"
