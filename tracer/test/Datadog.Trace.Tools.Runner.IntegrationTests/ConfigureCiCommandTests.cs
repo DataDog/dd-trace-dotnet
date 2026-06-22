@@ -191,7 +191,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             var cachedTracerHome = setup.CreateReadyCachedTracerHome();
 
             DeleteDirectory(cachedTracerHome);
-            Directory.CreateDirectory(cachedTracerHome);
+            CreatePrivateCacheDirectory(cachedTracerHome);
             File.WriteAllText(Path.Combine(cachedTracerHome, ".dd-trace-runner-cache"), "fake-marker");
             File.WriteAllText(Path.Combine(cachedTracerHome, "metadata.txt"), "tampered");
 
@@ -543,6 +543,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             var path = Path.Combine(new[] { rootPath }.Concat(pathParts).ToArray());
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllText(path, "source");
+        }
+
+        private static void CreatePrivateCacheDirectory(string path)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                WindowsDirectoryAccess.CreatePrivateDirectory(path);
+                return;
+            }
+
+            Directory.CreateDirectory(path);
         }
 
         private static void CopyTracerAssembly(string tracerHome, string sourceAssemblyPath, DateTime? lastWriteTimeUtc)
