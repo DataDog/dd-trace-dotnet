@@ -7,6 +7,7 @@ using System;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Helpers;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
@@ -30,10 +31,9 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private static MethodBase GetEffectiveMethod(MethodBase method)
         {
             // For async methods, analyze the MoveNext method
-            if (method.GetCustomAttribute<AsyncStateMachineAttribute>() is AsyncStateMachineAttribute asyncAttribute)
+            if (StateMachineAttributeHelper.TryGetAsyncStateMachineType(method, out var stateMachineType))
             {
-                var stateMachineType = asyncAttribute.StateMachineType;
-                return stateMachineType.GetMethod(
+                return stateMachineType?.GetMethod(
                            "MoveNext",
                            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public) ?? method;
             }
