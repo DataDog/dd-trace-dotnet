@@ -73,6 +73,18 @@ INSTANTIATE_TEST_SUITE_P(
         dlsym(RTLD_DEFAULT, "fstatat"),
         dlsym(RTLD_DEFAULT, "__xstat"),
         dlsym(RTLD_DEFAULT, "__lxstat"),
-        dlsym(RTLD_DEFAULT, "__fxstatat")));
+        dlsym(RTLD_DEFAULT, "__fxstatat"),
+        // Large-file (*64) variants: the .NET runtime is compiled with
+        // _FILE_OFFSET_BITS=64, so it references these symbols rather than the
+        // un-suffixed ones. They are exported unconditionally (the universal
+        // binary is built on musl but must cover glibc consumers), so they are
+        // verified on every platform.
+        dlsym(RTLD_DEFAULT, "open64"),
+        dlsym(RTLD_DEFAULT, "openat64"),
+        dlsym(RTLD_DEFAULT, "pread64"),
+        dlsym(RTLD_DEFAULT, "pwrite64"),
+        dlsym(RTLD_DEFAULT, "__xstat64"),
+        dlsym(RTLD_DEFAULT, "__lxstat64"),
+        dlsym(RTLD_DEFAULT, "__fxstatat64")));
 
 } // namespace WrappedFunctionsTest
