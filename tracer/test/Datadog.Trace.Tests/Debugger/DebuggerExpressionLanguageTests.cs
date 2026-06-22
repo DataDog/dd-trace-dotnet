@@ -2983,6 +2983,7 @@ namespace Datadog.Trace.Tests.Debugger
         private class BudgetExpressionRenderingVisitor : System.Linq.Expressions.ExpressionVisitor
         {
             private static readonly BudgetExpressionRenderingVisitor Instance = new();
+            private static readonly System.Linq.Expressions.Expression EmptyBudgetCheck = System.Linq.Expressions.Expression.Empty();
 
             internal static System.Linq.Expressions.Expression Strip(System.Linq.Expressions.Expression expression)
             {
@@ -2995,11 +2996,24 @@ namespace Datadog.Trace.Tests.Debugger
                 return System.Linq.Expressions.Expression.Lambda(Visit(node.Body), parameters);
             }
 
+            protected override System.Linq.Expressions.Expression VisitBlock(System.Linq.Expressions.BlockExpression node)
+            {
+                var expressions = node.Expressions.Select(Visit).Where(expression => !ReferenceEquals(expression, EmptyBudgetCheck)).ToArray();
+                if (expressions.Length == 0)
+                {
+                    return EmptyBudgetCheck;
+                }
+
+                return node.Variables.Count == 0 && expressions.Length == 1
+                           ? expressions[0]
+                           : System.Linq.Expressions.Expression.Block(node.Variables, expressions);
+            }
+
             protected override System.Linq.Expressions.Expression VisitMethodCall(System.Linq.Expressions.MethodCallExpression node)
             {
                 if (node.Method.DeclaringType == typeof(EvaluationBudget) && node.Method.Name == nameof(EvaluationBudget.ThrowIfExceeded))
                 {
-                    return System.Linq.Expressions.Expression.Empty();
+                    return EmptyBudgetCheck;
                 }
 
                 return base.VisitMethodCall(node);

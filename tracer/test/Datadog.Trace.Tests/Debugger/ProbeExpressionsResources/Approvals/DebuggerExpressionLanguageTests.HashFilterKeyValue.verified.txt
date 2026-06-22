@@ -1,4 +1,4 @@
-﻿Condition:
+Condition:
 Json:
 {
   "any": [
@@ -78,7 +78,7 @@ Expression: (
 
                 stringStringKeyValuePair = enumerator.Current;
 
-                if (stringStringKeyValuePair.Key == "hello";)
+                if (stringStringKeyValuePair.Key == "hello")
                 {
                     filterResult.Add(stringStringKeyValuePair);
                 }
@@ -108,7 +108,7 @@ Expression: (
 
                 if (ProbeExpressionParser<bool>.ShouldRedactDictionaryKey(stringStringKeyValuePair.Key)
                     ? false
-                    : stringStringKeyValuePair.Value == "world";)
+                    : stringStringKeyValuePair.Value == "world")
                 {
                     anyResult = true;
                     break;

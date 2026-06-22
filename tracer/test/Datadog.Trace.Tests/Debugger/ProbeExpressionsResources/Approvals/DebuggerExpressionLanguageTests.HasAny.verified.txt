@@ -1,4 +1,4 @@
-﻿Condition:
+Condition:
 Json:
 {
   "any": [
@@ -64,7 +64,7 @@ Expression: (
 
                 @string = enumerator.Current;
 
-                if (@string == "hello";)
+                if (@string == "hello")
                 {
                     anyResult = true;
                     break;
