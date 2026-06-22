@@ -484,32 +484,18 @@ namespace Datadog.Trace
                 {
                     DebuggerManager.Instance.ExceptionReplay?.EndRequest();
 
-                    // FFE APM feature-flag span enrichment. Guarded by a cheap process-wide enabled
-                    // latch (a single volatile bool read) so the gate-off branch does no work and
-                    // allocates no per-span state — span finish is .NET's highest-risk hot path.
-                    // When on, drain the root span's accumulated state and write the ffe_* tags
-                    // BEFORE CloseSpan.
-                    if (FeatureFlags.SpanEnrichmentStore.IsEnabled)
+                    var spanEnrichment = (Context.TraceContext?.Tracer as Tracer)?.TracerManager.SpanEnrichment;
+                    if (spanEnrichment?.IsEnabled == true)
                     {
-                        // Never-throw guard: Span.Finish() is core span lifecycle. Enrichment must
-                        // NEVER break span finish/flush for an unrelated trace, mirroring the
-                        // try/catch isolation in both SpanEnrichmentStore.Accumulate and the
-                        // OpenFeature hook's FinallyAsync (the Node reference isolates both finally
-                        // and onSpanFinish). Any throw inside the drain/encode/serialize path is
-                        // logged and swallowed here.
                         try
                         {
-                            var enrichmentState = FeatureFlags.SpanEnrichmentStore.GetAndClear(SpanId);
+                            var enrichmentState = spanEnrichment.GetAndClear(SpanId);
                             if (enrichmentState is not null && enrichmentState.HasData())
                             {
                                 foreach (var tag in enrichmentState.ToSpanTags())
                                 {
                                     if (!StringUtil.IsNullOrEmpty(tag.Value))
                                     {
-                                        // Write through the underlying tag collection directly: the public
-                                        // SetTag() rejects writes once _isFinished is set (already 1 here),
-                                        // and this is a legitimate internal finish-time write (like other
-                                        // tags set inside Finish before CloseSpan).
                                         Tags.SetTag(tag.Key, tag.Value);
                                     }
                                 }

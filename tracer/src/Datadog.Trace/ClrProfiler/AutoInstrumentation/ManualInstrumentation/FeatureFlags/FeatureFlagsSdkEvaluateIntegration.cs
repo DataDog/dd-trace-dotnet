@@ -44,8 +44,15 @@ public sealed class FeatureFlagsSdkEvaluateIntegration
         }
 
         var parameters = (State)state.State!;
-        var res = TracerManager.Instance.FeatureFlags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey ?? string.Empty, parameters.Attributes);
-        SpanEnrichmentStore.AccumulateForActiveRoot(res, parameters.TargetingKey);
+        var tracer = Datadog.Trace.Tracer.Instance;
+        var manager = tracer.TracerManager;
+        var res = manager.FeatureFlags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey ?? string.Empty, parameters.Attributes);
+        var rootSpan = tracer.InternalActiveScope?.Span?.Context.TraceContext?.RootSpan;
+        if (rootSpan is not null)
+        {
+            manager.SpanEnrichment.AccumulateForRoot(rootSpan.SpanId, res, parameters.TargetingKey);
+        }
+
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
     }
 

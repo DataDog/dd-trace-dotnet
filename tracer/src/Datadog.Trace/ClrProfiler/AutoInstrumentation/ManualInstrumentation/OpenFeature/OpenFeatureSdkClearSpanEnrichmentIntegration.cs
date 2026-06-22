@@ -13,8 +13,7 @@ using Datadog.Trace.FeatureFlags;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature;
 
 /// <summary>
-/// System.Void Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk::ClearSpanEnrichment() calltarget
-/// instrumentation. Bridges provider-close cleanup into <see cref="SpanEnrichmentStore.Clear"/>.
+/// System.Void Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk::ClearSpanEnrichment() calltarget instrumentation.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.FeatureFlags.OpenFeature",
@@ -31,7 +30,7 @@ public sealed class OpenFeatureSdkClearSpanEnrichmentIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>()
     {
-        SpanEnrichmentStore.Clear();
+        Datadog.Trace.Tracer.Instance.TracerManager.SpanEnrichment.Clear();
         return CallTargetState.GetDefault();
     }
 }

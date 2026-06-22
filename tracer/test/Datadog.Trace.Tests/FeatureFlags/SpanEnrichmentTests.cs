@@ -38,6 +38,8 @@ public class SpanEnrichmentTests
     // modified" failure; the test asserts this stays false post-fix.
     private static volatile bool _raceFailed;
 
+    private readonly SpanEnrichmentStore _store = new(isEnabled: true);
+
     // ---------------------------------------------------------------------
     // Codec golden vector + round-trip
     // ---------------------------------------------------------------------
@@ -244,11 +246,11 @@ public class SpanEnrichmentTests
     public void Store_Accumulate_SerialIdWithDoLogAndTargetingKey_AddsSubject()
     {
         const ulong rootSpanId = 9001;
-        SpanEnrichmentStore.Clear();
+        _store.Clear();
 
-        SpanEnrichmentStore.Accumulate(rootSpanId, serialId: 100, doLog: true, targetingKey: "user-123", hasVariant: true, flagKey: "flag", value: "on");
+        _store.Accumulate(rootSpanId, serialId: 100, doLog: true, targetingKey: "user-123", hasVariant: true, flagKey: "flag", value: "on");
 
-        var state = SpanEnrichmentStore.GetAndClear(rootSpanId);
+        var state = _store.GetAndClear(rootSpanId);
         state.Should().NotBeNull();
         var tags = TagDict(state!);
         tags[SpanEnrichmentState.TagFlagsEnc].Should().NotBeNullOrEmpty();
@@ -259,11 +261,11 @@ public class SpanEnrichmentTests
     public void Store_Accumulate_SerialIdWithoutDoLog_NoSubject()
     {
         const ulong rootSpanId = 9002;
-        SpanEnrichmentStore.Clear();
+        _store.Clear();
 
-        SpanEnrichmentStore.Accumulate(rootSpanId, serialId: 100, doLog: false, targetingKey: "user-123", hasVariant: true, flagKey: "flag", value: "on");
+        _store.Accumulate(rootSpanId, serialId: 100, doLog: false, targetingKey: "user-123", hasVariant: true, flagKey: "flag", value: "on");
 
-        var tags = TagDict(SpanEnrichmentStore.GetAndClear(rootSpanId)!);
+        var tags = TagDict(_store.GetAndClear(rootSpanId)!);
         tags.Should().ContainKey(SpanEnrichmentState.TagFlagsEnc);
         tags.Should().NotContainKey(SpanEnrichmentState.TagSubjectsEnc);
     }
@@ -272,12 +274,12 @@ public class SpanEnrichmentTests
     public void Store_Accumulate_MissingVariant_RecordsRuntimeDefault()
     {
         const ulong rootSpanId = 9003;
-        SpanEnrichmentStore.Clear();
+        _store.Clear();
 
         // No serial id + no variant => runtime-default detection.
-        SpanEnrichmentStore.Accumulate(rootSpanId, serialId: null, doLog: false, targetingKey: null, hasVariant: false, flagKey: "defaulted-flag", value: "the-default");
+        _store.Accumulate(rootSpanId, serialId: null, doLog: false, targetingKey: null, hasVariant: false, flagKey: "defaulted-flag", value: "the-default");
 
-        var tags = TagDict(SpanEnrichmentStore.GetAndClear(rootSpanId)!);
+        var tags = TagDict(_store.GetAndClear(rootSpanId)!);
         tags.Should().NotContainKey(SpanEnrichmentState.TagFlagsEnc);
         var defaults = JsonConvert.DeserializeObject<Dictionary<string, string>>(tags[SpanEnrichmentState.TagRuntimeDefaults])!;
         defaults["defaulted-flag"].Should().Be("the-default");
@@ -287,24 +289,23 @@ public class SpanEnrichmentTests
     public void Store_Accumulate_WithVariantNoSerialId_RecordsNothing()
     {
         const ulong rootSpanId = 9004;
-        SpanEnrichmentStore.Clear();
+        _store.Clear();
 
         // Has a variant but no serial id => neither a serial nor a default.
-        SpanEnrichmentStore.Accumulate(rootSpanId, serialId: null, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag", value: "on");
+        _store.Accumulate(rootSpanId, serialId: null, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag", value: "on");
 
-        var state = SpanEnrichmentStore.GetAndClear(rootSpanId);
-        (state is null || !state.HasData()).Should().BeTrue();
+        _store.GetAndClear(rootSpanId).Should().BeNull();
     }
 
     [Fact]
     public async System.Threading.Tasks.Task Store_AccumulateForActiveRoot_NativeEvaluationMetadata_WritesRootTags()
     {
-        SpanEnrichmentStore.ResetIsEnabledForTesting();
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
         await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
         TracerRestorerAttribute.SetTracer(tracer);
 
-        SpanEnrichmentStore.Clear();
+        var spanEnrichment = tracer.TracerManager.SpanEnrichment;
+        spanEnrichment.Clear();
         var rootScope = (Scope)tracer.StartActive("root-op", new SpanCreationSettings { FinishOnClose = false });
         var rootSpan = rootScope.Span;
         rootSpan.IsRootSpan.Should().BeTrue();
@@ -324,9 +325,7 @@ public class SpanEnrichmentTests
                         [FeatureFlagsEvaluator.MetadataDoLog] = "true"
                     });
 
-                // Native SDK calls bypass OpenFeature hooks, so the manual CallTarget integration
-                // must accumulate from the returned evaluation while any child span is active.
-                SpanEnrichmentStore.AccumulateForActiveRoot(evaluation, "user-123");
+                spanEnrichment.AccumulateForRoot(rootSpan.SpanId, evaluation, "user-123");
             }
         }
         finally
@@ -346,11 +345,11 @@ public class SpanEnrichmentTests
     public void Store_GetAndClear_RemovesState()
     {
         const ulong rootSpanId = 9005;
-        SpanEnrichmentStore.Clear();
-        SpanEnrichmentStore.Accumulate(rootSpanId, serialId: 1, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
+        _store.Clear();
+        _store.Accumulate(rootSpanId, serialId: 1, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
 
-        SpanEnrichmentStore.GetAndClear(rootSpanId).Should().NotBeNull();
-        SpanEnrichmentStore.GetAndClear(rootSpanId).Should().BeNull("state must be cleared after the first drain");
+        _store.GetAndClear(rootSpanId).Should().NotBeNull();
+        _store.GetAndClear(rootSpanId).Should().BeNull("state must be cleared after the first drain");
     }
 
     // ---------------------------------------------------------------------
@@ -367,11 +366,11 @@ public class SpanEnrichmentTests
         var span = scope.Span;
         span.IsRootSpan.Should().BeTrue();
         var rootSpanId = span.SpanId;
+        var spanEnrichment = tracer.TracerManager.SpanEnrichment;
 
-        // Simulate what the hook + bridge do at runtime (auto-instrumentation is not active in these unit tests).
-        SpanEnrichmentStore.Clear();
-        SpanEnrichmentStore.Accumulate(rootSpanId, serialId: 100, doLog: true, targetingKey: "user-123", hasVariant: true, flagKey: "flag", value: "on");
-        SpanEnrichmentStore.Accumulate(rootSpanId, serialId: 108, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag2", value: "off");
+        spanEnrichment.Clear();
+        spanEnrichment.Accumulate(rootSpanId, serialId: 100, doLog: true, targetingKey: "user-123", hasVariant: true, flagKey: "flag", value: "on");
+        spanEnrichment.Accumulate(rootSpanId, serialId: 108, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag2", value: "off");
 
         span.Finish();
 
@@ -380,32 +379,24 @@ public class SpanEnrichmentTests
         span.GetTag(SpanEnrichmentState.TagSubjectsEnc).Should().NotBeNullOrEmpty();
 
         // State is cleared in the IsRootSpan block after writing.
-        SpanEnrichmentStore.GetAndClear(rootSpanId).Should().BeNull();
+        spanEnrichment.GetAndClear(rootSpanId).Should().BeNull();
     }
 
     [Fact]
     public async System.Threading.Tasks.Task SpanFinish_GateOff_NegativeControl_NoTags_NoStateAllocated()
     {
-        // Gate OFF (default). Zero-idle-overhead proof: Span.Finish() must do no work and the
-        // store must hold no per-span state.
         var settings = TracerSettings.Create(new());
         settings.IsSpanEnrichmentEnabled.Should().BeFalse("the gate is off by default");
 
-        // The enabled latch is a process-wide static that other tests in this process may have
-        // flipped on. Reset it so this test genuinely exercises the gate-off (inert) Span.Finish
-        // path rather than passing via the empty-store path with the latch stuck on.
-        SpanEnrichmentStore.ResetIsEnabledForTesting();
-        SpanEnrichmentStore.IsEnabled.Should().BeFalse("the gate-off path must be inert");
-
         await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
+        var spanEnrichment = tracer.TracerManager.SpanEnrichment;
+        spanEnrichment.IsEnabled.Should().BeFalse("the gate-off path must be inert");
 
         var scope = (Scope)tracer.StartActive("root-op");
         var span = scope.Span;
 
-        // With the gate off, the hook is never constructed and nothing is ever accumulated,
-        // so the store has no state for this span.
-        SpanEnrichmentStore.Clear();
-        SpanEnrichmentStore.GetAndClear(span.SpanId).Should().BeNull("no state is allocated when the gate is off");
+        spanEnrichment.Clear();
+        spanEnrichment.GetAndClear(span.SpanId).Should().BeNull("no state is allocated when the gate is off");
 
         span.Finish();
 
@@ -423,7 +414,7 @@ public class SpanEnrichmentTests
 
         var scope = (Scope)tracer.StartActive("root-op");
         var span = scope.Span;
-        SpanEnrichmentStore.Clear();
+        tracer.TracerManager.SpanEnrichment.Clear();
 
         span.Finish();
 
@@ -476,7 +467,7 @@ public class SpanEnrichmentTests
         // inner SortedSet/Dictionary. Without the per-instance lock this corrupts the red-black tree
         // or throws; with it, the result is a deterministic deduped/capped merge.
         const ulong rootSpanId = 70001;
-        SpanEnrichmentStore.Clear();
+        _store.Clear();
 
         // Every task writes the SAME id range (1..IdRange), so heavy contention + dedupe pressure
         // converge on one unambiguous expected union: exactly {1..IdRange}. IdRange is well under the
@@ -488,11 +479,11 @@ public class SpanEnrichmentTests
         {
             for (var id = 1; id <= idRange; id++)
             {
-                SpanEnrichmentStore.Accumulate(rootSpanId, serialId: id, doLog: true, targetingKey: "user-123", hasVariant: true, flagKey: "flag", value: "on");
+                _store.Accumulate(rootSpanId, serialId: id, doLog: true, targetingKey: "user-123", hasVariant: true, flagKey: "flag", value: "on");
             }
         });
 
-        var state = SpanEnrichmentStore.GetAndClear(rootSpanId);
+        var state = _store.GetAndClear(rootSpanId);
         state.Should().NotBeNull();
 
         // No exception is the primary assertion; the merged set must be exactly {1..idRange}, sorted +
@@ -525,28 +516,26 @@ public class SpanEnrichmentTests
 
         // Clear() releases the backing map so the next Accumulate hits the null-store lazy-init
         // path under contention — exactly the window the fix protects.
-        SpanEnrichmentStore.Clear();
-        SpanEnrichmentStore.TrackedRootCount.Should().Be(0, "the store must start from null/empty so the lazy-init race is exercised");
+        _store.Clear();
+        _store.TrackedRootCount.Should().Be(0, "the store must start from null/empty so the lazy-init race is exercised");
 
         Parallel.For(0, roots, i =>
         {
             var rootSpanId = (ulong)(800000 + i);
-            SpanEnrichmentStore.Accumulate(rootSpanId, serialId: i + 1, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
+            _store.Accumulate(rootSpanId, serialId: i + 1, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
         });
 
-        // Every distinct root must have survived the concurrent first-time init — none dropped by a
-        // losing dictionary assignment.
-        SpanEnrichmentStore.TrackedRootCount.Should().Be(roots, "no root's first-time Accumulate may be lost to a non-atomic lazy init");
+        _store.TrackedRootCount.Should().Be(roots, "no root's first-time Accumulate may be lost to a non-atomic lazy init");
 
         for (var i = 0; i < roots; i++)
         {
             var rootSpanId = (ulong)(800000 + i);
-            var state = SpanEnrichmentStore.GetAndClear(rootSpanId);
+            var state = _store.GetAndClear(rootSpanId);
             state.Should().NotBeNull($"root {rootSpanId}'s first-time Accumulate must not be lost");
             DecodeDeltaVarint(TagDict(state!)[SpanEnrichmentState.TagFlagsEnc]).Should().Equal(new long[] { i + 1 });
         }
 
-        SpanEnrichmentStore.Clear();
+        _store.Clear();
     }
 
     [Fact]
@@ -555,13 +544,13 @@ public class SpanEnrichmentTests
         // Clear() now atomically swaps the backing map out (Interlocked.Exchange to null) rather than
         // clearing it in place. A racing Accumulate either completes against the old (orphaned) map
         // or lazily re-initializes a fresh one; neither path may throw or corrupt the store.
-        SpanEnrichmentStore.Clear();
+        _store.Clear();
 
         var clearer = Task.Run(() =>
         {
             for (var i = 0; i < 2000; i++)
             {
-                SpanEnrichmentStore.Clear();
+                _store.Clear();
             }
         });
 
@@ -569,14 +558,14 @@ public class SpanEnrichmentTests
         {
             for (var i = 0; i < 2000; i++)
             {
-                SpanEnrichmentStore.Accumulate((ulong)(900000 + (i % 64)), serialId: i, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
+                _store.Accumulate((ulong)(900000 + (i % 64)), serialId: i, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
             }
         });
 
         var act = () => Task.WaitAll(clearer, accumulator);
         act.Should().NotThrow("Clear() must atomically release the map without racing a concurrent Accumulate");
 
-        SpanEnrichmentStore.Clear();
+        _store.Clear();
     }
 
     [Fact]
@@ -592,17 +581,15 @@ public class SpanEnrichmentTests
 
         for (var round = 0; round < 200 && !_raceFailed; round++)
         {
-            SpanEnrichmentStore.Clear();
+            _store.Clear();
 
             // Seed so the state exists and ToSpanTags has something to enumerate.
             for (var i = 1; i <= 30; i++)
             {
-                SpanEnrichmentStore.Accumulate(rootSpanId, serialId: i, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
+                _store.Accumulate(rootSpanId, serialId: i, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
             }
 
-            // Grab the live instance (the "straggler" that raced the drain) and keep mutating it
-            // while another thread repeatedly enumerates ToSpanTags.
-            var live = SpanEnrichmentStore.GetAndClear(rootSpanId)!;
+            var live = _store.GetAndClear(rootSpanId)!;
 
             var adder = System.Threading.Tasks.Task.Run(() =>
             {
@@ -655,9 +642,10 @@ public class SpanEnrichmentTests
         var scope = (Scope)tracer.StartActive("root-op");
         var span = scope.Span;
         span.IsRootSpan.Should().BeTrue();
+        var spanEnrichment = tracer.TracerManager.SpanEnrichment;
 
-        SpanEnrichmentStore.Clear();
-        SpanEnrichmentStore.OnGetAndClearForTesting = static () => throw new System.InvalidOperationException("boom: simulated enrichment failure");
+        spanEnrichment.Clear();
+        spanEnrichment.OnGetAndClearForTesting = static () => throw new System.InvalidOperationException("boom: simulated enrichment failure");
 
         try
         {
@@ -669,7 +657,7 @@ public class SpanEnrichmentTests
         }
         finally
         {
-            SpanEnrichmentStore.OnGetAndClearForTesting = null;
+            spanEnrichment.OnGetAndClearForTesting = null;
         }
     }
 
@@ -680,35 +668,35 @@ public class SpanEnrichmentTests
     [Fact]
     public void Store_GrowthBound_StopsCreatingStatesPastCap_ExistingRootsStillAccumulate()
     {
-        SpanEnrichmentStore.Clear();
-        SpanEnrichmentStore.TrackedRootCount.Should().Be(0);
+        _store.Clear();
+        _store.TrackedRootCount.Should().Be(0);
 
         var cap = SpanEnrichmentStore.MaxTrackedRootSpans;
 
         // Fill to the cap with distinct never-finishing roots.
         for (var i = 0; i < cap; i++)
         {
-            SpanEnrichmentStore.Accumulate((ulong)(1000 + i), serialId: 1, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
+            _store.Accumulate((ulong)(1000 + i), serialId: 1, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
         }
 
-        SpanEnrichmentStore.TrackedRootCount.Should().Be(cap);
+        _store.TrackedRootCount.Should().Be(cap);
 
         // New roots past the cap are dropped — the store does NOT grow unboundedly.
         for (var i = 0; i < 500; i++)
         {
-            SpanEnrichmentStore.Accumulate((ulong)(900000 + i), serialId: 1, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
+            _store.Accumulate((ulong)(900000 + i), serialId: 1, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
         }
 
-        SpanEnrichmentStore.TrackedRootCount.Should().Be(cap, "new roots past the cap must be dropped, not grow the store");
+        _store.TrackedRootCount.Should().Be(cap, "new roots past the cap must be dropped, not grow the store");
 
         // A root we are ALREADY tracking must keep accumulating (in-flight evals for a live trace
         // are never lost), even at the cap.
         var existingRoot = 1000UL;
-        SpanEnrichmentStore.Accumulate(existingRoot, serialId: 99, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
-        var state = SpanEnrichmentStore.GetAndClear(existingRoot)!;
+        _store.Accumulate(existingRoot, serialId: 99, doLog: false, targetingKey: null, hasVariant: true, flagKey: "f", value: "v");
+        var state = _store.GetAndClear(existingRoot)!;
         DecodeDeltaVarint(TagDict(state)[SpanEnrichmentState.TagFlagsEnc]).Should().Contain(99);
 
-        SpanEnrichmentStore.Clear();
+        _store.Clear();
     }
 
     // ---------------------------------------------------------------------

@@ -12,9 +12,7 @@ using Datadog.Trace.Configuration;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature;
 
 /// <summary>
-/// System.Boolean Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk::IsSpanEnrichmentEnabled()
-/// calltarget instrumentation. Returns the real <c>TracerSettings.IsSpanEnrichmentEnabled</c> so the
-/// provider only constructs the span-enrichment hook when the gate is on.
+/// System.Boolean Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk::IsSpanEnrichmentEnabled() calltarget instrumentation.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.FeatureFlags.OpenFeature",
@@ -31,7 +29,7 @@ public sealed class OpenFeatureSdkIsSpanEnrichmentEnabledIntegration
 {
     internal static CallTargetReturn<bool> OnMethodEnd<TTarget>(bool returnValue, Exception? exception, in CallTargetState state)
     {
-        var enabled = Datadog.Trace.Tracer.Instance.Settings.IsSpanEnrichmentEnabled;
+        var enabled = Datadog.Trace.Tracer.Instance.TracerManager.SpanEnrichment.IsEnabled;
         return new CallTargetReturn<bool>(enabled);
     }
 }

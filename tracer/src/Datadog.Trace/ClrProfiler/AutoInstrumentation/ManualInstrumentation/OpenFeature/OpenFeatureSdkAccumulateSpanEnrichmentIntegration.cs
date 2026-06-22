@@ -14,8 +14,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
 
 /// <summary>
 /// System.Void Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk::AccumulateSpanEnrichment(System.Nullable`1[System.Int64],System.Boolean,System.String,System.Boolean,System.String,System.Object) calltarget instrumentation.
-/// Bridges the OpenFeature span-enrichment hook (which cannot reference the core tracer) into
-/// <see cref="SpanEnrichmentStore"/>, resolving the active root span id on this side.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.FeatureFlags.OpenFeature",
@@ -32,12 +30,11 @@ public sealed class OpenFeatureSdkAccumulateSpanEnrichmentIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(ref long? serialId, ref bool doLog, ref string? targetingKey, ref bool hasVariant, ref string flagKey, ref object? value)
     {
-        // Resolve the active root span (O(1)). If there is no active span, there is nothing to
-        // enrich — skip silently (no-span negative case).
-        var rootSpan = Datadog.Trace.Tracer.Instance.InternalActiveScope?.Span?.Context.TraceContext?.RootSpan;
+        var tracer = Datadog.Trace.Tracer.Instance;
+        var rootSpan = tracer.InternalActiveScope?.Span?.Context.TraceContext?.RootSpan;
         if (rootSpan is not null)
         {
-            SpanEnrichmentStore.Accumulate(rootSpan.SpanId, serialId, doLog, targetingKey, hasVariant, flagKey, value);
+            tracer.TracerManager.SpanEnrichment.Accumulate(rootSpan.SpanId, serialId, doLog, targetingKey, hasVariant, flagKey, value);
         }
 
         return CallTargetState.GetDefault();

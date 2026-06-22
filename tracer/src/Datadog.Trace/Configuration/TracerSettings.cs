@@ -679,14 +679,6 @@ namespace Datadog.Trace.Configuration
             IsSpanEnrichmentEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled)
                                                        .AsBool(false);
 
-            if (IsSpanEnrichmentEnabled)
-            {
-                // Latch the process-wide span-enrichment gate on so Span.Finish() reads a single
-                // cheap volatile bool instead of dereferencing the settings chain on every root
-                // finish. Off by default, so the disabled path stays fully inert.
-                FeatureFlags.SpanEnrichmentStore.Enable();
-            }
-
             if (source is CompositeConfigurationSource compositeSource)
             {
                 foreach (var nestedSource in compositeSource)
@@ -1302,10 +1294,7 @@ namespace Datadog.Trace.Configuration
         internal bool IsFlaggingProviderEnabled { get; }
 
         /// <summary>
-        /// Gets a value indicating whether APM span enrichment with feature-flag
-        /// evaluation metadata is enabled (Experimental). Distinct from
-        /// <see cref="IsFlaggingProviderEnabled"/>; off by default. When enabled, it latches
-        /// the process-wide gate read on the <see cref="Span.Finish(System.TimeSpan)"/> hot path.
+        /// Gets a value indicating whether APM span enrichment is enabled; see <see cref="IsFlaggingProviderEnabled"/>.
         /// </summary>
         internal bool IsSpanEnrichmentEnabled { get; }
 
