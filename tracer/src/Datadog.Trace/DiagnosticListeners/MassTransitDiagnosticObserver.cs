@@ -33,7 +33,8 @@ namespace Datadog.Trace.DiagnosticListeners
     /// <para/>
     /// Context propagation:
     /// - Send events: Inject trace context into message headers via InjectTraceContext()
-    /// - Consume/Handle events: Extract parent context from message headers via ExtractTraceContext()
+    /// - Receive events: Extract parent context from TransportHeaders (message attributes/metadata)
+    /// - Consume/Handle events: Extract parent context from Headers (message envelope headers)
     /// - This links consumer spans to producer spans across the message bus
     /// <para/>
     /// Scope lifecycle:
@@ -191,44 +192,38 @@ namespace Datadog.Trace.DiagnosticListeners
                 "MassTransitDiagnosticObserver.OnReceiveStart: Processing ReceiveContext, ArgType={ArgType}",
                 arg.GetType().FullName);
 
-            // Duck cast arg to IReceiveContext — BaseReceiveContext.TransportHeaders is public and
-            // returns Headers (JsonTransportHeaders). IReceiveContext.TransportHeaders is duck typed
-            // to IHeaders which exposes GetAll() returning KeyValuePair<string, object> items.
-            // Use TryDuckCast: a shape divergence in MassTransit shouldn't blow up the receive event
-            // — we still create a receive span (without inputAddress) and fall back to reflection
-            // for header extraction below.
-            arg.TryDuckCast<IReceiveContext>(out var receiveCtx);
+            // Duck cast to IReceiveContext — BaseReceiveContext.InputAddress and TransportHeaders
+            // are public concrete properties, so this always succeeds for well-formed receive contexts.
+            var castSucceeded = arg.TryDuckCast<IReceiveContext>(out var receiveCtx);
             var inputAddress = receiveCtx?.InputAddress?.ToString();
             var transportHeaders = receiveCtx?.TransportHeaders;
 
             Log.Debug(
-                "MassTransitDiagnosticObserver.OnReceiveStart: InputAddress={InputAddress}, HasTransportHeaders={HasHeaders}",
+                "MassTransitDiagnosticObserver.OnReceiveStart: CastSucceeded={Cast}, InputAddress={InputAddress}, HasTransportHeaders={HasHeaders}",
+                castSucceeded,
                 inputAddress ?? "null",
                 transportHeaders != null);
 
-            // Try extracting trace context from transport headers first (works for RabbitMQ, in-memory).
-            // If that fails (e.g. SQS where trace headers are in the message body, not message attributes),
-            // fall back to reading from the ReceiveContext's Headers property via reflection.
             PropagationContext parentContext = default;
             if (transportHeaders != null)
             {
                 var adapter = new ContextPropagationExtractAdapter(transportHeaders);
                 parentContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(adapter);
+                Log.Debug(
+                    "MassTransitDiagnosticObserver.OnReceiveStart: ExtractedFromTransportHeaders, HasSpanContext={HasContext}",
+                    parentContext.SpanContext != null);
             }
-
-            if (parentContext.SpanContext is null)
+            else if (!castSucceeded)
             {
-                parentContext = MassTransitCommon.ExtractTraceContext(Tracer.Instance, arg);
+                Log.Warning(
+                    "MassTransitDiagnosticObserver.OnReceiveStart: Duck cast failed for ArgType={ArgType} — receive span will have no parent",
+                    arg.GetType().FullName);
             }
 
             // Merge extracted baggage into ambient context. CreateReceiveSpan only forwards
             // parentContext.SpanContext to StartActiveInternal, so without this baggage from the
             // incoming message would be dropped instead of flowing to the consume span.
             parentContext = parentContext.MergeBaggageInto(Baggage.Current);
-
-            Log.Debug(
-                "MassTransitDiagnosticObserver.OnReceiveStart: ExtractedParentContext, HasSpanContext={HasContext}",
-                parentContext.SpanContext != null);
 
             var scope = MassTransitCommon.CreateReceiveSpan(Tracer.Instance, inputAddress, parentContext);
 

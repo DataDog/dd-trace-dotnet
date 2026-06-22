@@ -844,7 +844,6 @@
       <type fullname="System.Reflection.FieldInfo" />
       <type fullname="System.Reflection.GenericParameterAttributes" />
       <type fullname="System.Reflection.ICustomAttributeProvider" />
-      <type fullname="System.Reflection.InterfaceMapping" />
       <type fullname="System.Reflection.IntrospectionExtensions" />
       <type fullname="System.Reflection.LocalVariableInfo" />
       <type fullname="System.Reflection.MemberInfo" />

@@ -406,101 +406,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
 
             var propagationContext = new PropagationContext(scope.Span.Context, Baggage.Current);
-            bool injected = false;
 
             try
             {
                 var headersObj = sendContext.Headers;
-                if (headersObj is null)
-                {
-                    Log.Debug("MassTransitCommon.InjectTraceContext: Headers object is null");
-                }
-
                 var internalHeaders = headersObj?.Headers;
+
+                Log.Debug(
+                    "MassTransitCommon.InjectTraceContext: HasHeaders={HasHeaders}, HasInternalHeaders={HasInternal}",
+                    headersObj != null,
+                    internalHeaders != null);
+
                 if (internalHeaders != null)
                 {
                     var adapter = new CarrierWithDelegate<IDictionary<string, object>>(
                         internalHeaders,
                         setter: (d, k, v) => d[k] = v);
                     tracer.TracerManager.SpanContextPropagator.Inject(propagationContext, adapter);
-                    injected = true;
+                    Log.Debug(
+                        "MassTransitCommon.InjectTraceContext: Injected trace context TraceId={TraceId}",
+                        scope.Span.TraceId);
+                }
+                else
+                {
+                    Log.Warning(
+                        "MassTransitCommon.InjectTraceContext: Could not inject — Headers null for SendContextType={Type}",
+                        (sendContext as IDuckType)?.Instance?.GetType().FullName ?? "unknown");
                 }
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "MassTransitCommon.InjectTraceContext: DuckCopy path failed, falling back to reflection");
-            }
-
-            // Reflection fallback — uses GetInterfaceMap() to find DictionarySendHeaders.Set()
-            if (!injected)
-            {
-                Log.Debug("MassTransitCommon.InjectTraceContext: Using reflection fallback to inject trace context");
-                try
-                {
-                    var headersObject = TryGetProperty<object>((sendContext as IDuckType)?.Instance, "Headers");
-                    if (headersObject is null)
-                    {
-                        Log.Debug("MassTransitCommon.InjectTraceContext: No Headers property found in SendContext");
-                        return;
-                    }
-
-                    var injectAdapter = new ContextPropagationInjectAdapter(headersObject);
-                    tracer.TracerManager.SpanContextPropagator.Inject(propagationContext, injectAdapter);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "MassTransitCommon.InjectTraceContext: Failed to inject trace context");
-                    return;
-                }
-            }
-
-            Log.Debug(
-                "MassTransitCommon.InjectTraceContext: Successfully injected trace context TraceId={TraceId}",
-                scope.Span.TraceId);
-        }
-
-        /// <summary>
-        /// Extracts trace context from a MassTransit context object (ReceiveContext, ConsumeContext, etc.)
-        /// using reflection to read the Headers property — used as fallback when duck typing fails.
-        /// </summary>
-        internal static PropagationContext ExtractTraceContext(Tracer tracer, object? context)
-        {
-            if (context is null)
-            {
-                Log.Debug("MassTransitCommon.ExtractTraceContext: context is null");
-                return default;
-            }
-
-            try
-            {
-                // Use reflection to get Headers property — duck typing fails for most concrete context types
-                // due to explicit interface implementation (e.g. MessageConsumeContext<T>)
-                var headersObject = TryGetProperty<object>(context, "Headers");
-
-                Log.Debug(
-                    "MassTransitCommon.ExtractTraceContext: ContextType={ContextType}, HeadersType={HeadersType}",
-                    context.GetType().FullName,
-                    headersObject?.GetType().FullName ?? "null");
-
-                if (headersObject is null)
-                {
-                    return default;
-                }
-
-                // Extract trace context from incoming message headers (consumer side)
-                var extractHeadersAdapter = new ContextPropagationExtractAdapter(headersObject);
-                var extractedContext = tracer.TracerManager.SpanContextPropagator.Extract(extractHeadersAdapter);
-
-                Log.Debug(
-                    "MassTransitCommon.ExtractTraceContext: HasSpanContext={HasSpanContext}",
-                    extractedContext.SpanContext != null);
-
-                return extractedContext;
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "MassTransitCommon.ExtractTraceContext: Failed to extract trace context");
-                return default;
+                Log.Error(ex, "MassTransitCommon.InjectTraceContext: Failed to inject trace context");
             }
         }
 
