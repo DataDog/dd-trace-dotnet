@@ -155,7 +155,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             peReader = null;
             reader = default;
 
-            if (string.IsNullOrEmpty(module.FullyQualifiedName) || !File.Exists(module.FullyQualifiedName))
+            if (StringUtil.IsNullOrEmpty(module.FullyQualifiedName) || !File.Exists(module.FullyQualifiedName))
             {
                 return false;
             }
