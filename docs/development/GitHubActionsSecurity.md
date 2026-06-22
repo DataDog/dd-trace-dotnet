@@ -13,7 +13,7 @@ A mutable tag (`@v4`, `@main`) can be force-pushed to point at different — pot
 
 ### Exempt references
 
-Local composite actions (`uses: ./.github/actions/...`) and local reusable workflows (`uses: ./.github/workflows/...`) move with the current commit and must **not** be version-pinned. Reviewers should leave these as-is.
+Local composite actions (`uses: ./.github/actions/...`) and local reusable workflows (`uses: ./.github/workflows/...`) move with the current commit and must **not** be version-pinned. Reviewers should leave these as-is. Also, all `actions/*`, `github/*`, and `DataDog/*` actions are allowed.
 
 ---
 
@@ -33,7 +33,6 @@ If a workflow run is blocked with an "action is not allowed" error, ask a reposi
    ```yaml
    uses: owner/repo@<40-char-sha> # vX.Y.Z
    ```
-4. **Update CODEOWNERS if needed.** `.github/workflows/` is owned by `@DataDog/apm-dotnet`; keep the right team in the review chain.
 
 ---
 
