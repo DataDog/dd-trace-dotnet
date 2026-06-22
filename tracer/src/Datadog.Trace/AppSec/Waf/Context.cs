@@ -28,6 +28,7 @@ internal sealed class Context : IContext
     private readonly Stopwatch _stopwatch;
     private readonly IWafLibraryInvoker _wafLibraryInvoker;
     private readonly IEncoder _encoder;
+    private readonly List<IntPtr> _persistentArgPointers;
     private readonly UserEventsState _userEventsState = new();
     private bool _disposed;
     private ulong _totalRuntimeOverRuns;
@@ -41,6 +42,7 @@ internal sealed class Context : IContext
         _encoder = encoder;
         _stopwatch = new Stopwatch();
         _encodeResults = new(64);
+        _persistentArgPointers = new(64);
     }
 
     ~Context() => Dispose(false);
@@ -160,14 +162,16 @@ internal sealed class Context : IContext
             // Calling _encoder.Encode(null) results in a null object that will cause the WAF to error
             // The WAF can be called with an empty dictionary (though we should avoid doing this).
 
-            DdwafObjectStruct pwPersistentArgs = default;
             DdwafObjectStruct pwEphemeralArgsValue = default;
+            DdwafObjectStruct* pwPersistentArgs = null;
 
             if (persistentAddressData is not null)
             {
                 var persistentArgs = _encoder.Encode(persistentAddressData, applySafetyLimits: true);
-                pwPersistentArgs = persistentArgs.ResultDdwafObject;
+                pwPersistentArgs = (DdwafObjectStruct*)System.Runtime.InteropServices.Marshal.AllocHGlobal(sizeof(DdwafObjectStruct));
+                *pwPersistentArgs = persistentArgs.ResultDdwafObject;
                 _encodeResults.Add(persistentArgs);
+                _persistentArgPointers.Add((IntPtr)pwPersistentArgs);
                 truncated |= persistentArgs.Truncated;
             }
 
@@ -190,7 +194,7 @@ internal sealed class Context : IContext
             }
 
             // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
-            code = _waf.Run(_contextHandle, persistentAddressData != null ? &pwPersistentArgs : null, ephemeralArgs != null ? &pwEphemeralArgsValue : null, ref retNative, timeoutMicroSeconds);
+            code = _waf.Run(_contextHandle, pwPersistentArgs, ephemeralArgs != null ? &pwEphemeralArgsValue : null, ref retNative, timeoutMicroSeconds);
         }
 
         _stopwatch.Stop();
@@ -224,6 +228,11 @@ internal sealed class Context : IContext
             foreach (var encodeResult in _encodeResults)
             {
                 encodeResult.Dispose();
+            }
+
+            foreach (var persistentArgPointer in _persistentArgPointers)
+            {
+                System.Runtime.InteropServices.Marshal.FreeHGlobal(persistentArgPointer);
             }
 
             _wafLibraryInvoker.ContextDestroy(_contextHandle);
