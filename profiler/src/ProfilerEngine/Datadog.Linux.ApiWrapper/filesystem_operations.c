@@ -159,6 +159,31 @@ WRAPPED_FUNCTION_RENAMED(int, "__fxstatat64", __dd_fxstatat64, (int, ver)(int, d
  * implement the same pattern manually.
  */
 
+/*
+ * Mirrors glibc's __OPEN_NEEDS_MODE: the optional mode argument is present only
+ * for O_CREAT or a *full* O_TMPFILE open.
+ *
+ * O_TMPFILE is defined as (__O_TMPFILE | O_DIRECTORY), so we must match the
+ * ENTIRE bit pattern with "(flags & O_TMPFILE) == O_TMPFILE". Testing
+ * "flags & O_TMPFILE" would also be true for a plain directory open such as
+ * open(path, O_RDONLY | O_DIRECTORY), which passes no mode argument -- reading
+ * it via va_arg would be undefined behavior.
+ */
+static int __dd_open_needs_mode(int flags)
+{
+    if ((flags & O_CREAT) != 0)
+    {
+        return 1;
+    }
+#ifdef O_TMPFILE
+    if ((flags & O_TMPFILE) == O_TMPFILE)
+    {
+        return 1;
+    }
+#endif
+    return 0;
+}
+
 static int (*__dd_real_open)(const char*, int, mode_t) = NULL;
 
 static void load_symbols_open() __attribute__((constructor));
@@ -175,11 +200,7 @@ int open(const char* pathname, int flags, ...)
     }
 
     mode_t mode = 0;
-    if (flags & (O_CREAT
-#ifdef O_TMPFILE
-                 | O_TMPFILE
-#endif
-                 ))
+    if (__dd_open_needs_mode(flags))
     {
         va_list args;
         va_start(args, flags);
@@ -215,11 +236,7 @@ int openat(int dirfd, const char* pathname, int flags, ...)
     }
 
     mode_t mode = 0;
-    if (flags & (O_CREAT
-#ifdef O_TMPFILE
-                 | O_TMPFILE
-#endif
-                 ))
+    if (__dd_open_needs_mode(flags))
     {
         va_list args;
         va_start(args, flags);
@@ -264,11 +281,7 @@ int __dd_open64(const char* pathname, int flags, ...)
     }
 
     mode_t mode = 0;
-    if (flags & (O_CREAT
-#ifdef O_TMPFILE
-                 | O_TMPFILE
-#endif
-                 ))
+    if (__dd_open_needs_mode(flags))
     {
         va_list args;
         va_start(args, flags);
@@ -305,11 +318,7 @@ int __dd_openat64(int dirfd, const char* pathname, int flags, ...)
     }
 
     mode_t mode = 0;
-    if (flags & (O_CREAT
-#ifdef O_TMPFILE
-                 | O_TMPFILE
-#endif
-                 ))
+    if (__dd_open_needs_mode(flags))
     {
         va_list args;
         va_start(args, flags);
