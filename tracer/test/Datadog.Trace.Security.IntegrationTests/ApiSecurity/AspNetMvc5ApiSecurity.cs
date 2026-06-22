@@ -6,12 +6,9 @@
 #if NETFRAMEWORK
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -59,6 +56,7 @@ public abstract class AspNetMvc5ApiSecurity : AspNetBase, IClassFixture<IisFixtu
     [Trait("LoadFromGAC", "True")]
     [InlineData("scan-without-attack", "/home/apisecurity/11", """{"Dog":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
     [InlineData("scan-with-attack", "/home/apisecurity/12", """{"Dog":"23", "Dog2":"dev/zero", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
+    [InlineData("scan-datacontract-json", "/home/datacontractjson/13", """{"Dog":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
     [InlineData("scan-empty-model", "/home/emptymodel", """{"Dog":"23", "Dog2":"test", "Dog3": 2.5, "Dog4": 1.6, "NonExistingProp" : 1}""")]
     public async Task TestApiSecurityScan(string scenario, string url, string body)
     {
