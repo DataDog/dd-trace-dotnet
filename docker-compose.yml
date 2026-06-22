@@ -273,6 +273,22 @@ services:
     volumes:
       - ./docker/eventhubs-emulator-config.json:/Eventhubs_Emulator/ConfigFiles/Config.json:ro
 
+  azure-eventgrid-emulator:
+    image: workleap/eventgridemulator:latest
+    profiles: ["group2"]
+    ports:
+      - "127.0.0.1:6500:6500"
+    volumes:
+      - ./docker/eventgrid-emulator-config.json:/app/appsettings.json:ro
+    environment:
+      # Override the topic's subscriber webhook (ASP.NET array config). The Azure Functions host that
+      # receives the pushed event is reachable at a different host depending on where it runs: inside the
+      # IntegrationTests container in CI (EVENTGRID_WEBHOOK_HOST=integrationtests) vs on the Docker host
+      # locally (host.docker.internal). The emulator adds the aeg-event-type header and forwards the CloudEvent.
+      - Topics__samples-eventgrid-topic__0=http://${EVENTGRID_WEBHOOK_HOST:-host.docker.internal}:7071/runtime/webhooks/eventgrid?functionName=EventGridTrigger
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   cosmosdb-emulator:
     image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview
     profiles: ["group2"]
@@ -509,6 +525,7 @@ services:
       - COUCHBASE_PORT=8091
       - ASB_CONNECTION_STRING=Endpoint=sb://azureservicebus-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
       - EVENTHUBS_CONNECTION_STRING=Endpoint=sb://azure-eventhubs-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
+      - EVENTGRID_TOPIC_ENDPOINT=http://azure-eventgrid-emulator:6500/samples-eventgrid-topic/api/events
       - COSMOSDB_ENDPOINT=https://cosmosdb-emulator:8081
       - TEST_AGENT_HOST=test-agent
       - CONTAINER_HOSTNAME=http://integrationtests
@@ -736,11 +753,12 @@ services:
       - azureservicebus-emulator
       - azurite
       - azure-eventhubs-emulator
+      - azure-eventgrid-emulator
       - cosmosdb-emulator
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 cosmosdb-emulator:8081 test-agent:8126 test-agent:4317 test-agent:4318
+    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 azure-eventgrid-emulator:6500 cosmosdb-emulator:8081 test-agent:8126 test-agent:4317 test-agent:4318
 
   IntegrationTests.ARM64:
     build:
