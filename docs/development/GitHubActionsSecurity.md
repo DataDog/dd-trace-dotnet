@@ -46,8 +46,6 @@ SHA pins are kept current automatically. `.github/dependabot.yml` configures Dep
 
 Dependabot preserves the SHA-pin + `# vX.Y.Z` comment format when bumping. Review the bump PR and spot-check that the new SHA corresponds to the advertised tag on the upstream repo before merging.
 
-**Consider bumping the schedule to `weekly`** to receive security patches faster (currently `monthly`).
-
 ---
 
 ## Reviewer checklist
