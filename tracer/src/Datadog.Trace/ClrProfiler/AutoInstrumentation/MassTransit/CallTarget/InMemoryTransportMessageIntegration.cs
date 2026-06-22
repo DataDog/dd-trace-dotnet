@@ -70,14 +70,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget
                     setter: (d, k, v) => d[k] = v);
                 var propagationContext = new PropagationContext(spanContext, Baggage.Current);
                 Tracer.Instance.TracerManager.SpanContextPropagator.Inject(propagationContext, adapter);
-
-                Log.Debug(
-                    "InMemoryTransportMessageIntegration: Injected trace context TraceId={TraceId}",
-                    spanContext.TraceId);
             }
             catch (System.Exception ex)
             {
-                Log.Debug(ex, "InMemoryTransportMessageIntegration: Failed to inject trace context");
+                Log.Error(ex, "InMemoryTransportMessageIntegration: Failed to inject trace context");
             }
 
             return CallTargetReturn.GetDefault();

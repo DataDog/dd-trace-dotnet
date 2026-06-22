@@ -57,20 +57,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
         public override bool IsSubscriberEnabled()
         {
-            var enabled = Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.MassTransit);
-            Log.Debug("MassTransitDiagnosticObserver.IsSubscriberEnabled: {Enabled}", enabled);
-            return enabled;
+            return Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.MassTransit);
         }
 
         protected override void OnNext(string eventName, object arg)
         {
             try
             {
-                Log.Debug(
-                    "MassTransitDiagnosticObserver.OnNext: Event='{EventName}', ArgType={ArgType}",
-                    eventName,
-                    arg?.GetType().FullName ?? "null");
-
                 switch (eventName)
                 {
                     // Send events (producer spans)
@@ -159,24 +152,14 @@ namespace Datadog.Trace.DiagnosticListeners
 
             // Extract metadata from SendContext — returns the duck-typed proxy for reuse
             var sendContextProxy = MassTransitCommon.ExtractSendContextMetadata(arg, out var destinationAddress, out var messageId, out var conversationId, out var correlationId);
-            Log.Debug(
-                "MassTransitDiagnosticObserver.OnSendStart: Destination={Destination}",
-                destinationAddress);
-
             var scope = MassTransitCommon.CreateProduceSpan(Tracer.Instance, destinationAddress, messageType: null);
 
             if (scope is not null)
             {
-                // Set additional context tags
                 MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
 
                 // Inject trace context into message headers — reuses the proxy from above, no second DuckCast
                 MassTransitCommon.InjectTraceContext(Tracer.Instance, sendContextProxy, scope);
-
-                Log.Debug(
-                    "MassTransitDiagnosticObserver.OnSendStart: Created span TraceId={TraceId}, SpanId={SpanId}",
-                    scope.Span.TraceId,
-                    scope.Span.SpanId);
             }
         }
 
@@ -184,13 +167,8 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             if (arg == null)
             {
-                Log.Debug("MassTransitDiagnosticObserver.OnReceiveStart: arg is null");
                 return;
             }
-
-            Log.Debug(
-                "MassTransitDiagnosticObserver.OnReceiveStart: Processing ReceiveContext, ArgType={ArgType}",
-                arg.GetType().FullName);
 
             // Duck cast to IReceiveContext — BaseReceiveContext.InputAddress and TransportHeaders
             // are public concrete properties, so this always succeeds for well-formed receive contexts.
@@ -198,20 +176,11 @@ namespace Datadog.Trace.DiagnosticListeners
             var inputAddress = receiveCtx?.InputAddress?.ToString();
             var transportHeaders = receiveCtx?.TransportHeaders;
 
-            Log.Debug(
-                "MassTransitDiagnosticObserver.OnReceiveStart: CastSucceeded={Cast}, InputAddress={InputAddress}, HasTransportHeaders={HasHeaders}",
-                castSucceeded,
-                inputAddress ?? "null",
-                transportHeaders != null);
-
             PropagationContext parentContext = default;
             if (transportHeaders != null)
             {
                 var adapter = new ContextPropagationExtractAdapter(transportHeaders);
                 parentContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(adapter);
-                Log.Debug(
-                    "MassTransitDiagnosticObserver.OnReceiveStart: ExtractedFromTransportHeaders, HasSpanContext={HasContext}",
-                    parentContext.SpanContext != null);
             }
             else if (!castSucceeded)
             {
@@ -225,20 +194,7 @@ namespace Datadog.Trace.DiagnosticListeners
             // incoming message would be dropped instead of flowing to the consume span.
             parentContext = parentContext.MergeBaggageInto(Baggage.Current);
 
-            var scope = MassTransitCommon.CreateReceiveSpan(Tracer.Instance, inputAddress, parentContext);
-
-            if (scope != null)
-            {
-                Log.Debug(
-                    "MassTransitDiagnosticObserver.OnReceiveStart: Created span TraceId={TraceId}, SpanId={SpanId}, ParentId={ParentId}",
-                    scope.Span.TraceId,
-                    scope.Span.SpanId,
-                    scope.Span.Context.ParentId);
-            }
-            else
-            {
-                Log.Debug("MassTransitDiagnosticObserver.OnReceiveStart: Scope not created");
-            }
+            MassTransitCommon.CreateReceiveSpan(Tracer.Instance, inputAddress, parentContext);
         }
 
         private void OnConsumeStart(object? arg, string operationType)
@@ -254,11 +210,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 var innerCastSucceeded = arg.TryDuckCast<IMessageConsumeContextInner>(out var inner);
                 if (innerCastSucceeded && inner?.Context != null)
                 {
-                    var innerContextCastSucceeded = inner.Context.TryDuckCast<IConsumeContext>(out consumeContext);
-                    Log.Debug(
-                        "MassTransitDiagnosticObserver.OnConsumeStart: DirectCast=false, InnerContextType={InnerType}, InnerContextCast={InnerContextCast}",
-                        inner.Context.GetType().Name,
-                        innerContextCastSucceeded);
+                    inner.Context.TryDuckCast<IConsumeContext>(out consumeContext);
                 }
                 else
                 {
@@ -271,11 +223,6 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             var messageType = MassTransitCommon.GetConsumeMessageType(consumeContext);
-
-            Log.Debug(
-                "MassTransitDiagnosticObserver.OnConsumeStart: MessageType={MessageType}, OperationType={OperationType}",
-                messageType,
-                operationType);
 
             PropagationContext parentContext = default;
             if (consumeContext?.Headers != null)
@@ -299,21 +246,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 activeScope.Span.GetTag(Tags.InstrumentationName) == MassTransitConstants.ComponentTagName)
             {
                 parentContext = new PropagationContext(activeScope.Span.Context as SpanContext, Baggage.Current);
-
-                Log.Debug(
-                    "MassTransitDiagnosticObserver.OnConsumeStart: Using active Receive span as parent, ParentSpanId={ParentSpanId}",
-                    activeScope.Span.SpanId);
             }
 
-            var scope = MassTransitCommon.CreateProcessSpan(Tracer.Instance, inputAddress, messageType, parentContext);
-
-            if (scope != null)
-            {
-                Log.Debug(
-                    "MassTransitDiagnosticObserver.OnConsumeStart: Created span TraceId={TraceId}, SpanId={SpanId}",
-                    scope.Span.TraceId,
-                    scope.Span.SpanId);
-            }
+            MassTransitCommon.CreateProcessSpan(Tracer.Instance, inputAddress, messageType, parentContext);
         }
 
         private void OnStop(string operationType)
@@ -324,7 +259,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope == null)
             {
-                Log.Debug("MassTransitDiagnosticObserver.OnStop: No active scope for {OperationType}", operationType);
                 return;
             }
 
@@ -342,7 +276,6 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             scope.Close();
-            Log.Debug("MassTransitDiagnosticObserver.OnStop: Closed scope for {OperationType}", operationType);
         }
     }
 }

@@ -51,16 +51,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             string? destinationAddress,
             string? messageType)
         {
-            Log.Debug(
-                "MassTransitCommon.CreateProducerScope: operation={Operation}, destination={Destination}, messageType={MessageType}",
-                operation,
-                destinationAddress,
-                messageType);
-
             var settings = tracer.CurrentTraceSettings.Settings;
             if (!settings.IsIntegrationEnabled(MassTransitConstants.IntegrationId))
             {
-                Log.Debug("MassTransitCommon.CreateProducerScope: Integration is disabled");
                 return null;
             }
 
@@ -106,11 +99,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 {
                     tags.MessageTypes = messageType;
                 }
-
-                Log.Debug(
-                    "MassTransitCommon.CreateProducerScope: Created span with TraceId={TraceId}, SpanId={SpanId}",
-                    span.TraceId,
-                    span.SpanId);
             }
             catch (Exception ex)
             {
@@ -131,17 +119,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             string? messageType,
             PropagationContext parentContext = default)
         {
-            Log.Debug(
-                "MassTransitCommon.CreateConsumerScope: operation={Operation}, inputAddress={InputAddress}, messageType={MessageType}, hasParent={HasParent}",
-                operation,
-                inputAddress,
-                messageType,
-                parentContext.SpanContext != null);
-
             var settings = tracer.CurrentTraceSettings.Settings;
             if (!settings.IsIntegrationEnabled(MassTransitConstants.IntegrationId))
             {
-                Log.Debug("MassTransitCommon.CreateConsumerScope: Integration is disabled");
                 return null;
             }
 
@@ -188,11 +168,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 {
                     tags.MessageTypes = messageType;
                 }
-
-                Log.Debug(
-                    "MassTransitCommon.CreateConsumerScope: Created span with TraceId={TraceId}, SpanId={SpanId}",
-                    span.TraceId,
-                    span.SpanId);
             }
             catch (Exception ex)
             {
@@ -209,7 +184,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         {
             if (StringUtil.IsNullOrWhiteSpace(address))
             {
-                Log.Debug("The address is null or empty. Unable to determine the messaging system");
                 return "unknown";
             }
 
@@ -338,7 +312,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         {
             if (sendContext is null || scope.Span is null)
             {
-                Log.Debug("MassTransitCommon.InjectTraceContext: sendContext or span is null");
                 return;
             }
 
@@ -346,23 +319,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             try
             {
-                var headersObj = sendContext.Headers;
-                var internalHeaders = headersObj?.Headers;
-
-                Log.Debug(
-                    "MassTransitCommon.InjectTraceContext: HasHeaders={HasHeaders}, HasInternalHeaders={HasInternal}",
-                    headersObj != null,
-                    internalHeaders != null);
-
+                var internalHeaders = sendContext.Headers?.Headers;
                 if (internalHeaders != null)
                 {
                     var adapter = new CarrierWithDelegate<IDictionary<string, object>>(
                         internalHeaders,
                         setter: (d, k, v) => d[k] = v);
                     tracer.TracerManager.SpanContextPropagator.Inject(propagationContext, adapter);
-                    Log.Debug(
-                        "MassTransitCommon.InjectTraceContext: Injected trace context TraceId={TraceId}",
-                        scope.Span.TraceId);
                 }
                 else
                 {
