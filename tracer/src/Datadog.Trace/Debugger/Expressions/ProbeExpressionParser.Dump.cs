@@ -10,6 +10,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Util;
 using static Datadog.Trace.Debugger.Expressions.ProbeExpressionParserHelper;
@@ -18,6 +19,33 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {
+    private static FieldInfo[] GetSafeFieldsForDump(FieldInfo[] fields)
+    {
+        var writeIndex = 0;
+        for (var readIndex = 0; readIndex < fields.Length; readIndex++)
+        {
+            var field = fields[readIndex];
+            if (!field.IsStatic || field.IsLiteral || StaticMemberSafety.CanReadStaticMember(field))
+            {
+                fields[writeIndex++] = field;
+            }
+        }
+
+        if (writeIndex == fields.Length)
+        {
+            return fields;
+        }
+
+        var safeFields = new FieldInfo[writeIndex];
+        Array.Copy(fields, safeFields, writeIndex);
+        return safeFields;
+    }
+
+    private static object GetFieldValueForDump(FieldInfo field, object source)
+    {
+        return field.IsLiteral ? StaticMemberSafety.GetRawConstantValue(field) : field.GetValue(field.IsStatic ? null : source);
+    }
+
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
         if (Datadog.Trace.Debugger.Helpers.TypeExtensions.IsSimple(expression.Type) ||
@@ -128,13 +156,14 @@ internal partial class ProbeExpressionParser<T>
         const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
         var getTypeMethod = GetMethodByReflection(typeof(object), nameof(object.GetType), Type.EmptyTypes);
         var getFieldsMethod = GetMethodByReflection(typeof(Type), nameof(Type.GetFields), [typeof(BindingFlags)]);
+        var getSafeFieldsMethod = GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(GetSafeFieldsForDump), [typeof(FieldInfo[])]);
         var orderByMethod = GetMethodByReflection(typeof(System.Linq.Enumerable), nameof(System.Linq.Enumerable.OrderBy), [typeof(IEnumerable<>), typeof(Func<,>)], [typeof(FieldInfo), typeof(int)]);
         var toArray = GetMethodByReflection(typeof(System.Linq.Enumerable), nameof(System.Linq.Enumerable.ToArray), [typeof(IEnumerable<>)], [typeof(FieldInfo)]);
 
         ParameterExpression parameterExp = Expression.Parameter(typeof(FieldInfo), "fieldInfo");
         MemberExpression propertyExp = Expression.Property(parameterExp, "MetadataToken");
         Expression<Func<FieldInfo, int>> lambdaExp = Expression.Lambda<Func<FieldInfo, int>>(propertyExp, parameterExp);
-        var fieldInfoArray = Expression.Call(Expression.Call(expression, getTypeMethod), getFieldsMethod, Expression.Constant(flags));
+        var fieldInfoArray = Expression.Call(null, getSafeFieldsMethod, Expression.Call(Expression.Call(expression, getTypeMethod), getFieldsMethod, Expression.Constant(flags)));
         var fieldInfoOrderedArray = Expression.Call(null, toArray, Expression.Call(null, orderByMethod, fieldInfoArray, lambdaExp));
         var stringBuilderAppend = GetMethodByReflection(typeof(StringBuilder), nameof(StringBuilder.Append), [typeof(string)]);
         var expressions = new List<Expression>();
@@ -158,8 +187,9 @@ internal partial class ProbeExpressionParser<T>
 
         var fieldGetValueExpression =
            Expression.Call(
+               null,
+               GetMethodByReflection(typeof(ProbeExpressionParser<T>), nameof(GetFieldValueForDump), [typeof(FieldInfo), typeof(object)]),
                fieldAtIndex,
-               GetMethodByReflection(typeof(FieldInfo), nameof(FieldInfo.GetValue), new[] { typeof(object) }),
                Expression.Convert(expression, typeof(object)));
 
         var dumpObjectCallExpression = Expression.Call(

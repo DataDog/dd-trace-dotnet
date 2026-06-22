@@ -13,6 +13,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
@@ -555,8 +556,19 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                             if (field.IsStatic)
                             {
-                                value = field.GetValue(null);
-                                return true;
+                                if (field.IsLiteral)
+                                {
+                                    value = StaticMemberSafety.GetRawConstantValue(field);
+                                    return true;
+                                }
+
+                                if (StaticMemberSafety.CanReadStaticMember(field))
+                                {
+                                    value = field.GetValue(null);
+                                    return true;
+                                }
+
+                                return false;
                             }
 
                             if (field.DeclaringType == null || (source != null && !field.DeclaringType.IsInstanceOfType(source)))
@@ -593,8 +605,13 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                             if (getMethod.IsStatic)
                             {
-                                value = property.GetValue(null);
-                                return true;
+                                if (StaticMemberSafety.CanReadStaticMember(property))
+                                {
+                                    value = property.GetValue(null);
+                                    return true;
+                                }
+
+                                return false;
                             }
 
                             if (property.DeclaringType == null || (source != null && !property.DeclaringType.IsInstanceOfType(source)))

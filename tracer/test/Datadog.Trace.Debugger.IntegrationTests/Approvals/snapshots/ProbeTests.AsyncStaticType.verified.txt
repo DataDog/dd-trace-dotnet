@@ -12,16 +12,6 @@
                 "type": "String",
                 "value": "Last name"
               }
-            },
-            "staticFields": {
-              "_staticField": {
-                "type": "String",
-                "value": "Static Field"
-              },
-              "StaticProperty": {
-                "type": "String",
-                "value": "Static Property"
-              }
             }
           },
           "return": {
@@ -35,16 +25,6 @@
               "@return": {
                 "type": "String",
                 "value": "Last name"
-              }
-            },
-            "staticFields": {
-              "_staticField": {
-                "type": "String",
-                "value": "Static Field"
-              },
-              "StaticProperty": {
-                "type": "String",
-                "value": "Static Property"
               }
             }
           }
@@ -89,16 +69,6 @@
                 "lastName": {
                   "type": "String",
                   "value": "Last name"
-                }
-              },
-              "staticFields": {
-                "_staticField": {
-                  "type": "String",
-                  "value": "Static Field"
-                },
-                "StaticProperty": {
-                  "type": "String",
-                  "value": "Static Property"
                 }
               }
             }

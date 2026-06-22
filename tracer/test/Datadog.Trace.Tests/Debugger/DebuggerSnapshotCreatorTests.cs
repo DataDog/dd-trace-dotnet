@@ -32,6 +32,13 @@ namespace Datadog.Trace.Tests.Debugger
     [UsesVerify]
     public class DebuggerSnapshotCreatorTests(ITestOutputHelper output)
     {
+        private static int _staticCaptureInitializedCount;
+
+        private enum StaticCaptureEnum
+        {
+            One = 1
+        }
+
         public static IEnumerable<object[]> SupportedCollectionSamples()
         {
             yield return [new List<int> { 1 }, "List`1", 1];
@@ -368,6 +375,31 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void StaticFields_CctorFreeType_IsCaptured()
+        {
+            var staticFields = CaptureStaticFields(typeof(StaticCaptureWithoutCctor));
+
+            Assert.Equal("Int32", staticFields["_staticField"]?["type"]?.Value<string>());
+            Assert.Equal("0", staticFields["_staticField"]?["value"]?.Value<string>());
+        }
+
+        [Fact]
+        public void StaticFields_TypeWithCctor_OnlyCapturesConstants()
+        {
+            ResetStaticCaptureInitializedCount();
+
+            var staticFields = CaptureStaticFields(typeof(StaticCaptureWithCctor));
+
+            Assert.Equal("String", staticFields["ConstantField"]?["type"]?.Value<string>());
+            Assert.Equal("constant-value", staticFields["ConstantField"]?["value"]?.Value<string>());
+            Assert.Equal("StaticCaptureEnum", staticFields["EnumConstantField"]?["type"]?.Value<string>());
+            Assert.Equal("One", staticFields["EnumConstantField"]?["value"]?.Value<string>());
+            Assert.Null(staticFields["_staticField"]);
+            Assert.Null(staticFields["StaticProperty"]);
+            Assert.Equal(0, _staticCaptureInitializedCount);
+        }
+
+        [Fact]
         public void Message_UsesFirstEvaluationError()
         {
             var captureLimitInfo = new CaptureLimitInfo(
@@ -652,6 +684,35 @@ namespace Datadog.Trace.Tests.Debugger
         {
         }
 
+        private static JObject CaptureStaticFields(Type type)
+        {
+            var snapshotCreator = new DebuggerSnapshotCreator(
+                isFullSnapshot: true,
+                Datadog.Trace.Debugger.Expressions.ProbeLocation.Method,
+                hasCondition: false,
+                tags: [],
+                limitInfo: CreateCaptureLimitInfo(),
+                processTagsProvider: static () => null,
+                serviceNameProvider: static () => "test-service");
+
+            var method = typeof(DebuggerSnapshotCreatorTests).GetMethod(nameof(DummyMethod), BindingFlags.NonPublic | BindingFlags.Static)!;
+            var captureInfo = new CaptureInfo<Type>(
+                methodMetadataIndex: 0,
+                methodState: MethodState.EntryStart,
+                method: method,
+                type: type,
+                invocationTargetType: type,
+                localsCount: 0,
+                argumentsCount: 0);
+
+            snapshotCreator.StartEntry();
+            snapshotCreator.CaptureStaticFields(ref captureInfo);
+            snapshotCreator.EndEntry();
+            snapshotCreator.FinalizeSnapshot("Foo", "Bar", "foo");
+
+            return (JObject)JObject.Parse(snapshotCreator.GetSnapshotJson()).SelectToken("debugger.snapshot.captures.entry.staticFields");
+        }
+
         private static JObject SerializeCollection(ICollection collection, int maxCollectionSize, CancellationTokenSource cts = null)
         {
             return SerializeCollection(collection, maxCollectionSize, collection.Count, wasTruncated: false, cts);
@@ -787,6 +848,16 @@ namespace Datadog.Trace.Tests.Debugger
             return token != null && token.HasValues;
         }
 
+        private static void IncrementStaticCaptureInitializedCount()
+        {
+            _staticCaptureInitializedCount++;
+        }
+
+        private static void ResetStaticCaptureInitializedCount()
+        {
+            _staticCaptureInitializedCount = 0;
+        }
+
         private sealed class CancelingCollection : ICollection
         {
             private readonly object[] _items;
@@ -866,6 +937,31 @@ namespace Datadog.Trace.Tests.Debugger
                 soInfinite = this;
                 Console.Write(number);
             }
+        }
+
+        private class StaticCaptureWithoutCctor
+        {
+#pragma warning disable CS0169, CS0649
+            private static int _staticField;
+#pragma warning restore CS0169, CS0649
+
+            public static string StaticProperty => "safe-property";
+        }
+
+        private class StaticCaptureWithCctor
+        {
+            public const string ConstantField = "constant-value";
+
+            public const StaticCaptureEnum EnumConstantField = StaticCaptureEnum.One;
+
+            private static string _staticField = "unsafe-field";
+
+            static StaticCaptureWithCctor()
+            {
+                IncrementStaticCaptureInitializedCount();
+            }
+
+            public static string StaticProperty { get; } = "unsafe-property";
         }
 
         private class ClassWithLotsOFields
