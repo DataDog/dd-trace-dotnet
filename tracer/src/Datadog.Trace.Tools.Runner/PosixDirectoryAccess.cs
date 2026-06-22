@@ -10,100 +10,132 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Datadog.Trace.PlatformHelpers;
 
-namespace Datadog.Trace.Tools.Runner
+namespace Datadog.Trace.Tools.Runner;
+
+/// <summary>
+/// Provides POSIX directory creation and permission validation for runner tracer home caches.
+/// </summary>
+internal static class PosixDirectoryAccess
 {
-    internal static class PosixDirectoryAccess
+    private const uint PosixDirectoryFileType = 0x4000;
+    private const uint PosixFileTypeMask = 0xF000;
+    private const uint PosixGroupOrOtherWrite = 0x12; // 022
+    private const uint PrivateDirectoryMode = 448; // 0700
+
+    /// <summary>
+    /// Attempts to create a directory with private POSIX permissions.
+    /// </summary>
+    /// <param name="path">The directory path to create.</param>
+    internal static void CreatePrivateDirectory(string path)
     {
-        private const uint PosixDirectoryFileType = 0x4000;
-        private const uint PosixFileTypeMask = 0xF000;
-        private const uint PosixGroupOrOtherWrite = 0x12; // 022
-        private const uint PrivateDirectoryMode = 448; // 0700
-
-        internal static void CreatePrivateDirectory(string path)
+        var result = Mkdir(path, PrivateDirectoryMode);
+        if (result != 0 && !Directory.Exists(path))
         {
-            var result = Mkdir(path, PrivateDirectoryMode);
-            if (result != 0 && !Directory.Exists(path))
-            {
-                throw new IOException($"Unable to create directory '{path}'. errno: {Marshal.GetLastWin32Error()}");
-            }
+            throw new IOException($"Unable to create directory '{path}'. errno: {Marshal.GetLastWin32Error()}");
         }
-
-        internal static void ValidateDirectoryAccess(string path, bool requireCurrentUserOwner, bool allowGroupOrOtherWrite)
-        {
-            var directoryInfo = GetDirectoryInfo(path);
-            if ((directoryInfo.Mode & PosixFileTypeMask) != PosixDirectoryFileType)
-            {
-                throw new IOException($"Path '{path}' must be a directory.");
-            }
-
-            if (requireCurrentUserOwner && directoryInfo.UserId != GetEffectiveUserId())
-            {
-                throw new IOException($"Directory '{path}' must be owned by the current user.");
-            }
-
-            if (!allowGroupOrOtherWrite && (directoryInfo.Mode & PosixGroupOrOtherWrite) != 0)
-            {
-                throw new IOException($"Directory '{path}' must not be writable by group or other users.");
-            }
-        }
-
-        private static PosixDirectoryInfo GetDirectoryInfo(string path)
-        {
-            // struct stat layout varies across libc, CPU architectures, and macOS inode eras. The stat(1)
-            // output format is stable enough for the two fields we need: mode and owner uid.
-            var isMacOs = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ||
-                          string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.Ordinal) ||
-                          FrameworkDescription.Instance.OSDescription.StartsWith("Darwin", StringComparison.OrdinalIgnoreCase);
-            var statPath = isMacOs ? "/usr/bin/stat" : File.Exists("/usr/bin/stat") ? "/usr/bin/stat" : "/bin/stat";
-            var processStartInfo = new ProcessStartInfo(statPath)
-            {
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-            };
-
-            processStartInfo.ArgumentList.Add(isMacOs ? "-f" : "-c");
-            processStartInfo.ArgumentList.Add(isMacOs ? "%p %u" : "%f %u");
-            processStartInfo.ArgumentList.Add(path);
-
-            using var process = Process.Start(processStartInfo);
-            if (process is null)
-            {
-                throw new IOException($"Unable to inspect directory '{path}'.");
-            }
-
-            var output = process.StandardOutput.ReadToEnd();
-            var error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-            if (process.ExitCode != 0)
-            {
-                throw new IOException($"Unable to inspect directory '{path}'. {error}");
-            }
-
-            var values = output.Trim().Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
-            if (values.Length != 2 || !uint.TryParse(values[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var userId))
-            {
-                throw new IOException($"Unable to inspect directory '{path}'. Unexpected stat output: '{output.Trim()}'.");
-            }
-
-            uint mode;
-            try
-            {
-                mode = Convert.ToUInt32(values[0], isMacOs ? 8 : 16);
-            }
-            catch (Exception ex) when (ex is FormatException or OverflowException)
-            {
-                throw new IOException($"Unable to inspect directory '{path}'. Unexpected stat mode: '{values[0]}'.", ex);
-            }
-
-            return new PosixDirectoryInfo(mode, userId);
-        }
-
-        [DllImport("libc", EntryPoint = "mkdir", SetLastError = true)]
-        private static extern int Mkdir(string path, uint mode);
-
-        [DllImport("libc", EntryPoint = "geteuid")]
-        private static extern uint GetEffectiveUserId();
-
-        private readonly record struct PosixDirectoryInfo(uint Mode, uint UserId);
     }
+
+    /// <summary>
+    /// Validates POSIX ownership and write permissions for an existing directory.
+    /// </summary>
+    /// <param name="path">The directory path to validate.</param>
+    /// <param name="requireCurrentUserOwner">Whether the directory must be owned by the current effective user.</param>
+    /// <param name="allowGroupOrOtherWrite">Whether group or other write bits are allowed.</param>
+    internal static void ValidateDirectoryAccess(string path, bool requireCurrentUserOwner, bool allowGroupOrOtherWrite)
+    {
+        var directoryInfo = GetDirectoryInfo(path);
+        if ((directoryInfo.Mode & PosixFileTypeMask) != PosixDirectoryFileType)
+        {
+            throw new IOException($"Path '{path}' must be a directory.");
+        }
+
+        if (requireCurrentUserOwner && directoryInfo.UserId != GetEffectiveUserId())
+        {
+            throw new IOException($"Directory '{path}' must be owned by the current user.");
+        }
+
+        if (!allowGroupOrOtherWrite && (directoryInfo.Mode & PosixGroupOrOtherWrite) != 0)
+        {
+            throw new IOException($"Directory '{path}' must not be writable by group or other users.");
+        }
+    }
+
+    /// <summary>
+    /// Gets the POSIX mode and owner uid for a directory.
+    /// </summary>
+    /// <param name="path">The directory path to inspect.</param>
+    /// <returns>The POSIX directory metadata.</returns>
+    private static PosixDirectoryInfo GetDirectoryInfo(string path)
+    {
+        // struct stat layout varies across libc, CPU architectures, and macOS inode eras. The stat(1)
+        // output format is stable enough for the two fields we need: mode and owner uid.
+        var isMacOs = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ||
+                      string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.Ordinal) ||
+                      FrameworkDescription.Instance.OSDescription.StartsWith("Darwin", StringComparison.OrdinalIgnoreCase);
+        var statPath = isMacOs ? "/usr/bin/stat" : File.Exists("/usr/bin/stat") ? "/usr/bin/stat" : "/bin/stat";
+        var processStartInfo = new ProcessStartInfo(statPath)
+        {
+            RedirectStandardError = true,
+            RedirectStandardOutput = true,
+        };
+
+        processStartInfo.ArgumentList.Add(isMacOs ? "-f" : "-c");
+        processStartInfo.ArgumentList.Add(isMacOs ? "%p %u" : "%f %u");
+        processStartInfo.ArgumentList.Add(path);
+
+        using var process = Process.Start(processStartInfo);
+        if (process is null)
+        {
+            throw new IOException($"Unable to inspect directory '{path}'.");
+        }
+
+        var output = process.StandardOutput.ReadToEnd();
+        var error = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        if (process.ExitCode != 0)
+        {
+            throw new IOException($"Unable to inspect directory '{path}'. {error}");
+        }
+
+        var values = output.Trim().Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
+        if (values.Length != 2 || !uint.TryParse(values[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var userId))
+        {
+            throw new IOException($"Unable to inspect directory '{path}'. Unexpected stat output: '{output.Trim()}'.");
+        }
+
+        uint mode;
+        try
+        {
+            mode = Convert.ToUInt32(values[0], isMacOs ? 8 : 16);
+        }
+        catch (Exception ex) when (ex is FormatException or OverflowException)
+        {
+            throw new IOException($"Unable to inspect directory '{path}'. Unexpected stat mode: '{values[0]}'.", ex);
+        }
+
+        return new PosixDirectoryInfo(mode, userId);
+    }
+
+    /// <summary>
+    /// Calls POSIX mkdir with the requested mode.
+    /// </summary>
+    /// <param name="path">The directory path to create.</param>
+    /// <param name="mode">The requested POSIX mode.</param>
+    /// <returns>Zero on success; otherwise a non-zero result with errno available through <c>Marshal.GetLastWin32Error()</c>.</returns>
+    [DllImport("libc", EntryPoint = "mkdir", SetLastError = true)]
+    private static extern int Mkdir(string path, uint mode);
+
+    /// <summary>
+    /// Gets the current effective user id.
+    /// </summary>
+    /// <returns>The current effective user id.</returns>
+    [DllImport("libc", EntryPoint = "geteuid")]
+    private static extern uint GetEffectiveUserId();
+
+    /// <summary>
+    /// Represents the POSIX metadata needed to validate a directory.
+    /// </summary>
+    /// <param name="Mode">The raw mode bits returned by stat.</param>
+    /// <param name="UserId">The owner user id returned by stat.</param>
+    private readonly record struct PosixDirectoryInfo(uint Mode, uint UserId);
 }
