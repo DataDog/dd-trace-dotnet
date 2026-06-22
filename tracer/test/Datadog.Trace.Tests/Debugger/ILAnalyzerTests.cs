@@ -109,7 +109,7 @@ public class ILAnalyzerTests
 
         ResolveEventHandler resolver = (_, args) =>
         {
-            if (args.Name.StartsWith(assemblyName, StringComparison.Ordinal))
+            if (args.Name?.StartsWith(assemblyName, StringComparison.Ordinal) == true)
             {
                 dependencyResolveCount++;
             }
