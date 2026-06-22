@@ -248,11 +248,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            // MessageConsumeContext<T> (the most common type) uses explicit interface implementations
-            // for all properties, so a direct duck cast to IConsumeContext fails for it.
-            // In that case, duck-cast to IMessageConsumeContextInner to reach the private _context
-            // field, which is a BaseConsumeContext-derived type whose properties are public and
-            // duck-cast successfully.
             var directCastSucceeded = arg.TryDuckCast<IConsumeContext>(out var consumeContext);
             if (!directCastSucceeded)
             {

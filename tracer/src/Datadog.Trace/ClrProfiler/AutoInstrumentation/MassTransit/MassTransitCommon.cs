@@ -7,9 +7,7 @@
 
 using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Reflection;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
@@ -24,13 +22,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
     internal static class MassTransitCommon
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MassTransitCommon));
-
-        // Cache of resolved PropertyInfo lookups for TryGetProperty. Keyed by (concrete type, property name).
-        // The MassTransit context type space is small and bounded, so unbounded growth is not a concern.
-        // Using a struct key instead of a value tuple because tuple syntax requires System.ValueTuple,
-        // which isn't available on .NET Framework 4.6.1.
-        private static readonly ConcurrentDictionary<PropertyCacheKey, PropertyInfo?> PropertyCache = new();
-        private static readonly Func<PropertyCacheKey, PropertyInfo?> ResolvePropertyDelegate = ResolveProperty;
 
         /// <summary>
         /// Creates a produce (send) span for an outbound message.
@@ -312,60 +303,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         }
 
         /// <summary>
-        /// Helper method to get a property value using reflection.
-        /// Used by DiagnosticObserver for properties on ConsumeContext types.
-        /// </summary>
-        /// <remarks>
-        /// Uses reflection because duck typing fails for explicit interface implementations
-        /// in MessageConsumeContext&lt;T&gt; and similar MassTransit context types.
-        /// Searches class properties first, then falls back to interface properties.
-        /// </remarks>
-        internal static T? TryGetProperty<T>(object? obj, string propertyName)
-        {
-            if (obj is null)
-            {
-                return default;
-            }
-
-            try
-            {
-                var property = PropertyCache.GetOrAdd(new PropertyCacheKey(obj.GetType(), propertyName), ResolvePropertyDelegate);
-                if (property != null && property.GetValue(obj) is T typedValue)
-                {
-                    return typedValue;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "MassTransitCommon.TryGetProperty: Failed to get property '{PropertyName}'", propertyName);
-            }
-
-            return default;
-        }
-
-        private static PropertyInfo? ResolveProperty(PropertyCacheKey key)
-        {
-            // Class-level lookup wins over interface lookup so explicit-interface implementations
-            // resolve to the concrete declared property when one exists.
-            var property = key.OwnerType.GetProperty(key.PropertyName);
-            if (property != null)
-            {
-                return property;
-            }
-
-            foreach (var iface in key.OwnerType.GetInterfaces())
-            {
-                property = iface.GetProperty(key.PropertyName);
-                if (property != null)
-                {
-                    return property;
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Resolves the message type for an inbound message from an already duck-typed consume context.
         /// Returns null when <paramref name="consumeContext"/> is null (cast failed) or
         /// <c>SupportedMessageTypes</c> is empty.
@@ -495,31 +432,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             if (entityName.StartsWith("Instance_", StringComparison.Ordinal)) { return "instance"; }
 
             return entityName;
-        }
-
-        private readonly struct PropertyCacheKey : IEquatable<PropertyCacheKey>
-        {
-            public PropertyCacheKey(Type ownerType, string propertyName)
-            {
-                OwnerType = ownerType;
-                PropertyName = propertyName;
-            }
-
-            public Type OwnerType { get; }
-
-            public string PropertyName { get; }
-
-            public bool Equals(PropertyCacheKey other) => OwnerType == other.OwnerType && PropertyName == other.PropertyName;
-
-            public override bool Equals(object? obj) => obj is PropertyCacheKey other && Equals(other);
-
-            public override int GetHashCode()
-            {
-                unchecked
-                {
-                    return (OwnerType.GetHashCode() * 397) ^ PropertyName.GetHashCode();
-                }
-            }
         }
     }
 }

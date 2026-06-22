@@ -7,7 +7,9 @@
 
 using System.Collections.Generic;
 using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -55,23 +57,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget
 
             try
             {
-                // Get the Headers property — IDictionary<string, object> on InMemoryTransportMessage
-                var headers = MassTransitCommon.TryGetProperty<IDictionary<string, object>>(instance, "Headers");
-                if (headers == null)
+                if (!instance.TryDuckCast<IInMemoryTransportMessage>(out var msg) || msg?.Headers == null)
                 {
-                    Log.Debug("InMemoryTransportMessageIntegration: Headers property not found");
+                    Log.Warning(
+                        "InMemoryTransportMessageIntegration: Duck cast failed or Headers null for InstanceType={Type}",
+                        instance.GetType().FullName);
                     return CallTargetReturn.GetDefault();
                 }
 
-                // Inject trace context into the transport message headers using a dict adapter
                 var adapter = new CarrierWithDelegate<IDictionary<string, object>>(
-                    headers,
+                    msg.Headers,
                     setter: (d, k, v) => d[k] = v);
                 var propagationContext = new PropagationContext(spanContext, Baggage.Current);
                 Tracer.Instance.TracerManager.SpanContextPropagator.Inject(propagationContext, adapter);
 
                 Log.Debug(
-                    "InMemoryTransportMessageIntegration: Injected trace context into InMemoryTransportMessage.Headers TraceId={TraceId}",
+                    "InMemoryTransportMessageIntegration: Injected trace context TraceId={TraceId}",
                     spanContext.TraceId);
             }
             catch (System.Exception ex)
