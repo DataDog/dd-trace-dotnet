@@ -438,7 +438,10 @@ public class MethodMatcherTests
             // Assert
             result.Should().BeTrue();
             ConstructorCountingAttribute.ConstructorCallCount.Should().Be(0, "state-machine resolution should inspect method attributes without instantiating them");
+            return;
         }
+
+        throw new InvalidOperationException("Test setup failed - expected async method to throw");
     }
 
     [Fact]
