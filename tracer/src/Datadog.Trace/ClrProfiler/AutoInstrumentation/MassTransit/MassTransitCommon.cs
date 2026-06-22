@@ -26,8 +26,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// <summary>
         /// Creates a produce (send) span for an outbound message.
         /// </summary>
-        internal static Scope? CreateProduceSpan(Tracer tracer, string? destinationAddress, string? messageType)
-            => CreateProducerScope(tracer, MassTransitConstants.OperationSend, MassTransitConstants.SendOperationName, destinationAddress, messageType);
+        internal static Scope? CreateProduceSpan(Tracer tracer, string? destinationAddress)
+            => CreateProducerScope(tracer, MassTransitConstants.OperationSend, MassTransitConstants.SendOperationName, destinationAddress);
 
         /// <summary>
         /// Creates a receive span for an inbound message at the transport level.
@@ -48,8 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             Tracer tracer,
             string operation,
             string operationName,
-            string? destinationAddress,
-            string? messageType)
+            string? destinationAddress)
         {
             var settings = tracer.CurrentTraceSettings.Settings;
             if (!settings.IsIntegrationEnabled(MassTransitConstants.IntegrationId))
@@ -92,12 +91,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 if (!string.IsNullOrEmpty(destinationAddress))
                 {
                     tags.DestinationAddress = destinationAddress;
-                }
-
-                // Set message type if provided
-                if (!string.IsNullOrEmpty(messageType))
-                {
-                    tags.MessageTypes = messageType;
                 }
             }
             catch (Exception ex)

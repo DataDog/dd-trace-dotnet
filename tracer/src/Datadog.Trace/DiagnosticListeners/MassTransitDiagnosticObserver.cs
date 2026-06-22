@@ -152,7 +152,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             // Extract metadata from SendContext — returns the duck-typed proxy for reuse
             var sendContextProxy = MassTransitCommon.ExtractSendContextMetadata(arg, out var destinationAddress, out var messageId, out var conversationId, out var correlationId);
-            var scope = MassTransitCommon.CreateProduceSpan(Tracer.Instance, destinationAddress, messageType: null);
+            var scope = MassTransitCommon.CreateProduceSpan(Tracer.Instance, destinationAddress);
 
             if (scope is not null)
             {
@@ -208,9 +208,9 @@ namespace Datadog.Trace.DiagnosticListeners
             if (!directCastSucceeded)
             {
                 var innerCastSucceeded = arg.TryDuckCast<IMessageConsumeContextInner>(out var inner);
-                if (innerCastSucceeded && inner?.Context != null)
+                if (innerCastSucceeded)
                 {
-                    inner.Context.TryDuckCast<IConsumeContext>(out consumeContext);
+                    consumeContext = inner?.Context;
                 }
                 else
                 {

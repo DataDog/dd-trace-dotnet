@@ -18,5 +18,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 internal interface IMessageConsumeContextInner
 {
     [DuckField(Name = "_context")]
-    object? Context { get; }
+    IConsumeContext? Context { get; }
 }
