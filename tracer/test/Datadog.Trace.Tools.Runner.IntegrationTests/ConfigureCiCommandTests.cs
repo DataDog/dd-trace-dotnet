@@ -167,6 +167,132 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        public void ConfigureCiFallsBackToOriginalTracerHomeWhenCachedTracerHomePathIsFile()
+        {
+            using var setup = ConfigureCiTestSetup.Create(output);
+            var cachedTracerHome = setup.CreateReadyCachedTracerHome();
+
+            DeleteDirectory(cachedTracerHome);
+            File.WriteAllText(cachedTracerHome, "attacker-controlled");
+
+            var environmentVariables = setup.RunConfigureCi();
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(setup.ExpectedOriginalTracerHome);
+            File.ReadAllText(cachedTracerHome).Should().Be("attacker-controlled");
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        public void ConfigureCiRebuildsCachedTracerHomeWhenCachedTracerHomeDirectoryWasPrecreated()
+        {
+            using var setup = ConfigureCiTestSetup.Create(output);
+            var cachedTracerHome = setup.CreateReadyCachedTracerHome();
+
+            DeleteDirectory(cachedTracerHome);
+            Directory.CreateDirectory(cachedTracerHome);
+            File.WriteAllText(Path.Combine(cachedTracerHome, ".dd-trace-runner-cache"), "fake-marker");
+            File.WriteAllText(Path.Combine(cachedTracerHome, "metadata.txt"), "tampered");
+
+            var environmentVariables = setup.RunConfigureCi();
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(cachedTracerHome);
+            File.ReadAllText(Path.Combine(cachedTracerHome, "metadata.txt")).Should().Be("source");
+        }
+
+        [SkippableFact]
+        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        public void ConfigureCiFallsBackToOriginalTracerHomeWhenCachedTracerHomePathIsSymbolicLink()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+            using var setup = ConfigureCiTestSetup.Create(output);
+            var cachedTracerHome = setup.CreateReadyCachedTracerHome();
+            var cacheTarget = Path.Combine(setup.TempRoot, "attacker-cache-target");
+
+            DeleteDirectory(cachedTracerHome);
+            Directory.CreateDirectory(cacheTarget);
+            SetDirectoryMode(cacheTarget, "700");
+            RunProcess("ln", "-s", cacheTarget, cachedTracerHome);
+
+            var environmentVariables = setup.RunConfigureCi();
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(setup.ExpectedOriginalTracerHome);
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        public void ConfigureCiFallsBackToOriginalTracerHomeWhenCacheLockPathIsDirectory()
+        {
+            using var setup = ConfigureCiTestSetup.Create(output);
+            var cachedTracerHome = setup.CreateReadyCachedTracerHome();
+            var lockPath = cachedTracerHome + ".lock";
+
+            DeleteFile(lockPath);
+            Directory.CreateDirectory(lockPath);
+
+            var environmentVariables = setup.RunConfigureCi();
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(setup.ExpectedOriginalTracerHome);
+        }
+
+        [SkippableFact]
+        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        public void ConfigureCiFallsBackToOriginalTracerHomeWhenCacheLockPathIsSymbolicLink()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+            using var setup = ConfigureCiTestSetup.Create(output);
+            var cachedTracerHome = setup.CreateReadyCachedTracerHome();
+            var lockPath = cachedTracerHome + ".lock";
+            var lockTarget = Path.Combine(setup.TempRoot, "attacker-lock");
+
+            DeleteFile(lockPath);
+            File.WriteAllText(lockTarget, "attacker-controlled");
+            RunProcess("ln", "-s", lockTarget, lockPath);
+
+            var environmentVariables = setup.RunConfigureCi();
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(setup.ExpectedOriginalTracerHome);
+        }
+
+        [SkippableFact]
+        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        public void ConfigureCiFallsBackToOriginalTracerHomeWhenSourceTracerHomeContainsSymbolicLink()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+            using var setup = ConfigureCiTestSetup.Create(output);
+            setup.CreateTrustedCacheHome();
+            setup.UseCacheHome();
+            setup.CreateTracerHome();
+
+            var sourceMetadata = Path.Combine(setup.TracerHome, "metadata.txt");
+            var symlinkTarget = Path.Combine(setup.TempRoot, "attacker-metadata.txt");
+            File.WriteAllText(symlinkTarget, "attacker-controlled");
+            File.Delete(sourceMetadata);
+            RunProcess("ln", "-s", symlinkTarget, sourceMetadata);
+
+            var environmentVariables = setup.RunConfigureCi();
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(setup.ExpectedOriginalTracerHome);
+        }
+
+        [SkippableTheory]
+        [Trait("RunOnWindows", "True")]
+        [InlineData(".dd-trace-runner-cache")]
+        [InlineData(".dd-trace-runner-cache.integrity")]
+        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        public void ConfigureCiFallsBackToOriginalTracerHomeWhenSourceTracerHomeContainsReservedCacheMetadata(string reservedFileName)
+        {
+            using var setup = ConfigureCiTestSetup.Create(output);
+            setup.CreateTrustedCacheHome();
+            setup.UseCacheHome();
+            setup.CreateTracerHome();
+            File.WriteAllText(Path.Combine(setup.TracerHome, reservedFileName), "reserved");
+
+            var environmentVariables = setup.RunConfigureCi();
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(setup.ExpectedOriginalTracerHome);
+        }
+
+        [SkippableFact]
         [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiCreatesPrivateCachedTracerHomeOnPosix()
         {
@@ -501,6 +627,14 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
         }
 
+        private static void DeleteFile(string path)
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+
         private static Dictionary<string, string> SetStaleRunScopedBackfillEnvironment()
         {
             var originalEnvironment = new Dictionary<string, string>();
@@ -546,6 +680,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             public string FixedTempTracerHome => Path.GetFullPath(Path.Combine(TempRoot, "dd"));
 
+            public string ExpectedOriginalTracerHome => Path.GetFullPath(TracerHome);
+
             public string ExpectedCacheRoot => Path.GetFullPath(Path.Combine(CacheHome, "Datadog", "dd-trace", "runner", "tracer-home")) + Path.DirectorySeparatorChar;
 
             public static ConfigureCiTestSetup Create(ITestOutputHelper output, string cacheDirectoryName = "cache")
@@ -570,6 +706,14 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 EnvironmentHelpers.SetEnvironmentVariable("TMP", TempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("TEMP", TempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", CacheHome);
+            }
+
+            public string CreateReadyCachedTracerHome()
+            {
+                CreateTrustedCacheHome();
+                UseCacheHome();
+                CreateTracerHome();
+                return RunConfigureCi()["DD_DOTNET_TRACER_HOME"];
             }
 
             public Dictionary<string, string> RunConfigureCi()
