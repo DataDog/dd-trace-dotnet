@@ -15,7 +15,7 @@ namespace Datadog.Trace.Debugger.Helpers
         public static bool CanReadStaticMember(MemberInfo memberInfo)
         {
             var declaringType = memberInfo.DeclaringType;
-            return declaringType?.TypeInitializer is null;
+            return declaringType is { TypeInitializer: null };
         }
 
         public static object? GetRawConstantValue(FieldInfo field)
