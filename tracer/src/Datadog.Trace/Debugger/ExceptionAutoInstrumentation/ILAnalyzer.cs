@@ -7,7 +7,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 
 #if NETCOREAPP
@@ -25,30 +24,6 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal static class ILAnalyzer
     {
-        private static readonly OpCode[] SingleByteOpCodes = new OpCode[0x100];
-        private static readonly OpCode[] MultiByteOpCodes = new OpCode[0x100];
-
-        static ILAnalyzer()
-        {
-            foreach (var field in typeof(OpCodes).GetFields(BindingFlags.Public | BindingFlags.Static))
-            {
-                if (field.GetValue(null) is not OpCode opCode)
-                {
-                    continue;
-                }
-
-                var value = unchecked((ushort)opCode.Value);
-                if (value < 0x100)
-                {
-                    SingleByteOpCodes[value] = opCode;
-                }
-                else if ((value & 0xFF00) == 0xFE00)
-                {
-                    MultiByteOpCodes[value & 0xFF] = opCode;
-                }
-            }
-        }
-
         public static bool HasDirectCallTo(MethodBase method, Type targetType, string methodName)
         {
             try
@@ -116,7 +91,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
 
                 // Check for call instructions
-                if (opcode == OpCodes.Call.Value || opcode == OpCodes.Callvirt.Value)
+                if (opcode == 0x28 || opcode == 0x6F)
                 {
                     if (position + 3 >= il.Length)
                     {
@@ -208,8 +183,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                                IsTargetType(reader, memberReference.Parent, targetType);
 
                     case HandleKind.MethodSpecification:
-                        var methodSpecification = reader.GetMethodSpecification((MethodSpecificationHandle)handle);
-                        return IsMethodHandleMatch(reader, methodSpecification.Method, targetType, methodName);
+                        return false;
                 }
             }
             catch
@@ -273,25 +247,61 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         private static int GetOperandSize(int opcode, byte[] il, int position)
         {
-            var opCode = GetOpCode(opcode);
-            switch (opCode.OperandType)
+            switch (opcode)
             {
-                case OperandType.InlineBrTarget:
-                case OperandType.InlineField:
-                case OperandType.InlineI:
-                case OperandType.InlineMethod:
-                case OperandType.InlineSig:
-                case OperandType.InlineString:
-                case OperandType.InlineTok:
-                case OperandType.InlineType:
-                case OperandType.ShortInlineR:
+                case 0x20: // ldc.i4
+                case 0x22: // ldc.r4
+                case 0x27: // jmp
+                case 0x29: // calli
+                case 0x38: // br
+                case 0x39: // brfalse
+                case 0x3A: // brtrue
+                case 0x3B: // beq
+                case 0x3C: // bge
+                case 0x3D: // bgt
+                case 0x3E: // ble
+                case 0x3F: // blt
+                case 0x40: // bne.un
+                case 0x41: // bge.un
+                case 0x42: // bgt.un
+                case 0x43: // ble.un
+                case 0x44: // blt.un
+                case 0x70: // cpobj
+                case 0x71: // ldobj
+                case 0x72: // ldstr
+                case 0x73: // newobj
+                case 0x74: // castclass
+                case 0x75: // isinst
+                case 0x79: // unbox
+                case 0x7B: // ldfld
+                case 0x7C: // ldflda
+                case 0x7D: // stfld
+                case 0x7E: // ldsfld
+                case 0x7F: // ldsflda
+                case 0x80: // stsfld
+                case 0x81: // stobj
+                case 0x8C: // box
+                case 0x8D: // newarr
+                case 0x8F: // ldelema
+                case 0xA3: // ldelem
+                case 0xA4: // stelem
+                case 0xA5: // unbox.any
+                case 0xC2: // refanyval
+                case 0xC6: // mkrefany
+                case 0xD0: // ldtoken
+                case 0xDD: // leave
+                case 0xFE06: // ldftn
+                case 0xFE07: // ldvirtftn
+                case 0xFE15: // initobj
+                case 0xFE16: // constrained
+                case 0xFE1C: // sizeof
                     return 4;
 
-                case OperandType.InlineI8:
-                case OperandType.InlineR:
+                case 0x21: // ldc.i8
+                case 0x23: // ldc.r8
                     return 8;
 
-                case OperandType.InlineSwitch:
+                case 0x45: // switch
                     if (position + 3 >= il.Length)
                     {
                         return il.Length - position;
@@ -308,22 +318,41 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
                     return 4 + (count * 4);
 
-                case OperandType.InlineVar:
+                case 0xFE09: // ldarg
+                case 0xFE0A: // ldarga
+                case 0xFE0B: // starg
+                case 0xFE0C: // ldloc
+                case 0xFE0D: // ldloca
+                case 0xFE0E: // stloc
                     return 2;
 
-                case OperandType.ShortInlineBrTarget:
-                case OperandType.ShortInlineI:
-                case OperandType.ShortInlineVar:
+                case 0x0F: // ldarg.s
+                case 0x10: // ldarga.s
+                case 0x11: // starg.s
+                case 0x12: // ldloc.s
+                case 0x13: // ldloca.s
+                case 0x14: // stloc.s
+                case 0x1F: // ldc.i4.s
+                case 0x2B: // br.s
+                case 0x2C: // brfalse.s
+                case 0x2D: // brtrue.s
+                case 0x2E: // beq.s
+                case 0x2F: // bge.s
+                case 0x30: // bgt.s
+                case 0x31: // ble.s
+                case 0x32: // blt.s
+                case 0x33: // bne.un.s
+                case 0x34: // bge.un.s
+                case 0x35: // bgt.un.s
+                case 0x36: // ble.un.s
+                case 0x37: // blt.un.s
+                case 0xDE: // leave.s
+                case 0xFE12: // unaligned
                     return 1;
 
                 default:
                     return 0;
             }
-        }
-
-        private static OpCode GetOpCode(int opcode)
-        {
-            return opcode > 0xFF ? MultiByteOpCodes[opcode & 0xFF] : SingleByteOpCodes[opcode];
         }
     }
 }
