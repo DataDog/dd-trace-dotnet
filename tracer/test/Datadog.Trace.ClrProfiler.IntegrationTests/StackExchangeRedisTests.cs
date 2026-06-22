@@ -41,6 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             V2_0_495, // First 2.0 version with many breaking changes
             V2_0_571, // Switches to UNLINK (instead of DEL)
             Latest, // Uses different call stacks
+            V3_0_0, // ECHO/SLOWLOG/TIME are no longer database-scoped, so don't report db.redis.database_index
             // ReSharper restore InconsistentNaming
         }
 
@@ -128,6 +129,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var version = new Version(packageVersionString);
             return version switch
             {
+                _ when version >= new Version(3, 0, 0) => PackageVersion.V3_0_0,
                 _ when version >= new Version(2, 6, 45) => PackageVersion.Latest,
                 _ when version >= new Version(2, 0, 571) => PackageVersion.V2_0_571,
                 _ when version >= new Version(2, 0, 495) => PackageVersion.V2_0_495,
