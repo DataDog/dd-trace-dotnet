@@ -8,6 +8,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.IO.Compression;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -15,6 +18,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
@@ -47,6 +51,7 @@ internal sealed class FlagEvaluationApi : IDisposable
     internal const int GlobalCap = 131_072;
     internal const int PerFlagCap = EvalScalePerFlagBucketTarget;
     internal const int DegradedCap = 32_768;
+    internal const int EvpPayloadSizeLimit = 5 * 1024 * 1024;
 
     /// <summary>
     /// Bounds the async hand-off queue between the (hot-path) Enqueue call and the background
@@ -324,6 +329,12 @@ internal sealed class FlagEvaluationApi : IDisposable
     internal static string SerializeForTest(FlagEvaluationsRequest request) =>
         Util.Json.JsonHelper.SerializeObject(request, SerializerSettings);
 
+    internal static List<byte[]> BuildPayloadBytesForTest(FlagEvaluationsRequest request, int payloadSizeLimit) =>
+        BuildPayloadBytes(request, payloadSizeLimit);
+
+    internal static FlagEvaluationsRequest DeserializeForTest(string json) =>
+        Util.Json.JsonHelper.DeserializeObject<FlagEvaluationsRequest>(json, SerializerSettings)!;
+
     private void TryToStartSendLoopIfNotStarted()
     {
         if (Interlocked.CompareExchange(ref _started, 1, 0) != 0)
@@ -396,8 +407,13 @@ internal sealed class FlagEvaluationApi : IDisposable
                 return false;
             }
 
-            var request = apiRequestFactory.Create(uri);
-            using var response = await request.PostAsJsonAsync(payload, MultipartCompression.GZip, SerializerSettings).ConfigureAwait(false);
+            foreach (var payloadBytes in BuildPayloadBytes(payload, EvpPayloadSizeLimit))
+            {
+                var request = apiRequestFactory.Create(uri);
+                var compressedPayload = GZip(payloadBytes);
+                using var response = await request.PostAsync(new ArraySegment<byte>(compressedPayload), MimeTypes.Json, "gzip").ConfigureAwait(false);
+            }
+
             return true;
         }
         catch (Exception ex)
@@ -413,5 +429,135 @@ internal sealed class FlagEvaluationApi : IDisposable
         {
             Log.Warning<long>("FlagEvaluationApi: evaluation queue full — dropped {Dropped} evaluation(s) under backpressure (best-effort telemetry)", droppedBackpressure);
         }
+    }
+
+    private static List<byte[]> BuildPayloadBytes(FlagEvaluationsRequest request, int payloadSizeLimit)
+    {
+        var contextJson = Util.Json.JsonHelper.SerializeObject(request.Context, SerializerSettings);
+        var payloadPrefix = $"{{\"context\":{contextJson},\"flagEvaluations\":[";
+        const string PayloadSuffix = "]}";
+        var basePayloadSize = EncodingHelpers.Utf8NoBom.GetByteCount(payloadPrefix) + EncodingHelpers.Utf8NoBom.GetByteCount(PayloadSuffix);
+        var payloads = new List<byte[]>();
+        var batch = new List<EncodedEvent>();
+        var batchSize = basePayloadSize;
+        var droppedOversized = 0;
+
+        foreach (var ev in request.FlagEvaluations)
+        {
+            var encodedEvent = EncodeEvent(ev);
+            if (!SingleEventFits(basePayloadSize, encodedEvent.SizeBytes, payloadSizeLimit))
+            {
+                var degraded = DegradeForPayloadLimit(ev);
+                if (degraded is null)
+                {
+                    droppedOversized++;
+                    continue;
+                }
+
+                encodedEvent = EncodeEvent(degraded);
+                if (!SingleEventFits(basePayloadSize, encodedEvent.SizeBytes, payloadSizeLimit))
+                {
+                    droppedOversized++;
+                    continue;
+                }
+            }
+
+            var separatorSize = batch.Count > 0 ? 1 : 0;
+            if (batchSize + separatorSize + encodedEvent.SizeBytes > payloadSizeLimit && batch.Count > 0)
+            {
+                payloads.Add(BuildPayloadBytes(payloadPrefix, PayloadSuffix, batch));
+                batch.Clear();
+                batchSize = basePayloadSize;
+            }
+
+            separatorSize = batch.Count > 0 ? 1 : 0;
+            batchSize += separatorSize + encodedEvent.SizeBytes;
+            batch.Add(encodedEvent);
+        }
+
+        if (batch.Count > 0)
+        {
+            payloads.Add(BuildPayloadBytes(payloadPrefix, PayloadSuffix, batch));
+        }
+
+        if (droppedOversized > 0)
+        {
+            Log.Warning<int>("FlagEvaluationApi: dropped {Dropped} oversized flag evaluation event(s) after payload-limit degradation (best-effort telemetry)", droppedOversized);
+        }
+
+        return payloads;
+    }
+
+    private static EncodedEvent EncodeEvent(FlagEvaluationEvent ev)
+    {
+        var json = Util.Json.JsonHelper.SerializeObject(ev, SerializerSettings);
+        return new EncodedEvent(json, EncodingHelpers.Utf8NoBom.GetByteCount(json));
+    }
+
+    private static bool SingleEventFits(int basePayloadSize, int eventSize, int payloadSizeLimit) =>
+        basePayloadSize + eventSize <= payloadSizeLimit;
+
+    private static byte[] BuildPayloadBytes(string payloadPrefix, string payloadSuffix, List<EncodedEvent> events)
+    {
+        var builder = new StringBuilder(payloadPrefix);
+        for (int i = 0; i < events.Count; i++)
+        {
+            if (i > 0)
+            {
+                builder.Append(',');
+            }
+
+            builder.Append(events[i].Json);
+        }
+
+        builder.Append(payloadSuffix);
+        return EncodingHelpers.Utf8NoBom.GetBytes(builder.ToString());
+    }
+
+    private static FlagEvaluationEvent? DegradeForPayloadLimit(FlagEvaluationEvent ev)
+    {
+        if (ev.TargetingKey is null && ev.Context is null)
+        {
+            return null;
+        }
+
+        return new FlagEvaluationEvent
+        {
+            Timestamp = ev.Timestamp,
+            Flag = ev.Flag,
+            FirstEvaluation = ev.FirstEvaluation,
+            LastEvaluation = ev.LastEvaluation,
+            EvaluationCount = ev.EvaluationCount,
+            RuntimeDefaultUsed = ev.RuntimeDefaultUsed,
+            Variant = ev.Variant,
+            Allocation = ev.Allocation,
+            Error = ev.Error,
+            TargetingKey = null,
+            Context = null,
+        };
+    }
+
+    private static byte[] GZip(byte[] bytes)
+    {
+        using var output = new MemoryStream();
+        using (var gzip = new GZipStream(output, CompressionMode.Compress, leaveOpen: true))
+        {
+            gzip.Write(bytes, 0, bytes.Length);
+        }
+
+        return output.ToArray();
+    }
+
+    private readonly struct EncodedEvent
+    {
+        public EncodedEvent(string json, int sizeBytes)
+        {
+            Json = json;
+            SizeBytes = sizeBytes;
+        }
+
+        public string Json { get; }
+
+        public int SizeBytes { get; }
     }
 }

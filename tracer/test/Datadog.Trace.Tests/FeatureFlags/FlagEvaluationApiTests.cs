@@ -8,14 +8,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Moq;
@@ -344,6 +345,7 @@ public class FlagEvaluationApiTests
         FlagEvaluationApi.GlobalCap.Should().Be(131_072);
         FlagEvaluationApi.PerFlagCap.Should().Be(10_000);
         FlagEvaluationApi.DegradedCap.Should().Be(32_768);
+        FlagEvaluationApi.EvpPayloadSizeLimit.Should().Be(5 * 1024 * 1024);
     }
 
     [Fact]
@@ -412,6 +414,71 @@ public class FlagEvaluationApiTests
         FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0");
         FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")
             .Should().BeNull("the aggregator is drained by BuildPayload");
+    }
+
+    // -------------------------------------------------------------------------
+    // EVP payload byte limit — split before POST, degrade per-event fallback
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public void BuildPayloadBytes_SplitsByEncodedByteLimit()
+    {
+        var context = new Dictionary<string, object?> { ["blob"] = new string('x', 100) };
+        var events = new[]
+        {
+            NewPayloadEvent("flag-a", context: context),
+            NewPayloadEvent("flag-b", context: context),
+            NewPayloadEvent("flag-c", context: context),
+        };
+        var singleEventLimit = FlagEvaluationApi.BuildPayloadBytesForTest(NewRequest(events[0]), int.MaxValue)
+                                                 .Single()
+                                                 .Length;
+
+        var payloads = FlagEvaluationApi.BuildPayloadBytesForTest(NewRequest(events), singleEventLimit);
+
+        payloads.Should().HaveCount(3);
+        payloads.Should().OnlyContain(payload => payload.Length <= singleEventLimit);
+        payloads.Select(DeserializePayloadBytes)
+                .Should()
+                .OnlyContain(payload => payload.FlagEvaluations.Count == 1);
+    }
+
+    [Fact]
+    public void BuildPayloadBytes_DegradesOversizedFullEventBeforeDrop()
+    {
+        var fullEvent = NewPayloadEvent(
+            "flag-a",
+            targetingKey: "customer-1",
+            context: new Dictionary<string, object?> { ["blob"] = new string('x', 1_024) });
+        var degradedLimit = FlagEvaluationApi.BuildPayloadBytesForTest(NewRequest(NewPayloadEvent("flag-a", targetingKey: null, context: null)), int.MaxValue)
+                                             .Single()
+                                             .Length;
+
+        FlagEvaluationApi.BuildPayloadBytesForTest(NewRequest(fullEvent), int.MaxValue)
+                         .Single()
+                         .Length
+                         .Should()
+                         .BeGreaterThan(degradedLimit);
+
+        var payloads = FlagEvaluationApi.BuildPayloadBytesForTest(NewRequest(fullEvent), degradedLimit);
+
+        payloads.Should().ContainSingle().Which.Length.Should().BeLessOrEqualTo(degradedLimit);
+        var ev = (JObject)JObject.Parse(Encoding.UTF8.GetString(payloads.Single()))["flagEvaluations"]![0]!;
+        ev.ContainsKey("targeting_key").Should().BeFalse("payload-limit degradation omits customer targeting data before dropping the event");
+        ev.ContainsKey("context").Should().BeFalse("payload-limit degradation omits customer context before dropping the event");
+        ev["flag"]!["key"]!.Value<string>().Should().Be("flag-a");
+        ev["variant"]!["key"]!.Value<string>().Should().Be("on");
+        ev["allocation"]!["key"]!.Value<string>().Should().Be("alloc-a");
+    }
+
+    [Fact]
+    public void BuildPayloadBytes_DropsOversizedDegradedEvent()
+    {
+        var oversizedDegradedEvent = NewPayloadEvent(new string('f', 256), targetingKey: null, context: null);
+
+        var payloads = FlagEvaluationApi.BuildPayloadBytesForTest(NewRequest(oversizedDegradedEvent), payloadSizeLimit: 128);
+
+        payloads.Should().BeEmpty("an already-degraded event that still cannot fit in one EVP payload is dropped");
     }
 
     // -------------------------------------------------------------------------
@@ -687,6 +754,8 @@ public class FlagEvaluationApiTests
         sent.Should().BeTrue();
         capture.LastPayload.Should().NotBeNull();
         capture.LastPayload!.FlagEvaluations.Should().HaveCount(2);
+        capture.ContentTypes.Should().ContainSingle().Which.Should().Be(MimeTypes.Json);
+        capture.ContentEncodings.Should().ContainSingle().Which.Should().Be("gzip");
     }
 
     /// <summary>
@@ -702,8 +771,8 @@ public class FlagEvaluationApiTests
 
         var requestMock = new Mock<IApiRequest>();
         requestMock
-            .Setup(x => x.PostAsJsonAsync(It.IsAny<FlagEvaluationsRequest>(), It.IsAny<MultipartCompression>(), It.IsAny<JsonSerializerSettings>()))
-            .Callback<FlagEvaluationsRequest, MultipartCompression, JsonSerializerSettings>((payload, compression, settings) => localCapture.LastPayload = payload)
+            .Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<string>(), It.IsAny<string>()))
+            .Callback<ArraySegment<byte>, string, string>((payload, contentType, contentEncoding) => localCapture.Add(payload, contentType, contentEncoding))
             .ReturnsAsync(responseMock.Object);
 
         var factoryMock = new Mock<IApiRequestFactory>();
@@ -713,6 +782,42 @@ public class FlagEvaluationApiTests
         capture = localCapture;
         return new FlagEvaluationApi(factoryMock.Object, service: "svc", env: "prod", version: "1.0");
     }
+
+    private static FlagEvaluationsRequest NewRequest(params FlagEvaluationEvent[] events)
+    {
+        return new FlagEvaluationsRequest
+        {
+            Context = new FlagEvalDDContext
+            {
+                Service = "svc",
+                Env = "prod",
+                Version = "1.0"
+            },
+            FlagEvaluations = events.ToList()
+        };
+    }
+
+    private static FlagEvaluationEvent NewPayloadEvent(
+        string flagKey,
+        string? targetingKey = "user-1",
+        Dictionary<string, object?>? context = null)
+    {
+        return new FlagEvaluationEvent
+        {
+            Timestamp = SchemaValidTimestampMs,
+            Flag = new FlagEvalFlag { Key = flagKey },
+            FirstEvaluation = SchemaValidTimestampMs,
+            LastEvaluation = SchemaValidTimestampMs,
+            EvaluationCount = 1,
+            Variant = new FlagEvalVariant { Key = "on" },
+            Allocation = new FlagEvalAllocation { Key = "alloc-a" },
+            TargetingKey = targetingKey,
+            Context = context is null ? null : new FlagEvalEventContext { Evaluation = context }
+        };
+    }
+
+    private static FlagEvaluationsRequest DeserializePayloadBytes(byte[] bytes) =>
+        FlagEvaluationApi.DeserializeForTest(Encoding.UTF8.GetString(bytes));
 
     private static void AssertValidAgainstWorkerSchema(JObject json)
     {
@@ -811,6 +916,35 @@ public class FlagEvaluationApiTests
 
     private sealed class PayloadCapture
     {
-        public FlagEvaluationsRequest? LastPayload { get; set; }
+        public List<FlagEvaluationsRequest> Payloads { get; } = new();
+
+        public List<string> ContentTypes { get; } = new();
+
+        public List<string?> ContentEncodings { get; } = new();
+
+        public FlagEvaluationsRequest? LastPayload => Payloads.LastOrDefault();
+
+        public void Add(ArraySegment<byte> bytes, string contentType, string? contentEncoding)
+        {
+            ContentTypes.Add(contentType);
+            ContentEncodings.Add(contentEncoding);
+
+            var payloadBytes = bytes.ToArray();
+            if (contentEncoding == "gzip")
+            {
+                payloadBytes = DecompressGzip(payloadBytes);
+            }
+
+            Payloads.Add(DeserializePayloadBytes(payloadBytes));
+        }
+
+        private static byte[] DecompressGzip(byte[] bytes)
+        {
+            using var input = new MemoryStream(bytes);
+            using var gzip = new GZipStream(input, CompressionMode.Decompress);
+            using var output = new MemoryStream();
+            gzip.CopyTo(output);
+            return output.ToArray();
+        }
     }
 }
