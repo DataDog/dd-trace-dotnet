@@ -137,6 +137,7 @@ namespace Datadog.Trace.Agent
 
             // Reset the per-field admission sets so each flush window admits a fresh set of distinct values.
             CardinalityLimiter.Reset();
+            CardinalityReporter.Reset();
 
             // Align to 10-second boundary to match the Go tracer's alignTs: ts - ts % bucketSize
             var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
