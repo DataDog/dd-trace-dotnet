@@ -40,6 +40,7 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("Grpc.Net.Client,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Hangfire.Core,", StringComparison.Ordinal)
             || assemblyName.StartsWith("HotChocolate.Execution,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("HotChocolate.Types,", StringComparison.Ordinal)
             || assemblyName.StartsWith("log4net,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MongoDB.Driver,", StringComparison.Ordinal)
             || assemblyName.StartsWith("MongoDB.Driver.Core,", StringComparison.Ordinal)
@@ -414,6 +415,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationV13"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationV14"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationV14"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtraV16"
                     => Datadog.Trace.Configuration.IntegrationId.HotChocolate,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler.CurlHandlerIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerSyncIntegration"
