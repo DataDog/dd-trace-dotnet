@@ -70,12 +70,7 @@ namespace Datadog.Trace.FeatureFlags
                     return new Evaluation(
                         flagKey,
                         defaultValue,
-                        EvaluationReason.Error,
-                        error: "FLAG_NOT_FOUND",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "FLAG_NOT_FOUND"
-                        });
+                        EvaluationReason.Default);
                 }
 
                 if (flag.Enabled != true)
@@ -153,12 +148,11 @@ namespace Datadog.Trace.FeatureFlags
                             if (allShardsMatch)
                             {
                                 // Determine reason based on how the flag was resolved.
-                                // Per the FFE spec, SPLIT takes precedence over TARGETING_MATCH:
-                                // - Split: Resolved via percentage split (shards present)
-                                // - TargetingMatch: Allocation had targeting rules that matched (no shards)
+                                // - TargetingMatch: Allocation had targeting rules that matched
+                                // - Split: Resolved via percentage split without targeting rules
                                 // - Static: No rules, no shards - simple static value
-                                var reason = hadShards ? EvaluationReason.Split
-                                           : hadRules ? EvaluationReason.TargetingMatch
+                                var reason = hadRules ? EvaluationReason.TargetingMatch
+                                           : hadShards ? EvaluationReason.Split
                                            : EvaluationReason.Static;
 
                                 return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, reason, now, context);
@@ -429,12 +423,7 @@ namespace Datadog.Trace.FeatureFlags
             // Special case "id": if not present, use targeting key
             if (name == "id" && !context.Attributes.ContainsKey(name))
             {
-                if (StringUtil.IsNullOrEmpty(context.TargetingKey))
-                {
-                    throw new MissingTargetingKeyException();
-                }
-
-                return context.TargetingKey;
+                return StringUtil.IsNullOrEmpty(context.TargetingKey) ? null : context.TargetingKey;
             }
 
             return context.GetAttribute(name);

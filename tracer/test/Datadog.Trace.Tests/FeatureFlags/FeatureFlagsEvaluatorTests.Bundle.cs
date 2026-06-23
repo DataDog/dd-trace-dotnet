@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing.Text;
+using System.Linq;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
@@ -26,6 +27,25 @@ public partial class FeatureFlagsEvaluatorTests
     public static List<object[]> TestData = GetTestData();
     internal static ServerConfiguration _config = ReadConfig();
 #pragma warning restore SA1401 // Fields should be private
+
+    public enum CanonicalEvaluationReason
+    {
+        DEFAULT,
+
+        STATIC,
+
+        TARGETING_MATCH,
+
+        SPLIT,
+
+        DISABLED,
+
+        CACHED,
+
+        UNKNOWN,
+
+        ERROR
+    }
 
     [SkippableTheory]
     [MemberData(nameof(TestData))]
@@ -49,7 +69,12 @@ public partial class FeatureFlagsEvaluatorTests
         }
 
         AssertEqual(testCase.Result.Value, result.Value);
-        AssertEqual(testCase.Result.Variant, result.Variant);
+        if (testCase.Result.Variant is not null)
+        {
+            AssertEqual(testCase.Result.Variant, result.Variant);
+        }
+
+        Assert.Equal(testCase.Result.Reason, ToCanonicalReason(result.Reason));
 
         Assert.NotNull(description);
 
@@ -66,9 +91,9 @@ public partial class FeatureFlagsEvaluatorTests
             else if (type == Trace.FeatureFlags.ValueType.Json)
             {
                 // Normalize BCL structure and Expected Json
-                var jsonTxt = JToken.Parse(JsonConvert.SerializeObject(obj)).ToString();
-                var expectedTxt = expected?.ToString();
-                Assert.Equal<object>(expectedTxt, jsonTxt);
+                var actualJson = JToken.Parse(JsonConvert.SerializeObject(obj));
+                var expectedJson = JToken.Parse(expected?.ToString() ?? "null");
+                Assert.True(JToken.DeepEquals(expectedJson, actualJson), $"Expected {expectedJson}, got {actualJson}");
             }
             else
             {
@@ -93,9 +118,9 @@ public partial class FeatureFlagsEvaluatorTests
     private static ServerConfiguration ReadConfig()
     {
         // Read config
-        var configContent = ResourceHelper.ReadAllText<FeatureFlagsEvaluatorTests>("resources.config.flags-v1.json");
+        var configContent = ResourceHelper.ReadAllText<FeatureFlagsEvaluatorTests>("ffe_system_test_data.ufc-config.json");
         var fullObject = JObject.Parse(configContent);
-        var dataToken = fullObject.SelectToken("data.attributes.flags");
+        var dataToken = fullObject.SelectToken("flags");
         var flags = dataToken?.ToObject<Dictionary<string, Flag>>();
         Assert.NotNull(flags);
 
@@ -145,11 +170,9 @@ public partial class FeatureFlagsEvaluatorTests
 
     private static List<object[]> GetTestData()
     {
-        // This file should regularly be updated from here https://github.com/DataDog/experimental/blob/main/teams/asm/iast/redaction/suite/evidence-redaction-suite.yml
-
         List<object[]> testData = new List<object[]>();
 
-        foreach (var file in ResourceHelper.EnumFiles<FeatureFlagsEvaluatorTests>("resources.data"))
+        foreach (var file in ResourceHelper.EnumFiles<FeatureFlagsEvaluatorTests>("ffe_system_test_data.evaluation_cases").OrderBy(static file => file.Key))
         {
             var testCases = JsonConvert.DeserializeObject<List<TestCase>>(file.Value);
             foreach (var testCase in testCases!)
@@ -158,7 +181,24 @@ public partial class FeatureFlagsEvaluatorTests
             }
         }
 
+        Assert.NotEmpty(testData);
         return testData;
+    }
+
+    private static CanonicalEvaluationReason ToCanonicalReason(EvaluationReason reason)
+    {
+        return reason switch
+        {
+            EvaluationReason.Default => CanonicalEvaluationReason.DEFAULT,
+            EvaluationReason.Static => CanonicalEvaluationReason.STATIC,
+            EvaluationReason.TargetingMatch => CanonicalEvaluationReason.TARGETING_MATCH,
+            EvaluationReason.Split => CanonicalEvaluationReason.SPLIT,
+            EvaluationReason.Disabled => CanonicalEvaluationReason.DISABLED,
+            EvaluationReason.Cached => CanonicalEvaluationReason.CACHED,
+            EvaluationReason.Unknown => CanonicalEvaluationReason.UNKNOWN,
+            EvaluationReason.Error => CanonicalEvaluationReason.ERROR,
+            _ => throw new NotImplementedException(),
+        };
     }
 
     public class TestCase
@@ -179,7 +219,7 @@ public partial class FeatureFlagsEvaluatorTests
         {
             public object? Value { get; set; }
 
-            public EvaluationReason Reason { get; set; }
+            public CanonicalEvaluationReason Reason { get; set; }
 
             public string? Variant { get; set; }
 
