@@ -20,7 +20,7 @@ namespace Benchmarks.Trace
 {
     /// <summary>
     /// Hot-path cost of EVP flag-evaluation recording. Mirrors the work the OpenFeature
-    /// <c>FlagEvalLoggingHook.FinallyAsync</c> charges the evaluating thread: a cheap bounded enqueue.
+    /// <c>FlagEvalEVPHook.FinallyAsync</c> charges the evaluating thread: a cheap bounded enqueue.
     /// Also measures the off-thread aggregation cost (enqueue + drain into the two-tier aggregator)
     /// so the design's "cheap capture, deferred aggregation" split is visible in ns/op + allocs.
     /// </summary>

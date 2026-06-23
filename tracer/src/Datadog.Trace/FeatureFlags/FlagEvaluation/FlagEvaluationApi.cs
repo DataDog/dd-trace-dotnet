@@ -158,7 +158,7 @@ internal sealed class FlagEvaluationApi : IDisposable
 
     /// <summary>
     /// Non-blocking enqueue of one evaluation event. This is the ONLY method called from the
-    /// hot-path FlagEvalLoggingHook.FinallyAsync: it does a cheap bounded ConcurrentQueue offer and
+    /// hot-path FlagEvalEVPHook.FinallyAsync: it does a cheap bounded ConcurrentQueue offer and
     /// nothing else. Canonical-key/aggregation run later on the background send loop
     /// (see <see cref="DrainQueueIntoAggregator"/>), off the evaluation thread. When the queue
     /// is at capacity the event is dropped and counted (observable, never blocks the evaluation).
