@@ -132,6 +132,8 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
             if (StringUtil.IsNullOrEmpty(module.FullyQualifiedName) || !File.Exists(module.FullyQualifiedName))
             {
+                // Avoid falling back to Module.ResolveMethod here. Runtime token resolution can trigger assembly loading
+                // side effects, so non-file-backed modules are treated as unanalyzable instead.
                 return false;
             }
 
@@ -326,12 +328,12 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 case 0xFE0E: // stloc
                     return 2;
 
-                case 0x0F: // ldarg.s
-                case 0x10: // ldarga.s
-                case 0x11: // starg.s
-                case 0x12: // ldloc.s
-                case 0x13: // ldloca.s
-                case 0x14: // stloc.s
+                case 0x0E: // ldarg.s
+                case 0x0F: // ldarga.s
+                case 0x10: // starg.s
+                case 0x11: // ldloc.s
+                case 0x12: // ldloca.s
+                case 0x13: // stloc.s
                 case 0x1F: // ldc.i4.s
                 case 0x2B: // br.s
                 case 0x2C: // brfalse.s

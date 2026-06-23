@@ -100,6 +100,48 @@ public class ILAnalyzerTests
     }
 
     [Fact]
+    public void HasDirectCallTo_LdNullBeforeTargetCall_ReturnsTrue()
+    {
+        var assemblyName = "ILAnalyzerLdNull_" + Guid.NewGuid().ToString("N");
+        var targetPath = Path.Combine(Path.GetTempPath(), assemblyName + ".dll");
+
+        try
+        {
+            var targetSource = """
+                               namespace GeneratedTarget
+                               {
+                                   public class TargetType
+                                   {
+                                       public void ContainsNullArgumentCall()
+                                       {
+                                           Target(null);
+                                       }
+
+                                       private static void Target(object value)
+                                       {
+                                       }
+                                   }
+                               }
+                               """;
+
+            EmitAssembly(targetPath, assemblyName, targetSource);
+
+            var targetAssembly = Assembly.LoadFile(targetPath);
+            var type = targetAssembly.GetType("GeneratedTarget.TargetType")!;
+            var method = type.GetMethod("ContainsNullArgumentCall");
+            method.Should().NotBeNull("Test setup failed - method not found");
+
+            var result = ILAnalyzer.HasDirectCallTo(method!, type, "Target");
+
+            result.Should().BeTrue("ldnull has no operand, so it must not cause the scanner to skip the following call");
+        }
+        finally
+        {
+            TryDelete(targetPath);
+        }
+    }
+
+    [Fact]
     public void HasDirectCallTo_UnavailableDependencyCall_DoesNotResolveDependency()
     {
         var assemblyName = "ILAnalyzerDependency_" + Guid.NewGuid().ToString("N");
