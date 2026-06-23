@@ -32,23 +32,26 @@ namespace Datadog.Trace.Debugger.Expressions
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
 
         private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
+        private readonly int _maxEvaluationTimeInMilliseconds;
         private volatile ProbeProcessorState _state;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ProbeProcessor"/> class, that correlated to probe id
         /// </summary>
         /// <param name="probe">A probe that can pe log probe, metric probe or span decoration probe</param>
+        /// <param name="maxEvaluationTimeInMilliseconds">Maximum elapsed time allowed for expression evaluation.</param>
         /// <exception cref="ArgumentOutOfRangeException">If probe type or probe location is from unsupported type</exception>
         /// <remarks>Exceptions should be caught and logged by the caller</remarks>
-        internal ProbeProcessor(ProbeDefinition probe)
-            : this(probe, DebuggerGlobalRateLimiter.Instance)
+        internal ProbeProcessor(ProbeDefinition probe, int maxEvaluationTimeInMilliseconds)
+            : this(probe, maxEvaluationTimeInMilliseconds, DebuggerGlobalRateLimiter.Instance)
         {
         }
 
-        internal ProbeProcessor(ProbeDefinition probe, IDebuggerGlobalRateLimiter globalRateLimiter)
+        internal ProbeProcessor(ProbeDefinition probe, int maxEvaluationTimeInMilliseconds, IDebuggerGlobalRateLimiter globalRateLimiter)
         {
             _globalRateLimiter = globalRateLimiter ?? throw new ArgumentNullException(nameof(globalRateLimiter));
-            _state = ProbeProcessorState.Create(probe);
+            _maxEvaluationTimeInMilliseconds = maxEvaluationTimeInMilliseconds;
+            _state = ProbeProcessorState.Create(probe, maxEvaluationTimeInMilliseconds);
         }
 
         private static DebuggerExpression? ToDebuggerExpression(SnapshotSegment? segment)
@@ -60,9 +63,9 @@ namespace Datadog.Trace.Debugger.Expressions
         {
         }
 
-        public IProbeProcessor UpdateProbeProcessor(ProbeDefinition probe)
+        public IProbeProcessor UpdateProbeProcessor(ProbeDefinition probe, int? maxEvaluationTimeInMilliseconds = null)
         {
-            _state = ProbeProcessorState.Create(probe);
+            _state = ProbeProcessorState.Create(probe, maxEvaluationTimeInMilliseconds ?? _maxEvaluationTimeInMilliseconds);
             return this;
         }
 
@@ -743,7 +746,8 @@ namespace Datadog.Trace.Debugger.Expressions
                 DebuggerExpression? condition,
                 DebuggerExpression? metric,
                 KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? spanDecorations,
-                CaptureExpressionDefinition[]? captureExpressions)
+                CaptureExpressionDefinition[]? captureExpressions,
+                int maxEvaluationTimeInMilliseconds)
             {
                 ProbeInfo = probeInfo;
                 Templates = templates;
@@ -751,6 +755,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 Metric = metric;
                 SpanDecorations = spanDecorations;
                 CaptureExpressions = captureExpressions;
+                MaxEvaluationTimeInMilliseconds = maxEvaluationTimeInMilliseconds;
                 HasCondition = condition.HasValue;
                 IsMetricCountWithoutExpression = probeInfo.ProbeType == ProbeType.Metric && (metric?.Json == null) && probeInfo.MetricKind == MetricKind.COUNT;
                 ShouldCaptureExpressions = !probeInfo.IsFullSnapshot && captureExpressions is { Length: > 0 };
@@ -775,6 +780,8 @@ namespace Datadog.Trace.Debugger.Expressions
 
             private CaptureExpressionDefinition[]? CaptureExpressions { get; }
 
+            internal int MaxEvaluationTimeInMilliseconds { get; }
+
             internal bool HasCondition { get; }
 
             internal bool IsMetricCountWithoutExpression { get; }
@@ -783,7 +790,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             internal bool ShouldEvaluateExpressions { get; }
 
-            internal static ProbeProcessorState Create(ProbeDefinition probe)
+            internal static ProbeProcessorState Create(ProbeDefinition probe, int maxEvaluationTimeInMilliseconds)
             {
                 var location = probe.Where.MethodName != null
                                    ? ProbeLocation.Method
@@ -862,7 +869,8 @@ namespace Datadog.Trace.Debugger.Expressions
                     condition,
                     metric,
                     spanDecorations,
-                    captureExpressions);
+                    captureExpressions,
+                    maxEvaluationTimeInMilliseconds);
             }
 
             internal ProbeExpressionEvaluator GetOrCreateEvaluator()
@@ -873,7 +881,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     return evaluator;
                 }
 
-                var newEvaluator = new ProbeExpressionEvaluator(Templates, Condition, Metric, SpanDecorations, CaptureExpressions);
+                var newEvaluator = new ProbeExpressionEvaluator(Templates, Condition, Metric, SpanDecorations, CaptureExpressions, MaxEvaluationTimeInMilliseconds);
                 var previousEvaluator = Interlocked.CompareExchange(ref _evaluator, newEvaluator, null);
                 return previousEvaluator ?? newEvaluator;
             }

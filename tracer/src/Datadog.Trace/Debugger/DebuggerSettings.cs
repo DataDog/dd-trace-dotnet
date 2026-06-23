@@ -27,6 +27,11 @@ namespace Datadog.Trace.Debugger
         public const int DefaultMaxStringLength = 1000;
         public const int DefaultMaxProbesPerType = 0;
 
+        // Hidden support key: read directly with null telemetry, and do not add to supported-configurations.yaml.
+        internal const string InternalMaxEvaluationTimeInMilliseconds = "DD_INTERNAL_DYNAMIC_INSTRUMENTATION_MAX_EVALUATION_TIME_MS";
+
+        private const int MinAllowedEvaluationTimeInMilliseconds = 10;
+        private const int MaxAllowedEvaluationTimeInMilliseconds = 1000;
         private const int DefaultUploadBatchSize = 100;
         public const int DefaultSymbolBatchSizeInBytes = 1 * 1024 * 1024; // 1 MB
         private const int DefaultDiagnosticsIntervalSeconds = 60 * 60; // 1 hour
@@ -55,6 +60,14 @@ namespace Datadog.Trace.Debugger
                                                      DefaultMaxSerializationTimeInMilliseconds,
                                                      serializationTimeThreshold => serializationTimeThreshold > 0)
                                                 .Value;
+
+            var maxEvaluationTimeResult = source.GetInt32(
+                InternalMaxEvaluationTimeInMilliseconds,
+                NullConfigurationTelemetry.Instance,
+                evaluationTimeThreshold => evaluationTimeThreshold is >= MinAllowedEvaluationTimeInMilliseconds and <= MaxAllowedEvaluationTimeInMilliseconds);
+            MaxEvaluationTimeInMilliseconds = maxEvaluationTimeResult is { Result: var maxEvaluationTime, IsValid: true }
+                                                  ? maxEvaluationTime
+                                                  : DefaultMaxEvaluationTimeInMilliseconds;
 
             UploadBatchSize = config
                              .WithKeys(ConfigurationKeys.Debugger.UploadBatchSize)
@@ -168,6 +181,8 @@ namespace Datadog.Trace.Debugger
         public bool SymbolDatabaseCompressionEnabled { get; }
 
         public int MaxSerializationTimeInMilliseconds { get; }
+
+        public int MaxEvaluationTimeInMilliseconds { get; }
 
         public int MaximumDepthOfMembersToCopy { get; }
 
