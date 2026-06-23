@@ -1,6 +1,8 @@
 # Debugger Safety Boundaries
 
-Debugger and Dynamic Instrumentation code runs inside customer processes while inspecting live customer objects. This document defines the main safety boundaries for reflection, metadata inspection, static member capture, and customer-code execution. It is intended as review guidance for future debugger changes and as a record of the boundaries established after the `InstanceOf` early-load fix in PR #8785.
+Debugger and Dynamic Instrumentation code runs inside customer processes while inspecting live customer objects. Treat every reflection call, metadata lookup, and value read as potentially observable by the customer application unless the API is known to be metadata-only or limited to instance fields.
+
+Use this document when changing debugger capture, expression evaluation, Exception Replay, Code Origin, symbol extraction, async or iterator resolution, or any helper used by those paths.
 
 ## Risk Model
 
@@ -8,51 +10,52 @@ Keep these risks separate when auditing or changing debugger code:
 
 - Early runtime resolution: resolving assemblies, types, members, generic signatures, or method tokens earlier than customer code would.
 - Static constructor execution: reading static members or otherwise using a type in a way that can run its type initializer.
-- Customer-code execution: invoking getters, enumerators, `ToString()`, exception overrides, attribute constructors, or similar user-controlled code.
+- Customer-code execution: invoking getters, enumerators, `ToString()`, exception overrides, attribute constructors, operators, or similar user-controlled code.
 
-## Reflection Classification
+## Area Guidance
 
-| Area | Classification | Current status |
+| Area | Main risk | Preferred handling |
 | --- | --- | --- |
-| Code Origin endpoint discovery | Metadata-only scan through `EndpointDetector` and `System.Reflection.Metadata`; no runtime member resolution required. | No follow-up from this audit. |
-| Line probe resolution | Scans already loaded assemblies and symbol/PDB metadata. | No follow-up from this audit. |
-| SymDB symbol extraction/upload | Processes already loaded assemblies plus metadata/PDB information; dnlib paths may resolve metadata definitions but do not intentionally load new customer assemblies. | No follow-up from this audit. |
-| Debugger static member capture and expressions | Reading static fields/properties can trigger type initializers. | Fixed by PR #8814: guard static member capture and preserve literal/cctor-free statics. |
-| Exception Replay IL call scanning | `Module.ResolveMethod(token)` can resolve arbitrary call operands and load unavailable dependencies while looking for `ExceptionDispatchInfo.Throw`. | Fixed by PR #8815: inspect call operands with metadata instead of runtime resolution. |
-| Debugger state-machine attribute resolution | `GetCustomAttributes()` / typed `GetCustomAttribute<T>()` can instantiate attributes while resolving async/iterator methods. | Fixed by PR #8816: use metadata-only `CustomAttributeData` for state-machine attributes. |
-| Snapshot capture and expression evaluation | Some paths intentionally execute bounded customer code, such as expression property access and supported collection enumeration. | Governed by the customer-code execution policy below; focused regression tests added by PR #8817. |
+| Code Origin endpoint discovery | Accidentally resolving runtime types or attributes while identifying endpoints. | Prefer `System.Reflection.Metadata` and token/name inspection. Avoid runtime member resolution unless the change explains why it is required. |
+| Line probe resolution | Loading or resolving customer code while matching probes to source locations. | Restrict discovery to already loaded assemblies and symbol/PDB metadata. Treat new runtime resolution as a behavior change that needs focused tests. |
+| SymDB symbol extraction/upload | Resolving metadata in a way that loads unavailable dependencies or executes customer code. | Prefer metadata/PDB readers. If dnlib or reflection is used, verify it does not intentionally load new customer assemblies or instantiate attributes. |
+| Static member capture and expressions | Static field/property reads can trigger type initializers. | Read static literals from metadata when possible. For non-literal static fields or properties, verify the implementation cannot run a customer type initializer, or skip capture. |
+| Exception Replay IL call scanning | `Module.ResolveMethod(token)` and similar APIs can resolve arbitrary call operands and load unavailable dependencies. | Prefer metadata inspection of call operands. If runtime resolution remains necessary, justify why metadata is insufficient, catch failures locally, and add tests for missing dependency and generic-signature cases. |
+| Async and iterator state-machine resolution | `GetCustomAttributes()` and typed `GetCustomAttribute<T>()` can instantiate customer attributes. | Prefer `CustomAttributeData` or metadata-only attribute inspection when matching state-machine attributes. Do not instantiate attributes just to identify compiler-generated methods. |
+| Snapshot capture and expression evaluation | Some paths intentionally execute bounded customer code, while default object capture should not. | Follow the customer-code execution policy below and add regression tests for any intentional boundary crossing. |
 
 ## Customer-Code Execution Policy
 
-Default object capture should avoid customer-code execution. It may read instance fields, compiler-generated backing fields, and metadata because those operations do not call user methods. It must not call arbitrary instance property getters as part of normal object field capture.
+Default object capture should avoid customer-code execution. It may read instance fields, compiler-generated backing fields, and metadata because those operations do not call user methods. It must not call arbitrary instance property getters, indexers, enumerators, or `ToString()` as part of normal object field capture.
 
-Static member capture is governed by the static member safety policy in code: literal constants are safe to read from metadata, and non-literal static fields/properties are only read when their declaring type has no type initializer.
-
-Some debugger features exist to evaluate live runtime values, so they are allowed to execute bounded customer code:
+Some debugger features exist to evaluate live runtime values, so they may execute customer code when that behavior is explicit and constrained:
 
 - User-authored probe expressions may read properties or invoke supported collection operations requested by the expression.
-- Supported collection and dictionary capture may read `Count`, call `GetEnumerator()`, `MoveNext()`, `Current`, and dictionary entry `Key`/`Value` accessors, subject to configured depth, collection-size, and timeout limits.
+- Supported collection and dictionary capture may read `Count`, call `GetEnumerator()`, `MoveNext()`, `Current`, and dictionary entry `Key`/`Value` accessors, subject to configured depth, collection-size, and cooperative timeout checks.
 - Special system-type selectors may read documented BCL properties, such as selected `System.Exception` and `System.Lazy<T>` properties.
 - Safe BCL `ToString()` calls may be used only for types allowed by `Redaction.IsSafeToCallToString()`.
 
-Capture paths must not silently broaden default capture to execute customer code. In particular, future changes should not call arbitrary getters, indexers, enumerable methods, or `ToString()` for unknown customer types unless the behavior is made explicit in product policy and covered by tests.
+Timeouts are best-effort around synchronous customer callbacks; they cannot preempt a blocking or long-running `Count`, enumerator, `MoveNext()`, `Current`, `Key`, or `Value` call.
 
-When a value is useful but would require disallowed customer-code execution, prefer omitting that value and reporting a `notCapturedReason` over executing the code.
+Capture paths must not silently broaden default capture to execute customer code. When a value is useful but would require disallowed customer-code execution, prefer omitting that value and reporting a `notCapturedReason` over executing the code.
 
 ## Review Checklist
 
-When reviewing debugger capture, expression, exception-replay, Code Origin, or symbol changes, classify each reflection operation before accepting it:
+When reviewing debugger changes, classify each reflection operation before accepting it:
 
-- Metadata-only APIs are preferred for discovery and filtering.
-- Runtime `Type`, `MemberInfo`, or signature resolution should be justified and covered by a focused test when it can touch customer assemblies.
-- Static member reads must be guarded so they do not run customer type initializers unless explicitly allowed by policy.
-- Customer-code execution must be covered by the policy above and regression tests.
+- Prefer metadata-only APIs for discovery and filtering.
+- Justify runtime `Type`, `MemberInfo`, signature, method-token, or attribute resolution when it can touch customer assemblies.
+- Guard static member reads so they do not run customer type initializers unless the behavior is explicitly allowed.
+- Cover intentional customer-code execution with policy text and regression tests.
 
-Reviewers should identify whether a change introduces any of the following operations:
+Look specifically for newly introduced calls or expression-tree access to:
 
-- `PropertyInfo.GetValue`, expression property access, or indexer access
-- `IEnumerable.GetEnumerator`, `MoveNext`, `Current`, `Count`, `Key`, or `Value`
-- `Exception.Message`, `Exception.StackTrace`, `Exception.ToString`, or custom exception overrides
-- arbitrary `ToString()`, `Equals()`, or operator calls
+- `PropertyInfo.GetValue`, property access, or indexer access.
+- `FieldInfo.GetValue` on static fields.
+- `Module.ResolveMethod`, `Module.ResolveMember`, `Type.GetType`, `Assembly.Load`, or APIs that can resolve missing dependencies.
+- `GetCustomAttributes()`, typed `GetCustomAttribute<T>()`, or other APIs that instantiate attributes.
+- `IEnumerable.GetEnumerator`, `MoveNext`, `Current`, `Count`, `Key`, or `Value`.
+- `Exception.Message`, `Exception.StackTrace`, `Exception.ToString`, or custom exception overrides.
+- arbitrary `ToString()`, `Equals()`, operators, delegates, callbacks, or expression-compiled accessors.
 
 If a change intentionally crosses one of these boundaries, document why the runtime behavior is required, state whether it is covered by the allowed execution policy, and add a regression test that would fail if the boundary were crossed accidentally.

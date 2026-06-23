@@ -231,17 +231,18 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
-        public void Policy_SupportedCollectionCapture_ReadsCountAndEnumerates()
+        public void Policy_UnsupportedCollectionCapture_DoesNotReadCountOrEnumerate()
         {
             var collection = new SideEffectCollection([1, 2]);
 
-            var collectionJson = SerializeCollection(collection, maxCollectionSize: 10);
+            var collectionJson = GetLocalToken(collection);
 
-            Assert.Equal(1, collection.CountCallCount);
-            Assert.Equal(1, collection.GetEnumeratorCallCount);
-            Assert.Equal(3, collection.MoveNextCallCount);
-            Assert.Equal(2, collectionJson["size"]?.Value<int>());
-            Assert.Equal(2, collectionJson["elements"]?.Value<JArray>()?.Count);
+            Assert.Equal(0, collection.CountCallCount);
+            Assert.Equal(0, collection.GetEnumeratorCallCount);
+            Assert.Equal(0, collection.MoveNextCallCount);
+            Assert.Equal("SideEffectCollection", collectionJson["type"]?.Value<string>());
+            Assert.Null(collectionJson["size"]);
+            Assert.Null(collectionJson["elements"]);
         }
 
         [Fact]
