@@ -53,7 +53,6 @@ internal sealed class FlagEvaluationApi : IDisposable
     internal const int GlobalCap = 131_072;
     internal const int PerFlagCap = EvalScalePerFlagBucketTarget;
     internal const int DegradedCap = 32_768;
-    internal const int EvpPayloadSizeLimit = 5 * 1024 * 1024;
 
     /// <summary>
     /// Bounds the async hand-off queue between the (hot-path) Enqueue call and the background
@@ -400,7 +399,7 @@ internal sealed class FlagEvaluationApi : IDisposable
     /// Returns true when a batch was built (and a send attempted), false when the aggregator was empty.
     /// Exposed as internal so the shutdown-drain behavior can be exercised in unit tests.
     /// </summary>
-    internal Task<bool> FlushAsync() => FlushAsync(EvpPayloadSizeLimit);
+    internal Task<bool> FlushAsync() => FlushAsync(EventPlatformProxyConstants.PayloadSizeLimitBytes);
 
     internal async Task<bool> FlushAsync(int payloadSizeLimit)
     {

@@ -40,7 +40,7 @@ public sealed class OpenFeatureSdkEnqueueEVPIntegration
         ref long evalTimeMs,
         ref IDictionary<string, object?>? contextAttrs)
     {
-        var api = TracerManager.Instance.FeatureFlags?.GetEVPApi();
+        var api = TracerManager.Instance.FeatureFlags?.GetFlagEvalEVPApi();
         if (api is not null)
         {
             Dictionary<string, object?>? ctxDict = contextAttrs is Dictionary<string, object?> d

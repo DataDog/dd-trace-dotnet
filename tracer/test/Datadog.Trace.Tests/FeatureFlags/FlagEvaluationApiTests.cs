@@ -347,7 +347,7 @@ public class FlagEvaluationApiTests
         FlagEvaluationApi.GlobalCap.Should().Be(131_072);
         FlagEvaluationApi.PerFlagCap.Should().Be(10_000);
         FlagEvaluationApi.DegradedCap.Should().Be(32_768);
-        FlagEvaluationApi.EvpPayloadSizeLimit.Should().Be(5 * 1024 * 1024);
+        EventPlatformProxyConstants.PayloadSizeLimitBytes.Should().Be(5 * 1024 * 1024);
     }
 
     [Fact]

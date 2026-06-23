@@ -27,7 +27,7 @@ namespace Datadog.Trace.FeatureFlags
         private readonly ISubscription _rcmSubscription;
         private readonly FfeProduct _ffeProduct;
         private readonly ExposureApi _exposureApi;
-        private readonly FlagEvaluationApi? _evpApi;
+        private readonly FlagEvaluationApi? _flagEvalEVPApi;
 
         private Action? _onNewConfigEventHander;
         private FeatureFlagsEvaluator? _evaluator;
@@ -50,7 +50,7 @@ namespace Datadog.Trace.FeatureFlags
             {
                 try
                 {
-                    _evpApi = new FlagEvaluationApi(settings);
+                    _flagEvalEVPApi = new FlagEvaluationApi(settings);
                 }
                 catch (Exception ex)
                 {
@@ -73,12 +73,12 @@ namespace Datadog.Trace.FeatureFlags
         /// Gets the EVP flag evaluation api instance, or null if the EVP path is disabled.
         /// Used by tests and by the OpenFeature provider wiring.
         /// </summary>
-        internal FlagEvaluationApi? GetEVPApi() => _evpApi;
+        internal FlagEvaluationApi? GetFlagEvalEVPApi() => _flagEvalEVPApi;
 
         public void Dispose()
         {
             _exposureApi.Dispose();
-            _evpApi?.Dispose();
+            _flagEvalEVPApi?.Dispose();
         }
 
         internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)

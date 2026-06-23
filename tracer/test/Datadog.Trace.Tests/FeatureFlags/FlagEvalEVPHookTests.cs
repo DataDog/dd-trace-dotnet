@@ -22,26 +22,26 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 public class FlagEvalEVPHookTests
 {
     [Fact]
-    public void KillswitchDefault_EvpApiIsWired()
+    public void KillswitchDefault_FlagEvalEVPApiIsWired()
     {
         // Default (killswitch unset): the EVP path is on, so the module exposes a FlagEvaluationApi.
         var module = new FeatureFlagsModule(CreateSettings(killswitch: null), new MockRcmSubscriptionManager());
-        module.GetEVPApi().Should().NotBeNull("the EVP path defaults to enabled");
+        module.GetFlagEvalEVPApi().Should().NotBeNull("the EVP path defaults to enabled");
     }
 
     [Fact]
-    public void KillswitchTrue_EvpApiIsWired()
+    public void KillswitchTrue_FlagEvalEVPApiIsWired()
     {
         var module = new FeatureFlagsModule(CreateSettings(killswitch: "true"), new MockRcmSubscriptionManager());
-        module.GetEVPApi().Should().NotBeNull();
+        module.GetFlagEvalEVPApi().Should().NotBeNull();
     }
 
     [Fact]
-    public void KillswitchFalse_EvpApiIsNotWired()
+    public void KillswitchFalse_FlagEvalEVPApiIsNotWired()
     {
         // Killswitch off: the module must NOT create the EVP writer (OTel path is unaffected).
         var module = new FeatureFlagsModule(CreateSettings(killswitch: "false"), new MockRcmSubscriptionManager());
-        module.GetEVPApi().Should().BeNull("DD_FLAGGING_EVALUATION_COUNTS_ENABLED=false disables only the EVP path");
+        module.GetFlagEvalEVPApi().Should().BeNull("DD_FLAGGING_EVALUATION_COUNTS_ENABLED=false disables only the EVP path");
     }
 
     [Fact]
