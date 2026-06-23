@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange;
     ReturnTypeName = "StackExchange.Redis.ServerEndPoint",
     ParameterTypeNames = new[] { "StackExchange.Redis.Message" },
     MinimumVersion = "1.0.0",
-    MaximumVersion = "2.*.*",
+    MaximumVersion = "3.*.*",
     IntegrationName = StackExchangeRedisHelper.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
