@@ -14,10 +14,10 @@ namespace Datadog.Trace.FeatureFlags
     /// <summary> Standard implementation of a EvaluationContext </summary>
     /// <param name="key"> Targeting Key </param>
     /// <param name="attributes"> Context optional attributes </param>
-    internal sealed class EvaluationContext(string key, IDictionary<string, object?>? attributes = null)
+    internal sealed class EvaluationContext(string? key, IDictionary<string, object?>? attributes = null)
     {
         /// <summary> Gets the Context Targeting Key </summary>
-        public string TargetingKey { get; } = key;
+        public string? TargetingKey { get; } = key;
 
         /// <summary> Gets the Context optional Values </summary>
         public IDictionary<string, object?> Attributes { get; } = attributes ?? new Dictionary<string, object?>();

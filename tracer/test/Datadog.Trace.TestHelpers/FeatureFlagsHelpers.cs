@@ -116,6 +116,26 @@ internal static class FeatureFlagsHelpers
         return new Flag { Key = "time-based-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
     }
 
+    internal static Flag CreateStaticFlag(string key, ValueType type, object value, string variantKey)
+    {
+        var variants = new Dictionary<string, Variant>
+        {
+            [variantKey] = new Variant { Key = variantKey, Value = value },
+        };
+
+        var splits = new List<Split>
+        {
+            new Split { Shards = new List<Shard>(), VariationKey = variantKey }
+        };
+
+        var allocations = new List<Allocation>
+        {
+            new Allocation { Key = "alloc1", Splits = splits, DoLog = false }
+        };
+
+        return new Flag { Key = key, Enabled = true, VariationType = type, Variations = variants, Allocations = allocations };
+    }
+
     internal static Flag CreateExposureFlag()
     {
         var variants = new Dictionary<string, Variant>
