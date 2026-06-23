@@ -4,6 +4,8 @@ Debugger and Dynamic Instrumentation code runs inside customer processes while i
 
 Use this document when changing debugger capture, expression evaluation, Exception Replay, Code Origin, symbol extraction, async or iterator resolution, or any helper used by those paths.
 
+Most capture and expression-evaluation code runs synchronously on customer application threads. Keep work bounded, avoid unnecessary allocation, and assume any added latency is paid directly by the instrumented request or background operation.
+
 ## Risk Model
 
 Keep these risks separate when auditing or changing debugger code:
@@ -39,6 +41,12 @@ Timeouts are best-effort around synchronous customer callbacks; they cannot pree
 
 Capture paths must not silently broaden default capture to execute customer code. When a value is useful but would require disallowed customer-code execution, prefer omitting that value and reporting a `notCapturedReason` over executing the code.
 
+## Bounds And Overhead
+
+Capture and expression-evaluation paths must have clear bounds for depth, collection size, field count, string length, and elapsed work where applicable. New traversal, filtering, formatting, or evaluation logic should either use existing capture limits or introduce an explicit limit with tests.
+
+Avoid avoidable allocations on capture hot paths. Prefer existing caches, pooled helpers, metadata handles, and streaming writers over building intermediate object graphs or strings. Do not add reflection scans, expression compilation, LINQ-heavy traversal, or broad allocations to per-capture paths without a clear reason and focused performance consideration.
+
 ## Review Checklist
 
 When reviewing debugger changes, classify each reflection operation before accepting it:
@@ -47,6 +55,8 @@ When reviewing debugger changes, classify each reflection operation before accep
 - Justify runtime `Type`, `MemberInfo`, signature, method-token, or attribute resolution when it can touch customer assemblies.
 - Guard static member reads so they do not run customer type initializers unless the behavior is explicitly allowed.
 - Cover intentional customer-code execution with policy text and regression tests.
+- Verify capture and expression-evaluation work is bounded and appropriate for synchronous execution on customer threads.
+- Check allocation behavior for new hot-path code, especially reflection, string formatting, LINQ, collection materialization, and expression compilation.
 
 Look specifically for newly introduced calls or expression-tree access to:
 
