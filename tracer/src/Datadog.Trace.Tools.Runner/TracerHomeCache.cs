@@ -34,6 +34,23 @@ internal static class TracerHomeCache
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TracerHomeCache));
 
     /// <summary>
+    /// Defines which owner is trusted for an existing directory.
+    /// </summary>
+    private enum DirectoryOwnerRequirement
+    {
+        /// <summary>No owner validation is required.</summary>
+        None,
+
+        /// <summary>The directory must be owned by the current user.</summary>
+        CurrentUser,
+
+        /// <summary>
+        /// The directory must be owned by the current user, LocalSystem, or Builtin Administrators on Windows.
+        /// </summary>
+        TrustedWindowsOwner
+    }
+
+    /// <summary>
     /// Returns a validated cached tracer home path when that cache path is shorter than the original path.
     /// </summary>
     /// <param name="tracerHome">The source tracer home path.</param>
@@ -579,6 +596,7 @@ internal static class TracerHomeCache
         if (Directory.Exists(path))
         {
             ValidateExistingPrivateDirectory(path);
+            ValidateExistingCacheParentAncestors(path);
             return;
         }
 
@@ -592,6 +610,7 @@ internal static class TracerHomeCache
         else if (!string.IsNullOrEmpty(parentPath))
         {
             ValidateExistingCacheParentDirectory(parentPath);
+            ValidateExistingCacheParentAncestors(parentPath);
         }
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -618,7 +637,7 @@ internal static class TracerHomeCache
     /// <param name="path">The directory path to validate.</param>
     private static void ValidateExistingPrivateDirectory(string path)
     {
-        ValidateExistingDirectory(path, requireCurrentUserOwner: true, allowGroupOrOtherWrite: false);
+        ValidateExistingDirectory(path, DirectoryOwnerRequirement.CurrentUser, allowGroupOrOtherWrite: false);
     }
 
     /// <summary>
@@ -627,16 +646,68 @@ internal static class TracerHomeCache
     /// <param name="path">The parent directory path to validate.</param>
     private static void ValidateExistingCacheParentDirectory(string path)
     {
-        ValidateExistingDirectory(path, requireCurrentUserOwner: !RuntimeInformation.IsOSPlatform(OSPlatform.Windows), allowGroupOrOtherWrite: false);
+        var ownerRequirement = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                                   ? DirectoryOwnerRequirement.TrustedWindowsOwner
+                                   : DirectoryOwnerRequirement.CurrentUser;
+
+        ValidateExistingDirectory(
+            path,
+            ownerRequirement,
+            allowGroupOrOtherWrite: false);
+    }
+
+    /// <summary>
+    /// Validates POSIX ancestors above the private cache parent.
+    /// </summary>
+    /// <param name="path">The nearest existing private cache parent directory.</param>
+    private static void ValidateExistingCacheParentAncestors(string path)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return;
+        }
+
+        var currentPath = Path.GetDirectoryName(Path.GetFullPath(path));
+        while (!string.IsNullOrEmpty(currentPath))
+        {
+            ValidateExistingPosixCacheParentAncestor(currentPath);
+
+            var parentPath = Path.GetDirectoryName(currentPath);
+            if (string.IsNullOrEmpty(parentPath) || string.Equals(parentPath, currentPath, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            currentPath = parentPath;
+        }
+    }
+
+    /// <summary>
+    /// Validates an existing POSIX cache ancestor without rejecting trusted symlink ancestors such as /tmp on macOS.
+    /// </summary>
+    /// <param name="path">The ancestor directory path to validate.</param>
+    private static void ValidateExistingPosixCacheParentAncestor(string path)
+    {
+        PosixDirectoryAccess.ValidateDirectoryAccess(
+            path,
+            requireCurrentUserOwner: false,
+            allowGroupOrOtherWrite: false,
+            allowStickyGroupOrOtherWrite: true,
+            allowTrustedSymlink: true);
     }
 
     /// <summary>
     /// Validates that an existing directory is not a reparse point and satisfies platform access requirements.
     /// </summary>
     /// <param name="path">The directory path to validate.</param>
-    /// <param name="requireCurrentUserOwner">Whether the directory must be owned by the current user.</param>
+    /// <param name="ownerRequirement">The ownership requirement for the directory.</param>
     /// <param name="allowGroupOrOtherWrite">Whether broad write access is allowed.</param>
-    private static void ValidateExistingDirectory(string path, bool requireCurrentUserOwner, bool allowGroupOrOtherWrite)
+    /// <param name="allowStickyGroupOrOtherWrite">Whether POSIX sticky directories may be group or other writable.</param>
+    private static void ValidateExistingDirectory(
+        string path,
+        DirectoryOwnerRequirement ownerRequirement,
+        bool allowGroupOrOtherWrite,
+        bool allowStickyGroupOrOtherWrite = false)
     {
         var attributes = File.GetAttributes(path);
         if ((attributes & FileAttributes.ReparsePoint) != 0)
@@ -653,11 +724,19 @@ internal static class TracerHomeCache
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            WindowsDirectoryAccess.ValidateDirectoryAccess(path, requireCurrentUserOwner, allowGroupOrOtherWrite);
+            WindowsDirectoryAccess.ValidateDirectoryAccess(
+                path,
+                requireCurrentUserOwner: ownerRequirement == DirectoryOwnerRequirement.CurrentUser,
+                requireTrustedOwner: ownerRequirement != DirectoryOwnerRequirement.None,
+                allowBroadWrite: allowGroupOrOtherWrite);
             return;
         }
 
-        PosixDirectoryAccess.ValidateDirectoryAccess(path, requireCurrentUserOwner, allowGroupOrOtherWrite);
+        PosixDirectoryAccess.ValidateDirectoryAccess(
+            path,
+            ownerRequirement == DirectoryOwnerRequirement.CurrentUser,
+            allowGroupOrOtherWrite,
+            allowStickyGroupOrOtherWrite);
     }
 
     /// <summary>

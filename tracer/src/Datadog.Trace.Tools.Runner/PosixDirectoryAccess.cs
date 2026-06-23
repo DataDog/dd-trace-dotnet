@@ -18,9 +18,12 @@ namespace Datadog.Trace.Tools.Runner;
 internal static class PosixDirectoryAccess
 {
     private const uint PosixDirectoryFileType = 0x4000;
+    private const uint PosixSymbolicLinkFileType = 0xA000;
     private const uint PosixFileTypeMask = 0xF000;
     private const uint PosixGroupOrOtherWrite = 0x12; // 022
+    private const uint PosixStickyBit = 0x200; // 01000
     private const uint PrivateDirectoryMode = 448; // 0700
+    private const uint RootUserId = 0;
 
     /// <summary>
     /// Attempts to create a directory with private POSIX permissions.
@@ -41,31 +44,85 @@ internal static class PosixDirectoryAccess
     /// <param name="path">The directory path to validate.</param>
     /// <param name="requireCurrentUserOwner">Whether the directory must be owned by the current effective user.</param>
     /// <param name="allowGroupOrOtherWrite">Whether group or other write bits are allowed.</param>
-    internal static void ValidateDirectoryAccess(string path, bool requireCurrentUserOwner, bool allowGroupOrOtherWrite)
+    /// <param name="allowStickyGroupOrOtherWrite">Whether sticky group or other writable directories are allowed.</param>
+    /// <param name="allowTrustedSymlink">Whether symlinks owned by root or the current user are allowed.</param>
+    internal static void ValidateDirectoryAccess(
+        string path,
+        bool requireCurrentUserOwner,
+        bool allowGroupOrOtherWrite,
+        bool allowStickyGroupOrOtherWrite = false,
+        bool allowTrustedSymlink = false)
     {
         var directoryInfo = GetDirectoryInfo(path);
+        var currentUserId = GetEffectiveUserId();
+        if ((directoryInfo.Mode & PosixFileTypeMask) == PosixSymbolicLinkFileType)
+        {
+            if (!allowTrustedSymlink)
+            {
+                throw new IOException($"Path '{path}' must be a directory.");
+            }
+
+            if (!IsRootOrCurrentUser(directoryInfo.UserId, currentUserId))
+            {
+                throw new IOException($"Directory '{path}' symbolic link must be owned by root or the current user.");
+            }
+
+            directoryInfo = GetDirectoryInfo(path, followSymlinks: true);
+        }
+
         if ((directoryInfo.Mode & PosixFileTypeMask) != PosixDirectoryFileType)
         {
             throw new IOException($"Path '{path}' must be a directory.");
         }
 
-        if (requireCurrentUserOwner && directoryInfo.UserId != GetEffectiveUserId())
+        if (requireCurrentUserOwner && directoryInfo.UserId != currentUserId)
         {
             throw new IOException($"Directory '{path}' must be owned by the current user.");
         }
 
-        if (!allowGroupOrOtherWrite && (directoryInfo.Mode & PosixGroupOrOtherWrite) != 0)
+        if (!allowGroupOrOtherWrite &&
+            (directoryInfo.Mode & PosixGroupOrOtherWrite) != 0 &&
+            !IsAllowedStickyDirectory(directoryInfo, currentUserId, allowStickyGroupOrOtherWrite))
         {
             throw new IOException($"Directory '{path}' must not be writable by group or other users.");
         }
     }
 
     /// <summary>
+    /// Checks whether a broadly writable sticky directory is trusted as a POSIX ancestor.
+    /// </summary>
+    /// <param name="directoryInfo">The directory metadata to inspect.</param>
+    /// <param name="currentUserId">The current effective user id.</param>
+    /// <param name="allowStickyGroupOrOtherWrite">Whether sticky group or other writable directories are allowed.</param>
+    /// <returns><c>true</c> when the sticky directory is owned by root or the current user.</returns>
+    private static bool IsAllowedStickyDirectory(
+        PosixDirectoryInfo directoryInfo,
+        uint currentUserId,
+        bool allowStickyGroupOrOtherWrite)
+    {
+        return allowStickyGroupOrOtherWrite &&
+               (directoryInfo.Mode & PosixStickyBit) != 0 &&
+               IsRootOrCurrentUser(directoryInfo.UserId, currentUserId);
+    }
+
+    /// <summary>
+    /// Checks whether a POSIX owner uid is root or the current effective user.
+    /// </summary>
+    /// <param name="userId">The owner uid to inspect.</param>
+    /// <param name="currentUserId">The current effective user id.</param>
+    /// <returns><c>true</c> when the owner is root or the current effective user.</returns>
+    private static bool IsRootOrCurrentUser(uint userId, uint currentUserId)
+    {
+        return userId == RootUserId || userId == currentUserId;
+    }
+
+    /// <summary>
     /// Gets the POSIX mode and owner uid for a directory.
     /// </summary>
     /// <param name="path">The directory path to inspect.</param>
+    /// <param name="followSymlinks">Whether to follow symbolic links.</param>
     /// <returns>The POSIX directory metadata.</returns>
-    private static PosixDirectoryInfo GetDirectoryInfo(string path)
+    private static PosixDirectoryInfo GetDirectoryInfo(string path, bool followSymlinks = false)
     {
         // struct stat layout varies across libc, CPU architectures, and macOS inode eras. The stat(1)
         // output format is stable enough for the two fields we need: mode and owner uid.
@@ -78,6 +135,11 @@ internal static class PosixDirectoryAccess
             RedirectStandardError = true,
             RedirectStandardOutput = true,
         };
+
+        if (followSymlinks)
+        {
+            processStartInfo.ArgumentList.Add("-L");
+        }
 
         processStartInfo.ArgumentList.Add(isMacOs ? "-f" : "-c");
         processStartInfo.ArgumentList.Add(isMacOs ? "%p %u" : "%f %u");

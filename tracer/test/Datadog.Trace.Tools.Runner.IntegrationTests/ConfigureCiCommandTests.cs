@@ -351,6 +351,24 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         [SkippableFact]
         [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        public void ConfigureCiFallsBackToOriginalTracerHomeWhenCacheRootIsUnderSharedWritableAncestor()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+            using var setup = ConfigureCiTestSetup.Create(output, Path.Combine("shared-cache-parent", "private-cache"));
+            var sharedCacheParent = Path.GetDirectoryName(setup.CacheHome);
+            Directory.CreateDirectory(sharedCacheParent);
+            SetDirectoryMode(sharedCacheParent, "777");
+            CreateTrustedCacheHome(setup.CacheHome);
+            setup.UseCacheHome();
+            setup.CreateTracerHome();
+
+            var environmentVariables = setup.RunConfigureCi();
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(Path.GetFullPath(setup.TracerHome));
+        }
+
+        [SkippableFact]
+        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiFallsBackToOriginalTracerHomeWhenCacheRootIsSymbolicLink()
         {
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
@@ -365,6 +383,23 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             var environmentVariables = setup.RunConfigureCi();
             environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(Path.GetFullPath(setup.TracerHome));
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        public void ConfigureCiUsesCachedTracerHomeWhenWindowsCacheRootHasInheritOnlyBroadWrite()
+        {
+            SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+
+            using var setup = ConfigureCiTestSetup.Create(output, "cache-with-inherit-only-broad-write");
+            CreateTrustedCacheHome(setup.CacheHome);
+            GrantWindowsInheritOnlyModifyAccessToEveryone(setup.CacheHome);
+            setup.UseCacheHome();
+            setup.CreateTracerHome();
+
+            var environmentVariables = setup.RunConfigureCi();
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().StartWith(setup.ExpectedCacheRoot);
         }
 
         [SkippableFact]
@@ -626,6 +661,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         private static void GrantWindowsModifyAccessToEveryone(string path)
         {
             RunIcacls(path, "/grant", "*S-1-1-0:(OI)(CI)M");
+        }
+
+        private static void GrantWindowsInheritOnlyModifyAccessToEveryone(string path)
+        {
+            RunIcacls(path, "/grant", "*S-1-1-0:(OI)(CI)(IO)M");
         }
 
         private static void RunIcacls(string path, params string[] arguments)

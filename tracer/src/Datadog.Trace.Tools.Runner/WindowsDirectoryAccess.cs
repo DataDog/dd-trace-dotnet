@@ -44,8 +44,13 @@ internal static class WindowsDirectoryAccess
     /// </summary>
     /// <param name="path">The directory path to validate.</param>
     /// <param name="requireCurrentUserOwner">Whether the directory must be owned by the current Windows user.</param>
+    /// <param name="requireTrustedOwner">Whether the directory must be owned by a trusted Windows identity.</param>
     /// <param name="allowBroadWrite">Whether write access by identities outside the trusted set is allowed.</param>
-    internal static void ValidateDirectoryAccess(string path, bool requireCurrentUserOwner, bool allowBroadWrite)
+    internal static void ValidateDirectoryAccess(
+        string path,
+        bool requireCurrentUserOwner,
+        bool requireTrustedOwner,
+        bool allowBroadWrite)
     {
         DirectorySecurity security;
         try
@@ -63,12 +68,15 @@ internal static class WindowsDirectoryAccess
             throw new IOException("Unable to determine the current Windows user.");
         }
 
-        if (requireCurrentUserOwner)
+        if (requireCurrentUserOwner || requireTrustedOwner)
         {
             var owner = security.GetOwner(typeof(SecurityIdentifier)) as SecurityIdentifier;
-            if (owner is null || !owner.Equals(currentUser))
+            var isRequiredOwner = owner is not null &&
+                                  (requireCurrentUserOwner ? owner.Equals(currentUser) : IsAllowedWriter(owner, currentUser));
+            if (!isRequiredOwner)
             {
-                throw new IOException($"Directory '{path}' must be owned by the current user.");
+                var ownerDescription = requireCurrentUserOwner ? "the current user" : "a trusted Windows identity";
+                throw new IOException($"Directory '{path}' must be owned by {ownerDescription}.");
             }
         }
 
@@ -80,6 +88,7 @@ internal static class WindowsDirectoryAccess
         foreach (FileSystemAccessRule rule in security.GetAccessRules(includeExplicit: true, includeInherited: true, targetType: typeof(SecurityIdentifier)))
         {
             if (rule.AccessControlType != AccessControlType.Allow ||
+                (rule.PropagationFlags & PropagationFlags.InheritOnly) != 0 ||
                 !GrantsWriteAccess(rule.FileSystemRights) ||
                 rule.IdentityReference is not SecurityIdentifier securityIdentifier ||
                 IsAllowedWriter(securityIdentifier, currentUser))
