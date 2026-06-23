@@ -34,7 +34,7 @@
     SpanId: Id_3,
     Name: graphql.execute,
     Resource: Query operation,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_2,
     Tags: {
@@ -51,13 +51,8 @@
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate,
-      _dd.svc_src: graphql
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      version: 1.0.0
     }
   },
   {
@@ -215,7 +210,7 @@
     SpanId: Id_14,
     Name: graphql.execute,
     Resource: Query Book,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_5,
     Tags: {
@@ -233,13 +228,8 @@ query Book {
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate,
-      _dd.svc_src: graphql
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      version: 1.0.0
     }
   },
   {
@@ -247,7 +237,7 @@ query Book {
     SpanId: Id_15,
     Name: graphql.execute,
     Resource: Mutation m,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_7,
     Tags: {
@@ -264,13 +254,8 @@ mutation m {
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate,
-      _dd.svc_src: graphql
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      version: 1.0.0
     }
   },
   {
@@ -278,7 +263,7 @@ mutation m {
     SpanId: Id_16,
     Name: graphql.execute,
     Resource: Uncompleted operation,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_9,
     Error: 1,
@@ -312,13 +297,8 @@ errors: [
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate,
-      _dd.svc_src: graphql
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      version: 1.0.0
     }
   },
   {
@@ -326,7 +306,7 @@ errors: [
     SpanId: Id_17,
     Name: graphql.execute,
     Resource: Query ErrorQuery,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_11,
     Error: 1,
@@ -338,11 +318,17 @@ errors: [
 errors: [
 {
 "message": "Unexpected Execution Error",
+"locations": [
+{
+"line": 1,
+"column": 18
+},
+]
 },
 ]
 ,
       error.type: HotChocolate.Error,
-      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Unexpected Execution Error","path":["throwException"],"stacktrace":"   at Samples.HotChocolate.Query.ThrowException() in Query.cs:line 00","extensions.int":1,"extensions.float":1.1,"extensions.str":"1","extensions.bool":true,"extensions.other":"[1,foo]","extensions.sbyte":-42,"extensions.byte":42,"extensions.short":-1000,"extensions.ushort":1000,"extensions.uint":4294967295,"extensions.long":-9223372036854775808,"extensions.ulong":"18446744073709551615","extensions.decimal":"3.14159265358979","extensions.double":3.141592653589793,"extensions.char":"A"}}],
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Unexpected Execution Error","locations":["1:18"],"path":["throwException"],"stacktrace":"   at Samples.HotChocolate.Query.ThrowException() in Query.cs:line 00","extensions.int":1,"extensions.float":1.1,"extensions.str":"1","extensions.bool":true,"extensions.other":"[1,foo]","extensions.sbyte":-42,"extensions.byte":42,"extensions.short":-1000,"extensions.ushort":1000,"extensions.uint":4294967295,"extensions.long":-9223372036854775808,"extensions.ulong":"18446744073709551615","extensions.decimal":"3.14159265358979","extensions.double":3.141592653589793,"extensions.char":"A"}}],
       graphql.operation.name: ErrorQuery,
       graphql.operation.type: Query,
       graphql.source:
@@ -350,13 +336,8 @@ query ErrorQuery {
   throwException
 },
       language: dotnet,
-      runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate,
-      _dd.svc_src: graphql
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      version: 1.0.0
     }
   },
   {
@@ -364,7 +345,7 @@ query ErrorQuery {
     SpanId: Id_18,
     Name: graphql.execute,
     Resource: Query ErrorQuery,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_13,
     Error: 1,
@@ -376,11 +357,17 @@ query ErrorQuery {
 errors: [
 {
 "message": "Unexpected Execution Error",
+"locations": [
+{
+"line": 1,
+"column": 18
+},
+]
 },
 ]
 ,
       error.type: HotChocolate.Error,
-      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Unexpected Execution Error","path":["throwExceptionIndex"],"stacktrace":"   at Samples.HotChocolate.Query.ThrowExceptionIndex() in Query.cs:line 00","extensions.int":1,"extensions.float":1.1,"extensions.str":"1","extensions.bool":true,"extensions.other":"[1,foo]","extensions.sbyte":-42,"extensions.byte":42,"extensions.short":-1000,"extensions.ushort":1000,"extensions.uint":4294967295,"extensions.long":-9223372036854775808,"extensions.ulong":"18446744073709551615","extensions.decimal":"3.14159265358979","extensions.double":3.141592653589793,"extensions.char":"A"}}],
+      events: [{"name":"dd.graphql.query.error","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"message":"Unexpected Execution Error","locations":["1:18"],"path":["throwExceptionIndex"],"stacktrace":"   at Samples.HotChocolate.Query.ThrowExceptionIndex() in Query.cs:line 00","extensions.int":1,"extensions.float":1.1,"extensions.str":"1","extensions.bool":true,"extensions.other":"[1,foo]","extensions.sbyte":-42,"extensions.byte":42,"extensions.short":-1000,"extensions.ushort":1000,"extensions.uint":4294967295,"extensions.long":-9223372036854775808,"extensions.ulong":"18446744073709551615","extensions.decimal":"3.14159265358979","extensions.double":3.141592653589793,"extensions.char":"A"}}],
       graphql.operation.name: ErrorQuery,
       graphql.operation.type: Query,
       graphql.source:
@@ -388,13 +375,8 @@ query ErrorQuery {
   throwExceptionIndex
 },
       language: dotnet,
-      runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.HotChocolate,
-      _dd.svc_src: graphql
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      version: 1.0.0
     }
   }
 ]
