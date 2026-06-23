@@ -24,7 +24,7 @@ internal static class FeatureFlagsSdk
 {
     /// <summary>
     /// Metadata key carrying the evaluation timestamp (Unix milliseconds), stamped at provider
-    /// entry so the EVP hook can use the true evaluation time for first/last_evaluation bounds
+    /// entry so the logging hook can use the true evaluation time for first/last_evaluation bounds
     /// rather than the later hook-fire time. Mirrors the Go reference provider behavior.
     /// </summary>
     internal const string MetadataEvalTimeKey = "dd.eval.timestamp_ms";
@@ -74,7 +74,7 @@ internal static class FeatureFlagsSdk
 
     public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, EvaluationContext? context)
     {
-        // Stamp the evaluation time once at provider entry (UnixMilli). The EVP hook reads it from
+        // Stamp the evaluation time once at provider entry (UnixMilli). The logging hook reads it from
         // flag metadata so first_evaluation/last_evaluation reflect the evaluation moment, not the
         // (potentially later) hook-fire time.
         long evalTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -161,7 +161,7 @@ internal static class FeatureFlagsSdk
     {
         var dic = (metadata ?? new Dictionary<string, string>()).ToDictionary(p => p.Key, p => (object)p.Value);
 
-        // Stamp the provider-captured evaluation time so the EVP hook can read it from metadata.
+        // Stamp the provider-captured evaluation time so the logging hook can read it from metadata.
         // ImmutableMetadata.GetString reads string-typed values, so store it as a string.
         dic[MetadataEvalTimeKey] = evalTimeMs.ToString(System.Globalization.CultureInfo.InvariantCulture);
         return new ImmutableMetadata(dic);

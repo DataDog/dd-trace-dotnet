@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Op
 
 /// <summary>
 /// System.Void Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk::EnqueueEVP(...) calltarget instrumentation.
-/// Routes the EVP enqueue call from FlagEvalEVPHook (in Datadog.FeatureFlags.OpenFeature NuGet)
+/// Routes the EVP enqueue call from FlagEvalLoggingHook (in Datadog.FeatureFlags.OpenFeature NuGet)
 /// through to FlagEvaluationApi in the full tracer (Datadog.Trace.dll).
 /// This is the cross-assembly bridge that avoids a package reference from the NuGet to Datadog.Trace.
 /// </summary>

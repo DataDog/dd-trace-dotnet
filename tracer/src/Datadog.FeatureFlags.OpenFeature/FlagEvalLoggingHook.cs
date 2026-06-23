@@ -1,4 +1,4 @@
-// <copyright file="FlagEvalEVPHook.cs" company="Datadog">
+// <copyright file="FlagEvalLoggingHook.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -23,7 +23,7 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// in the auto-instrumentation side) to avoid a cross-assembly reference to FlagEvaluationApi.
 /// The existing OTel FlagEvalMetricsHook is left unmodified (no regression to that metric path).
 /// </summary>
-internal sealed class FlagEvalEVPHook : Hook
+internal sealed class FlagEvalLoggingHook : Hook
 {
     /// <summary>
     /// Metadata key for the evaluation timestamp stamped by the provider at eval entry.
@@ -42,9 +42,9 @@ internal sealed class FlagEvalEVPHook : Hook
     private const int MaxFieldLength = 256;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="FlagEvalEVPHook"/> class.
+    /// Initializes a new instance of the <see cref="FlagEvalLoggingHook"/> class.
     /// </summary>
-    public FlagEvalEVPHook()
+    public FlagEvalLoggingHook()
     {
     }
 
@@ -102,7 +102,7 @@ internal sealed class FlagEvalEVPHook : Hook
         catch (Exception ex)
         {
             // EVP recording must never break flag evaluation.
-            System.Diagnostics.Debug.WriteLine($"[Datadog] FlagEvalEVPHook.FinallyAsync failed: {ex}");
+            System.Diagnostics.Debug.WriteLine($"[Datadog] FlagEvalLoggingHook.FinallyAsync failed: {ex}");
         }
 
         return default;

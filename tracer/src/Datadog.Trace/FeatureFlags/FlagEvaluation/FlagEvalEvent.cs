@@ -9,7 +9,7 @@ using System.Collections.Generic;
 namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 
 /// <summary>
-/// Minimal snapshot enqueued by FlagEvalEVPHook.FinallyAsync (hot path — cheap capture only).
+/// Minimal snapshot enqueued by FlagEvalLoggingHook.FinallyAsync (hot path — cheap capture only).
 /// The background aggregation worker reads this off the evaluation path.
 /// </summary>
 internal sealed class FlagEvalEvent
