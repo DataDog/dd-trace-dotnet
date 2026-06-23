@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
@@ -17,4 +18,7 @@ internal sealed class Split
     public string? VariationKey { get; set; }
 
     public Dictionary<string, string>? ExtraLogging { get; set; }
+
+    [JsonProperty("serialId")]
+    public long? SerialId { get; set; }
 }

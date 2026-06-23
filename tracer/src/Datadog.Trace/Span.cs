@@ -483,6 +483,29 @@ namespace Datadog.Trace
                 if (IsRootSpan)
                 {
                     DebuggerManager.Instance.ExceptionReplay?.EndRequest();
+
+                    var spanEnrichment = (Context.TraceContext?.Tracer as Tracer)?.TracerManager.SpanEnrichment;
+                    if (spanEnrichment?.IsEnabled == true)
+                    {
+                        try
+                        {
+                            var enrichmentState = spanEnrichment.GetAndClear(SpanId);
+                            if (enrichmentState is not null && enrichmentState.HasData())
+                            {
+                                foreach (var tag in enrichmentState.ToSpanTags())
+                                {
+                                    if (!StringUtil.IsNullOrEmpty(tag.Value))
+                                    {
+                                        Tags.SetTag(tag.Key, tag.Value);
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning(ex, "FFE span enrichment failed for root span {SpanId}", SpanId);
+                        }
+                    }
                 }
 
                 Duration = duration;

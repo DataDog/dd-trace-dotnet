@@ -109,6 +109,7 @@ namespace Datadog.Trace
             TracerFlareManager = tracerFlareManager;
             SpanEventsManager = spanEventsManager;
             FeatureFlags = featureFlagsModule;
+            SpanEnrichment = new SpanEnrichmentStore(settings.IsSpanEnrichmentEnabled);
 
             ServiceRemappingHash = serviceRemappingHash;
 
@@ -186,6 +187,8 @@ namespace Datadog.Trace
         public ISpanEventsManager SpanEventsManager { get; }
 
         public FeatureFlagsModule FeatureFlags { get; }
+
+        public SpanEnrichmentStore SpanEnrichment { get; }
 
         public PerTraceSettings PerTraceSettings => Volatile.Read(ref _perTraceSettings);
 
@@ -325,6 +328,8 @@ namespace Datadog.Trace
                     featureFlagsReplaced = true;
                     oldManager.FeatureFlags.Dispose();
                 }
+
+                oldManager.SpanEnrichment.Clear();
 
                 Log.Information(
                     exception: null,
@@ -770,6 +775,8 @@ namespace Datadog.Trace
                     instance.RemoteConfigurationManager?.Dispose();
                     Log.Debug("Disposing FeatureFlagsManager");
                     instance.FeatureFlags?.Dispose();
+                    Log.Debug("Clearing SpanEnrichmentStore");
+                    instance.SpanEnrichment.Clear();
 
                     Log.Debug("Waiting for disposals.");
                     await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
