@@ -1483,7 +1483,7 @@ namespace Datadog.Trace.Tests.Agent
             aggregator.CurrentBuffer.Buckets.Should().HaveCount(4);
 
             var blockedBucket = aggregator.CurrentBuffer.Buckets.Values
-                                          .Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "tenant:tracer_blocked_value" }));
+                                          .Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "tracer_blocked_value" }));
             blockedBucket.Hits.Should().Be(2); // d + e merged into the blocked bucket
 
             // A repeat of an already-admitted key still merges into its existing entry, regardless of the cap.
@@ -1517,6 +1517,31 @@ namespace Datadog.Trace.Tests.Agent
 
             DecodeTags(aggregator.CurrentBuffer.Buckets[aggregator.BuildKey(withRegion)].AdditionalMetricTags)
                 .Should().Equal("region:us-east-1");
+        }
+
+        [Fact]
+        public async Task AdditionalTags_PerBucketCap_OverflowDropsConfiguredKeyNames()
+        {
+            var start = DateTimeOffset.UtcNow;
+            // Two configured keys, cap of 1 so the second distinct combination overflows.
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region,tenant", cardinalityLimit: 1), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            // First combination admitted; the second collapses into the masked overflow bucket.
+            aggregator.Add(MakeSpan("us", "acme"), MakeSpan("eu", "globex"));
+
+            var blocked = aggregator.CurrentBuffer.Buckets.Values
+                                    .Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "tracer_blocked_value" }));
+
+            DecodeTags(blocked.AdditionalMetricTags).Should().Equal("tracer_blocked_value");
+            blocked.Hits.Should().Be(1); // just the overflowing span
+
+            Span MakeSpan(string region, string tenant)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("region", region);
+                span.SetTag("tenant", tenant);
+                return span;
+            }
         }
 
         [Fact]
@@ -1578,11 +1603,11 @@ namespace Datadog.Trace.Tests.Agent
             var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
 
             // Exactly one real additional-tag bucket has hits this interval; region=a's retained real bucket got none.
-            buckets.Count(b => b.AdditionalMetricTags.Count > 0 && b.Hits > 0 && DecodeTags(b.AdditionalMetricTags)[0] != "region:tracer_blocked_value")
+            buckets.Count(b => b.AdditionalMetricTags.Count > 0 && b.Hits > 0 && DecodeTags(b.AdditionalMetricTags)[0] != "tracer_blocked_value")
                    .Should().Be(1);
             buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:b" })).Hits.Should().Be(1);
             buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:a" })).Hits.Should().Be(0);
-            buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:tracer_blocked_value" })).Hits.Should().Be(1);
+            buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "tracer_blocked_value" })).Hits.Should().Be(1);
 
             Span MakeRegion(string region)
             {
@@ -1651,13 +1676,16 @@ namespace Datadog.Trace.Tests.Agent
                 return span;
             }
 
-            // First 2 distinct peer-tag combinations are admitted; p3/p4 have their peer tags cleared and
-            // collapse into the single no-peer-tags row.
+            // First 2 distinct peer-tag combinations are admitted; p3/p4 have their peer tags collapsed
+            // to the sentinel and merge into the single collapsed peer-tags row.
             aggregator.Add(MakePeer("p1"), MakePeer("p2"), MakePeer("p3"), MakePeer("p4"));
 
             var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
-            buckets.Count(b => b.PeerTags.Count > 0).Should().Be(2);
-            buckets.Single(b => b.PeerTags.Count == 0 && b.Key.PeerTagsHash == 0).Hits.Should().Be(2); // p3 + p4 merged
+            buckets.Count(b => b.Key.PeerTagsHash != 0).Should().Be(2); // p1, p2 admitted with real peer tags
+
+            var collapsed = buckets.Single(b => b.Key.PeerTagsHash == 0); // p3 + p4 merged
+            collapsed.Hits.Should().Be(2);
+            DecodeTags(collapsed.PeerTags).Should().Equal("tracer_blocked_value");
         }
 
         [Fact]
@@ -1772,7 +1800,8 @@ namespace Datadog.Trace.Tests.Agent
         [InlineData(true, 15000)]
         public async Task ResourceLength_TruncatedToConfiguredByteCap(bool bigResource, int expectedMaxBytes)
         {
-            var discovery = new StubDiscoveryService(featureFlags: bigResource ? ["big_resource"] : null);
+            // Resource truncation only runs when the tracer owns obfuscation (version 1).
+            var discovery = new StubDiscoveryService(obfuscationVersion: 1, featureFlags: bigResource ? ["big_resource"] : null);
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discovery, Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "svc");
@@ -1785,6 +1814,24 @@ namespace Datadog.Trace.Tests.Agent
             // ASCII => byte length == char length, truncated to exactly the configured cap.
             System.Text.Encoding.UTF8.GetByteCount(chunk[0].ResourceName).Should().BeLessOrEqualTo(expectedMaxBytes);
             chunk[0].ResourceName.Length.Should().Be(expectedMaxBytes);
+        }
+
+        [Fact]
+        public async Task ResourceLength_NotTruncatedWhenObfuscationDisabled()
+        {
+            // Obfuscation disabled (version 0): the tracer does not own normalization/obfuscation, so the
+            // RFC §4 resource length cap is not applied and the agent caps the resource instead.
+            var discovery = new StubDiscoveryService(obfuscationVersion: 0);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discovery, Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "svc");
+            span.OperationName = "op";
+            span.ResourceName = new string('x', 20000);
+            var chunk = new SpanCollection([span]);
+
+            aggregator.ProcessTrace(ref chunk);
+
+            chunk[0].ResourceName.Length.Should().Be(20000); // left untouched
         }
 
         [Fact]
@@ -1816,9 +1863,58 @@ namespace Datadog.Trace.Tests.Agent
 
             await aggregator.Flush();
 
+            // The statsd health metric is aggregated per cardinality-tag combination and emitted once per flush.
             dogStatsd.Verify(
-                s => s.Increment(TracerMetricNames.Stats.CollapsedSpans, 1, It.IsAny<double>(), It.IsAny<string[]>()),
+                s => s.Counter(
+                    TracerMetricNames.Stats.CollapsedSpans,
+                    1d,
+                    It.IsAny<double>(),
+                    It.Is<string[]>(tags => tags.Contains("collapsed:resource"))),
                 Times.Once());
+        }
+
+        [Fact]
+        public async Task CollapsedSpans_HealthMetricIsScopedPerFlushWindow()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var dogStatsd = new Mock<Vendors.StatsdClient.IDogStatsd>();
+            var statsd = new TestStatsdManager(dogStatsd.Object);
+            var settings = TracerSettings.Create(new Dictionary<string, object>
+            {
+                { ConfigurationKeys.TracerMetricsEnabled, true },
+                { ConfigurationKeys.StatsResourceCardinalityLimit, 1 },
+            });
+
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), settings, new StubDiscoveryService(), statsd, isOtlp: false);
+
+            // Dispose so the explicit Flush() calls below run synchronously without waiting on the interval.
+            await aggregator.DisposeAsync();
+
+            // Three flush windows that all reuse the same two buffers (BufferCount == 2). Each window collapses
+            // exactly one span ("b" folds into the sentinel resource), so each flush must emit the counter with
+            // value 1. Without resetting the reporter per window, the reused buffer's count would accumulate and
+            // the third window would emit value 2.
+            for (var i = 0; i < 3; i++)
+            {
+                aggregator.Add(MakeResource("a")); // admitted (budget of 1 now full)
+                aggregator.Add(MakeResource("b")); // folded => one collapsed span this window
+                await aggregator.Flush();
+            }
+
+            dogStatsd.Verify(
+                s => s.Counter(
+                    TracerMetricNames.Stats.CollapsedSpans,
+                    1d,
+                    It.IsAny<double>(),
+                    It.Is<string[]>(tags => tags.Contains("collapsed:resource"))),
+                Times.Exactly(3));
+
+            Span MakeResource(string resource)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.ResourceName = resource;
+                return span;
+            }
         }
 
         private static List<string> DecodeTags(List<byte[]> encoded)

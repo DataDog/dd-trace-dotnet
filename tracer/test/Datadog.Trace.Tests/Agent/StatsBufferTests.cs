@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.Stats;
 using FluentAssertions;
 using MessagePack;
@@ -56,7 +57,7 @@ namespace Datadog.Trace.Tests.Agent
                 HostName = "Hostname",
             };
 
-            var buffer = new StatsBuffer(payload);
+            var buffer = CreateBuffer(payload);
 
             var key1 = CreateKey("resource1", "service1", "operation1", "type1", 1, true);
             var key2 = CreateKey("resource2", "service2", "operation2", "type2", 2, false);
@@ -109,7 +110,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void Reset()
         {
-            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
             var key1 = CreateKey("resource1", "service1", "operation1", "type1", 1, false);
             var key2 = CreateKey("resource2", "service2", "operation2", "type2", 2, false);
@@ -163,7 +164,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void IncrementSequence()
         {
-            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
             var key = CreateKey("resource1", "service1", "operation1", "type1", 1, false);
             var statsBucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
@@ -186,7 +187,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void Serialization_EmitsEmptyAdditionalMetricTagsWhenEmpty()
         {
-            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
             var key = CreateKey("resource", "service", "operation", "type", 200, false);
             var bucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Hits = 1, TopLevelHits = 1 };
             buffer.Buckets.Add(key, bucket);
@@ -201,7 +202,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void Serialization_PopulatesAdditionalMetricTags()
         {
-            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
             var key = CreateKey("resource", "service", "operation", "type", 200, false, additionalMetricTagsHash: 12345);
             var additionalTags = new List<byte[]>
             {
@@ -228,7 +229,7 @@ namespace Datadog.Trace.Tests.Agent
                     { ConfigurationKeys.GlobalTags, "datacenter:us-east-1,tenant_id:acme-corp" },
                 });
 
-            var buffer = new StatsBuffer(new ClientStatsPayload(settings));
+            var buffer = CreateBuffer(new ClientStatsPayload(settings));
             var key = CreateKey("resource", "service", "operation", "type", 200, false);
             var bucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Hits = 1, TopLevelHits = 1 };
             buffer.Buckets.Add(key, bucket);
@@ -243,7 +244,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void Serialization_EmitsEmptyTracerDdTagsWhenNoGlobalTags()
         {
-            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
             var key = CreateKey("resource", "service", "operation", "type", 200, false);
             var bucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Hits = 1, TopLevelHits = 1 };
             buffer.Buckets.Add(key, bucket);
@@ -312,6 +313,9 @@ namespace Datadog.Trace.Tests.Agent
             key13.Should().NotBe(key14);
         }
 
+        private static StatsBuffer CreateBuffer(ClientStatsPayload payload)
+            => new(payload, new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance));
+
         private static StatsAggregationKey CreateKey(
             string resource,
             string service,
@@ -344,7 +348,8 @@ namespace Datadog.Trace.Tests.Agent
                 grpcStatusCode,
                 serviceSource ?? string.Empty,
                 peerTagsHash,
-                additionalMetricTagsHash);
+                additionalMetricTagsHash,
+                truncatedFields: StatsCardinalityTruncatedFields.None);
         }
 
         private static void AssertStatsGroup(MockClientGroupedStats group, StatsAggregationKey expectedKey, StatsBucket expectedBucket)
