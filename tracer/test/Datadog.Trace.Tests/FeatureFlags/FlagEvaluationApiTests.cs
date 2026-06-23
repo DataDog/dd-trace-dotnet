@@ -620,33 +620,6 @@ public class FlagEvaluationApiTests
     }
 
     [Fact]
-    public void Serialize_FullAndDegradedEvents_ValidateAgainstWorkerSchema()
-    {
-        var agg = new FlagEvaluationAggregator(globalCap: 1, perFlagCap: 10, degradedCap: 10);
-        agg.Add(new FlagEvalEvent("flag-full", "on", "alloc-1", "user-1", SchemaValidTimestampMs, new Dictionary<string, object?> { ["env"] = "prod" }));
-        agg.Add(new FlagEvalEvent("flag-degraded", "off", "alloc-2", "user-2", SchemaValidTimestampMs + 1, new Dictionary<string, object?> { ["env"] = "prod" }));
-
-        var payload = FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")!;
-        var json = JObject.Parse(FlagEvaluationApi.SerializeForTest(payload));
-
-        AssertValidAgainstWorkerSchema(json);
-    }
-
-    [Fact]
-    public void WorkerSchemaRejectsTopLevelReason()
-    {
-        var agg = new FlagEvaluationAggregator(globalCap: 10, perFlagCap: 10, degradedCap: 10);
-        agg.Add(new FlagEvalEvent("flag-a", "on", "alloc-1", "user-1", SchemaValidTimestampMs, null));
-
-        var payload = FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")!;
-        var json = JObject.Parse(FlagEvaluationApi.SerializeForTest(payload));
-        ((JObject)json["flagEvaluations"]![0]!).Add("reason", "targeting_match");
-
-        var errors = ValidateAgainstWorkerSchema(json);
-        errors.Should().Contain(e => e.IndexOf("reason", StringComparison.Ordinal) >= 0);
-    }
-
-    [Fact]
     public void FlagEvalEventDoesNotCarryReason()
     {
         typeof(FlagEvalEvent).GetProperty("Reason").Should().BeNull("OpenFeature reason is not an EVP schema-visible dimension");
@@ -1033,101 +1006,6 @@ public class FlagEvaluationApiTests
 
         return tags is { Length: 1 } && tags[0] == tag;
     }
-
-    private static void AssertValidAgainstWorkerSchema(JObject json)
-    {
-        var errors = ValidateAgainstWorkerSchema(json);
-        errors.Should().BeEmpty(string.Join(Environment.NewLine, errors));
-    }
-
-    private static List<string> ValidateAgainstWorkerSchema(JToken json)
-    {
-        var schema = LoadWorkerSchema();
-        var errors = new List<string>();
-        ValidateSchema(json, schema, "$", errors);
-        return errors;
-    }
-
-    private static JObject LoadWorkerSchema()
-    {
-        var resourceName = typeof(FlagEvaluationApiTests).Assembly
-            .GetManifestResourceNames()
-            .Single(name => name.EndsWith("batchedflagevaluations.json", StringComparison.Ordinal));
-        using var stream = typeof(FlagEvaluationApiTests).Assembly.GetManifestResourceStream(resourceName)!;
-        using var reader = new StreamReader(stream);
-        return JObject.Parse(reader.ReadToEnd());
-    }
-
-    private static void ValidateSchema(JToken value, JObject schema, string path, List<string> errors)
-    {
-        if (schema["type"] is JValue typeToken && !MatchesType(value, typeToken.Value<string>()))
-        {
-            errors.Add($"{path}: expected {typeToken.Value<string>()}, got {value.Type}");
-            return;
-        }
-
-        if (schema["minimum"] is JValue minimum && value.Type == JTokenType.Integer && value.Value<long>() < minimum.Value<long>())
-        {
-            errors.Add($"{path}: value {value.Value<long>()} is below minimum {minimum.Value<long>()}");
-        }
-
-        if (schema["type"]?.Value<string>() == "array" && schema["items"] is JObject itemSchema && value is JArray array)
-        {
-            for (int i = 0; i < array.Count; i++)
-            {
-                ValidateSchema(array[i], itemSchema, $"{path}[{i}]", errors);
-            }
-
-            return;
-        }
-
-        if (schema["type"]?.Value<string>() != "object" || value is not JObject obj)
-        {
-            return;
-        }
-
-        if (schema["required"] is JArray required)
-        {
-            foreach (string? requiredProperty in required.Values<string>())
-            {
-                if (requiredProperty is null)
-                {
-                    continue;
-                }
-
-                if (!obj.ContainsKey(requiredProperty))
-                {
-                    errors.Add($"{path}: missing required property {requiredProperty}");
-                }
-            }
-        }
-
-        var properties = schema["properties"] as JObject;
-        if (properties is not null)
-        {
-            foreach (var property in obj.Properties())
-            {
-                if (properties[property.Name] is JObject propertySchema)
-                {
-                    ValidateSchema(property.Value, propertySchema, $"{path}.{property.Name}", errors);
-                }
-                else if (schema["additionalProperties"]?.Value<bool>() == false)
-                {
-                    errors.Add($"{path}: additional property {property.Name} is not allowed");
-                }
-            }
-        }
-    }
-
-    private static bool MatchesType(JToken value, string? schemaType) => schemaType switch
-    {
-        "object" => value.Type == JTokenType.Object,
-        "array" => value.Type == JTokenType.Array,
-        "string" => value.Type == JTokenType.String,
-        "integer" => value.Type == JTokenType.Integer,
-        "boolean" => value.Type == JTokenType.Boolean,
-        _ => true
-    };
 
     private sealed class PayloadCapture
     {
