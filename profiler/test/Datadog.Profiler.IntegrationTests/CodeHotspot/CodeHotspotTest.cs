@@ -9,7 +9,6 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Datadog.Profiler.IntegrationTests.Xunit;
 using Datadog.Trace;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -17,6 +16,7 @@ using MessagePack;
 using Perftools.Profiles;
 using Xunit;
 using Xunit.Abstractions;
+using ProfilerXunit = Datadog.Profiler.IntegrationTests.Xunit;
 
 namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 {
@@ -239,7 +239,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             Assert.Empty(tracingContexts);
         }
 
-        [Flaky("Endpoint association can race with the profiler's shutdown export on slow/32-bit runtimes")]
+        [ProfilerXunit.Flaky("Endpoint association can race with the profiler's shutdown export on slow/32-bit runtimes")]
         [TestAppFact("Samples.BuggyBits")]
         public void CheckEndpointsAreAttached(string appName, string framework, string appAssembly)
         {
