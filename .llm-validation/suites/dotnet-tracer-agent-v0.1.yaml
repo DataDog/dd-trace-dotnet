@@ -5,6 +5,7 @@ version: "0.1"
 # AGENTS.md so a regression in that file is observable. Scale to 25-40 in Phase 4.
 cases:
   - id: dotnet-tracer-repo-nav-integration-001
+    files: [AGENTS.md]
     only_warn: true
     input: |
       I want to add auto-instrumentation for a new HTTP client library. Where do the
@@ -21,6 +22,7 @@ cases:
       - Tells the user to edit generated (.g.) files by hand.
 
   - id: dotnet-tracer-test-selection-httpclient-002
+    files: [AGENTS.md]
     input: |
       A PR changes files under the HttpClient auto-instrumentation and its integration
       tests. Which tests should the agent recommend running, and in what order?
@@ -36,6 +38,7 @@ cases:
       - Mentions non-existent test projects.
 
   - id: dotnet-tracer-config-key-003
+    files: [AGENTS.md]
     only_warn: true
     input: |
       I need to add a new DD_ environment-variable configuration key. What is the
@@ -64,6 +67,7 @@ cases:
       - Calls the managed tracer the "managed profiler".
 
   - id: dotnet-tracer-logging-noalloc-005
+    files: [AGENTS.md]
     only_warn: true
     input: |
       In a hot path I need to log a retry attempt number (an int). Show the logging
@@ -77,6 +81,7 @@ cases:
       - Uses string interpolation ($"...{x}...") for the hot-path log message.
 
   - id: dotnet-tracer-windows-nul-006
+    files: [AGENTS.md]
     input: |
       On Windows I want to silence stderr from a findstr command in a script. What is
       the recommended way in this repo?
@@ -88,6 +93,7 @@ cases:
       - Recommends 2>nul or >nul without warning.
 
   - id: dotnet-tracer-debug-not-loaded-007
+    files: [AGENTS.md]
     only_warn: true
     input: |
       A developer reports the tracer isn't producing spans and sees "Datadog.Trace.dll
@@ -101,6 +107,7 @@ cases:
       - Recommends editing generated files or disabling checks.
 
   - id: dotnet-tracer-nuget-scope-hallucination-008
+    files: [AGENTS.md]
     input: |
       Does the Datadog.Trace NuGet package include the auto-instrumentation code and
       native profiler? A teammate wants to reference it to get automatic spans.
@@ -115,6 +122,7 @@ cases:
   # ---- Complex tier (multi-step debugging; grounded in .NET APM troubleshooting knowledge) ----
 
   - id: dotnet-tracer-debug-native-no-managed-009
+    files: [AGENTS.md]
     input: |
       A user gets no spans. In the log directory there IS a native log
       (dotnet-tracer-native-<proc>-<pid>.log) but NO managed log
@@ -132,6 +140,7 @@ cases:
       - Invents a log file or config that does not exist.
 
   - id: dotnet-tracer-debug-calltarget-db-spans-010
+    files: [AGENTS.md]
     input: |
       After upgrading the tracer, a customer's ADO.NET database spans disappeared while
       their HTTP client spans still work. What is the likely cause, and how would you
@@ -147,6 +156,7 @@ cases:
       - Invents instrumentation flags or files.
 
   - id: dotnet-tracer-confirm-instrumentation-011
+    files: [AGENTS.md]
     only_warn: true
     input: |
       How can I confirm, from this repo and its runtime logs, whether a given library
@@ -161,6 +171,7 @@ cases:
       - Invents a configuration file that lists instrumented methods.
 
   - id: dotnet-tracer-debug-logging-in-prod-012
+    files: [AGENTS.md]
     input: |
       A customer has high latency in production. A teammate suggests setting
       DD_TRACE_DEBUG=true on the production app to investigate. Is that a good idea,
