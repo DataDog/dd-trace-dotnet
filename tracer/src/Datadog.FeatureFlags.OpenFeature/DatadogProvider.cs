@@ -14,6 +14,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using OpenFeature;
 using OpenFeature.Constant;
+using OpenFeature.Error;
 using OpenFeature.Model;
 
 namespace Datadog.FeatureFlags.OpenFeature;
@@ -23,8 +24,11 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// </summary>
 public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisposable
 {
+    private const int InitialConfigTimeoutSeconds = 30;
+    private static readonly TimeSpan InitialConfigTimeout = TimeSpan.FromSeconds(InitialConfigTimeoutSeconds);
     private static Action? _onNewConfig = null;
     private readonly Metadata _metadata = new Metadata("datadog-openfeature-provider");
+    private readonly TaskCompletionSource<bool> _initialConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
 #if NET6_0_OR_GREATER
     private readonly FlagEvalMetricsHook _metricsHook;
 #endif
@@ -48,10 +52,32 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         _onNewConfig = onNewConfig;
     }
 
+    private static void ThrowInitialConfigTimeout()
+    {
+        var message = $"Timed out after {InitialConfigTimeoutSeconds} seconds waiting for initial Datadog Feature Flags configuration from Remote Configuration.";
+        throw new ProviderNotReadyException(message, new TimeoutException(message));
+    }
+
+    /// <inheritdoc />
+    public override Task InitializeAsync(EvaluationContext context, CancellationToken cancellationToken)
+    {
+        if (FeatureFlagsSdk.IsReady())
+        {
+            return Task.CompletedTask;
+        }
+
+        return WaitForInitialConfig(cancellationToken);
+    }
+
     private void SignalGeneralUpdate()
     {
         try
         {
+            if (FeatureFlagsSdk.IsReady())
+            {
+                _initialConfigReceived.TrySetResult(true);
+            }
+
             _onNewConfig?.Invoke();
 
             // You don't have to provide specific flag keys
@@ -63,6 +89,40 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
             EventChannel.Writer.TryWrite((object)payload);
         }
         catch { }
+    }
+
+    private async Task WaitForInitialConfig(CancellationToken cancellationToken)
+    {
+        var timeoutTask = Task.Delay(InitialConfigTimeout);
+        if (!cancellationToken.CanBeCanceled)
+        {
+            var completedInitialConfigTask = await Task.WhenAny(_initialConfigReceived.Task, timeoutTask).ConfigureAwait(false);
+            if (completedInitialConfigTask == timeoutTask)
+            {
+                ThrowInitialConfigTimeout();
+            }
+
+            await _initialConfigReceived.Task.ConfigureAwait(false);
+            return;
+        }
+
+        var cancellationCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var cancellationRegistration = cancellationToken.Register(
+            state => ((TaskCompletionSource<bool>)state!).TrySetResult(true),
+            cancellationCompletionSource);
+        var cancellationTask = cancellationCompletionSource.Task;
+        var completedTask = await Task.WhenAny(_initialConfigReceived.Task, timeoutTask, cancellationTask).ConfigureAwait(false);
+        if (completedTask == cancellationTask)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        if (completedTask == timeoutTask)
+        {
+            ThrowInitialConfigTimeout();
+        }
+
+        await _initialConfigReceived.Task.ConfigureAwait(false);
     }
 
     /// <summary> Gets provider metadata </summary>

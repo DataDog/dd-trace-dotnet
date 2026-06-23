@@ -26,6 +26,7 @@ namespace Datadog.Trace.FeatureFlags
         private readonly ISubscription _rcmSubscription;
         private readonly FfeProduct _ffeProduct;
         private readonly ExposureApi _exposureApi;
+        private readonly bool _isRemoteConfigurationAvailable;
 
         private Action? _onNewConfigEventHander;
         private FeatureFlagsEvaluator? _evaluator;
@@ -35,6 +36,7 @@ namespace Datadog.Trace.FeatureFlags
             Log.Debug("FeatureFlagsModule ENABLED");
             _rcmSubscriptionManager = rcmSubscriptionManager;
             _exposureApi = new ExposureApi(settings);
+            _isRemoteConfigurationAvailable = settings.IsRemoteConfigurationAvailable;
             _ffeProduct = new FfeProduct(UpdateRemoteConfig);
             _rcmSubscription = new Subscription(_ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
             _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription!);
@@ -59,6 +61,16 @@ namespace Datadog.Trace.FeatureFlags
         internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)
         {
             _onNewConfigEventHander = onNewConfig;
+
+            if (Volatile.Read(ref _evaluator) is not null)
+            {
+                _onNewConfigEventHander?.Invoke();
+            }
+        }
+
+        internal bool IsReady()
+        {
+            return !_isRemoteConfigurationAvailable || Volatile.Read(ref _evaluator) is not null;
         }
 
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string targetingKey, IDictionary<string, object?>? attributes)
