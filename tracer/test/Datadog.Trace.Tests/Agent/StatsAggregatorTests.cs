@@ -13,8 +13,10 @@ using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Util;
@@ -49,7 +51,7 @@ namespace Datadog.Trace.Tests.Agent
                 .Returns(Task.FromResult(true));
 
             // Mock the DiscoveryService so StatsAggregator.CanComputeStats = true and Api.SendStatsAsync will be called
-            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds), new StubDiscoveryService(), isOtlp: false);
+            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -84,7 +86,7 @@ namespace Datadog.Trace.Tests.Agent
 
             // First, validate that Flush does call SendStatsAsync even if disposed
             // If this behavior change then the test needs to be rewritten
-            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), isOtlp: false);
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             // Dispose immediately to make Flush complete without delay
             await aggregator.DisposeAsync();
@@ -98,7 +100,7 @@ namespace Datadog.Trace.Tests.Agent
             api.Reset();
 
             // Now the actual test
-            aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), isOtlp: false);
+            aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
             await aggregator.DisposeAsync();
 
             await aggregator.Flush();
@@ -111,7 +113,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task StaleBuckets_DoNotTriggerFlush()
         {
             var api = new Mock<IApi>();
-            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), isOtlp: false);
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
             await aggregator.DisposeAsync();
 
             // Add a span and flush — this should send stats
@@ -131,7 +133,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task IdleFlush_StillResetsStartTimestamp()
         {
             var api = new Mock<IApi>();
-            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), isOtlp: false);
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
             await aggregator.DisposeAsync();
 
             // Add a span and flush to populate the buffer
@@ -166,7 +168,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -245,7 +247,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -308,7 +310,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -375,7 +377,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -414,7 +416,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -457,7 +459,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -506,14 +508,14 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void CreateStatsAggregator_Otlp_AlwaysComputesStats()
         {
-            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
             aggregator.CanComputeStats.Should().BeTrue();
         }
 
         [Fact]
         public async Task Otlp_ProcessTrace_WhenTraceSampled_ReturnsAggregateAndExport()
         {
-            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
             await using var tracer = TracerHelper.CreateWithFakeAgent();
 
             var traceContext = new TraceContext(tracer);
@@ -530,7 +532,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task Otlp_ProcessTrace_WhenTraceNotSampled_ReturnsAggregateOnly()
         {
-            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
             await using var tracer = TracerHelper.CreateWithFakeAgent();
 
             var traceContext = new TraceContext(tracer);
@@ -548,7 +550,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task ProcessTrace_WhenSampled_ReturnsAggregateAndExport()
         {
             var discoveryService = new StubDiscoveryService(obfuscationVersion: 1);
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
@@ -583,7 +585,7 @@ namespace Datadog.Trace.Tests.Agent
                 IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
@@ -609,7 +611,7 @@ namespace Datadog.Trace.Tests.Agent
                 IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
@@ -636,7 +638,7 @@ namespace Datadog.Trace.Tests.Agent
                 IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
@@ -655,7 +657,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task ShouldFilterTrace_WhenNoFilter_ReturnsFalse()
         {
             // No discovery service → no trace filter configured
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
             span.OperationName = "operation";
@@ -677,7 +679,7 @@ namespace Datadog.Trace.Tests.Agent
                 IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
@@ -702,7 +704,7 @@ namespace Datadog.Trace.Tests.Agent
                 IgnoreResourcesRegex: null);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
@@ -726,7 +728,7 @@ namespace Datadog.Trace.Tests.Agent
                 IgnoreResourcesRegex: ["^GET /health"]);
 
             var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
@@ -742,7 +744,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task ShouldKeepTrace_WhenPrioritySampled_ReturnsTrue()
         {
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
@@ -758,7 +760,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task ShouldKeepTrace_WhenNotSampled_ReturnsFalse()
         {
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
@@ -774,7 +776,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task ShouldKeepTrace_Otlp_WhenSampled_ReturnsTrue()
         {
-            await using var aggregator = (StatsAggregator)StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, isOtlp: true);
+            await using var aggregator = (StatsAggregator)StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
 
             var tracer = new StubDatadogTracer();
             var traceContext = new TraceContext(tracer);
@@ -791,7 +793,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task ObfuscateTrace_WhenNotEnabled_ReturnsUnmodified()
         {
             // Default: obfuscation version is 0 (not enabled), so ObfuscateTrace should return the same collection
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
             span.OperationName = "operation";
@@ -812,7 +814,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             // Use StubDiscoveryService with obfuscation version 1 to enable tracer obfuscation
             var discoveryService = new StubDiscoveryService(obfuscationVersion: 1);
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
             span.OperationName = "operation";
@@ -833,7 +835,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task SpanKindEligibility_ServerAndClientSpansAreIncluded()
         {
             var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -885,7 +887,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task SpanKindCreatesDistinctBuckets()
         {
             var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -915,7 +917,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task IsTraceRootCreatesDistinctBuckets()
         {
             var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -951,7 +953,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task HttpMethodCreatesDistinctBuckets()
         {
             var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -980,7 +982,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task HttpEndpointCreatesDistinctBuckets()
         {
             var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -1009,7 +1011,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task GrpcStatusCodeCreatesDistinctBuckets()
         {
             var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -1042,7 +1044,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task GrpcStatusCodeFallbackTags(string tagName, string tagValue)
         {
             var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -1068,7 +1070,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task GrpcStatusCodePriorityOrder()
         {
             var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -1096,7 +1098,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task ServiceSourceCreatesDistinctBuckets()
         {
             var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -1125,7 +1127,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task PeerTagsCreateDistinctBuckets()
         {
             var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), new StubDiscoveryService(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -1164,7 +1166,7 @@ namespace Datadog.Trace.Tests.Agent
             // peer.service:remote-service → hash 3430395298086625290
             // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(start, "svc");
             span.SetTag(Tags.SpanKind, spanKind);
@@ -1183,7 +1185,7 @@ namespace Datadog.Trace.Tests.Agent
             // db.instance:i-1234, db.system:postgres, peer.service:remote-service → hash 9894752672193411515
             // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(start, "svc");
             span.SetTag(Tags.SpanKind, SpanKinds.Client);
@@ -1205,7 +1207,7 @@ namespace Datadog.Trace.Tests.Agent
             // messaging.destination:topic-foo, messaging.system:kafka → hash 0xf5eeb51fbe7929b4
             // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(start, "svc");
             span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
@@ -1224,7 +1226,7 @@ namespace Datadog.Trace.Tests.Agent
             // Same hash as single tag — empty db.instance and db.system values are skipped
             // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(start, "svc");
             span.SetTag(Tags.SpanKind, SpanKinds.Client);
@@ -1244,7 +1246,7 @@ namespace Datadog.Trace.Tests.Agent
             // Verify that the fast-path hash from BuildKey matches
             // what you'd get by hashing the GetEncodedPeerTags output directly
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(start, "svc");
             span.SetTag(Tags.SpanKind, SpanKinds.Client);
@@ -1273,7 +1275,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             // Verify that the fast-path hash from BuildKey matches the encoded base service tag
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(start, "svc");
             span.Tags.SetTag(Tags.BaseService, "my-base-service");
@@ -1292,7 +1294,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task PeerTagsHash_NoMatchingTags_ReturnsZero()
         {
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(start, "svc");
             span.SetTag(Tags.SpanKind, SpanKinds.Client);
@@ -1308,7 +1310,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task AdditionalTags_PresentValuesDistinguishBuckets()
         {
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span1 = CreateTopLevelSpan(start, "svc");
             span1.SetTag("region", "us-east-1");
@@ -1327,7 +1329,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task AdditionalTags_MissingTagBucketsSeparatelyFromPresent()
         {
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var withRegion = CreateTopLevelSpan(start, "svc");
             withRegion.SetTag("region", "us-east-1");
@@ -1352,7 +1354,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task AdditionalTags_HashIsConsistentAndOrderIndependent()
         {
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region,tenant"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region,tenant"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             // Same values, but set on the span in a different order: the hash must match because
             // hashing iterates the configured (sorted) key order, not the span's tag insertion order.
@@ -1373,7 +1375,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task AdditionalTags_MultipleKeysAggregateIndependently()
         {
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region,tenant"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region,tenant"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             Span Make(string region, string tenant)
             {
@@ -1393,7 +1395,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task AdditionalTags_ValueExceedingLengthCap_SubstitutesBlockedByTracer()
         {
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(start, "svc");
             span.SetDuration(TimeSpan.FromMilliseconds(100));
@@ -1414,7 +1416,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task AdditionalTags_ValueAtLengthCap_IsNotBlocked()
         {
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var value = new string('x', 200); // exactly at the cap is allowed
             var span = CreateTopLevelSpan(start, "svc");
@@ -1430,7 +1432,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task AdditionalTags_EncodedTagsAreSortedByConfiguredKeyOrder()
         {
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("tenant,region,az"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("tenant,region,az"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(start, "svc");
             span.SetTag("region", "us-east-1");
@@ -1449,7 +1451,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var start = DateTimeOffset.UtcNow;
             // No additional tags configured (feature off)
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(start, "svc");
             span.SetTag("region", "us-east-1");
@@ -1465,7 +1467,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task AdditionalTags_PerBucketCap_BlocksOverflowAndMergesAdmitted()
         {
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("tenant", cardinalityLimit: 3), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("tenant", cardinalityLimit: 3), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             Span MakeTenant(string tenant)
             {
@@ -1494,7 +1496,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task AdditionalTags_PerBucketCap_DoesNotApplyToSpansWithoutAdditionalTags()
         {
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             // Five distinct buckets (by resource) but none carry the configured tag, so the cap never triggers.
             for (var i = 0; i < 5; i++)
@@ -1521,7 +1523,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task AdditionalTags_FlushResetsCardinalityBudget()
         {
             var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), new StubDiscoveryService(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             // Dispose so the background flush completes and explicit Flush() runs synchronously without delay.
             await aggregator.DisposeAsync();
@@ -1554,7 +1556,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task AdditionalTags_RetainedBucketIsGatedByCapWhenReactivated()
         {
             var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), new StubDiscoveryService(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             // Dispose so the background flush completes and explicit Flush() runs synchronously without delay.
             await aggregator.DisposeAsync();
@@ -1594,7 +1596,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task Resource_PerFieldCap_FoldsOverflowToSentinel()
         {
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(resourceLimit: 2), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(resourceLimit: 2), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             Span MakeResource(string resource)
             {
@@ -1616,7 +1618,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task HttpEndpoint_PerFieldCap_FoldsOverflowToSentinel()
         {
             var start = DateTimeOffset.UtcNow;
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(httpEndpointLimit: 2), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(httpEndpointLimit: 2), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             Span MakeEndpoint(string route)
             {
@@ -1639,7 +1641,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var start = DateTimeOffset.UtcNow;
             // StubDiscoveryService advertises peer.service as a peer tag, so peer-tag hashing is active.
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(peerTagsLimit: 2), new StubDiscoveryService(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(peerTagsLimit: 2), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             Span MakePeer(string peer)
             {
@@ -1664,7 +1666,7 @@ namespace Datadog.Trace.Tests.Agent
             var start = DateTimeOffset.UtcNow;
             // Drive cardinality through the service dimension, which has no per-field cap, so only the
             // whole-key backstop can bound it.
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(bucketsLimit: 2), Mock.Of<IDiscoveryService>(), isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(bucketsLimit: 2), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             aggregator.Add(
                 CreateTopLevelSpan(start, "s1"),
@@ -1737,7 +1739,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task Resource_PerFieldCap_ResetsOnFlush()
         {
             var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(resourceLimit: 1), new StubDiscoveryService(), isOtlp: false);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(resourceLimit: 1), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             // Dispose so the background flush completes and explicit Flush() runs synchronously without delay.
             await aggregator.DisposeAsync();
@@ -1771,7 +1773,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task ResourceLength_TruncatedToConfiguredByteCap(bool bigResource, int expectedMaxBytes)
         {
             var discovery = new StubDiscoveryService(featureFlags: bigResource ? ["big_resource"] : null);
-            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discovery, isOtlp: false);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discovery, Mock.Of<IStatsdManager>(), isOtlp: false);
 
             var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "svc");
             span.OperationName = "op";
@@ -1783,6 +1785,40 @@ namespace Datadog.Trace.Tests.Agent
             // ASCII => byte length == char length, truncated to exactly the configured cap.
             System.Text.Encoding.UTF8.GetByteCount(chunk[0].ResourceName).Should().BeLessOrEqualTo(expectedMaxBytes);
             chunk[0].ResourceName.Length.Should().Be(expectedMaxBytes);
+        }
+
+        [Fact]
+        public async Task CollapsedSpans_RecordedOnStatsdHealthMetric()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var dogStatsd = new Mock<Vendors.StatsdClient.IDogStatsd>();
+            var statsd = new TestStatsdManager(dogStatsd.Object);
+            var settings = TracerSettings.Create(new Dictionary<string, object>
+            {
+                { ConfigurationKeys.TracerMetricsEnabled, true },
+                { ConfigurationKeys.StatsResourceCardinalityLimit, 1 },
+            });
+
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), settings, new StubDiscoveryService(), statsd, isOtlp: false);
+
+            // Dispose so the explicit Flush() below runs synchronously without waiting on the interval.
+            await aggregator.DisposeAsync();
+
+            Span MakeResource(string resource)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.ResourceName = resource;
+                return span;
+            }
+
+            aggregator.Add(MakeResource("a")); // admitted (budget of 1 now full)
+            aggregator.Add(MakeResource("b")); // folded => one collapsed span
+
+            await aggregator.Flush();
+
+            dogStatsd.Verify(
+                s => s.Increment(TracerMetricNames.Stats.CollapsedSpans, 1, It.IsAny<double>(), It.IsAny<string[]>()),
+                Times.Once());
         }
 
         private static List<string> DecodeTags(List<byte[]> encoded)

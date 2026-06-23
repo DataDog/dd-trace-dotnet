@@ -477,6 +477,9 @@ internal static class MetricTags
         [Description("encoding:json")] Json,
     }
 
+    // Note that these tags need to remain in sync with StatsCardinalityReporter.StatsdTags.Tags
+    // (both order and values)
+    [EnumExtensions]
     internal enum CollapsedStatsFields
     {
         [Description("")] None,

@@ -19,6 +19,7 @@ using Datadog.Trace.Processors;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
@@ -95,8 +96,6 @@ namespace Datadog.Trace.Agent
         private TraceFilter _traceFilter;
         private List<PeerTagKey> _peerTagKeys = [];
         private int _computeStatsState;
-
-        private int _additionalTagsBlockLoggedThisBucket;
 
         private int _maxResourceLengthBytes = DefaultMaxResourceLengthBytes;
 
@@ -588,7 +587,6 @@ namespace Datadog.Trace.Agent
             // Hash should be generated as TAGNAME:TAGVALUE, in sorted order (_additionalTagKeys is pre-sorted).
             ulong? previousHash = null;
             var presentTagCount = 0;
-            string firstPresentTagName = null;
             string firstBlockedTagName = null;
             foreach (var tagKey in _additionalTagKeys)
             {
@@ -597,8 +595,6 @@ namespace Datadog.Trace.Agent
                 {
                     continue;
                 }
-
-                firstPresentTagName ??= tagKey.Name;
 
                 if (tagValue.Length > AdditionalTagMaxValueLength)
                 {
@@ -619,36 +615,8 @@ namespace Datadog.Trace.Agent
             results = new AdditionalTagResults
             {
                 TagCount = presentTagCount,
-                FirstPresentTagName = firstPresentTagName,
                 FirstBlockedTagName = firstBlockedTagName,
             };
-            return previousHash ?? 0;
-        }
-
-        /// <summary>
-        /// Computes the masked-value hash for the per-flush-bucket cardinality cap: every present tag's
-        /// value is replaced with <see cref="BlockedByTracerSentinel"/>. Spans that share the same set of
-        /// present keys collapse into a single "blocked" bucket.
-        /// </summary>
-        private ulong ComputeBlockedAdditionalMetricTagsHash(Span span)
-        {
-            ulong? previousHash = null;
-            foreach (var tagKey in _additionalTagKeys)
-            {
-                var tagValue = span.GetTag(tagKey.Name);
-                if (string.IsNullOrEmpty(tagValue))
-                {
-                    continue;
-                }
-
-                if (previousHash.HasValue)
-                {
-                    previousHash = FnvHash64.GenerateHash(PeerTagSeparator, FnvHash64.Version.V1A, previousHash.Value);
-                }
-
-                previousHash = HashTag(tagKey.Utf8Prefix, BlockedByTracerSentinel, FnvHash64.Version.V1A, previousHash);
-            }
-
             return previousHash ?? 0;
         }
 
@@ -707,13 +675,17 @@ namespace Datadog.Trace.Agent
                 lock (_buffers)
                 {
                     _currentBuffer = (_currentBuffer + 1) % BufferCount;
-
-                    // Reset per-flush values. The per-field admission sets live on the buffer and are
-                    // cleared in StatsBuffer.Reset(); only the log-throttle gate is reset here.
-                    _additionalTagsBlockLoggedThisBucket = 0;
                 }
 
                 TelemetryFactory.Metrics.RecordGaugeStatsBuckets(buffer.Buckets.Count);
+                if (Volatile.Read(ref _traceMetricsEnabled))
+                {
+                    using var lease = _statsd.TryGetClientLease();
+                    if (lease.Client is { } statsd)
+                    {
+                        buffer.CardinalityReporter.EmitCollapsedHealthCheckMetrics(statsd);
+                    }
+                }
 
                 if (buffer.HasHits() && CanComputeStats == true)
                 {
@@ -771,7 +743,8 @@ namespace Datadog.Trace.Agent
             // window, new values are folded to the sentinel so the field stops growing cardinality, while
             // the span's other dimensions and its hits/duration are still recorded. The seen-sets live on
             // the buffer and reset each flush.
-            var cardinalityLimitsApplied = buffer.CardinalityLimiter.ApplyCardinalityLimits(ref key);
+            var perFieldLimitsApplied = buffer.CardinalityLimiter.ApplyCardinalityLimits(ref key);
+            var wholeKeyOverflow = false;
 
             if (!buffer.Buckets.TryGetValue(key, out var bucket))
             {
@@ -782,7 +755,7 @@ namespace Datadog.Trace.Agent
                 if (buffer.ActiveBucketCount >= _bucketsCardinalityLimit)
                 {
                     key = OverflowKey;
-                    cardinalityLimitsApplied = true;
+                    wholeKeyOverflow = true;
                     buffer.Buckets.TryGetValue(key, out bucket);
                 }
 
@@ -803,14 +776,9 @@ namespace Datadog.Trace.Agent
                 }
             }
 
-            // Observability: a per-value length mask (tag value > 200 chars) or any cardinality collapse.
-            if (additionalTagResults.FirstBlockedTagName is not null)
+            if (wholeKeyOverflow || perFieldLimitsApplied || key.TruncatedFields != StatsCardinalityTruncatedFields.None)
             {
-                OnAdditionalTagsBlocked(additionalTagResults.FirstBlockedTagName);
-            }
-            else if (cardinalityLimitsApplied)
-            {
-                OnAdditionalTagsBlocked(additionalTagResults.FirstPresentTagName);
+                buffer.CardinalityReporter.RecordCardinalityOverflow(key.CardinalityLimitedFields, key.TruncatedFields);
             }
 
             // Count buckets that become active this window (first hit) for the whole-key cap. Covers both
@@ -841,25 +809,6 @@ namespace Datadog.Trace.Agent
             else
             {
                 bucket.OkSummary.Add(ConvertTimestamp(duration));
-            }
-
-            void OnAdditionalTagsBlocked(string triggeringTagName)
-            {
-                // One-shot warn per flush bucket, so an attack-shaped workload can't flood the logs.
-                // The per-value length cap and every per-field/whole-key cardinality cap funnel through here.
-                if (_additionalTagsBlockLoggedThisBucket == 0)
-                {
-                    // TODO: logging this once per log cycle might be too much...
-                    _additionalTagsBlockLoggedThisBucket = 1;
-                    Log.Warning(
-                        "Client-side stats values are being collapsed to '{Sentinel}' in the current flush window " +
-                        "(first triggered by tag: {TagName}). This is caused by a tag value exceeding 200 characters, " +
-                        "or by exceeding one of the DD_TRACE_STATS_*_CARDINALITY_LIMIT caps.",
-                        BlockedByTracerSentinel,
-                        triggeringTagName ?? "<unknown>");
-                }
-
-                // TODO: emit a tracer-internal health metric counting block events
             }
         }
 
@@ -939,9 +888,6 @@ namespace Datadog.Trace.Agent
         internal readonly struct AdditionalTagResults
         {
             public int TagCount { get; init; }
-
-            // First configured tag present on the span (for cap-block diagnostics); null if none present.
-            public string FirstPresentTagName { get; init; }
 
             // First configured tag whose value was masked by the per-value length cap; null if none.
             public string FirstBlockedTagName { get; init; }

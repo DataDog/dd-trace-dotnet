@@ -24,12 +24,15 @@ namespace Datadog.Trace.Agent
             CardinalityLimiter = cardinalityLimiter;
             _keysToRemove = new();
             Buckets = new();
+            CardinalityReporter = cardinalityReporter;
             Reset();
         }
 
         public Dictionary<StatsAggregationKey, StatsBucket> Buckets { get; }
 
         public StatsCardinalityLimiter CardinalityLimiter { get; }
+
+        public StatsCardinalityReporter CardinalityReporter { get; }
 
         public long Start { get; private set; }
 
