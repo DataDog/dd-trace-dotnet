@@ -138,6 +138,48 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public async Task EnforcesCardinalityLimit_FoldingExcessIntoOverflowSeries()
+        {
+            var settings = TracerSettings.Create(new());
+            var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            Tracer.UnsafeSetTracerInstance(tracer);
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            using var meter = new Meter("TestMeter");
+            var counter = meter.CreateCounter<long>("test.counter");
+
+            // Emit more distinct attribute sets than the cardinality limit allows. This mirrors the
+            // unbounded feature_flag.key cardinality scenario (APMSP-3500): a single instrument fed
+            // attacker-controlled / high-cardinality attribute values must not grow memory without bound.
+            const int distinctTagSets = MetricState.DefaultCardinalityLimit + 500;
+            for (var i = 0; i < distinctTagSets; i++)
+            {
+                counter.Add(1, new KeyValuePair<string, object>("feature_flag.key", $"flag-{i}"));
+            }
+
+            await pipeline.ForceCollectAndExportAsync();
+            var counterMetrics = testExporter.ExportedMetrics.Where(m => m.InstrumentName == "test.counter").ToList();
+
+            // The number of exported points is bounded at the cardinality limit, no matter how many
+            // distinct attribute sets were recorded.
+            counterMetrics.Count.Should().Be(MetricState.DefaultCardinalityLimit, "cardinality is capped at the limit regardless of input");
+
+            // Excess attribute sets are folded into a single overflow series tagged otel.metric.overflow=true.
+            var overflowPoints = counterMetrics.Where(m => m.Tags.ContainsKey(MetricState.OverflowAttributeKey)).ToList();
+            overflowPoints.Count.Should().Be(1, "excess attribute sets fold into exactly one overflow series");
+            overflowPoints[0].Tags[MetricState.OverflowAttributeKey].Should().Be(true);
+
+            // No measurements are dropped: the running total is preserved across the real + overflow series.
+            counterMetrics.Sum(m => m.SnapshotSum).Should().Be(distinctTagSets, "every measurement is still counted, only the per-key breakdown is lost past the cap");
+
+            // The overflow series absorbs everything beyond the (limit - 1) retained real series.
+            overflowPoints[0].SnapshotSum.Should().Be(distinctTagSets - (MetricState.DefaultCardinalityLimit - 1));
+        }
+
+        [Fact]
         public async Task DetectsDuplicateInstrumentsWithCaseInsensitiveNames()
         {
             // Arrange
