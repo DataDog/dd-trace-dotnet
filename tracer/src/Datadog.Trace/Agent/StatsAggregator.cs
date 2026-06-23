@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.TraceSamplers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
@@ -78,6 +79,7 @@ namespace Datadog.Trace.Agent
         private readonly Task _flushTask;
 
         private readonly IDiscoveryService _discoveryService;
+        private readonly IStatsdManager _statsd;
 
         private readonly PrioritySampler _prioritySampler;
         private readonly ErrorSampler _errorSampler;
@@ -98,10 +100,13 @@ namespace Datadog.Trace.Agent
 
         private int _maxResourceLengthBytes = DefaultMaxResourceLengthBytes;
 
-        internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
+        private bool _traceMetricsEnabled;
+
+        internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, IStatsdManager statsd, bool isOtlp)
         {
             _api = api;
             _isOtlp = isOtlp;
+            _statsd = statsd;
             _processExit = new TaskCompletionSource<bool>();
             _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
             _buffers = new StatsBuffer[BufferCount];
@@ -136,11 +141,20 @@ namespace Datadog.Trace.Agent
                 HostName = HostMetadata.Instance.Hostname,
             };
 
+            _traceMetricsEnabled = settings.Manager.InitialMutableSettings.TracerMetricsEnabled;
+            _statsd.SetRequired(StatsdConsumer.StatsAggregator, _traceMetricsEnabled);
+
             _settingSubscription = settings.Manager.SubscribeToChanges(changes =>
             {
                 if (changes.UpdatedMutable is { } mutable)
                 {
                     header.UpdateDetails(mutable);
+
+                    if (mutable.TracerMetricsEnabled != changes.PreviousMutable.TracerMetricsEnabled)
+                    {
+                        Volatile.Write(ref _traceMetricsEnabled, mutable.TracerMetricsEnabled);
+                        _statsd.SetRequired(StatsdConsumer.StatsAggregator, mutable.TracerMetricsEnabled);
+                    }
                 }
             });
 
@@ -180,14 +194,15 @@ namespace Datadog.Trace.Agent
             private set => Volatile.Write(ref _computeStatsState, value switch { true => 1, false => -1, _ => 0, });
         }
 
-        public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
+        public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService, IStatsdManager statsd, bool isOtlp)
         {
-            return isOtlp || settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService, isOtlp) : new NullStatsAggregator();
+            return isOtlp || settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService, statsd, isOtlp) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()
         {
             _discoveryService?.RemoveSubscription(HandleConfigUpdate);
+            _statsd.SetRequired(StatsdConsumer.StatsAggregator, false);
             _processExit.TrySetResult(true);
             _settingSubscription.Dispose();
             return _flushTask;
