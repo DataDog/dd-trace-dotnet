@@ -7,8 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
@@ -34,8 +32,8 @@ namespace Datadog.Trace.FeatureFlags
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanEnrichmentState));
 
-        // Per-instance lock guarding mutation and tag production. A single root span can accumulate
-        // from concurrent flag evaluations under the same trace.
+        // Per-instance lock guarding bounded state updates. Tag production snapshots under this
+        // lock and performs encoding/JSON serialization after releasing it.
         private readonly object _gate = new();
 
         private readonly HashSet<long> _serialIds = new();
@@ -125,50 +123,64 @@ namespace Datadog.Trace.FeatureFlags
         public IReadOnlyList<KeyValuePair<string, string>> ToSpanTags()
         {
             var tags = new List<KeyValuePair<string, string>>(3);
+            long[]? serialIds = null;
+            Dictionary<string, long[]>? subjects = null;
+            Dictionary<string, string>? defaults = null;
 
             lock (_gate)
             {
                 if (_serialIds.Count > 0)
                 {
-                    var enc = ULeb128Encoder.EncodeDeltaVarint(_serialIds);
-                    if (!string.IsNullOrEmpty(enc))
-                    {
-                        tags.Add(new KeyValuePair<string, string>(TagFlagsEnc, enc));
-                    }
+                    serialIds = new long[_serialIds.Count];
+                    _serialIds.CopyTo(serialIds);
                 }
 
                 if (_subjects.Count > 0)
                 {
-                    var encoded = new Dictionary<string, string>(_subjects.Count);
+                    subjects = new Dictionary<string, long[]>(_subjects.Count);
                     foreach (var pair in _subjects)
                     {
-                        encoded[pair.Key] = ULeb128Encoder.EncodeDeltaVarint(pair.Value);
+                        var ids = new long[pair.Value.Count];
+                        pair.Value.CopyTo(ids);
+                        subjects[pair.Key] = ids;
                     }
-
-                    tags.Add(new KeyValuePair<string, string>(TagSubjectsEnc, JsonHelper.SerializeObject(encoded)));
                 }
 
                 if (_defaults.Count > 0)
                 {
-                    tags.Add(new KeyValuePair<string, string>(TagRuntimeDefaults, JsonHelper.SerializeObject(_defaults)));
+                    defaults = new Dictionary<string, string>(_defaults);
                 }
+            }
+
+            if (serialIds is not null)
+            {
+                var enc = ULeb128Encoder.EncodeDeltaVarint(serialIds);
+                if (!string.IsNullOrEmpty(enc))
+                {
+                    tags.Add(new KeyValuePair<string, string>(TagFlagsEnc, enc));
+                }
+            }
+
+            if (subjects is not null)
+            {
+                var encoded = new Dictionary<string, string>(subjects.Count);
+                foreach (var pair in subjects)
+                {
+                    encoded[pair.Key] = ULeb128Encoder.EncodeDeltaVarint(pair.Value);
+                }
+
+                tags.Add(new KeyValuePair<string, string>(TagSubjectsEnc, JsonHelper.SerializeObject(encoded)));
+            }
+
+            if (defaults is not null)
+            {
+                tags.Add(new KeyValuePair<string, string>(TagRuntimeDefaults, JsonHelper.SerializeObject(defaults)));
             }
 
             return tags;
         }
 
-        internal static string HashTargetingKey(string targetingKey)
-        {
-#if NET6_0_OR_GREATER
-            Span<byte> hash = stackalloc byte[32];
-            SHA256.HashData(Encoding.UTF8.GetBytes(targetingKey), hash);
-            return HexString.ToHexString(hash);
-#else
-            using var sha = SHA256.Create();
-            var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(targetingKey));
-            return HexString.ToHexString(hash);
-#endif
-        }
+        internal static string HashTargetingKey(string targetingKey) => Sha256Helper.ComputeHashAsHexString(targetingKey);
 
         // Object default -> JSON (matches Node's JSON.stringify); scalars -> their string form.
         // A bare string is emitted as-is (Node's String(value) for a string is the string itself).
