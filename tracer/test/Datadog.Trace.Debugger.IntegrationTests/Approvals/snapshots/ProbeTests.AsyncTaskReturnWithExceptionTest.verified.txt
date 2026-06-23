@@ -12,40 +12,6 @@
                 "type": "String",
                 "value": "RunAsync"
               }
-            },
-            "staticFields": {
-              "Rooms": {
-                "elements": [
-                  {
-                    "fields": {
-                      "Id": {
-                        "type": "String",
-                        "value": "Foo"
-                      },
-                      "Status": {
-                        "type": "RoomStatus",
-                        "value": "Ready"
-                      }
-                    },
-                    "type": "Room"
-                  },
-                  {
-                    "fields": {
-                      "Id": {
-                        "type": "String",
-                        "value": "Bar"
-                      },
-                      "Status": {
-                        "type": "RoomStatus",
-                        "value": "Ready"
-                      }
-                    },
-                    "type": "Room"
-                  }
-                ],
-                "size": 2,
-                "type": "List`1"
-              }
             }
           },
           "return": {
@@ -85,40 +51,6 @@
               "room": {
                 "isNull": "true",
                 "type": "Room"
-              }
-            },
-            "staticFields": {
-              "Rooms": {
-                "elements": [
-                  {
-                    "fields": {
-                      "Id": {
-                        "type": "String",
-                        "value": "Foo"
-                      },
-                      "Status": {
-                        "type": "RoomStatus",
-                        "value": "Ready"
-                      }
-                    },
-                    "type": "Room"
-                  },
-                  {
-                    "fields": {
-                      "Id": {
-                        "type": "String",
-                        "value": "Bar"
-                      },
-                      "Status": {
-                        "type": "RoomStatus",
-                        "value": "Ready"
-                      }
-                    },
-                    "type": "Room"
-                  }
-                ],
-                "size": 2,
-                "type": "List`1"
               }
             },
             "throwable": {

@@ -11,6 +11,9 @@
               "lastName": {
                 "type": "String",
                 "value": "Last name"
+              },
+              "this": {
+                "type": "StaticFieldsWithoutTypeInitializer"
               }
             },
             "staticFields": {
@@ -25,6 +28,9 @@
               "lastName": {
                 "type": "String",
                 "value": "Last name"
+              },
+              "this": {
+                "type": "StaticFieldsWithoutTypeInitializer"
               }
             },
             "locals": {
