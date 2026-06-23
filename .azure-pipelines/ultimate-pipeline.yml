@@ -2489,18 +2489,15 @@ stages:
 
     strategy:
       matrix:
-        net6:
-          publishTargetFramework: "net6.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6"
-        net7:
-          publishTargetFramework: "net7.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7"
         net8:
           publishTargetFramework: "net8.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:8"
         net9:
           publishTargetFramework: "net9.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9"
+        net10:
+          publishTargetFramework: "net10.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:10"
     pool:
       name: $(linuxX64Pool)
 
