@@ -17,6 +17,8 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Moq;
@@ -444,6 +446,26 @@ public class FlagEvaluationApiTests
     }
 
     [Fact]
+    public void BuildPayloadBytes_ReportsSplitCount()
+    {
+        var context = new Dictionary<string, object?> { ["blob"] = new string('x', 100) };
+        var events = new[]
+        {
+            NewPayloadEvent("flag-a", context: context),
+            NewPayloadEvent("flag-b", context: context),
+            NewPayloadEvent("flag-c", context: context),
+        };
+        var singleEventLimit = FlagEvaluationApi.BuildPayloadBytesForTest(NewRequest(events[0]), int.MaxValue)
+                                                 .Single()
+                                                 .Length;
+
+        var result = FlagEvaluationApi.BuildPayloadBytesWithStatsForTest(NewRequest(events), singleEventLimit);
+
+        result.Payloads.Should().HaveCount(3);
+        result.SplitPayloadCount.Should().Be(2, "three bounded EVP payloads require two additional split payloads");
+    }
+
+    [Fact]
     public void BuildPayloadBytes_DegradesOversizedFullEventBeforeDrop()
     {
         var fullEvent = NewPayloadEvent(
@@ -472,6 +494,25 @@ public class FlagEvaluationApiTests
     }
 
     [Fact]
+    public void BuildPayloadBytes_CountsPayloadLimitDegradationByEvaluationCount()
+    {
+        var fullEvent = NewPayloadEvent(
+            "flag-a",
+            targetingKey: "customer-1",
+            context: new Dictionary<string, object?> { ["blob"] = new string('x', 1_024) });
+        fullEvent.EvaluationCount = 7;
+        var degradedLimit = FlagEvaluationApi.BuildPayloadBytesForTest(NewRequest(NewPayloadEvent("flag-a", targetingKey: null, context: null)), int.MaxValue)
+                                             .Single()
+                                             .Length;
+
+        var result = FlagEvaluationApi.BuildPayloadBytesWithStatsForTest(NewRequest(fullEvent), degradedLimit);
+
+        result.Payloads.Should().ContainSingle();
+        result.DegradedPayloadLimit.Should().Be(7, "telemetry counts customer evaluations represented by the row, not serialized rows");
+        result.DroppedPayloadLimit.Should().Be(0);
+    }
+
+    [Fact]
     public void BuildPayloadBytes_DropsOversizedDegradedEvent()
     {
         var oversizedDegradedEvent = NewPayloadEvent(new string('f', 256), targetingKey: null, context: null);
@@ -479,6 +520,19 @@ public class FlagEvaluationApiTests
         var payloads = FlagEvaluationApi.BuildPayloadBytesForTest(NewRequest(oversizedDegradedEvent), payloadSizeLimit: 128);
 
         payloads.Should().BeEmpty("an already-degraded event that still cannot fit in one EVP payload is dropped");
+    }
+
+    [Fact]
+    public void BuildPayloadBytes_CountsPayloadLimitDropsByEvaluationCount()
+    {
+        var oversizedDegradedEvent = NewPayloadEvent(new string('f', 256), targetingKey: null, context: null);
+        oversizedDegradedEvent.EvaluationCount = 3;
+
+        var result = FlagEvaluationApi.BuildPayloadBytesWithStatsForTest(NewRequest(oversizedDegradedEvent), payloadSizeLimit: 128);
+
+        result.Payloads.Should().BeEmpty("an already-degraded event that still cannot fit in one EVP payload is dropped");
+        result.DroppedPayloadLimit.Should().Be(3, "telemetry counts customer evaluations represented by the row, not serialized rows");
+        result.DegradedPayloadLimit.Should().Be(0);
     }
 
     // -------------------------------------------------------------------------
@@ -698,6 +752,56 @@ public class FlagEvaluationApiTests
         api.DroppedBackpressureCount.Should().Be(0, "the backpressure count is reset once surfaced on flush");
     }
 
+    [Fact]
+    public async Task FlushAsync_ReportsQueueOverflowDropMetric()
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var previous = TelemetryFactory.SetMetricsForTesting(collector);
+        try
+        {
+            var api = NewApiWithCapturedTransport(out _);
+            for (int i = 0; i <= FlagEvaluationApi.QueueCapacity; i++)
+            {
+                api.EnqueueForTest(new FlagEvalEvent("flag", "on", "alloc", "user", 1_000L, null));
+            }
+
+            await api.FlushAsync();
+
+            AssertCountMetric(collector, Count.FlagEvaluationRowsDropped.GetName(), "reason:queue_overflow", 1);
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(previous);
+        }
+    }
+
+    [Fact]
+    public void BuildPayload_ReportsDegradedCapAndCardinalityMetrics()
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var previous = TelemetryFactory.SetMetricsForTesting(collector);
+        try
+        {
+            var agg = new FlagEvaluationAggregator(globalCap: 0, perFlagCap: 0, degradedCap: 1);
+            agg.Add(new FlagEvalEvent("flag-a", "on", "alloc", "user", 1_000L, null));
+            agg.Add(new FlagEvalEvent("flag-a", "on", "alloc", "user", 1_001L, null));
+            agg.Add(new FlagEvalEvent("flag-b", "on", "alloc", "user", 1_002L, null));
+            agg.Add(new FlagEvalEvent("flag-c", "on", "alloc", "user", 1_003L, null));
+
+            FlagEvaluationApi.BuildPayload(agg, "svc", "prod", "1.0")
+                             .Should()
+                             .NotBeNull();
+
+            var metrics = GetMetricData(collector);
+            AssertCountMetric(metrics, Count.FlagEvaluationRowsDropped.GetName(), "reason:degraded_cap", 2);
+            AssertCountMetric(metrics, Count.FlagEvaluationRowsDegraded.GetName(), "reason:cardinality_cap", 2);
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(previous);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // G5 — shutdown drains the queue and flushes a final batch before exit
     // -------------------------------------------------------------------------
@@ -756,6 +860,86 @@ public class FlagEvaluationApiTests
         capture.LastPayload!.FlagEvaluations.Should().HaveCount(2);
         capture.ContentTypes.Should().ContainSingle().Which.Should().Be(MimeTypes.Json);
         capture.ContentEncodings.Should().ContainSingle().Which.Should().Be("gzip");
+    }
+
+    [Fact]
+    public async Task FlushAsync_NormalPathDoesNotEmitFlagEvaluationTelemetry()
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var previous = TelemetryFactory.SetMetricsForTesting(collector);
+        try
+        {
+            var api = NewApiWithCapturedTransport(out _);
+            api.EnqueueForTest(new FlagEvalEvent("flag-a", "on", "alloc", "user", 1_000L, null));
+
+            await api.FlushAsync();
+
+            GetMetricData(collector)
+                .Should()
+                .NotContain(metric => metric.Metric.StartsWith("flagevaluation.", StringComparison.Ordinal));
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(previous);
+        }
+    }
+
+    [Fact]
+    public async Task FlushAsync_ReportsPayloadLimitDegradeDropAndSplitMetrics()
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var previous = TelemetryFactory.SetMetricsForTesting(collector);
+        try
+        {
+            var api = NewApiWithCapturedTransport(out var capture);
+            var context = new Dictionary<string, object?> { ["blob"] = new string('x', 200) };
+            api.EnqueueForTest(new FlagEvalEvent("flag-a", "on", "alloc", "user-1", 1_000L, context));
+            api.EnqueueForTest(new FlagEvalEvent("flag-a", "on", "alloc", "user-1", 1_001L, context));
+            api.EnqueueForTest(new FlagEvalEvent(new string('f', 256), "on", "alloc", "user-2", 1_002L, null));
+
+            var degradedLimit = FlagEvaluationApi.BuildPayloadBytesForTest(NewRequest(NewPayloadEvent("flag-a", targetingKey: null, context: null)), int.MaxValue)
+                                                 .Single()
+                                                 .Length;
+
+            await api.FlushAsync(degradedLimit);
+
+            capture.Payloads.Should().ContainSingle("the degraded row fits and the oversized degraded row is dropped");
+            var metrics = GetMetricData(collector);
+            AssertCountMetric(metrics, Count.FlagEvaluationRowsDegraded.GetName(), "reason:payload_limit", 2);
+            AssertCountMetric(metrics, Count.FlagEvaluationRowsDropped.GetName(), "reason:payload_limit", 1);
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(previous);
+        }
+    }
+
+    [Fact]
+    public async Task FlushAsync_ReportsPayloadSplitMetric()
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var previous = TelemetryFactory.SetMetricsForTesting(collector);
+        try
+        {
+            var api = NewApiWithCapturedTransport(out var capture);
+            var context = new Dictionary<string, object?> { ["blob"] = new string('x', 100) };
+            api.EnqueueForTest(new FlagEvalEvent("flag-a", "on", "alloc", "user-a", 1_000L, context));
+            api.EnqueueForTest(new FlagEvalEvent("flag-b", "on", "alloc", "user-b", 1_001L, context));
+            api.EnqueueForTest(new FlagEvalEvent("flag-c", "on", "alloc", "user-c", 1_002L, context));
+
+            var singleEventLimit = FlagEvaluationApi.BuildPayloadBytesForTest(NewRequest(NewPayloadEvent("flag-a", context: context)), int.MaxValue)
+                                                     .Single()
+                                                     .Length;
+
+            await api.FlushAsync(singleEventLimit);
+
+            capture.Payloads.Should().HaveCount(3);
+            AssertCountMetric(collector, Count.FlagEvaluationPayloadSplits.GetName(), null, 2);
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(previous);
+        }
     }
 
     /// <summary>
@@ -818,6 +1002,37 @@ public class FlagEvaluationApiTests
 
     private static FlagEvaluationsRequest DeserializePayloadBytes(byte[] bytes) =>
         FlagEvaluationApi.DeserializeForTest(Encoding.UTF8.GetString(bytes));
+
+    private static void AssertCountMetric(MetricsTelemetryCollector collector, string metricName, string? tag, int value)
+    {
+        AssertCountMetric(GetMetricData(collector), metricName, tag, value);
+    }
+
+    private static void AssertCountMetric(IReadOnlyCollection<MetricData> metrics, string metricName, string? tag, int value)
+    {
+        var metric = metrics.Should()
+                            .ContainSingle(m => m.Metric == metricName && TagsMatch(m.Tags, tag))
+                            .Subject;
+        metric.Common.Should().BeTrue();
+        metric.Namespace.Should().BeNull();
+        metric.Points.Should().ContainSingle().Which.Value.Should().Be(value);
+    }
+
+    private static IReadOnlyCollection<MetricData> GetMetricData(MetricsTelemetryCollector collector)
+    {
+        collector.AggregateMetrics();
+        return collector.GetMetrics().Metrics ?? new List<MetricData>();
+    }
+
+    private static bool TagsMatch(string[]? tags, string? tag)
+    {
+        if (tag is null)
+        {
+            return tags is null;
+        }
+
+        return tags is { Length: 1 } && tags[0] == tag;
+    }
 
     private static void AssertValidAgainstWorkerSchema(JObject json)
     {

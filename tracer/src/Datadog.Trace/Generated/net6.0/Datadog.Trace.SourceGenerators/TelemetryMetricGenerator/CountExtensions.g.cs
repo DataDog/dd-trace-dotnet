@@ -12,7 +12,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 56;
+    public const int Length = 59;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -31,6 +31,9 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.TraceChunkEnqueued => "trace_chunks_enqueued_for_serialization",
             Datadog.Trace.Telemetry.Metrics.Count.TraceChunkDropped => "trace_chunks_dropped",
             Datadog.Trace.Telemetry.Metrics.Count.TraceChunkSent => "trace_chunks_sent",
+            Datadog.Trace.Telemetry.Metrics.Count.FlagEvaluationRowsDropped => "flagevaluation.rows.dropped",
+            Datadog.Trace.Telemetry.Metrics.Count.FlagEvaluationRowsDegraded => "flagevaluation.rows.degraded",
+            Datadog.Trace.Telemetry.Metrics.Count.FlagEvaluationPayloadSplits => "flagevaluation.payload.splits",
             Datadog.Trace.Telemetry.Metrics.Count.TraceSegmentsClosed => "trace_segments_closed",
             Datadog.Trace.Telemetry.Metrics.Count.TraceApiRequests => "trace_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.TraceApiResponses => "trace_api.responses",

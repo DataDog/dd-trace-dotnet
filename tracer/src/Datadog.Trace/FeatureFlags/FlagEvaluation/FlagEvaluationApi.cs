@@ -18,6 +18,8 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
@@ -136,7 +138,7 @@ internal sealed class FlagEvaluationApi : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="FlagEvaluationApi"/> class with an injected
     /// request factory and context. Test-only seam: lets a unit test drive <see cref="Enqueue"/>
-    /// and <see cref="FlushAsync"/> against a captured transport without a live agent.
+    /// and <see cref="FlushAsync()"/> against a captured transport without a live agent.
     /// </summary>
     internal FlagEvaluationApi(IApiRequestFactory apiRequestFactory, string service, string env, string version)
     {
@@ -181,7 +183,7 @@ internal sealed class FlagEvaluationApi : IDisposable
     /// <summary>
     /// Bounded enqueue WITHOUT starting the background send loop. Test-only seam: lets a unit test
     /// stage events through the same cheap-offer + backpressure path Enqueue uses, then drive
-    /// <see cref="FlushAsync"/> / <see cref="RunSendLoopForTestAsync"/> deterministically.
+    /// <see cref="FlushAsync()"/> / <see cref="RunSendLoopForTestAsync"/> deterministically.
     /// </summary>
     internal void EnqueueForTest(FlagEvalEvent ev)
     {
@@ -250,6 +252,10 @@ internal sealed class FlagEvaluationApi : IDisposable
         Dictionary<FullKey, EvaluationEntry> full = result.Full;
         Dictionary<DegradedKey, EvaluationEntry> degraded = result.Degraded;
         long dropped = result.Dropped;
+        long degradedRows = CountEvaluations(degraded.Values);
+
+        RecordFlagEvaluationRowsDropped(MetricTags.FlagEvaluationReason.DegradedCap, dropped);
+        RecordFlagEvaluationRowsDegraded(MetricTags.FlagEvaluationReason.CardinalityCap, degradedRows);
 
         if (dropped > 0)
         {
@@ -330,6 +336,9 @@ internal sealed class FlagEvaluationApi : IDisposable
         Util.Json.JsonHelper.SerializeObject(request, SerializerSettings);
 
     internal static List<byte[]> BuildPayloadBytesForTest(FlagEvaluationsRequest request, int payloadSizeLimit) =>
+        BuildPayloadBytes(request, payloadSizeLimit).Payloads;
+
+    internal static PayloadBuildResult BuildPayloadBytesWithStatsForTest(FlagEvaluationsRequest request, int payloadSizeLimit) =>
         BuildPayloadBytes(request, payloadSizeLimit);
 
     internal static FlagEvaluationsRequest DeserializeForTest(string json) =>
@@ -391,7 +400,9 @@ internal sealed class FlagEvaluationApi : IDisposable
     /// Returns true when a batch was built (and a send attempted), false when the aggregator was empty.
     /// Exposed as internal so the shutdown-drain behavior can be exercised in unit tests.
     /// </summary>
-    internal async Task<bool> FlushAsync()
+    internal Task<bool> FlushAsync() => FlushAsync(EvpPayloadSizeLimit);
+
+    internal async Task<bool> FlushAsync(int payloadSizeLimit)
     {
         // Drain the hot-path hand-off queue into the aggregator first (off the evaluation thread),
         // then surface any backpressure drops so an undersized queue is observable.
@@ -407,7 +418,10 @@ internal sealed class FlagEvaluationApi : IDisposable
                 return false;
             }
 
-            foreach (var payloadBytes in BuildPayloadBytes(payload, EvpPayloadSizeLimit))
+            var payloadResult = BuildPayloadBytes(payload, payloadSizeLimit);
+            RecordPayloadBuildResult(payloadResult);
+
+            foreach (var payloadBytes in payloadResult.Payloads)
             {
                 var request = apiRequestFactory.Create(uri);
                 var compressedPayload = GZip(payloadBytes);
@@ -425,13 +439,15 @@ internal sealed class FlagEvaluationApi : IDisposable
 
     private static void ReportBackpressureDrops(long droppedBackpressure)
     {
+        RecordFlagEvaluationRowsDropped(MetricTags.FlagEvaluationReason.QueueOverflow, droppedBackpressure);
+
         if (droppedBackpressure > 0)
         {
             Log.Warning<long>("FlagEvaluationApi: evaluation queue full — dropped {Dropped} evaluation(s) under backpressure (best-effort telemetry)", droppedBackpressure);
         }
     }
 
-    private static List<byte[]> BuildPayloadBytes(FlagEvaluationsRequest request, int payloadSizeLimit)
+    private static PayloadBuildResult BuildPayloadBytes(FlagEvaluationsRequest request, int payloadSizeLimit)
     {
         var contextJson = Util.Json.JsonHelper.SerializeObject(request.Context, SerializerSettings);
         var payloadPrefix = $"{{\"context\":{contextJson},\"flagEvaluations\":[";
@@ -440,7 +456,8 @@ internal sealed class FlagEvaluationApi : IDisposable
         var payloads = new List<byte[]>();
         var batch = new List<EncodedEvent>();
         var batchSize = basePayloadSize;
-        var droppedOversized = 0;
+        long droppedOversized = 0;
+        long degradedOversized = 0;
 
         foreach (var ev in request.FlagEvaluations)
         {
@@ -450,16 +467,18 @@ internal sealed class FlagEvaluationApi : IDisposable
                 var degraded = DegradeForPayloadLimit(ev);
                 if (degraded is null)
                 {
-                    droppedOversized++;
+                    droppedOversized += ev.EvaluationCount;
                     continue;
                 }
 
                 encodedEvent = EncodeEvent(degraded);
                 if (!SingleEventFits(basePayloadSize, encodedEvent.SizeBytes, payloadSizeLimit))
                 {
-                    droppedOversized++;
+                    droppedOversized += ev.EvaluationCount;
                     continue;
                 }
+
+                degradedOversized += ev.EvaluationCount;
             }
 
             var separatorSize = batch.Count > 0 ? 1 : 0;
@@ -482,10 +501,55 @@ internal sealed class FlagEvaluationApi : IDisposable
 
         if (droppedOversized > 0)
         {
-            Log.Warning<int>("FlagEvaluationApi: dropped {Dropped} oversized flag evaluation event(s) after payload-limit degradation (best-effort telemetry)", droppedOversized);
+            Log.Warning<long>("FlagEvaluationApi: dropped {Dropped} oversized flag evaluation event(s) after payload-limit degradation (best-effort telemetry)", droppedOversized);
         }
 
-        return payloads;
+        var splitPayloads = payloads.Count > 1 ? payloads.Count - 1 : 0;
+        return new PayloadBuildResult(payloads, droppedOversized, degradedOversized, splitPayloads);
+    }
+
+    private static long CountEvaluations(IEnumerable<EvaluationEntry> entries)
+    {
+        long total = 0;
+        foreach (var entry in entries)
+        {
+            total += entry.Count;
+        }
+
+        return total;
+    }
+
+    private static void RecordPayloadBuildResult(PayloadBuildResult result)
+    {
+        RecordFlagEvaluationRowsDropped(MetricTags.FlagEvaluationReason.PayloadLimit, result.DroppedPayloadLimit);
+        RecordFlagEvaluationRowsDegraded(MetricTags.FlagEvaluationReason.PayloadLimit, result.DegradedPayloadLimit);
+        RecordTelemetryCount(result.SplitPayloadCount, TelemetryFactory.Metrics.RecordCountFlagEvaluationPayloadSplits);
+    }
+
+    private static void RecordFlagEvaluationRowsDropped(MetricTags.FlagEvaluationReason reason, long value)
+    {
+        RecordTelemetryCount(value, increment => TelemetryFactory.Metrics.RecordCountFlagEvaluationRowsDropped(reason, increment));
+    }
+
+    private static void RecordFlagEvaluationRowsDegraded(MetricTags.FlagEvaluationReason reason, long value)
+    {
+        RecordTelemetryCount(value, increment => TelemetryFactory.Metrics.RecordCountFlagEvaluationRowsDegraded(reason, increment));
+    }
+
+    private static void RecordTelemetryCount(long value, Action<int> record)
+    {
+        if (value <= 0)
+        {
+            return;
+        }
+
+        while (value > int.MaxValue)
+        {
+            record(int.MaxValue);
+            value -= int.MaxValue;
+        }
+
+        record((int)value);
     }
 
     private static EncodedEvent EncodeEvent(FlagEvaluationEvent ev)
@@ -559,5 +623,24 @@ internal sealed class FlagEvaluationApi : IDisposable
         public string Json { get; }
 
         public int SizeBytes { get; }
+    }
+
+    internal readonly struct PayloadBuildResult
+    {
+        public PayloadBuildResult(List<byte[]> payloads, long droppedPayloadLimit, long degradedPayloadLimit, int splitPayloadCount)
+        {
+            Payloads = payloads;
+            DroppedPayloadLimit = droppedPayloadLimit;
+            DegradedPayloadLimit = degradedPayloadLimit;
+            SplitPayloadCount = splitPayloadCount;
+        }
+
+        public List<byte[]> Payloads { get; }
+
+        public long DroppedPayloadLimit { get; }
+
+        public long DegradedPayloadLimit { get; }
+
+        public int SplitPayloadCount { get; }
     }
 }
