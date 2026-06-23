@@ -20,6 +20,6 @@ namespace Datadog.Trace.Debugger.Expressions
 
         void LogException(Exception ex, IDebuggerSnapshotCreator snapshotCreator);
 
-        IProbeProcessor UpdateProbeProcessor(ProbeDefinition probe);
+        IProbeProcessor UpdateProbeProcessor(ProbeDefinition probe, int? maxEvaluationTimeInMilliseconds = null);
     }
 }
