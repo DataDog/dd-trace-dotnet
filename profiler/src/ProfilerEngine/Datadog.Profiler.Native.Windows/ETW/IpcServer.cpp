@@ -43,13 +43,15 @@ void IpcServer::Stop()
     if (_hNamedPipe != nullptr)
     {
         // connecting to the server pipe will unblock the ConnectNamedPipe() call
+        // SECURITY_SQOS_PRESENT | SECURITY_ANONYMOUS guards against a process that squats our pipe
+        // name during the shutdown race from impersonating us via ImpersonateNamedPipeClient.
         HANDLE hPipe = ::CreateFileA(
             _portName.c_str(),
             GENERIC_READ | GENERIC_WRITE,
             0,
             nullptr,
             OPEN_EXISTING,
-            FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
+            SECURITY_SQOS_PRESENT | SECURITY_ANONYMOUS | FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
             nullptr);
         if (hPipe != INVALID_HANDLE_VALUE)
         {

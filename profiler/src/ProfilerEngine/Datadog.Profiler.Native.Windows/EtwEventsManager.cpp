@@ -3,6 +3,7 @@
 
 
 #include "EtwEventsManager.h"
+#include "EventsParserHelper.h"
 #include "FrameStore.h"
 #include "IContentionListener.h"
 #include "IAllocationsListener.h"
@@ -14,6 +15,7 @@
 
 #include "Windows.h"
 
+#include <cstddef>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -218,8 +220,39 @@ void EtwEventsManager::OnEvent(
             //    <data name = "Address" inType = "win:Pointer" />
             // but no object size...
             // Since the events are received asynchronously, it is not even possible
-            // to assume that the object that was stored at the received Adress field
+            // to assume that the object that was stored at the received Address field
             // is still there: it could have been moved by a garbage collection
+            //
+            // Since the payload can be received from an untrusted source (any local process can
+            // connect to the inbound pipe), so it must be validated before being parsed:
+            //  - the buffer must be large enough to hold the fixed-size fields, and
+            //  - the type name must be NUL-terminated within the received bytes.
+            // Reading the name with EventsParserHelper::ReadWideString is also cross-platform
+            const uint32_t fixedFieldsSize = static_cast<uint32_t>(offsetof(AllocationTickV3Payload, FirstCharInName));
+            if (cbEventData < fixedFieldsSize)
+            {
+                if (_isDebugLogEnabled)
+                {
+                    std::cout << "AllocationTick payload too small (" << cbEventData << " bytes)" << std::endl;
+                }
+
+                pThreadInfo->ClearLastEventId();
+                return;
+            }
+
+            ULONG nameOffset = fixedFieldsSize;
+            const WCHAR* pTypeName = EventsParserHelper::ReadWideString(pEventData, cbEventData, &nameOffset);
+            if (pTypeName == nullptr)
+            {
+                if (_isDebugLogEnabled)
+                {
+                    std::cout << "AllocationTick type name is not properly terminated" << std::endl;
+                }
+
+                pThreadInfo->ClearLastEventId();
+                return;
+            }
+
             auto* pPayload = reinterpret_cast<AllocationTickV3Payload const*>(pEventData);
             pThreadInfo->AllocationTickTimestamp = timestamp;
             pThreadInfo->AllocationKind = pPayload->AllocationKind;
@@ -238,7 +271,7 @@ void EtwEventsManager::OnEvent(
             pThreadInfo->AllocationAmount = pPayload->AllocationAmount64;
 
             // TODO: should we use a buffer allocated once and reused to avoid memory allocations due to std::string?
-            pThreadInfo->AllocatedType = shared::ToString(shared::WSTRING(&(pPayload->FirstCharInName)));
+            pThreadInfo->AllocatedType = shared::ToString(shared::WSTRING(pTypeName));
 
             // wait for the sibling StackWalk event to create the sample
         }
@@ -302,8 +335,14 @@ void EtwEventsManager::AttachCallstack(std::vector<uintptr_t>& stack, uint16_t u
     }
 
     StackWalkPayload* pPayload = (StackWalkPayload*)pUserData;
-    //                    size of all frames                      + payload size             - size of the first frame not counted twice
-    if (userDataLength < pPayload->FrameCount * sizeof(uintptr_t) + sizeof(StackWalkPayload) - sizeof(uintptr_t))
+
+    // FrameCount might come from an untrusted payload. Compute the number of frames that actually fit
+    // in the received bytes using a division so the bound cannot be bypassed by an integer overflow
+    // of FrameCount * sizeof(uintptr_t) (which would truncate to 32 bits on x86).
+    // sizeof(StackWalkPayload) already accounts for the first Stack[0] entry, hence - sizeof(uintptr_t).
+    const size_t headerSize = sizeof(StackWalkPayload) - sizeof(uintptr_t);
+    const size_t maxFrames = (static_cast<size_t>(userDataLength) - headerSize) / sizeof(uintptr_t);
+    if (pPayload->FrameCount > maxFrames)
     {
         return;
     }
