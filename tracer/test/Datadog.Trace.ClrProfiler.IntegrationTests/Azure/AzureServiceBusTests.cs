@@ -28,11 +28,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         {
         }
 
-        public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.AzureServiceBus
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
             SpanKinds.Consumer => span.IsAzureServiceBusInbound(metadataSchemaVersion),
@@ -42,10 +37,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         };
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("SkipInCI", "True")] // We are unable to test all the features of Azure Service Bus with an emulator. For now, run only locally with a connection string to a live Azure Service Bus namespace
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBus))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
 
