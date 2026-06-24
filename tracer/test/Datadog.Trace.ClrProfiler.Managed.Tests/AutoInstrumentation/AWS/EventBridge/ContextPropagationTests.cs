@@ -26,7 +26,7 @@ public class ContextPropagationTests
     private const string StartTimeKey = "x-datadog-start-time";
     private const string ResourceNameKey = "x-datadog-resource-name";
     private const string EventBusName = "test-event-bus";
-    private const int MaxSizeBytes = 256 * 1024; // 256 KB
+    private const int MaxSizeBytes = 1024 * 1024; // 1 MB
 
     private readonly SpanContext _spanContext;
 
