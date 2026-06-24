@@ -27,6 +27,7 @@ namespace Datadog.Trace.Debugger
         public const int DefaultMaxProbesPerType = 0;
 
         private const int DefaultUploadBatchSize = 100;
+        private const string DefaultSite = "datadoghq.com";
         public const int DefaultSymbolBatchSizeInBytes = 1 * 1024 * 1024; // 1 MB
         private const int DefaultDiagnosticsIntervalSeconds = 60 * 60; // 1 hour
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
@@ -154,6 +155,9 @@ namespace Datadog.Trace.Debugger
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
 
             ProbeFile = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile).AsString() ?? string.Empty;
+            DynamicInstrumentationAgentlessEnabled = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationAgentlessEnabled).AsBool(false);
+            DynamicInstrumentationAgentlessApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+            DynamicInstrumentationAgentlessSite = config.WithKeys(ConfigurationKeys.Site).AsString(DefaultSite, site => !string.IsNullOrEmpty(site)) ?? DefaultSite;
         }
 
         internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
@@ -201,6 +205,15 @@ namespace Datadog.Trace.Debugger
         public int CodeOriginMaxUserFrames { get; }
 
         public string ProbeFile { get; }
+
+        public bool DynamicInstrumentationAgentlessEnabled { get; }
+
+        public string? DynamicInstrumentationAgentlessApiKey { get; }
+
+        public string DynamicInstrumentationAgentlessSite { get; }
+
+        public bool IsDynamicInstrumentationAgentlessLocalMode =>
+            DynamicInstrumentationAgentlessEnabled && !StringUtil.IsNullOrEmpty(ProbeFile);
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
