@@ -1126,6 +1126,7 @@
    <assembly fullname="System.Security.Cryptography.Algorithms">
       <type fullname="System.Security.Cryptography.AsymmetricSignatureFormatter" />
       <type fullname="System.Security.Cryptography.MD5" />
+      <type fullname="System.Security.Cryptography.RandomNumberGenerator" />
       <type fullname="System.Security.Cryptography.RSA" />
       <type fullname="System.Security.Cryptography.RSAParameters" />
       <type fullname="System.Security.Cryptography.RSAPKCS1SignatureFormatter" />
