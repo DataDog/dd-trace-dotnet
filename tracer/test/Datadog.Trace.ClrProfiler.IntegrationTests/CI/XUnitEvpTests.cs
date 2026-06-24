@@ -414,6 +414,11 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                                                             "attempt_to_fix": true
                                                         }
                                                     },
+                                                    "SimpleErrorParameterizedTest": {
+                                                        "properties": {
+                                                            "disabled": true
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -426,6 +431,61 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                 1,
                 34,
                 "quarantined_and_disabled");
+
+            yield return row.Concat(
+                new MockData(
+                    GetSettingsJson("false", "false", "true", "10"),
+                    string.Empty,
+                    """
+                    {
+                        "data": {
+                            "id": "878448902e138d339eb9f26a778851f35582b5ea3622ae8ab446209d232399af",
+                            "type": "ci_app_libraries_tests",
+                            "attributes": {
+                                "modules": {
+                                    "Samples.XUnitTests": {
+                                        "suites": {
+                                            "Samples.XUnitTests.TestSuite": {
+                                                "tests": {
+                                                    "SimplePassTest": {
+                                                        "properties": {
+                                                            "quarantined": true,
+                                                            "attempt_to_fix": true
+                                                        }
+                                                    },
+                                                    "TraitPassTest": {
+                                                        "properties": {
+                                                            "disabled": true,
+                                                            "attempt_to_fix": true
+                                                        }
+                                                    },
+                                                    "TraitErrorTest": {
+                                                        "properties": {
+                                                            "quarantined": true
+                                                        }
+                                                    },
+                                                    "SimpleErrorTest": {
+                                                        "properties": {
+                                                            "disabled": true
+                                                        }
+                                                    },
+                                                    "SimpleErrorParameterizedTest": {
+                                                        "properties": {
+                                                            "disabled": true
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    """),
+                0,
+                34,
+                "quarantined_and_disabled_attempt_to_fix_passes");
         }
     }
 
