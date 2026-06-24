@@ -237,6 +237,24 @@ namespace Datadog.Trace.Tests.Agent
             result.TracerDdTags.Should().NotBeNull().And.BeEmpty();
         }
 
+        [Theory]
+        [InlineData(null, 0)]  // NOT_SET (e.g. the whole-key overflow row)
+        [InlineData(true, 1)]  // TRUE
+        [InlineData(false, 2)] // FALSE
+        public void Serialization_EncodesIsTraceRootTrilean(bool? isTraceRoot, int expectedWireValue)
+        {
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var key = CreateKey("resource", "service", "operation", "type", 200, false, isTraceRoot: isTraceRoot);
+            var bucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Hits = 1, TopLevelHits = 1 };
+            buffer.Buckets.Add(key, bucket);
+
+            var stream = new MemoryStream();
+            buffer.Serialize(stream, 1);
+            var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
+
+            result.Stats[0].Stats.Single().IsTraceRoot.Should().Be(expectedWireValue);
+        }
+
         [Fact]
         public void KeyEquality_NewDimensions()
         {
@@ -284,7 +302,7 @@ namespace Datadog.Trace.Tests.Agent
             int httpStatusCode,
             bool isSyntheticsRequest,
             string spanKind = null,
-            bool isTraceRoot = false,
+            bool? isTraceRoot = false,
             string httpMethod = null,
             string httpEndpoint = null,
             string grpcStatusCode = "",
@@ -328,7 +346,7 @@ namespace Datadog.Trace.Tests.Agent
             group.TopLevelHits.Should().Be((long)expectedBucket.TopLevelHits);
             group.SpanKind.Should().Be(expectedKey.SpanKind);
             // Trilean: NOT_SET=0, TRUE=1, FALSE=2
-            group.IsTraceRoot.Should().Be(expectedKey.IsTraceRoot ? 1 : 2);
+            group.IsTraceRoot.Should().Be(expectedKey.IsTraceRoot switch { true => 1, false => 2, _ => 0 });
             group.HttpMethod.Should().Be(expectedKey.HttpMethod);
             group.HttpEndpoint.Should().Be(expectedKey.HttpEndpoint);
             group.GrpcStatusCode.Should().Be(expectedKey.GrpcStatusCode);

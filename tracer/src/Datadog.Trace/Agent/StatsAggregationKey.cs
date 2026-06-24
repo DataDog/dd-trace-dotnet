@@ -19,7 +19,7 @@ internal readonly record struct StatsAggregationKey
         string spanKind,
         bool isError,
         bool isTopLevel,
-        bool isTraceRoot,
+        bool? isTraceRoot,
         string httpMethod,
         string httpEndpoint,
         string grpcStatusCode,
@@ -63,7 +63,7 @@ internal readonly record struct StatsAggregationKey
 
     public string SpanKind { get; }
 
-    public bool IsTraceRoot { get; }
+    public bool? IsTraceRoot { get; }
 
     public string HttpMethod { get; }
 

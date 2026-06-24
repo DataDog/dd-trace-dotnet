@@ -251,7 +251,7 @@ namespace Datadog.Trace.Agent
 
             // Spec defines Trilean: NOT_SET=0, TRUE=1, FALSE=2
             MessagePackBinary.WriteStringBytes(stream, IsTraceRootKeyBytes);
-            MessagePackBinary.WriteInt32(stream, bucket.Key.IsTraceRoot ? 1 : 2);
+            MessagePackBinary.WriteInt32(stream, bucket.Key.IsTraceRoot switch { true => 1, false => 2, null => 0 });
 
             MessagePackBinary.WriteStringBytes(stream, HttpMethodKeyBytes);
             MessagePackBinary.WriteString(stream, bucket.Key.HttpMethod);
