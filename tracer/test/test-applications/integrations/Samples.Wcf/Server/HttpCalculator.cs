@@ -17,6 +17,8 @@ class HttpCalculator : IHttpCalculator
 
     public double ServerSyncAddWrapped(string n1, string n2) => GetResult(n1, n2);
 
+    public double ServerSyncAddJsonQuery(string n1, string n2, string apiKey) => GetResult(n1, n2);
+
     private static double GetResult(string n1, string n2, [CallerMemberName] string member = null)
     {
         LoggingHelper.WriteLineWithDate($"[Server] Received {member}({n1},{n2})");
