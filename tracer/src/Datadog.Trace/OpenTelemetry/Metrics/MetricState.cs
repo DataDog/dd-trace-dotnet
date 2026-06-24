@@ -42,9 +42,10 @@ internal sealed class MetricState
     private readonly AggregationTemporality? _temporality;
 
     private readonly ConcurrentDictionary<TagSet, MetricPoint> _points = new();
+    private readonly object _pointsLock = new();
     private readonly int _cardinalityLimit;
 
-    private volatile bool _overflowActive;
+    private int _realSeriesCount;
     private int _overflowLogged;
 
     public MetricState(MetricStreamIdentity identity, AggregationTemporality? temporality, int cardinalityLimit = DefaultCardinalityLimit)
@@ -66,24 +67,22 @@ internal sealed class MetricState
             return;
         }
 
-        var point = GetOrCreatePoint(tags);
-        switch (_identity.InstrumentType)
+        while (true)
         {
-            case InstrumentType.Counter:
-            case InstrumentType.UpDownCounter:
-                point.UpdateCounter(value);
-                break;
-            case InstrumentType.ObservableCounter:
-            case InstrumentType.ObservableUpDownCounter:
-                point.UpdateObservableCounter(value);
-                break;
-            case InstrumentType.Gauge:
-            case InstrumentType.ObservableGauge:
-                point.UpdateGauge(value);
-                break;
-            case InstrumentType.Histogram:
-                point.UpdateHistogram(value);
-                break;
+            var point = GetOrCreatePoint(tags);
+            var recorded = _identity.InstrumentType switch
+            {
+                InstrumentType.Counter or InstrumentType.UpDownCounter => point.UpdateCounter(value),
+                InstrumentType.ObservableCounter or InstrumentType.ObservableUpDownCounter => point.UpdateObservableCounter(value),
+                InstrumentType.Gauge or InstrumentType.ObservableGauge => point.UpdateGauge(value),
+                InstrumentType.Histogram => point.UpdateHistogram(value),
+                _ => true
+            };
+
+            if (recorded)
+            {
+                return;
+            }
         }
     }
 
@@ -99,24 +98,22 @@ internal sealed class MetricState
             return;
         }
 
-        var point = GetOrCreatePoint(tags);
-        switch (_identity.InstrumentType)
+        while (true)
         {
-            case InstrumentType.Counter:
-            case InstrumentType.UpDownCounter:
-                point.UpdateCounter(value);
-                break;
-            case InstrumentType.ObservableCounter:
-            case InstrumentType.ObservableUpDownCounter:
-                point.UpdateObservableCounter(value);
-                break;
-            case InstrumentType.Gauge:
-            case InstrumentType.ObservableGauge:
-                point.UpdateGauge(value);
-                break;
-            case InstrumentType.Histogram:
-                point.UpdateHistogram(value);
-                break;
+            var point = GetOrCreatePoint(tags);
+            var recorded = _identity.InstrumentType switch
+            {
+                InstrumentType.Counter or InstrumentType.UpDownCounter => point.UpdateCounter(value),
+                InstrumentType.ObservableCounter or InstrumentType.ObservableUpDownCounter => point.UpdateObservableCounter(value),
+                InstrumentType.Gauge or InstrumentType.ObservableGauge => point.UpdateGauge(value),
+                InstrumentType.Histogram => point.UpdateHistogram(value),
+                _ => true
+            };
+
+            if (recorded)
+            {
+                return;
+            }
         }
     }
 
@@ -127,15 +124,18 @@ internal sealed class MetricState
     /// </summary>
     public void BuildPoints(List<MetricPoint> into)
     {
-        foreach (var point in _points.Values)
+        foreach (var pair in _points)
         {
+            var point = pair.Value;
             if (!point.HasDataToExport())
             {
+                TryReclaimPoint(pair.Key, point);
                 continue;
             }
 
             var snapshot = point.CreateSnapshotAndReset();
             into.Add(snapshot);
+            TryReclaimPoint(pair.Key, point);
         }
     }
 
@@ -143,36 +143,61 @@ internal sealed class MetricState
     {
         var tagSet = TagSet.FromSpan(tags);
 
-        if (_points.TryGetValue(tagSet, out var existingPoint))
+        while (true)
         {
-            return existingPoint;
-        }
+            if (_points.TryGetValue(tagSet, out var existingPoint))
+            {
+                if (!existingPoint.IsRetired)
+                {
+                    return existingPoint;
+                }
 
-        // Cardinality limit (OpenTelemetry metrics SDK spec): once the stream is full, fold any
-        // new attribute set into a single overflow series tagged otel.metric.overflow=true. This
-        // bounds memory at _cardinalityLimit points per stream regardless of input, so a
-        // high-cardinality or attacker-controlled attribute value cannot exhaust memory.
-        // Already-tracked attribute sets keep updating via the fast path above. Once overflow is
-        // active we skip the (relatively expensive) Count check on the hot path.
-        if (_overflowActive || _points.Count >= _cardinalityLimit - 1)
-        {
-            return GetOrCreateOverflowPoint();
-        }
+                TryRemovePoint(tagSet, existingPoint);
+                continue;
+            }
 
-        var dict = new Dictionary<string, object?>(tags.Length);
-        for (int i = 0; i < tags.Length; i++)
-        {
-            var kv = tags[i];
-            dict[kv.Key] = kv.Value;
-        }
+            lock (_pointsLock)
+            {
+                if (_points.TryGetValue(tagSet, out existingPoint))
+                {
+                    if (!existingPoint.IsRetired)
+                    {
+                        return existingPoint;
+                    }
 
-        return _points.GetOrAdd(tagSet, _ => CreatePoint(dict));
+                    TryRemovePoint(tagSet, existingPoint);
+                    continue;
+                }
+
+                // Cardinality limit (OpenTelemetry metrics SDK spec): when the stream is full,
+                // fold any new attribute set into a single overflow series tagged
+                // otel.metric.overflow=true. Existing attribute sets keep updating via the fast
+                // path above, and new real-series insertion is synchronized so concurrent traffic
+                // cannot overshoot the configured number of real series.
+                if (Volatile.Read(ref _realSeriesCount) >= _cardinalityLimit)
+                {
+                    return GetOrCreateOverflowPoint();
+                }
+
+                var dict = new Dictionary<string, object?>(tags.Length);
+                for (int i = 0; i < tags.Length; i++)
+                {
+                    var kv = tags[i];
+                    dict[kv.Key] = kv.Value;
+                }
+
+                var point = CreatePoint(dict);
+                if (_points.TryAdd(tagSet, point))
+                {
+                    Interlocked.Increment(ref _realSeriesCount);
+                    return point;
+                }
+            }
+        }
     }
 
     private MetricPoint GetOrCreateOverflowPoint()
     {
-        _overflowActive = true;
-
         if (_points.TryGetValue(OverflowTagSet, out var overflowPoint))
         {
             return overflowPoint;
@@ -186,10 +211,32 @@ internal sealed class MetricState
         }
 
         var dict = new Dictionary<string, object?>(1) { [OverflowAttributeKey] = true };
-        return _points.GetOrAdd(OverflowTagSet, _ => CreatePoint(dict));
+        return _points.GetOrAdd(OverflowTagSet, _ => CreatePoint(dict, aggregateObservableValues: true));
     }
 
-    private MetricPoint CreatePoint(Dictionary<string, object?> tags)
+    private void TryReclaimPoint(TagSet tagSet, MetricPoint point)
+    {
+        if (tagSet.Equals(OverflowTagSet)
+         || _temporality != AggregationTemporality.Delta
+         || _identity.InstrumentType is not (InstrumentType.Counter or InstrumentType.Histogram)
+         || !point.TryRetireIfIdle())
+        {
+            return;
+        }
+
+        TryRemovePoint(tagSet, point);
+    }
+
+    private void TryRemovePoint(TagSet tagSet, MetricPoint point)
+    {
+        if (((ICollection<KeyValuePair<TagSet, MetricPoint>>)_points).Remove(new KeyValuePair<TagSet, MetricPoint>(tagSet, point))
+         && !tagSet.Equals(OverflowTagSet))
+        {
+            Interlocked.Decrement(ref _realSeriesCount);
+        }
+    }
+
+    private MetricPoint CreatePoint(Dictionary<string, object?> tags, bool aggregateObservableValues = false)
         => new MetricPoint(
             _identity.InstrumentName,
             _identity.MeterName,
@@ -200,6 +247,7 @@ internal sealed class MetricState
             tags,
             _identity.Unit,
             _identity.Description,
-            _identity.IsLongType);
+            _identity.IsLongType,
+            aggregateObservableValues: aggregateObservableValues);
 }
 #endif

@@ -415,7 +415,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
             foreach (var tag in metric.Tags)
             {
-                var attrData = SerializeKeyValue(tag.Key, tag.Value?.ToString() ?? string.Empty);
+                var attrData = SerializeKeyValue(tag.Key, tag.Value);
                 WriteTag(writer, FieldNumbers.NumberDataPointAttributes, LengthDelimited);
                 WriteVarInt(writer, attrData.Length);
                 writer.Write(attrData);
@@ -448,7 +448,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
             foreach (var tag in metric.Tags)
             {
-                var attrData = SerializeKeyValue(tag.Key, tag.Value?.ToString() ?? string.Empty);
+                var attrData = SerializeKeyValue(tag.Key, tag.Value);
                 WriteTag(writer, FieldNumbers.NumberDataPointAttributes, LengthDelimited);
                 WriteVarInt(writer, attrData.Length);
                 writer.Write(attrData);
@@ -473,7 +473,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
             foreach (var tag in metric.Tags)
             {
-                var attrData = SerializeKeyValue(tag.Key, tag.Value?.ToString() ?? string.Empty);
+                var attrData = SerializeKeyValue(tag.Key, tag.Value);
                 WriteTag(writer, FieldNumbers.HistogramDataPointAttributes, LengthDelimited);
                 WriteVarInt(writer, attrData.Length);
                 writer.Write(attrData);
@@ -518,14 +518,14 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             return buffer.ToArray();
         }
 
-        private byte[] SerializeKeyValue(string key, string value)
+        private byte[] SerializeKeyValue(string key, object? value)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
             WriteStringField(writer, FieldNumbers.Key, key);
 
-            var anyValueData = SerializeStringAnyValue(value);
+            var anyValueData = SerializeAnyValue(value);
             WriteTag(writer, FieldNumbers.Value, LengthDelimited);
             WriteVarInt(writer, anyValueData.Length);
             writer.Write(anyValueData);
@@ -533,17 +533,25 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             return buffer.ToArray();
         }
 
-        private byte[] SerializeStringAnyValue(string value)
+        internal static byte[] SerializeAnyValue(object? value)
         {
             using var buffer = new MemoryStream();
             using var writer = new BinaryWriter(buffer, Encoding.UTF8);
 
-            WriteStringField(writer, FieldNumbers.StringValue, value);
+            if (value is bool boolValue)
+            {
+                WriteTag(writer, FieldNumbers.BoolValue, VarInt);
+                writer.Write(boolValue);
+            }
+            else
+            {
+                WriteStringField(writer, FieldNumbers.StringValue, value?.ToString() ?? string.Empty);
+            }
 
             return buffer.ToArray();
         }
 
-        private void WriteStringField(BinaryWriter writer, int fieldNumber, string value)
+        private static void WriteStringField(BinaryWriter writer, int fieldNumber, string value)
         {
             if (!string.IsNullOrEmpty(value))
             {
@@ -552,24 +560,24 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
             }
         }
 
-        private void WriteTag(BinaryWriter writer, int fieldNumber, int wireType)
+        private static void WriteTag(BinaryWriter writer, int fieldNumber, int wireType)
         {
             WriteVarInt(writer, (fieldNumber << 3) | wireType);
         }
 
-        private void WriteString(BinaryWriter writer, string value)
+        private static void WriteString(BinaryWriter writer, string value)
         {
             var bytes = Encoding.UTF8.GetBytes(value);
             WriteVarInt(writer, bytes.Length);
             writer.Write(bytes);
         }
 
-        private void WriteVarInt(BinaryWriter writer, int value)
+        private static void WriteVarInt(BinaryWriter writer, int value)
         {
             WriteVarInt(writer, (uint)value);
         }
 
-        private void WriteVarInt(BinaryWriter writer, uint value)
+        private static void WriteVarInt(BinaryWriter writer, uint value)
         {
             while (value >= 0x80)
             {
@@ -663,6 +671,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
 
             // AnyValue
             public const int StringValue = 1;
+            public const int BoolValue = 2;
         }
     }
 }

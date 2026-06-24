@@ -13,18 +13,20 @@ using System.Threading;
 
 namespace Datadog.Trace.OpenTelemetry.Metrics;
 
-internal sealed class MetricPoint(string instrumentName, string meterName, string meterVersion, KeyValuePair<string, object?>[] meterTags, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "", bool isLongType = false, double[]? explicitBounds = null)
+internal sealed class MetricPoint(string instrumentName, string meterName, string meterVersion, KeyValuePair<string, object?>[] meterTags, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "", bool isLongType = false, double[]? explicitBounds = null, bool aggregateObservableValues = false)
 {
     internal static readonly double[] DefaultHistogramBounds = [0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000];
     private readonly long[] _runningBucketCounts = instrumentType == InstrumentType.Histogram ? new long[DefaultHistogramBounds.Length + 1] : [];
     private readonly double[] _runningBucketBounds = instrumentType == InstrumentType.Histogram ? (explicitBounds ?? DefaultHistogramBounds) : [];
     private readonly object _histogramLock = new();
+    private readonly bool _aggregateObservableValues = aggregateObservableValues;
     private long _runningCountValue;
     private double _runningDoubleValue;
     private double _runningMin = double.PositiveInfinity;
     private double _runningMax = double.NegativeInfinity;
     private bool _hasMeasurements;
     private double _lastObservedCumulative = double.NaN;
+    private bool _retired;
 
     public string InstrumentName { get; } = instrumentName;
 
@@ -58,6 +60,8 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
 
     internal double[] RunningBucketBounds => _runningBucketBounds;
 
+    internal bool IsRetired => Volatile.Read(ref _retired);
+
     public DateTimeOffset StartTime { get; internal set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset EndTime { get; internal set; } = DateTimeOffset.UtcNow;
@@ -76,47 +80,73 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
 
     public double[] SnapshotBucketBounds { get; internal set; } = [];
 
-    internal void UpdateCounter(double value)
+    internal bool UpdateCounter(double value)
     {
         lock (_histogramLock)
         {
+            if (_retired)
+            {
+                return false;
+            }
+
             _runningDoubleValue += value;
             _hasMeasurements = true;
+            return true;
         }
     }
 
-    internal void UpdateObservableCounter(double currentValue)
+    internal bool UpdateObservableCounter(double currentValue)
     {
         lock (_histogramLock)
         {
+            if (_retired)
+            {
+                return false;
+            }
+
             if (double.IsNaN(_lastObservedCumulative))
             {
                 _hasMeasurements = true;
             }
-            else if (currentValue != _lastObservedCumulative)
+            else if (currentValue != _lastObservedCumulative || _aggregateObservableValues)
             {
                 _hasMeasurements = true;
             }
 
-            _runningDoubleValue = currentValue;
+            _runningDoubleValue = _aggregateObservableValues
+                ? _runningDoubleValue + currentValue
+                : currentValue;
+
+            return true;
         }
     }
 
-    internal void UpdateGauge(double value)
+    internal bool UpdateGauge(double value)
     {
-        Interlocked.Exchange(ref _runningDoubleValue, value);
         lock (_histogramLock)
         {
+            if (_retired)
+            {
+                return false;
+            }
+
+            _runningDoubleValue = value;
             _hasMeasurements = true;
+            return true;
         }
     }
 
-    internal void UpdateHistogram(double value)
+    internal bool UpdateHistogram(double value)
     {
         var bucketIndex = FindBucketIndex(value);
 
         lock (_histogramLock)
         {
+            if (_retired)
+            {
+                return false;
+            }
+
             unchecked
             {
                 _runningCountValue++;
@@ -127,6 +157,7 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
             _runningMin = Math.Min(_runningMin, value);
             _runningMax = Math.Max(_runningMax, value);
             _hasMeasurements = true;
+            return true;
         }
     }
 
@@ -217,10 +248,28 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
 
                 StartTime = endTime;
             }
+            else if (_aggregateObservableValues && InstrumentType is InstrumentType.ObservableCounter or InstrumentType.ObservableUpDownCounter)
+            {
+                _runningDoubleValue = 0.0;
+            }
 
             _hasMeasurements = false;
 
             return snapshot;
+        }
+    }
+
+    internal bool TryRetireIfIdle()
+    {
+        lock (_histogramLock)
+        {
+            if (_retired || _hasMeasurements)
+            {
+                return false;
+            }
+
+            _retired = true;
+            return true;
         }
     }
 }

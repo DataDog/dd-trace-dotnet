@@ -14,6 +14,7 @@ using Datadog.Trace.OpenTelemetry.Metrics;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
+using OpenTelemetry.Proto.Common.V1;
 using VerifyXunit;
 using Xunit;
 
@@ -163,9 +164,9 @@ namespace Datadog.Trace.Tests
             await pipeline.ForceCollectAndExportAsync();
             var counterMetrics = testExporter.ExportedMetrics.Where(m => m.InstrumentName == "test.counter").ToList();
 
-            // The number of exported points is bounded at the cardinality limit, no matter how many
-            // distinct attribute sets were recorded.
-            counterMetrics.Count.Should().Be(MetricState.DefaultCardinalityLimit, "cardinality is capped at the limit regardless of input");
+            // The configured limit allows this many real attribute sets; once exceeded, measurements
+            // fold into a single overflow series.
+            counterMetrics.Count.Should().Be(MetricState.DefaultCardinalityLimit + 1, "cardinality is capped at the configured real series plus one overflow series");
 
             // Excess attribute sets are folded into a single overflow series tagged otel.metric.overflow=true.
             var overflowPoints = counterMetrics.Where(m => m.Tags.ContainsKey(MetricState.OverflowAttributeKey)).ToList();
@@ -175,9 +176,112 @@ namespace Datadog.Trace.Tests
             // No measurements are dropped: the running total is preserved across the real + overflow series.
             counterMetrics.Sum(m => m.SnapshotSum).Should().Be(distinctTagSets, "every measurement is still counted, only the per-key breakdown is lost past the cap");
 
-            // The overflow series absorbs everything beyond the (limit - 1) retained real series.
-            overflowPoints[0].SnapshotSum.Should().Be(distinctTagSets - (MetricState.DefaultCardinalityLimit - 1));
+            // The overflow series absorbs everything beyond the retained real series.
+            overflowPoints[0].SnapshotSum.Should().Be(distinctTagSets - MetricState.DefaultCardinalityLimit);
         }
+
+#nullable enable
+
+        [Fact]
+        public void AllowsConfiguredNumberOfRealSeriesBeforeUsingOverflow()
+        {
+            using var meter = new Meter("TestMeter");
+            var counter = meter.CreateCounter<long>("test.counter");
+            var state = new MetricState(new MetricStreamIdentity(counter, InstrumentType.Counter), AggregationTemporality.Delta, cardinalityLimit: 2);
+
+            state.RecordMeasurementLong(1, new[] { new KeyValuePair<string, object?>("id", "a") });
+            state.RecordMeasurementLong(1, new[] { new KeyValuePair<string, object?>("id", "b") });
+
+            var points = new List<MetricPoint>();
+            state.BuildPoints(points);
+
+            points.Count.Should().Be(2);
+            points.Should().NotContain(point => point.Tags.ContainsKey(MetricState.OverflowAttributeKey));
+        }
+
+        [Fact]
+        public void ReclaimsInactiveDeltaSeriesBeforeApplyingCardinalityLimit()
+        {
+            using var meter = new Meter("TestMeter");
+            var counter = meter.CreateCounter<long>("test.counter");
+            var state = new MetricState(new MetricStreamIdentity(counter, InstrumentType.Counter), AggregationTemporality.Delta, cardinalityLimit: 2);
+
+            state.RecordMeasurementLong(1, new[] { new KeyValuePair<string, object?>("id", "a") });
+            state.RecordMeasurementLong(1, new[] { new KeyValuePair<string, object?>("id", "b") });
+
+            var points = new List<MetricPoint>();
+            state.BuildPoints(points);
+            points.Should().HaveCount(2);
+
+            points.Clear();
+            state.RecordMeasurementLong(1, new[] { new KeyValuePair<string, object?>("id", "c") });
+            state.RecordMeasurementLong(1, new[] { new KeyValuePair<string, object?>("id", "d") });
+
+            state.BuildPoints(points);
+
+            points.Count.Should().Be(2);
+            points.Should().NotContain(point => point.Tags.ContainsKey(MetricState.OverflowAttributeKey));
+        }
+
+        [Fact]
+        public async Task ReservesCardinalitySlotsUnderConcurrentNewSeries()
+        {
+            const int cardinalityLimit = 8;
+            const int measurementCount = 128;
+            using var meter = new Meter("TestMeter");
+            var counter = meter.CreateCounter<long>("test.counter");
+            var state = new MetricState(new MetricStreamIdentity(counter, InstrumentType.Counter), AggregationTemporality.Delta, cardinalityLimit);
+
+            var tasks = Enumerable.Range(0, measurementCount)
+                                  .Select(i => Task.Run(() => state.RecordMeasurementLong(1, new[] { new KeyValuePair<string, object?>("id", i) })));
+
+            await Task.WhenAll(tasks);
+
+            var points = new List<MetricPoint>();
+            state.BuildPoints(points);
+            var realPoints = points.Where(point => !point.Tags.ContainsKey(MetricState.OverflowAttributeKey)).ToList();
+            var overflowPoint = points.Single(point => point.Tags.ContainsKey(MetricState.OverflowAttributeKey));
+
+            realPoints.Count.Should().Be(cardinalityLimit);
+            points.Count.Should().Be(cardinalityLimit + 1);
+            points.Sum(point => point.SnapshotSum).Should().Be(measurementCount);
+            overflowPoint.SnapshotSum.Should().Be(measurementCount - cardinalityLimit);
+        }
+
+        [Fact]
+        public void AggregatesObservableOverflowValuesBeforeDeltaCalculation()
+        {
+            using var meter = new Meter("TestMeter");
+            var counter = meter.CreateObservableCounter<long>("test.observable.counter", () => 0L);
+            var state = new MetricState(new MetricStreamIdentity(counter, InstrumentType.ObservableCounter), AggregationTemporality.Delta, cardinalityLimit: 1);
+
+            state.RecordMeasurementLong(10, new[] { new KeyValuePair<string, object?>("id", "a") });
+            state.RecordMeasurementLong(20, new[] { new KeyValuePair<string, object?>("id", "b") });
+            state.RecordMeasurementLong(30, new[] { new KeyValuePair<string, object?>("id", "c") });
+
+            var points = new List<MetricPoint>();
+            state.BuildPoints(points);
+            points.Single(point => point.Tags.ContainsKey(MetricState.OverflowAttributeKey)).SnapshotSum.Should().Be(50);
+
+            points.Clear();
+            state.RecordMeasurementLong(25, new[] { new KeyValuePair<string, object?>("id", "b") });
+            state.RecordMeasurementLong(40, new[] { new KeyValuePair<string, object?>("id", "c") });
+
+            state.BuildPoints(points);
+
+            points.Single(point => point.Tags.ContainsKey(MetricState.OverflowAttributeKey)).SnapshotSum.Should().Be(15);
+        }
+
+        [Fact]
+        public void SerializesBooleanMetricAttributesAsOtlpBoolValues()
+        {
+            var anyValue = AnyValue.Parser.ParseFrom(OtlpMetricsSerializer.SerializeAnyValue(true));
+
+            anyValue.ValueCase.Should().Be(AnyValue.ValueOneofCase.BoolValue);
+            anyValue.BoolValue.Should().BeTrue();
+        }
+
+#nullable restore
 
         [Fact]
         public async Task DetectsDuplicateInstrumentsWithCaseInsensitiveNames()
