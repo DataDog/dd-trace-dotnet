@@ -223,7 +223,8 @@ namespace Datadog.Trace.AspNet
                         // Despite the HttpRuntime.UsingIntegratedPipeline check, writing to the request headers
                         // can still fail in some hosting configurations (e.g. Sitefinity): "This operation requires IIS integrated pipeline mode".
                         // This must not abort the rest of the request instrumentation, so swallow it and disable for the rest of the application lifetime.
-                        Log.Error(ex, "Unable to inject distributed tracing headers into the request. Disabling for the rest of the application lifetime.");
+                        // This is an expected environmental limitation of the host, not a tracer bug, so skip telemetry.
+                        Log.ErrorSkipTelemetry(ex, "Unable to inject distributed tracing headers into the request. Disabling for the rest of the application lifetime.");
                         _canInjectContextIntoRequestHeaders = false;
                     }
                 }
