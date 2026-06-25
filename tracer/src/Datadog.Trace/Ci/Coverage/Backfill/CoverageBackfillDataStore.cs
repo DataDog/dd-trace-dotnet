@@ -600,6 +600,59 @@ internal static class CoverageBackfillDataStore
         => TryReadCoverageIpcResults(testOptimization, sessionId, waitForResultFolder: false, out results);
 
     /// <summary>
+    /// Reads one persisted coverage IPC result referenced by a short IPC notification.
+    /// </summary>
+    /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>
+    /// <param name="sessionId">Parent test-session span id.</param>
+    /// <param name="source">Coverage source that produced the result.</param>
+    /// <param name="resultId">Stable result identity returned when the result was persisted.</param>
+    /// <param name="result">Coverage result recovered from the shared run folder.</param>
+    /// <returns>True when the referenced result was recovered and matched the requested source.</returns>
+    internal static bool TryReadCoverageIpcResult(ITestOptimization testOptimization, ulong sessionId, CodeCoverageReportSource source, string? resultId, out CodeCoverageAggregationResult result)
+    {
+        result = default;
+        if (StringUtil.IsNullOrEmpty(resultId))
+        {
+            return false;
+        }
+
+        try
+        {
+            foreach (var runFolder in GetRunFolderCandidates(testOptimization))
+            {
+                var filePath = Path.Combine(GetIpcResultFolder(runFolder, sessionId), GetIpcResultFileName(source, resultId!));
+                if (!File.Exists(filePath) &&
+                    !HasTemporaryAtomicFileForFinalPath(filePath))
+                {
+                    continue;
+                }
+
+                if (!TryReadAllTextWithRetry(testOptimization, filePath, waitForFile: true, out var contents) ||
+                    !TryDeserializeCoverageIpcResult(testOptimization, contents, sessionId, out var persistedResult))
+                {
+                    return false;
+                }
+
+                if (persistedResult.Source != source ||
+                    !string.Equals(persistedResult.ResultId, resultId, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                result = persistedResult;
+                return true;
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            testOptimization.Log.Debug(ex, "CoverageBackfillDataStore: Error reading referenced coverage IPC result state.");
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Reads persisted coverage results from child coverage collectors, if any were written before IPC delivery.
     /// </summary>
     /// <param name="testOptimization">Current Test Optimization instance that owns the run id and workspace.</param>

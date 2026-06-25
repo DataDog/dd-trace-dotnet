@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tags;
@@ -453,7 +454,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         ipcServer.SetMessageReceivedCallback(
             o =>
             {
-                codeCoverageReceived.Value = codeCoverageReceived.Value || o is SessionCodeCoverageMessage;
+                codeCoverageReceived.Value = codeCoverageReceived.Value || o is SessionCodeCoverageMessage or SessionCodeCoverageReferenceMessage;
             });
 
         string[] messages = null;
@@ -770,7 +771,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
             "Coverlet collector writes a Cobertura attachment on Linux under auto instrumentation but does not invoke the in-process callback validated by this IPC smoke test.");
 
         var tests = new List<MockCIVisibilityTest>();
-        var coverageMessages = new List<SessionCodeCoverageMessage>();
+        var coverageResults = new List<CodeCoverageAggregationResult>();
+        var unresolvedCoverageReferences = new List<string>();
         var evpRequests = new List<string>();
         var skippableRequestBodies = new List<string>();
 
@@ -792,11 +794,18 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         ipcServer.SetMessageReceivedCallback(
             message =>
             {
-                if (message is SessionCodeCoverageMessage coverageMessage)
+                if (TryResolveCoverageIpcMessage(sessionId, message, out var coverageResult, out var unresolvedReference))
                 {
-                    lock (coverageMessages)
+                    lock (coverageResults)
                     {
-                        coverageMessages.Add(coverageMessage);
+                        coverageResults.Add(coverageResult);
+                    }
+                }
+                else if (unresolvedReference is not null)
+                {
+                    lock (unresolvedCoverageReferences)
+                    {
+                        unresolvedCoverageReferences.Add(unresolvedReference);
                     }
                 }
             });
@@ -920,21 +929,29 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         skippedTest.Meta[TestTags.SkipReason].Should().Be(IntelligentTestRunnerTags.SkippedByReason);
         skippedTest.CorrelationId.Should().Be(correlationId);
 
-        SessionCodeCoverageMessage[] receivedCoverageMessages;
-        lock (coverageMessages)
+        string[] receivedUnresolvedCoverageReferences;
+        lock (unresolvedCoverageReferences)
         {
-            receivedCoverageMessages = coverageMessages.ToArray();
+            receivedUnresolvedCoverageReferences = unresolvedCoverageReferences.ToArray();
+        }
+
+        receivedUnresolvedCoverageReferences.Should().BeEmpty();
+
+        CodeCoverageAggregationResult[] receivedCoverageResults;
+        lock (coverageResults)
+        {
+            receivedCoverageResults = coverageResults.ToArray();
         }
 
         // This target uses an injected out-of-process session, so the testhost proves coverage backfill through the IPC message consumed by the parent session.
-        var coverageMessage = receivedCoverageMessages.Should().ContainSingle().Subject;
-        coverageMessage.Source.Should().Be(CodeCoverageReportSource.Coverlet);
-        coverageMessage.Backfilled.Should().BeTrue();
-        coverageMessage.ExecutableLines.Should().HaveValue();
-        coverageMessage.CoveredLines.Should().HaveValue();
+        var coverageResult = receivedCoverageResults.Should().ContainSingle().Subject;
+        coverageResult.Source.Should().Be(CodeCoverageReportSource.Coverlet);
+        coverageResult.Backfilled.Should().BeTrue();
+        coverageResult.ExecutableLines.Should().HaveValue();
+        coverageResult.CoveredLines.Should().HaveValue();
 
-        var executableLines = coverageMessage.ExecutableLines.GetValueOrDefault();
-        var coveredLines = coverageMessage.CoveredLines.GetValueOrDefault();
+        var executableLines = coverageResult.ExecutableLines.GetValueOrDefault();
+        var coveredLines = coverageResult.CoveredLines.GetValueOrDefault();
         var coveredLinesWithoutBackfill = coveredLines - SimplePassTestBackfilledLineCount;
         var rawBackfilledPercentage = coveredLines / executableLines * 100;
         var rawPercentageWithoutBackfill = coveredLinesWithoutBackfill / executableLines * 100;
@@ -944,8 +961,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
         executableLines.Should().BeGreaterThan(0);
         coveredLinesWithoutBackfill.Should().BeGreaterThanOrEqualTo(0);
-        coverageMessage.Value.Should().BeApproximately(expectedBackfilledPercentage, 0.0001);
-        coverageMessage.Value.Should().BeGreaterThan(expectedPercentageWithoutBackfill);
+        coverageResult.Percentage.Should().BeApproximately(expectedBackfilledPercentage, 0.0001);
+        coverageResult.Percentage.Should().BeGreaterThan(expectedPercentageWithoutBackfill);
     }
 
     /// <summary>
@@ -958,7 +975,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
     public virtual async Task ItrCoverageBackfillSkippableDecisionMatrixMatchesJavaBehavior(string packageVersion, string evpVersionToRemove, bool expectedGzip, string matrixCase)
     {
         var tests = new List<MockCIVisibilityTest>();
-        var coverageMessages = new List<SessionCodeCoverageMessage>();
+        var coverageResults = new List<CodeCoverageAggregationResult>();
+        var unresolvedCoverageReferences = new List<string>();
         var evpRequests = new List<string>();
         var skippableRequestBodies = new List<string>();
 
@@ -981,11 +999,18 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         ipcServer.SetMessageReceivedCallback(
             message =>
             {
-                if (message is SessionCodeCoverageMessage coverageMessage)
+                if (TryResolveCoverageIpcMessage(sessionId, message, out var coverageResult, out var unresolvedReference))
                 {
-                    lock (coverageMessages)
+                    lock (coverageResults)
                     {
-                        coverageMessages.Add(coverageMessage);
+                        coverageResults.Add(coverageResult);
+                    }
+                }
+                else if (unresolvedReference is not null)
+                {
+                    lock (unresolvedCoverageReferences)
+                    {
+                        unresolvedCoverageReferences.Add(unresolvedReference);
                     }
                 }
             });
@@ -1092,13 +1117,21 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
         if (ShouldAssertNoBackfilledCoverageMessages(matrixCase))
         {
-            SessionCodeCoverageMessage[] receivedCoverageMessages;
-            lock (coverageMessages)
+            string[] receivedUnresolvedCoverageReferences;
+            lock (unresolvedCoverageReferences)
             {
-                receivedCoverageMessages = coverageMessages.ToArray();
+                receivedUnresolvedCoverageReferences = unresolvedCoverageReferences.ToArray();
             }
 
-            receivedCoverageMessages.Should().NotContain(message => message.Backfilled);
+            receivedUnresolvedCoverageReferences.Should().BeEmpty();
+
+            CodeCoverageAggregationResult[] receivedCoverageResults;
+            lock (coverageResults)
+            {
+                receivedCoverageResults = coverageResults.ToArray();
+            }
+
+            receivedCoverageResults.Should().NotContain(result => result.Backfilled);
         }
     }
 
@@ -1209,6 +1242,49 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                     },
                     useDotnetExec: false))
            .ConfigureAwait(false);
+    }
+
+    private static bool TryResolveCoverageIpcMessage(ulong sessionId, object message, out CodeCoverageAggregationResult result, out string unresolvedReference)
+    {
+        result = default;
+        unresolvedReference = null;
+
+        if (message is SessionCodeCoverageMessage coverageMessage)
+        {
+            result = new CodeCoverageAggregationResult(
+                coverageMessage.Source,
+                coverageMessage.Value,
+                coverageMessage.Backfilled,
+                coverageMessage.ExecutableLines,
+                coverageMessage.CoveredLines,
+                coverageMessage.Diagnostic,
+                coverageMessage.ResultId,
+                coverageMessage.BackfillValidated,
+                coverageMessage.BackfillNotApplicable,
+                coverageMessage.BackfillValidation,
+                coverageMessage.SupersededResultIds);
+            return true;
+        }
+
+        if (message is SessionCodeCoverageReferenceMessage referenceMessage)
+        {
+            if (CoverageBackfillDataStore.TryReadCoverageIpcResults(sessionId, out var persistedResults))
+            {
+                foreach (var persistedResult in persistedResults)
+                {
+                    if (persistedResult.Source == referenceMessage.Source &&
+                        string.Equals(persistedResult.ResultId, referenceMessage.ResultId, System.StringComparison.Ordinal))
+                    {
+                        result = persistedResult;
+                        return true;
+                    }
+                }
+            }
+
+            unresolvedReference = $"{referenceMessage.Source}:{referenceMessage.ResultId}";
+        }
+
+        return false;
     }
 
     private static bool ShouldSkipSimplePassTest(string matrixCase)
