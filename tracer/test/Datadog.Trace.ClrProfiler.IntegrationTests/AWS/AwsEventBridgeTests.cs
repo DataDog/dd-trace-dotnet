@@ -89,16 +89,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 await VerifyHelper.VerifySpans(spans, settings);
 
                 await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AwsEventBridge);
+
+                static string GetSnapshotSuffix(string packageVersion)
+                    => packageVersion switch
+                    {
+                        null or "" => ".Pre4.0.6.10",
+                        { } v when new Version(v) < new Version("4.0.6.10") => ".Pre4.0.6.10",
+                        _ => string.Empty
+                    };
             }
         }
-
-        static string GetSnapshotSuffix(string packageVersion)
-            => packageVersion switch
-            {
-                null or "" => ".Pre4.0.6.10",
-                { } v when new Version(v) < new Version("4.0.6.10") => ".Pre4.0.6.10",
-                _ => string.Empty
-            };
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
