@@ -11,12 +11,24 @@
               "this": {
                 "type": "MultidimensionalArrayTest"
               }
+            },
+            "staticFields": {
+              "StateArray": {
+                "notCapturedReason": "typeInitializer",
+                "type": "State[][]"
+              }
             }
           },
           "return": {
             "arguments": {
               "this": {
                 "type": "MultidimensionalArrayTest"
+              }
+            },
+            "staticFields": {
+              "StateArray": {
+                "notCapturedReason": "typeInitializer",
+                "type": "State[][]"
               }
             }
           }

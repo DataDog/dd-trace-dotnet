@@ -12,6 +12,12 @@
                 "type": "String",
                 "value": "RunAsync"
               }
+            },
+            "staticFields": {
+              "Rooms": {
+                "notCapturedReason": "typeInitializer",
+                "type": "List`1"
+              }
             }
           },
           "return": {
@@ -51,6 +57,12 @@
               "room": {
                 "isNull": "true",
                 "type": "Room"
+              }
+            },
+            "staticFields": {
+              "Rooms": {
+                "notCapturedReason": "typeInitializer",
+                "type": "List`1"
               }
             },
             "throwable": {

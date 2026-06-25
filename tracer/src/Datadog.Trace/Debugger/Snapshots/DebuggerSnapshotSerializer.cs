@@ -242,8 +242,13 @@ namespace Datadog.Trace.Debugger.Snapshots
                     break;
                 }
 
-                if (!TryGetValue(field, source, out var value, out var type))
+                if (!TryGetValue(field, source, out var value, out var type, out var notCapturedReason))
                 {
+                    if (notCapturedReason.HasValue)
+                    {
+                        WriteNotCapturedMember(jsonWriter, fieldOrPropertyName, type, notCapturedReason.Value, ref index, fieldsObjectName);
+                    }
+
                     continue;
                 }
 
@@ -280,6 +285,23 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 WriteNotCapturedReason(jsonWriter, NotCapturedReason.fieldCount);
             }
+        }
+
+        private static void WriteNotCapturedMember(JsonWriter jsonWriter, string memberName, Type type, NotCapturedReason notCapturedReason, ref int index, string fieldsObjectName)
+        {
+            if (index == 0)
+            {
+                jsonWriter.WritePropertyName(fieldsObjectName);
+                jsonWriter.WriteStartObject();
+            }
+
+            index++;
+            jsonWriter.WritePropertyName(memberName);
+            jsonWriter.WriteStartObject();
+            jsonWriter.WritePropertyName("type");
+            jsonWriter.WriteValue(type.Name);
+            WriteNotCapturedReason(jsonWriter, notCapturedReason);
+            jsonWriter.WriteEndObject();
         }
 
         private static void SerializeEnumerable(
@@ -530,8 +552,14 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal static bool TryGetValue(MemberInfo fieldOrProp, object source, out object value, [NotNullWhen(true)] out Type type)
         {
+            return TryGetValue(fieldOrProp, source, out value, out type, out _);
+        }
+
+        private static bool TryGetValue(MemberInfo fieldOrProp, object source, out object value, [NotNullWhen(true)] out Type type, out NotCapturedReason? notCapturedReason)
+        {
             value = null;
             type = null;
+            notCapturedReason = null;
             try
             {
                 switch (fieldOrProp)
@@ -568,6 +596,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                                     return true;
                                 }
 
+                                notCapturedReason = NotCapturedReason.typeInitializer;
                                 return false;
                             }
 
@@ -611,6 +640,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                                     return true;
                                 }
 
+                                notCapturedReason = NotCapturedReason.typeInitializer;
                                 return false;
                             }
 

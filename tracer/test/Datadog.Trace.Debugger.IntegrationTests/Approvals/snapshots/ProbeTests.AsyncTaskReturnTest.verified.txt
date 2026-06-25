@@ -12,6 +12,12 @@
                 "type": "String",
                 "value": "Foo"
               }
+            },
+            "staticFields": {
+              "Rooms": {
+                "notCapturedReason": "typeInitializer",
+                "type": "List`1"
+              }
             }
           },
           "return": {
@@ -38,6 +44,12 @@
                   }
                 },
                 "type": "Room"
+              }
+            },
+            "staticFields": {
+              "Rooms": {
+                "notCapturedReason": "typeInitializer",
+                "type": "List`1"
               }
             }
           }

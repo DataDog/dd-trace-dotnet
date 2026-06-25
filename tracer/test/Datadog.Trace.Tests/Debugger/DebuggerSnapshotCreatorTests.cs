@@ -384,7 +384,7 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
-        public void StaticFields_TypeWithCctor_OnlyCapturesConstants()
+        public void StaticFields_TypeWithCctor_CapturesConstantsAndMarksSkippedMembers()
         {
             ResetStaticCaptureInitializedCount();
 
@@ -394,8 +394,12 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.Equal("constant-value", staticFields["ConstantField"]?["value"]?.Value<string>());
             Assert.Equal("StaticCaptureEnum", staticFields["EnumConstantField"]?["type"]?.Value<string>());
             Assert.Equal("One", staticFields["EnumConstantField"]?["value"]?.Value<string>());
-            Assert.Null(staticFields["_staticField"]);
-            Assert.Null(staticFields["StaticProperty"]);
+            Assert.Equal("String", staticFields["_staticField"]?["type"]?.Value<string>());
+            Assert.Equal("typeInitializer", staticFields["_staticField"]?["notCapturedReason"]?.Value<string>());
+            Assert.Null(staticFields["_staticField"]?["value"]);
+            Assert.Equal("String", staticFields["StaticProperty"]?["type"]?.Value<string>());
+            Assert.Equal("typeInitializer", staticFields["StaticProperty"]?["notCapturedReason"]?.Value<string>());
+            Assert.Null(staticFields["StaticProperty"]?["value"]);
             Assert.Equal(0, _staticCaptureInitializedCount);
         }
 

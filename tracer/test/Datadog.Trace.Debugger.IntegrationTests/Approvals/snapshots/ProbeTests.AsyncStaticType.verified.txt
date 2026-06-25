@@ -12,6 +12,16 @@
                 "type": "String",
                 "value": "Last name"
               }
+            },
+            "staticFields": {
+              "_staticField": {
+                "notCapturedReason": "typeInitializer",
+                "type": "String"
+              },
+              "StaticProperty": {
+                "notCapturedReason": "typeInitializer",
+                "type": "String"
+              }
             }
           },
           "return": {
@@ -25,6 +35,16 @@
               "@return": {
                 "type": "String",
                 "value": "Last name"
+              }
+            },
+            "staticFields": {
+              "_staticField": {
+                "notCapturedReason": "typeInitializer",
+                "type": "String"
+              },
+              "StaticProperty": {
+                "notCapturedReason": "typeInitializer",
+                "type": "String"
               }
             }
           }
@@ -69,6 +89,16 @@
                 "lastName": {
                   "type": "String",
                   "value": "Last name"
+                }
+              },
+              "staticFields": {
+                "_staticField": {
+                  "notCapturedReason": "typeInitializer",
+                  "type": "String"
+                },
+                "StaticProperty": {
+                  "notCapturedReason": "typeInitializer",
+                  "type": "String"
                 }
               }
             }
