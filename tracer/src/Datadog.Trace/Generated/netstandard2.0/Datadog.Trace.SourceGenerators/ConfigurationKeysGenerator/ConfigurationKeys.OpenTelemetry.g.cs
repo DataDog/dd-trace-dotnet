@@ -216,7 +216,7 @@ internal static partial class ConfigurationKeys
         /// Configuration key to set the exporter for traces.
         /// We only recognize the values 'otlp' and 'none'. The value 'otlp' enables
         /// the experimental export of traces using OTLP. The value 'none' disables
-        /// the export of traces entirely, which is the equivalent of setting 
+        /// the export of traces entirely, which is the equivalent of setting
         /// <see cref="ConfigurationKeys.TraceEnabled"/> to false.
         /// </summary>
         public const string TracesExporter = "OTEL_TRACES_EXPORTER";

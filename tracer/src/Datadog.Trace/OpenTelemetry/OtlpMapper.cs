@@ -69,8 +69,6 @@ internal static class OtlpMapper
 
         writeKeyValue(ref state, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
 
-        // OTLP equivalent of the Datadog-Client-Computed-Stats header, so a downstream Agent does
-        // not recompute stats for these spans. String "true" matches the libdatadog/dd-trace-js convention.
         if (traceChunk.ClientComputedStats)
         {
             writeKeyValue(ref state, new KeyValue("_dd.stats_computed", "true"));

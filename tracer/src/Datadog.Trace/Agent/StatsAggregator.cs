@@ -533,9 +533,6 @@ namespace Datadog.Trace.Agent
             var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind));
             var isSpanKindEligible = spanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Consumer or SpanKinds.Producer;
 
-            // FR04: OTLP span metrics reuse the existing client-side stats span-selection, so the same
-            // filter applies for both transports — only top-level, measured, or eligible-span-kind spans
-            // are aggregated (and partial-snapshot spans are always excluded).
             if (!(span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
                  || span.GetMetric(Tags.PartialSnapshot) >= 0)
             {

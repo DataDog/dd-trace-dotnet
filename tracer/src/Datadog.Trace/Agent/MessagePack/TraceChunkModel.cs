@@ -70,8 +70,6 @@ internal readonly struct TraceChunkModel
 
     public readonly bool IsApmEnabled = true;
 
-    // Drives the _dd.stats_computed OTLP resource attribute, the OTLP equivalent of the
-    // Datadog-Client-Computed-Stats header.
     public readonly bool ClientComputedStats = false;
 
     /// <summary>

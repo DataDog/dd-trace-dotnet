@@ -157,7 +157,6 @@ namespace Datadog.Trace.Agent
         private static void WriteScopeMetricsJson(JsonTextWriter writer, StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
         {
             writer.WriteStartObject();
-            // Intentionally no scope object per spec
             writer.WritePropertyName("metrics");
             writer.WriteStartArray();
             WriteMetricJson(writer, buffer, bucketDurationNs, otelSemanticsEnabled);
@@ -429,7 +428,6 @@ namespace Datadog.Trace.Agent
             using var stream = new MemoryStream(512);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
 
-            // Intentionally omit the scope field — spec says no InstrumentationScope.
             var metricData = SerializeMetric(buffer, bucketDurationNs, otelSemanticsEnabled);
             WriteTag(writer, FieldNumbers.Metrics, WireTypeLengthDelimited);
             WriteVarInt(writer, metricData.Length);
@@ -716,7 +714,6 @@ namespace Datadog.Trace.Agent
 
             WriteStringField(writer, FieldNumbers.Key, key);
 
-            // AnyValue.string_value = field 1
             using var anyStream = new MemoryStream(32);
             using var anyWriter = new BinaryWriter(anyStream, Encoding.UTF8, leaveOpen: true);
             WriteStringField(anyWriter, AnyValueFieldNumbers.StringValue, value);
@@ -738,7 +735,6 @@ namespace Datadog.Trace.Agent
 
             WriteStringField(writer, FieldNumbers.Key, key);
 
-            // AnyValue.int_value = field 3, wire type VarInt
             using var anyStream = new MemoryStream(16);
             using var anyWriter = new BinaryWriter(anyStream, Encoding.UTF8, leaveOpen: true);
             WriteTag(anyWriter, AnyValueFieldNumbers.IntValue, WireTypeVarInt);
@@ -761,7 +757,6 @@ namespace Datadog.Trace.Agent
 
             WriteStringField(writer, FieldNumbers.Key, key);
 
-            // AnyValue.bool_value = field 2, wire type VarInt
             using var anyStream = new MemoryStream(8);
             using var anyWriter = new BinaryWriter(anyStream, Encoding.UTF8, leaveOpen: true);
             WriteTag(anyWriter, AnyValueFieldNumbers.BoolValue, WireTypeVarInt);
@@ -781,7 +776,7 @@ namespace Datadog.Trace.Agent
 
         private static void WriteStringField(BinaryWriter writer, int fieldNumber, string value)
         {
-            if (!string.IsNullOrEmpty(value))
+            if (!StringUtil.IsNullOrEmpty(value))
             {
                 WriteTag(writer, fieldNumber, WireTypeLengthDelimited);
                 var bytes = Encoding.UTF8.GetBytes(value);

@@ -294,11 +294,6 @@ namespace Datadog.Trace
 
             var api = new ManagedApi(settings.Manager, statsd, updateSampleRates, updateConfigHash, settings.PartialFlushEnabled);
 
-            // Span metrics are exported over OTLP independently of the trace transport. When enabled
-            // alongside the native trace exporter, traces still flow to the Datadog agent while the
-            // histogram is computed by the OTLP stats aggregator and sent to the OTLP metrics endpoint.
-            // The native trace export then carries the Datadog-Client-Computed-Stats header (driven by
-            // AgentWriter.CanComputeStats), so the agent does not double-count these spans.
             if (settings.OtelTracesSpanMetricsEnabled)
             {
                 var otlpMetricsApi = new ManagedApiOtlp(settings);
