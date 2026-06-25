@@ -31,7 +31,11 @@ namespace Datadog.Trace.Agent
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly TracesEncoding _tracesEncoding;
         private readonly Uri _tracesEndpoint;
-        private readonly Uri _statsEndpoint; // This endpoint is passed for the _sendStats callback, but otherwise unused
+        private readonly Uri _statsEndpoint;
+        private readonly KeyValuePair<string, string>[] _metricsHeaders;
+        private readonly bool _spanMetricsEnabled;
+        private readonly bool _otelSemanticsEnabled;
+        private readonly OtlpProtocol _metricsEncoding;
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
 
@@ -47,6 +51,10 @@ namespace Datadog.Trace.Agent
             _tracesEncoding = exporterSettings.TracesEncoding;
             _tracesEndpoint = _apiRequestFactory.GetEndpoint(null); // The base endpoint for OTLP traces already includes the path component
             _statsEndpoint = exporterSettings.OtlpMetricsEndpoint;
+            _metricsHeaders = exporterSettings.OtlpMetricsHeaders ?? [];
+            _spanMetricsEnabled = settings.OtelTracesSpanMetricsEnabled;
+            _otelSemanticsEnabled = settings.OtelSemanticsEnabled;
+            _metricsEncoding = exporterSettings.OtlpMetricsProtocol;
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
         }
 
@@ -158,10 +166,65 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private Task<SendResult> SendStatsAsyncImpl(IApiRequest request, bool isFinalTry, SendStatsState state)
+        private async Task<SendResult> SendStatsAsyncImpl(IApiRequest request, bool isFinalTry, SendStatsState state)
         {
-            _log.Debug("Sending APM trace stats is currently only supported on .NET 6+");
-            return Task.FromResult(SendResult.Success);
+            if (!_spanMetricsEnabled)
+            {
+                return SendResult.Success;
+            }
+
+            var useJson = _metricsEncoding == OtlpProtocol.HttpJson;
+            var payload = useJson
+                ? OtlpSpanStatsSerializer.SerializeJson(state.Stats, state.BucketDuration, _otelSemanticsEnabled)
+                : OtlpSpanStatsSerializer.Serialize(state.Stats, state.BucketDuration, _otelSemanticsEnabled);
+
+            if (payload is null)
+            {
+                return SendResult.Success;
+            }
+
+            foreach (var header in _metricsHeaders)
+            {
+                request.AddHeader(header.Key, header.Value);
+            }
+
+            var contentType = useJson ? MimeTypes.Json : MimeTypes.XProtobuf;
+
+            IApiResponse response = null;
+            try
+            {
+                response = await request.PostAsync(new ArraySegment<byte>(payload), contentType).ConfigureAwait(false);
+
+                if (response.StatusCode == 200)
+                {
+                    _log.Debug("Successfully sent span metrics to OTLP metrics endpoint.");
+                    return SendResult.Success;
+                }
+
+                if (response.StatusCode == 429 || response.StatusCode == 502 || response.StatusCode == 503 || response.StatusCode == 504)
+                {
+                    return isFinalTry ? SendResult.Failed_DontRetry : SendResult.Failed_CanRetry;
+                }
+
+                if (isFinalTry)
+                {
+                    try
+                    {
+                        var body = await response.ReadAsStringAsync().ConfigureAwait(false);
+                        _log.Error<int, string>("Failed to send span metrics: status {StatusCode}, response: {Response}", response.StatusCode, body);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error<int>(ex, "Failed to send span metrics with status {StatusCode}", response.StatusCode);
+                    }
+                }
+
+                return SendResult.Failed_DontRetry;
+            }
+            finally
+            {
+                response?.Dispose();
+            }
         }
 
         private async Task<SendResult> SendTracesAsyncImpl(IApiRequest request, bool finalTry, SendTracesState state)
