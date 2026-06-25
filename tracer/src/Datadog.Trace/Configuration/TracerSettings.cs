@@ -708,6 +708,17 @@ namespace Datadog.Trace.Configuration
             OtlpRuntimeMetricsEnabled = false;
 #endif
 
+            // OTEL_TRACES_SPAN_METRICS_ENABLED is a tri-state: explicit true/false overrides auto-detection.
+            // When unset, span metrics are auto-enabled iff OTEL_TRACES_EXPORTER=otlp AND DD_METRICS_OTEL_ENABLED=true.
+            var otelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString();
+            var explicitSpanMetrics = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled).AsBool();
+            OtelTracesSpanMetricsEnabled = explicitSpanMetrics
+                ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled);
+
+            OtelSemanticsEnabled = config
+                .WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled)
+                .AsBool(defaultValue: false);
+
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
@@ -1100,6 +1111,22 @@ namespace Datadog.Trace.Configuration
         /// When true, OTLP takes precedence over DogStatsD for runtime metrics.
         /// </summary>
         internal bool OtlpRuntimeMetricsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether OTLP span metrics export is enabled.
+        /// Derived from the tri-state OTEL_TRACES_SPAN_METRICS_ENABLED:
+        /// explicit true/false overrides auto-detection; when unset, enabled iff
+        /// OTEL_TRACES_EXPORTER=otlp and DD_METRICS_OTEL_ENABLED=true.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled"/>
+        internal bool OtelTracesSpanMetricsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether only OTel semantic-convention attributes are emitted
+        /// on OTLP span metrics data points, suppressing all datadog.* attributes.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
+        internal bool OtelSemanticsEnabled { get; }
 
         /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.

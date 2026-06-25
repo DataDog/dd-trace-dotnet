@@ -533,9 +533,11 @@ namespace Datadog.Trace.Agent
             var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind));
             var isSpanKindEligible = spanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Consumer or SpanKinds.Producer;
 
-            if (!_isOtlp // If we are using OTLP, we include both top-level and non-top-level spans
-                && (!(span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
-                 || span.GetMetric(Tags.PartialSnapshot) >= 0))
+            // FR04: OTLP span metrics reuse the existing client-side stats span-selection, so the same
+            // filter applies for both transports — only top-level, measured, or eligible-span-kind spans
+            // are aggregated (and partial-snapshot spans are always excluded).
+            if (!(span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
+                 || span.GetMetric(Tags.PartialSnapshot) >= 0)
             {
                 return;
             }
@@ -561,6 +563,17 @@ namespace Datadog.Trace.Agent
             var duration = span.Duration.ToNanoseconds();
 
             bucket.Duration += duration;
+
+            // Track exact min/max for OTLP histogram data points (unweighted raw duration).
+            if (duration < bucket.MinDuration)
+            {
+                bucket.MinDuration = duration;
+            }
+
+            if (duration > bucket.MaxDuration)
+            {
+                bucket.MaxDuration = duration;
+            }
 
             // If we are using OTLP, the errors are tracked as a separate aggregation entirely (different AggregationKey)
             // As a result, if using OTLP we always add to the OkSummary sketch.

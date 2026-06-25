@@ -30,6 +30,8 @@ namespace Datadog.Trace.Agent
 
         public long Start { get; private set; }
 
+        internal ClientStatsPayload Header => _header;
+
         // UTF-8 bytes for the constant map keys and values are embedded in the PE as static data via u8
         // literals. Using ReadOnlySpan<byte> property getters and WriteStringBytes avoids re-encoding the
         // same strings to UTF-8 on every serialization, matching the approach in SpanMessagePackFormatter.
