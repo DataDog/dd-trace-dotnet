@@ -70,7 +70,7 @@ namespace Datadog.Trace.Agent
         // For tests only
         internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == _serializer.HeaderSize;
 
-        public WriteStatus TryWrite(in SpanCollection spans, ref byte[] temporaryBuffer, int? samplingPriority = null)
+        public WriteStatus TryWrite(in SpanCollection spans, ref byte[] temporaryBuffer, int? samplingPriority = null, bool clientComputedStats = false)
         {
             bool lockTaken = false;
 
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Agent
                 // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
                 // the idea is that as we refactor further, we can pass more than just the spans,
                 // and these values can come directly from the trace context.
-                var traceChunk = new TraceChunkModel(in spans, samplingPriority, isFirstChunkInPayload: TraceCount == 0);
+                var traceChunk = new TraceChunkModel(in spans, samplingPriority, isFirstChunkInPayload: TraceCount == 0, clientComputedStats: clientComputedStats);
 
                 // We don't know what the serialized size of the payload will be,
                 // so we need to write to a temporary buffer first
