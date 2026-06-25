@@ -8,6 +8,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Ipc;
@@ -15,12 +17,14 @@ using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using Moq;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -789,12 +793,13 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         Output.WriteLine("RunId: {0}", runId);
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, sessionCommand);
 
+        var coverageIpcTestOptimization = CreateCoverageIpcTestOptimization(runId);
         var ipcServerName = $"session_{sessionId}";
         using var ipcServer = new IpcServer(ipcServerName);
         ipcServer.SetMessageReceivedCallback(
             message =>
             {
-                if (TryResolveCoverageIpcMessage(sessionId, message, out var coverageResult, out var unresolvedReference))
+                if (TryResolveCoverageIpcMessage(coverageIpcTestOptimization, sessionId, message, out var coverageResult, out var unresolvedReference))
                 {
                     lock (coverageResults)
                     {
@@ -994,12 +999,13 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         Output.WriteLine("CoverageBackfillMatrixCase: {0}", matrixCase);
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, sessionCommand);
 
+        var coverageIpcTestOptimization = CreateCoverageIpcTestOptimization(runId);
         var ipcServerName = $"session_{sessionId}";
         using var ipcServer = new IpcServer(ipcServerName);
         ipcServer.SetMessageReceivedCallback(
             message =>
             {
-                if (TryResolveCoverageIpcMessage(sessionId, message, out var coverageResult, out var unresolvedReference))
+                if (TryResolveCoverageIpcMessage(coverageIpcTestOptimization, sessionId, message, out var coverageResult, out var unresolvedReference))
                 {
                     lock (coverageResults)
                     {
@@ -1244,7 +1250,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
            .ConfigureAwait(false);
     }
 
-    private static bool TryResolveCoverageIpcMessage(ulong sessionId, object message, out CodeCoverageAggregationResult result, out string unresolvedReference)
+    private static bool TryResolveCoverageIpcMessage(ITestOptimization testOptimization, ulong sessionId, object message, out CodeCoverageAggregationResult result, out string unresolvedReference)
     {
         result = default;
         unresolvedReference = null;
@@ -1268,23 +1274,24 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
         if (message is SessionCodeCoverageReferenceMessage referenceMessage)
         {
-            if (CoverageBackfillDataStore.TryReadCoverageIpcResults(sessionId, out var persistedResults))
+            if (CoverageBackfillDataStore.TryReadCoverageIpcResult(testOptimization, sessionId, referenceMessage.Source, referenceMessage.ResultId, out result))
             {
-                foreach (var persistedResult in persistedResults)
-                {
-                    if (persistedResult.Source == referenceMessage.Source &&
-                        string.Equals(persistedResult.ResultId, referenceMessage.ResultId, System.StringComparison.Ordinal))
-                    {
-                        result = persistedResult;
-                        return true;
-                    }
-                }
+                return true;
             }
 
             unresolvedReference = $"{referenceMessage.Source}:{referenceMessage.ResultId}";
         }
 
         return false;
+    }
+
+    private static ITestOptimization CreateCoverageIpcTestOptimization(string runId)
+    {
+        var testOptimization = new Mock<ITestOptimization>();
+        testOptimization.Setup(x => x.RunId).Returns(runId);
+        testOptimization.Setup(x => x.CIValues).Returns(new CoverageIpcTestEnvironmentValues(System.Environment.CurrentDirectory));
+        testOptimization.Setup(x => x.Log).Returns(DatadogLogging.GetLoggerFor(typeof(XUnitEvpTests)));
+        return testOptimization.Object;
     }
 
     private static bool ShouldSkipSimplePassTest(string matrixCase)
@@ -1408,4 +1415,16 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
     private static bool HasCorrectCompressionTag(string[] tags, bool isGzipped)
         => isGzipped ? tags.Contains("rq_compressed:true") : !tags.Contains("rq_compressed:true");
+
+    private sealed class CoverageIpcTestEnvironmentValues : CIEnvironmentValues
+    {
+        public CoverageIpcTestEnvironmentValues(string workspacePath)
+        {
+            WorkspacePath = workspacePath;
+        }
+
+        protected override void Setup(IGitInfo gitInfo)
+        {
+        }
+    }
 }
