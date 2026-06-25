@@ -22,21 +22,17 @@ namespace Datadog.Trace.Agent
 
         public StatsAggregationKey Key { get; }
 
-        // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/weight.go
-        // Hits, Errors, and TopLevelHits are doubles to accumulate fractional sampling weights (1/rate)
-        public double Hits { get; set; }
+        public long Hits { get; set; }
 
-        public double Errors { get; set; }
+        public long Errors { get; set; }
 
-        // Duration is a double to accumulate fractional sampling weights (1/rate), like Hits/Errors/TopLevelHits.
-        // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/statsraw.go
-        public double Duration { get; set; }
+        public long Duration { get; set; }
 
         public DDSketch OkSummary { get; }
 
         public DDSketch ErrorSummary { get; }
 
-        public double TopLevelHits { get; set; }
+        public long TopLevelHits { get; set; }
 
         public List<byte[]> PeerTags { get; }
 
