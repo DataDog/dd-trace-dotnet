@@ -38,6 +38,7 @@ namespace Datadog.Trace.AspNet
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TracingHttpModule));
 
         private static bool _canReadHttpResponseHeaders = true;
+        private static bool _canInjectContextIntoRequestHeaders = true;
 
         private readonly string _httpContextScopeKey;
         private readonly string _requestOperationName;
@@ -210,10 +211,21 @@ namespace Datadog.Trace.AspNet
                 // Decorate the incoming HTTP Request with distributed tracing headers
                 // in case the next processor cannot access the stored Scope
                 // (e.g. WCF being hosted in IIS)
-                if (HttpRuntime.UsingIntegratedPipeline)
+                if (HttpRuntime.UsingIntegratedPipeline && _canInjectContextIntoRequestHeaders)
                 {
-                    var injectedContext = new PropagationContext(scope.Span.Context, Baggage.Current);
-                    tracer.TracerManager.SpanContextPropagator.Inject(injectedContext, requestHeaders.Wrap());
+                    try
+                    {
+                        var injectedContext = new PropagationContext(scope.Span.Context, Baggage.Current);
+                        tracer.TracerManager.SpanContextPropagator.Inject(injectedContext, requestHeaders.Wrap());
+                    }
+                    catch (PlatformNotSupportedException ex)
+                    {
+                        // Despite the HttpRuntime.UsingIntegratedPipeline check, writing to the request headers
+                        // can still fail in some hosting configurations (e.g. Sitefinity): "This operation requires IIS integrated pipeline mode".
+                        // This must not abort the rest of the request instrumentation, so swallow it and disable for the rest of the application lifetime.
+                        Log.Error(ex, "Unable to inject distributed tracing headers into the request. Disabling for the rest of the application lifetime.");
+                        _canInjectContextIntoRequestHeaders = false;
+                    }
                 }
 
                 httpContext.Items[_httpContextScopeKey] = new ScopeContainer(scope, inferredProxyScope);
