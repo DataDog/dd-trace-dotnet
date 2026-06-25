@@ -69,13 +69,20 @@ if [ -z "${buildId}" ]; then
   buildId=$(curl -sS $allBuildsForBranchUrl | jq --arg version $CI_COMMIT_SHA '.value[] | select(.sourceVersion == $version and .reason != "schedule")  | .id' | head -n 1)
 fi
 
-# 3. Last resort: any build carrying this commit, regardless of branch (prefer non-scheduled)
+# 3. Last resort: any build carrying this commit, regardless of branch (prefer non-scheduled).
+# Unlike tiers 1-2 (which intentionally wait on an in-progress build for this exact branch),
+# tier 3's commit is already built elsewhere, so we prefer a completed-successful build to avoid
+# locking onto a queued/canceled/failed newer build and polling it for 40 minutes; we still fall
+# back to an in-progress build if no successful one is found.
 if [ -z "${buildId}" ]; then
   echo "No build found on branch '$branchName' for commit '$CI_COMMIT_SHA'. Falling back to any build carrying this commit..."
   allBuildsUrl="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/builds?api-version=7.1&definitions=54&\$top=200&queryOrder=queueTimeDescending"
   buildId=$(curl -sS "$allBuildsUrl" | jq -r --arg version "$CI_COMMIT_SHA" '
     [ .value[] | select((.triggerInfo["pr.sourceSha"] == $version) or (.sourceVersion == $version)) ]
-    | ( map(select(.reason != "schedule")) + map(select(.reason == "schedule")) )
+    | ( map(select(.reason != "schedule" and .result == "succeeded"))
+      + map(select(.reason == "schedule"  and .result == "succeeded"))
+      + map(select(.reason != "schedule"))
+      + map(select(.reason == "schedule")) )
     | .[0].id // empty')
 fi
 
