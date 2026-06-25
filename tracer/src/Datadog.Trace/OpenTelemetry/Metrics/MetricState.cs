@@ -134,17 +134,18 @@ internal sealed class MetricState
 
         return _points.GetOrAdd(
             tagSet,
-            _ => new MetricPoint(
-                _identity.InstrumentName,
-                _identity.MeterName,
-                _identity.MeterVersion,
-                _identity.MeterTags,
-                _identity.InstrumentType,
-                _temporality,
-                dict,
-                _identity.Unit,
-                _identity.Description,
-                _identity.IsLongType));
+            static (_, x) => new MetricPoint(
+                x.state._identity.InstrumentName,
+                x.state._identity.MeterName,
+                x.state._identity.MeterVersion,
+                x.state._identity.MeterTags,
+                x.state._identity.InstrumentType,
+                x.state._temporality,
+                x.dict,
+                x.state._identity.Unit,
+                x.state._identity.Description,
+                x.state._identity.IsLongType),
+            (state: this, dict));
     }
 }
 #endif
