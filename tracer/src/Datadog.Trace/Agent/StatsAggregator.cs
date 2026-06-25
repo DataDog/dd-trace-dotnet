@@ -509,13 +509,6 @@ namespace Datadog.Trace.Agent
             return ns << shift;
         }
 
-        // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/weight.go
-        private static double GetWeight(Span span)
-        {
-            var rate = span.Context.TraceContext.AppliedSamplingRate;
-            return (rate is > 0) ? 1.0 / rate.Value : 1.0;
-        }
-
         private void AddToBuffer(Span span)
         {
             // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/span_concentrator.go#L210-L217
@@ -540,25 +533,22 @@ namespace Datadog.Trace.Agent
                 buffer.Buckets.Add(key, bucket);
             }
 
-            var weight = GetWeight(span);
-            bucket.Hits += weight;
+            bucket.Hits++;
 
             if (span.IsTopLevel)
             {
-                bucket.TopLevelHits += weight;
+                bucket.TopLevelHits++;
             }
 
             var duration = span.Duration.ToNanoseconds();
 
-            // Duration is weighted by sampling rate, matching the Go agent behavior:
-            // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/statsraw.go
-            bucket.Duration += duration * weight;
+            bucket.Duration += duration;
 
             // If we are using OTLP, the errors are tracked as a separate aggregation entirely (different AggregationKey)
             // As a result, if using OTLP we always add to the OkSummary sketch.
             if (span.Error && !_isOtlp)
             {
-                bucket.Errors += weight;
+                bucket.Errors++;
                 bucket.ErrorSummary.Add(ConvertTimestamp(duration));
             }
             else
