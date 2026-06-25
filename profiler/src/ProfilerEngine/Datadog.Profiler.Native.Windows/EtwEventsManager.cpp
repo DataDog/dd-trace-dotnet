@@ -257,16 +257,12 @@ void EtwEventsManager::OnEvent(
             pThreadInfo->AllocationTickTimestamp = timestamp;
             pThreadInfo->AllocationKind = pPayload->AllocationKind;
 
-            // when events are replayed, no pointer value should be used
-            // --> ClassID is invalid and should not be used
-            if (!_agentReplayEndpoint.empty())
-            {
-                pThreadInfo->AllocationClassId = 0;
-            }
-            else
-            {
-                pThreadInfo->AllocationClassId = pPayload->TypeId;
-            }
+            // The TypeId carried by the event is a raw CLR pointer that comes from an untrusted
+            // source (any local process can connect to the inbound pipe), and it may also be
+            // stale by the time we process the event. It must never be dereferenced as a ClassID,
+            // so we never propagate it: the type name string carried by the payload is used instead.
+            // This also covers the replay case where the ClassId is not valid anymore.
+            pThreadInfo->AllocationClassId = 0;
 
             pThreadInfo->AllocationAmount = pPayload->AllocationAmount64;
 

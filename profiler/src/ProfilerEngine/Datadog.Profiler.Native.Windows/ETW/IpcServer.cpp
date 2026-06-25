@@ -168,7 +168,10 @@ IpcServer* IpcServer::StartAsync(
     pThis->_hNamedPipe =
         ::CreateNamedPipeA(
             pThis->_portName.c_str(),
-            PIPE_ACCESS_DUPLEX,
+            // FILE_FLAG_FIRST_PIPE_INSTANCE guarantees we are the creator of this pipe name.
+            // Without it, a malicious local process could pre-create the pipe and impersonate
+            // our endpoint so the Agent connects to it instead of us.
+            PIPE_ACCESS_DUPLEX | FILE_FLAG_FIRST_PIPE_INSTANCE,
             PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,
             pThis->_maxInstances,
             pThis->_outBufferSize,
@@ -179,7 +182,20 @@ IpcServer* IpcServer::StartAsync(
 
     if (pThis->_hNamedPipe == INVALID_HANDLE_VALUE)
     {
-        pThis->ShowLastError("Failed to create named pipe...");
+        DWORD lastError = ::GetLastError();
+
+        // With FILE_FLAG_FIRST_PIPE_INSTANCE, ERROR_ACCESS_DENIED means a pipe with the same
+        // name already exists: another (potentially malicious) process squatted our endpoint.
+        // Refuse to continue so we never end up attaching to an impersonated pipe.
+        if (lastError == ERROR_ACCESS_DENIED)
+        {
+            pThis->ShowLastError("Failed to create named pipe: the name is already in use (possible squatting); aborting...", lastError);
+        }
+        else
+        {
+            pThis->ShowLastError("Failed to create named pipe...", lastError);
+        }
+
         if (pThis->_pLogger != nullptr)
         {
             std::stringstream builder;
