@@ -286,7 +286,7 @@ namespace Datadog.Trace.Agent
             writer.WritePropertyName("timeUnixNano");
             writer.WriteValue(endTimeUnixNano.ToString());
 
-            var count = (ulong)Math.Round(bucket.Hits);
+            var count = (ulong)bucket.Hits;
             writer.WritePropertyName("count");
             writer.WriteValue(count.ToString());
 
@@ -583,7 +583,7 @@ namespace Datadog.Trace.Agent
 
             // ── Count / Sum ───────────────────────────────────────────────────────
 
-            var count = (ulong)Math.Round(bucket.Hits);
+            var count = (ulong)bucket.Hits;
             WriteTag(writer, FieldNumbers.HistogramDataPointCount, WireTypeFixed64);
             writer.Write(count);
 
