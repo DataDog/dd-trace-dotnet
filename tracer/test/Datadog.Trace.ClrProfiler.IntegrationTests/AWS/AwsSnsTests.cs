@@ -100,8 +100,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     => packageVersion switch
                     {
                         // Lower versions than specified don't contain PublishBatch method
-                        null or "" => string.Empty,
+                        null or "" => ".Pre4.0.3.8",
                         { } v when new Version(v) < new Version("3.7.3") => ".pre3.7.3",
+                        { } v when new Version(v) < new Version("4.0.3.8") => ".Pre4.0.3.8",
                         _ => string.Empty
                     };
             }

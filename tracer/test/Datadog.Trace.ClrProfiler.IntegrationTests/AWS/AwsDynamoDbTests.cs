@@ -61,7 +61,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.UseFileName($"{nameof(AwsDynamoDbTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
+                var suffix = GetSnapshotSuffix(packageVersion);
+                settings.UseFileName($"{nameof(AwsDynamoDbTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}{suffix}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_dynamodb");
                 settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_dynamodb");
                 settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_dynamodb");
@@ -82,5 +83,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AwsDynamoDb);
             }
         }
+
+        static string GetSnapshotSuffix(string packageVersion)
+            => packageVersion switch
+            {
+                null or "" => ".Pre4.0.21.7",
+                { } v when new Version(v) < new Version("4.0.21.7") => ".Pre4.0.21.7",
+                _ => string.Empty
+            };
     }
 }

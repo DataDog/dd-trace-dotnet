@@ -68,12 +68,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
                 // Default version is 3.7.*
-                var snapshotSuffix = string.IsNullOrEmpty(packageVersion) ? string.Empty :
+                var snapshotSuffix = string.IsNullOrEmpty(packageVersion) ? ".Pre4.0.4.8" :
                     new Version(packageVersion) switch
                     {
-                        { Major: 3, Minor: >= 7 } => string.Empty, // Post 3.7.0
-                        _ => "_pre3_7_0"  // Pre 3.7.0
-
+                        { } v when v >= new Version("4.0.4.8") => string.Empty, // v4 with IMDS spans
+                        { Major: 3, Minor: >= 7 } => ".Pre4.0.4.8",             // 3.7.x
+                        _ => "_pre3_7_0"                                        // Pre 3.7.0
                     };
 
                 settings.UseFileName($"{nameof(AwsStepFunctionsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}{snapshotSuffix}");

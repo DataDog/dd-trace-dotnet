@@ -67,7 +67,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
-                settings.UseFileName($"{nameof(AwsEventBridgeTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
+                var suffix = GetSnapshotSuffix(packageVersion);
+                settings.UseFileName($"{nameof(AwsEventBridgeTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}{suffix}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_eventbridge");
                 settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_eventbridge");
                 settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_eventbridge");
@@ -90,6 +91,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AwsEventBridge);
             }
         }
+
+        static string GetSnapshotSuffix(string packageVersion)
+            => packageVersion switch
+            {
+                null or "" => ".Pre4.0.6.10",
+                { } v when new Version(v) < new Version("4.0.6.10") => ".Pre4.0.6.10",
+                _ => string.Empty
+            };
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]

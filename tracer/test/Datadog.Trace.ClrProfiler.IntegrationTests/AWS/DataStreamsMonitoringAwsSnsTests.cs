@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Versioning;
@@ -45,12 +46,14 @@ public class DataStreamsMonitoringAwsSnsTests : TestHelper
         using var agent = EnvironmentHelper.GetMockAgent();
         using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
         {
+            // v4.0.3.8+ performs IMDSv2 credential probes that produce extra http.request spans
+            var isV4 = !string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version("4.0.3.8");
 #if NETFRAMEWORK
-            var expectedCount = 10;
+            var expectedCount = isV4 ? 22 : 10;
             var expectedTaggedCount = 4;
             var frameworkName = "NetFramework";
 #else
-            var expectedCount = 5;
+            var expectedCount = isV4 ? 17 : 5;
             var expectedTaggedCount = 2;
             var frameworkName = "NetCore";
 #endif

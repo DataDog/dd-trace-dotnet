@@ -103,6 +103,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     {
                         null or "" => ".pre3_7_300",
                         { } v when new Version(v) < new Version("3.7.300.6") => ".pre3_7_300",
+                        { } v when new Version(v) < new Version("4.0.3.8") => ".Pre4.0.3.8",
                         _ => string.Empty
                     };
             }
