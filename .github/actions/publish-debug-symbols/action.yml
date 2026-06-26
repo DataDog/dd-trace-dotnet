@@ -128,15 +128,8 @@ runs:
       env:
         BOLD_GREEN: "\e[1;32m"
         RESET: "\e[0m"
-        PREPROD_API_KEY: ${{ steps.dd-sts-preprod.outputs.api_key }}
-        US1_API_KEY: ${{ steps.dd-sts-us1.outputs.api_key }}
-        US3_API_KEY: ${{ steps.dd-sts-us3.outputs.api_key }}
-        US5_API_KEY: ${{ steps.dd-sts-us5.outputs.api_key }}
-        EU1_API_KEY: ${{ steps.dd-sts-eu1.outputs.api_key }}
-        AP1_API_KEY: ${{ steps.dd-sts-ap1.outputs.api_key }}
-        AP2_API_KEY: ${{ steps.dd-sts-ap2.outputs.api_key }}
       run: |
-        for i in "datad0g.com ${{ inputs.preprod_api_key }}" "datadoghq.com ${{ inputs.us1_api_key }}" "us3.datadoghq.com ${{ inputs.us3_api_key }}" "us5.datadoghq.com ${{ inputs.us5_api_key }}" "datadoghq.eu ${{ inputs.eu1_api_key }}" "ap1.datadoghq.com ${{ inputs.ap1_api_key }}" "ap2.datadoghq.com ${{ inputs.ap2_api_key }}"; do
+        for i in "datad0g.com ${{ steps.dd-sts-preprod.outputs.api_key }}" "datadoghq.com ${{ steps.dd-sts-us1.outputs.api_key }}" "us3.datadoghq.com ${{ steps.dd-sts-us3.outputs.api_key }}" "us5.datadoghq.com ${{ steps.dd-sts-us5.outputs.api_key }}" "datadoghq.eu ${{ steps.dd-sts-eu1.outputs.api_key }}" "ap1.datadoghq.com ${{ steps.dd-sts-ap1.outputs.api_key }}" "ap2.datadoghq.com ${{ steps.dd-sts-ap2.outputs.api_key }}"; do
           site=$(echo $i | cut -d' ' -f1)
           api_key=$(echo $i | cut -d' ' -f2)
           echo -e "${BOLD_GREEN}Pushing symbols to $site${RESET}"
