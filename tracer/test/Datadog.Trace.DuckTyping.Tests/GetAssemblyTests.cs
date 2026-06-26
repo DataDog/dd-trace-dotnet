@@ -6,8 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.Ci;
-using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.DuckTyping.Tests
@@ -18,7 +16,6 @@ namespace Datadog.Trace.DuckTyping.Tests
         [Fact]
         public void GetAssemblyTest()
         {
-            var asmDuckTypes = 0;
             var lstExceptions = new List<Exception>();
             var assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
             foreach (var assembly in assemblies)
@@ -27,8 +24,6 @@ namespace Datadog.Trace.DuckTyping.Tests
                     assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeGenericTypeAssemblyPrefix) ||
                     assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeNotVisibleAssemblyPrefix))
                 {
-                    asmDuckTypes++;
-
                     try
                     {
                         assembly.GetTypes();
@@ -45,31 +40,9 @@ namespace Datadog.Trace.DuckTyping.Tests
                 throw new AggregateException(lstExceptions.ToArray());
             }
 
-            /*****
-             * WARNING: This number is expected to change if you add
-             * a another test to the ducktype assembly.
-             */
-            if (!TestOptimization.Instance.IsRunning)
-            {
-#if NETFRAMEWORK
-                asmDuckTypes.Should().Be(1183);
-#elif NETCOREAPP2_1
-                asmDuckTypes.Should().Be(1186);
-#else
-                asmDuckTypes.Should().Be(1187);
-#endif
-            }
-            else
-            {
-                // When running inside CI Visibility, we will generate additional duck types
-#if NETFRAMEWORK
-                asmDuckTypes.Should().BeGreaterThan(1183);
-#elif NETCOREAPP2_1
-                asmDuckTypes.Should().BeGreaterThan(1186);
-#else
-                asmDuckTypes.Should().BeGreaterThan(1187);
-#endif
-            }
+            // The number of generated assemblies depends on runtime, platform, CI instrumentation,
+            // AOT/dynamic mode, and randomized test order. This test only owns type-load validation
+            // for whatever duck type assemblies are loaded when it runs.
         }
     }
 }

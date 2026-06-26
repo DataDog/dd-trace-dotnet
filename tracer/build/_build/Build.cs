@@ -462,9 +462,16 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetBuild(x => x
+                .SetProjectFile(Solution.GetProject(Projects.DatadogTraceToolsShared))
+                .EnableNoRestore()
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
+                .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1"));
+
+            DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdTrace))
                 .EnableNoRestore()
-                .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")

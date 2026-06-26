@@ -140,6 +140,41 @@ namespace Datadog.Trace.DuckTyping
                  proxyType.GenericTypeArguments[0].GetCustomAttribute<DuckCopyAttribute>() != null);
         }
 
+        private static bool TryUnwrapValueWithType(Type type, out Type valueType)
+        {
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ValueWithType<>))
+            {
+                valueType = type.GenericTypeArguments[0];
+                return true;
+            }
+
+            valueType = type;
+            return false;
+        }
+
+        private static IEnumerable<string> GetDuckAttributeCandidateNames(string configuredName)
+        {
+            if (configuredName.IndexOf(',') == -1)
+            {
+                var trimmedName = configuredName.Trim();
+                if (!string.IsNullOrEmpty(trimmedName))
+                {
+                    yield return trimmedName;
+                }
+
+                yield break;
+            }
+
+            foreach (var name in configuredName.Split(','))
+            {
+                var trimmedName = name.Trim();
+                if (!string.IsNullOrEmpty(trimmedName))
+                {
+                    yield return trimmedName;
+                }
+            }
+        }
+
         /// <summary>
         /// Gets if the direct access method should be used or the indirect method (dynamic method)
         /// </summary>

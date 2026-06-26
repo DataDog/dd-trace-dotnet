@@ -331,6 +331,8 @@ BenchmarkDotNet.Artifacts/
 tracer/deploy/linux/
 tracer/deploy/AzureAppServices/
 !tracer/build/artifacts
+tracer/build/artifacts/ducktype-aot-compat-gate-manual/
+tracer/build/artifacts/profile-samples/
 tracer/src/Datadog.Trace.Bundle/home
 build_data
 
