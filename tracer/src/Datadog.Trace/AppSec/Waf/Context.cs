@@ -193,7 +193,7 @@ internal sealed class Context : IContext
             }
 
             // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
-            // right now this is fine because we added: _encodeResults.Add(persistentArgs); and behind the scenes they are heap allocated pointers (though waf helpers or manually HC allocs via the new encoder)
+            // pwPersistentArgs doesn't need to be pinpointed because we already have: _encodeResults.Add(persistentArgs); and behind the scenes they are heap allocated pointers (through waf helpers via the legacy encoder or manually HC allocs via the new encoder)
             code = _waf.Run(_contextHandle, persistentAddressData != null ? &pwPersistentArgs : null, ephemeralArgs != null ? &pwEphemeralArgsValue : null, ref retNative, timeoutMicroSeconds);
         }
 
