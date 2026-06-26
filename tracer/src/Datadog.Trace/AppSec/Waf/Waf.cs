@@ -6,22 +6,20 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Rcm;
-using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf
 {
+    /// <summary>
+    /// Type using the underlying native library here: https://github.com/DataDog/libddwaf
+    /// </summary>
     internal sealed class Waf : IWaf
     {
         private const string InitContextError = "WAF ddwaf_init_context failed.";
@@ -126,6 +124,12 @@ namespace Datadog.Trace.AppSec.Waf
                             var oldHandle = _wafHandle;
                             _wafHandle = newHandle;
                             _wafLocker.ExitWriteLock();
+                            // Safe to destroy oldHandle here: ddwaf_context_init() copies the ruleset
+                            // shared_ptr into each context, so contexts hold their own independent reference.
+                            // ddwaf_destroy() only decrements the handle's refcount; existing contexts remain
+                            // valid. The write lock above ensures no concurrent ddwaf_context_init call was
+                            // reading oldHandle when it is destroyed.
+                            // See: https://github.com/DataDog/libddwaf/blob/main/src/waf.hpp#L28-L30
                             _wafLibraryInvoker.Destroy(oldHandle);
                         }
                         else
@@ -173,6 +177,12 @@ namespace Datadog.Trace.AppSec.Waf
             bool lockAcquired = false;
             try
             {
+                // ddwaf_known_addresses is explicitly documented as not thread-safe:
+                // https://github.com/DataDog/libddwaf/blob/7a17b8d31b491e329f10eae20b07a619910aa888/docs/c-api/api.md?plain=1#L144
+                // Internally it lazily populates root_addresses via ruleset::get_root_addresses(),
+                // which has no synchronization. Concurrent calls race on that lazy init and corrupt
+                // the vector, causing an AccessViolationException in Marshal.PtrToStringAnsi.
+                // A write lock ensures exclusive access, matching the original intent.
                 if (_wafLocker.EnterWriteLock())
                 {
                     lockAcquired = true;

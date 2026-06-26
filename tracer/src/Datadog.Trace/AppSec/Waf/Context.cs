@@ -14,6 +14,9 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf;
 
+/// <summary>
+/// Context type using the underlying native library here: https://github.com/DataDog/libddwaf/blob/7a17b8d31b491e329f10eae20b07a619910aa888/src/context.hpp#L147
+/// </summary>
 internal sealed class Context : IContext
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
@@ -190,6 +193,7 @@ internal sealed class Context : IContext
             }
 
             // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
+            // right now this is fine because we added: _encodeResults.Add(persistentArgs); and behind the scenes they are heap allocated pointers (though waf helpers or manually HC allocs via the new encoder)
             code = _waf.Run(_contextHandle, persistentAddressData != null ? &pwPersistentArgs : null, ephemeralArgs != null ? &pwEphemeralArgsValue : null, ref retNative, timeoutMicroSeconds);
         }
 
