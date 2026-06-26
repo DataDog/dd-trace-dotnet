@@ -12,7 +12,9 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal static class FilterEvaluationHelpers
 {
-    internal static BoundedCaptureCollectionResult<T> FilterForCapture<T>(IEnumerable<T> source, Func<T, bool> predicate, int maxCollectionSize, bool isDictionary)
+    internal delegate bool FilterPredicate<T>(T item, ref EvaluationBudget budget);
+
+    internal static BoundedCaptureCollectionResult<T> FilterForCapture<T>(IEnumerable<T> source, FilterPredicate<T> predicate, ref EvaluationBudget budget, int maxCollectionSize, bool isDictionary)
     {
         if (source is null)
         {
@@ -33,7 +35,8 @@ internal static class FilterEvaluationHelpers
         var wasTruncated = false;
         foreach (var item in source)
         {
-            if (!predicate(item))
+            budget.ThrowIfExceeded();
+            if (!predicate(item, ref budget))
             {
                 continue;
             }

@@ -197,7 +197,8 @@ internal static class ProbeExpressionParserHelper
             ParameterExpression returnParameterExpression,
             ParameterExpression durationParameterExpression,
             ParameterExpression exceptionParameterExpression,
-            ParameterExpression argsOrLocalsParameterExpression)
+            ParameterExpression argsOrLocalsParameterExpression,
+            ParameterExpression evaluationBudgetParameterExpression)
         {
             ExpressionBody = body;
             ThisParameterExpression = thisParameterExpression;
@@ -205,6 +206,7 @@ internal static class ProbeExpressionParserHelper
             DurationParameterExpression = durationParameterExpression;
             ExceptionParameterExpression = exceptionParameterExpression;
             ArgsAndLocalsParameterExpression = argsOrLocalsParameterExpression;
+            EvaluationBudgetParameterExpression = evaluationBudgetParameterExpression;
         }
 
         internal Expression ExpressionBody { get; }
@@ -218,5 +220,7 @@ internal static class ProbeExpressionParserHelper
         internal ParameterExpression ExceptionParameterExpression { get; }
 
         internal ParameterExpression ArgsAndLocalsParameterExpression { get; }
+
+        internal ParameterExpression EvaluationBudgetParameterExpression { get; }
     }
 }

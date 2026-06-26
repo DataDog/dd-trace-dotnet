@@ -15,9 +15,11 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AgileObjects.ReadableExpressions;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
@@ -235,12 +237,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             // Act
             var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             // Assert
             Assert.NotNull(result);
@@ -272,23 +269,13 @@ namespace Datadog.Trace.Tests.Debugger
                                          """;
 
             var equalsCompiled = ProbeExpressionParser<bool>.ParseExpression(equalsJson, scopeMembers);
-            var equalsResult = equalsCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var equalsResult = EvaluateCompiled(equalsCompiled, scopeMembers);
 
             Assert.False(equalsResult);
             Assert.True(equalsCompiled.Errors == null || equalsCompiled.Errors.Length == 0);
 
             var notEqualsCompiled = ProbeExpressionParser<bool>.ParseExpression(notEqualsJson, scopeMembers);
-            var notEqualsResult = notEqualsCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var notEqualsResult = EvaluateCompiled(notEqualsCompiled, scopeMembers);
 
             Assert.True(notEqualsResult);
             Assert.True(notEqualsCompiled.Errors == null || notEqualsCompiled.Errors.Length == 0);
@@ -309,12 +296,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             // Act
             var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             // Assert
             Assert.NotNull(result);
@@ -336,12 +318,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers, typeof(GenericReferenceTypeTarget<>));
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.IsType<GenericReferenceTypeTarget<string>>(result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
@@ -488,12 +465,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.True(result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
@@ -515,12 +487,7 @@ namespace Datadog.Trace.Tests.Debugger
                          """;
 
             var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.True(result);
             compiled.Errors.Should().ContainSingle();
@@ -541,12 +508,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Same(UndefinedValue.Instance, result);
             compiled.Errors.Should().ContainSingle();
@@ -575,12 +537,7 @@ namespace Datadog.Trace.Tests.Debugger
                 json,
                 scopeMembers,
                 new CaptureLimitInfo(MaxReferenceDepth: 5, MaxCollectionSize: 2, MaxLength: 255, MaxFieldCount: 20));
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Same(UndefinedValue.Instance, result);
             compiled.Errors.Should().ContainSingle();
@@ -739,8 +696,9 @@ namespace Datadog.Trace.Tests.Debugger
         public void FilterEvaluationHelpers_FilterForCapture_StopsAfterLimitAndOneExtraMatch()
         {
             var collection = new CountingEnumerable<string>(["hello", "world", "again"]);
+            var budget = EvaluationBudget.Create(DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds);
 
-            var result = FilterEvaluationHelpers.FilterForCapture(collection, static value => value.Length > 0, maxCollectionSize: 1, isDictionary: false);
+            var result = FilterEvaluationHelpers.FilterForCapture(collection, static (string value, ref EvaluationBudget _) => value.Length > 0, ref budget, maxCollectionSize: 1, isDictionary: false);
 
             result.Count.Should().Be(1);
             result.WasTruncated.Should().BeTrue();
@@ -1712,12 +1670,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.NotEqual(secret, result);
             Assert.Equal("{REDACTED}", result);
@@ -1751,12 +1704,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.NotEqual(secret, result);
             Assert.Equal("{REDACTED}", result);
@@ -1786,12 +1734,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.True(result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
@@ -1820,12 +1763,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.True(result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
@@ -1854,12 +1792,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0, string.Join(Environment.NewLine, compiled.Errors?.Select(e => $"{e.Expression}: {e.Message}") ?? []));
             Assert.False(result);
@@ -1908,23 +1841,13 @@ namespace Datadog.Trace.Tests.Debugger
                                          """;
 
             var publicCompiled = ProbeExpressionParser<bool>.ParseExpression(publicJson, scopeMembers);
-            var publicResult = publicCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var publicResult = EvaluateCompiled(publicCompiled, scopeMembers);
 
             Assert.True(publicResult);
             Assert.True(publicCompiled.Errors == null || publicCompiled.Errors.Length == 0);
 
             var sensitiveCompiled = ProbeExpressionParser<bool>.ParseExpression(sensitiveJson, scopeMembers);
-            var sensitiveResult = sensitiveCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var sensitiveResult = EvaluateCompiled(sensitiveCompiled, scopeMembers);
 
             Assert.False(sensitiveResult);
             Assert.True(sensitiveCompiled.Errors == null || sensitiveCompiled.Errors.Length == 0);
@@ -1973,23 +1896,13 @@ namespace Datadog.Trace.Tests.Debugger
                                          """;
 
             var publicCompiled = ProbeExpressionParser<bool>.ParseExpression(publicJson, scopeMembers);
-            var publicResult = publicCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var publicResult = EvaluateCompiled(publicCompiled, scopeMembers);
 
             Assert.True(publicResult);
             Assert.True(publicCompiled.Errors == null || publicCompiled.Errors.Length == 0);
 
             var sensitiveCompiled = ProbeExpressionParser<bool>.ParseExpression(sensitiveJson, scopeMembers);
-            var sensitiveResult = sensitiveCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var sensitiveResult = EvaluateCompiled(sensitiveCompiled, scopeMembers);
 
             Assert.False(sensitiveResult);
             Assert.True(sensitiveCompiled.Errors == null || sensitiveCompiled.Errors.Length == 0);
@@ -2038,23 +1951,13 @@ namespace Datadog.Trace.Tests.Debugger
                                          """;
 
             var publicCompiled = ProbeExpressionParser<bool>.ParseExpression(publicJson, scopeMembers);
-            var publicResult = publicCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var publicResult = EvaluateCompiled(publicCompiled, scopeMembers);
 
             Assert.True(publicResult);
             Assert.True(publicCompiled.Errors == null || publicCompiled.Errors.Length == 0);
 
             var sensitiveCompiled = ProbeExpressionParser<bool>.ParseExpression(sensitiveJson, scopeMembers);
-            var sensitiveResult = sensitiveCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var sensitiveResult = EvaluateCompiled(sensitiveCompiled, scopeMembers);
 
             Assert.False(sensitiveResult);
             Assert.True(sensitiveCompiled.Errors == null || sensitiveCompiled.Errors.Length == 0);
@@ -2125,23 +2028,13 @@ namespace Datadog.Trace.Tests.Debugger
                                       """;
 
             var sensitiveCompiled = ProbeExpressionParser<object>.ParseExpression(sensitiveJson, scopeMembers);
-            var sensitiveResult = sensitiveCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var sensitiveResult = EvaluateCompiled(sensitiveCompiled, scopeMembers);
 
             Assert.NotEqual(secret, sensitiveResult);
             Assert.Equal("{REDACTED}", sensitiveResult);
 
             var publicCompiled = ProbeExpressionParser<object>.ParseExpression(publicJson, scopeMembers);
-            var publicResult = publicCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var publicResult = EvaluateCompiled(publicCompiled, scopeMembers);
 
             Assert.Equal(publicValue, publicResult);
         }
@@ -2190,23 +2083,13 @@ namespace Datadog.Trace.Tests.Debugger
                                   """;
 
             var publicCompiled = ProbeExpressionParser<bool>.ParseExpression(publicJson, scopeMembers);
-            var publicResult = publicCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var publicResult = EvaluateCompiled(publicCompiled, scopeMembers);
 
             Assert.True(publicResult);
             Assert.True(publicCompiled.Errors == null || publicCompiled.Errors.Length == 0);
 
             var sensitiveCompiled = ProbeExpressionParser<bool>.ParseExpression(sensitiveJson, scopeMembers);
-            var sensitiveResult = sensitiveCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var sensitiveResult = EvaluateCompiled(sensitiveCompiled, scopeMembers);
 
             Assert.False(sensitiveResult);
             Assert.True(sensitiveCompiled.Errors == null || sensitiveCompiled.Errors.Length == 0);
@@ -2227,12 +2110,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Same(collection, result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
@@ -2255,12 +2133,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.True(result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
@@ -2279,12 +2152,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers, typeof(GenericValueTypeTarget<>));
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Same(UndefinedValue.Instance, result);
             var error = Assert.Single(compiled.Errors);
@@ -2304,12 +2172,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers, typeof(RecursiveGenericConstraintTarget<>));
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Same(UndefinedValue.Instance, result);
             var error = Assert.Single(compiled.Errors);
@@ -2331,12 +2194,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.True(result);
             var error = Assert.Single(compiled.Errors);
@@ -2358,12 +2216,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.True(result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
@@ -2384,12 +2237,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.True(result);
             var error = Assert.Single(compiled.Errors);
@@ -2474,12 +2322,7 @@ namespace Datadog.Trace.Tests.Debugger
             scopeMembers.AddMember(new ScopeMember("HashtableLocal", typeof(Hashtable), hashtable, ScopeMemberKind.Local));
 
             var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.True(result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
@@ -2499,15 +2342,99 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
+            var result = EvaluateCompiled(compiled, scopeMembers);
+
+            Assert.Equal("{[hello, ], }", result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_ConditionTimeout_SetsConditionError()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("LargeCollectionLocal", typeof(List<int>), Enumerable.Range(1, 10_000).ToList(), ScopeMemberKind.Local));
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: new DebuggerExpression(string.Empty, @"{""all"":[{""ref"":""LargeCollectionLocal""},{""gt"":[""@it"",0]}]}", null),
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null,
+                maxEvaluationTimeInMilliseconds: 0);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Condition.Should().BeTrue();
+            result.HasConditionError.Should().BeTrue();
+            result.Errors.Should().Contain(error => error.Message == EvaluationTimeBudgetExceededException.ErrorMessage);
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_CaptureExpressionsReuseEvaluationBudget()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("LargeCollectionLocal", typeof(List<int>), Enumerable.Range(1, 10_000).ToList(), ScopeMemberKind.Local));
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: new DebuggerExpression(string.Empty, @"{""all"":[{""ref"":""LargeCollectionLocal""},{""gt"":[""@it"",0]}]}", null),
+                metric: null,
+                spanDecorations: null,
+                captureExpressions:
+                [
+                    new CaptureExpressionDefinition("value", new DebuggerExpression(string.Empty, @"{""ref"":""StringLocal""}", null), default)
+                ],
+                maxEvaluationTimeInMilliseconds: 0);
+
+            var result = evaluator.Evaluate(scopeMembers, out var entry);
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers, entry);
+
+            result.CaptureExpressionCount.Should().Be(0);
+            result.Errors.Should().Contain(error => error.Message == EvaluationTimeBudgetExceededException.ErrorMessage);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_BudgetedDelegateTimeout_ThrowsEvaluationTimeout()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("LargeCollectionLocal", typeof(List<int>), Enumerable.Range(1, 10_000).ToList(), ScopeMemberKind.Local));
+            const string json = """
+                                {
+                                  "all": [
+                                    { "ref": "LargeCollectionLocal" },
+                                    { "gt": [ "@it", 0 ] }
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var budget = EvaluationBudget.Create(0);
+            var act = () => compiled.BudgetedDelegate(
                 scopeMembers.InvocationTarget,
                 scopeMembers.Return,
                 scopeMembers.Duration,
                 scopeMembers.Exception,
-                scopeMembers.Members);
+                scopeMembers.Members,
+                ref budget);
 
-            Assert.Equal("{[hello, ], }", result);
-            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+            act.Should().Throw<EvaluationTimeBudgetExceededException>();
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_StaticPropertyAccess_IsAllowed()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("PropertyHolderLocal", typeof(PropertyHolder), new PropertyHolder(), ScopeMemberKind.Local));
+            const string json = """
+                                {
+                                  "getmember": [
+                                    { "ref": "PropertyHolderLocal" },
+                                    "StaticValue"
+                                  ]
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = EvaluateCompiled(compiled, scopeMembers);
+
+            result.Should().Be(PropertyHolder.StaticValue);
         }
 
         private static string CreateInstanceOfJson(string valueJson, string typeName)
@@ -2700,6 +2627,19 @@ namespace Datadog.Trace.Tests.Debugger
             return scope;
         }
 
+        private T EvaluateCompiled<T>(CompiledExpression<T> compiled, MethodScopeMembers scopeMembers)
+        {
+            compiled.BudgetedDelegate.Should().NotBeNull();
+            var budget = EvaluationBudget.Create(DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds);
+            return compiled.BudgetedDelegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members,
+                ref budget);
+        }
+
         private (string Template, bool? Condition, double? Metric, List<EvaluationError> Errors) Evaluate((ProbeExpressionEvaluator Evaluator, MethodScopeMembers ScopeMembers) evaluator)
         {
             var result = evaluator.Evaluator.Evaluate(evaluator.ScopeMembers);
@@ -2713,15 +2653,15 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 builder.AppendLine("Condition:");
                 builder.AppendLine($"Json:{evaluator.Condition.Value.Json}");
-                builder.AppendLine($"Expression: {SanitizeExpression(evaluator.CompiledCondition.Value.ParsedExpression.ToReadableString())}");
+                builder.AppendLine($"Expression: {SanitizeExpression(evaluator.CompiledCondition.Value.ParsedExpression)}");
                 builder.AppendLine($"Result: {evaluationResult.Condition}");
             }
 
             if (evaluator.Templates.Any(t => t?.Dsl != DefaultDslTemplate))
             {
                 builder.AppendLine("Template:");
-                builder.AppendLine($"Segments: {string.Join(Environment.NewLine, evaluator.Templates.Select(t => t?.Json))}");
-                builder.AppendLine($"Expressions: {string.Join(Environment.NewLine, evaluator.CompiledTemplates.Select(t => t.ParsedExpression.ToReadableString()))}");
+                AppendLabelledLine(builder, "Segments", string.Join(Environment.NewLine, evaluator.Templates.Select(t => t?.Json)));
+                AppendLabelledLine(builder, "Expressions", string.Join(Environment.NewLine, evaluator.CompiledTemplates.Where(t => t.ParsedExpression != null).Select(t => SanitizeExpression(t.ParsedExpression))));
                 builder.AppendLine($"Result: {SanitizeEvaluationResult(evaluationResult.Template)}");
             }
 
@@ -2729,7 +2669,7 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 builder.AppendLine("Metric:");
                 builder.AppendLine($"Json:{evaluator.Metric.Value.Json}");
-                builder.AppendLine($"Expression: {evaluator.CompiledMetric.Value.ParsedExpression.ToReadableString()}");
+                builder.AppendLine($"Expression: {SanitizeExpression(evaluator.CompiledMetric.Value.ParsedExpression)}");
                 builder.AppendLine($"Result: {evaluationResult.Metric}");
             }
 
@@ -2742,10 +2682,67 @@ namespace Datadog.Trace.Tests.Debugger
             return builder.ToString();
         }
 
+        private void AppendLabelledLine(StringBuilder builder, string label, string value)
+        {
+            if (StringUtil.IsNullOrEmpty(value))
+            {
+                builder.Append(label).AppendLine(":");
+                return;
+            }
+
+            if (value.StartsWith(Environment.NewLine))
+            {
+                builder.Append(label).AppendLine(":");
+                builder.AppendLine();
+                builder.AppendLine(value.TrimStart('\r', '\n'));
+                return;
+            }
+
+            builder.Append(label).Append(": ").AppendLine(value);
+        }
+
+        private string SanitizeExpression(System.Linq.Expressions.Expression expression)
+        {
+            return SanitizeExpression(ToReadableExpressionString(BudgetExpressionRenderingVisitor.Strip(expression)));
+        }
+
         private string SanitizeExpression(string expression)
         {
+            if (expression == null)
+            {
+                return string.Empty;
+            }
+
             string pattern = @",(?=\d*d\b)";
-            return Regex.Replace(expression, pattern, ".");
+            expression = Regex.Replace(expression, pattern, ".");
+            expression = Regex.Replace(expression, @",\s*ref EvaluationBudget evaluationBudget", string.Empty);
+            expression = Regex.Replace(expression, @"[ \t]*EvaluationBudget\.ThrowIfExceeded\(ref evaluationBudget\);\r?\n", string.Empty);
+            expression = Regex.Replace(expression, @"\bScopeMember scopeMember\b", "scopeMember");
+            expression = Regex.Replace(expression, @"\bException exception\b", "exception");
+            expression = Regex.Replace(expression, @"\bScopeMember\[\] scopeMemberArray\b", "scopeMemberArray");
+            var filterLocalsReplacement =
+                "${indent}string @string;" + Environment.NewLine +
+                "${indent}var enumerable = (IEnumerable<string>)CollectionLocal;" + Environment.NewLine +
+                "${indent}var enumerator = enumerable.GetEnumerator();" + Environment.NewLine +
+                "${indent}var filterResult = new List<string>();";
+            expression = Regex.Replace(
+                expression,
+                @"(?m)^(?<indent>[ \t]+)List<string> filterResult;\r?\n\k<indent>IEnumerable<string> enumerable;\r?\n\k<indent>IEnumerator<string> enumerator;\r?\n\k<indent>string @string;\r?\n\k<indent>enumerable = \(IEnumerable<string>\)CollectionLocal;\r?\n\k<indent>enumerator = enumerable\.GetEnumerator\(\);\r?\n\k<indent>filterResult = new List<string>\(\);",
+                filterLocalsReplacement);
+            expression = Regex.Replace(expression, @"[ \t]+(?=\r?\n)", string.Empty);
+            return expression;
+        }
+
+        private string ToReadableExpressionString(System.Linq.Expressions.Expression expression)
+        {
+            try
+            {
+                return expression.ToReadableString();
+            }
+            catch (ArgumentException)
+            {
+                return expression.ToString();
+            }
         }
 
         private string SanitizeEvaluationResult(string template)
@@ -2951,6 +2948,11 @@ namespace Datadog.Trace.Tests.Debugger
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
+        internal class PropertyHolder
+        {
+            public static string StaticValue => "static value";
+        }
+
         internal class GenericValueTypeTarget<T>
             where T : struct
         {
@@ -2976,6 +2978,46 @@ namespace Datadog.Trace.Tests.Debugger
 
         internal sealed class String
         {
+        }
+
+        private class BudgetExpressionRenderingVisitor : System.Linq.Expressions.ExpressionVisitor
+        {
+            private static readonly BudgetExpressionRenderingVisitor Instance = new();
+            private static readonly System.Linq.Expressions.Expression EmptyBudgetCheck = System.Linq.Expressions.Expression.Empty();
+
+            internal static System.Linq.Expressions.Expression Strip(System.Linq.Expressions.Expression expression)
+            {
+                return Instance.Visit(expression);
+            }
+
+            protected override System.Linq.Expressions.Expression VisitLambda<T>(System.Linq.Expressions.Expression<T> node)
+            {
+                var parameters = node.Parameters.Where(parameter => !parameter.IsByRef && parameter.Type != typeof(EvaluationBudget));
+                return System.Linq.Expressions.Expression.Lambda(Visit(node.Body), parameters);
+            }
+
+            protected override System.Linq.Expressions.Expression VisitBlock(System.Linq.Expressions.BlockExpression node)
+            {
+                var expressions = node.Expressions.Select(Visit).Where(expression => !ReferenceEquals(expression, EmptyBudgetCheck)).ToArray();
+                if (expressions.Length == 0)
+                {
+                    return EmptyBudgetCheck;
+                }
+
+                return node.Variables.Count == 0 && expressions.Length == 1
+                           ? expressions[0]
+                           : System.Linq.Expressions.Expression.Block(node.Variables, expressions);
+            }
+
+            protected override System.Linq.Expressions.Expression VisitMethodCall(System.Linq.Expressions.MethodCallExpression node)
+            {
+                if (node.Method.DeclaringType == typeof(EvaluationBudget) && node.Method.Name == nameof(EvaluationBudget.ThrowIfExceeded))
+                {
+                    return EmptyBudgetCheck;
+                }
+
+                return base.VisitMethodCall(node);
+            }
         }
 
         private class HashtableHolder
