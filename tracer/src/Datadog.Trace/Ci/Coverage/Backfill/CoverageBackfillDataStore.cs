@@ -608,7 +608,7 @@ internal static class CoverageBackfillDataStore
     /// <param name="resultId">Stable result identity returned when the result was persisted.</param>
     /// <param name="result">Coverage result recovered from the shared run folder.</param>
     /// <returns>True when the referenced result was recovered and matched the requested source.</returns>
-    internal static bool TryReadCoverageIpcResult(ITestOptimization testOptimization, ulong sessionId, CodeCoverageReportSource source, string? resultId, out CodeCoverageAggregationResult result)
+    internal static bool TryReadCoverageIpcResult(ITestOptimization testOptimization, ulong sessionId, CodeCoverageReportSource source, string resultId, out CodeCoverageAggregationResult result)
     {
         result = default;
         if (StringUtil.IsNullOrEmpty(resultId))
@@ -618,9 +618,10 @@ internal static class CoverageBackfillDataStore
 
         try
         {
+            var fileName = GetIpcResultFileName(source, resultId);
             foreach (var runFolder in GetRunFolderCandidates(testOptimization))
             {
-                var filePath = Path.Combine(GetIpcResultFolder(runFolder, sessionId), GetIpcResultFileName(source, resultId!));
+                var filePath = Path.Combine(GetIpcResultFolder(runFolder, sessionId), fileName);
                 if (!File.Exists(filePath) &&
                     !HasTemporaryAtomicFileForFinalPath(filePath))
                 {
