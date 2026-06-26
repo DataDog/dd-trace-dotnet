@@ -1,8 +1,15 @@
 name: dotnet-tracer-agent
 version: "0.1"
 
-# Seed suite (Phase 1). Cases are grounded in the facts asserted by the repo's
-# AGENTS.md so a regression in that file is observable. Scale to 25-40 in Phase 4.
+# Seed suite (Phase 1). Two kinds of cases:
+#  - CONTENT cases — grounded in facts AGENTS.md / the skill assert, so a regression in that file is observable.
+#    Tagged `files:` with the file whose content they exercise.
+#  - CONTROL cases — out-of-scope questions AGENTS.md does NOT cover (general C#/.NET, answered from the agent's
+#    own knowledge). Tagged `files: [AGENTS.md]` because AGENTS.md is ALWAYS in the agent's context, so a bloated
+#    (even correct) AGENTS.md can degrade these unrelated answers (context saturation) — that's what they catch.
+#    Skills load on-demand (only when invoked), so skill size can't affect unrelated questions → no control cases
+#    for skills. Control cases are `only_warn` while calibrating.
+# Scale to 25-40 in Phase 4.
 cases:
   - id: dotnet-tracer-repo-nav-integration-001
     files: [AGENTS.md]
@@ -203,3 +210,81 @@ cases:
       - Tells the user to edit the auto-generated .gitlab/one-pipeline.locked.yml by hand.
       - Invents a libdatadog version pin in the root vcpkg.json.
       - Indicates the project's libdatadog skill / instructions are wrong, outdated, or had to be corrected against the actual repo files.
+
+  # ---- Control / out-of-scope cases (detect AGENTS.md context saturation) ----
+  # General C#/.NET questions AGENTS.md does NOT cover. They should not benefit from AGENTS.md content, but a
+  # bloated AGENTS.md (always in context) can degrade them — so a drop here flags collateral, global degradation.
+  # Tagged files:[AGENTS.md] (skills load on-demand, so they can't affect these); only_warn while calibrating.
+  - id: dotnet-tracer-control-async-disposal-014
+    files: [AGENTS.md]
+    only_warn: true
+    input: |
+      In general C#, when should a type implement IAsyncDisposable instead of (or alongside) IDisposable, and how
+      do `await using` and the two dispose methods relate? Keep it general — not tracer-specific.
+    expected_criteria:
+      - Says IAsyncDisposable (DisposeAsync) is for cleanup that is genuinely asynchronous, e.g. flushing/closing async I/O.
+      - Notes `await using` invokes DisposeAsync, and a type may implement both interfaces (sync + async paths).
+      - Advises against blocking on async work inside a synchronous Dispose() (no sync-over-async / .Result / .Wait()).
+    bad_signals:
+      - Claims IAsyncDisposable replaces IDisposable in all cases / they are interchangeable.
+      - Recommends calling .Result or .Wait() inside Dispose() to do async cleanup.
+      - Invents a non-existent interface or method.
+
+  - id: dotnet-tracer-control-lazy-init-015
+    files: [AGENTS.md]
+    only_warn: true
+    input: |
+      Show a correct thread-safe lazily-initialized value in C#, and explain the main pitfall of hand-rolled
+      double-checked locking. General C# — not specific to this repo.
+    expected_criteria:
+      - Recommends Lazy<T> (with an appropriate LazyThreadSafetyMode) as the simplest correct option.
+      - If showing double-checked locking, marks the backing field `volatile` (or explains why memory ordering matters).
+      - Explains the pitfall: without volatile/Lazy, reordering can publish a partially-constructed instance.
+    bad_signals:
+      - Presents a double-checked lock without volatile and calls it correct.
+      - Claims a plain `if (x == null) x = new()` is thread-safe.
+      - Invents a non-existent type or API.
+
+  # Tracer-internal reasoning AGENTS.md does NOT cover (distributed context propagation). Verified against
+  # tracer/src/Datadog.Trace/Propagators + ClrProfiler/AutoInstrumentation/Http (HttpMessageHandlerCommon).
+  - id: dotnet-tracer-control-context-propagation-016
+    files: [AGENTS.md]
+    only_warn: true
+    input: |
+      When the .NET tracer auto-instruments an outbound HttpClient call, how does it propagate the active trace
+      context to the downstream service — which headers does it inject by default, and where does the injection
+      happen? Keep it about the tracer's behavior, not anything AGENTS.md documents.
+    expected_criteria:
+      - Says the tracer injects propagation headers onto the outgoing request automatically (no manual work needed).
+      - Names the Datadog headers — x-datadog-trace-id, x-datadog-parent-id, x-datadog-sampling-priority (origin/tags conditionally).
+      - Notes W3C tracecontext (traceparent/tracestate) is also injected by default (multiple styles run together; B3 is available).
+      - Explains injection happens in the HttpClient/HttpMessageHandler auto-instrumentation (OnMethodBegin) via the span-context propagator, before the request is sent.
+      - Mentions the propagation style is configurable (DD_TRACE_PROPAGATION_STYLE / inject+extract variants), default Datadog + W3C tracecontext.
+    bad_signals:
+      - Claims context propagates without HTTP headers (e.g. via shared/ambient state across processes).
+      - Invents header names that aren't used, or says the user must add the headers manually.
+      - Confuses inbound extraction with outbound injection, or claims only one fixed propagation style is supported.
+
+  # Deep, repo-specific reasoning that AGENTS.md does NOT cover (IAST taint flow) — a strong control case:
+  # AGENTS.md content can't help it, but a bloated AGENTS.md degrades the agent's ability to reason it out.
+  # Criteria verified against tracer/src/Datadog.Trace/Iast (source taint -> String.Replace propagation aspect
+  # -> ADO.NET DbCommand SQL sink -> vulnerability on the span). The answer is YES, it is detected.
+  - id: dotnet-tracer-control-iast-sqli-propagation-017
+    files: [AGENTS.md]
+    only_warn: true
+    input: |
+      With IAST enabled: an ASP.NET controller receives a string parameter `name`; the value is used to replace a
+      placeholder in a constant SQL query string (e.g. `query.Replace("{name}", name)`), and the query is then
+      executed via MySql. Should IAST report a vulnerability? Walk through how the `name` value propagates from the
+      request all the way to a vulnerability being added to the span.
+    expected_criteria:
+      - Concludes YES — IAST reports a SQL injection vulnerability for this flow.
+      - Identifies the request/route parameter `name` as the taint source (user input is tainted on the way in).
+      - Explains taint propagates through the string Replace (string operations are instrumented), so the resulting query string carries the tainted range — Replace does NOT break taint.
+      - Identifies the MySql/ADO.NET DbCommand execution as the SQL-injection sink, where IAST checks whether the executed query text contains a tainted range.
+      - States the detected SQL_INJECTION vulnerability is recorded and attached to the span (IAST vulnerability batch → span meta-struct / IAST tag).
+    bad_signals:
+      - Concludes IAST would NOT detect a vulnerability here (false negative).
+      - Claims String.Replace strips or doesn't propagate taint, so nothing is flagged.
+      - Requires manual annotation of the source/sink, or invents a non-existent mechanism, flag, or API.
+      - Confuses IAST (code-level vulnerability detection) with the WAF / AppSec live-attack (threat) detection.
