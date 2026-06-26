@@ -243,6 +243,34 @@
       "send_to_user": false,
       "user_tags": []
     },
+    "flagevaluation.rows.dropped": {
+      "tags": [
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "flag evaluations",
+      "description": "The number of flag evaluation rows dropped before sending the EVP payload, tagged by reason.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.rows.degraded": {
+      "tags": [
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "flag evaluations",
+      "description": "The number of flag evaluation rows degraded before sending the EVP payload, tagged by reason.",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "flagevaluation.payload.splits": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "payloads",
+      "description": "The number of additional EVP payloads created when flag evaluation payloads are split to stay under the request limit.",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "trace_segments_closed": {
       "tags": [],
       "metric_type": "count",

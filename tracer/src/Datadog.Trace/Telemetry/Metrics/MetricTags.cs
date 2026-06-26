@@ -84,6 +84,14 @@ internal static class MetricTags
         [Description("reason:trace_filter")] TraceFilter,
     }
 
+    internal enum FlagEvaluationReason
+    {
+        [Description("reason:queue_overflow")] QueueOverflow,
+        [Description("reason:degraded_cap")] DegradedCap,
+        [Description("reason:payload_limit")] PayloadLimit,
+        [Description("reason:cardinality_cap")] CardinalityCap,
+    }
+
     internal enum StatusCode
     {
         [Description("status_code:200")] Code200,

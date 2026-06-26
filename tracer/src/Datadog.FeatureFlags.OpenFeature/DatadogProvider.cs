@@ -26,7 +26,16 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
     private static Action? _onNewConfig = null;
     private readonly Metadata _metadata = new Metadata("datadog-openfeature-provider");
 #if NET6_0_OR_GREATER
-    private readonly FlagEvalMetricsHook _metricsHook;
+    private readonly FlagEvalMetricsHook _flagEvalMetricsHook;
+
+    // EVP flag evaluation hook — registered alongside the OTel FlagEvalMetricsHook. It routes
+    // through FeatureFlagsSdk.EnqueueEVP, a no-op until the auto-instrumentation bridge wires it
+    // to FlagEvaluationApi in the tracer. The killswitch (DD_FLAGGING_EVALUATION_COUNTS_ENABLED,
+    // default on) is owned by the tracer's configuration system in FeatureFlagsModule, which
+    // decides whether to create the FlagEvaluationApi and wire the bridge. Registering the hook
+    // unconditionally here keeps the killswitch on the tracer side (the only side that can read
+    // the DD_* configuration) rather than a duplicate raw environment read in the NuGet.
+    private readonly FlagEvalEVPHook _flagEvalEVPHook;
 #endif
 
     /// <summary> Initializes a new instance of the <see cref="DatadogProvider"/> class. </summary>
@@ -34,7 +43,8 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
     {
         FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => SignalGeneralUpdate());
 #if NET6_0_OR_GREATER
-        _metricsHook = new FlagEvalMetricsHook();
+        _flagEvalMetricsHook = new FlagEvalMetricsHook();
+        _flagEvalEVPHook = new FlagEvalEVPHook();
 #endif
     }
 
@@ -134,12 +144,16 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         return Task.FromResult(res);
     }
 
-    /// <summary> Gets provider hooks for flag evaluation metrics tracking. </summary>
+    /// <summary>
+    /// Gets provider hooks for flag evaluation tracking.
+    /// Returns the OTel FlagEvalMetricsHook (feature_flag.evaluations) and the FlagEvalEVPHook.
+    /// The EVP hook is inert until the tracer wires its bridge (gated by the killswitch there).
+    /// </summary>
     /// <returns> Returns the list of provider hooks. </returns>
     public override IImmutableList<Hook> GetProviderHooks()
     {
 #if NET6_0_OR_GREATER
-        return ImmutableList.Create<Hook>(_metricsHook);
+        return ImmutableList.Create<Hook>(_flagEvalMetricsHook, _flagEvalEVPHook);
 #else
         return ImmutableList<Hook>.Empty;
 #endif
@@ -149,7 +163,7 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
     public void Dispose()
     {
 #if NET6_0_OR_GREATER
-        _metricsHook.Dispose();
+        _flagEvalMetricsHook.Dispose();
 #endif
     }
 }

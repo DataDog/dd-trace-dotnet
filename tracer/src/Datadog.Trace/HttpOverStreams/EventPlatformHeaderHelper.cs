@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.Agent;
 
 namespace Datadog.Trace.HttpOverStreams;
 
@@ -15,14 +16,19 @@ internal sealed class EventPlatformHeaderHelper : HttpHeaderHelperBase
 
     private EventPlatformHeaderHelper()
     {
-        const string evpHeaderKey = "X-Datadog-EVP-Subdomain";
-        const string evpHeaderValue = "event-platform-intake";
         DefaultHeaders =
         [
             ..AgentHttpHeaderNames.MinimalHeaders,
-            new(evpHeaderKey, evpHeaderValue),
+            new(
+                EventPlatformProxyConstants.SubdomainHeaderName,
+                EventPlatformProxyConstants.EventPlatformIntakeSubdomain),
         ];
-        HttpSerializedDefaultHeaders = $"{AgentHttpHeaderNames.HttpSerializedMinimalHeaders}{evpHeaderKey}: {evpHeaderValue}{DatadogHttpValues.CrLf}";
+        HttpSerializedDefaultHeaders =
+            AgentHttpHeaderNames.HttpSerializedMinimalHeaders
+            + EventPlatformProxyConstants.SubdomainHeaderName
+            + ": "
+            + EventPlatformProxyConstants.EventPlatformIntakeSubdomain
+            + DatadogHttpValues.CrLf;
     }
 
     public override KeyValuePair<string, string>[] DefaultHeaders { get; }

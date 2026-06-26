@@ -67,6 +67,21 @@ internal enum Count
     [TelemetryMetric("trace_chunks_sent")] TraceChunkSent,
 
     /// <summary>
+    /// The number of flag evaluation rows dropped before sending the EVP payload, tagged by reason.
+    /// </summary>
+    [TelemetryMetric<MetricTags.FlagEvaluationReason>("flagevaluation.rows.dropped")] FlagEvaluationRowsDropped,
+
+    /// <summary>
+    /// The number of flag evaluation rows degraded before sending the EVP payload, tagged by reason.
+    /// </summary>
+    [TelemetryMetric<MetricTags.FlagEvaluationReason>("flagevaluation.rows.degraded")] FlagEvaluationRowsDegraded,
+
+    /// <summary>
+    /// The number of additional EVP payloads created when flag evaluation payloads are split to stay under the request limit.
+    /// </summary>
+    [TelemetryMetric("flagevaluation.payload.splits")] FlagEvaluationPayloadSplits,
+
+    /// <summary>
     /// The number of trace segments (local traces) closed. In non partial flush scenarios, trace_segments_closed == trace_chunks_enqueued",
     /// </summary>
     [TelemetryMetric("trace_segments_closed")] TraceSegmentsClosed,
