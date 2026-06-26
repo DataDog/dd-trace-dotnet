@@ -8,27 +8,41 @@
         "captures": {
           "entry": {
             "arguments": {
+              "lastName": {
+                "type": "String",
+                "value": "Last name"
+              },
               "this": {
-                "type": "MultidimensionalArrayTest"
+                "type": "StaticFieldsWithoutTypeInitializer"
               }
             },
             "staticFields": {
-              "StateArray": {
-                "notCapturedReason": "typeInitializer",
-                "type": "State[][]"
+              "_staticField": {
+                "type": "String",
+                "value": "Static Field"
               }
             }
           },
           "return": {
             "arguments": {
+              "lastName": {
+                "type": "String",
+                "value": "Last name"
+              },
               "this": {
-                "type": "MultidimensionalArrayTest"
+                "type": "StaticFieldsWithoutTypeInitializer"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "String",
+                "value": "Last name"
               }
             },
             "staticFields": {
-              "StateArray": {
-                "notCapturedReason": "typeInitializer",
-                "type": "State[][]"
+              "_staticField": {
+                "type": "String",
+                "value": "Static Field"
               }
             }
           }
@@ -40,7 +54,7 @@
           "id": "ScrubbedValue",
           "location": {
             "method": "Method",
-            "type": "Samples.Probes.TestRuns.SmokeTests.MultidimensionalArrayTest"
+            "type": "Samples.Probes.TestRuns.SmokeTests.StaticFieldsWithoutTypeInitializer"
           },
           "version": 0
         },
@@ -52,7 +66,7 @@
     "debugger.type": "snapshot",
     "logger": {
       "method": "Method",
-      "name": "Samples.Probes.TestRuns.SmokeTests.MultidimensionalArrayTest",
+      "name": "Samples.Probes.TestRuns.SmokeTests.StaticFieldsWithoutTypeInitializer",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
