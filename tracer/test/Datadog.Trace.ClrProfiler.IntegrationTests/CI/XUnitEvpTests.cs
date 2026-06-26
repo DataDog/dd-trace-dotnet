@@ -1274,6 +1274,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
         if (message is SessionCodeCoverageReferenceMessage referenceMessage)
         {
+            // Reference messages are the production path for persisted coverage payloads. Resolve the
+            // exact source/result id so the test exercises the same handoff as TestSession.
             if (CoverageBackfillDataStore.TryReadCoverageIpcResult(testOptimization, sessionId, referenceMessage.Source, referenceMessage.ResultId, out result))
             {
                 return true;
@@ -1287,6 +1289,10 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 
     private static ITestOptimization CreateCoverageIpcTestOptimization(string runId)
     {
+        // InjectSession gives the sample process a run id and .dd folder through child-process
+        // environment variables. The IPC callback runs in this test process, so use an explicit
+        // TestOptimization context instead of relying on TestOptimization.Instance or mutating
+        // process-wide environment variables shared by parallel integration tests.
         var testOptimization = new Mock<ITestOptimization>();
         testOptimization.Setup(x => x.RunId).Returns(runId);
         testOptimization.Setup(x => x.CIValues).Returns(new CoverageIpcTestEnvironmentValues(System.Environment.CurrentDirectory));
