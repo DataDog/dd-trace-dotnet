@@ -225,6 +225,19 @@ namespace Datadog.Trace.AppSec.Waf
             IntPtr contextHandle;
             if (_wafLocker.EnterReadLock())
             {
+                // Re-check Disposed inside the read lock. Dispose() sets Disposed and calls
+                // Destroy(_wafHandle) while holding the write lock, which is mutually exclusive
+                // with this read lock. Without this check, a Dispose() could slip in between the
+                // outer Disposed check and acquiring the read lock, leaving _wafHandle pointing at
+                // freed memory: ddwaf_context_init dereferences the handle (handle->create_context),
+                // so calling InitContext on a destroyed handle is a use-after-free.
+                if (Disposed)
+                {
+                    _wafLocker.ExitReadLock();
+                    Log.Warning("Context can't be created as waf instance has been disposed.");
+                    return null;
+                }
+
                 contextHandle = _wafLibraryInvoker.InitContext(_wafHandle);
                 _wafLocker.ExitReadLock();
             }
@@ -254,12 +267,28 @@ namespace Datadog.Trace.AppSec.Waf
                 return;
             }
 
-            Disposed = true;
             // we really need to enter here so longer timeout, otherwise waf handle might not be disposed
             if (_wafLocker.EnterWriteLock(15000))
             {
-                _wafLibraryInvoker.Destroy(_wafHandle);
+                // Set Disposed and Destroy the handle atomically under the write lock. A plain
+                // "Disposed = true" before the lock would let two concurrent Dispose() calls both
+                // pass the outer guard and both reach Destroy(_wafHandle), which is a double free:
+                // ddwaf_destroy does `delete handle` unconditionally (no native refcount on the
+                // handle itself), so a second call corrupts the heap. The inner re-check ensures
+                // exactly one caller destroys the handle.
+                if (!Disposed)
+                {
+                    Disposed = true;
+                    _wafLibraryInvoker.Destroy(_wafHandle);
+                }
+
                 _wafLocker.ExitWriteLock();
+            }
+            else
+            {
+                // Couldn't acquire the write lock; mark disposed so other operations bail out,
+                // even though the native handle may leak in this (rare) timeout case.
+                Disposed = true;
             }
         }
     }
