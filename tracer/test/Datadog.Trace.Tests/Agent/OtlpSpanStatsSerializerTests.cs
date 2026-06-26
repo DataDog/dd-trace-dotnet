@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Agent;
@@ -15,44 +17,9 @@ namespace Datadog.Trace.Tests.Agent
 {
     public class OtlpSpanStatsSerializerTests
     {
-        private static readonly List<byte[]> EmptyPeerTags = [];
         private const long BucketDurationNs = 10_000_000_000L; // 10s
 
-        private static StatsBuffer CreateBuffer(string service = "my-service", string env = "prod", string version = "1.0")
-        {
-            var settings = MutableSettings.CreateForTesting(
-                new(),
-                new Dictionary<string, object?>
-                {
-                    { ConfigurationKeys.ServiceName, service },
-                    { ConfigurationKeys.Environment, env },
-                    { ConfigurationKeys.ServiceVersion, version },
-                });
-            return new StatsBuffer(new ClientStatsPayload(settings));
-        }
-
-        private static StatsAggregationKey CreateKey(
-            string resource = "GET /",
-            string service = "my-service",
-            string operationName = "http.request",
-            string type = "web",
-            int httpStatusCode = 200,
-            bool isSyntheticsRequest = false,
-            string spanKind = "server",
-            bool isError = false,
-            bool isTopLevel = true,
-            bool isTraceRoot = true,
-            string httpMethod = "GET",
-            string httpEndpoint = "/api/v1",
-            string grpcStatusCode = "",
-            string serviceSource = "",
-            ulong peerTagsHash = 0)
-        {
-            return new StatsAggregationKey(
-                resource, service, operationName, type, httpStatusCode,
-                isSyntheticsRequest, spanKind, isError, isTopLevel, isTraceRoot,
-                httpMethod, httpEndpoint, grpcStatusCode, serviceSource, peerTagsHash);
-        }
+        private static readonly List<byte[]> EmptyPeerTags = [];
 
         [Fact]
         public void Serialize_ReturnsNull_WhenNoHits()
@@ -333,7 +300,53 @@ namespace Datadog.Trace.Tests.Agent
             bytes[0].Should().Be(0x0A);
         }
 
-        // ── Helpers ──────────────────────────────────────────────────────────────────
+        private static StatsBuffer CreateBuffer(string service = "my-service", string env = "prod", string version = "1.0")
+        {
+            var settings = MutableSettings.CreateForTesting(
+                new(),
+                new Dictionary<string, object?>
+                {
+                    { ConfigurationKeys.ServiceName, service },
+                    { ConfigurationKeys.Environment, env },
+                    { ConfigurationKeys.ServiceVersion, version },
+                });
+            return new StatsBuffer(new ClientStatsPayload(settings));
+        }
+
+        private static StatsAggregationKey CreateKey(
+            string resource = "GET /",
+            string service = "my-service",
+            string operationName = "http.request",
+            string type = "web",
+            int httpStatusCode = 200,
+            bool isSyntheticsRequest = false,
+            string spanKind = "server",
+            bool isError = false,
+            bool isTopLevel = true,
+            bool isTraceRoot = true,
+            string httpMethod = "GET",
+            string httpEndpoint = "/api/v1",
+            string grpcStatusCode = "",
+            string serviceSource = "",
+            ulong peerTagsHash = 0)
+        {
+            return new StatsAggregationKey(
+                resource,
+                service,
+                operationName,
+                type,
+                httpStatusCode,
+                isSyntheticsRequest,
+                spanKind,
+                isError,
+                isTopLevel,
+                isTraceRoot,
+                httpMethod,
+                httpEndpoint,
+                grpcStatusCode,
+                serviceSource,
+                peerTagsHash);
+        }
 
         private static StatsBuffer CreateBufferWithOneHit(string service = "my-service")
         {
