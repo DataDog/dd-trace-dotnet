@@ -416,6 +416,47 @@ public class TestSessionCoverageTests
     }
 
     [Fact]
+    public void IpcCoverageReferenceRecoveredByPersistedFallbackPublishesCoverage()
+    {
+        var runFolder = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-coverage-ipc-{Guid.NewGuid():N}");
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, runFolder);
+        var session = CreateSession();
+        try
+        {
+            InvokeIpcMessageReceived(
+                session,
+                new SessionCodeCoverageReferenceMessage(
+                    CodeCoverageReportSource.Coverlet,
+                    "late-coverlet-result"));
+
+            CoverageBackfillDataStore.RecordCoverageIpcResult(
+                TestOptimization.Instance,
+                session.Tags.SessionId,
+                CodeCoverageReportSource.Coverlet,
+                percentage: 80,
+                backfilled: true,
+                executableLines: 10,
+                coveredLines: 8,
+                diagnostic: "late-coverlet-result",
+                resultId: "late-coverlet-result");
+
+            session.RecordPersistedCoverageIpcResults().Should().BeTrue();
+            session.PublishCodeCoverage();
+
+            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(80);
+            session.Tags.GetTag(CodeCoverageTags.Backfilled).Should().Be("true");
+        }
+        finally
+        {
+            CloseAndReset(session);
+            if (Directory.Exists(runFolder))
+            {
+                Directory.Delete(runFolder, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void IpcCoverageReferenceMissingResultDoesNotBlockExternalXmlCoverage()
     {
         var runFolder = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-coverage-ipc-{Guid.NewGuid():N}");
