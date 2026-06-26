@@ -21,20 +21,6 @@ on:
         required: true
       NUGET_TRUSTED_PUBLISHING_USERNAME:
         required: true
-      DD_PUBLIC_SYMBOL_PREPROD_API_KEY:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_US1:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_US3:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_US5:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_EU1:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_AP1:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_AP2:
-        required: true
 
 jobs:
   create_draft_release:
@@ -182,10 +168,3 @@ jobs:
         uses: ./.github/actions/publish-debug-symbols
         with:
           artifacts_path: ${{steps.assets.outputs.artifacts_path}}
-          preprod_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_PREPROD_API_KEY }}
-          us1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US1 }}
-          us3_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US3 }}
-          us5_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US5 }}
-          eu1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_EU1 }}
-          ap1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP1 }}
-          ap2_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP2 }}
