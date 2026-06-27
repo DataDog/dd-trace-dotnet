@@ -83,15 +83,46 @@ Flow 1 (7.436 ms, 10 events)
 
 ## Next Work
 
-1. Explore native debugger method rewriting extension points:
-   - `tracer/src/Datadog.Tracer.Native/debugger_probes_instrumentation_requester.cpp`
-   - `tracer/src/Datadog.Tracer.Native/debugger_rejit_preprocessor.cpp`
-   - `tracer/src/Datadog.Tracer.Native/debugger_method_rewriter.cpp`
-   - `tracer/src/Datadog.Tracer.Native/debugger_members.*`
-2. Add native env/config gates:
-   - `DD_INTERNAL_DEBUGGER_FLOW_RECORDER_ENABLED`
-   - assembly/type allowlist for the POC
-3. Add token/member references for `Datadog.Trace.Debugger.LiveDebuggerPoc.FlowRecorder`.
-4. Inject enter/exit calls into a tightly scoped sample method set.
-5. Extend viewer output with method metadata/name mapping when native metadata is available.
-6. Re-run concurrency review after native callbacks are wired because rewritten IL changes the lifecycle surface.
+### Native Exploration Findings
+
+The next implementation slice should be non-async only. The existing debugger method-probe path already provides method discovery, method metadata index assignment, local signature mutation, return rewriting, and EH protection.
+
+Relevant flow:
+
+1. `CorProfiler::JITCompilationStarted` calls `DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded`.
+2. `PerformInstrumentAllIfNeeded` creates synthetic `MethodProbeDefinition` instances when `DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL` is enabled.
+3. `DebuggerRejitPreprocessor` queues methods and `ProbesMetadataTracker::GetInstrumentedMethodIndex` assigns the `methodMetadataIndex` used by managed metadata.
+4. `DebuggerMethodRewriter::Rewrite` creates additional locals with `DebuggerTokens::ModifyLocalSigAndInitialize`.
+5. Non-async method probes are injected in `DebuggerMethodRewriter::ApplyMethodProbe`.
+
+Smallest native POC slice:
+
+1. Add native environment helper support for `DD_INTERNAL_DEBUGGER_FLOW_RECORDER_ENABLED`.
+2. Add `DebuggerTokens` support for:
+   - `Datadog.Trace.Debugger.LiveDebuggerPoc.FlowRecorder`
+   - `Datadog.Trace.Debugger.LiveDebuggerPoc.FlowRecorderState`
+   - `FlowRecorder.Enter(int) : FlowRecorderState`
+   - `FlowRecorder.Exit(ref FlowRecorderState, Exception) : void`
+3. Increase `DebuggerTokens::GetAdditionalLocalsCount` from `3` to `4`.
+4. Append a `FlowRecorderState` local in `DebuggerTokens::AddAdditionalLocals`.
+   - Existing local layout:
+     - `debuggerLocals[0]`: line probe state
+     - `debuggerLocals[1]`: span method state
+     - `debuggerLocals[2]`: multi-probe state array
+   - Proposed POC local:
+     - `debuggerLocals[3]`: flow recorder state
+5. In `DebuggerMethodRewriter::Rewrite`, name `debuggerLocals[3]` as `flowRecorderStateIndex`.
+6. In `DebuggerMethodRewriter::ApplyMethodProbe`, behind the native flow-recorder env flag and only for non-async method probes:
+   - after `UpdateProbeInfo`, load `instrumentedMethodIndex`, call `FlowRecorder.Enter`, and store the result in `flowRecorderStateIndex`;
+   - in the existing end-method protected region, load `flowRecorderStateIndex` by address, load `exceptionIndex`, and call `FlowRecorder.Exit`;
+   - keep the call inside existing debugger EH-protected instrumentation regions so recorder failures do not break customer methods.
+7. Extend the viewer output with method metadata/name mapping once native metadata is available.
+8. Re-run concurrency review after native callbacks are wired because rewritten IL changes the recorder lifecycle surface.
+
+Native risks to watch:
+
+- Managed/native signature mismatch will produce invalid IL or runtime method resolution failures.
+- `Exit(ref FlowRecorderState, Exception)` must load `ldloca flowRecorderStateIndex` before `ldloc exceptionIndex`.
+- The added local must not disturb the final `callTargetState` local used for duplicate-rewrite detection.
+- `DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL` currently uses broad matching (`is_exact_signature_match = false`), so keep the POC allowlist strict before enabling automatic recording broadly.
+- This does not cover async `MoveNext` rewriting yet.
