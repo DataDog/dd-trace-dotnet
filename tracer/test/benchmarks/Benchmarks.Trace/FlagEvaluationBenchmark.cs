@@ -28,19 +28,27 @@ namespace Benchmarks.Trace
     [BenchmarkCategory(Constants.TracerCategory, Constants.RunOnPrs, Constants.RunOnMaster)]
     public class FlagEvaluationBenchmark
     {
-        private static readonly Dictionary<string, object?> Context = new()
-        {
-            { "user_tier", "premium" },
-            { "region", "us-east-1" },
-            { "beta_opt_in", true },
-            { "request_count", 42 },
-        };
+        [Params(
+            "typical/100flags_50users_10fields",
+            "stress/10flags_1000users_250fields",
+            "scale/2500flags_500users_20fields")]
+        public string Profile { get; set; } = "typical/100flags_50users_10fields";
 
         private FlagEvaluationApi _api = null!;
+        private Dictionary<string, object?> _context = null!;
+        private string[] _flagKeys = null!;
+        private string[] _targetingKeys = null!;
+        private int _counter;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
+            var profile = BenchmarkProfile.FromName(Profile);
+            _context = NewContext(profile.NumFields);
+            _flagKeys = NewKeys("bench-flag-", profile.NumFlags);
+            _targetingKeys = NewKeys("bench-user-", profile.NumUsers);
+            _counter = 0;
+
             // No-op transport: the benchmark exercises the capture + aggregation hot path, not the
             // network. The send loop is never started (we drive Enqueue/Drain directly).
             _api = new FlagEvaluationApi(new NoOpApiRequestFactory(), service: "bench", env: "ci", version: "1.0");
@@ -53,13 +61,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public void EnqueueHotPath()
         {
-            _api.EnqueueForTest(new FlagEvalEvent(
-                flagKey: "checkout-redesign",
-                variant: "treatment",
-                allocationKey: "alloc-7",
-                targetingKey: "user-123",
-                evalTimeMs: 1_700_000_000_000L,
-                contextAttrs: NewContext()));
+            _api.EnqueueForTest(NextEvent());
 
             // Keep the queue bounded so the benchmark measures steady-state enqueue, not unbounded growth.
             _api.DrainQueueIntoAggregator();
@@ -67,23 +69,76 @@ namespace Benchmarks.Trace
 
         /// <summary>
         /// The deferred aggregation cost (prune + canonical key + two-tier map insert) that the
-        /// background worker pays per evaluation — the cost moved OFF the evaluation thread.
+        /// background worker pays per evaluation - the cost moved OFF the evaluation thread.
         /// </summary>
         [Benchmark]
         public long EnqueuePlusAggregate()
         {
-            _api.EnqueueForTest(new FlagEvalEvent(
-                flagKey: "checkout-redesign",
-                variant: "treatment",
-                allocationKey: "alloc-7",
-                targetingKey: "user-123",
-                evalTimeMs: 1_700_000_000_000L,
-                contextAttrs: NewContext()));
+            _api.EnqueueForTest(NextEvent());
 
             return _api.DrainQueueIntoAggregator();
         }
 
-        private static Dictionary<string, object?> NewContext() => new(Context);
+        private FlagEvalEvent NextEvent()
+        {
+            var i = _counter++;
+            return new FlagEvalEvent(
+                flagKey: _flagKeys[i % _flagKeys.Length],
+                variant: "variant-" + (i % 4),
+                allocationKey: "alloc-" + (i % _flagKeys.Length),
+                targetingKey: _targetingKeys[i % _targetingKeys.Length],
+                evalTimeMs: 1_700_000_000_000L + i,
+                contextAttrs: new Dictionary<string, object?>(_context));
+        }
+
+        private static Dictionary<string, object?> NewContext(int fields)
+        {
+            var context = new Dictionary<string, object?>();
+            for (var i = 0; i < fields; i++)
+            {
+                context["field" + i] = "value";
+            }
+
+            return context;
+        }
+
+        private static string[] NewKeys(string prefix, int count)
+        {
+            var keys = new string[count];
+            for (var i = 0; i < count; i++)
+            {
+                keys[i] = prefix + i;
+            }
+
+            return keys;
+        }
+
+        private readonly struct BenchmarkProfile
+        {
+            public BenchmarkProfile(int numFlags, int numUsers, int numFields)
+            {
+                NumFlags = numFlags;
+                NumUsers = numUsers;
+                NumFields = numFields;
+            }
+
+            public int NumFlags { get; }
+
+            public int NumUsers { get; }
+
+            public int NumFields { get; }
+
+            public static BenchmarkProfile FromName(string name)
+            {
+                return name switch
+                {
+                    "typical/100flags_50users_10fields" => new BenchmarkProfile(100, 50, 10),
+                    "stress/10flags_1000users_250fields" => new BenchmarkProfile(10, 1_000, 250),
+                    "scale/2500flags_500users_20fields" => new BenchmarkProfile(2_500, 500, 20),
+                    _ => throw new ArgumentOutOfRangeException(nameof(name), name, "Unknown benchmark profile")
+                };
+            }
+        }
 
         /// <summary>A request factory whose transport is never invoked by this benchmark.</summary>
         private sealed class NoOpApiRequestFactory : IApiRequestFactory
