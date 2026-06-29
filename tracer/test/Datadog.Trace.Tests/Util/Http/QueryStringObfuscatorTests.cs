@@ -106,4 +106,53 @@ public class QueryStringObfuscatorTests
         var result = queryStringObfuscator.Obfuscate(queryString);
         result.Should().Be("?<redacted>&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2&<redacted>&<redacted>");
     }
+
+    [Theory]
+    [InlineData(
+        // Vault file download URL with Korean filename + auth ticket — the pattern that caused
+        // catastrophic backtracking with the default regex (CPU spike to 90% in production).
+        // High-byte URL-encoded sequences (%EC, %84, %A4...) must be stripped before obfuscation
+        // so that the regex engine does not attempt to match them against JWT/SSH/bearer patterns.
+        "dbName=CPMS&fileId=F4D7D9C025CF4FB29023189592B261D1&fileName=%EC%84%A4%EA%B3%84%EC%9E%90%EB%A3%8C%EC%86%A1%EB%B6%80%EC%84%9C_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&token=VAULTTOKEN1234567",
+        "dbName=CPMS&fileId=F4D7D9C025CF4FB29023189592B261D1&fileName=_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&<redacted>")]
+    [InlineData(
+        // Japanese filename — same high-byte URL encoding pattern
+        "filename=%E6%97%A5%E6%9C%AC%E8%AA%9E%E3%83%86%E3%82%B9%E3%83%88.pdf&token=abc1234567890ab",
+        "filename=.pdf&<redacted>")]
+    [InlineData(
+        // ASCII-only URL — high-byte stripping must NOT affect ASCII credential parameters
+        "key1=val1&token=abc1234567890ab&key2=val2",
+        "key1=val1&<redacted>&key2=val2")]
+    [InlineData(
+        // Mixed: ASCII params + Korean filename — only ticket should be redacted
+        "database=CPMS&fileName=%EC%84%A4%EA%B3%84.xlsx&user=emma.bae",
+        "database=CPMS&fileName=.xlsx&user=emma.bae")]
+    public void ObfuscateWithDefaultPattern_MultibyteUrlEncoding(string queryString, string expected)
+    {
+        var logger = new Mock<IDatadogLogger>();
+        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
+        var result = queryStringObfuscator.Obfuscate(queryString);
+        result.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ObfuscateWithDefaultPattern_MultibyteUrlEncoding_CompletesWithinTimeout()
+    {
+        // Regression test: the default obfuscation regex must complete well within the timeout
+        // when applied to a URL containing a long URL-encoded Korean filename + auth ticket.
+        // Before the fix, RegexInterpreter.Go() consumed 16+ seconds/min on this pattern.
+        var logger = new Mock<IDatadogLogger>();
+        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
+
+        var longKoreanFilename = string.Concat(Enumerable.Repeat("%EC%84%A4%EA%B3%84%EC%9E%90%EB%A3%8C", 10));
+        var queryString = $"dbName=CPMS&fileId=ABC123&fileName={longKoreanFilename}_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&token=VAULTTOKEN1234567";
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var result = queryStringObfuscator.Obfuscate(queryString);
+        stopwatch.Stop();
+
+        // Must not time out (return empty string) and must complete in well under 1 second
+        result.Should().NotBeEmpty("obfuscation must not time out on multibyte URL-encoded filenames");
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000, "catastrophic backtracking must not occur");
+    }
 }
