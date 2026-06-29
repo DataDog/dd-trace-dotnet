@@ -10,12 +10,14 @@
 #include <string>
 #include <cstdint>
 
+#include "SymbolsStore.h"
+
 struct FrameInfoView
 {
 public:
-    std::string_view ModuleName;
-    std::string_view Frame;
-    std::string_view Filename;
+    libdatadog::ModuleId* ModuleId;
+    libdatadog::FunctionId* FunctionId;
+    //libdatadog::StringId* Filename;
     std::uint32_t StartLine;
 };
 

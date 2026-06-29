@@ -21,19 +21,23 @@ Success& Success::operator=(Success&& o) noexcept
 {
     if (this != &o)
     {
-        _details = std::move(o._details);
+        _details = std::exchange(o._details, nullptr);
     }
     return *this;
 }
 
-Success::Success(std::unique_ptr<SuccessImpl> details) :
-    _details(std::move(details))
+Success::Success(SuccessImpl* details) :
+    _details(details)
 {
 }
 
-Success::~Success() = default;
+Success::~Success()
+{
+    auto old = std::exchange(_details, nullptr);
+    delete old;
+}
 
-std::string const & Success::message() const noexcept
+std::string const& Success::message() const noexcept
 {
     static std::string empty;
 

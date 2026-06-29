@@ -68,6 +68,10 @@ class NetworkProvider;
 class IUnwinder;
 class UnwindingRecorderFactory;
 
+namespace libdatadog {
+class SymbolsStore;
+}
+
 #ifdef LINUX
 class SystemCallsShield;
 #endif
@@ -305,6 +309,7 @@ private :
     std::unique_ptr<RawSampleTransformer> _rawSampleTransformer;
 
     std::unique_ptr<ManagedCodeCache> _managedCodeCache = nullptr;
+    std::unique_ptr<libdatadog::SymbolsStore> _pSymbolsStore = nullptr;
 
 private:
     static void ConfigureDebugLog();

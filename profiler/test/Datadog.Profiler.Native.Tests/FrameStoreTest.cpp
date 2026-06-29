@@ -7,27 +7,15 @@
 #include "FrameStore.h"
 #include "ManagedCodeCache.h"
 #include "MockProfilerInfo.h"
+#include "ServiceWrapper.hpp"
+#include "SymbolsStore.h"
 
 #include <memory>
 #include <string>
 
 using namespace testing;
 
-namespace {
-
-// The strings produced by FrameStore::GetFrame. Kept in sync with the private constants
-// in FrameStore.cpp. If the production strings change, update these so the test intent
-// stays explicit.
-constexpr const char* NotResolvedFrameText =
-    "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:NotResolvedFrame |fg: |sg:(?)";
-constexpr const char* FakeContentionFrameText =
-    "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)";
-constexpr const char* FakeAllocationFrameText =
-    "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)";
-constexpr const char* UnknownManagedFrameText =
-    "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Method |fg: |sg:(?)";
-
-} // namespace
+using libdatadog::SymbolsStore;
 
 // These tests guard the contract that FrameStore::GetFrame uses to tell
 // RawSampleTransformer whether a frame is resolved (kept) or not (dropped):
@@ -52,6 +40,7 @@ constexpr const char* UnknownManagedFrameText =
 TEST(FrameStoreTest, GetFrame_NoCache_NativeIp_ReturnsNotResolvedAndDropped)
 {
     auto mockProfiler = MockProfilerInfo{};
+    ServiceWrapper<SymbolsStore> symbolsStore;
 
     EXPECT_CALL(mockProfiler, GetFunctionFromIP(_, _))
         .WillRepeatedly(Return(E_FAIL));
@@ -60,7 +49,8 @@ TEST(FrameStoreTest, GetFrame_NoCache_NativeIp_ReturnsNotResolvedAndDropped)
         /*pCorProfilerInfo*/ &mockProfiler,
         /*pConfiguration  */ nullptr,
         /*pDebugInfoStore */ nullptr,
-        /*pManagedCodeCache*/ nullptr);
+        /*pManagedCodeCache*/ nullptr,
+        /*pSymbolsStore   */ symbolsStore);
 
     // IP must be greater than FrameStore::MaxFakeIP so we don't hit the fake-IP
     // short-circuit at the top of GetFrame.
@@ -70,7 +60,8 @@ TEST(FrameStoreTest, GetFrame_NoCache_NativeIp_ReturnsNotResolvedAndDropped)
 
     EXPECT_FALSE(isResolved) << "Native IPs must be reported as unresolved so "
                                 "RawSampleTransformer drops them from the sample.";
-    EXPECT_EQ(std::string(frameInfo.Frame), std::string(NotResolvedFrameText));
+    EXPECT_EQ(frameInfo.ModuleId, symbolsStore->GetNotResolvedModuleId());
+    EXPECT_EQ(frameInfo.FunctionId, symbolsStore->GetNotResolvedFrameId());
 }
 
 // Test 5: Cached path - a native IP that is not in any managed code range must be
@@ -83,6 +74,7 @@ TEST(FrameStoreTest, GetFrame_NoCache_NativeIp_ReturnsNotResolvedAndDropped)
 TEST(FrameStoreTest, GetFrame_WithCache_NativeIp_ReturnsNotResolvedAndDropped)
 {
     auto mockProfiler = MockProfilerInfo{};
+    ServiceWrapper<SymbolsStore> symbolsStore;
 
     // Empty cache => any IP resolves to InvalidFunctionId (there are no registered
     // JIT ranges and no R2R modules), which is exactly the "native IP" case.
@@ -93,7 +85,8 @@ TEST(FrameStoreTest, GetFrame_WithCache_NativeIp_ReturnsNotResolvedAndDropped)
         /*pCorProfilerInfo*/ &mockProfiler,
         /*pConfiguration  */ nullptr,
         /*pDebugInfoStore */ nullptr,
-        /*pManagedCodeCache*/ cache.get());
+        /*pManagedCodeCache*/ cache.get(),
+        /*pSymbolsStore   */ symbolsStore);
 
     // Sanity-check the upstream contract we rely on: the cache must report the IP
     // as "definitely native" (a value equal to InvalidFunctionId), not nullopt.
@@ -107,7 +100,8 @@ TEST(FrameStoreTest, GetFrame_WithCache_NativeIp_ReturnsNotResolvedAndDropped)
     EXPECT_FALSE(isResolved) << "Native IPs (InvalidFunctionId from the cache) must "
                                 "be reported as unresolved so RawSampleTransformer "
                                 "drops them from the sample.";
-    EXPECT_EQ(std::string(frameInfo.Frame), std::string(NotResolvedFrameText));
+    EXPECT_EQ(frameInfo.ModuleId, symbolsStore->GetNotResolvedModuleId());
+    EXPECT_EQ(frameInfo.FunctionId, symbolsStore->GetNotResolvedFrameId());
 
     cache.reset();
 }
@@ -120,6 +114,7 @@ TEST(FrameStoreTest, GetFrame_WithCache_NativeIp_ReturnsNotResolvedAndDropped)
 TEST(FrameStoreTest, GetFrame_FakeIps_ShortCircuitToResolvedPlaceholders)
 {
     auto mockProfiler = MockProfilerInfo{};
+    ServiceWrapper<SymbolsStore> symbolsStore;
 
     // No call to GetFunctionFromIP is expected: the fake-IP branch short-circuits
     // before reaching the resolver. Setting a strict mock verifies this contract.
@@ -129,22 +124,26 @@ TEST(FrameStoreTest, GetFrame_FakeIps_ShortCircuitToResolvedPlaceholders)
         /*pCorProfilerInfo*/ &mockProfiler,
         /*pConfiguration  */ nullptr,
         /*pDebugInfoStore */ nullptr,
-        /*pManagedCodeCache*/ nullptr);
+        /*pManagedCodeCache*/ nullptr,
+        /*pSymbolsStore   */ symbolsStore);
 
     {
         auto [isResolved, frameInfo] = frameStore.GetFrame(FrameStore::FakeLockContentionIP);
         EXPECT_TRUE(isResolved);
-        EXPECT_EQ(std::string(frameInfo.Frame), std::string(FakeContentionFrameText));
+        EXPECT_EQ(frameInfo.ModuleId, symbolsStore->GetFakeModuleId());
+        EXPECT_EQ(frameInfo.FunctionId, symbolsStore->GetFakeContentionFrameId());
     }
     {
         auto [isResolved, frameInfo] = frameStore.GetFrame(FrameStore::FakeAllocationIP);
         EXPECT_TRUE(isResolved);
-        EXPECT_EQ(std::string(frameInfo.Frame), std::string(FakeAllocationFrameText));
+        EXPECT_EQ(frameInfo.ModuleId, symbolsStore->GetFakeModuleId());
+        EXPECT_EQ(frameInfo.FunctionId, symbolsStore->GetFakeAllocationFrameId());
     }
     {
         auto [isResolved, frameInfo] = frameStore.GetFrame(FrameStore::FakeUnknownIP);
         EXPECT_TRUE(isResolved);
-        EXPECT_EQ(std::string(frameInfo.Frame), std::string(UnknownManagedFrameText));
+        EXPECT_EQ(frameInfo.ModuleId, symbolsStore->GetFakeModuleId());
+        EXPECT_EQ(frameInfo.FunctionId, symbolsStore->GetUnknownManagedFrameId());
     }
 }
 
@@ -160,6 +159,7 @@ TEST(FrameStoreTest, GetFrame_FakeIps_ShortCircuitToResolvedPlaceholders)
 TEST(FrameStoreTest, GetFrame_WithCache_CachedPathNullopt_ReturnsResolvedPlaceholder)
 {
     auto mockProfiler = MockProfilerInfo{};
+    ServiceWrapper<SymbolsStore> symbolsStore;
 
     auto cache = std::make_unique<ManagedCodeCache>(&mockProfiler);
     cache->Initialize();
@@ -187,7 +187,8 @@ TEST(FrameStoreTest, GetFrame_WithCache_CachedPathNullopt_ReturnsResolvedPlaceho
         /*pCorProfilerInfo*/ &mockProfiler,
         /*pConfiguration  */ nullptr,
         /*pDebugInfoStore */ nullptr,
-        /*pManagedCodeCache*/ cache.get());
+        /*pManagedCodeCache*/ cache.get(),
+        /*pSymbolsStore   */ symbolsStore);
 
     // Sanity-check the upstream contract: the cache reports nullopt (SEH path).
     ASSERT_FALSE(cache->GetFunctionId(ipInR2R).has_value());
@@ -204,7 +205,8 @@ TEST(FrameStoreTest, GetFrame_WithCache_CachedPathNullopt_ReturnsResolvedPlaceho
     EXPECT_TRUE(isResolved) << "When the cache signals SEH (nullopt), FrameStore must "
                                "keep the frame (isResolved=true) to preserve the "
                                "legacy Windows placeholder behavior.";
-    EXPECT_EQ(std::string(frameInfo.Frame), std::string(NotResolvedFrameText));
+    EXPECT_EQ(frameInfo.ModuleId, symbolsStore->GetNotResolvedModuleId());
+    EXPECT_EQ(frameInfo.FunctionId, symbolsStore->GetNotResolvedFrameId());
 
     cache.reset();
 }
