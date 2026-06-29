@@ -23,8 +23,13 @@
 
     <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.0.226801" />
 
+    <PackageReference Include="Azure.Messaging.EventHubs" Version="5.11.5" />
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.18.1" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.23.0" />
+
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
 
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
     <PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
 
     <PackageReference Include="Testcontainers" Version="3.6.0" />

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -30,6 +31,9 @@ public abstract class AzureFunctionsTests : TestHelper
     protected AzureFunctionsTests(string sampleAppName, ITestOutputHelper output)
         : base(sampleAppName, samplePathOverrides: Path.Combine("test", "test-applications", "azure-functions"), output)
     {
+        // Disable Continuous Profiler to avoid error log "Stable Configuration has not been set: the profiler was never started"
+        SetEnvironmentVariable("DD_PROFILING_ENABLED", "0");
+        SetEnvironmentVariable("DD_PROFILING_MANAGED_ACTIVATION_ENABLED", "0");
         // Ensures we filter out the host span requests etc
         SetEnvironmentVariable("WEBSITE_SKU", "Basic");
         SetEnvironmentVariable("DD_AZURE_APP_SERVICES", "1");
@@ -64,7 +68,7 @@ public abstract class AzureFunctionsTests : TestHelper
         return filteredSpans;
     }
 
-    protected async Task<ProcessResult> RunAzureFunctionAndWaitForExit(MockTracerAgent agent, string framework = null, int expectedExitCode = 0)
+    protected async Task<ProcessResult> RunAzureFunctionAndWaitForExit(MockTracerAgent agent, Func<Task> seedAsync = null, string framework = null, int expectedExitCode = 0)
     {
         // run the azure function
         var binFolder = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion: string.Empty, framework);
@@ -79,6 +83,12 @@ public abstract class AzureFunctionsTests : TestHelper
             workingDirectory: binFolder); // points to the sample project
 
         using var helper = new ProcessHelper(process);
+
+        if (seedAsync is not null)
+        {
+            await WaitForFunctionAppReadyAsync();
+            await seedAsync();
+        }
 
         return WaitForProcessResult(helper, expectedExitCode);
     }
@@ -124,6 +134,34 @@ public abstract class AzureFunctionsTests : TestHelper
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
+    }
+
+    private static async Task WaitForFunctionAppReadyAsync(int port = 7071, int timeoutSeconds = 60)
+    {
+        // Poll the host ping endpoint; it returns 200 only when the host is fully initialized and
+        // all function routes are registered.
+        using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+        var pingUrl = $"http://127.0.0.1:{port}/admin/host/ping";
+        var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+        while (DateTime.UtcNow < deadline)
+        {
+            try
+            {
+                var response = await http.GetAsync(pingUrl);
+                if (response.IsSuccessStatusCode)
+                {
+                    return;
+                }
+            }
+            catch
+            {
+                // Host not yet listening
+            }
+
+            await Task.Delay(500);
+        }
+
+        throw new TimeoutException($"Azure Functions app did not become ready on port {port} within {timeoutSeconds} seconds.");
     }
 
 #if NETCOREAPP3_1
