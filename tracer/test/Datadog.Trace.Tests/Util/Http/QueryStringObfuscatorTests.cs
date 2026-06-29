@@ -5,7 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
@@ -95,6 +97,36 @@ public class QueryStringObfuscatorTests
         var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
         var result = queryStringObfuscator.Obfuscate(querystring);
         result.Should().Be(querystring);
+    }
+
+    // Culture-sensitive case-insensitive matching mis-cases non-ASCII characters (e.g. the Turkish
+    // dotted/dotless 'I'), which both produces a CPU spike when scanning non-ASCII query strings on
+    // .NET Framework and, worse, causes keywords containing an 'i' (api, public, signature, ...) to
+    // be missed entirely under cultures like tr-TR. The obfuscator must match culture-independently.
+    [Theory]
+    [InlineData("tr-TR")]
+    [InlineData("az-Latn-AZ")]
+    [InlineData("en-US")]
+    public void ObfuscatesIndependentlyOfCurrentCulture(string culture)
+    {
+        var originalCulture = Thread.CurrentThread.CurrentCulture;
+        try
+        {
+            Thread.CurrentThread.CurrentCulture = new CultureInfo(culture);
+
+            var logger = new Mock<IDatadogLogger>();
+            // Constructed under the test culture so the underlying Regex captures it.
+            var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
+
+            // Upper-case keywords containing 'I' only match when 'I' folds to 'i', which is false
+            // under Turkic cultures unless the regex is culture-invariant.
+            var result = queryStringObfuscator.Obfuscate("http://google.fr/waf?API_KEY=secret123&SIGNATURE=abc&PUBLIC_KEY=zzz&key=val");
+            result.Should().Be("http://google.fr/waf?<redacted>&<redacted>&<redacted>&key=val");
+        }
+        finally
+        {
+            Thread.CurrentThread.CurrentCulture = originalCulture;
+        }
     }
 
     [Fact]
