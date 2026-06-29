@@ -3,7 +3,9 @@
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "CounterMetric.h"
 #include "ManagedCodeCache.h"
+#include "MetricsRegistry.h"
 #include "MockProfilerInfo.h"
 
 #include <thread>
@@ -15,11 +17,12 @@ using namespace testing;
 class ManagedCodeCacheTest : public Test {
 protected:
     MockProfilerInfo* mockProfiler;
+    MetricsRegistry metricsRegistry;
     std::unique_ptr<ManagedCodeCache> cache;
 
     void SetUp() override {
         mockProfiler = new MockProfilerInfo();
-        cache = std::make_unique<ManagedCodeCache>(mockProfiler);
+        cache = std::make_unique<ManagedCodeCache>(mockProfiler, metricsRegistry);
         cache->Initialize();
     }
 
@@ -43,6 +46,15 @@ protected:
                 }
                 return S_OK;
             });
+    }
+
+    // Helper: read (and reset) the IsManaged lock-failure counter.
+    // GetMetrics() exchanges the underlying atomic to 0, so each call returns the
+    // number of failures recorded since the previous read.
+    uint64_t GetLockFailureCount() {
+        auto metric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_managed_code_cache_lock_failures");
+        auto metrics = metric->GetMetrics();
+        return metrics.empty() ? 0 : static_cast<uint64_t>(metrics.front().second);
     }
 };
 
@@ -402,6 +414,47 @@ TEST_F(ManagedCodeCacheTest, IsManaged_WriterHoldsPagesMutex_ReturnsNullopt) {
     auto afterRelease = cache->IsManaged(codeStart + 0x50);
     ASSERT_TRUE(afterRelease.has_value());
     EXPECT_TRUE(afterRelease.value());
+}
+
+// Test: IsManaged increments the lock-failure metric when it cannot acquire the
+// pages mutex within the timeout, and leaves it untouched on the success path.
+TEST_F(ManagedCodeCacheTest, IsManaged_LockAcquisitionFailure_IncrementsMetric) {
+    FunctionID testFuncId = 0x4321;
+    uintptr_t codeStart = 0xD000;
+    ULONG32 codeSize = 0x100;
+
+    SetupMockCodeInfo(testFuncId, codeStart, codeSize);
+    cache->AddFunction(testFuncId);
+
+    // Success path must not increment the failure metric.
+    ASSERT_TRUE(cache->IsManaged(codeStart + 0x50).value_or(false));
+    EXPECT_EQ(0u, GetLockFailureCount());
+
+    // Hold the pages mutex exclusively so IsManaged times out and returns nullopt.
+    std::atomic<bool> writerHoldsLock{false};
+    std::atomic<bool> readerDone{false};
+    std::thread writer([&]() {
+        auto lock = cache->LockPagesMutexExclusiveForTest();
+        writerHoldsLock.store(true);
+        while (!readerDone.load())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    });
+
+    while (!writerHoldsLock.load())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    auto contended = cache->IsManaged(codeStart + 0x50);
+    EXPECT_FALSE(contended.has_value());
+
+    readerDone.store(true);
+    writer.join();
+
+    // The failed acquisition must have been recorded exactly once.
+    EXPECT_EQ(1u, GetLockFailureCount());
 }
 
 // Test: IsManaged must also return nullopt when the writer holds the modules
