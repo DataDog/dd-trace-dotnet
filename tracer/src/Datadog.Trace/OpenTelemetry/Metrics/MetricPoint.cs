@@ -13,11 +13,12 @@ using System.Threading;
 
 namespace Datadog.Trace.OpenTelemetry.Metrics;
 
-internal sealed class MetricPoint(string instrumentName, string meterName, string meterVersion, KeyValuePair<string, object?>[] meterTags, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "", bool isLongType = false, double[]? explicitBounds = null)
+internal sealed class MetricPoint(string instrumentName, string meterName, string meterVersion, KeyValuePair<string, object?>[] meterTags, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "", bool isLongType = false, double[]? explicitBounds = null, bool isOverflow = false)
 {
     internal static readonly double[] DefaultHistogramBounds = [0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000];
     private readonly long[] _runningBucketCounts = instrumentType == InstrumentType.Histogram ? new long[DefaultHistogramBounds.Length + 1] : [];
     private readonly double[] _runningBucketBounds = instrumentType == InstrumentType.Histogram ? (explicitBounds ?? DefaultHistogramBounds) : [];
+    private readonly bool _isOverflow = isOverflow;
     private readonly object _histogramLock = new();
     private long _runningCountValue;
     private double _runningDoubleValue;
@@ -89,6 +90,18 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
     {
         lock (_histogramLock)
         {
+            if (_isOverflow)
+            {
+                // Multiple distinct series fold into this single overflow bucket. Each observable
+                // callback reports its series' current cumulative once per collection cycle, so SUM
+                // them (rather than overwrite) to get the bucket's cumulative for this cycle. The
+                // accumulator is cleared each cycle in CreateSnapshotAndReset, so the next cycle
+                // re-sums from zero.
+                _runningDoubleValue += currentValue;
+                _hasMeasurements = true;
+                return;
+            }
+
             if (double.IsNaN(_lastObservedCumulative))
             {
                 _hasMeasurements = true;
@@ -216,6 +229,14 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
                 }
 
                 StartTime = endTime;
+            }
+
+            // Overflow observable buckets accumulate per cycle, so the running total must be cleared
+            // every cycle regardless of temporality; _lastObservedCumulative already captured this
+            // cycle's total for the cross-cycle delta calculation.
+            if (_isOverflow && InstrumentType is InstrumentType.ObservableCounter or InstrumentType.ObservableUpDownCounter)
+            {
+                _runningDoubleValue = 0.0;
             }
 
             _hasMeasurements = false;

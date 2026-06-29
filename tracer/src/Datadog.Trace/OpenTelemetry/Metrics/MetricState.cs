@@ -196,7 +196,8 @@ internal sealed class MetricState
             OverflowTags,
             _identity.Unit,
             _identity.Description,
-            _identity.IsLongType);
+            _identity.IsLongType,
+            isOverflow: true);
 
         return Interlocked.CompareExchange(ref _overflowPoint, created, null) ?? created;
     }
