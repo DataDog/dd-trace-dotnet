@@ -584,8 +584,8 @@ namespace Datadog.Trace.Agent
             // ── Count / Sum ───────────────────────────────────────────────────────
 
             var count = (ulong)bucket.Hits;
-            WriteTag(writer, FieldNumbers.HistogramDataPointCount, WireTypeFixed64);
-            writer.Write(count);
+            WriteTag(writer, FieldNumbers.HistogramDataPointCount, WireTypeVarInt);
+            WriteVarInt(writer, count);
 
             // Sum: convert from nanoseconds to seconds
             var sumS = bucket.Duration * NsToS;
@@ -598,8 +598,8 @@ namespace Datadog.Trace.Agent
             var bucketCounts = ProjectSketch(bucket.OkSummary);
             foreach (var bc in bucketCounts)
             {
-                WriteTag(writer, FieldNumbers.HistogramDataPointBucketCounts, WireTypeFixed64);
-                writer.Write(bc);
+                WriteTag(writer, FieldNumbers.HistogramDataPointBucketCounts, WireTypeVarInt);
+                WriteVarInt(writer, bc);
             }
 
             // ── Explicit bounds (seconds) ─────────────────────────────────────────
