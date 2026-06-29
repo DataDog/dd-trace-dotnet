@@ -55,6 +55,39 @@ public class QueryStringObfuscatorTests
             new(
                 "http://google.fr/waf?PassWord=12345&Token=token:1234&Bearer 1234&ecdsa-1-1 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa= test&old-pwd2=test&ssh-dss aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa= test&application_key=test&app-key=test2",
                 "http://google.fr/waf?<redacted>&<redacted>&<redacted>&<redacted>&<redacted>&<redacted>&<redacted>&<redacted>"),
+            // CJK in query strings: a secret value containing decoded CJK characters is still redacted
+            new(
+                "?password=パスワード&key=val",
+                "?<redacted>&key=val"),
+            // CJK arrives percent-encoded over the wire (e.g. UTF-8 of あ is %E3%81%82); still redacted
+            new(
+                "?token=%E3%81%82%E3%81%84%E3%81%86&x=1",
+                "?<redacted>&x=1"),
+            // CJK inside an encoded quoted/colon ("key":"value") secret value (mirrors the json case above)
+            new(
+                "?json=%7B%22token%22%3A%20%22あいう%22%7D",
+                "?json=%7B<redacted>%7D"),
+            // Negative: CJK-only/non-secret params must be left untouched (no catastrophic backtracking, no false redaction)
+            new(
+                "?名前=パスワード&q=ありがとう",
+                "?名前=パスワード&q=ありがとう"),
+            // Negative: a keyword substring ("token") inside a CJK value with no =/:/" must not trigger redaction
+            new(
+                "?q=ありがとうtokenありがとう",
+                "?q=ありがとうtokenありがとう"),
+            // Real-world vault file-download URL: high-byte URL-encoded Korean filename alongside an auth ticket.
+            // The encoded filename (%EC/%84/%A4...) must not derail obfuscation; only the token ticket is redacted.
+            new(
+                "dbName=CPMS&fileId=F4D7D9C025CF4FB29023189592B261D1&fileName=%EC%84%A4%EA%B3%84%EC%9E%90%EB%A3%8C%EC%86%A1%EB%B6%80%EC%84%9C_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&token=VAULTTOKEN1234567",
+                "dbName=CPMS&fileId=F4D7D9C025CF4FB29023189592B261D1&fileName=%EC%84%A4%EA%B3%84%EC%9E%90%EB%A3%8C%EC%86%A1%EB%B6%80%EC%84%9C_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&<redacted>"),
+            // High-byte URL-encoded Japanese filename + a 15-char token value
+            new(
+                "filename=%E6%97%A5%E6%9C%AC%E8%AA%9E%E3%83%86%E3%82%B9%E3%83%88.pdf&token=abc1234567890ab",
+                "filename=%E6%97%A5%E6%9C%AC%E8%AA%9E%E3%83%86%E3%82%B9%E3%83%88.pdf&<redacted>"),
+            // Negative: encoded Korean filename with only non-secret params (incl. a dotted value) — nothing redacted
+            new(
+                "database=CPMS&fileName=%EC%84%A4%EA%B3%84.xlsx&user=emma.bae",
+                "database=CPMS&fileName=%EC%84%A4%EA%B3%84.xlsx&user=emma.bae"),
         };
         return allData.Select(e => new[] { e.Data, e.Expected });
     }
