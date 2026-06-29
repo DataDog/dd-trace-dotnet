@@ -651,6 +651,172 @@ internal class CreatedumpCommand : Command
         return false;
     }
 
+    private static CrashDiagnosticsInfo ReadDiagnosticsInfo(ClrRuntime runtime, int? crashThread, int pid)
+    {
+        var debugLines = new List<string>();
+        try
+        {
+            // Step 1: Try to resolve via crashing thread's AppDomain
+            ClrAppDomain? crashDomain = null;
+
+            if (crashThread.HasValue)
+            {
+                var thread = runtime.Threads.FirstOrDefault(t => t.OSThreadId == (uint)crashThread.Value);
+                crashDomain = thread?.CurrentAppDomain;
+            }
+
+            if (crashDomain is not null)
+            {
+                DebugPrint($"Crash thread {crashThread} -> AppDomain: {crashDomain.Name} (ID: {crashDomain.Id})");
+                var info = ReadDiagnosticsInfoFromDomain(runtime, crashDomain);
+
+                if (info.ServiceName is not null)
+                {
+                    return info;
+                }
+
+                DebugPrint("DiagnosticsInfo._instance is null in crash thread's AppDomain, falling back to process name");
+                return FallbackToProcessName(pid);
+            }
+
+            // Step 2: No AppDomain (native thread or crash thread not found) — enumerate all
+            DebugPrint($"Crash thread {crashThread?.ToString() ?? "(none)"} -> no managed AppDomain, enumerating all AppDomains");
+            var serviceNames = new HashSet<string>();
+            var runtimeIds = new HashSet<string>();
+
+            debugLines.Add($"domains_count={runtime.AppDomains.Length}");
+
+            foreach (var domain in runtime.AppDomains)
+            {
+                var field = FindStaticFieldInDomain(runtime, domain, "Datadog.Trace.DiagnosticsInfo", "_instance");
+                var domainInfo = ReadDiagnosticsInfoFromDomain(runtime, domain);
+
+                debugLines.Add($"domain[{domain.Id}]={domain.Name}|field={(field is null ? "null" : "found")}|svc={domainInfo.ServiceName ?? "(null)"}|rid={domainInfo.RuntimeId ?? "(null)"}");
+
+                if (domainInfo.ServiceName is not null)
+                {
+                    serviceNames.Add(domainInfo.ServiceName);
+                }
+
+                if (domainInfo.RuntimeId is not null)
+                {
+                    runtimeIds.Add(domainInfo.RuntimeId);
+                }
+            }
+
+            var debugInfo = string.Join(";", debugLines);
+
+            if (serviceNames.Count == 1)
+            {
+                return new CrashDiagnosticsInfo(
+                    ServiceName: serviceNames.First(),
+                    Services: null,
+                    RuntimeId: runtimeIds.Count == 1 ? runtimeIds.First() : null,
+                    RuntimeIds: runtimeIds.Count > 1 ? string.Join(",", runtimeIds.OrderBy(x => x)) : null,
+                    DebugInfo: debugInfo);
+            }
+
+            if (serviceNames.Count > 1)
+            {
+                var processName = GetProcessName(pid);
+                return new CrashDiagnosticsInfo(
+                    ServiceName: processName,
+                    Services: string.Join(",", serviceNames.OrderBy(x => x)),
+                    RuntimeId: null,
+                    RuntimeIds: runtimeIds.Count > 0 ? string.Join(",", runtimeIds.OrderBy(x => x)) : null,
+                    DebugInfo: debugInfo);
+            }
+
+            return FallbackToProcessName(pid, debugInfo);
+        }
+        catch (Exception ex)
+        {
+            debugLines.Add($"exception={ex.GetType().Name}:{ex.Message}");
+            return FallbackToProcessName(pid, string.Join(";", debugLines));
+        }
+    }
+
+    private static CrashDiagnosticsInfo ReadDiagnosticsInfoFromDomain(ClrRuntime runtime, ClrAppDomain domain)
+    {
+        try
+        {
+            var field = FindStaticFieldInDomain(runtime, domain, "Datadog.Trace.DiagnosticsInfo", "_instance");
+
+            if (field is null)
+            {
+                return default;
+            }
+
+            var instance = field.ReadObject(domain);
+
+            if (!instance.IsValid || instance.IsNull)
+            {
+                return default;
+            }
+
+            string? serviceName = null;
+            string? runtimeId = null;
+
+            serviceName = instance.ReadStringField("_serviceName");
+            runtimeId = instance.ReadStringField("_runtimeId");
+
+            return new CrashDiagnosticsInfo(
+                ServiceName: string.IsNullOrEmpty(serviceName) ? null : serviceName,
+                Services: null,
+                RuntimeId: string.IsNullOrEmpty(runtimeId) ? null : runtimeId,
+                RuntimeIds: null);
+        }
+        catch
+        {
+            return default;
+        }
+    }
+
+    private static ClrStaticField? FindStaticFieldInDomain(ClrRuntime runtime, ClrAppDomain domain, string typeName, string fieldName)
+    {
+        foreach (var module in runtime.EnumerateModules())
+        {
+            if (module.AppDomain?.Id != domain.Id)
+            {
+                continue;
+            }
+
+            var type = module.GetTypeByName(typeName);
+
+            if (type is not null)
+            {
+                return type.GetStaticFieldByName(fieldName);
+            }
+        }
+
+        return null;
+    }
+
+    private static CrashDiagnosticsInfo FallbackToProcessName(int pid, string? debugInfo = null)
+    {
+        return new CrashDiagnosticsInfo(
+            ServiceName: GetProcessName(pid),
+            Services: null,
+            RuntimeId: null,
+            RuntimeIds: null,
+            DebugInfo: debugInfo);
+    }
+
+    private static string GetProcessName(int pid)
+    {
+        try
+        {
+            using var process = Process.GetProcessById(pid);
+            return process.ProcessName;
+        }
+        catch
+        {
+            // Process may have already exited
+        }
+
+        return "unknown";
+    }
+
     private void Execute(InvocationContext context)
     {
         DebugPrint($"dd-dotnet invoked with command-line: {Environment.CommandLine}");
@@ -918,8 +1084,11 @@ internal class CreatedumpCommand : Command
             _ = SetSignal(crashReport, signal.Value, signalCode);
         }
 
+        DebugPrint("Reading diagnostics info (service name, runtime id)");
+        var diagnosticsInfo = ReadDiagnosticsInfo(_runtime, crashThread, pid);
+
         DebugPrint("Setting crash report metadata");
-        _ = SetMetadata(crashReport, _runtime, exception, isSuspicious);
+        _ = SetMetadata(crashReport, _runtime, exception, isSuspicious, diagnosticsInfo);
 
         try
         {
@@ -1042,7 +1211,7 @@ internal class CreatedumpCommand : Command
         return false;
     }
 
-    private unsafe bool SetMetadata(ICrashReport crashReport, ClrRuntime runtime, ClrException? exception, bool isSuspicious)
+    private unsafe bool SetMetadata(ICrashReport crashReport, ClrRuntime runtime, ClrException? exception, bool isSuspicious, CrashDiagnosticsInfo diagnosticsInfo)
     {
         var flavor = runtime.ClrInfo.Flavor switch
         {
@@ -1083,6 +1252,26 @@ internal class CreatedumpCommand : Command
 
         var tags = new (string Key, string Value)[] { ("language", "dotnet"), ("runtime_version", $"{flavor} {version}"), ("library_version", TracerConstants.AssemblyVersion) };
 
+        if (diagnosticsInfo.ServiceName is not null)
+        {
+            tags = [.. tags, ("service", diagnosticsInfo.ServiceName)];
+        }
+
+        if (diagnosticsInfo.Services is not null)
+        {
+            tags = [.. tags, ("services", diagnosticsInfo.Services)];
+        }
+
+        if (diagnosticsInfo.RuntimeId is not null)
+        {
+            tags = [.. tags, ("runtime_id", diagnosticsInfo.RuntimeId)];
+        }
+
+        if (diagnosticsInfo.RuntimeIds is not null)
+        {
+            tags = [.. tags, ("runtime_ids", diagnosticsInfo.RuntimeIds)];
+        }
+
         if (exception != null)
         {
             tags = [.. tags, ("exception", exception.ToString())];
@@ -1091,6 +1280,11 @@ internal class CreatedumpCommand : Command
         if (isSuspicious)
         {
             tags = [.. tags, ("crash_datadog", "true")];
+        }
+
+        if (diagnosticsInfo.DebugInfo is not null)
+        {
+            tags = [.. tags, ("debug_diag", diagnosticsInfo.DebugInfo)];
         }
 
         var bag = new List<IntPtr>();
@@ -1143,6 +1337,8 @@ internal class CreatedumpCommand : Command
             }
         }
     }
+
+    private readonly record struct CrashDiagnosticsInfo(string? ServiceName, string? Services, string? RuntimeId, string? RuntimeIds, string? DebugInfo = null);
 
     [StructLayout(LayoutKind.Sequential)]
     private unsafe struct ResolveMethodData
