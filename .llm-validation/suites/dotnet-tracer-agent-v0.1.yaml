@@ -239,7 +239,7 @@ cases:
     expected_criteria:
       - Recommends Lazy<T> (with an appropriate LazyThreadSafetyMode) as the simplest correct option.
       - If showing double-checked locking, marks the backing field `volatile` (or explains why memory ordering matters).
-      - Explains the pitfall: without volatile/Lazy, reordering can publish a partially-constructed instance.
+      - Explains the pitfall — without volatile/Lazy, reordering can publish a partially-constructed instance.
     bad_signals:
       - Presents a double-checked lock without volatile and calls it correct.
       - Claims a plain `if (x == null) x = new()` is thread-safe.
