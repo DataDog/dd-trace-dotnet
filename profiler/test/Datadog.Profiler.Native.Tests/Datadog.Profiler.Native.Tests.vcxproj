@@ -61,8 +61,14 @@
     <ClCompile Include="AppDomainStoreHelper.cpp" />
     <ClCompile Include="ApplicationStoreTest.cpp" />
     <ClCompile Include="CallstackTest.cpp" />
+    <ClCompile Include="CdacDescriptorTest.cpp" />
+    <ClCompile Include="CdacGCContractTest.cpp" />
     <ClCompile Include="ClrEventsParserTest.cpp" />
+    <ClCompile Include="CommittedMemoryProbeTest.cpp" />
     <ClCompile Include="ConfigurationTest.cpp" />
+    <ClCompile Include="DacNativeHeapEnumeratorTest.cpp" />
+    <ClCompile Include="EEHeapReporterTest.cpp" />
+    <ClCompile Include="InProcessMemoryReaderTest.cpp" />
     <ClCompile Include="CpuProfilerTypeTest.cpp" />
     <ClCompile Include="CpuSamplePRoviderTest.cpp" />
     <ClCompile Include="CrashReportingTest.cpp" />
@@ -110,6 +116,7 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\IMetricsSenderFactory.cpp" />
     <ClInclude Include="AppDomainStoreHelper.h" />
+    <ClInclude Include="EEHeapTestHelpers.h" />
     <ClInclude Include="EnvironmentHelper.h" />
     <ClInclude Include="FakeSamples.h" />
     <ClInclude Include="FrameStoreHelper.h" />

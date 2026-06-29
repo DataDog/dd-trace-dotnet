@@ -30,6 +30,7 @@ class IRuntimeInfo;
 class ISsiManager;
 class IHeapSnapshotManager;
 class IGcSettingsProvider;
+class IEEHeapReporter;
 
 namespace libdatadog {
 class Exporter;
@@ -50,7 +51,8 @@ public:
         IMetadataProvider* metadataProvider,
         ISsiManager* ssiManager,
         IAllocationsRecorder* allocationsRecorder,
-        IHeapSnapshotManager* heapSnapshotManager);
+        IHeapSnapshotManager* heapSnapshotManager,
+        IEEHeapReporter* eeHeapReporter);
     ~ProfileExporter() override;
 
     bool Export(bool lastCall = false) override;
@@ -173,6 +175,7 @@ private:
     IRuntimeInfo* _runtimeInfo;
     ISsiManager* _ssiManager;
     IHeapSnapshotManager* _heapSnapshotManager;
+    IEEHeapReporter* _eeHeapReporter = nullptr; // could be null when the eeheap feature is disabled
     IGcSettingsProvider* _gcSettingsProvider = nullptr;  // could be null with .NET Framework
 
 public: // for tests

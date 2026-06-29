@@ -90,6 +90,7 @@ public:
     std::chrono::milliseconds GetHeapSnapshotCheckInterval() const override;
     uint32_t GetHeapSnapshotMemoryPressureThreshold() const override;
     std::chrono::seconds GetTestHeapSnapshotInterval() const override;
+    bool IsEEHeapEnabled() const override;
     uint32_t GetHeapHandleLimit() const override;
     bool UseManagedCodeCache() const override;
     bool IsMemoryFootprintEnabled() const override;
@@ -206,6 +207,7 @@ private:
     bool _isWaitHandleProfilingEnabled;
 
     bool _isHeapSnapshotEnabled;
+    bool _isEEHeapEnabled;
     bool _isHeapSnapshotSkipTraversal;
     std::chrono::minutes _heapSnapshotInterval;
     std::chrono::milliseconds _heapSnapshotCheckInterval;

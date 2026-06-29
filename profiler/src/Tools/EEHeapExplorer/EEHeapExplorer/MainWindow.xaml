@@ -1,0 +1,141 @@
+<Window x:Class="EEHeapExplorer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:converters="clr-namespace:EEHeapExplorer.Converters"
+        xmlns:vm="clr-namespace:EEHeapExplorer.ViewModels"
+        Title="EEHeap Explorer"
+        Icon="eeheapCat.ico"
+        Width="900" Height="650"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.InputBindings>
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding LoadCommand}" />
+    </Window.InputBindings>
+
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <converters:ByteSizeConverter x:Key="ByteSizeConverter" />
+
+        <Style x:Key="RightCellStyle" TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Right" />
+        </Style>
+        <Style x:Key="RightHeaderStyle" TargetType="{x:Type FrameworkElement}">
+            <Setter Property="HorizontalAlignment" Value="Right" />
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- Menu bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Load..." Command="{Binding LoadCommand}" InputGestureText="Ctrl+O" />
+                <Separator />
+                <MenuItem Header="E_xit" Command="{Binding ExitCommand}" />
+            </MenuItem>
+            <MenuItem Header="_About" Click="About_Click" />
+        </Menu>
+
+        <!-- Status bar -->
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusText}" />
+            </StatusBarItem>
+        </StatusBar>
+
+        <!-- Main content: top kind summary, bottom detail -->
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2*" MinHeight="120" />
+                <RowDefinition Height="5" />
+                <RowDefinition Height="3*" MinHeight="120" />
+            </Grid.RowDefinitions>
+
+            <!-- Top: kind summary -->
+            <DockPanel Grid.Row="0">
+                <TextBlock DockPanel.Dock="Top"
+                           Margin="8,6,8,2"
+                           FontSize="13"
+                           FontWeight="SemiBold"
+                           Text="Heap kinds (sorted by reserved size)" />
+                <DataGrid x:Name="KindGrid"
+                          ItemsSource="{Binding KindSummaries}"
+                          SelectedItem="{Binding SelectedKind}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          CanUserSortColumns="True"
+                          GridLinesVisibility="None"
+                          AlternatingRowBackground="#F8F8F8"
+                          Margin="4">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Kind" Width="*" Binding="{Binding Kind}" />
+                        <DataGridTextColumn Header="Count" Width="100"
+                                            Binding="{Binding Count, StringFormat={}{0:N0}}"
+                                            ElementStyle="{StaticResource RightCellStyle}"
+                                            HeaderStyle="{StaticResource RightHeaderStyle}"
+                                            SortMemberPath="Count" />
+                        <DataGridTextColumn Header="Reserved" Width="140"
+                                            Binding="{Binding ReservedTotal, Converter={StaticResource ByteSizeConverter}}"
+                                            ElementStyle="{StaticResource RightCellStyle}"
+                                            HeaderStyle="{StaticResource RightHeaderStyle}"
+                                            SortMemberPath="ReservedTotal" />
+                        <DataGridTextColumn Header="Committed" Width="140"
+                                            Binding="{Binding CommittedTotal, Converter={StaticResource ByteSizeConverter}}"
+                                            ElementStyle="{StaticResource RightCellStyle}"
+                                            HeaderStyle="{StaticResource RightHeaderStyle}"
+                                            SortMemberPath="CommittedTotal" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Row="1"
+                          HorizontalAlignment="Stretch"
+                          Background="#CCCCCC"
+                          ShowsPreview="True" />
+
+            <!-- Bottom: detail for the selected kind -->
+            <DockPanel Grid.Row="2">
+                <TextBlock DockPanel.Dock="Top"
+                           Margin="8,6,8,2"
+                           FontSize="13"
+                           FontWeight="SemiBold">
+                    <Run Text="Detail for: " />
+                    <Run Text="{Binding SelectedKind.Kind, Mode=OneWay, FallbackValue='(select a kind)'}" />
+                </TextBlock>
+                <DataGrid x:Name="DetailGrid"
+                          ItemsSource="{Binding DetailRows}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          CanUserSortColumns="True"
+                          GridLinesVisibility="None"
+                          AlternatingRowBackground="#F8F8F8"
+                          Margin="4">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Region / Group" Width="*" Binding="{Binding Label}" />
+                        <DataGridTextColumn Header="State" Width="120" Binding="{Binding State}" />
+                        <DataGridTextColumn Header="Count" Width="80"
+                                            Binding="{Binding Count, StringFormat={}{0:N0}}"
+                                            ElementStyle="{StaticResource RightCellStyle}"
+                                            HeaderStyle="{StaticResource RightHeaderStyle}"
+                                            SortMemberPath="Count" />
+                        <DataGridTextColumn Header="Reserved" Width="140"
+                                            Binding="{Binding Reserved, Converter={StaticResource ByteSizeConverter}}"
+                                            ElementStyle="{StaticResource RightCellStyle}"
+                                            HeaderStyle="{StaticResource RightHeaderStyle}"
+                                            SortMemberPath="Reserved" />
+                        <DataGridTextColumn Header="Committed" Width="140"
+                                            Binding="{Binding Committed, Converter={StaticResource ByteSizeConverter}}"
+                                            ElementStyle="{StaticResource RightCellStyle}"
+                                            HeaderStyle="{StaticResource RightHeaderStyle}"
+                                            SortMemberPath="Committed" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+        </Grid>
+    </DockPanel>
+</Window>
