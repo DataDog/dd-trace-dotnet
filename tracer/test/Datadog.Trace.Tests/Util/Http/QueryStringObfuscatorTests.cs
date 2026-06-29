@@ -154,6 +154,50 @@ public class QueryStringObfuscatorTests
         }
     }
 
+    // Regression guard for a reported production CPU spike on Vault file-download URLs carrying
+    // URL-encoded CJK filenames alongside auth-related parameters. URL-encoding makes the input pure
+    // ASCII ("%EC%84%A4..."), and the default pattern's repetition groups are linear (their
+    // alternatives are mutually exclusive by the second character), so this must NOT exhibit
+    // catastrophic backtracking. A deliberately tight timeout means any future change that
+    // reintroduces super-linear backtracking would time out (Obfuscate returns string.Empty) and
+    // fail the trailing-secret assertion below.
+    [Theory]
+    [InlineData(50)]
+    [InlineData(500)]
+    [InlineData(2000)]
+    public void DefaultPatternDoesNotBacktrackOnUrlEncodedCjk(int filenameRepetitions)
+    {
+        const double tightTimeoutMs = 2000;
+        var encodedCjkFilename = string.Concat(Enumerable.Repeat("%EC%84%A4%EA%B3%84%EC%9E%90%EB%A3%8C", filenameRepetitions));
+        // Mirrors the reported URL shape, with a genuinely redactable secret appended so a successful
+        // (non-timed-out) run is observable in the output.
+        var queryString = $"/Vault/vaultserver.aspx?fileName={encodedCjkFilename}_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&password=hunter2";
+
+        var logger = new Mock<IDatadogLogger>();
+        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(tightTimeoutMs, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
+
+        var result = queryStringObfuscator.Obfuscate(queryString);
+
+        // Completed within the timeout (no RegexMatchTimeoutException, which would yield string.Empty)
+        // and still redacted the trailing secret while leaving the encoded CJK bytes untouched.
+        result.Should().Be($"/Vault/vaultserver.aspx?fileName={encodedCjkFilename}_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&<redacted>");
+    }
+
+    // The reported Vault "ticket" parameter is not actually matched by the default pattern (there is
+    // no "ticket" keyword and the value does not satisfy any keyword suffix), so the URL passes
+    // through unchanged - and, crucially, quickly.
+    [Fact]
+    public void DefaultPatternPassesThroughUnmatchedVaultUrl()
+    {
+        var logger = new Mock<IDatadogLogger>();
+        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
+
+        var url = "/Vault/vaultserver.aspx?fileName=%EC%84%A4%EA%B3%84%EC%9E%90%EB%A3%8C_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&ticket=VAULT_TOKEN";
+        var result = queryStringObfuscator.Obfuscate(url);
+
+        result.Should().Be(url);
+    }
+
     [Fact]
     public void ObfuscateWithCustomPattern()
     {
