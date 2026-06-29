@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -151,9 +152,19 @@ namespace Datadog.Trace.Debugger
                                          .AsInt32(DefaultCodeOriginExitSpanFrames, frames => frames > 0)
                                          .Value;
 
+            ProbeFile = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile).AsString() ?? string.Empty;
+
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
 
-            ProbeFile = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile).AsString() ?? string.Empty;
+            // This is an internal test harness flag, not a registry-backed tracer configuration.
+#pragma warning disable RS0030
+            SnapshotExplorationTestRootPath = Environment.GetEnvironmentVariable(SnapshotExplorationConstants.TestRootPathKey) ?? string.Empty;
+#pragma warning restore RS0030
+            // Snapshot exploration is an internal test mode for the test host only. Child processes may inherit the
+            // root path, but they should keep the normal debugger sinks/pollers/rate limits.
+            IsSnapshotExplorationTestEnabled =
+                !StringUtil.IsNullOrWhiteSpace(SnapshotExplorationTestRootPath) &&
+                SnapshotExplorationConstants.IsRunningInTestHost();
         }
 
         internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
@@ -201,6 +212,15 @@ namespace Datadog.Trace.Debugger
         public int CodeOriginMaxUserFrames { get; }
 
         public string ProbeFile { get; }
+
+        public bool IsSnapshotExplorationTestEnabled { get; }
+
+        public string SnapshotExplorationTestRootPath { get; }
+
+        public string SnapshotExplorationTestReportFolderPath =>
+            StringUtil.IsNullOrWhiteSpace(SnapshotExplorationTestRootPath)
+                ? string.Empty
+                : Path.Combine(SnapshotExplorationTestRootPath, "SnapshotExplorationTestReport");
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {

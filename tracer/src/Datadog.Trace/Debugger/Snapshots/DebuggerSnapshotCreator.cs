@@ -353,7 +353,6 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void EndEntry()
         {
-            // Do not rely on "hasArgumentsOrLocals" heuristics here.
             // Some instrumentations intentionally skip capturing args/locals (e.g. methods with byref-like args),
             // and closing a non-open container corrupts the JsonWriter state ("No token to close").
             CloseLocalsOrArgsIfOpen();

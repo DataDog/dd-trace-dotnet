@@ -93,6 +93,19 @@ namespace Datadog.Trace.Debugger.RateLimiting
             }
         }
 
+        public void SetUnlimitedRate()
+        {
+            lock (_lifetimeLock)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                AdaptiveSamplerLifetime.Replace(ref _snapshotSampler, NopAdaptiveSampler.Instance);
+            }
+        }
+
         public void ResetRate()
         {
             lock (_lifetimeLock)

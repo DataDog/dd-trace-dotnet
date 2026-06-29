@@ -61,6 +61,7 @@ public class ConfigurationTests
                 "_DD_ROOT_DOTNET_SESSION_ID",
                 "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH",
                 "DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH",
+                "DD_INTERNAL_SNAPSHOT_EXPLORATION_TEST_ROOT_PATH",
                 "DD_DOTNET_TRACER_HOME",
                 "DD_INSTRUMENTATION_INSTALL_ID",
                 "DD_INSTRUMENTATION_INSTALL_TYPE",

@@ -325,6 +325,10 @@ public class ConfigurationUpdaterTests
             LastRate = samplesPerSecond;
         }
 
+        public void SetUnlimitedRate()
+        {
+        }
+
         public void ResetRate()
         {
             ResetRateCallCount++;

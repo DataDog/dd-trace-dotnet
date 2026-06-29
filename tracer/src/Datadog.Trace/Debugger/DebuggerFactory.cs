@@ -33,14 +33,22 @@ internal sealed class DebuggerFactory
         var globalRateLimiter = DebuggerGlobalRateLimiter.Instance;
         var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
         var snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
-        var logSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+        // Snapshot exploration tests write directly to a per-process CSV file, so both
+        // uploaders must share the same sink/report writer instead of opening it twice.
+        var logSink = debuggerSettings.IsSnapshotExplorationTestEnabled
+                          ? snapshotSink
+                          : SnapshotSink.Create(debuggerSettings, snapshotSlicer);
         var diagnosticsSink = DiagnosticsSink.Create(serviceNameProvider, debuggerSettings);
 
         var snapshotUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), snapshotSink);
         var logUploader = CreateLogUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, false), logSink);
-        var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
+        IDebuggerUploader diagnosticsUploader = debuggerSettings.IsSnapshotExplorationTestEnabled
+                                                    ? NoOpDebuggerUploader.Instance
+                                                    : CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
-        var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
+        IProbeStatusPoller probeStatusPoller = debuggerSettings.IsSnapshotExplorationTestEnabled
+                                                   ? new SnapshotExplorationProbeStatusPoller(debuggerSettings.SnapshotExplorationTestReportFolderPath)
+                                                   : ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion, debuggerSettings.MaxProbesPerType, globalRateLimiter);
         var memoryPressureMonitor = new MemoryPressureMonitor(MemoryPressureConfig.Default);
 
@@ -83,7 +91,7 @@ internal sealed class DebuggerFactory
         return statsd;
     }
 
-    private static SnapshotUploader CreateSnapshotUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotSink)
+    private static SnapshotUploader CreateSnapshotUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, ISnapshotSink snapshotSink)
     {
         var snapshotBatchUploadApi = DebuggerUploadApiFactory.CreateSnapshotUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
         var snapshotBatchUploader = BatchUploader.Create(snapshotBatchUploadApi);
@@ -93,7 +101,7 @@ internal sealed class DebuggerFactory
         return debuggerSink;
     }
 
-    private static SnapshotUploader CreateLogUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, SnapshotSink snapshotSink)
+    private static SnapshotUploader CreateLogUploader(IDiscoveryService discoveryService, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IApiRequestFactory apiFactory, ISnapshotSink snapshotSink)
     {
         var logUploaderApi = DebuggerUploadApiFactory.CreateLogUploadApi(apiFactory, discoveryService, gitMetadataTagsProvider);
         var logBatchUploader = BatchUploader.Create(logUploaderApi);
@@ -115,6 +123,11 @@ internal sealed class DebuggerFactory
 
     internal static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, Func<string> serviceNameProvider, TracerSettings tracerSettings, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
+        if (settings.IsSnapshotExplorationTestEnabled)
+        {
+            return NoOpSymbolUploader.Instance;
+        }
+
         var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, settings.SymbolDatabaseCompressionEnabled);
         var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, tracerSettings, settings, serviceNameProvider);
         return symbolsUploader;
