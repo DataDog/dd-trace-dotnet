@@ -10,8 +10,10 @@ instruction_files:
   - .claude/skills/bump-libdatadog/SKILL.md   # also gate the libdatadog-bump skill
 
 # Testing-level presets (pick one via --level / LLMVAL_LEVEL). Explicit --case/--max-cases/--runs override.
-# Keep `minimum` as the default during bring-up: cheap, fast, and meaningful — it runs the logging-terminology
-# case (exercises AGENTS.md) and the libdatadog-bump case (exercises the gated skill), the two known regressions.
+# TESTING: `minimum` (the 2 known cases) keeps test runs cheap while we validate the pipeline. For production,
+# switch to `full` (validate the whole relevant suite — `files:` targeting scopes it to ~16 cases on an
+# AGENTS.md PR) or a curated `gate` preset; `minimum`/`medium` also serve as a fallback if a full run ever
+# approaches the job's 2h timeout.
 default_level: minimum
 presets:
   minimum:                                       # the 2 known-regression cases — one per monitored file. The gating default.
