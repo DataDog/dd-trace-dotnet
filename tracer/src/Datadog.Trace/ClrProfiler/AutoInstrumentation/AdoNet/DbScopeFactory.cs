@@ -56,18 +56,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 VulnerabilitiesModule.OnSqlQuery(commandText, integrationId);
 
                 tags = perTraceSettings.Schema.Database.CreateSqlTags();
-                tags.DbType = dbType;
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
-                tags.DbName = tagsFromConnectionString.DbName;
-                tags.DbUser = tagsFromConnectionString.DbUser;
-                tags.OutHost = tagsFromConnectionString.OutHost;
-
                 tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
-                perTraceSettings.Schema.RemapPeerService(tags);
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
                 scope.Span.ResourceName = commandText;
                 scope.Span.Type = SpanTypes.Sql;
+
+                if (tracer.Settings.OpenTelemetrySemanticsEnabled)
+                {
+                    DbOtelHelper.SetDatabaseAttributes(
+                        span: scope.Span,
+                        dbType: dbType,
+                        dbName: tagsFromConnectionString.DbName,
+                        outHost: tagsFromConnectionString.OutHost,
+                        port: tagsFromConnectionString.Port,
+                        commandText: commandText,
+                        peerServiceEnabled: tags is SqlV1Tags);
+                }
+                else
+                {
+                    tags.DbType = dbType;
+                    tags.DbName = tagsFromConnectionString.DbName;
+                    tags.DbUser = tagsFromConnectionString.DbUser;
+                    tags.OutHost = tagsFromConnectionString.OutHost;
+                    perTraceSettings.Schema.RemapPeerService(tags);
+                }
+
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
             catch (Exception ex) when (ex is not BlockException)
@@ -136,9 +151,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
             static bool HasDbType(Span span, string dbType)
             {
-                if (span.Tags is SqlTags sqlTags)
+                if (span.Tags is SqlTags sqlTags && sqlTags.DbType is not null)
                 {
                     return sqlTags.DbType == dbType;
+                }
+
+                // OTel mode: db.type not set; check db.system.name instead
+                var systemName = span.GetTag("db.system.name");
+                if (systemName is not null)
+                {
+                    return DbOtelHelper.GetSystemName(dbType) == systemName;
                 }
 
                 return span.GetTag(Tags.DbType) == dbType;

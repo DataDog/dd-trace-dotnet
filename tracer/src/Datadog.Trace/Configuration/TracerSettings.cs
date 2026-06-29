@@ -115,6 +115,10 @@ namespace Datadog.Trace.Configuration
                                        .AsBoolResult()
                                        .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
 
+            OpenTelemetrySemanticsEnabled = config
+                                                    .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetrySemanticsEnabled)
+                                                    .AsBool(defaultValue: false);
+
             PeerServiceTagsEnabled = config
                .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
                .AsBool(defaultValue: false);
@@ -788,6 +792,13 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
         internal bool ApmTracingEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether OpenTelemetry semantics mode is enabled.
+        /// Default is <c>false</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetrySemanticsEnabled"/>
+        internal bool OpenTelemetrySemanticsEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether OpenTelemetry Metrics are enabled.

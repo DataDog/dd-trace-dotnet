@@ -81,58 +81,62 @@ internal static class OtlpMapper
                tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
     }
 
-    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit)
+    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit, bool openTelemetrySemanticsEnabled)
     {
         return EmitAttributesFromSpan(
             in spanModel,
             limit,
+            openTelemetrySemanticsEnabled,
             ref writeKeyValue,
             static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue));
     }
 
-    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, ref TState state, KeyValueWriter<TState> writeKeyValue)
+    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, bool openTelemetrySemanticsEnabled, ref TState state, KeyValueWriter<TState> writeKeyValue)
     {
         int count = 0;
         int droppedAttributesCount = 0;
 
-        if (count < limit)
+        if (!openTelemetrySemanticsEnabled)
         {
-            writeKeyValue(ref state, new KeyValue("service.name", spanModel.Span.ServiceName));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
-        }
+            if (count < limit)
+            {
+                writeKeyValue(ref state, new KeyValue("service.name", spanModel.Span.ServiceName));
+                count++;
+            }
+            else
+            {
+                droppedAttributesCount++;
+            }
 
-        if (count < limit)
-        {
-            writeKeyValue(ref state, new KeyValue("operation.name", spanModel.Span.OperationName));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
-        }
+            if (count < limit)
+            {
+                writeKeyValue(ref state, new KeyValue("operation.name", spanModel.Span.OperationName));
+                count++;
+            }
+            else
+            {
+                droppedAttributesCount++;
+            }
 
-        if (count < limit)
-        {
-            writeKeyValue(ref state, new KeyValue("resource.name", spanModel.Span.ResourceName));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
-        }
+            if (count < limit)
+            {
+                writeKeyValue(ref state, new KeyValue("resource.name", spanModel.Span.ResourceName));
+                count++;
+            }
+            else
+            {
+                droppedAttributesCount++;
+            }
 
-        if (count < limit)
-        {
-            writeKeyValue(ref state, new KeyValue("span.type", spanModel.Span.Type));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
+            if (count < limit)
+            {
+                writeKeyValue(ref state, new KeyValue("span.type", spanModel.Span.Type));
+                count++;
+            }
+            else
+            {
+                droppedAttributesCount++;
+            }
         }
 
         // Write trace tags
@@ -195,7 +199,7 @@ internal static class OtlpMapper
             tagProcessors = tracer.TracerManager?.TagProcessors;
         }
 
-        var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit);
+        var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
         spanModel.Span.Tags.EnumerateTags(ref tagWriter);
         count = tagWriter.Count;
         droppedAttributesCount += tagWriter.DroppedCount;
@@ -203,7 +207,7 @@ internal static class OtlpMapper
 
         // Write span metrics
         // Note: I could have done this earlier but I wanted to simulate the same behavior as the MessagePack formatter.
-        var metricsWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit);
+        var metricsWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
         spanModel.Span.Tags.EnumerateMetrics(ref metricsWriter);
         count = metricsWriter.Count;
         droppedAttributesCount += metricsWriter.DroppedCount;
@@ -223,18 +227,20 @@ internal static class OtlpMapper
         private readonly KeyValueWriter<TState> _writeKeyValue;
         private readonly ITagProcessor[]? _tagProcessors;
         private readonly int _limit;
+        private readonly bool _openTelemetrySemanticsEnabled;
 
         public TState State;
         public int Count;
         public int DroppedCount;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal TagWriter(TState state, KeyValueWriter<TState> writeKeyValue, ITagProcessor[]? tagProcessors, int count, int limit)
+        internal TagWriter(TState state, KeyValueWriter<TState> writeKeyValue, ITagProcessor[]? tagProcessors, int count, int limit, bool openTelemetrySemanticsEnabled = false)
         {
             State = state;
             _writeKeyValue = writeKeyValue;
             _tagProcessors = tagProcessors;
             _limit = limit;
+            _openTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
 
             Count = count;
             DroppedCount = 0;
@@ -256,6 +262,19 @@ internal static class OtlpMapper
                 return;
             }
 
+            // When OTel trace compatibility is enabled, suppress tags that would duplicate
+            // OTLP-native fields or Datadog-specific attributes not relevant to OTel consumers.
+            if (_openTelemetrySemanticsEnabled
+                && (key == Tags.ErrorMsg
+                    || key == "otel.status_code"
+                    || key == "span.kind"
+                    || key == "service.name"
+                    || key == "service.version"
+                    || key == "service.instance.id"))
+            {
+                return;
+            }
+
             if (Count < _limit)
             {
                 if (_tagProcessors is not null)
@@ -266,7 +285,18 @@ internal static class OtlpMapper
                     }
                 }
 
-                _writeKeyValue(ref State, new KeyValue(key, value));
+                // Per OTel semantic conventions, these attributes must be int_value, not string_value.
+                // They are stored as strings internally; parse and box as long so WriteAnyValue emits AnyValue.int_value.
+                if ((key == "server.port" || key == "http.response.status_code")
+                    && long.TryParse(value, out var longValue))
+                {
+                    _writeKeyValue(ref State, new KeyValue(key, longValue));
+                }
+                else
+                {
+                    _writeKeyValue(ref State, new KeyValue(key, value));
+                }
+
                 Count++;
             }
             else

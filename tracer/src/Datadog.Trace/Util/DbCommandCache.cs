@@ -75,7 +75,8 @@ namespace Datadog.Trace.Util
                 return new TagsCacheItem(
                     dbName: GetConnectionStringValue(builder, "Database", "Initial Catalog", "InitialCatalog"),
                     dbUser: GetConnectionStringValue(builder, "User ID", "UserID", "User", "Uid", "Username", "User Name"),
-                    outHost: GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host", "Hostname", "Host Name"));
+                    outHost: GetConnectionStringValue(builder, "Server", "Data Source", "DataSource", "Network Address", "NetworkAddress", "Address", "Addr", "Host", "Hostname", "Host Name"),
+                    port: GetConnectionStringValue(builder, "Port", "Port Number"));
             }
             catch (Exception)
             {
@@ -105,12 +106,14 @@ namespace Datadog.Trace.Util
             public readonly string? DbName;
             public readonly string? DbUser;
             public readonly string? OutHost;
+            public readonly string? Port;
 
-            public TagsCacheItem(string? dbName, string? dbUser, string? outHost)
+            public TagsCacheItem(string? dbName, string? dbUser, string? outHost, string? port)
             {
                 DbName = dbName;
                 DbUser = dbUser;
                 OutHost = outHost;
+                Port = port;
             }
         }
     }

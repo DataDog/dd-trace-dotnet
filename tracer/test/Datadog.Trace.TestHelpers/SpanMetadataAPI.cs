@@ -49,6 +49,7 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsAspNetCore(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
             metadataSchemaVersion switch
             {
+                "otel" => span.IsAspNetCoreOTel(excludeTags),
                 "v1" => span.IsAspNetCoreV1(excludeTags),
                 _ => span.IsAspNetCoreV0(excludeTags),
             };
@@ -56,6 +57,7 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsAspNetCoreMvc(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "otel" => span.IsAspNetCoreMvcOTel(),
                 "v1" => span.IsAspNetCoreMvcV1(),
                 _ => span.IsAspNetCoreMvcV0(),
             };
@@ -212,6 +214,7 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsHttpMessageHandler(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "otel" => span.IsHttpClientRequestOTel(),
                 "v1" => span.IsHttpMessageHandlerV1(),
                 _ => span.IsHttpMessageHandlerV0(),
             };
@@ -262,6 +265,7 @@ namespace Datadog.Trace.TestHelpers
             metadataSchemaVersion switch
             {
                 "v1" => span.IsMySqlV1(),
+                "otel" => span.IsMySqlOTel(),
                 _ => span.IsMySqlV0(),
             };
 
@@ -269,6 +273,7 @@ namespace Datadog.Trace.TestHelpers
             metadataSchemaVersion switch
             {
                 "v1" => span.IsNpgsqlV1(),
+                "otel" => span.IsNpgsqlOTel(),
                 _ => span.IsNpgsqlV0(),
             };
 
@@ -283,6 +288,7 @@ namespace Datadog.Trace.TestHelpers
             metadataSchemaVersion switch
             {
                 "v1" => span.IsOracleV1(),
+                "otel" => span.IsOracleOTel(),
                 _ => span.IsOracleV0(),
             };
 
@@ -369,6 +375,7 @@ namespace Datadog.Trace.TestHelpers
             metadataSchemaVersion switch
             {
                 "v1" => span.IsSqliteV1(),
+                "otel" => span.IsSqliteOTel(),
                 _ => span.IsSqliteV0(),
             };
 
@@ -376,6 +383,7 @@ namespace Datadog.Trace.TestHelpers
             metadataSchemaVersion switch
             {
                 "v1" => span.IsSqlClientV1(),
+                "otel" => span.IsSqlClientOTel(),
                 _ => span.IsSqlClientV0(),
             };
 
@@ -389,6 +397,7 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsWebRequest(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "otel" => span.IsHttpClientRequestOTel(),
                 "v1" => span.IsWebRequestV1(),
                 _ => span.IsWebRequestV0(),
             };
