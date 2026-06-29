@@ -4,6 +4,7 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
@@ -16,6 +17,9 @@
 
 #include "cor.h"
 #include "corprof.h"
+
+class CounterMetric;
+class MetricsRegistry;
 
 // Represents a single contiguous code range
 struct CodeRange {
@@ -73,7 +77,7 @@ class ManagedCodeCache {
 public:
     static constexpr FunctionID InvalidFunctionId = -1;
 
-    explicit ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo);
+    ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, MetricsRegistry& metricsRegistry);
     ~ManagedCodeCache();
 
     // Signal-safe lookup methods (no allocation)
@@ -167,6 +171,10 @@ private:
     
     // Profiler interface (ICorProfilerInfo4 is available in .NET Framework 4.5+)
     ICorProfilerInfo4* _profilerInfo;
+
+    // Counts how many times IsManaged failed to acquire a lock within the timeout
+    // (signal-handler read path backing off instead of blocking).
+    std::shared_ptr<CounterMetric> _lockFailureMetric;
 
     std::optional<FunctionID> GetFunctionIdImpl(std::uintptr_t ip) const noexcept;
     std::optional<bool> IsCodeInR2RModule(std::uintptr_t ip, bool signalSafe) const noexcept;

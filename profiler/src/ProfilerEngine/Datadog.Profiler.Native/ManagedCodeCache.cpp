@@ -4,6 +4,8 @@
 #include "ManagedCodeCache.h"
 
 #include "Configuration.h"
+#include "CounterMetric.h"
+#include "MetricsRegistry.h"
 
 #include <algorithm>
 #include <chrono>
@@ -88,8 +90,9 @@ struct IMAGE_NT_HEADERS_GENERIC
     WORD    Magic;
 };
 
-ManagedCodeCache::ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo)
-    : _profilerInfo(pProfilerInfo)
+ManagedCodeCache::ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, MetricsRegistry& metricsRegistry)
+    : _profilerInfo(pProfilerInfo),
+      _lockFailureMetric(metricsRegistry.GetOrRegister<CounterMetric>("dotnet_managed_code_cache_lock_failures"))
 {
 }
 
@@ -239,7 +242,14 @@ std::optional<bool> ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcep
     // Best effort to identify an instruction pointer. When called from a signal
     // handler, IsManagedImpl uses a time-based lock acquire (bounded wait) and
     // returns std::nullopt if a lock cannot be acquired within the timeout.
-    return IsManagedImpl(ip);
+    auto result = IsManagedImpl(ip);
+    if (!result.has_value())
+    {
+        // Lock could not be acquired within the timeout: record it. Incr() is an
+        // atomic increment, so this is safe to call from a signal handler.
+        _lockFailureMetric->Incr();
+    }
+    return result;
 }
 
 std::optional<bool> ManagedCodeCache::IsManagedImpl(std::uintptr_t ip) const noexcept
