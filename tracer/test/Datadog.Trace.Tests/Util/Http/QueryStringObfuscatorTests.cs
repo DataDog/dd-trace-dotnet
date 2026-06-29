@@ -129,6 +129,31 @@ public class QueryStringObfuscatorTests
         }
     }
 
+    // Same culture-folding root cause, exercised through a customer-style custom pattern over a
+    // query string carrying non-ASCII (Korean) secret values. Under a Turkic culture the upper-case
+    // keys containing 'I' (TICKET, EMPID) only match when 'I' folds to 'i', so without culture
+    // invariance their Korean secret values leak unredacted. (The pattern itself is linear - this is
+    // a correctness, not a backtracking, problem.)
+    [Fact]
+    public void ObfuscatesNonAsciiValuesWithCustomPatternIndependentlyOfCulture()
+    {
+        var originalCulture = Thread.CurrentThread.CurrentCulture;
+        try
+        {
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("tr-TR");
+
+            var logger = new Mock<IDatadogLogger>();
+            var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, @"(?i)(?<![a-zA-Z])(?:ticket|user|empid)=[^&]+", logger.Object);
+
+            var result = queryStringObfuscator.Obfuscate("TICKET=비밀번호&USER=관리자&EMPID=한국&x=공개");
+            result.Should().Be("<redacted>&<redacted>&<redacted>&x=공개");
+        }
+        finally
+        {
+            Thread.CurrentThread.CurrentCulture = originalCulture;
+        }
+    }
+
     [Fact]
     public void ObfuscateWithCustomPattern()
     {
