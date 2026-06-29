@@ -95,12 +95,18 @@ internal sealed partial class SecurityReporter
     {
         if (_span.IsAppsecEvent())
         {
-            AddResponseHeaderTags();
-            return;
+            var route = _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
+            if (route != null)
+            {
+                _span.SetTag(Tags.HttpEndpoint, route);
+            }
         }
 
-        var headers = CanAccessHeaders ? _httpTransport.GetResponseHeaders() : new NameValueHeadersCollection(new NameValueCollection());
-        AddHeaderTags(_span, headers, AlwaysResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
+        if (CanAccessHeaders)
+        {
+            var headers = _span.IsAppsecEvent() ? ResponseHeaders : AlwaysResponseHeaders;
+            AddHeaderTags(_span, _httpTransport.GetResponseHeaders(), headers, SpanContextPropagator.HttpResponseHeadersTagPrefix);
+        }
     }
 
     private static void AddHeaderTags(Span span, IHeadersCollection headers, Dictionary<string, string?> headersToCollect, string prefix) => Tracer.Instance.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers, headersToCollect, defaultTagPrefix: prefix);
@@ -344,17 +350,15 @@ internal sealed partial class SecurityReporter
 
     internal void AddResponseHeaderTags()
     {
-        TryAddEndPoint();
-        var headers = CanAccessHeaders ? _httpTransport.GetResponseHeaders() : new NameValueHeadersCollection(new NameValueCollection());
-        AddHeaderTags(_span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
-    }
-
-    private void TryAddEndPoint()
-    {
         var route = _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
         if (route != null)
         {
             _span.SetTag(Tags.HttpEndpoint, route);
+        }
+
+        if (CanAccessHeaders)
+        {
+            AddHeaderTags(_span, _httpTransport.GetResponseHeaders(), ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
     }
 }
