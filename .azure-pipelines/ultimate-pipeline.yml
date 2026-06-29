@@ -2501,6 +2501,9 @@ stages:
         net9:
           publishTargetFramework: "net9.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9"
+        net10:
+          publishTargetFramework: "net10.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:10"
     pool:
       name: $(linuxX64Pool)
 

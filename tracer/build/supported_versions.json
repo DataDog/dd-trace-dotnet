@@ -829,14 +829,14 @@
     "integrationName": "IbmMq",
     "assemblyName": "amqmdnetstd",
     "minAssemblyVersionInclusive": "9.0.0",
-    "maxAssemblyVersionInclusive": "9.65535.65535",
+    "maxAssemblyVersionInclusive": "10.65535.65535",
     "packages": [
       {
         "name": "IBMMQDotnetClient",
         "minVersionAvailableInclusive": "9.1.4",
         "minVersionSupportedInclusive": "9.1.4",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "9.4.5.1",
+        "maxVersionSupportedInclusive": "10.0.0",
         "maxVersionAvailableInclusive": "10.0.0",
         "maxVersionTestedInclusive": null
       }
