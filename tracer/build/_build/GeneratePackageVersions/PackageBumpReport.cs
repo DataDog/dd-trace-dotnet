@@ -64,8 +64,6 @@ public class PackageBumpReport
         {
             sb.AppendLine("## Package Version Updates");
             sb.AppendLine();
-            sb.AppendLine("Bold entries indicate **major**-version bumps. `(new)` means no previous version existed.");
-            sb.AppendLine();
             sb.AppendLine("| Package | Integration | Previous | New | Published |");
             sb.AppendLine("|---------|-------------|----------|-----|-----------|");
 
@@ -97,11 +95,11 @@ public class PackageBumpReport
         {
             sb.AppendLine("## Package Version Cooldown Report");
             sb.AppendLine();
-            sb.AppendLine($"The following versions were published less than **{_cooldownDays} days** ago and have been overridden.");
+            sb.AppendLine($"The following versions were published less than **{_cooldownDays} days** ago and have been ignored.");
             sb.AppendLine("These require manual review before inclusion.");
             sb.AppendLine();
-            sb.AppendLine("| Package | Integration | Overridden Version | Published | Age (days) |");
-            sb.AppendLine("|---------|-------------|--------------------|-----------|------------|");
+            sb.AppendLine("| Package | Integration | Version Kept | Ignored Version | Published | Age (days) |");
+            sb.AppendLine("|---------|-------------|--------------|-----------------|-----------|------------|");
 
             foreach (var entry in _cooldownEntries)
             {
@@ -109,8 +107,9 @@ public class PackageBumpReport
                 var age = entry.PublishedDate.HasValue
                     ? ((int)(DateTimeOffset.UtcNow - entry.PublishedDate.Value).TotalDays).ToString()
                     : "?";
+                var kept = entry.KeptVersion ?? "(none)";
 
-                sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {entry.OverriddenVersion} | {published} | {age} |");
+                sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {kept} | {entry.IgnoredVersion} | {published} | {age} |");
             }
         }
 
@@ -151,7 +150,8 @@ public class PackageBumpReport
     public record CooldownEntry(
         string PackageName,
         string IntegrationName,
-        string OverriddenVersion,
+        string KeptVersion,
+        string IgnoredVersion,
         DateTimeOffset? PublishedDate);
 
     public record MajorAvailableEntry(

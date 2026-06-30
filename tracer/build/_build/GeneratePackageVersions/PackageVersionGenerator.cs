@@ -276,6 +276,7 @@ namespace GeneratePackageVersions
         {
             var previouslyTested = GetPreviouslyTestedVersions(entry.IntegrationName);
             var result = new List<VersionWithDate>();
+            var ignored = new List<VersionWithDate>();
 
             foreach (var v in versions)
             {
@@ -287,16 +288,26 @@ namespace GeneratePackageVersions
 
                 if (publishedTooRecently && !atOrBelowPreviousMax)
                 {
-                    BumpReport.AddCooldown(new PackageBumpReport.CooldownEntry(
-                        entry.NugetPackageSearchName,
-                        entry.IntegrationName,
-                        v.Version,
-                        v.Published));
+                    ignored.Add(v);
                 }
                 else
                 {
                     result.Add(v);
                 }
+            }
+
+            var keptVersion = result.Count > 0
+                ? result.Select(v => new Version(v.Version)).Max().ToString()
+                : null;
+
+            foreach (var v in ignored)
+            {
+                BumpReport.AddCooldown(new PackageBumpReport.CooldownEntry(
+                    entry.NugetPackageSearchName,
+                    entry.IntegrationName,
+                    keptVersion,
+                    v.Version,
+                    v.Published));
             }
 
             return result;

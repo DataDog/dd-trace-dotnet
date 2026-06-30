@@ -344,9 +344,10 @@ partial class Build
                foreach (var entry in versionGenerator.BumpReport.CooldownEntries)
                {
                    Logger.Warning(
-                       "  {Package} {Version} overridden (published {Date})",
+                       "  {Package} {IgnoredVersion} ignored, keeping {KeptVersion} (published {Date})",
                        entry.PackageName,
-                       entry.OverriddenVersion,
+                       entry.IgnoredVersion,
+                       entry.KeptVersion ?? "(none)",
                        entry.PublishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "unknown");
                }
            }
