@@ -1260,25 +1260,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
     auto new_internal_end = std::remove(managedInternalModules_.begin(), managedInternalModules_.end(), module_id);
     managedInternalModules_.erase(new_internal_end, managedInternalModules_.end());
 
-    // If the domain-neutral Datadog.Trace module is unloading, clear the cached id. This is an atomic
-    // scalar, so it does not need (and must not take) the loaded-app-domains lock here.
+    // Clear the cached domain-neutral Datadog.Trace.dll module id if this is it.
     if (managed_profiler_domain_neutral_module_id == module_id)
     {
         managed_profiler_domain_neutral_module_id = 0;
     }
 
-    // Clear the loaded-assembly marker for any AppDomain whose recorded Datadog.Trace.dll manifest module is
-    // this module. A Datadog.Trace.dll module can unload independently of an AppDomain shutdown (e.g. a
-    // collectible AssemblyLoadContext), in which case AppDomainShutdownFinished never fires for it; leaving a
-    // stale entry would make ProfilerAssemblyIsLoadedIntoAppDomain() keep returning true and
-    // GetProfilerAssemblyModuleId() hand back an unloaded ModuleID. The scan is O(AppDomains-with-tracer)
-    // (tiny) and race-free: the map is Synchronized and we hold its lock for the duration of the scan.
-    //
-    // Pre-existing limitation (not introduced or worsened here): managed_profiler_loaded_app_domains records a
-    // single ModuleID per AppDomainID (AssemblyLoadFinished uses first-wins insert), so it cannot represent
-    // multiple Datadog.Trace.dll instances sharing one AppDomain (e.g. several AssemblyLoadContexts on .NET
-    // Core). Modeling that requires a per-AppDomain set plus resolving GetProfilerAssemblyModuleId's single-
-    // module contract (Dataflow::GetAspectsModule depends on it); tracked as separate work.
+    // Datadog.Trace.dll can unload without AppDomainShutdownFinished, such as from a collectible
+    // AssemblyLoadContext. Remove entries pointing at this module without querying CLR metadata.
+    // Pre-existing limitation: the map tracks one profiler module per AppDomain.
     {
         auto loadedAppDomains = managed_profiler_loaded_app_domains.Get();
         auto& loadedAppDomainsMap = loadedAppDomains.Ref();
@@ -1295,9 +1285,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
         }
     }
 
-    // We do not call ICorProfilerInfo::GetModuleInfo2() here. During ModuleUnloadStarted the CLR is already
-    // unloading this module, and querying module flags/assembly information can hit partially torn-down CLR
-    // state and fault fatally inside the runtime.
+    // Do not query CLR metadata here; ModuleUnloadStarted can run after module state is partially torn down.
     DBG("ModuleUnloadStarted: ", module_id);
 
     return S_OK;
@@ -1682,14 +1670,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
         return S_OK;
     }
 
-    // On .NET Framework a failed AppDomain unload (e.g. CannotUnloadAppDomainException) can leave the
-    // AppDomain alive with Datadog.Trace.dll still loaded and methods still being JIT'd. Tearing down any
-    // AppDomain-scoped state in that case would leave a live domain internally inconsistent: IAST would lose
-    // its per-domain state while instrumentation keeps running, the loaded-assembly marker would disappear so
-    // instrumentation silently stops, and the first-JIT marker would be lost causing duplicate startup-hook
-    // injection. So we only clean up AppDomain-scoped state when the unload actually succeeded; on failure we
-    // leave it all intact. A stale entry for a genuinely-dead domain is a bounded, benign leak (the
-    // AppDomainID is never reused), which is the safer trade compared to corrupting a still-live domain.
+    // A failed AppDomain unload can leave the domain alive, so preserve per-domain state unless unload succeeds.
     if (FAILED(hrStatus))
     {
         DBG("AppDomainShutdownFinished: AppDomain: ", appDomainId,

@@ -62,12 +62,9 @@ private:
     bool corlib_module_loaded = false;
     ModuleID corlib_module_id = 0;
     AppDomainID corlib_app_domain_id = 0;
-    // Scalar cached id; atomic because it is written from AssemblyLoadFinished / ModuleUnloadStarted and
-    // read from the JIT/ReJIT rewrite paths, which run on different CLR-callback threads.
+    // Written and read from different CLR callback threads.
     std::atomic<ModuleID> managed_profiler_domain_neutral_module_id{0};
-    // Guarded by its own dedicated lock (NOT module_ids). It is accessed from AssemblyLoadFinished,
-    // AppDomainShutdownFinished, ProfilerAssemblyIsLoadedIntoAppDomain and GetProfilerAssemblyModuleId,
-    // which run on different threads and do not all hold module_ids, so module_ids cannot serialize it.
+    // Uses a dedicated lock because these accesses do not all happen under module_ids.
     Synchronized<std::unordered_map<AppDomainID, ModuleID>> managed_profiler_loaded_app_domains;
     std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
     bool is_desktop_iis = false;
