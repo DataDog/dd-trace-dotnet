@@ -1438,6 +1438,27 @@ TEST_F(ConfigurationTest, CheckHeapSnapshotIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsHeapSnapshotEnabled(), false);
 }
 
+TEST_F(ConfigurationTest, CheckEEHeapIsDisabledByDefault)
+{
+    unsetenv(EnvironmentVariables::EEHeapEnabled);
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsEEHeapEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckEEHeapIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::EEHeapEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsEEHeapEnabled(), true);
+}
+
+TEST_F(ConfigurationTest, CheckEEHeapIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::EEHeapEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsEEHeapEnabled(), false);
+}
+
 TEST_F(ConfigurationTest, CheckHeapSnapshotSkipTraversalIsDisabledByDefault)
 {
     auto configuration = Configuration{};

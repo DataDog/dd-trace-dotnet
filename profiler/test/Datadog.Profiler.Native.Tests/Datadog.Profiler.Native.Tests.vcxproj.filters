@@ -24,6 +24,24 @@
     <ClCompile Include="HResultConverterTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="CdacDescriptorTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="CdacGCContractTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="CommittedMemoryProbeTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="DacNativeHeapEnumeratorTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="EEHeapReporterTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="InProcessMemoryReaderTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="IMetricsSenderFactoryTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
@@ -244,6 +262,9 @@
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="RuntimeInfoHelper.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="EEHeapTestHelpers.h">
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.h" />
