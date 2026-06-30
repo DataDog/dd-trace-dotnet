@@ -18,9 +18,11 @@ default_level: minimum
 presets:
   minimum:                                       # the 2 known-regression cases — one per monitored file. The gating default.
     cases: ["dotnet-tracer-logging-terminology-004", "dotnet-tracer-bump-libdatadog-013"]
-    runs: 4                                       # 4 runs = 8 pairwise comparisons. runs=3 was too noisy (same inputs
-                                                  # swung 0% -> 33%); 4 keeps a clear regression confidently below the
-                                                  # 0.55 CI guard (so it FAILs) while trimming ~1/3 of the cost vs 6.
+    runs: 8                                       # TESTING: raised 4 -> 8 (16 pairwise comparisons) to collect more
+                                                  # data on judge/answer-sampling noise — a no-op change swung 50% one
+                                                  # run and 87.5% (+7.7 quality) the next at runs=4. Now cheap: with
+                                                  # per-phase cache priming the extra runs are mostly 0.1x cache reads.
+                                                  # Revisit the gating default once we see how tight the CI gets at 8.
   medium:                                        # first 4 cases (incl. the logging regression). The PR #8774 run.
     max_cases: 4
     runs: 3
