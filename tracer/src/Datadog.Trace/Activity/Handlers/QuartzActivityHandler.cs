@@ -62,7 +62,7 @@ namespace Datadog.Trace.Activity.Handlers
                     EnhanceActivityMetadata(activity5);
                 }
 
-                OtlpHelpers.UpdateSpanFromActivity(activity, span);
+                OtlpHelpers.UpdateSpanFromActivity(activity, span, Tracer.Instance.Settings.OpenTelemetrySemanticsEnabled);
 
                 span.Finish(activity.StartTimeUtc.Add(activity.Duration));
                 activityMapping.Scope.Close();

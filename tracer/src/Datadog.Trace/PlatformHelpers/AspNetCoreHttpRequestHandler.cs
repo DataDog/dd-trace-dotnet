@@ -233,7 +233,7 @@ namespace Datadog.Trace.PlatformHelpers
                 // Tracer.Instance.ActiveScope, but if a customer is not disposing a span somewhere,
                 // that will not necessarily be true, so make sure you use the RequestTrackingFeature.
                 var span = rootScope.Span;
-                CopyAspNetCoreActivityTagsIfRequired(span);
+                CopyAspNetCoreActivityTagsIfRequired(span, tracer.Settings.OpenTelemetrySemanticsEnabled);
                 var isMissingHttpStatusCode = !span.HasHttpStatusCode();
 
                 var settings = tracer.CurrentTraceSettings.Settings;
@@ -310,7 +310,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        public void CopyAspNetCoreActivityTagsIfRequired(Span span)
+        public void CopyAspNetCoreActivityTagsIfRequired(Span span, bool openTelemetrySemanticsEnabled)
         {
             // Extract data from the Activity if there is one, and it's the one we expect
             // We're using GetCurrentActivityObject rather than GetCurrentActivity because
@@ -323,10 +323,10 @@ namespace Datadog.Trace.PlatformHelpers
                 return;
             }
 
-            AddActivityTags(span, rawActivity, _log);
+            AddActivityTags(span, rawActivity, _log, openTelemetrySemanticsEnabled);
 
             // Extracted to method as not invoked in default config (only when otel enabled)
-            static void AddActivityTags(Span span, object rawActivity, IDatadogLogger log)
+            static void AddActivityTags(Span span, object rawActivity, IDatadogLogger log, bool openTelemetrySemanticsEnabled)
             {
                 // AFAICT this has been static since at least .NET Core 2.1
                 // https://github.com/dotnet/aspnetcore/blob/v2.1.33/src/Hosting/Hosting/src/Internal/HostingApplicationDiagnostics.cs#L18C46-L18C88
@@ -339,7 +339,7 @@ namespace Datadog.Trace.PlatformHelpers
                      && string.Equals(activity5.OperationName, aspnetcoreActivityOperationName, StringComparison.Ordinal)
                      && activity5.HasTagObjects())
                     {
-                        var state = new OtelTagsEnumerationState(span);
+                        var state = new OtelTagsEnumerationState(span, openTelemetrySemanticsEnabled);
                         ActivityEnumerationHelper.EnumerateTagObjects(
                             activity5,
                             ref state,
@@ -351,7 +351,7 @@ namespace Datadog.Trace.PlatformHelpers
                                 // We also don't want to override our standard aspnetcore/web tags.
                                 if (!IsKnownWebTag(kvp.Key))
                                 {
-                                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false);
+                                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                                 }
 
                                 return true;
@@ -361,7 +361,7 @@ namespace Datadog.Trace.PlatformHelpers
                           && string.Equals(activity.OperationName, aspnetcoreActivityOperationName, StringComparison.Ordinal)
                           && activity.HasTags())
                     {
-                        var state = new OtelTagsEnumerationState(span);
+                        var state = new OtelTagsEnumerationState(span, openTelemetrySemanticsEnabled);
                         ActivityEnumerationHelper.EnumerateTags(
                             activity,
                             ref state,
@@ -373,7 +373,7 @@ namespace Datadog.Trace.PlatformHelpers
                                 // We also don't want to override our standard aspnetcore/web tags.
                                 if (!IsKnownWebTag(kvp.Key))
                                 {
-                                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false);
+                                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                                 }
 
                                 return true;
