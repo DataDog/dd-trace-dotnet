@@ -1682,12 +1682,29 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
         return S_OK;
     }
 
+    // On .NET Framework a failed AppDomain unload (e.g. CannotUnloadAppDomainException) can leave the
+    // AppDomain alive with Datadog.Trace.dll still loaded and methods still being JIT'd. Tearing down any
+    // AppDomain-scoped state in that case would leave a live domain internally inconsistent: IAST would lose
+    // its per-domain state while instrumentation keeps running, the loaded-assembly marker would disappear so
+    // instrumentation silently stops, and the first-JIT marker would be lost causing duplicate startup-hook
+    // injection. So we only clean up AppDomain-scoped state when the unload actually succeeded; on failure we
+    // leave it all intact. A stale entry for a genuinely-dead domain is a bounded, benign leak (the
+    // AppDomainID is never reused), which is the safer trade compared to corrupting a still-live domain.
+    if (FAILED(hrStatus))
+    {
+        DBG("AppDomainShutdownFinished: AppDomain: ", appDomainId,
+            " reported a failed unload (hrStatus=", hrStatus,
+            "); leaving AppDomain-scoped state intact in case the domain is still alive");
+        return S_OK;
+    }
+
     if (_dataflow != nullptr)
     {
         _dataflow->AppDomainShutdown(appDomainId);
     }
 
-    // remove appdomain metadata from map
+    // remove appdomain metadata from maps
+    managed_profiler_loaded_app_domains.Get()->erase(appDomainId);
     const auto& count = first_jit_compilation_app_domains.erase(appDomainId);
 
     DBG("AppDomainShutdownFinished: AppDomain: ", appDomainId, ", removed ", count, " elements");
