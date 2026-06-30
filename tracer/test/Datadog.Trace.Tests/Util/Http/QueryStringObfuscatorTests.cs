@@ -103,12 +103,16 @@ public class QueryStringObfuscatorTests
     // dotted/dotless 'I'), which both produces a CPU spike when scanning non-ASCII query strings on
     // .NET Framework and, worse, causes keywords containing an 'i' (api, public, signature, ...) to
     // be missed entirely under cultures like tr-TR. The obfuscator must match culture-independently.
-    [Theory]
+    [SkippableTheory]
     [InlineData("tr-TR")]
     [InlineData("az-Latn-AZ")]
     [InlineData("en-US")]
     public void ObfuscatesIndependentlyOfCurrentCulture(string culture)
     {
+        // the default regex seems to crash the regex engine on netcoreapp2.1 under arm64, with a null reference exception on the dotnet RegexRunner. Its ok as these arent supported in auto instrumentation, we just warn not to reuse this regex if 2.1&arm64 is the environment
+#if NETCOREAPP2_1
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+#endif
         var originalCulture = Thread.CurrentThread.CurrentCulture;
         try
         {
@@ -161,12 +165,16 @@ public class QueryStringObfuscatorTests
     // catastrophic backtracking. A deliberately tight timeout means any future change that
     // reintroduces super-linear backtracking would time out (Obfuscate returns string.Empty) and
     // fail the trailing-secret assertion below.
-    [Theory]
+    [SkippableTheory]
     [InlineData(50)]
     [InlineData(500)]
     [InlineData(2000)]
     public void DefaultPatternDoesNotBacktrackOnUrlEncodedCjk(int filenameRepetitions)
     {
+        // the default regex seems to crash the regex engine on netcoreapp2.1 under arm64, with a null reference exception on the dotnet RegexRunner. Its ok as these arent supported in auto instrumentation, we just warn not to reuse this regex if 2.1&arm64 is the environment
+#if NETCOREAPP2_1
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+#endif
         const double tightTimeoutMs = 2000;
         var encodedCjkFilename = string.Concat(Enumerable.Repeat("%EC%84%A4%EA%B3%84%EC%9E%90%EB%A3%8C", filenameRepetitions));
         // Mirrors the reported URL shape, with a genuinely redactable secret appended so a successful
@@ -186,9 +194,13 @@ public class QueryStringObfuscatorTests
     // The reported Vault "ticket" parameter is not actually matched by the default pattern (there is
     // no "ticket" keyword and the value does not satisfy any keyword suffix), so the URL passes
     // through unchanged - and, crucially, quickly.
-    [Fact]
+    [SkippableFact]
     public void DefaultPatternPassesThroughUnmatchedVaultUrl()
     {
+        // the default regex seems to crash the regex engine on netcoreapp2.1 under arm64, with a null reference exception on the dotnet RegexRunner. Its ok as these arent supported in auto instrumentation, we just warn not to reuse this regex if 2.1&arm64 is the environment
+#if NETCOREAPP2_1
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+#endif
         var logger = new Mock<IDatadogLogger>();
         var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
 
