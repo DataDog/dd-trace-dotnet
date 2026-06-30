@@ -45,12 +45,7 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
             // Each message is ~2 KB; 200 logs serialize to well over the initial 64 KB buffer,
             // forcing multiple buffer resizes. Before the grow-and-retry fix this threw
             // ArgumentOutOfRangeException from WriteLogRecord once writePosition passed 64 KB.
-            var largeMessage = new string('x', 2048);
-            var logs = new List<LogPoint>();
-            for (var i = 0; i < 200; i++)
-            {
-                logs.Add(new LogPoint { Message = largeMessage, LogLevel = 2, CategoryName = "Test" });
-            }
+            var logs = CreateLogs(count: 200, messageSize: 2048);
 
             byte[] payload = null;
             var act = () => payload = OtlpLogsSerializer.SerializeLogs(logs, CreateResourceTags());
@@ -61,6 +56,19 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
             // The serialized payload must be larger than the initial buffer, proving the
             // buffer grew rather than silently truncating the batch.
             payload!.Length.Should().BeGreaterThan(InitialBufferSize);
+        }
+
+        [Fact]
+        public void SerializeLogs_BatchExceedingMaxSize_ReturnsNull()
+        {
+            // ~11 MB of messages exceeds the 10 MB cap, so the batch can never fit.
+            // The serializer must give up and return null (signalling a drop) rather than
+            // growing without bound or throwing.
+            var logs = CreateLogs(count: 11, messageSize: 1024 * 1024);
+
+            var payload = OtlpLogsSerializer.SerializeLogs(logs, CreateResourceTags());
+
+            payload.Should().BeNull();
         }
 
         [Fact]
@@ -75,7 +83,20 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
             const int startPosition = 5;
             var payload = OtlpLogsSerializer.SerializeLogs(logs, CreateResourceTags(), startPosition);
 
-            payload.Length.Should().BeGreaterThan(startPosition);
+            payload.Should().NotBeNull();
+            payload!.Length.Should().BeGreaterThan(startPosition);
+        }
+
+        private static List<LogPoint> CreateLogs(int count, int messageSize)
+        {
+            var message = new string('x', messageSize);
+            var logs = new List<LogPoint>(count);
+            for (var i = 0; i < count; i++)
+            {
+                logs.Add(new LogPoint { Message = message, LogLevel = 2, CategoryName = "Test" });
+            }
+
+            return logs;
         }
 
         private static OtlpLogsSerializer.ResourceTags CreateResourceTags()

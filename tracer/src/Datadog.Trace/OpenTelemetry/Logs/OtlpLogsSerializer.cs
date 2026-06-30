@@ -26,22 +26,35 @@ internal static class OtlpLogsSerializer
     private const int TraceIdSize = 16;
     private const int SpanIdSize = 8;
 
+    private const int InitialBufferSize = 64 * 1024;
+
+    // Upper bound for a serialized batch. The buffer grows up to this cap; a batch that still
+    // doesn't fit is dropped rather than allocating without bound. The intake rejects payloads
+    // far larger than this anyway, and it matches the default trace payload cap (DD_TRACE_BUFFER_SIZE).
+    private const int MaxBufferSize = 10 * 1024 * 1024;
+
     /// <summary>
-    /// Serializes logs to OTLP LogsData binary format using vendored protobuf serializer
+    /// Serializes logs to OTLP LogsData binary format using vendored protobuf serializer.
     /// </summary>
-    public static byte[] SerializeLogs(IReadOnlyList<LogPoint> logs, ResourceTags settings, int startPosition = 0)
+    /// <param name="logs">The batch of logs to serialize.</param>
+    /// <param name="settings">Resource-level tags applied to the payload.</param>
+    /// <param name="startPosition">Offset at which to start writing (e.g. a reserved gRPC frame header).</param>
+    /// <returns>
+    /// The serialized payload, an empty array when there is nothing to serialize, or <c>null</c>
+    /// when the batch is too large to fit within <see cref="MaxBufferSize"/>.
+    /// </returns>
+    public static byte[]? SerializeLogs(IReadOnlyList<LogPoint> logs, ResourceTags settings, int startPosition = 0)
     {
         if (logs.Count == 0)
         {
             return Array.Empty<byte>();
         }
 
-        var buffer = new byte[64 * 1024];
+        var buffer = new byte[InitialBufferSize];
 
         // The batch may not fit in the initial buffer. On overflow, grow the buffer (doubling,
-        // up to ProtobufSerializer.MaxBufferSize) and retry from the start, mirroring the
-        // resize-and-retry strategy the vendored OTLP serializers use. If the buffer cannot
-        // grow any further, the overflow exception propagates so the caller drops the batch.
+        // up to MaxBufferSize) and retry from the start. If it's already at the cap and still
+        // overflows, return null so the caller drops the batch instead of growing without bound.
         while (true)
         {
             try
@@ -51,20 +64,31 @@ internal static class OtlpLogsSerializer
             catch (ArgumentException)
             {
                 // A span/array write ran past the end of the buffer.
-                if (!ProtobufSerializer.IncreaseBufferSize(ref buffer, OtlpSignalType.Logs))
+                if (!TryGrowBuffer(ref buffer))
                 {
-                    throw;
+                    return null;
                 }
             }
             catch (IndexOutOfRangeException)
             {
                 // Same overflow condition, surfaced as an index-based write past the end.
-                if (!ProtobufSerializer.IncreaseBufferSize(ref buffer, OtlpSignalType.Logs))
+                if (!TryGrowBuffer(ref buffer))
                 {
-                    throw;
+                    return null;
                 }
             }
         }
+    }
+
+    private static bool TryGrowBuffer(ref byte[] buffer)
+    {
+        if (buffer.Length >= MaxBufferSize)
+        {
+            return false;
+        }
+
+        buffer = new byte[Math.Min(buffer.Length * 2, MaxBufferSize)];
+        return true;
     }
 
     private static byte[] SerializeLogs(byte[] buffer, IReadOnlyList<LogPoint> logs, ResourceTags settings, int startPosition)

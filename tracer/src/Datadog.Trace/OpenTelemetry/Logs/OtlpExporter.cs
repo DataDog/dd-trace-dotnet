@@ -185,6 +185,15 @@ internal sealed class OtlpExporter : IOtlpExporter
             var startPosition = _protocol == OtlpProtocol.Grpc ? 5 : 0;
             var otlpPayload = OtlpLogsSerializer.SerializeLogs(logs, _resourceTags, startPosition);
 
+            if (otlpPayload is null)
+            {
+                // The batch is too large to serialize and cannot be sent. Drop it (retrying would
+                // just overflow again) but report success so the batching sink doesn't trip its
+                // circuit breaker for a non-transient issue.
+                Log.Warning<int>("Dropping OTLP log batch of {Count} logs: serialized payload exceeds the maximum size.", logs.Count);
+                return true;
+            }
+
             return _protocol switch
             {
                 OtlpProtocol.HttpProtobuf => await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false),
