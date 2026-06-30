@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Windows.Data;
 using System.Windows.Input;
 using EEHeapExplorer.Settings;
 using EEHeapModel;
@@ -31,6 +32,15 @@ public class MainViewModel : INotifyPropertyChanged
         LoadCommand = new RelayCommand(LoadFile);
         ExitCommand = new RelayCommand(_ => System.Windows.Application.Current.Shutdown());
 
+        KindSummariesView = CollectionViewSource.GetDefaultView(KindSummaries);
+        KindSummariesView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(KindSummary.Group)));
+
+        // Order groups by their committed total (largest first); the Group key keeps each group's
+        // rows contiguous when two groups happen to share the same total; then committed within group.
+        KindSummariesView.SortDescriptions.Add(new SortDescription(nameof(KindSummary.GroupCommittedTotal), ListSortDirection.Descending));
+        KindSummariesView.SortDescriptions.Add(new SortDescription(nameof(KindSummary.Group), ListSortDirection.Ascending));
+        KindSummariesView.SortDescriptions.Add(new SortDescription(nameof(KindSummary.CommittedTotal), ListSortDirection.Descending));
+
         var settings = UserSettingsStore.Load();
         _lastLoadedDirectory = settings.LastFolder;
     }
@@ -42,6 +52,18 @@ public class MainViewModel : INotifyPropertyChanged
     /// Gets the per-kind summaries for the top grid (sorted by reserved size descending).
     /// </summary>
     public ObservableCollection<KindSummary> KindSummaries { get; }
+
+    /// <summary>
+    /// Gets the grouped + sorted view over <see cref="KindSummaries"/> (grouped by high-level group,
+    /// ordered by group then committed size descending) bound by the top grid.
+    /// </summary>
+    public ICollectionView KindSummariesView { get; }
+
+    /// <summary>
+    /// Gets the live widths of the top grid's columns, kept in sync by the view so the grouped header
+    /// cells stay aligned with the data columns (including when the user resizes a column).
+    /// </summary>
+    public ColumnWidths ColumnWidths { get; } = new();
 
     /// <summary>
     /// Gets the detail rows for the currently selected kind.
@@ -91,6 +113,45 @@ public class MainViewModel : INotifyPropertyChanged
     /// </summary>
     public ICommand ExitCommand { get; }
 
+    /// <summary>
+    /// Loads an eeheap report directly from a file path (used by the Load command after the file
+    /// dialog, and for command-line auto-loading on startup).
+    /// </summary>
+    public void LoadFromPath(string fileName)
+    {
+        try
+        {
+            _report = EEHeapLoader.LoadFromFile(fileName);
+
+            KindSummaries.Clear();
+            DetailRows.Clear();
+            _selectedKind = null;
+            OnPropertyChanged(nameof(SelectedKind));
+
+            foreach (var summary in KindSummary.BuildFromReport(_report))
+            {
+                KindSummaries.Add(summary);
+            }
+
+            StatusText =
+                $"Loaded ({_report.Source}): {_report.Heaps.Count} regions, " +
+                $"reserved {_report.TotalReserved:N0} B, committed {_report.TotalCommitted:N0} B — {fileName}";
+
+            var directory = Path.GetDirectoryName(fileName);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                _lastLoadedDirectory = directory;
+                UserSettingsStore.Save(new UserSettings { LastFolder = directory });
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Error loading file: {ex.Message}";
+            KindSummaries.Clear();
+            DetailRows.Clear();
+        }
+    }
+
     private void LoadFile(object? parameter)
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
@@ -105,37 +166,7 @@ public class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        try
-        {
-            _report = EEHeapLoader.LoadFromFile(dialog.FileName);
-
-            KindSummaries.Clear();
-            DetailRows.Clear();
-            _selectedKind = null;
-            OnPropertyChanged(nameof(SelectedKind));
-
-            foreach (var summary in KindSummary.BuildFromReport(_report))
-            {
-                KindSummaries.Add(summary);
-            }
-
-            StatusText =
-                $"Loaded ({_report.Source}): {_report.Heaps.Count} regions, " +
-                $"reserved {_report.TotalReserved:N0} B, committed {_report.TotalCommitted:N0} B — {dialog.FileName}";
-
-            var directory = Path.GetDirectoryName(dialog.FileName);
-            if (!string.IsNullOrEmpty(directory))
-            {
-                _lastLoadedDirectory = directory;
-                UserSettingsStore.Save(new UserSettings { LastFolder = directory });
-            }
-        }
-        catch (Exception ex)
-        {
-            StatusText = $"Error loading file: {ex.Message}";
-            KindSummaries.Clear();
-            DetailRows.Clear();
-        }
+        LoadFromPath(dialog.FileName);
     }
 
     private void UpdateDetailRows()

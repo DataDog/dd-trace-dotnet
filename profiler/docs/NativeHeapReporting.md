@@ -29,7 +29,7 @@
 - [x] schema-committed-gen: Extend `ClrNativeHeapInfo` with `Committed` (uint64) + `Generation` (int, default -1); `EEHeapReporter::ToJson` always emits `committed` and emits `generation` only when `>= 0`; keep `size` as reserved/virtual for back-compat.
 - [x] page-probe-helper: Add a shared `ProbeCommittedBytes(IMemoryReader&, base, reserved)` helper that walks page-by-page under the fault guard (mirroring SOS `SafeReadMemory`) and returns committed bytes; used by both backends for non-GC heaps.
 - [x] dac-committed-gen (DAC): `AddGcSegments` emits ONE entry per segment/region carrying `Size`=reserved span, `Committed`=committed span, `Generation`=generation_table index (replacing the two collapsed Active/Reserved entries); loader/code/VCS/thunk + HostCodeHeap set `Committed` via the shared page-probe helper.
-- [x] cdac-committed (cDAC): Populate `Committed` for loader/code blocks via the shared page-probe helper over `InProcessMemoryReader`; set `Committed`=`Size` for GC free/handle/bookkeeping regions.
+- [x] cdac-committed (cDAC): Populate `Committed` for loader/code blocks via the shared page-probe helper over `InProcessMemoryReader`; set `Committed`=`Size` for GC free/handle/bookkeeping regions. (Bookkeeping `Committed` later refined to the OS region-map query - see "GC bookkeeping committed size".)
 - [x] cdac-gc-segments (cDAC parity): Add `GCContract::GetGCHeapSegments` - per-generation allocated GC segments matching the DAC, using `TotalGenerationCount` + `GCHeap.GenerationTable` (server) / the workstation generation-table global, `Generation.StartSegment`, and `HeapSegment.Mem/Allocated/Committed/Reserved/Next`; emit `GCHeapSegment` with `Generation` + `GCHeap` and reserved+committed, deduped, all `Has*`-guarded.
 - [x] dac-gc-extras (DAC parity): Vendor `ISOSDacInterface13` + `ISOSMemoryEnum` (: `ISOSEnum`) + `SOSMemoryRegion` + IIDs verbatim from upstream `sospriv.idl` (vendored copy stops at 12) into a Dac-only header; QI for it after `ISOSDacInterface` and, when present (.NET 8+), emit GC free-regions/handle-table/bookkeeping via `ISOSMemoryEnum` as `GCFreeRegion`/`HandleTable`/`GCBookkeeping`. Absent on .NET 5-7 and .NET Framework.
 - [x] native-tests-committed-gen: Update DAC/cDAC/reporter GoogleTests (fake SOS + fake `ISOSDacInterface13`/`ISOSMemoryEnum`; fake cDAC per-generation memory; fake reader for the committed probe; assert committed+generation in JSON) and `EEHeapTest.cs` integration assertions.
@@ -143,7 +143,7 @@ The DAC headers are already vendored and already on the profiler include path (`
 - [dacprivate.h](../../shared/src/native-lib/coreclr/src/inc/dacprivate.h) - `DacpJitCodeHeapInfo` (CODEHEAP_LOADER/CODEHEAP_HOST), `DacpAppDomainData` (`pLowFrequencyHeap`/`pHighFrequencyHeap`/`pStubHeap`), `DacpModuleData` (`pThunkHeap`), `DacpGcHeapData`/`DacpGcHeapDetails`/`DacpHeapSegmentData`, `VCSHeapType`.
 - [livedatatarget.h](../../shared/src/native-lib/coreclr/src/inc/livedatatarget.h) - `LiveProcDataTarget` (a ready-made `ICLRDataTarget` for a live local process, Windows-only `#ifndef TARGET_UNIX`).
 
-Note: the vendored `sospriv.h` predates `ISOSDacInterface13::GetLoaderAllocatorHeaps`, so loader-heap enumeration uses the classic AppDomain/Module-based traversal (the path ClrMD uses for older runtimes), not the newer per-LoaderAllocator API.
+Note: loader-heap enumeration now prefers `ISOSDacInterface13`'s per-LoaderAllocator API (`GetDomainLoaderAllocator` + `GetLoaderAllocatorHeaps`/`GetLoaderAllocatorHeapNames`) on .NET 8+ to surface every heap kind (incl. `FixupPrecodeHeap`/`NewStubPrecodeHeap`/`VtableHeap`); it falls back to the classic AppDomain/Module-based traversal (the path ClrMD uses for older runtimes) when that interface or those names are unavailable. See Part 3 below.
 
 ### B1. `DacInterface.{h,cpp}` (bootstrap)
 - Locate the DAC next to the runtime module:
@@ -172,6 +172,7 @@ Both OSes are supported (modern .NET only on Linux; .NET Framework is Windows-on
 ### B3. `DacNativeHeapEnumerator.{h,cpp}`
 Implements `INativeHeapEnumerator` using `ISOSDacInterface`. The structure and ordering below were cross-checked against the actual SOS `!eeheap` helpers in `eeheap.cpp` (`JitHeapInfo`, `PrintDomainHeapInfo`, `VSDHeapInfo`, `PrintModuleHeapInfo`, `GCHeapInfo`) - it matches ClrMD's `EnumerateClrNativeHeaps`:
 - JIT code heaps (`JitHeapInfo`): `GetJitManagerList` (two-call count/fill) -> for each manager that is a real JIT (`IsMiIL`), `GetCodeHeapList(managerAddr, ...)` (two-call) -> per `DacpJitCodeHeapInfo`: `CODEHEAP_LOADER` -> `TraverseLoaderHeap(LoaderHeap)`; `CODEHEAP_HOST` -> size = `HostData.currentAddr - HostData.baseAddr` (one region). Native/unknown managers are ignored.
+  - CRITICAL: a `CODEHEAP_LOADER` heap is an `ExplicitControlLoaderHeap`, NOT a normal loader heap. On modern runtimes the classic `ISOSDacInterface::TraverseLoaderHeap(addr, cb)` assumes a normal layout and reports every block as all-zero (address/size/committed = 0). When `ISOSDacInterface13` is available (.NET 8+) we must walk code heaps via `ISOSDacInterface13::TraverseLoaderHeap(addr, LoaderHeapKindExplicitControl, cb)`; the classic call is only correct as a fallback on .NET 5-7 (where code heaps were enumerable that way). Domain/module/VCS heaps are normal heaps and keep using the classic `TraverseLoaderHeap`. This mirrors the SOS/ClrMD `!eeheap` fix (dotnet/diagnostics #3675).
 - Loader heaps (AppDomain-based, deduped) (`PrintDomainHeapInfo`): `GetAppDomainStoreData` + `GetAppDomainList`, plus the System and Shared domains; for each, `DacpAppDomainData.Request` -> `TraverseLoaderHeap` on `pLowFrequencyHeap`, then `pHighFrequencyHeap`, then `pStubHeap` (this exact order).
 - VCS stub heaps (`VSDHeapInfo`): `TraverseVirtCallStubHeap(appDomain, heaptype, cb)` for each `VCSHeapType` in order IndcellHeap, LookupHeap, ResolveHeap, DispatchHeap, CacheEntryHeap.
 - Module thunk heaps (`PrintModuleHeapInfo`): `GetAssemblyList`/`GetAssemblyModuleList` per assembly -> `DacpModuleData.Request` -> `pThunkHeap` -> `TraverseLoaderHeap`. SOS skips this for minidumps; in-process live is fine.
@@ -279,7 +280,7 @@ Two existing test projects are the templates: unit tests in `profiler/test/Datad
 - DAC: requires a matching DAC binary next to the runtime (it ships beside `coreclr`/`clr`, so the in-process match is normally satisfied); in-process enumeration of a live, running runtime is best-effort and may capture transient/partial state (mitigated by `Flush()`).
 - DAC .NET Framework: `mscordacwks.dll` is Windows-only; the .NET Framework path therefore only applies on Windows.
 - DAC GC segments vs regions: older runtimes use segment-per-generation; .NET 6+ uses a null-terminated region list per generation (this changed SOS's `eeheap.cpp`, see dotnet/diagnostics PR 2112). The `GetHeapSegmentData` walk must handle both - iterate each generation's `start_segment` chain and, on region-mode runtimes, the per-generation region lists - so the DAC backend works across all pre-.NET 11 versions.
-- The vendored `sospriv.h` predates `ISOSDacInterface13` (`GetLoaderAllocatorHeaps`, `GetGCFreeRegions`, `GetHandleTableMemoryRegions`, `GetGCBookkeepingMemoryRegions`). The DAC backend uses the classic AppDomain/Module + segment walk for loader/code heaps; Part 2 ("Full parity") additionally vendors `ISOSDacInterface13` and uses ONLY its three GC enumerators (free-regions/handle-table/bookkeeping) when available (.NET 8+), degrading to empty on .NET 5-7 and .NET Framework.
+- `ISOSDacInterface13` is vendored separately (the bundled `sospriv.h` stops at 12). Part 2 used its three GC enumerators (free-regions/handle-table/bookkeeping). Part 3 additionally uses its per-LoaderAllocator heap API (`GetDomainLoaderAllocator`/`GetLoaderAllocatorHeaps`/`GetLoaderAllocatorHeapNames`) for loader heaps on .NET 8+, and `ISOSDacInterface8` for the full generation table (POH). All degrade gracefully to the classic AppDomain/Module + capped-generation-table walk on .NET 5-7 and .NET Framework.
 
 ---
 
@@ -324,7 +325,7 @@ In [DacNativeHeapEnumerator.cpp](../src/ProfilerEngine/Datadog.Profiler.Native/D
 
 In [CdacNativeHeapEnumerator.cpp](../src/ProfilerEngine/Datadog.Profiler.Native/CdacNativeHeapEnumerator.cpp) / [CdacGCContract](../src/ProfilerEngine/Datadog.Profiler.Native/CdacGCContract.h):
 - Loader/code blocks (`WalkLoaderHeap`/`EnumerateCodeHeaps`): set `Committed = ProbeCommittedBytes(...)` over the enumerator's `_reader`.
-- GC free/handle/bookkeeping regions: committed by nature -> `Committed = Size`, `Generation = -1`.
+- GC free/handle regions: committed by nature -> `Committed = Size`, `Generation = -1`. Bookkeeping is the exception: `Size` is the reserved card-table span, so `Committed` is computed from the OS region map (see "GC bookkeeping committed size").
 - Per-generation allocated GC segments are added for parity in the next section.
 
 ## Full parity (cDAC <-> DAC) - maximal
@@ -354,7 +355,7 @@ The vendored [sospriv.idl](../../shared/src/native-lib/coreclr/src/inc/sospriv.i
 
 In [DacNativeHeapEnumerator.cpp](../src/ProfilerEngine/Datadog.Profiler.Native/DacNativeHeapEnumerator.cpp):
 - After QI'ing `ISOSDacInterface`, also `QueryInterface(IID_ISOSDacInterface13, ...)`. If it fails (.NET 5-7, .NET Framework), skip these sources.
-- For each of `GetGCFreeRegions`/`GetHandleTableMemoryRegions`/`GetGCBookkeepingMemoryRegions`: get the `ISOSMemoryEnum`, loop `Next` (batched), and emit one entry per `SOSMemoryRegion` with `Address = Start`, `Size = Committed = Size`, `GCHeap = Heap`, `Generation = -1`, `Kind = GCFreeRegion` / `HandleTable` / `GCBookkeeping`, wrapped in the existing per-source `safe(...)` guard.
+- For each of `GetGCFreeRegions`/`GetHandleTableMemoryRegions`/`GetGCBookkeepingMemoryRegions`: get the `ISOSMemoryEnum`, loop `Next` (batched), and emit one entry per `SOSMemoryRegion` with `Address = Start`, `Size = Committed = Size`, `GCHeap = Heap`, `Generation = -1`, `Kind = GCFreeRegion` / `HandleTable` / `GCBookkeeping`, wrapped in the existing per-source `safe(...)` guard. (Bookkeeping is the exception: its `Size` is the reserved card-table span, so `Committed` is derived from the OS region map - see "GC bookkeeping committed size".)
 - The DAC's free-region enum does not subdivide into the cDAC's finer `GCFreeGlobal*`/`GCFreeSoh/Uoh` kinds; mapping all to `GCFreeRegion` is the documented, acceptable difference.
 
 ### Hard runtime limit (documented, not a bug)
@@ -398,3 +399,40 @@ Copy the ReferenceChainExplorer scaffolding (`App.xaml(.cs)`, `MainWindow.xaml(.
 - `File > Load...` (Ctrl+O) `OpenFileDialog` filter `eeheap (*.json;*.zip)|*.json;*.zip`; status bar shows `Source` (cdac/dac) + overall virtual/committed totals.
 
 Mapping to the request: TOP panel = per-kind distribution sorted by size with virtual+committed; BOTTOM panel = detail for the selected kind, per-generation for the managed/GC heap, with virtual+committed.
+
+# Part 3 - ClrMD parity: Pinned Object Heap, non-GC heap, finer loader/free kinds
+
+Follow-up to close the remaining gaps against ClrMD's authoritative `EnumerateClrNativeHeaps` (source in `C:\github\clrmd`, `DacImplementation/DacNativeHeaps.cs` + `DacHeap.cs`). All items target the DAC backend unless noted; the cDAC backend already implemented most of these.
+
+## Pinned Object Heap (POH, generation 4)
+
+- The legacy `DacpGcHeapDetails.generation_table` is fixed at `DAC_NUMBERGENERATIONS` (4) and omits the POH. `AddGcSegments` now QIs `ISOSDacInterface8` (.NET 5+) and reads the full table via `GetNumberGenerations` + `GetGenerationTable` (wks) / `GetGenerationTableSvr` (server), so generation 4 (POH) is walked. Falls back to the capped 4-entry table on .NET Framework (no `ISOSDacInterface8`).
+- POH is emitted as `GCHeapSegment` with `Generation = 4`; the cDAC backend already walked generation 4 via `TotalGenerationCount`. The viewer's detail builder already labels generation 4 as `POH`.
+
+## Non-GC / frozen heap (`NativeHeapKind::NonGCHeap`)
+
+- A read-only segment (`heap_segment::flags & HEAP_SEGMENT_FLAGS_READONLY`, value `1`) is the frozen / non-GC heap (ClrMD `GCSegmentKind.Frozen`). Both backends now read the segment flags during the generation walk and, when the read-only bit is set, emit a distinct `NonGCHeap` kind with `Generation = -1` instead of `GCHeapSegment`.
+- DAC: `DacpHeapSegmentData.flags`. cDAC: the `HeapSegment.Flags` field (`T_NUINT`), guarded by `HasField` for older runtimes.
+- `NonGCHeap` is a top-level kind, so it shows as its own row in the viewer (it is not a generation).
+
+## Modern per-LoaderAllocator loader heaps (DAC item 1)
+
+- On .NET 8+, `EnumerateLoaderHeaps` prefers `ISOSDacInterface13::GetDomainLoaderAllocator` + `GetLoaderAllocatorHeaps`/`GetLoaderAllocatorHeapNames`, mapping each name to a kind (`LowFrequencyHeap`/`HighFrequencyHeap`/`StubHeap`/`ExecutableHeap`/`FixupPrecodeHeap`/`NewStubPrecodeHeap`/`Indcell`/`Lookup`/`Resolve`/`Dispatch`/`CacheEntry`/`VtableHeap`). This surfaces precode/vtable heaps the legacy AppDomain walk misses, and the VCS stub heaps come from this list (so the separate legacy VCS walk is skipped in modern mode). Loader allocators are deduped (system + shared domains share one). Module thunk heaps stay a separate per-module source in both modes.
+- Falls back to the legacy low/high/stub + VCS walk when `ISOSDacInterface13` is absent or returns no heap names.
+
+## Classic-fallback pointer fixup (DAC item 2)
+
+- When only the classic `ISOSDacInterface` is available the DAC cannot distinguish a normal `LoaderHeap` from a vtable-less `ExplicitControlLoaderHeap`, so the heap address is nudged by one pointer based on runtime version (`AdjustLoaderHeapAddress`, mirroring ClrMD `FixupHeapAddress`): .NET 7 (and .NET 8 before `ISOSDacInterface13`) shift Normal heaps `+ptr`; .NET 5/6 (and other non-11) shift ExplicitControl heaps `-ptr`; .NET 11+ need no adjustment. ClrMD's extra read-validation retry (for unknown single-file versions) is omitted - the profiler always knows its own runtime version. The runtime major version + flavor are threaded into `EnumerateNativeHeapsFromSos`.
+
+## GC free-region sub-kinds, state semantics, sanitize (DAC items 3/5/6/7)
+
+- Free regions are sub-classified from `SOSMemoryRegion.ExtraData` (1=`GCFreeGlobalHugeRegion`, 2=`GCFreeGlobalRegion`, 3=`GCFreeRegion`, 4=`GCFreeSohSegment`, 5=`GCFreeUohSegment`), matching the cDAC backend and ClrMD (item 3). (ClrMD's start/length 0x100 alignment, item 4, is intentionally not adopted.)
+- State semantics (item 5): traversed loader/code blocks that are not the current block are `Inactive` (not `Reserved`); free regions are `Inactive`; the handle table is `Active`; bookkeeping is `RegionOfRegions`.
+- Bookkeeping is a region-of-regions covering all heaps, so it carries no GC heap index (item 6).
+- Traversed block sizes are clamped (`> int.MaxValue` -> 0) via `SanitizeSize` (item 7).
+
+## GC bookkeeping committed size (OS region-map query)
+
+- The bookkeeping/card-table block is a single `VirtualReserve` whose `card_table_info::size` is the **reserved** span of the whole block (card/brick/bundle/seg-mapping tables + the mark array under background GC), sized to cover the entire reserved GC address range. Neither the DAC (`ISOSMemoryEnum`/`SOSMemoryRegion.Size`) nor the cDAC contract (`CardTableInfo.Size`) exposes how much of it is committed, and the committed runs are **scattered per element with reserved gaps**, so reporting `Committed = Size` over-reports massively (e.g. ~1.5 GB committed for a block that is mostly reserved).
+- `eeheap::QueryCommittedBytes(base, reserved)` derives the true committed bytes from the OS region map instead: `VirtualQuery` on Windows (sum `MEM_COMMIT` runs), `/proc/self/maps` on Linux (sum accessible, non-`---p` VMA overlap). It is gap-aware (does not stop at the first hole) and costs O(number of regions), not O(number of pages), so it is cheap regardless of the reserved size. This differs from `ProbeCommittedBytes`, which is a page-by-page prefix probe suited to loader/code heaps where committed is contiguous.
+- Both backends use it for the `GCBookkeeping` kind (cDAC `AddCardTable`; DAC `DrainMemoryEnum` with `queryCommitted`), keeping `Size` = reserved and setting `Committed` to the queried total. If the query returns 0 (region map unavailable, e.g. not in-process) it falls back to the reserved size, preserving prior behavior. In-process only, matching the existing `ProbeCommitted` assumption.

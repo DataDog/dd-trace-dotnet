@@ -3,6 +3,8 @@
 
 #include "CdacGCContract.h"
 
+#include "CommittedMemoryProbe.h"
+
 #include <algorithm>
 #include <cctype>
 
@@ -261,6 +263,11 @@ void GCContract::AddGenerationSegments(
         return;
     }
 
+    // heap_segment::flags bit for a read-only (frozen / non-GC) segment - matches the DAC backend and
+    // ClrMD GCSegmentKind.Frozen. Older runtimes may not expose the field; guard accordingly.
+    constexpr uintptr_t HeapSegmentFlagsReadOnly = 1;
+    const bool hasFlags = _target.HasField("HeapSegment", "Flags");
+
     for (uint32_t g = 0; g < genCount; g++)
     {
         uintptr_t genAddr = genTableBase + static_cast<uintptr_t>(g) * static_cast<uintptr_t>(genSize);
@@ -280,6 +287,7 @@ void GCContract::AddGenerationSegments(
             uintptr_t committed = _target.ReadFieldPointer(seg, "HeapSegment", "Committed");
             uintptr_t reserved = _target.ReadFieldPointer(seg, "HeapSegment", "Reserved");
             uintptr_t next = _target.ReadFieldPointer(seg, "HeapSegment", "Next");
+            uintptr_t flags = hasFlags ? _target.ReadFieldPointer(seg, "HeapSegment", "Flags") : 0;
 
             if (mem != 0 && reserved > mem)
             {
@@ -287,10 +295,19 @@ void GCContract::AddGenerationSegments(
                 info.Address = mem;
                 info.Size = static_cast<uint64_t>(reserved - mem);
                 info.Committed = committed > mem ? static_cast<uint64_t>(committed - mem) : 0;
-                info.Kind = NativeHeapKind::GCHeapSegment;
+                if ((flags & HeapSegmentFlagsReadOnly) != 0)
+                {
+                    // Read-only segment: the frozen / non-GC heap, which is not a real generation.
+                    info.Kind = NativeHeapKind::NonGCHeap;
+                    info.Generation = -1;
+                }
+                else
+                {
+                    info.Kind = NativeHeapKind::GCHeapSegment;
+                    info.Generation = static_cast<int>(g);
+                }
                 info.State = NativeHeapState::Active;
                 info.GCHeap = heap;
-                info.Generation = static_cast<int>(g);
                 sink(info);
             }
 
@@ -444,7 +461,12 @@ void GCContract::AddCardTable(uintptr_t cardTableInfoAddr, const Sink& sink)
         ClrNativeHeapInfo info;
         info.Address = cardTableInfoAddr;
         info.Size = static_cast<uint64_t>(size);
-        info.Committed = static_cast<uint64_t>(size);
+        // CardTableInfo.Size is the *reserved* size of the whole card-table block; its committed runs
+        // are scattered per element (card/brick/bundle/seg-mapping/mark-array) with reserved gaps. The
+        // runtime does not expose the committed total, so we derive it from the OS region map. Fall back
+        // to the reserved size if the query is unavailable (e.g. not in-process).
+        uint64_t committed = eeheap::QueryCommittedBytes(cardTableInfoAddr, static_cast<uint64_t>(size));
+        info.Committed = committed != 0 ? committed : static_cast<uint64_t>(size);
         info.Kind = NativeHeapKind::GCBookkeeping;
         info.State = NativeHeapState::RegionOfRegions;
         sink(info);

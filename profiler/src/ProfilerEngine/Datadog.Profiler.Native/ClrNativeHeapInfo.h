@@ -31,6 +31,7 @@ enum class NativeHeapKind
     HandleTable,
     GCBookkeeping,
     GCHeapSegment,
+    NonGCHeap,
     GCFreeRegion,
     GCFreeGlobalHugeRegion,
     GCFreeGlobalRegion,
@@ -85,6 +86,7 @@ inline const char* ToString(NativeHeapKind kind)
         case NativeHeapKind::HandleTable: return "HandleTable";
         case NativeHeapKind::GCBookkeeping: return "GCBookkeeping";
         case NativeHeapKind::GCHeapSegment: return "GCHeapSegment";
+        case NativeHeapKind::NonGCHeap: return "NonGCHeap";
         case NativeHeapKind::GCFreeRegion: return "GCFreeRegion";
         case NativeHeapKind::GCFreeGlobalHugeRegion: return "GCFreeGlobalHugeRegion";
         case NativeHeapKind::GCFreeGlobalRegion: return "GCFreeGlobalRegion";

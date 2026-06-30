@@ -29,4 +29,14 @@ public sealed class HeapDetailRow
     public ulong Reserved { get; init; }
 
     public ulong Committed { get; init; }
+
+    /// <summary>
+    /// This row's share of the selected kind's total reserved bytes (0..1).
+    /// </summary>
+    public double ReservedFraction { get; init; }
+
+    /// <summary>
+    /// This row's share of the selected kind's total committed bytes (0..1).
+    /// </summary>
+    public double CommittedFraction { get; init; }
 }

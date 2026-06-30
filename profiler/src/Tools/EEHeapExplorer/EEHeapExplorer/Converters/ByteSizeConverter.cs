@@ -15,18 +15,11 @@ public class ByteSizeConverter : IValueConverter
 {
     private static readonly string[] Units = { "B", "KB", "MB", "GB", "TB" };
 
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    /// <summary>
+    /// Formats a byte count as a human-readable size (B, KB, MB, GB, TB).
+    /// </summary>
+    public static string Format(double bytes)
     {
-        double bytes = value switch
-        {
-            ulong u => u,
-            long l => l,
-            int i => i,
-            uint ui => ui,
-            double d => d,
-            _ => 0,
-        };
-
         if (bytes <= 0)
         {
             return "0 B";
@@ -42,6 +35,21 @@ public class ByteSizeConverter : IValueConverter
         return unit == 0
             ? $"{bytes:N0} {Units[unit]}"
             : $"{bytes:N2} {Units[unit]}";
+    }
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        double bytes = value switch
+        {
+            ulong u => u,
+            long l => l,
+            int i => i,
+            uint ui => ui,
+            double d => d,
+            _ => 0,
+        };
+
+        return Format(bytes);
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

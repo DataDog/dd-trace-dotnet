@@ -45,23 +45,41 @@ public static class HeapDetailBuilder
 
     private static IReadOnlyList<HeapDetailRow> BuildGrouped(List<HeapRegion> regions)
     {
-        return regions
+        var rows = regions
             .GroupBy(r => (r.GcHeap, r.Generation))
-            .Select(g => new HeapDetailRow
+            .Select(g => new
             {
                 Label = BuildLabel(g.Key.GcHeap, g.Key.Generation),
                 Count = g.Count(),
                 Reserved = g.Aggregate(0ul, (acc, h) => acc + h.Reserved),
                 Committed = g.Aggregate(0ul, (acc, h) => acc + h.Committed),
             })
-            .OrderBy(r => r.Label, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        ulong totalReserved = rows.Aggregate(0ul, (acc, r) => acc + r.Reserved);
+        ulong totalCommitted = rows.Aggregate(0ul, (acc, r) => acc + r.Committed);
+
+        return rows
+            .OrderByDescending(r => r.Committed)
+            .Select(r => new HeapDetailRow
+            {
+                Label = r.Label,
+                Count = r.Count,
+                Reserved = r.Reserved,
+                Committed = r.Committed,
+                ReservedFraction = totalReserved == 0 ? 0 : (double)r.Reserved / totalReserved,
+                CommittedFraction = totalCommitted == 0 ? 0 : (double)r.Committed / totalCommitted,
+            })
             .ToList();
     }
 
     private static IReadOnlyList<HeapDetailRow> BuildRegionList(List<HeapRegion> regions)
     {
+        ulong totalReserved = regions.Aggregate(0ul, (acc, r) => acc + r.Reserved);
+        ulong totalCommitted = regions.Aggregate(0ul, (acc, r) => acc + r.Committed);
+
         return regions
-            .OrderByDescending(r => r.Reserved)
+            .OrderByDescending(r => r.Committed)
             .Select(r => new HeapDetailRow
             {
                 Label = r.AddressHex,
@@ -69,6 +87,8 @@ public static class HeapDetailBuilder
                 Count = 1,
                 Reserved = r.Reserved,
                 Committed = r.Committed,
+                ReservedFraction = totalReserved == 0 ? 0 : (double)r.Reserved / totalReserved,
+                CommittedFraction = totalCommitted == 0 ? 0 : (double)r.Committed / totalCommitted,
             })
             .ToList();
     }

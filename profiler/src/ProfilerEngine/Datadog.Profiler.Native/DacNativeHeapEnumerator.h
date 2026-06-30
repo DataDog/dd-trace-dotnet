@@ -26,12 +26,16 @@ public:
 private:
     DacInterface _dac;
     bool _available = false;
+    int _versionMajor = 0; // runtime major version (0 = unknown); drives the loader-heap pointer fixups
+    bool _isCore = true;   // false for .NET Framework
 };
 
 namespace dac
 {
 // Core enumeration over a (possibly fake) ISOSDacInterface. Factored out so unit tests can drive it
 // with a fake ISOSDacInterface without loading a real DAC. Every SOS call is HRESULT-checked; a
-// failing call degrades to "skip that source".
-std::vector<ClrNativeHeapInfo> EnumerateNativeHeapsFromSos(ISOSDacInterface* sos);
+// failing call degrades to "skip that source". versionMajor/isCore identify the runtime so the
+// classic-DAC loader-heap pointer fixups (ExplicitControl vs Normal) can match ClrMD; they are only
+// consulted when ISOSDacInterface13 is unavailable (.NET 5-7). 0/true is a safe default for tests.
+std::vector<ClrNativeHeapInfo> EnumerateNativeHeapsFromSos(ISOSDacInterface* sos, int versionMajor = 0, bool isCore = true);
 } // namespace dac

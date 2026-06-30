@@ -49,6 +49,11 @@ constexpr CLRDATA_ADDRESS AppDomain = 0x30;
 constexpr CLRDATA_ADDRESS AssemblyAddr = 0x40;
 constexpr CLRDATA_ADDRESS ModuleAddr = 0x50;
 constexpr CLRDATA_ADDRESS GcSegment = 0x5000;
+constexpr CLRDATA_ADDRESS PohSegment = 0x7000;    // generation 4 (Pinned Object Heap)
+constexpr CLRDATA_ADDRESS FrozenSegment = 0x8800; // read-only (frozen / non-GC) segment
+constexpr CLRDATA_ADDRESS LoaderAllocatorAddr = 0x600;
+constexpr CLRDATA_ADDRESS ModernHeapNormal = 0x610;
+constexpr CLRDATA_ADDRESS ModernHeapExplicit = 0x620;
 
 // A heap-allocated ISOSMemoryEnum that hands back a canned set of SOSMemoryRegion entries. Created
 // with new; the enumerator owns it and calls Release() exactly once (which deletes it).
@@ -102,18 +107,131 @@ private:
     size_t _pos = 0;
 };
 
-// A fake ISOSDacInterface13 returning one region from each GC memory-region enumerator.
-class FakeSosDac13 : public ISOSDacInterface13
+// A fake ISOSDacInterface8 exposing a 5-generation table (gen0/1/2 + LOH + POH) so the Pinned Object
+// Heap (generation 4) can be enumerated. gen0 starts at GcSegment, gen4 (POH) at PohSegment.
+class FakeSosDac8 : public ISOSDacInterface8
 {
 public:
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID, void**) override { return E_NOINTERFACE; }
     ULONG STDMETHODCALLTYPE AddRef() override { return 1; }
     ULONG STDMETHODCALLTYPE Release() override { return 1; }
 
-    HRESULT STDMETHODCALLTYPE TraverseLoaderHeap(CLRDATA_ADDRESS, LoaderHeapKind, VISITHEAP) override { return E_NOTIMPL; }
-    HRESULT STDMETHODCALLTYPE GetDomainLoaderAllocator(CLRDATA_ADDRESS, CLRDATA_ADDRESS*) override { return E_NOTIMPL; }
-    HRESULT STDMETHODCALLTYPE GetLoaderAllocatorHeapNames(int, const char**, int*) override { return E_NOTIMPL; }
-    HRESULT STDMETHODCALLTYPE GetLoaderAllocatorHeaps(CLRDATA_ADDRESS, int, CLRDATA_ADDRESS*, LoaderHeapKind*, int*) override { return E_NOTIMPL; }
+    HRESULT STDMETHODCALLTYPE GetNumberGenerations(unsigned int* pGenerations) override
+    {
+        if (pGenerations != nullptr)
+        {
+            *pGenerations = 5;
+        }
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE GetGenerationTable(unsigned int cGenerations, struct DacpGenerationData* pData, unsigned int* pNeeded) override
+    {
+        if (pNeeded != nullptr)
+        {
+            *pNeeded = 5;
+        }
+        if (pData != nullptr && cGenerations >= 5)
+        {
+            for (unsigned int i = 0; i < 5; i++)
+            {
+                pData[i].start_segment = 0;
+            }
+            pData[0].start_segment = GcSegment; // gen0
+            pData[4].start_segment = PohSegment; // POH
+        }
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE GetGenerationTableSvr(CLRDATA_ADDRESS, unsigned int, struct DacpGenerationData*, unsigned int*) override { return E_NOTIMPL; }
+    HRESULT STDMETHODCALLTYPE GetFinalizationFillPointers(unsigned int, CLRDATA_ADDRESS*, unsigned int*) override { return E_NOTIMPL; }
+    HRESULT STDMETHODCALLTYPE GetFinalizationFillPointersSvr(CLRDATA_ADDRESS, unsigned int, CLRDATA_ADDRESS*, unsigned int*) override { return E_NOTIMPL; }
+    HRESULT STDMETHODCALLTYPE GetAssemblyLoadContext(CLRDATA_ADDRESS, CLRDATA_ADDRESS*) override { return E_NOTIMPL; }
+};
+
+// A fake ISOSDacInterface13 returning one region from each GC memory-region enumerator. When
+// EnableModernLoaderAllocator is set it also implements the per-LoaderAllocator heap enumeration.
+class FakeSosDac13 : public ISOSDacInterface13
+{
+public:
+    // Records the most recent kind-aware TraverseLoaderHeap call so tests can assert that code heaps
+    // are walked as explicit-control heaps.
+    LoaderHeapKind LastTraverseKind = LoaderHeapKindNormal;
+    CLRDATA_ADDRESS LastTraverseAddr = 0;
+
+    // Records the kind/address of the most recent explicit-control traverse only, so a later Normal
+    // traverse (e.g. legacy loader heaps) does not clobber the code-heap assertion.
+    LoaderHeapKind LastExplicitTraverseKind = LoaderHeapKindNormal;
+    CLRDATA_ADDRESS LastExplicitTraverseAddr = 0;
+
+    bool EnableModernLoaderAllocator = false;
+    CLRDATA_ADDRESS FreeRegionExtraData = 0; // SOSMemoryRegion.ExtraData for the free region
+
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID, void**) override { return E_NOINTERFACE; }
+    ULONG STDMETHODCALLTYPE AddRef() override { return 1; }
+    ULONG STDMETHODCALLTYPE Release() override { return 1; }
+
+    HRESULT STDMETHODCALLTYPE TraverseLoaderHeap(CLRDATA_ADDRESS loaderHeapAddr, LoaderHeapKind kind, VISITHEAP pCallback) override
+    {
+        LastTraverseAddr = loaderHeapAddr;
+        LastTraverseKind = kind;
+        if (kind == LoaderHeapKindExplicitControl)
+        {
+            LastExplicitTraverseAddr = loaderHeapAddr;
+            LastExplicitTraverseKind = kind;
+        }
+        if (pCallback != nullptr && loaderHeapAddr != 0)
+        {
+            pCallback(loaderHeapAddr, 0x1000, TRUE);
+        }
+        return S_OK;
+    }
+    HRESULT STDMETHODCALLTYPE GetDomainLoaderAllocator(CLRDATA_ADDRESS domain, CLRDATA_ADDRESS* pLoaderAllocator) override
+    {
+        if (!EnableModernLoaderAllocator || pLoaderAllocator == nullptr || domain == 0)
+        {
+            return E_NOTIMPL;
+        }
+        *pLoaderAllocator = LoaderAllocatorAddr; // every domain shares one loader allocator
+        return S_OK;
+    }
+    HRESULT STDMETHODCALLTYPE GetLoaderAllocatorHeapNames(int count, const char** ppNames, int* pNeeded) override
+    {
+        if (!EnableModernLoaderAllocator)
+        {
+            return E_NOTIMPL;
+        }
+        static const char* const names[] = {"LowFrequencyHeap", "FixupPrecodeHeap"};
+        if (pNeeded != nullptr)
+        {
+            *pNeeded = 2;
+        }
+        if (ppNames != nullptr && count >= 2)
+        {
+            ppNames[0] = names[0];
+            ppNames[1] = names[1];
+        }
+        return S_OK;
+    }
+    HRESULT STDMETHODCALLTYPE GetLoaderAllocatorHeaps(CLRDATA_ADDRESS loaderAllocator, int count, CLRDATA_ADDRESS* pHeaps, LoaderHeapKind* pKinds, int* pNeeded) override
+    {
+        if (!EnableModernLoaderAllocator || loaderAllocator != LoaderAllocatorAddr)
+        {
+            return E_NOTIMPL;
+        }
+        if (pNeeded != nullptr)
+        {
+            *pNeeded = 2;
+        }
+        if (pHeaps != nullptr && pKinds != nullptr && count >= 2)
+        {
+            pHeaps[0] = ModernHeapNormal;
+            pKinds[0] = LoaderHeapKindNormal;
+            pHeaps[1] = ModernHeapExplicit;
+            pKinds[1] = LoaderHeapKindExplicitControl;
+        }
+        return S_OK;
+    }
 
     HRESULT STDMETHODCALLTYPE GetHandleTableMemoryRegions(ISOSMemoryEnum** ppEnum) override
     {
@@ -127,7 +245,8 @@ public:
     }
     HRESULT STDMETHODCALLTYPE GetGCFreeRegions(ISOSMemoryEnum** ppEnum) override
     {
-        *ppEnum = new FakeMemoryEnum({SOSMemoryRegion{0x8000, 0x4000, 0, 1}});
+        // SOSMemoryRegion is {Start, Size, ExtraData, Heap}.
+        *ppEnum = new FakeMemoryEnum({SOSMemoryRegion{0x8000, 0x4000, FreeRegionExtraData, 1}});
         return S_OK;
     }
     HRESULT STDMETHODCALLTYPE LockedFlush() override { return S_OK; }
@@ -143,14 +262,26 @@ public:
     bool FailGc = false;
     bool DedupMode = false; // system + shared domains share the same heaps; no app domains.
     bool SupportInterface13 = false; // when set, QI(ISOSDacInterface13) succeeds.
+    bool SupportInterface8 = false;  // when set, QI(ISOSDacInterface8) succeeds (full generation table).
+    bool WithFrozen = false;         // when set, GcSegment chains to a read-only (frozen) segment.
     FakeSosDac13 _dac13;
+    FakeSosDac8 _dac8;
 
     // --- IUnknown ---
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override
     {
-        if (SupportInterface13 && ppvObject != nullptr && IsEqualGUID(riid, __uuidof(ISOSDacInterface13)))
+        if (ppvObject == nullptr)
+        {
+            return E_POINTER;
+        }
+        if (SupportInterface13 && IsEqualGUID(riid, __uuidof(ISOSDacInterface13)))
         {
             *ppvObject = static_cast<ISOSDacInterface13*>(&_dac13);
+            return S_OK;
+        }
+        if (SupportInterface8 && IsEqualGUID(riid, __uuidof(ISOSDacInterface8)))
+        {
+            *ppvObject = static_cast<ISOSDacInterface8*>(&_dac8);
             return S_OK;
         }
         return E_NOINTERFACE;
@@ -342,17 +473,45 @@ public:
 
     HRESULT STDMETHODCALLTYPE GetHeapSegmentData(CLRDATA_ADDRESS seg, struct DacpHeapSegmentData* data) override
     {
-        if (data == nullptr || seg != GcSegment)
+        if (data == nullptr)
         {
             return E_FAIL;
         }
-        data->segmentAddr = GcSegment;
-        data->mem = 0x5000;
-        data->allocated = 0x5400;
-        data->committed = 0x5400;
-        data->reserved = 0x6000;
-        data->next = 0;
-        return S_OK;
+        if (seg == GcSegment)
+        {
+            data->segmentAddr = GcSegment;
+            data->mem = 0x5000;
+            data->allocated = 0x5400;
+            data->committed = 0x5400;
+            data->reserved = 0x6000;
+            data->flags = 0;
+            // When requested, chain a read-only (frozen / non-GC) segment after the gen0 segment.
+            data->next = WithFrozen ? FrozenSegment : 0;
+            return S_OK;
+        }
+        if (seg == PohSegment)
+        {
+            data->segmentAddr = PohSegment;
+            data->mem = 0x7000;
+            data->allocated = 0x7200;
+            data->committed = 0x7200;
+            data->reserved = 0x7400;
+            data->flags = 0;
+            data->next = 0;
+            return S_OK;
+        }
+        if (seg == FrozenSegment)
+        {
+            data->segmentAddr = FrozenSegment;
+            data->mem = 0x8800;
+            data->allocated = 0x8A00;
+            data->committed = 0x8A00;
+            data->reserved = 0x8C00;
+            data->flags = 1; // HEAP_SEGMENT_FLAGS_READONLY
+            data->next = 0;
+            return S_OK;
+        }
+        return E_FAIL;
     }
 
     // ----------------------------------------------------------------------------------------
@@ -544,6 +703,149 @@ TEST(DacNativeHeapEnumeratorTest, EnumeratesGcMemoryRegionsViaInterface13)
             EXPECT_EQ(h.GCHeap, 1);
         }
     }
+}
+
+TEST(DacNativeHeapEnumeratorTest, CodeHeapsUseExplicitControlTraversalWithInterface13)
+{
+    FakeSosDacInterface sos;
+    sos.SupportInterface13 = true; // .NET 8+: code heaps must be walked as explicit-control heaps.
+
+    std::vector<ClrNativeHeapInfo> heaps = dac::EnumerateNativeHeapsFromSos(&sos);
+
+    // The loader code heap is still enumerated, now through ISOSDacInterface13's kind-aware overload.
+    EXPECT_TRUE(HasHeap(heaps, NativeHeapKind::LoaderCodeHeap, static_cast<uintptr_t>(LoaderCodeHeapAddr), 0x1000));
+
+    // The classic ISOSDacInterface::TraverseLoaderHeap reports all-zero blocks for an explicit-control
+    // heap on modern runtimes, so the code-heap path must request LoaderHeapKindExplicitControl.
+    EXPECT_EQ(sos._dac13.LastExplicitTraverseKind, LoaderHeapKindExplicitControl);
+    EXPECT_EQ(sos._dac13.LastExplicitTraverseAddr, LoaderCodeHeapAddr);
+}
+
+TEST(DacNativeHeapEnumeratorTest, EnumeratesPinnedObjectHeapViaInterface8)
+{
+    FakeSosDacInterface sos;
+    sos.SupportInterface8 = true; // .NET 5+: the full generation table (incl. POH) is available.
+
+    std::vector<ClrNativeHeapInfo> heaps = dac::EnumerateNativeHeapsFromSos(&sos, /*versionMajor*/ 10);
+
+    // gen0 (GcSegment) and the Pinned Object Heap (generation 4) are both reported.
+    EXPECT_TRUE(HasHeap(heaps, NativeHeapKind::GCHeapSegment, 0x5000, 0x1000)); // gen0
+    EXPECT_TRUE(HasHeap(heaps, NativeHeapKind::GCHeapSegment, 0x7000, 0x400));  // POH (0x7400 - 0x7000)
+
+    bool sawPoh = false;
+    for (const auto& h : heaps)
+    {
+        if (h.Kind == NativeHeapKind::GCHeapSegment && h.Address == 0x7000)
+        {
+            EXPECT_EQ(h.Generation, 4); // labelled as the Pinned Object Heap
+            EXPECT_EQ(h.Committed, 0x200u); // 0x7200 - 0x7000
+            sawPoh = true;
+        }
+    }
+    EXPECT_TRUE(sawPoh);
+}
+
+TEST(DacNativeHeapEnumeratorTest, ReadOnlySegmentIsReportedAsNonGCHeap)
+{
+    FakeSosDacInterface sos;
+    sos.WithFrozen = true; // gen0 chains to a read-only (frozen) segment.
+
+    std::vector<ClrNativeHeapInfo> heaps = dac::EnumerateNativeHeapsFromSos(&sos, /*versionMajor*/ 10);
+
+    // The read-only segment is the non-GC / frozen heap: a distinct kind with no generation.
+    EXPECT_EQ(CountKind(heaps, NativeHeapKind::NonGCHeap), 1);
+    EXPECT_TRUE(HasHeap(heaps, NativeHeapKind::NonGCHeap, 0x8800, 0x400)); // 0x8C00 - 0x8800
+
+    for (const auto& h : heaps)
+    {
+        if (h.Kind == NativeHeapKind::NonGCHeap)
+        {
+            EXPECT_EQ(h.Generation, -1);
+            EXPECT_EQ(h.Committed, 0x200u); // 0x8A00 - 0x8800
+        }
+    }
+
+    // The regular gen0 segment is still reported as a GC segment.
+    EXPECT_TRUE(HasHeap(heaps, NativeHeapKind::GCHeapSegment, 0x5000, 0x1000));
+}
+
+TEST(DacNativeHeapEnumeratorTest, FreeRegionsAreSubclassifiedByExtraData)
+{
+    // ExtraData encodes the free-region sub-kind: 1=GlobalHuge, 2=GlobalRegion, 3=FreeRegion,
+    // 4=SohSegment, 5=UohSegment (mirrors ClrMD / the cDAC backend).
+    struct Case
+    {
+        CLRDATA_ADDRESS extraData;
+        NativeHeapKind expected;
+    };
+    const Case cases[] = {
+        {1, NativeHeapKind::GCFreeGlobalHugeRegion},
+        {2, NativeHeapKind::GCFreeGlobalRegion},
+        {3, NativeHeapKind::GCFreeRegion},
+        {4, NativeHeapKind::GCFreeSohSegment},
+        {5, NativeHeapKind::GCFreeUohSegment},
+    };
+
+    for (const auto& c : cases)
+    {
+        FakeSosDacInterface sos;
+        sos.SupportInterface13 = true;
+        sos._dac13.FreeRegionExtraData = c.extraData;
+
+        std::vector<ClrNativeHeapInfo> heaps = dac::EnumerateNativeHeapsFromSos(&sos);
+
+        EXPECT_EQ(CountKind(heaps, c.expected), 1) << "ExtraData=" << c.extraData;
+        // Free regions are inactive (not allocated into).
+        for (const auto& h : heaps)
+        {
+            if (h.Kind == c.expected)
+            {
+                EXPECT_EQ(h.State, NativeHeapState::Inactive);
+            }
+        }
+    }
+}
+
+TEST(DacNativeHeapEnumeratorTest, BookkeepingHasNoHeapIndex)
+{
+    FakeSosDacInterface sos;
+    sos.SupportInterface13 = true;
+
+    std::vector<ClrNativeHeapInfo> heaps = dac::EnumerateNativeHeapsFromSos(&sos);
+
+    for (const auto& h : heaps)
+    {
+        if (h.Kind == NativeHeapKind::GCBookkeeping)
+        {
+            EXPECT_EQ(h.State, NativeHeapState::RegionOfRegions);
+            EXPECT_EQ(h.GCHeap, -1); // a region-of-regions covers all heaps, so no single index
+        }
+        if (h.Kind == NativeHeapKind::HandleTable)
+        {
+            EXPECT_EQ(h.State, NativeHeapState::Active);
+        }
+    }
+}
+
+TEST(DacNativeHeapEnumeratorTest, ModernLoaderAllocatorHeapsViaInterface13)
+{
+    FakeSosDacInterface sos;
+    sos.SupportInterface13 = true;
+    sos._dac13.EnableModernLoaderAllocator = true; // .NET 8+: per-LoaderAllocator heap enumeration.
+
+    std::vector<ClrNativeHeapInfo> heaps = dac::EnumerateNativeHeapsFromSos(&sos, /*versionMajor*/ 11);
+
+    // The modern path surfaces heap kinds the legacy AppDomain walk misses (e.g. FixupPrecodeHeap).
+    EXPECT_TRUE(HasHeap(heaps, NativeHeapKind::LowFrequencyHeap, ModernHeapNormal, 0x1000));
+    EXPECT_TRUE(HasHeap(heaps, NativeHeapKind::FixupPrecodeHeap, ModernHeapExplicit, 0x1000));
+
+    // Every domain shares one loader allocator, so its heaps are enumerated exactly once.
+    EXPECT_EQ(CountKind(heaps, NativeHeapKind::LowFrequencyHeap), 1);
+    EXPECT_EQ(CountKind(heaps, NativeHeapKind::FixupPrecodeHeap), 1);
+
+    // VCS stub heaps are part of the loader-allocator list in the modern path, so the separate legacy
+    // VCS walk does not run.
+    EXPECT_EQ(CountKind(heaps, NativeHeapKind::IndirectionCellHeap), 0);
 }
 
 TEST(DacNativeHeapEnumeratorTest, SharedLoaderHeapsAreDeduped)

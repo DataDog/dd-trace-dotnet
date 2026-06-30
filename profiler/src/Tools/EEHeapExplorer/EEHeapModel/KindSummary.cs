@@ -19,23 +19,64 @@ public sealed class KindSummary
     public ulong CommittedTotal { get; init; }
 
     /// <summary>
-    /// Aggregates a report into one <see cref="KindSummary"/> per kind, sorted by reserved size
+    /// This kind's share of the report's total reserved bytes (0..1).
+    /// </summary>
+    public double ReservedFraction { get; init; }
+
+    /// <summary>
+    /// This kind's share of the report's total committed bytes (0..1).
+    /// </summary>
+    public double CommittedFraction { get; init; }
+
+    /// <summary>
+    /// High-level group this kind belongs to (see <see cref="HeapKindGroup"/>).
+    /// </summary>
+    public string Group { get; init; } = HeapKindGroup.Other;
+
+    /// <summary>
+    /// Total committed bytes of the whole group this kind belongs to (used to order groups by size).
+    /// </summary>
+    public ulong GroupCommittedTotal { get; init; }
+
+    /// <summary>
+    /// Aggregates a report into one <see cref="KindSummary"/> per kind, sorted by committed size
     /// descending ("sorted by size").
     /// </summary>
     public static IReadOnlyList<KindSummary> BuildFromReport(EEHeapReport report)
     {
-        var summaries = report.Heaps
+        ulong totalReserved = report.TotalReserved;
+        ulong totalCommitted = report.TotalCommitted;
+
+        var perKind = report.Heaps
             .GroupBy(h => h.Kind)
-            .Select(g => new KindSummary
+            .Select(g =>
             {
-                Kind = g.Key,
-                Count = g.Count(),
-                ReservedTotal = g.Aggregate(0ul, (acc, h) => acc + h.Reserved),
-                CommittedTotal = g.Aggregate(0ul, (acc, h) => acc + h.Committed),
+                ulong reserved = g.Aggregate(0ul, (acc, h) => acc + h.Reserved);
+                ulong committed = g.Aggregate(0ul, (acc, h) => acc + h.Committed);
+                return (Kind: g.Key, Count: g.Count(), Reserved: reserved, Committed: committed, Group: HeapKindGroup.ForKind(g.Key));
             })
-            .OrderByDescending(s => s.ReservedTotal)
             .ToList();
 
-        return summaries;
+        var groupCommitted = new Dictionary<string, ulong>();
+        foreach (var k in perKind)
+        {
+            groupCommitted.TryGetValue(k.Group, out ulong sum);
+            groupCommitted[k.Group] = sum + k.Committed;
+        }
+
+        return perKind
+            .Select(k => new KindSummary
+            {
+                Kind = k.Kind,
+                Count = k.Count,
+                ReservedTotal = k.Reserved,
+                CommittedTotal = k.Committed,
+                ReservedFraction = totalReserved == 0 ? 0 : (double)k.Reserved / totalReserved,
+                CommittedFraction = totalCommitted == 0 ? 0 : (double)k.Committed / totalCommitted,
+                Group = k.Group,
+                GroupCommittedTotal = groupCommitted[k.Group],
+            })
+            .OrderByDescending(s => s.CommittedTotal)
+            .ToList();
     }
 }

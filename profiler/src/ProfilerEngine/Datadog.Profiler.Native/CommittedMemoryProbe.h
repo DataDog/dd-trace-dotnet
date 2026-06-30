@@ -15,4 +15,13 @@ namespace eeheap
 // reserved. Used by both backends for the non-GC heaps whose block/Traverse* APIs only expose a
 // reserved block size. Returns 0 for a null/zero region.
 uint64_t ProbeCommittedBytes(IMemoryReader& reader, uintptr_t base, uint64_t reserved);
+
+// Returns the number of committed bytes within [base, base + reserved) using the OS region map
+// (VirtualQuery on Windows, /proc/self/maps on Linux). Unlike ProbeCommittedBytes this is gap-aware:
+// it sums every committed sub-range in the reservation rather than stopping at the first hole, and
+// its cost is O(number of distinct regions) instead of O(number of pages). Required for the GC
+// "bookkeeping" (card table) block, whose committed runs are scattered per element with reserved
+// gaps between them. In-process only; returns 0 when the region map cannot be determined (callers
+// fall back to the reserved size). The result is capped at reserved.
+uint64_t QueryCommittedBytes(uintptr_t base, uint64_t reserved);
 } // namespace eeheap
