@@ -393,7 +393,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             if (identifier.Length > MaxStackAlloc)
             {
-                Log.Warning("Identifier length {Length} exceeds maximum allowed length of {MaxSize}, hence we are going to redact this identifier", identifier.Length, property1: MaxStackAlloc);
+                Log.Warning("Identifier length {Length} exceeds maximum allowed length of {MaxSize}, so it cannot be normalized and will be skipped for redaction matching", identifier.Length, property1: MaxStackAlloc);
                 return false;
             }
 
