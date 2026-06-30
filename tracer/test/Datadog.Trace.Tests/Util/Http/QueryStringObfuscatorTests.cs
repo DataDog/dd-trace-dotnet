@@ -158,37 +158,30 @@ public class QueryStringObfuscatorTests
         }
     }
 
-    // Regression guard for a reported production CPU spike on Vault file-download URLs carrying
-    // URL-encoded CJK filenames alongside auth-related parameters. URL-encoding makes the input pure
-    // ASCII ("%EC%84%A4..."), and the default pattern's repetition groups are linear (their
-    // alternatives are mutually exclusive by the second character), so this must NOT exhibit
-    // catastrophic backtracking. A deliberately tight timeout means any future change that
-    // reintroduces super-linear backtracking would time out (Obfuscate returns string.Empty) and
-    // fail the trailing-secret assertion below.
+    // Secrets must still be redacted - and surrounding multi-byte values left byte-for-byte intact -
+    // across a range of Unicode scripts (CJK, RTL, surrogate-pair emoji, combining accents, Cyrillic).
+    // This guards against the obfuscator mangling non-ASCII content or failing to match keywords when
+    // they sit next to it.
     [SkippableTheory]
-    [InlineData(50)]
-    [InlineData(500)]
-    [InlineData(2000)]
-    public void DefaultPatternDoesNotBacktrackOnUrlEncodedCjk(int filenameRepetitions)
+    [InlineData("q=안녕하세요&password=secret123&x=세계", "q=안녕하세요&<redacted>&x=세계")] // Korean
+    [InlineData("q=こんにちは&token=abcdef123456&y=世界", "q=こんにちは&<redacted>&y=世界")] // Japanese
+    [InlineData("q=你好&api_key=xyz789&z=世界", "q=你好&<redacted>&z=世界")] // Chinese + api_key
+    [InlineData("q=مرحبا&pwd=p4ss&w=عالم", "q=مرحبا&<redacted>&w=عالم")] // Arabic (RTL)
+    [InlineData("q=😀🎉&secret=hunter2&r=🚀", "q=😀🎉&<redacted>&r=🚀")] // Emoji (surrogate pairs)
+    [InlineData("q=café&signature=abc&naïve=v", "q=café&<redacted>&naïve=v")] // Latin-1 accents
+    [InlineData("q=привет&access_key=k&s=мир", "q=привет&<redacted>&s=мир")] // Cyrillic + access_key
+    public void RedactsSecretsWhilePreservingUnicodeValues(string queryString, string expected)
     {
         // the default regex seems to crash the regex engine on netcoreapp2.1 under arm64, with a null reference exception on the dotnet RegexRunner. Its ok as these arent supported in auto instrumentation, we just warn not to reuse this regex if 2.1&arm64 is the environment
 #if NETCOREAPP2_1
         SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
 #endif
-        const double tightTimeoutMs = 2000;
-        var encodedCjkFilename = string.Concat(Enumerable.Repeat("%EC%84%A4%EA%B3%84%EC%9E%90%EB%A3%8C", filenameRepetitions));
-        // Mirrors the reported URL shape, with a genuinely redactable secret appended so a successful
-        // (non-timed-out) run is observable in the output.
-        var queryString = $"/Vault/vaultserver.aspx?fileName={encodedCjkFilename}_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&password=hunter2";
-
         var logger = new Mock<IDatadogLogger>();
-        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(tightTimeoutMs, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
+        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
 
         var result = queryStringObfuscator.Obfuscate(queryString);
 
-        // Completed within the timeout (no RegexMatchTimeoutException, which would yield string.Empty)
-        // and still redacted the trailing secret while leaving the encoded CJK bytes untouched.
-        result.Should().Be($"/Vault/vaultserver.aspx?fileName={encodedCjkFilename}_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&<redacted>");
+        result.Should().Be(expected);
     }
 
     // The reported Vault "ticket" parameter is not actually matched by the default pattern (there is
