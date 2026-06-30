@@ -112,6 +112,7 @@ namespace Datadog.Trace.Agent
         /// StatsBuffer is not thread-safe, this property is not intended to be used outside of the class,
         /// except for tests.
         /// </summary>
+        [TestingAndPrivateOnly]
         internal StatsBuffer CurrentBuffer => _buffers[_currentBuffer];
 
         public bool? CanComputeStats
@@ -427,7 +428,7 @@ namespace Datadog.Trace.Agent
         {
             if (results.BaseService is not null)
             {
-                return [EncodingHelpers.Utf8NoBom.GetBytes($"{Tags.BaseService}:{results.BaseService}")];
+                return [EncodeKeyValue(BaseServiceUtf8Prefix, results.BaseService)];
             }
 
             if (results.PeerTagCount == 0)
@@ -445,10 +446,27 @@ namespace Datadog.Trace.Agent
                 }
 
                 tagValue = IpAddressObfuscationUtil.QuantizePeerIpAddresses(tagValue);
-                result.Add(EncodingHelpers.Utf8NoBom.GetBytes($"{peerTag.Name}:{tagValue}"));
+                result.Add(EncodeKeyValue(peerTag.Utf8Prefix, tagValue));
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Builds a "key:value" UTF-8 byte array by reusing the pre-encoded <paramref name="utf8KeyPrefix"/>
+        /// (e.g. "tagKey:") and encoding only <paramref name="tagValue"/> directly into the destination
+        /// array — avoiding both the intermediate interpolated string and re-encoding the key prefix.
+        /// </summary>
+        private static byte[] EncodeKeyValue(byte[] utf8KeyPrefix, string tagValue)
+        {
+            var valueByteCount = EncodingHelpers.Utf8NoBom.GetByteCount(tagValue);
+            var encoded = new byte[utf8KeyPrefix.Length + valueByteCount];
+
+            // Copy the already-encoded "key:" bytes, then encode the value straight after them.
+            Buffer.BlockCopy(utf8KeyPrefix, 0, encoded, 0, utf8KeyPrefix.Length);
+            EncodingHelpers.Utf8NoBom.GetBytes(tagValue, charIndex: 0, charCount: tagValue.Length, encoded, byteIndex: utf8KeyPrefix.Length);
+
+            return encoded;
         }
 
         internal async Task Flush()
