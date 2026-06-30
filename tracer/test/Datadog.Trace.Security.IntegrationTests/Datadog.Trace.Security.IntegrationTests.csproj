@@ -115,6 +115,9 @@
     <None Update="ruleset.3.0.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="ruleset.response-status-body.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="wrong-tags-name-rule-set.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

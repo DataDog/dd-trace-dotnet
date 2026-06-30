@@ -1,0 +1,46 @@
+{
+  "version": "2.2",
+  "metadata": {
+    "rules_version": "1.0.0"
+  },
+  "rules": [
+    {
+      "id": "test-response-status-body-001",
+      "name": "Test: combined response status and body rule",
+      "tags": {
+        "type": "test_response_status_body",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.response.status"
+              }
+            ],
+            "regex": "^404$"
+          },
+          "operator": "match_regex"
+        },
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.response.body"
+              }
+            ],
+            "list": [
+              "waf_sentinel_response_body"
+            ]
+          },
+          "operator": "phrase_match"
+        }
+      ],
+      "transformers": [],
+      "on_match": [
+        "block"
+      ]
+    }
+  ]
+}
