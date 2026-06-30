@@ -1,7 +1,7 @@
 services:
   # ARM64 dependencies
   localstack_arm64:
-    image: localstack/localstack
+    image: localstack/localstack:4.14.0@sha256:3ebc37595918b8accb852f8048fef2aff047d465167edd655528065b07bc364a
     environment:
       - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
       - DEBUG=1
@@ -92,7 +92,7 @@ services:
 
 # Dependencies
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack:4.14.0@sha256:3ebc37595918b8accb852f8048fef2aff047d465167edd655528065b07bc364a
     profiles: ["group2"]
     environment:
       - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
@@ -881,7 +881,7 @@ services:
   # OSX ARM64 dependencies
 
   localstack_osx_arm64:
-    image: localstack/localstack
+    image: localstack/localstack:4.14.0@sha256:3ebc37595918b8accb852f8048fef2aff047d465167edd655528065b07bc364a
     environment:
       - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
       - DEBUG=1
