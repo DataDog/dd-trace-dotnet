@@ -12,8 +12,6 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Abstractions;
-using Microsoft.AspNetCore.Routing;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
@@ -48,19 +46,40 @@ internal static class SecurityCoordinatorHelpers
                 {
                     var securityCoordinator = SecurityCoordinator.Get(security, span, transport);
 
-                    var args = new Dictionary<string, object>
-                    {
-                        { AddressesConstants.ResponseStatus, httpContext.Response.StatusCode.ToString() },
-                    };
+                    // If the request-phase scan never ran (e.g. an MVC request short-circuited by an
+                    // authorization/resource filter before ActionResponseFilter.OnActionExecuting, and the
+                    // end-pipeline fallback didn't fire because an endpoint produced the response), fold the
+                    // basic request addresses (method, URI, query, headers, cookies, IP) into this
+                    // response-phase call so request-based rules still evaluate. This keeps coverage to a
+                    // single WAF call and can still block, since FireOnStarting runs before the response is
+                    // committed.
+                    var requestScanCompleted = span.Context?.TraceContext?.AppSecRequestContext.RequestScanCompleted ?? false;
+                    var args = requestScanCompleted
+                                   ? new Dictionary<string, object>()
+                                   : securityCoordinator.GetBasicRequestArgsForWaf();
+
+                    args[AddressesConstants.ResponseStatus] = httpContext.Response.StatusCode.ToString();
 
                     var extractedHeaders = SecurityCoordinator.ExtractHeadersFromRequest(headers);
                     if (extractedHeaders is not null)
                     {
-                        args.Add(AddressesConstants.ResponseHeaderNoCookies, extractedHeaders);
+                        args[AddressesConstants.ResponseHeaderNoCookies] = extractedHeaders;
+                    }
+
+                    // Include response body stashed by ActionResponseFilter.OnActionExecuted
+                    var pendingResponseBody = span.Context?.TraceContext?.AppSecRequestContext.TakePendingResponseBody();
+                    if (pendingResponseBody is not null)
+                    {
+                        args[AddressesConstants.ResponseBody] = pendingResponseBody;
                     }
 
                     var result = securityCoordinator.RunWaf(args, true);
                     securityCoordinator.BlockAndReport(result);
+
+                    if (!requestScanCompleted && span.Context?.TraceContext is { } traceContext)
+                    {
+                        traceContext.AppSecRequestContext.RequestScanCompleted = true;
+                    }
                 }
             }
         }
@@ -74,91 +93,69 @@ internal static class SecurityCoordinatorHelpers
         }
     }
 
-    internal static void CheckPathParamsAndSessionId(this Security security, HttpContext context, Span span, IDictionary<string, object> pathParams)
+    /// <summary>
+    /// Performs the single consolidated request-phase WAF scan, combining basic request data
+    /// (method, URI, query, headers, cookies, IP), path parameters, session ID, and request body.
+    /// Idempotent per request: if the request-phase scan has already run (RequestScanCompleted),
+    /// it does nothing. This makes it safe to call from more than one hook (e.g. a non-MVC route
+    /// event and an MVC/Razor action filter both firing for the same request).
+    /// </summary>
+    internal static void RunRequestScan(this Security security, HttpContext context, Span span, IDictionary<string, object>? pathParams, object? requestBody)
     {
-        if (security.AppsecEnabled)
+        if (!security.AppsecEnabled)
         {
-            var transport = new SecurityCoordinator.HttpTransport(context);
-            if (!transport.IsBlocked)
-            {
-                var securityCoordinator = SecurityCoordinator.Get(security, span, transport);
-                var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
-                IResult? result;
-                // we need to check context.Features.Get<ISessionFeature> as accessing the Session item if session has not been configured for the application is throwing InvalidOperationException
-                var sessionFeature = context.Features[SessionFeature];
-                Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.ISessionFeature? sessionFeatureProxy = null;
-                if (sessionFeature is not null)
-                {
-                    sessionFeatureProxy = sessionFeature.DuckCast<ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.ISessionFeature>();
-                }
-
-                if (sessionFeatureProxy?.Session?.IsAvailable == true)
-                {
-                    result = securityCoordinator.RunWaf(args, sessionId: sessionFeatureProxy.Session.Id);
-                }
-                else
-                {
-                    result = securityCoordinator.RunWaf(args);
-                }
-
-                securityCoordinator.BlockAndReport(result);
-            }
+            return;
         }
-    }
 
-    internal static void CheckPathParamsFromAction(this Security security, HttpContext context, Span span, IList<ParameterDescriptor>? actionPathParams, RouteValueDictionary routeValues)
-    {
-        if (security.AppsecEnabled && actionPathParams != null)
+        var appSecRequestContext = span.Context?.TraceContext?.AppSecRequestContext;
+        if (appSecRequestContext is { RequestScanCompleted: true })
         {
-            var transport = new SecurityCoordinator.HttpTransport(context);
-            if (!transport.IsBlocked)
-            {
-                var securityCoordinator = SecurityCoordinator.Get(security, span, transport);
-                var pathParams = new Dictionary<string, object>(actionPathParams.Count);
-                for (var i = 0; i < actionPathParams.Count; i++)
-                {
-                    var p = actionPathParams[i];
-                    if (routeValues.TryGetValue(p.Name, out var value))
-                    {
-                        pathParams.Add(p.Name, value);
-                    }
-                }
-
-                if (pathParams.Count == 0)
-                {
-                    return;
-                }
-
-                var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
-                var result = securityCoordinator.RunWaf(args);
-                securityCoordinator.BlockAndReport(result);
-            }
-        }
-    }
-
-    internal static object? CheckBody(this Security security, HttpContext context, Span span, object body, bool response)
-    {
-        if (response && !security.Settings.ApiSecurityParseResponseBody)
-        {
-            return null;
+            return;
         }
 
         var transport = new SecurityCoordinator.HttpTransport(context);
-        if (!transport.IsBlocked)
+        if (transport.IsBlocked)
         {
-            var securityCoordinator = SecurityCoordinator.Get(security, span, transport);
-            var keysAndValues = ObjectExtractor.Extract(body);
-
-            if (keysAndValues is not null)
-            {
-                var args = new Dictionary<string, object> { { response ? AddressesConstants.ResponseBody : AddressesConstants.RequestBody, keysAndValues } };
-                var result = securityCoordinator.RunWaf(args);
-                securityCoordinator.BlockAndReport(result);
-                return keysAndValues;
-            }
+            return;
         }
 
-        return null;
+        var securityCoordinator = SecurityCoordinator.Get(security, span, transport);
+        var args = securityCoordinator.GetBasicRequestArgsForWaf();
+
+        if (pathParams?.Count > 0)
+        {
+            args[AddressesConstants.RequestPathParams] = pathParams;
+        }
+
+        if (requestBody is not null)
+        {
+            args[AddressesConstants.RequestBody] = requestBody;
+        }
+
+        // we need to check context.Features.Get<ISessionFeature> as accessing the Session item if session has not been configured for the application is throwing InvalidOperationException
+        var sessionFeature = context.Features[SessionFeature];
+        Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.ISessionFeature? sessionFeatureProxy = null;
+        if (sessionFeature is not null)
+        {
+            sessionFeatureProxy = sessionFeature.DuckCast<ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents.ISessionFeature>();
+        }
+
+        IResult? result;
+        if (sessionFeatureProxy?.Session?.IsAvailable == true)
+        {
+            result = securityCoordinator.RunWaf(args, sessionId: sessionFeatureProxy.Session.Id);
+        }
+        else
+        {
+            result = securityCoordinator.RunWaf(args);
+        }
+
+        securityCoordinator.BlockAndReport(result);
+
+        if (appSecRequestContext is not null)
+        {
+            appSecRequestContext.RequestScanCompleted = true;
+        }
     }
 }
 #endif

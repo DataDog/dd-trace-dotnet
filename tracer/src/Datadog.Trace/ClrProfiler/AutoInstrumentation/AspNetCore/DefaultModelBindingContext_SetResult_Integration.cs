@@ -10,7 +10,6 @@ using System.Collections;
 using System.ComponentModel;
 using System.Data;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -99,9 +98,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         {
             object? bodyExtracted = null;
 
-            if (security.AppsecEnabled)
+            if (security.AppsecEnabled || iast.Settings.Enabled)
             {
-                bodyExtracted = security.CheckBody(context.HttpContext, span, context.Result.Model, false);
+                bodyExtracted = ObjectExtractor.Extract(context.Result.Model);
+            }
+
+            if (security.AppsecEnabled && bodyExtracted is not null)
+            {
+                // Stash the extracted body for the consolidated request-phase WAF scan that runs
+                // in ActionResponseFilter.OnActionExecuting (after model binding, before action execution).
+                span.Context?.TraceContext?.AppSecRequestContext.SetPendingRequestBody(bodyExtracted);
             }
 
             if (iast.Settings.Enabled)
