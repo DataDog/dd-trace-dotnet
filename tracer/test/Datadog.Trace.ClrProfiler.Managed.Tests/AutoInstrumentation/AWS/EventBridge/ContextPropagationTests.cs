@@ -5,9 +5,12 @@
 
 #nullable enable
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Amazon.EventBridge.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
@@ -26,21 +29,25 @@ public class ContextPropagationTests
     private const string DatadogKey = "_datadog";
     private const string DataStreamsContextKey = "dd-pathway-ctx-base64";
     private const string DetailType = "test-detail-type";
+    private const string ServiceName = "test-eventbridge";
     private const string StartTimeKey = "x-datadog-start-time";
     private const string ResourceNameKey = "x-datadog-resource-name";
     private const string EventBusName = "test-event-bus";
+    private const string EventBusPathwayHash = "4499620863636772640";
+    private const string DefaultBusPathwayHash = "12415672181339992293";
+    private const int EventBusInjectedPayloadSizeBytes = 431;
+    private const int DefaultBusInjectedPayloadSizeBytes = 388;
     private const int MaxSizeBytes = 256 * 1024; // 256 KB
+    private const long TraceIdUpper = 1234567890123456789;
+    private const ulong TraceIdLower = 9876543210987654321;
+    private const ulong SpanId = 6766950223540265769;
 
     private readonly SpanContext _spanContext;
 
     public ContextPropagationTests()
     {
-        const long upper = 1234567890123456789;
-        const ulong lower = 9876543210987654321;
-
-        var traceId = new TraceId(upper, lower);
-        const ulong spanId = 6766950223540265769;
-        _spanContext = new SpanContext(traceId, spanId, 1, "test-eventbridge", "serverless");
+        _spanContext = CreateFixedSpanContext(origin: "serverless");
+        ResetLastConsumePathway();
     }
 
     [Fact]
@@ -317,14 +324,6 @@ public class ContextPropagationTests
     }
 
     [Fact]
-    public void GetPayloadSizeBytes_UsesUtf8Encoding()
-    {
-        const string detail = "{\"name\":\"Jørdan\",\"emoji\":\"🙂\"}";
-
-        ContextPropagation.GetPayloadSizeBytes(detail).Should().Be(Encoding.UTF8.GetByteCount(detail));
-    }
-
-    [Fact]
     public async Task InjectTracingContext_WithDsmEnabled_AddsPathwayContext()
     {
         var request = GeneratePutEventsRequest([
@@ -332,43 +331,37 @@ public class ContextPropagationTests
         ]);
 
         var proxy = request.DuckCast<IPutEventsRequest>();
-        var settings = TracerSettings.Create(new() { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } });
+        var settings = CreateDsmSettings();
 
         await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
-        var scope = AwsEventBridgeCommon.CreateScope(tracer, "PutEvents", SpanKinds.Producer, out _);
+        using var scope = CreateDsmScope();
 
-        try
-        {
-            ContextPropagation.InjectContext(tracer, proxy, scope, new PropagationContext(scope!.Span.Context, baggage: null));
+        ContextPropagation.InjectContext(tracer, proxy, scope, new PropagationContext(scope.Span.Context, baggage: null));
 
-            var entries = (IList)proxy.Entries.Value!;
-            entries.Count.Should().Be(1);
-            var entry = (PutEventsRequestEntry)entries[0]!;
+        var entries = (IList)proxy.Entries.Value!;
+        entries.Count.Should().Be(1);
+        var entry = (PutEventsRequestEntry)entries[0]!;
 
-            var detail = JsonConvert.DeserializeObject<Dictionary<string, object>>(entry.Detail);
-            detail.Should().NotBeNull();
-            var detailDictionary = detail!;
-            detailDictionary.Should().ContainKey(DatadogKey);
+        var detail = JsonConvert.DeserializeObject<Dictionary<string, object>>(entry.Detail);
+        detail.Should().NotBeNull();
+        var detailDictionary = detail!;
+        detailDictionary.Should().ContainKey(DatadogKey);
 
-            var extracted = detailDictionary.TryGetValue(DatadogKey, out var datadogObject);
-            extracted.Should().BeTrue();
-            datadogObject.Should().NotBeNull();
+        var extracted = detailDictionary.TryGetValue(DatadogKey, out var datadogObject);
+        extracted.Should().BeTrue();
+        datadogObject.Should().NotBeNull();
 
-            var jsonString = JsonConvert.SerializeObject(datadogObject);
-            var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
-            var extractedTraceContextDictionary = extractedTraceContext!;
+        var jsonString = JsonConvert.SerializeObject(datadogObject);
+        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+        var extractedTraceContextDictionary = extractedTraceContext!;
 
-            extractedTraceContextDictionary.Should().ContainKey(DataStreamsContextKey);
-            extractedTraceContextDictionary[DataStreamsContextKey].Should().NotBeNull();
-            var encodedPathway = extractedTraceContextDictionary[DataStreamsContextKey].ToString();
-            encodedPathway.Should().NotBeNullOrEmpty();
-            System.Convert.FromBase64String(encodedPathway!).Should().NotBeEmpty();
-            scope.Span.GetTag("pathway.hash").Should().NotBeNullOrEmpty();
-        }
-        finally
-        {
-            scope?.Dispose();
-        }
+        extractedTraceContextDictionary.Should().ContainKey(DataStreamsContextKey);
+        extractedTraceContextDictionary[DataStreamsContextKey].Should().NotBeNull();
+        var encodedPathway = extractedTraceContextDictionary[DataStreamsContextKey].ToString();
+        encodedPathway.Should().NotBeNullOrEmpty();
+        System.Convert.FromBase64String(encodedPathway!).Should().NotBeEmpty();
+        scope.Span.GetTag("pathway.hash").Should().Be(EventBusPathwayHash);
+        Encoding.UTF8.GetByteCount(entry.Detail).Should().Be(EventBusInjectedPayloadSizeBytes);
     }
 
     [Fact]
@@ -379,41 +372,35 @@ public class ContextPropagationTests
         ]);
 
         var proxy = request.DuckCast<IPutEventsRequest>();
-        var settings = TracerSettings.Create(new() { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } });
+        var settings = CreateDsmSettings();
 
         await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
-        var scope = AwsEventBridgeCommon.CreateScope(tracer, "PutEvents", SpanKinds.Producer, out _);
+        using var scope = CreateDsmScope();
 
-        try
-        {
-            ContextPropagation.InjectContext(tracer, proxy, scope, new PropagationContext(scope!.Span.Context, baggage: null));
+        ContextPropagation.InjectContext(tracer, proxy, scope, new PropagationContext(scope.Span.Context, baggage: null));
 
-            var entries = (IList)proxy.Entries.Value!;
-            entries.Count.Should().Be(1);
-            var entry = (PutEventsRequestEntry)entries[0]!;
+        var entries = (IList)proxy.Entries.Value!;
+        entries.Count.Should().Be(1);
+        var entry = (PutEventsRequestEntry)entries[0]!;
 
-            var detail = JsonConvert.DeserializeObject<Dictionary<string, object>>(entry.Detail);
-            detail.Should().NotBeNull();
-            var detailDictionary = detail!;
-            detailDictionary.Should().ContainKey(DatadogKey);
+        var detail = JsonConvert.DeserializeObject<Dictionary<string, object>>(entry.Detail);
+        detail.Should().NotBeNull();
+        var detailDictionary = detail!;
+        detailDictionary.Should().ContainKey(DatadogKey);
 
-            var extracted = detailDictionary.TryGetValue(DatadogKey, out var datadogObject);
-            extracted.Should().BeTrue();
-            datadogObject.Should().NotBeNull();
+        var extracted = detailDictionary.TryGetValue(DatadogKey, out var datadogObject);
+        extracted.Should().BeTrue();
+        datadogObject.Should().NotBeNull();
 
-            var jsonString = JsonConvert.SerializeObject(datadogObject);
-            var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
-            var extractedTraceContextDictionary = extractedTraceContext!;
+        var jsonString = JsonConvert.SerializeObject(datadogObject);
+        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+        var extractedTraceContextDictionary = extractedTraceContext!;
 
-            extractedTraceContextDictionary.Should().ContainKey(DataStreamsContextKey);
-            extractedTraceContextDictionary.Should().NotContainKey(ResourceNameKey);
-            extractedTraceContextDictionary[DataStreamsContextKey].Should().NotBeNull();
-            scope.Span.GetTag("pathway.hash").Should().NotBeNullOrEmpty();
-        }
-        finally
-        {
-            scope?.Dispose();
-        }
+        extractedTraceContextDictionary.Should().ContainKey(DataStreamsContextKey);
+        extractedTraceContextDictionary.Should().NotContainKey(ResourceNameKey);
+        extractedTraceContextDictionary[DataStreamsContextKey].Should().NotBeNull();
+        scope.Span.GetTag("pathway.hash").Should().Be(DefaultBusPathwayHash);
+        Encoding.UTF8.GetByteCount(entry.Detail).Should().Be(DefaultBusInjectedPayloadSizeBytes);
     }
 
     [Fact]
@@ -424,30 +411,51 @@ public class ContextPropagationTests
         ]);
 
         var proxy = request.DuckCast<IPutEventsRequest>();
-        var settings = TracerSettings.Create(new() { { ConfigurationKeys.DataStreamsMonitoring.Enabled, true } });
+        var settings = CreateDsmSettings();
 
         await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
-        var scope = AwsEventBridgeCommon.CreateScope(tracer, "PutEvents", SpanKinds.Producer, out _);
+        using var scope = CreateDsmScope();
 
-        try
-        {
-            ContextPropagation.InjectContext(tracer, proxy, scope, new PropagationContext(scope!.Span.Context, baggage: null));
+        ContextPropagation.InjectContext(tracer, proxy, scope, new PropagationContext(scope.Span.Context, baggage: null));
 
-            var entries = (IList)proxy.Entries.Value!;
-            entries.Count.Should().Be(1);
-            var entry = (PutEventsRequestEntry)entries[0]!;
+        var entries = (IList)proxy.Entries.Value!;
+        entries.Count.Should().Be(1);
+        var entry = (PutEventsRequestEntry)entries[0]!;
 
-            entry.Detail.Should().Be("{invalid json");
-            scope.Span.GetTag("pathway.hash").Should().BeNull();
-        }
-        finally
-        {
-            scope?.Dispose();
-        }
+        entry.Detail.Should().Be("{invalid json");
+        scope.Span.GetTag("pathway.hash").Should().BeNull();
     }
 
     private static PutEventsRequest GeneratePutEventsRequest(List<PutEventsRequestEntry> entries)
     {
         return new PutEventsRequest { Entries = entries };
+    }
+
+    private static TracerSettings CreateDsmSettings()
+    {
+        return TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.DataStreamsMonitoring.Enabled, true },
+            { ConfigurationKeys.PropagateProcessTags, false },
+            { ConfigurationKeys.ServiceName, ServiceName },
+        });
+    }
+
+    private static Scope CreateDsmScope()
+    {
+        var span = new Span(CreateFixedSpanContext(), DateTimeOffset.UtcNow);
+        return new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: false);
+    }
+
+    private static SpanContext CreateFixedSpanContext(string origin = "")
+    {
+        return new SpanContext(new TraceId(TraceIdUpper, TraceIdLower), SpanId, 1, ServiceName, origin);
+    }
+
+    private static void ResetLastConsumePathway()
+    {
+        var field = typeof(DataStreamsMonitoring.DataStreamsManager).GetField("LastConsumePathway", BindingFlags.NonPublic | BindingFlags.Static);
+        var lastConsumePathway = (AsyncLocal<DataStreamsMonitoring.PathwayContext?>)field!.GetValue(null)!;
+        lastConsumePathway.Value = null;
     }
 }

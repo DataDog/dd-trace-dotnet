@@ -12,7 +12,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
 {
@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
                 return;
             }
 
-            var payloadSizeBytes = GetPayloadSizeBytes(detail);
+            var payloadSizeBytes = Encoding.UTF8.GetByteCount(detail);
             var pathwayContext = SetDataStreamsCheckpoint(tracer, scope, entry.DetailType, entry.EventBusName, payloadSizeBytes);
 
             var detailBuilder = Util.StringBuilderCache.Acquire().Append(detail);
@@ -101,17 +101,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             if (eventBusName != null)
             {
                 jsonBuilder.Append($",\"{ResourceNameKey}\":\"");
-                AppendEscapedJsonString(jsonBuilder, eventBusName);
+                JsonHelper.WriteEscapedJavaScriptString(jsonBuilder, eventBusName);
                 jsonBuilder.Append('"');
             }
 
             jsonBuilder.Append('}');
-        }
-
-        [TestingAndPrivateOnly]
-        internal static int GetPayloadSizeBytes(string detail)
-        {
-            return Encoding.UTF8.GetByteCount(detail);
         }
 
         private static PathwayContext? SetDataStreamsCheckpoint(Tracer tracer, Scope? scope, string? detailType, string? eventBusName, long payloadSizeBytes)
@@ -140,69 +134,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
         private static void AppendJsonProperty(StringBuilder carrier, string key, string value)
         {
             carrier.Append('"').Append(key).Append("\":\"");
-            AppendEscapedJsonString(carrier, value);
+            JsonHelper.WriteEscapedJavaScriptString(carrier, value);
             carrier.Append("\",");
-        }
-
-        private static void AppendEscapedJsonString(StringBuilder builder, string value)
-        {
-            foreach (var c in value)
-            {
-                switch (c)
-                {
-                    case '"':
-                        builder.Append("\\\"");
-                        break;
-                    case '\\':
-                        builder.Append("\\\\");
-                        break;
-                    case '\n':
-                        builder.Append("\\n");
-                        break;
-                    case '\r':
-                        builder.Append("\\r");
-                        break;
-                    case '\f':
-                        builder.Append("\\f");
-                        break;
-                    case '\b':
-                        builder.Append("\\b");
-                        break;
-                    case '\t':
-                        builder.Append("\\t");
-                        break;
-                    case '\u0085':
-                    case '\u2028':
-                    case '\u2029':
-                        AppendUnicodeEscape(builder, c);
-                        break;
-                    default:
-                        if (c < ' ')
-                        {
-                            AppendUnicodeEscape(builder, c);
-                        }
-                        else
-                        {
-                            builder.Append(c);
-                        }
-
-                        break;
-                }
-            }
-        }
-
-        private static void AppendUnicodeEscape(StringBuilder builder, char value)
-        {
-            builder.Append("\\u");
-            builder.Append(GetHexCharacter(value >> 12));
-            builder.Append(GetHexCharacter((value >> 8) & 0xF));
-            builder.Append(GetHexCharacter((value >> 4) & 0xF));
-            builder.Append(GetHexCharacter(value & 0xF));
-        }
-
-        private static char GetHexCharacter(int value)
-        {
-            return (char)(value < 10 ? value + '0' : (value - 10) + 'a');
         }
 
         private readonly struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>
