@@ -6,22 +6,20 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Rcm;
-using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf
 {
+    /// <summary>
+    /// Type using the underlying native library here: https://github.com/DataDog/libddwaf
+    /// </summary>
     internal sealed class Waf : IWaf
     {
         private const string InitContextError = "WAF ddwaf_init_context failed.";
@@ -126,6 +124,12 @@ namespace Datadog.Trace.AppSec.Waf
                             var oldHandle = _wafHandle;
                             _wafHandle = newHandle;
                             _wafLocker.ExitWriteLock();
+                            // Safe to destroy oldHandle here: ddwaf_context_init() copies the ruleset
+                            // shared_ptr into each context, so contexts hold their own independent reference.
+                            // ddwaf_destroy() only decrements the handle's refcount; existing contexts remain
+                            // valid. The write lock above ensures no concurrent ddwaf_context_init call was
+                            // reading oldHandle when it is destroyed.
+                            // See: https://github.com/DataDog/libddwaf/blob/main/src/waf.hpp#L28-L30
                             _wafLibraryInvoker.Destroy(oldHandle);
                         }
                         else
@@ -173,6 +177,12 @@ namespace Datadog.Trace.AppSec.Waf
             bool lockAcquired = false;
             try
             {
+                // ddwaf_known_addresses is explicitly documented as not thread-safe:
+                // https://github.com/DataDog/libddwaf/blob/7a17b8d31b491e329f10eae20b07a619910aa888/docs/c-api/api.md?plain=1#L144
+                // Internally it lazily populates root_addresses via ruleset::get_root_addresses(),
+                // which has no synchronization. Concurrent calls race on that lazy init and corrupt
+                // the vector, causing an AccessViolationException in Marshal.PtrToStringAnsi.
+                // A write lock ensures exclusive access, matching the original intent.
                 if (_wafLocker.EnterWriteLock())
                 {
                     lockAcquired = true;
@@ -215,6 +225,19 @@ namespace Datadog.Trace.AppSec.Waf
             IntPtr contextHandle;
             if (_wafLocker.EnterReadLock())
             {
+                // Re-check Disposed inside the read lock. Dispose() sets Disposed and calls
+                // Destroy(_wafHandle) while holding the write lock, which is mutually exclusive
+                // with this read lock. Without this check, a Dispose() could slip in between the
+                // outer Disposed check and acquiring the read lock, leaving _wafHandle pointing at
+                // freed memory: ddwaf_context_init dereferences the handle (handle->create_context),
+                // so calling InitContext on a destroyed handle is a use-after-free.
+                if (Disposed)
+                {
+                    _wafLocker.ExitReadLock();
+                    Log.Warning("Context can't be created as waf instance has been disposed.");
+                    return null;
+                }
+
                 contextHandle = _wafLibraryInvoker.InitContext(_wafHandle);
                 _wafLocker.ExitReadLock();
             }
@@ -244,12 +267,28 @@ namespace Datadog.Trace.AppSec.Waf
                 return;
             }
 
-            Disposed = true;
             // we really need to enter here so longer timeout, otherwise waf handle might not be disposed
             if (_wafLocker.EnterWriteLock(15000))
             {
-                _wafLibraryInvoker.Destroy(_wafHandle);
+                // Set Disposed and Destroy the handle atomically under the write lock. A plain
+                // "Disposed = true" before the lock would let two concurrent Dispose() calls both
+                // pass the outer guard and both reach Destroy(_wafHandle), which is a double free:
+                // ddwaf_destroy does `delete handle` unconditionally (no native refcount on the
+                // handle itself), so a second call corrupts the heap. The inner re-check ensures
+                // exactly one caller destroys the handle.
+                if (!Disposed)
+                {
+                    Disposed = true;
+                    _wafLibraryInvoker.Destroy(_wafHandle);
+                }
+
                 _wafLocker.ExitWriteLock();
+            }
+            else
+            {
+                // Couldn't acquire the write lock; mark disposed so other operations bail out,
+                // even though the native handle may leak in this (rare) timeout case.
+                Disposed = true;
             }
         }
     }

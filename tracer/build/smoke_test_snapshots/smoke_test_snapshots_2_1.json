@@ -54,6 +54,7 @@
         "http.client_ip": "127.0.0.1",
         "http.method": "GET",
         "http.request.headers.host": "localhost:5000",
+        "http.response.headers.content-type": "text/plain; charset=utf-8",
         "http.route": "api/values",
         "http.status_code": "200",
         "http.url": "http://localhost:5000/api/values",

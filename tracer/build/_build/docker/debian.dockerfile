@@ -41,6 +41,7 @@ RUN sed -i '/buster\/updates/d; /buster-updates/d' /etc/apt/sources.list \
         procps \
         wget \
         curl \
+        unzip \
         cmake \
         make \
         gcc \
@@ -115,6 +116,17 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     && ./dotnet-install.sh --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 9.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
+
+ARG AZURE_FUNCTIONS_CORE_TOOLS_VERSION=4.11.0
+
+RUN if [ "$(uname -m)" = "x86_64" ]; \
+    then curl -fsSL "https://github.com/Azure/azure-functions-core-tools/releases/download/${AZURE_FUNCTIONS_CORE_TOOLS_VERSION}/Azure.Functions.Cli.linux-x64.${AZURE_FUNCTIONS_CORE_TOOLS_VERSION}.zip" --output azure-functions-core-tools.zip \
+        && mkdir -p /opt/azure-functions-core-tools \
+        && unzip -q azure-functions-core-tools.zip -d /opt/azure-functions-core-tools \
+        && chmod +x /opt/azure-functions-core-tools/func \
+        && ln -s /opt/azure-functions-core-tools/func /usr/local/bin/func \
+        && rm azure-functions-core-tools.zip; \
+    fi
 
 
 # Copy the build project in and build it

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HotChocolate;
+using HotChocolate.Execution;
 
 namespace Samples.HotChocolate
 {
