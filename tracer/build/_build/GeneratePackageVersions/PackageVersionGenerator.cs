@@ -249,9 +249,6 @@ namespace GeneratePackageVersions
                         ? tested.ToString()
                         : ceilingEntries[0].MaxVersionExclusive;
 
-                    // Tracked file keys on the major (e.g. "2.x"), so intra-major patch releases don't
-                    // churn it; the exact version stays in the PR body / build log.
-                    var latestMajor = $"{latestAvailable.Major}.x";
                     var latestExact = latestAvailable.ToNormalizedString();
 
                     foreach (var entry in ceilingEntries)
@@ -260,8 +257,7 @@ namespace GeneratePackageVersions
                             entry.NugetPackageSearchName,
                             entry.IntegrationName,
                             currentCap,
-                            latestExact,
-                            latestMajor));
+                            latestExact));
                     }
                 }
             }

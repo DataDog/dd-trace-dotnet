@@ -375,16 +375,6 @@ partial class Build
                Logger.Information("Bump report saved to {Path}", reportPath);
            }
 
-           // A new major changes no .g.* file, so write a TRACKED file to guarantee the diff that opens the
-           // bump PR. Merge (don't overwrite) so scoped runs don't wipe rows for packages they didn't inspect.
-           var pendingMajorsPath = BuildDirectory / "pending_major_versions.md";
-           var existingPendingMajors = File.Exists(pendingMajorsPath) ? await File.ReadAllTextAsync(pendingMajorsPath) : null;
-           var inspectedPackages = new HashSet<string>(versionGenerator.QueriedVersions.Keys);
-           await File.WriteAllTextAsync(
-               pendingMajorsPath,
-               versionGenerator.BumpReport.RenderPendingMajorsFile(existingPendingMajors, inspectedPackages));
-           Logger.Information("Pending major versions written to {Path}", pendingMajorsPath);
-
            var assemblies = MonitoringHomeDirectory
                            .GlobFiles("**/Datadog.Trace.dll")
                            .Select(x => x.ToString())

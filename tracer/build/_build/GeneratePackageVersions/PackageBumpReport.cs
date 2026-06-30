@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -90,7 +89,7 @@ public class PackageBumpReport
             sb.AppendLine("integration's `MaximumVersion` and the definition's `MaxVersionExclusive`/`SpecificVersions`,");
             sb.AppendLine("or add a new split entry, to adopt.");
             sb.AppendLine();
-            AppendMajorAvailableTable(sb, _majorAvailableEntries, "Latest available", e => e.LatestAvailable);
+            AppendMajorAvailableTable(sb, _majorAvailableEntries);
             sb.AppendLine();
         }
 
@@ -128,84 +127,14 @@ public class PackageBumpReport
         }
     }
 
-    /// <summary>
-    /// Renders the pending-majors file, merging this run's majors with preserved rows for packages it
-    /// didn't inspect. Always returns content. See the Build.Utilities.cs call site for why it's committed.
-    /// </summary>
-    public string RenderPendingMajorsFile(string existingContent, ISet<string> inspectedPackages)
+    private static void AppendMajorAvailableTable(StringBuilder sb, IEnumerable<MajorAvailableEntry> entries)
     {
-        var merged = ParsePendingMajorsTable(existingContent)
-            .Where(r => !inspectedPackages.Contains(r.PackageName))
-            .Concat(_majorAvailableEntries)
-            .OrderBy(r => r.PackageName, StringComparer.Ordinal)
-            .ThenBy(r => r.IntegrationName, StringComparer.Ordinal)
-            .ToList();
-
-        var sb = new StringBuilder();
-        sb.AppendLine("# Pending Major Versions");
-        sb.AppendLine();
-        sb.AppendLine("Integrations whose NuGet package has a new major outside the version range we currently test.");
-        sb.AppendLine("Maintained automatically by the `GeneratePackageVersions` build target; do not edit by hand.");
-        sb.AppendLine();
-
-        if (merged.Count == 0)
-        {
-            sb.AppendLine("_None: every integration's tested range covers the latest major available on NuGet._");
-            return sb.ToString();
-        }
-
-        AppendMajorAvailableTable(sb, merged, "Available major", e => e.LatestMajor);
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Parses the data rows out of a previously-rendered pending-majors file, skipping the header and
-    /// separator rows. Tolerates a missing or empty file (yields nothing).
-    /// </summary>
-    private static IEnumerable<MajorAvailableEntry> ParsePendingMajorsTable(string content)
-    {
-        if (string.IsNullOrEmpty(content))
-        {
-            yield break;
-        }
-
-        foreach (var rawLine in content.Split('\n'))
-        {
-            var line = rawLine.Trim();
-            if (!line.StartsWith('|'))
-            {
-                continue;
-            }
-
-            var cells = line.Trim('|').Split('|');
-            if (cells.Length != 4)
-            {
-                continue;
-            }
-
-            var package = cells[0].Trim();
-
-            // Skip the header row and the |---| separator row.
-            if (package is "Package" || package.StartsWith('-'))
-            {
-                continue;
-            }
-
-            // The file stores the major form ("2.x") in the last column; the exact LatestAvailable
-            // isn't persisted and isn't needed for preserved rows (the PR body renders only this run).
-            var major = cells[3].Trim();
-            yield return new MajorAvailableEntry(package, cells[1].Trim(), cells[2].Trim(), major, major);
-        }
-    }
-
-    private static void AppendMajorAvailableTable(StringBuilder sb, IEnumerable<MajorAvailableEntry> entries, string lastHeader, Func<MajorAvailableEntry, string> lastValue)
-    {
-        sb.AppendLine($"| Package | Integration | Current cap | {lastHeader} |");
+        sb.AppendLine("| Package | Integration | Current cap | Latest available |");
         sb.AppendLine("|---------|-------------|-------------|------------------|");
 
         foreach (var entry in entries)
         {
-            sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {entry.CurrentCap} | {lastValue(entry)} |");
+            sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {entry.CurrentCap} | {entry.LatestAvailable} |");
         }
     }
 
@@ -229,6 +158,5 @@ public class PackageBumpReport
         string PackageName,
         string IntegrationName,
         string CurrentCap,
-        string LatestAvailable,
-        string LatestMajor);
+        string LatestAvailable);
 }
