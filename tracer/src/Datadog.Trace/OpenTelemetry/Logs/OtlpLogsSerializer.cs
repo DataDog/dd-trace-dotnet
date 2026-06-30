@@ -37,6 +37,38 @@ internal static class OtlpLogsSerializer
         }
 
         var buffer = new byte[64 * 1024];
+
+        // The batch may not fit in the initial buffer. On overflow, grow the buffer (doubling,
+        // up to ProtobufSerializer.MaxBufferSize) and retry from the start, mirroring the
+        // resize-and-retry strategy the vendored OTLP serializers use. If the buffer cannot
+        // grow any further, the overflow exception propagates so the caller drops the batch.
+        while (true)
+        {
+            try
+            {
+                return SerializeLogs(buffer, logs, settings, startPosition);
+            }
+            catch (ArgumentException)
+            {
+                // A span/array write ran past the end of the buffer.
+                if (!ProtobufSerializer.IncreaseBufferSize(ref buffer, OtlpSignalType.Logs))
+                {
+                    throw;
+                }
+            }
+            catch (IndexOutOfRangeException)
+            {
+                // Same overflow condition, surfaced as an index-based write past the end.
+                if (!ProtobufSerializer.IncreaseBufferSize(ref buffer, OtlpSignalType.Logs))
+                {
+                    throw;
+                }
+            }
+        }
+    }
+
+    private static byte[] SerializeLogs(byte[] buffer, IReadOnlyList<LogPoint> logs, ResourceTags settings, int startPosition)
+    {
         int writePosition = startPosition;
 
         writePosition = ProtobufSerializer.WriteTag(buffer, writePosition, LogsData_Resource_Logs, ProtobufWireType.LEN);
