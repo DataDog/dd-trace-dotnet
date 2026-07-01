@@ -960,6 +960,17 @@
     ]
   },
   {
+    "IntegrationName": "AzureEventGrid",
+    "SampleProjectName": "Samples.AzureEventGrid",
+    "NugetPackageSearchName": "Azure.Messaging.EventGrid",
+    "MinVersion": "4.0.0",
+    "MaxVersionExclusive": "6.0.0",
+    "SpecificVersions": [
+      "4.0.*",
+      "5.*.*"
+    ]
+  },
+  {
     "IntegrationName": "Selenium",
     "SampleProjectName": "Samples.Selenium",
     "NugetPackageSearchName": "Selenium.WebDriver",

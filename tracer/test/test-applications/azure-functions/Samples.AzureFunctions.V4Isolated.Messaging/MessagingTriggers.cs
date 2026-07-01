@@ -1,6 +1,9 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text;
+using Azure;
+using Azure.Messaging;
+using Azure.Messaging.EventGrid;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using Azure.Messaging.ServiceBus;
@@ -63,6 +66,21 @@ public class MessagingTriggers
         return Task.CompletedTask;
     }
 
+    [Function("EventGridTrigger")]
+    public Task EventGridTrigger([EventGridTrigger] CloudEvent cloudEvent)
+    {
+        using (SampleHelpers.CreateScope("Manual inside EventGridTrigger"))
+        {
+            _logger.LogInformation(
+                "Processed Event Grid event {Id}: {Type}",
+                cloudEvent.Id,
+                cloudEvent.Type);
+        }
+
+        ScheduleShutdown();
+        return Task.CompletedTask;
+    }
+
     [Function("SeedServiceBusMessage")]
     public async Task<HttpResponseData> SeedServiceBusMessage(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "seed/servicebus")] HttpRequestData req)
@@ -93,6 +111,31 @@ public class MessagingTriggers
         };
         eventData.Properties[TestIdApplicationProperty] = testId;
         await producer.SendAsync(new[] { eventData });
+        return req.CreateResponse(HttpStatusCode.OK);
+    }
+
+    [Function("SeedEventGridEvent")]
+    public async Task<HttpResponseData> SeedEventGridEvent(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "seed/eventgrid")] HttpRequestData req)
+    {
+        var testId = Environment.GetEnvironmentVariable(TestIdEnvironmentVariable) ?? string.Empty;
+        var endpoint = Environment.GetEnvironmentVariable("EVENTGRID_TOPIC_ENDPOINT")!;
+
+        // Publish to the Event Grid emulator's topic endpoint (EVENTGRID_TOPIC_ENDPOINT). The producer
+        // instrumentation creates the azure_eventgrid.send span and injects the W3C trace context into the
+        // CloudEvent's extension attributes. The emulator then forwards the event to the function host's
+        // webhook — preserving the CloudEvent (and its traceparent) and adding the "aeg-event-type:
+        // Notification" header the webhook requires — so the receive span can link back to this send.
+        var client = new EventGridPublisherClient(new Uri(endpoint), new AzureKeyCredential("test-key"));
+
+        var cloudEvent = new CloudEvent(
+            source: "/Samples.AzureFunctions.Messaging/eventgrid",
+            type: nameof(EventGridTrigger),
+            jsonSerializableData: new { message = $"Seeded event {testId}", testId })
+        {
+            Id = testId,
+        };
+        await client.SendEventAsync(cloudEvent);
         return req.CreateResponse(HttpStatusCode.OK);
     }
 

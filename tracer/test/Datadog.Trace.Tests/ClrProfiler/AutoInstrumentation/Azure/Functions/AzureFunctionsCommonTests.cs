@@ -90,6 +90,99 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             Baggage.Current.Count.Should().Be(2);
         }
 
+        [Fact]
+        public void ExtractPropagatedContextFromEventGrid_SingleCloudEvent_ExtractsContext()
+        {
+            var cloudEvent = new Dictionary<string, object>
+            {
+                ["specversion"] = "1.0",
+                ["type"] = "test.type",
+                ["source"] = "/test/source",
+                ["id"] = "test-id",
+                ["traceparent"] = $"00-{1:x32}-{1:x16}-01",
+                ["tracestate"] = "dd=s:1",
+            };
+            var context = CreateMockFunctionContextWithInputData("myEvent", JsonConvert.SerializeObject(cloudEvent));
+
+            var extractedContext = AzureFunctionsCommon.ExtractPropagatedContextFromEventGrid(context, "myEvent");
+
+            extractedContext.SpanContext.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void ExtractPropagatedContextFromEventGrid_SingleCloudEvent_TraceparentOnly()
+        {
+            var cloudEvent = new Dictionary<string, object>
+            {
+                ["specversion"] = "1.0",
+                ["type"] = "test.type",
+                ["source"] = "/test/source",
+                ["id"] = "test-id",
+                ["traceparent"] = $"00-{1:x32}-{1:x16}-01",
+            };
+            var context = CreateMockFunctionContextWithInputData("myEvent", JsonConvert.SerializeObject(cloudEvent));
+
+            var extractedContext = AzureFunctionsCommon.ExtractPropagatedContextFromEventGrid(context, "myEvent");
+
+            extractedContext.SpanContext.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void ExtractPropagatedContextFromEventGrid_NoTraceContext_ReturnsDefault()
+        {
+            var cloudEvent = new Dictionary<string, object>
+            {
+                ["specversion"] = "1.0",
+                ["type"] = "test.type",
+                ["source"] = "/test/source",
+                ["id"] = "test-id",
+            };
+            var context = CreateMockFunctionContextWithInputData("myEvent", JsonConvert.SerializeObject(cloudEvent));
+
+            var extractedContext = AzureFunctionsCommon.ExtractPropagatedContextFromEventGrid(context, "myEvent");
+
+            extractedContext.SpanContext.Should().BeNull();
+        }
+
+        [Fact]
+        public void ExtractPropagatedContextFromEventGrid_BatchCloudEvents_ReturnsDefault()
+        {
+            var batch = new[]
+            {
+                new Dictionary<string, object>
+                {
+                    ["specversion"] = "1.0",
+                    ["type"] = "test.type",
+                    ["source"] = "/test/source",
+                    ["id"] = "test-id-1",
+                    ["traceparent"] = $"00-{1:x32}-{1:x16}-01",
+                },
+                new Dictionary<string, object>
+                {
+                    ["specversion"] = "1.0",
+                    ["type"] = "test.type",
+                    ["source"] = "/test/source",
+                    ["id"] = "test-id-2",
+                    ["traceparent"] = $"00-{2:x32}-{2:x16}-01",
+                },
+            };
+            var context = CreateMockFunctionContextWithInputData("myEvents", JsonConvert.SerializeObject(batch));
+
+            var extractedContext = AzureFunctionsCommon.ExtractPropagatedContextFromEventGrid(context, "myEvents");
+
+            extractedContext.SpanContext.Should().BeNull();
+        }
+
+        [Fact]
+        public void ExtractPropagatedContextFromEventGrid_NullBindingName_ReturnsDefault()
+        {
+            var context = CreateMockFunctionContextWithInputData("myEvent", "{}");
+
+            var extractedContext = AzureFunctionsCommon.ExtractPropagatedContextFromEventGrid(context, null);
+
+            extractedContext.SpanContext.Should().BeNull();
+        }
+
         private static MockFunctionContext CreateMockFunctionContext(string propertyKey, Dictionary<string, object>? headerProperties)
         {
             var triggerMetadata = new Dictionary<string, object?>();
@@ -103,6 +196,29 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             var bindingsFeature = new MockBindingsFeature
             {
                 TriggerMetadata = triggerMetadata
+            };
+
+            var features = new List<KeyValuePair<Type, object?>>
+            {
+                new(typeof(Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature), bindingsFeature)
+            };
+
+            return new MockFunctionContext
+            {
+                Features = features
+            };
+        }
+
+        private static MockFunctionContext CreateMockFunctionContextWithInputData(string bindingName, string inputDataJson)
+        {
+            var inputData = new Dictionary<string, object?>
+            {
+                [bindingName] = inputDataJson
+            };
+
+            var bindingsFeature = new MockBindingsFeature
+            {
+                InputData = inputData
             };
 
             var features = new List<KeyValuePair<Type, object?>>
