@@ -34,8 +34,7 @@ namespace Datadog.Trace.Agent
 
         public long TopLevelHits { get; set; }
 
-        // Exact min/max span duration in nanoseconds, tracked for OTLP histogram data points.
-        // double.MaxValue/0 are sentinel values that indicate "no observation yet".
+        // Tracked for OTLP histogram data points; sentinels double.MaxValue/0 mean "not yet observed".
         public double MinDuration { get; set; } = double.MaxValue;
 
         public double MaxDuration { get; set; }

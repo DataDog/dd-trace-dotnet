@@ -14,23 +14,14 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent
 {
-    /// <summary>
-    /// Serializes a <see cref="StatsBuffer"/> to an OTLP ExportMetricsServiceRequest payload
-    /// (binary protobuf or JSON) containing a single <c>traces.span.sdk.metrics.duration</c> histogram metric.
-    /// </summary>
     internal sealed class OtlpSpanStatsSerializer
     {
         internal const string MetricName = "traces.span.sdk.metrics.duration";
 
-        // Protobuf wire types
         private const int WireTypeVarInt = 0;
         private const int WireTypeFixed64 = 1;
         private const int WireTypeLengthDelimited = 2;
-
-        // OTLP AggregationTemporality: DELTA = 1
         private const int AggregationTemporalityDelta = 1;
-
-        // OTel status code for ERROR (proto enum value 2, also accepted as string "ERROR" / "STATUS_CODE_ERROR")
         private const long StatusCodeError = 2;
 
         private const string MetricUnit = "s";
@@ -63,12 +54,6 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        // ── Serialization entry point ──────────────────────────────────────────────
-
-        /// <summary>
-        /// Returns a binary-protobuf <c>ExportMetricsServiceRequest</c> for the given stats buffer.
-        /// Returns <c>null</c> when the buffer has no hits.
-        /// </summary>
         public static byte[]? Serialize(StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
         {
             if (!buffer.HasHits())
@@ -88,12 +73,6 @@ namespace Datadog.Trace.Agent
             return stream.ToArray();
         }
 
-        // ── JSON serialization entry point ─────────────────────────────────────────
-
-        /// <summary>
-        /// Returns a JSON-encoded <c>ExportMetricsServiceRequest</c> for the given stats buffer.
-        /// Returns <c>null</c> when the buffer has no hits.
-        /// </summary>
         public static byte[]? SerializeJson(StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
         {
             if (!buffer.HasHits())
@@ -338,8 +317,6 @@ namespace Datadog.Trace.Agent
             writer.WriteEndObject();
         }
 
-        // ── JSON attribute helpers ────────────────────────────────────────────────
-
         private static void WriteStringKvJson(JsonTextWriter writer, string key, string value)
         {
             writer.WriteStartObject();
@@ -378,8 +355,6 @@ namespace Datadog.Trace.Agent
             writer.WriteEndObject();
             writer.WriteEndObject();
         }
-
-        // ── Resource metrics ───────────────────────────────────────────────────────
 
         private static byte[] SerializeResourceMetrics(StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
         {
@@ -432,8 +407,6 @@ namespace Datadog.Trace.Agent
             return stream.ToArray();
         }
 
-        // ── Scope metrics (no scope object per spec) ───────────────────────────────
-
         private static byte[] SerializeScopeMetrics(StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
         {
             using var stream = new MemoryStream(512);
@@ -447,8 +420,6 @@ namespace Datadog.Trace.Agent
             writer.Flush();
             return stream.ToArray();
         }
-
-        // ── Metric ────────────────────────────────────────────────────────────────
 
         private static byte[] SerializeMetric(StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
         {
@@ -466,8 +437,6 @@ namespace Datadog.Trace.Agent
             writer.Flush();
             return stream.ToArray();
         }
-
-        // ── Histogram ─────────────────────────────────────────────────────────────
 
         private static byte[] SerializeHistogram(StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
         {
@@ -498,8 +467,6 @@ namespace Datadog.Trace.Agent
             return stream.ToArray();
         }
 
-        // ── Data point ────────────────────────────────────────────────────────────
-
         private static byte[] SerializeDataPoint(
             StatsAggregationKey key,
             StatsBucket bucket,
@@ -511,58 +478,47 @@ namespace Datadog.Trace.Agent
             using var stream = new MemoryStream(256);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
 
-            // ── Attributes ────────────────────────────────────────────────────────
-
-            // span.name — span resource name
             if (!StringUtil.IsNullOrEmpty(key.Resource))
             {
                 WriteAttribute(writer, "span.name", key.Resource, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            // span.kind
             if (!StringUtil.IsNullOrEmpty(key.SpanKind))
             {
                 WriteAttribute(writer, "span.kind", key.SpanKind, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            // http.request.method
             if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
             {
                 WriteAttribute(writer, "http.request.method", key.HttpMethod, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            // http.response.status_code (int)
             if (key.HttpStatusCode != 0)
             {
                 WriteIntAttribute(writer, "http.response.status_code", key.HttpStatusCode, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            // http.route
             if (!StringUtil.IsNullOrEmpty(key.HttpEndpoint))
             {
                 WriteAttribute(writer, "http.route", key.HttpEndpoint, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            // rpc.response.status_code (string name) — only when a gRPC status code is present and parseable
             var grpcStatusNameProto = NormalizeGrpcStatusName(key.GrpcStatusCode);
             if (grpcStatusNameProto is not null)
             {
                 WriteAttribute(writer, "rpc.response.status_code", grpcStatusNameProto, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            // status.code = 2 (ERROR) — present only on error data points
             if (key.IsError)
             {
                 WriteIntAttribute(writer, "status.code", (int)StatusCodeError, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            // service.name — only when the span's service differs from the default service
             if (!StringUtil.IsNullOrEmpty(key.Service) && !string.Equals(key.Service, defaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
                 WriteAttribute(writer, "service.name", key.Service, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            // Datadog-specific attributes (suppressed in OTel-semantics mode)
             if (!otelSemanticsEnabled)
             {
                 if (!StringUtil.IsNullOrEmpty(key.OperationName))
@@ -583,28 +539,21 @@ namespace Datadog.Trace.Agent
                 }
             }
 
-            // ── Timestamps ────────────────────────────────────────────────────────
-
             WriteTag(writer, FieldNumbers.HistogramDataPointStartTimeUnixNano, WireTypeFixed64);
             writer.Write(startTimeUnixNano);
 
             WriteTag(writer, FieldNumbers.HistogramDataPointTimeUnixNano, WireTypeFixed64);
             writer.Write(endTimeUnixNano);
 
-            // ── Count / Sum ───────────────────────────────────────────────────────
-
             var count = (ulong)bucket.Hits;
             WriteTag(writer, FieldNumbers.HistogramDataPointCount, WireTypeVarInt);
             WriteVarInt(writer, count);
 
-            // Sum: convert from nanoseconds to seconds
             var sumS = bucket.Duration * NsToS;
             WriteTag(writer, FieldNumbers.HistogramDataPointSum, WireTypeFixed64);
             writer.Write(sumS);
 
-            // ── Bucket counts (projected from DDSketch) ────────────────────────────
-            // In OTLP mode errors go into a separate aggregation key, so OkSummary
-            // holds the full distribution for this data point.
+            // In OTLP mode errors go into a separate aggregation key, so OkSummary holds the full distribution.
             var bucketCounts = ProjectSketch(bucket.OkSummary);
             foreach (var bc in bucketCounts)
             {
@@ -612,15 +561,11 @@ namespace Datadog.Trace.Agent
                 WriteVarInt(writer, bc);
             }
 
-            // ── Explicit bounds (seconds) ─────────────────────────────────────────
-
             foreach (var bound in BoundsS)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointExplicitBounds, WireTypeFixed64);
                 writer.Write(bound);
             }
-
-            // ── Min / Max (exact, in seconds) ─────────────────────────────────────
 
             if (bucket.MinDuration < double.MaxValue)
             {
@@ -638,12 +583,6 @@ namespace Datadog.Trace.Agent
             return stream.ToArray();
         }
 
-        // ── DDSketch projection ───────────────────────────────────────────────────
-
-        /// <summary>
-        /// Projects the DDSketch distribution onto the 17 fixed OTLP histogram buckets.
-        /// The result is approximate — see spec §3.1 exactness nuance.
-        /// </summary>
         private static ulong[] ProjectSketch(DDSketch sketch)
         {
             // 17 buckets: index 0 = underflow (<BoundsNs[0]), indices 1-15 = between consecutive bounds,
@@ -689,11 +628,6 @@ namespace Datadog.Trace.Agent
             return BoundsNs.Length; // overflow
         }
 
-        // ── gRPC status normalization ─────────────────────────────────────────────
-
-        // Converts a raw grpc.status.code tag value (numeric string or name) to the canonical uppercase
-        // name required by rpc.response.status_code.  Returns null when the value is absent, unparseable,
-        // or outside the valid range 0–16.
         private static string? NormalizeGrpcStatusName(string grpcStatusCode)
         {
             if (StringUtil.IsNullOrEmpty(grpcStatusCode))
@@ -737,8 +671,6 @@ namespace Datadog.Trace.Agent
             return null;
         }
 
-        // ── Attribute helpers ─────────────────────────────────────────────────────
-
         private static void WriteAttribute(BinaryWriter writer, string key, string value, int fieldNumber = FieldNumbers.Attributes)
         {
             var kv = SerializeKeyValue(key, value);
@@ -762,8 +694,6 @@ namespace Datadog.Trace.Agent
             WriteVarInt(writer, kv.Length);
             writer.Write(kv);
         }
-
-        // ── KeyValue serialization ────────────────────────────────────────────────
 
         private static byte[] SerializeKeyValue(string key, string value)
         {
@@ -830,8 +760,6 @@ namespace Datadog.Trace.Agent
             return stream.ToArray();
         }
 
-        // ── Protobuf primitives ───────────────────────────────────────────────────
-
         private static void WriteStringField(BinaryWriter writer, int fieldNumber, string value)
         {
             if (!StringUtil.IsNullOrEmpty(value))
@@ -862,8 +790,6 @@ namespace Datadog.Trace.Agent
 
             writer.Write((byte)value);
         }
-
-        // ── Protobuf field number constants ───────────────────────────────────────
 
         private static class FieldNumbers
         {
