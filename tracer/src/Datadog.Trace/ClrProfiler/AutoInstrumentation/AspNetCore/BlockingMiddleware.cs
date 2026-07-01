@@ -136,7 +136,10 @@ internal sealed class BlockingMiddleware
             }
             catch (Exception e) when (GetBlockException(e) is { } blockException)
             {
-                var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), blockException.BlockInfo, null);
+                // Use the full result's block/redirect info so a redirect action (whose info is stored in
+                // blockException.BlockInfo as RedirectInfo) is written as a redirect, not as a block body with
+                // the redirect's 3xx status code.
+                var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), blockException.Result.BlockInfo, blockException.Result.RedirectInfo);
                 await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                 if (security.AppsecEnabled)
                 {
