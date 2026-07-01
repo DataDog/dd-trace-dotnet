@@ -94,11 +94,13 @@ internal static class SecurityCoordinatorHelpers
     }
 
     /// <summary>
-    /// Performs the single consolidated request-phase WAF scan, combining basic request data
+    /// Performs the consolidated request-phase WAF scan, combining basic request data
     /// (method, URI, query, headers, cookies, IP), path parameters, session ID, and request body.
-    /// Idempotent per request: if the request-phase scan has already run (RequestScanCompleted),
-    /// it does nothing. This makes it safe to call from more than one hook (e.g. a non-MVC route
-    /// event and an MVC/Razor action filter both firing for the same request).
+    /// May legitimately run more than once for a request when the data differs between hooks: for
+    /// Razor Pages the route-matched event runs it first with basic data (no bound body), then the
+    /// model-binding hook (DefaultModelBindingContext_SetResult_Integration) runs it again once the
+    /// body has been model-bound. Each call sets RequestScanCompleted so the response-phase scan and
+    /// the end-pipeline fallback know a request-phase scan has happened.
     /// </summary>
     internal static void RunRequestScan(this Security security, HttpContext context, Span span, IDictionary<string, object>? pathParams, object? requestBody)
     {
@@ -108,10 +110,6 @@ internal static class SecurityCoordinatorHelpers
         }
 
         var appSecRequestContext = span.Context?.TraceContext?.AppSecRequestContext;
-        if (appSecRequestContext is { RequestScanCompleted: true })
-        {
-            return;
-        }
 
         var transport = new SecurityCoordinator.HttpTransport(context);
         if (transport.IsBlocked)

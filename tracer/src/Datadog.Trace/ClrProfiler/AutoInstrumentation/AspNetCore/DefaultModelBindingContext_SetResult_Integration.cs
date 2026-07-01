@@ -10,6 +10,7 @@ using System.Collections;
 using System.ComponentModel;
 using System.Data;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -105,9 +106,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
             if (security.AppsecEnabled && bodyExtracted is not null)
             {
-                // Stash the extracted body for the consolidated request-phase WAF scan that runs
-                // in ActionResponseFilter.OnActionExecuting (after model binding, before action execution).
-                span.Context?.TraceContext?.AppSecRequestContext.SetPendingRequestBody(bodyExtracted);
+                var appSecRequestContext = span.Context?.TraceContext?.AppSecRequestContext;
+                if (appSecRequestContext is { RequestScanCompleted: true })
+                {
+                    // The request-phase scan already ran at the routing event, which means this endpoint
+                    // is not an MVC controller action (e.g. a Razor Page). Razor Pages don't go through
+                    // ActionResponseFilter (an IActionFilter), so nothing would ever consume a stashed body.
+                    // Scan the freshly model-bound body now instead.
+                    security.RunRequestScan(context.HttpContext, span, pathParams: null, requestBody: bodyExtracted);
+                }
+                else
+                {
+                    // MVC controller: the routing event deferred the request-phase scan to
+                    // ActionResponseFilter.OnActionExecuting. Stash the body for it to include.
+                    appSecRequestContext?.SetPendingRequestBody(bodyExtracted);
+                }
             }
 
             if (iast.Settings.Enabled)
