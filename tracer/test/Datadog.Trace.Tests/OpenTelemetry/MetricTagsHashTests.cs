@@ -163,6 +163,7 @@ public class MetricTagsHashTests
     }
 
     [Fact]
+    // TODO: When we emit metric attributes while maintaining their primitive types, this should no longer be true.
     public void StringAndNumericValuesWithSameTextAreEquivalent()
     {
         // Values are hashed by their (invariant) string form, so the integer 1 and the string "1" hash the same.
