@@ -2486,19 +2486,19 @@ stages:
       matrix:
         net6:
           publishTargetFramework: "net6.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6@sha256:c48000be860898f1a1c5bbffc1801673927942fd516f14fee458167ebe1dfa02"
         net7:
           publishTargetFramework: "net7.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7@sha256:5434516a138eb44786c9c3a4dc557fc2ad1cd87dc31c4c1043e0df456fa89fbe"
         net8:
           publishTargetFramework: "net8.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:8"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:8@sha256:e3a1b5ed15641105f82d90123047e96f58d16ae90c6700efafb08e7c9e95234c"
         net9:
           publishTargetFramework: "net9.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9@sha256:353e19a79580031dc1b2faf8e421af08f57b5f8d4eea7faae256c5a751e09cc0"
         net10:
           publishTargetFramework: "net10.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:10"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:10@sha256:ca784b95a4d6d09cd7c3f447833f80527ee7d7b644a955b26a59c2cfe2354296"
     pool:
       name: $(linuxX64Pool)
 
