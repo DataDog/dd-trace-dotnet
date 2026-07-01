@@ -20,6 +20,8 @@ namespace Datadog.Trace.Agent
     /// </summary>
     internal sealed class OtlpSpanStatsSerializer
     {
+        internal const string MetricName = "traces.span.sdk.metrics.duration";
+
         // Protobuf wire types
         private const int WireTypeVarInt = 0;
         private const int WireTypeFixed64 = 1;
@@ -31,7 +33,6 @@ namespace Datadog.Trace.Agent
         // OTel status code for ERROR (proto enum value 2, also accepted as string "ERROR" / "STATUS_CODE_ERROR")
         private const long StatusCodeError = 2;
 
-        internal const string MetricName = "traces.span.sdk.metrics.duration";
         private const string MetricUnit = "s";
         private const double NsToS = 1.0 / 1_000_000_000.0;
 
