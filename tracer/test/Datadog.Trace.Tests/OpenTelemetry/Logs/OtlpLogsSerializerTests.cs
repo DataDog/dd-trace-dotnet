@@ -61,10 +61,10 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
         [Fact]
         public void SerializeLogs_BatchExceedingMaxSize_ReturnsNull()
         {
-            // ~11 MB of messages exceeds the 10 MB cap, so the batch can never fit.
+            // ~4 MB of messages exceeds the 3 MB cap, so the batch can never fit.
             // The serializer must give up and return null (signalling a drop) rather than
             // growing without bound or throwing.
-            var logs = CreateLogs(count: 11, messageSize: 1024 * 1024);
+            var logs = CreateLogs(count: 4, messageSize: 1024 * 1024);
 
             var payload = OtlpLogsSerializer.SerializeLogs(logs, CreateResourceTags());
 

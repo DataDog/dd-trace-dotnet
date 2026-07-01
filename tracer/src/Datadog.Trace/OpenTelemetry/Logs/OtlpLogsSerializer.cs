@@ -29,9 +29,9 @@ internal static class OtlpLogsSerializer
     private const int InitialBufferSize = 64 * 1024;
 
     // Upper bound for a serialized batch. The buffer grows up to this cap; a batch that still
-    // doesn't fit is dropped rather than allocating without bound. The intake rejects payloads
-    // far larger than this anyway, and it matches the default trace payload cap (DD_TRACE_BUFFER_SIZE).
-    private const int MaxBufferSize = 10 * 1024 * 1024;
+    // doesn't fit is dropped rather than allocating without bound. Matches the 3MB payload cap
+    // used by our own direct log submission (DirectSubmissionLogSink.MaxTotalSizeBytes).
+    private const int MaxBufferSize = 3 * 1024 * 1024;
 
     /// <summary>
     /// Serializes logs to OTLP LogsData binary format using vendored protobuf serializer.
