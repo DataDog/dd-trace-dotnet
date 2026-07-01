@@ -150,12 +150,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 }
 
                 string resourceName;
+                string httpRouteValue = route;
 
                 string controller = string.Empty;
                 string action = string.Empty;
                 string area = string.Empty;
                 if (route is not null && routeValues is not null)
                 {
+                    var expandRouteTemplates = newResourceNamesEnabled && tracer.Settings.ExpandRouteTemplatesEnabled;
                     resourceName = AspNetResourceNameHelper.CalculateResourceName(
                         httpMethod: method,
                         routeTemplate: route,
@@ -165,7 +167,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         out controller,
                         out action,
                         addSlashPrefix: newResourceNamesEnabled,
-                        expandRouteTemplates: newResourceNamesEnabled && tracer.Settings.ExpandRouteTemplatesEnabled);
+                        expandRouteTemplates: expandRouteTemplates);
+
+                    // When route templates are expanded, the http.route tag should
+                    // reflect the expanded route to stay consistent with resource_name.
+                    // Extract the route path from the resource name (strip the HTTP method prefix).
+                    if (expandRouteTemplates && resourceName != null)
+                    {
+                        var spaceIndex = resourceName.IndexOf(' ');
+                        if (spaceIndex >= 0 && spaceIndex + 1 < resourceName.Length)
+                        {
+                            httpRouteValue = resourceName.Substring(spaceIndex + 1);
+                        }
+                    }
                 }
                 else if (requestUri != null)
                 {
@@ -210,11 +224,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetRoute = route;
                     if (span.Context.TraceContext.RootSpan.Tags is AspNetTags rootAspNetTags)
                     {
-                        rootAspNetTags.HttpRoute = route;
+                        rootAspNetTags.HttpRoute = httpRouteValue;
                     }
                     else
                     {
-                        span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
+                        span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, httpRouteValue);
                     }
                 }
 
