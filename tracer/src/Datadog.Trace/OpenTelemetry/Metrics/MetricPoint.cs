@@ -176,22 +176,37 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
             if (InstrumentType is InstrumentType.ObservableCounter or InstrumentType.ObservableUpDownCounter)
             {
                 var previousCumulative = double.IsNaN(_lastObservedCumulative) ? 0 : _lastObservedCumulative;
-                var delta = _runningDoubleValue - previousCumulative;
 
-                // OTel spec: for monotonic counters (ObservableCounter), a negative delta
-                // indicates a counter reset (e.g. process restart). Report currentValue
-                // as the delta, as if the previous cumulative was 0.
-                // ObservableUpDownCounter is non-monotonic so negative deltas are expected.
+                // The overflow bucket folds many series and re-sums their absolute cumulatives each
+                // cycle. A monotonic counter must never regress, so if a folded series stops reporting,
+                // we clamp to the previously reported cumulative (a high-water mark).
+                // _lastObservedCumulative already holds that previous value, so no extra state is needed.
+                // This also keeps delta >= 0, avoiding the single-series reset heuristic below (which
+                // would otherwise re-emit the whole bucket as one delta). ObservableUpDownCounter is
+                // non-monotonic, so it is intentionally excluded.
+                var effectiveCumulative = _runningDoubleValue;
+                if (_isOverflow && InstrumentType is InstrumentType.ObservableCounter)
+                {
+                    effectiveCumulative = Math.Max(_runningDoubleValue, previousCumulative);
+                }
+
+                var delta = effectiveCumulative - previousCumulative;
+
+                // OTel spec: for a single-series monotonic ObservableCounter, a negative delta
+                // indicates a counter reset (e.g. process restart). Report the current value as the
+                // delta, as if the previous cumulative was 0. The overflow bucket cannot reach here
+                // (its delta is clamped >= 0 above). ObservableUpDownCounter is non-monotonic so
+                // negative deltas are expected and left untouched.
                 if (delta < 0 && InstrumentType is InstrumentType.ObservableCounter)
                 {
-                    delta = _runningDoubleValue;
+                    delta = effectiveCumulative;
                 }
 
                 sumForSnapshot = AggregationTemporality == Metrics.AggregationTemporality.Delta
                     ? delta
-                    : _runningDoubleValue;
+                    : effectiveCumulative;
 
-                _lastObservedCumulative = _runningDoubleValue;
+                _lastObservedCumulative = effectiveCumulative;
             }
 
             var snapshot = new MetricPoint(InstrumentName, MeterName, MeterVersion, MeterTags, InstrumentType, AggregationTemporality, Tags, Unit, Description, IsLongType)
@@ -231,9 +246,10 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
                 StartTime = endTime;
             }
 
-            // Overflow observable buckets accumulate per cycle, so the running total must be cleared
-            // every cycle regardless of temporality; _lastObservedCumulative already captured this
-            // cycle's total for the cross-cycle delta calculation.
+            // The overflow bucket folds multiple observable series; unlike a normal point (single
+            // series -> overwrite) it _sums_ the per-series absolute cumulative totals. Since every series
+            // re-reports its full cumulative total each cycle, the raw accumulator must be cleared each
+            // cycle to avoid double-counting across cycles.
             if (_isOverflow && InstrumentType is InstrumentType.ObservableCounter or InstrumentType.ObservableUpDownCounter)
             {
                 _runningDoubleValue = 0.0;

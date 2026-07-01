@@ -453,7 +453,186 @@ namespace Datadog.Trace.Tests
                 .SnapshotSum.Should().Be(10.0, "delta temporality should report the change in the summed bucket cumulative (40 - 30)");
         }
 
+        [Fact]
+        public async Task ObservableCounterOverflowCumulativeDoesNotRegressWhenSeriesDrops()
+        {
+            var settings = TracerSettings.Create(
+                new()
+                {
+                    { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "1" },
+                    { ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, "cumulative" },
+                });
+
+            var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            Tracer.UnsafeSetTracerInstance(tracer);
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            using var meter = new Meter("TestMeter");
+
+            // "reg" claims the single regular slot; "o1"/"o2" fold into the overflow bucket. A monotonic
+            // ObservableCounter must never regress, so when a folded series stops reporting the exported
+            // cumulative must hold at its high-water mark rather than dropping with the re-summed total.
+            long o1 = 10;
+            long o2 = 20;
+            bool includeO2 = true;
+            meter.CreateObservableCounter<long>("test.obs.counter", () => includeO2
+                ? new[]
+                {
+                    new Measurement<long>(5, new KeyValuePair<string, object>("k", "reg")),
+                    new Measurement<long>(o1, new KeyValuePair<string, object>("k", "o1")),
+                    new Measurement<long>(o2, new KeyValuePair<string, object>("k", "o2")),
+                }
+                : new[]
+                {
+                    new Measurement<long>(5, new KeyValuePair<string, object>("k", "reg")),
+                    new Measurement<long>(o1, new KeyValuePair<string, object>("k", "o1")),
+                });
+
+            // Cycle 1: overflow cumulative = 10 + 20 = 30.
+            await pipeline.ForceCollectAndExportAsync();
+            var afterCycle1 = testExporter.ExportedMetrics.Count;
+            testExporter.ExportedMetrics
+                .Single(m => m.InstrumentName == "test.obs.counter" && m.Tags.ContainsKey("otel.metric.overflow"))
+                .SnapshotSum.Should().Be(30.0);
+
+            // Cycle 2: "o2" stops reporting so the raw sum would fall to 10; a monotonic cumulative must
+            // not decrease, so it is clamped to the previous high-water mark of 30.
+            includeO2 = false;
+            await pipeline.ForceCollectAndExportAsync();
+            var afterCycle2 = testExporter.ExportedMetrics.Count;
+            testExporter.ExportedMetrics.Skip(afterCycle1)
+                .Single(m => m.InstrumentName == "test.obs.counter" && m.Tags.ContainsKey("otel.metric.overflow"))
+                .SnapshotSum.Should().Be(30.0, "a monotonic cumulative must not regress when a folded series stops reporting");
+
+            // Cycle 3: "o2" returns and both series grow; the cumulative tracks the new higher total (15 + 25).
+            includeO2 = true;
+            o1 = 15;
+            o2 = 25;
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Skip(afterCycle2)
+                .Single(m => m.InstrumentName == "test.obs.counter" && m.Tags.ContainsKey("otel.metric.overflow"))
+                .SnapshotSum.Should().Be(40.0, "once the raw sum exceeds the high-water mark the cumulative tracks it again");
+        }
+
+        [Fact]
+        public async Task ObservableCounterOverflowDeltaDoesNotSpikeWhenSeriesDrops()
+        {
+            var settings = TracerSettings.Create(
+                new()
+                {
+                    { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "1" },
+                });
+
+            var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            Tracer.UnsafeSetTracerInstance(tracer);
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            using var meter = new Meter("TestMeter");
+
+            // ObservableCounter defaults to delta temporality. When a folded series stops reporting, the
+            // raw summed cumulative drops; without the high-water clamp the negative delta would be
+            // mistaken for a counter reset and re-emit the whole bucket as one over-counted delta.
+            long o1 = 10;
+            long o2 = 20;
+            bool includeO2 = true;
+            meter.CreateObservableCounter<long>("test.obs.counter", () => includeO2
+                ? new[]
+                {
+                    new Measurement<long>(5, new KeyValuePair<string, object>("k", "reg")),
+                    new Measurement<long>(o1, new KeyValuePair<string, object>("k", "o1")),
+                    new Measurement<long>(o2, new KeyValuePair<string, object>("k", "o2")),
+                }
+                : new[]
+                {
+                    new Measurement<long>(5, new KeyValuePair<string, object>("k", "reg")),
+                    new Measurement<long>(o1, new KeyValuePair<string, object>("k", "o1")),
+                });
+
+            // Cycle 1: cumulative = 30, first-cycle delta from 0 is 30.
+            await pipeline.ForceCollectAndExportAsync();
+            var afterCycle1 = testExporter.ExportedMetrics.Count;
+            testExporter.ExportedMetrics
+                .Single(m => m.InstrumentName == "test.obs.counter" && m.Tags.ContainsKey("otel.metric.overflow"))
+                .SnapshotSum.Should().Be(30.0);
+
+            // Cycle 2: "o2" stops reporting; the clamped cumulative holds at 30, so the delta is 0 rather
+            // than the old over-counted full-bucket value.
+            includeO2 = false;
+            await pipeline.ForceCollectAndExportAsync();
+            var afterCycle2 = testExporter.ExportedMetrics.Count;
+            testExporter.ExportedMetrics.Skip(afterCycle1)
+                .Single(m => m.InstrumentName == "test.obs.counter" && m.Tags.ContainsKey("otel.metric.overflow"))
+                .SnapshotSum.Should().Be(0.0, "a dropped folded series must not spike the delta by re-emitting the whole bucket");
+
+            // Cycle 3: "o2" returns and both grow to 15 + 25 = 40; delta is the real increment 40 - 30 = 10.
+            includeO2 = true;
+            o1 = 15;
+            o2 = 25;
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Skip(afterCycle2)
+                .Single(m => m.InstrumentName == "test.obs.counter" && m.Tags.ContainsKey("otel.metric.overflow"))
+                .SnapshotSum.Should().Be(10.0, "delta resumes reporting the real increment once the cumulative exceeds the high-water mark");
+        }
+
 #if NET7_0_OR_GREATER
+        [Fact]
+        public async Task ObservableUpDownCounterOverflowMayDecreaseWhenSeriesDrops()
+        {
+            var settings = TracerSettings.Create(
+                new()
+                {
+                    { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "1" },
+                });
+
+            var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            Tracer.UnsafeSetTracerInstance(tracer);
+
+            var testExporter = new InMemoryExporter();
+            await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
+            pipeline.Start();
+
+            using var meter = new Meter("TestMeter");
+
+            // ObservableUpDownCounter is non-monotonic (cumulative), so the high-water clamp must NOT apply:
+            // when a folded series stops reporting, a genuine decrease of the overflow cumulative is valid.
+            long o1 = 10;
+            long o2 = 20;
+            bool includeO2 = true;
+            meter.CreateObservableUpDownCounter<long>("test.obs.updown", () => includeO2
+                ? new[]
+                {
+                    new Measurement<long>(5, new KeyValuePair<string, object>("k", "reg")),
+                    new Measurement<long>(o1, new KeyValuePair<string, object>("k", "o1")),
+                    new Measurement<long>(o2, new KeyValuePair<string, object>("k", "o2")),
+                }
+                : new[]
+                {
+                    new Measurement<long>(5, new KeyValuePair<string, object>("k", "reg")),
+                    new Measurement<long>(o1, new KeyValuePair<string, object>("k", "o1")),
+                });
+
+            // Cycle 1: cumulative = 10 + 20 = 30.
+            await pipeline.ForceCollectAndExportAsync();
+            var afterCycle1 = testExporter.ExportedMetrics.Count;
+            testExporter.ExportedMetrics
+                .Single(m => m.InstrumentName == "test.obs.updown" && m.Tags.ContainsKey("otel.metric.overflow"))
+                .SnapshotSum.Should().Be(30.0);
+
+            // Cycle 2: "o2" stops reporting; a non-monotonic counter is allowed to decrease, so the
+            // cumulative falls to the current sum of 10 (no clamp).
+            includeO2 = false;
+            await pipeline.ForceCollectAndExportAsync();
+            testExporter.ExportedMetrics.Skip(afterCycle1)
+                .Single(m => m.InstrumentName == "test.obs.updown" && m.Tags.ContainsKey("otel.metric.overflow"))
+                .SnapshotSum.Should().Be(10.0, "ObservableUpDownCounter is non-monotonic, so the overflow cumulative may legitimately decrease");
+        }
+
         [Fact]
         public async Task ObservableUpDownCounterOverflowSumsCumulative()
         {
