@@ -1,0 +1,124 @@
+name: Run system tests
+
+# ─────────────────────────────────────────────────────────────────────────────
+# INTERIM MIGRATION PILOT — see GitLabMigration.md §7.
+#
+# Pilots moving the Azure DevOps `system_tests` stage
+# (.azure-pipelines/ultimate-pipeline.yml) onto the shared, cross-language
+# reusable workflow DataDog/system-tests/.github/workflows/system-tests.yml —
+# the same workflow every other tracer already uses (cf. dd-trace-java's
+# .github/workflows/run-system-tests.yaml).
+#
+# BINARIES SOURCE (interim): the linux-x64 tracer package is pulled from a
+# completed Azure DevOps build via the existing `DownloadAzurePipelineFromBuild`
+# Nuke target, mirroring create-system-test-docker-base-images.yml. This keeps
+# an ADO dependency for now; a later iteration can swap the `binaries` job for a
+# GitLab-built Linux package (GitLab builds the pkg → this job pulls it) to drop
+# the ADO coupling entirely.
+#
+# TESTING IN A PR: this is workflow_dispatch-driven (not auto-triggered on PR)
+# because it needs a completed ADO build id. To test against a PR:
+#   1. Push the PR; let its ADO build run far enough to finish `upload_to_azure`
+#      (the stage that publishes `<version>-release-artifacts`).
+#   2. Dispatch this workflow against the PR branch with that build id, e.g.:
+#        gh workflow run run-system-tests.yml --ref <pr-branch> -f azdo_build_id=<id>
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+    inputs:
+      azdo_build_id:
+        description: "Azure DevOps build id to pull the linux-x64 tracer package from (must have completed the upload_to_azure stage)."
+        required: true
+      scenarios:
+        description: "Comma-separated scenarios to run."
+        required: false
+        default: "DEFAULT"
+      scenarios_groups:
+        description: "Comma-separated scenario groups to run. The full ADO-equivalent set is: appsec,remote_config,telemetry,debugger,profiling,integrations,tracer_release"
+        required: false
+        default: ""
+
+jobs:
+  binaries:
+    name: Fetch tracer binaries from Azure
+    runs-on: ubuntu-latest
+    env:
+      AZURE_DEVOPS_TOKEN: ${{ secrets.AZURE_DEVOPS_TOKEN }}
+      # DownloadAzurePipelineFromBuild reads this Nuke parameter from the env.
+      AzureDevopsBuildId: ${{ github.event.inputs.azdo_build_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          global-json-file: global.json
+
+      - name: Download release artifacts from Azure Pipelines
+        id: assets
+        run: ./tracer/build.sh DownloadAzurePipelineFromBuild
+
+      - name: Stage linux-x64 (glibc) package as the binaries artifact
+        run: |
+          set -euo pipefail
+          mkdir -p binaries
+          # The release-artifacts bundle contains glibc-x64, musl and arm64
+          # packages. system-tests' install_ddtrace.sh expects EXACTLY ONE
+          # datadog-dotnet-apm*.tar.gz in /binaries, otherwise it silently falls
+          # back to the latest GitHub release — so copy only the glibc-x64 one.
+          for f in "${{ steps.assets.outputs.artifacts_path }}"/datadog-dotnet-apm-*.tar.gz; do
+            case "$f" in
+              *arm64*|*musl*) : ;;            # skip non-glibc-x64 variants
+              *) cp "$f" binaries/ ;;
+            esac
+          done
+          ls -la binaries
+          count=$(ls binaries/datadog-dotnet-apm-*.tar.gz | wc -l)
+          echo "Staged ${count} package(s)"
+          test "${count}" -eq 1
+
+      - name: Upload binaries artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: system-tests-binaries
+          path: binaries/
+
+  main:
+    needs: [binaries]
+    # DataDog/* is allowlisted; pinned to @main following dd-trace-java's precedent
+    # (system tests are pinned to a SHA for releases only).
+    uses: DataDog/system-tests/.github/workflows/system-tests.yml@main
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      library: dotnet
+      ref: main
+      binaries_artifact: system-tests-binaries
+      scenarios: ${{ github.event.inputs.scenarios }}
+      scenarios_groups: ${{ github.event.inputs.scenarios_groups }}
+      desired_execution_time: "900" # aim for ~15 min/job, matching the ADO stage
+      skip_empty_scenarios: true
+
+  check:
+    name: Check system tests success
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [binaries, main]
+    steps:
+      - name: Fail if binaries job failed
+        if: ${{ needs.binaries.result != 'success' }}
+        run: |
+          echo "::error::binaries job did not succeed: ${{ needs.binaries.result }}"
+          exit 1
+      - name: Fail if system tests failed or were skipped
+        if: ${{ needs.main.result != 'success' }}
+        run: |
+          echo "::error::system-tests job did not succeed: ${{ needs.main.result }}"
+          exit 1
+      - name: Success
+        run: echo "✅ All required jobs succeeded."
