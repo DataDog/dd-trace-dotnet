@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -300,6 +301,82 @@ namespace Datadog.Trace.Tests.Agent
             bytes[0].Should().Be(0x0A);
         }
 
+        [Theory]
+        [InlineData("5", "NOT_FOUND")]
+        [InlineData("0", "OK")]
+        [InlineData("14", "UNAVAILABLE")]
+        [InlineData("16", "UNAUTHENTICATED")]
+        [InlineData("NOT_FOUND", "NOT_FOUND")]
+        [InlineData("not_found", "NOT_FOUND")]
+        [InlineData("OK", "OK")]
+        [InlineData("ok", "OK")]
+        [InlineData("CANCELED", "CANCELLED")]
+        [InlineData("NOTFOUND", "NOT_FOUND")]
+        [InlineData("StatusCode.NotFound", "NOT_FOUND")]
+        [InlineData("StatusCode.OK", "OK")]
+        public void SerializeJson_GrpcStatusCode_EmitsCanonicalStringName(string input, string expected)
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(grpcStatusCode: input);
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetDataPointAttributes(SerializeToJson(buffer));
+
+            attrs.Should().ContainKey("rpc.response.status_code").WhoseValue.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("999")]
+        [InlineData("garbage")]
+        [InlineData("-1")]
+        public void SerializeJson_GrpcStatusCode_AbsentWhenInvalid(string input)
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(grpcStatusCode: input);
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetDataPointAttributes(SerializeToJson(buffer));
+
+            attrs.Should().NotContainKey("rpc.response.status_code");
+        }
+
+        [Fact]
+        public void SerializeJson_NoRpcMethodAttribute()
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(grpcStatusCode: "5");
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetDataPointAttributes(SerializeToJson(buffer));
+
+            attrs.Should().NotContainKey("rpc.method");
+        }
+
+        [Fact]
+        public void SerializeJson_TopLevelAndNonTopLevel_ProduceSeparateDataPoints()
+        {
+            var buffer = CreateBuffer();
+            var topKey = CreateKey(isTopLevel: true);
+            var nonTopKey = CreateKey(isTopLevel: false);
+            buffer.Buckets.Add(topKey, new StatsBucket(topKey, EmptyPeerTags) { Hits = 1, Duration = 1_000_000 });
+            buffer.Buckets.Add(nonTopKey, new StatsBucket(nonTopKey, EmptyPeerTags) { Hits = 1, Duration = 1_000_000 });
+
+            var json = SerializeToJson(buffer, otelSemanticsEnabled: false);
+            var dataPoints = json.SelectToken("$.resourceMetrics[0].scopeMetrics[0].metrics[0].histogram.dataPoints")!;
+
+            dataPoints.Should().HaveCount(2);
+
+            var topLevelValues = dataPoints
+                .Select(dp => GetDataPointAttributesFromToken((JObject)dp))
+                .Where(a => a.ContainsKey("datadog.span.top_level"))
+                .Select(a => a["datadog.span.top_level"])
+                .ToList();
+
+            topLevelValues.Should().Contain("true");
+            topLevelValues.Should().Contain("false");
+        }
+
         private static StatsBuffer CreateBuffer(string service = "my-service", string env = "prod", string version = "1.0")
         {
             var settings = MutableSettings.CreateForTesting(
@@ -369,8 +446,14 @@ namespace Datadog.Trace.Tests.Agent
 
         private static Dictionary<string, string> GetDataPointAttributes(JObject json)
         {
+            var dp = json.SelectToken("$.resourceMetrics[0].scopeMetrics[0].metrics[0].histogram.dataPoints[0]") as JObject;
+            return GetDataPointAttributesFromToken(dp);
+        }
+
+        private static Dictionary<string, string> GetDataPointAttributesFromToken(JObject? dataPoint)
+        {
             var result = new Dictionary<string, string>();
-            var attrs = json.SelectToken("$.resourceMetrics[0].scopeMetrics[0].metrics[0].histogram.dataPoints[0].attributes");
+            var attrs = dataPoint?.SelectToken("$.attributes");
             if (attrs == null)
             {
                 return result;

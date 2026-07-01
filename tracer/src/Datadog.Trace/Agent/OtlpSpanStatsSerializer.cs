@@ -45,6 +45,15 @@ namespace Datadog.Trace.Agent
         // Same bounds converted to nanoseconds for comparison with sketch bin values.
         private static readonly double[] BoundsNs;
 
+        // Canonical gRPC status names indexed by numeric code (0–16), per https://grpc.github.io/grpc/core/md_doc_statuscodes.html
+        private static readonly string[] GrpcStatusNames =
+        [
+            "OK", "CANCELLED", "UNKNOWN", "INVALID_ARGUMENT", "DEADLINE_EXCEEDED",
+            "NOT_FOUND", "ALREADY_EXISTS", "PERMISSION_DENIED", "RESOURCE_EXHAUSTED",
+            "FAILED_PRECONDITION", "ABORTED", "OUT_OF_RANGE", "UNIMPLEMENTED",
+            "INTERNAL", "UNAVAILABLE", "DATA_LOSS", "UNAUTHENTICATED",
+        ];
+
         static OtlpSpanStatsSerializer()
         {
             BoundsNs = new double[BoundsS.Length];
@@ -244,9 +253,10 @@ namespace Datadog.Trace.Agent
                 WriteStringKvJson(writer, "http.route", key.HttpEndpoint);
             }
 
-            if (!StringUtil.IsNullOrEmpty(key.GrpcStatusCode) && int.TryParse(key.GrpcStatusCode, out var grpcCode))
+            var grpcStatusName = NormalizeGrpcStatusName(key.GrpcStatusCode);
+            if (grpcStatusName is not null)
             {
-                WriteIntKvJson(writer, "rpc.response.status_code", grpcCode);
+                WriteStringKvJson(writer, "rpc.response.status_code", grpcStatusName);
             }
 
             if (key.IsError)
@@ -533,11 +543,11 @@ namespace Datadog.Trace.Agent
                 WriteAttribute(writer, "http.route", key.HttpEndpoint, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            // rpc.response.status_code (int) — only when a gRPC status code is present
-            // TODO: also emit rpc.method when we decide to accept the cardinality increase
-            if (!StringUtil.IsNullOrEmpty(key.GrpcStatusCode) && int.TryParse(key.GrpcStatusCode, out var grpcCode))
+            // rpc.response.status_code (string name) — only when a gRPC status code is present and parseable
+            var grpcStatusNameProto = NormalizeGrpcStatusName(key.GrpcStatusCode);
+            if (grpcStatusNameProto is not null)
             {
-                WriteIntAttribute(writer, "rpc.response.status_code", grpcCode, FieldNumbers.HistogramDataPointAttributes);
+                WriteAttribute(writer, "rpc.response.status_code", grpcStatusNameProto, FieldNumbers.HistogramDataPointAttributes);
             }
 
             // status.code = 2 (ERROR) — present only on error data points
@@ -565,7 +575,6 @@ namespace Datadog.Trace.Agent
                     WriteAttribute(writer, "datadog.span.type", key.Type, FieldNumbers.HistogramDataPointAttributes);
                 }
 
-                // top-level: true only when every hit in the group is top-level (root or cross-service entry)
                 WriteBoolAttribute(writer, "datadog.span.top_level", key.IsTopLevel, FieldNumbers.HistogramDataPointAttributes);
 
                 if (key.IsSyntheticsRequest)
@@ -678,6 +687,54 @@ namespace Datadog.Trace.Agent
             }
 
             return BoundsNs.Length; // overflow
+        }
+
+        // ── gRPC status normalization ─────────────────────────────────────────────
+
+        // Converts a raw grpc.status.code tag value (numeric string or name) to the canonical uppercase
+        // name required by rpc.response.status_code.  Returns null when the value is absent, unparseable,
+        // or outside the valid range 0–16.
+        private static string? NormalizeGrpcStatusName(string grpcStatusCode)
+        {
+            if (StringUtil.IsNullOrEmpty(grpcStatusCode))
+            {
+                return null;
+            }
+
+            // Numeric code path: "0"→"OK", "5"→"NOT_FOUND", etc.
+            if (int.TryParse(grpcStatusCode, out var code) && (uint)code <= 16)
+            {
+                return GrpcStatusNames[code];
+            }
+
+            // Named code path: strip optional "StatusCode." prefix (e.g. "StatusCode.NotFound")
+            var name = grpcStatusCode;
+            if (name.Length > 11 && name.StartsWith("StatusCode.", StringComparison.OrdinalIgnoreCase))
+            {
+                name = name.Substring(11);
+            }
+
+            name = name.ToUpperInvariant();
+
+            // Accept common single-L alias and compact form
+            if (name == "CANCELED")
+            {
+                name = "CANCELLED";
+            }
+            else if (name == "NOTFOUND")
+            {
+                name = "NOT_FOUND";
+            }
+
+            for (int i = 0; i < GrpcStatusNames.Length; i++)
+            {
+                if (GrpcStatusNames[i] == name)
+                {
+                    return GrpcStatusNames[i];
+                }
+            }
+
+            return null;
         }
 
         // ── Attribute helpers ─────────────────────────────────────────────────────
