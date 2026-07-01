@@ -28,7 +28,11 @@ public class ContextPropagationTests
     private const string DatadogKey = "_datadog";
     private const int MaxKinesisDataSize = 1024 * 1024;
     private const int MaxKinesisPutRecordsRequestSize = 5 * 1024 * 1024;
+    private const int BatchLimitPartitionKeyLength = 64;
     private const string StreamName = "MyStreamName";
+    private const ulong FixedTraceIdUpper = 1234567890123456789;
+    private const ulong FixedTraceIdLower = 9876543210987654321;
+    private const ulong FixedSpanId = 6766950223540265769;
 
     private static readonly Dictionary<string, object> PersonDictionary = new() { { "name", "Jordan" }, { "lastname", "Gonzalez" }, { "city", "NYC" }, { "age", 24 } };
     private static readonly Dictionary<string, object> PokemonDictionary = new() { { "id", 393 }, { "name", "Piplup" }, { "type", "water" } };
@@ -39,11 +43,8 @@ public class ContextPropagationTests
 
     public ContextPropagationTests()
     {
-        const long upper = 1234567890123456789;
-        const ulong lower = 9876543210987654321;
-
-        var traceId = new TraceId(upper, lower);
-        ulong spanId = 6766950223540265769;
+        var traceId = new TraceId(FixedTraceIdUpper, FixedTraceIdLower);
+        const ulong spanId = FixedSpanId;
         _spanContext = new SpanContext(traceId, spanId, 1, "test-kinesis", "serverless");
     }
 
@@ -74,11 +75,11 @@ public class ContextPropagationTests
     [Fact]
     public async Task InjectTraceIntoRecords_WithBatchNearRequestLimit_SkipsAddingTraceContextToAllRecords()
     {
-        const string partitionKey = "pk";
+        var partitionKey = new string('p', BatchLimitPartitionKeyLength);
         var injectedSizeDeltas = new List<int>();
 
         await using var probeTracer = GetTracer();
-        var probeScope = AwsKinesisCommon.CreateScope(probeTracer, "PutRecords", SpanKinds.Producer, null, out _);
+        using var probeScope = CreateDeterministicScope(probeTracer);
 
         for (var i = 0; i < 5; i++)
         {
@@ -112,10 +113,16 @@ public class ContextPropagationTests
 
         var originalTotalSize = request.Records.Sum(r => r.Data.Length + Encoding.UTF8.GetByteCount(r.PartitionKey));
         originalTotalSize.Should().BeLessThan(MaxKinesisPutRecordsRequestSize);
+        request.Records.Zip(injectedSizeDeltas, static (record, delta) => record.Data.Length + delta)
+               .Should()
+               .OnlyContain(size => size == MaxKinesisDataSize);
+        var projectedInjectedTotalSize = request.Records.Zip(injectedSizeDeltas, static (record, delta) => record.Data.Length + delta + Encoding.UTF8.GetByteCount(record.PartitionKey))
+                                               .Sum();
+        projectedInjectedTotalSize.Should().BeGreaterThan(MaxKinesisPutRecordsRequestSize);
 
         var proxy = request.DuckCast<IPutRecordsRequest>();
         await using var tracer = GetTracer();
-        var scope = AwsKinesisCommon.CreateScope(tracer, "PutRecords", SpanKinds.Producer, null, out _);
+        using var scope = CreateDeterministicScope(tracer);
         ContextPropagation.InjectTraceIntoRecords(tracer, proxy, scope, "streamname");
 
         foreach (var requestEntry in request.Records)
@@ -344,6 +351,17 @@ public class ContextPropagationTests
         var writerMock = new Mock<IAgentWriter>();
         var samplerMock = new Mock<ITraceSampler>();
         return TracerHelper.Create(settings, writerMock.Object, samplerMock.Object);
+    }
+
+    private static Scope CreateDeterministicScope(ScopedTracer tracer)
+    {
+        var spanContext = tracer.CreateSpanContext(
+            parent: null,
+            serviceName: "test-kinesis",
+            traceId: new TraceId(FixedTraceIdUpper, FixedTraceIdLower),
+            spanId: FixedSpanId);
+        var span = new Span(spanContext, DateTimeOffset.UtcNow);
+        return tracer.ActivateSpan(span, finishOnClose: false);
     }
 
     private static ScopedTracer GetAwsSdkDisabledTracer(string schemaVersion = "v1")
