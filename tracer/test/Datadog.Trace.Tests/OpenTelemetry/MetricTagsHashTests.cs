@@ -87,6 +87,17 @@ public class MetricTagsHashTests
     }
 
     [Fact]
+    public void KeyValueBoundaryIsUnambiguousWhenContentContainsEquals()
+    {
+        // A '=' inside a key/value must not shift the perceived key/value boundary:
+        // {"a=b" = "c"} must not collide with {"a" = "b=c"}.
+        var first = new[] { Tag("a=b", "c") };
+        var second = new[] { Tag("a", "b=c") };
+
+        MetricTagsHash.Compute(first).Should().NotBe(MetricTagsHash.Compute(second));
+    }
+
+    [Fact]
     public void PairBoundaryIsUnambiguous()
     {
         // {a=b, c=d} must not collide with {a=bc, d=} style regroupings
@@ -94,6 +105,44 @@ public class MetricTagsHashTests
         var second = new[] { Tag("a", "bcd") };
 
         MetricTagsHash.Compute(first).Should().NotBe(MetricTagsHash.Compute(second));
+    }
+
+    [Fact]
+    public void PairBoundaryIsUnambiguousWhenContentContainsSeparators()
+    {
+        // A key/value that itself contains the historical separators ('=' and ';') must not
+        // collapse two tags into one: {a=b, c=d} must not collide with {"a=b;c" = "d"}.
+        var first = new[] { Tag("a", "b"), Tag("c", "d") };
+        var second = new[] { Tag("a=b;c", "d") };
+
+        MetricTagsHash.Compute(first).Should().NotBe(MetricTagsHash.Compute(second));
+    }
+
+    [Fact]
+    public void ContentIsImmaterialToFraming()
+    {
+        // Length framing makes collisions structurally impossible regardless of content, including a
+        // literal null char. {"a\0b" = "c"} must not collide with {"a" = "b\0c"}.
+        var first = new[] { Tag("a\0b", "c") };
+        var second = new[] { Tag("a", "b\0c") };
+
+        MetricTagsHash.Compute(first).Should().NotBe(MetricTagsHash.Compute(second));
+    }
+
+    [Fact]
+    public void DigitContentDoesNotBlurIntoLengthPrefix()
+    {
+        // The length prefix is fixed-width binary, not decimal text, so content that "looks like a
+        // number" (e.g. a value ending in digits) can never be re-read as an adjacent length field.
+        // {k="12", x="3"} must not collide with {k="1", x="23"} (same keys, digits regrouped).
+        var first = new[] { Tag("k", "12"), Tag("x", "3") };
+        var second = new[] { Tag("k", "1"), Tag("x", "23") };
+
+        MetricTagsHash.Compute(first).Should().NotBe(MetricTagsHash.Compute(second));
+
+        // ...and regrouping digits across the key/value boundary is equally safe.
+        MetricTagsHash.Compute(new[] { Tag("k", "12") })
+                      .Should().NotBe(MetricTagsHash.Compute(new[] { Tag("k1", "2") }));
     }
 
     [Fact]

@@ -23,8 +23,6 @@ namespace Datadog.Trace.OpenTelemetry.Metrics;
 /// </summary>
 internal static class MetricTagsHash
 {
-    private const string PairSeparator = ";";
-    private const string KeyValueSeparator = "=";
     private const FnvHash64.Version HashVersion = FnvHash64.Version.V1A;
 
     private static readonly IComparer<KeyValuePair<string, object?>> KeyComparer =
@@ -38,8 +36,9 @@ internal static class MetricTagsHash
             return FnvHash64.Empty;
         }
 
-        // No need to allocate to sort if only a single item
         var hash = FnvHash64.Empty;
+
+        // No need to allocate to sort if only a single item
         if (len == 1)
         {
             return HashPair(tags[0], hash);
@@ -53,11 +52,6 @@ internal static class MetricTagsHash
 
             for (var i = 0; i < len; i++)
             {
-                if (i > 0)
-                {
-                    hash = HashChars(PairSeparator, hash);
-                }
-
                 hash = HashPair(sorted[i], hash);
             }
 
@@ -73,10 +67,11 @@ internal static class MetricTagsHash
     private static ulong HashPair(KeyValuePair<string, object?> tag, ulong hash)
     {
         hash = HashChars(tag.Key, hash);
-        hash = HashChars(KeyValueSeparator, hash);
+
         if (tag.Value is null)
         {
-            return hash;
+            // Treat this as identical to empty string, so just record the 0 length
+            return HashInt(0, hash);
         }
 
         // If we were targeting .NET 8, we could use IUtf8SpanFormattable to avoid the two steps but we aren't
@@ -99,14 +94,27 @@ internal static class MetricTagsHash
                               : tag.Value.ToString();
 
         return string.IsNullOrEmpty(stringValue)
-                   ? hash
+                   ? HashInt(0, hash)
                    : HashChars(stringValue, hash);
     }
 
-    // The hash is only an in-process dictionary key for a MetricPoint stream; it is never persisted
-    // or compared across processes. So rather than transcoding to UTF-8 (as FnvHash64's string
-    // overloads do), we hash the raw UTF-16 char bytes directly, which avoids the encoding step.
+    // The hash is only an in-process dictionary key for a MetricPoint stream; it is never persisted or
+    // compared across processes. So rather than transcoding to UTF-8 (as FnvHash64's string overloads
+    // do), we hash the raw UTF-16 char bytes directly, which avoids the encoding step. We include the
+    // length of the char bytes as a prefix to avoid collisions.
     private static ulong HashChars(ReadOnlySpan<char> chars, ulong hash)
-        => FnvHash64.GenerateHash(MemoryMarshal.AsBytes(chars), HashVersion, hash);
+    {
+        hash = HashInt(chars.Length, hash);
+        return FnvHash64.GenerateHash(MemoryMarshal.AsBytes(chars), HashVersion, hash);
+    }
+
+    // Hashes an int as fixed-width bytes. Used to length-prefix each field so the hashed byte stream
+    // is deterministically decodable; endianness is irrelevant as the hash is only used in-process.
+    private static ulong HashInt(int value, ulong hash)
+    {
+        Span<byte> bytes = stackalloc byte[sizeof(int)];
+        BitConverter.TryWriteBytes(bytes, value);
+        return FnvHash64.GenerateHash(bytes, HashVersion, hash);
+    }
 }
 #endif
