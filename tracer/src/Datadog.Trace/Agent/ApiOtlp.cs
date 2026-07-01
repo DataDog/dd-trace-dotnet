@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.Transports;
@@ -29,10 +28,10 @@ namespace Datadog.Trace.Agent
 
         private readonly IDatadogLogger _log;
         private readonly IApiRequestFactory _apiRequestFactory;
+        private readonly IApiRequestFactory _metricsRequestFactory;
         private readonly TracesEncoding _tracesEncoding;
         private readonly Uri _tracesEndpoint;
         private readonly Uri _statsEndpoint;
-        private readonly KeyValuePair<string, string>[] _metricsHeaders;
         private readonly bool _spanMetricsEnabled;
         private readonly bool _otelSemanticsEnabled;
         private readonly OtlpProtocol _metricsEncoding;
@@ -48,10 +47,10 @@ namespace Datadog.Trace.Agent
             _sendTraces = SendTracesAsyncImpl;
 
             _apiRequestFactory = apiRequestFactory;
+            _metricsRequestFactory = OtlpTransportStrategy.GetMetrics(exporterSettings);
             _tracesEncoding = exporterSettings.TracesEncoding;
             _tracesEndpoint = _apiRequestFactory.GetEndpoint(null); // The base endpoint for OTLP traces already includes the path component
             _statsEndpoint = exporterSettings.OtlpMetricsEndpoint;
-            _metricsHeaders = exporterSettings.OtlpMetricsHeaders ?? [];
             _spanMetricsEnabled = settings.OtelTracesSpanMetricsEnabled;
             _otelSemanticsEnabled = settings.OtelSemanticsEnabled;
             _metricsEncoding = exporterSettings.OtlpMetricsProtocol;
@@ -82,7 +81,7 @@ namespace Datadog.Trace.Agent
             var state = new SendStatsState(stats, bucketDuration, tracerObfuscationVersion);
 
             // We are supposed to be fire and forget for these stats, with no retries
-            return SendWithRetry(_statsEndpoint, _sendStats, state, retryLimit: 0);
+            return SendWithRetry(_statsEndpoint, _sendStats, state, retryLimit: 0, _metricsRequestFactory);
         }
 
         public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
@@ -94,7 +93,7 @@ namespace Datadog.Trace.Agent
             return SendWithRetry(_tracesEndpoint, _sendTraces, state);
         }
 
-        private async Task<bool> SendWithRetry<T>(Uri endpoint, SendCallback<T> callback, T state, int retryLimit = 5)
+        private async Task<bool> SendWithRetry<T>(Uri endpoint, SendCallback<T> callback, T state, int retryLimit = 5, IApiRequestFactory requestFactory = null)
         {
             // retry up to 5 times with exponential back-off
             var retryCount = 1;
@@ -106,7 +105,7 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    request = _apiRequestFactory.Create(endpoint);
+                    request = (requestFactory ?? _apiRequestFactory).Create(endpoint);
                 }
                 catch (Exception ex)
                 {
@@ -181,11 +180,6 @@ namespace Datadog.Trace.Agent
             if (payload is null)
             {
                 return SendResult.Success;
-            }
-
-            foreach (var header in _metricsHeaders)
-            {
-                request.AddHeader(header.Key, header.Value);
             }
 
             var contentType = useJson ? MimeTypes.Json : MimeTypes.XProtobuf;
