@@ -12,6 +12,9 @@ internal static class AzureFunctionsConstants
     // Used for the operation name of spans created for Azure API Management requests
     public const string AzureApimName = "azure.apim";
 
+    // Used for the operation name of the spans created for Azure Front Door requests
+    public const string AzureFrontDoorName = "azure.frontdoor";
+
     // Used for the operation name of spans created for Azure Functions requests
     public const string AzureFunctionName = "azure_functions.invoke";
 }
