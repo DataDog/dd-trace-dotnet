@@ -61,7 +61,7 @@ internal static class InferredProxySpanHelper
 
         if (string.Equals(proxyName, AzureFrontDoorHeaderValue, StringComparison.OrdinalIgnoreCase))
         {
-            _azureCoordinator ??= new InferredProxyCoordinator(new AzureFrontDoorExtractor(), new Az());
+            _azureCoordinator ??= new InferredProxyCoordinator(new AzureFrontDoorExtractor(), new AzureFrontDoorSpanFactory());
             return _azureCoordinator.ExtractAndCreateScope(tracer, carrier, accessor, propagationContext);
         }
 
