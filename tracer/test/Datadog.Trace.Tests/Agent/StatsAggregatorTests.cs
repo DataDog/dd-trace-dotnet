@@ -1122,42 +1122,6 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task SamplingWeightIsApplied()
-        {
-            var start = DateTimeOffset.UtcNow;
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
-
-            try
-            {
-                // Span with sampling rate 0.1 → weight = 1/0.1 = 10
-                // GetWeight uses TraceContext.AppliedSamplingRate
-                var sampledTraceContext = new TraceContext(new StubDatadogTracer());
-                sampledTraceContext.AppliedSamplingRate = 0.1f;
-                var sampledSpan = new Span(new SpanContext(null, sampledTraceContext, "svc"), start);
-                sampledSpan.OperationName = "op";
-                sampledSpan.SetDuration(TimeSpan.FromMilliseconds(100));
-
-                // Span with no sampling rate → weight = 1.0
-                var unweightedSpan = CreateTopLevelSpan(start, "svc2");
-                unweightedSpan.OperationName = "op";
-                unweightedSpan.SetDuration(TimeSpan.FromMilliseconds(100));
-
-                aggregator.Add(sampledSpan, unweightedSpan);
-
-                var buffer = aggregator.CurrentBuffer;
-                var sampledKey = aggregator.BuildKey(sampledSpan);
-                var unweightedKey = aggregator.BuildKey(unweightedSpan);
-
-                buffer.Buckets[sampledKey].Hits.Should().BeApproximately(10.0, 0.001);
-                buffer.Buckets[unweightedKey].Hits.Should().BeApproximately(1.0, 0.001);
-            }
-            finally
-            {
-                await aggregator.DisposeAsync();
-            }
-        }
-
-        [Fact]
         public async Task PeerTagsCreateDistinctBuckets()
         {
             var start = DateTimeOffset.UtcNow;
@@ -1341,7 +1305,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         /// <summary>
-        /// Creates a top-level span with a TraceContext (required by GetWeight).
+        /// Creates a top-level span with a TraceContext.
         /// </summary>
         private static Span CreateTopLevelSpan(DateTimeOffset start, string serviceName = null)
         {

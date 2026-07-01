@@ -49,6 +49,87 @@
 
 
 
+
+
+## [Release 3.48.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.48.0)
+
+## Summary
+
+* [Tracing] Add support for IBMMQ 10.x.x
+* [Client side stats] Fix incorrect statistic generation introduced in 3.43.0
+
+## Changes
+
+### Tracer
+* Add support for IBM MQ 10.x.x (#8835)
+* Fix ObjectDisposedException race in DataStreamsWriter disposal (#8758)
+
+### CI Visibility
+* [CI Visibility] Avoid oversized coverage IPC messages (#8832)
+
+### Debugger
+* [Debugger] Guard static member capture (#8814)
+* [Debugger] Avoid resolving call tokens in exception replay IL scan (#8815)
+
+### Fixes
+* Remove sampling-based weighting in Client Side Stats (#8828)
+
+### Build / Test
+* Update to use dd-sts instead of long-lived credentials (#8809)
+* [Test Package Versions Bump] Updating package versions (#8810)
+* Fix GitHub Actions bugs and update documentation (#8812)
+* [CI] Add net10.0 to AWS Lambda test runtimes (#8819)
+
+[Changes since 3.47.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.47.0...v3.48.0)
+
+## [Release 3.47.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.47.0)
+
+## Summary
+
+- Add support for HotChocolate v16.x (#8802)
+- Add support for StackExchange.Redis v3.x (#8808)
+- Add support for Amazon.Lambda.RuntimeSupport v2.x (#8797)
+## Changes
+
+### Tracer
+* [DBM] Skip telemetry for DBM errors (#8679)
+* Trim experimental features flags (#8789)
+* Add support for `HotChocolate` v16.x (#8802)
+* Add support for StackExchange.Redis 3.x (#8808)
+
+### CI Visibility
+* [CI Visibility] Implement ITR code coverage backfill (#8626)
+
+### Continuous Profiler
+* [Profiler] Generate reference chain (#8225)
+* [Profiler] Add support for SMB/CIFS (#8769)
+* Fix flake in profiling demo app (#8793)
+* [Profiler] Try fixing flakiness (#8813)
+
+### Debugger
+* [Debugger] Bound root filter capture expressions (#8780)
+* [Debugger] Resolve instanceof types at runtime (#8785)
+* [Debugger] Avoid instantiating state machine attributes (#8816)
+
+### Serverless
+* feat: add support for latest Amazon.Lambda.RuntimeSupport package (#8797)
+
+### Build / Test
+* Use libdatadog for dotnet (#8186)
+* [Test Package Versions Bump] Updating package versions (#8786)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#8788)
+* Add `StartDependencies.Profiler` to docker-compose.yml (#8792)
+* [TESTS] Fix monitoring home calculation fallback for tests (#8798)
+* Update DatadogTestLogger package versions to 0.0.54 (#8799)
+* Fix `RunInstrumentationGenerator` (#8801)
+* Fix local MSBuild issue with `CompileSamples` (#8807)
+
+### Miscellaneous
+* [Config] Register all native configuration variables (3/3) (#8733)
+
+
+[Changes since 3.46.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.46.0...v3.47.0)
+
 ## [Release 3.46.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.46.0)
 
 ## Summary

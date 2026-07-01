@@ -373,6 +373,17 @@ internal partial class ProbeExpressionParser<T>
 
             if (isStatic)
             {
+                if (memberInfo is FieldInfo { IsLiteral: true } literalField)
+                {
+                    return Expression.Constant(StaticMemberSafety.GetRawConstantValue(literalField), literalField.FieldType);
+                }
+
+                if (!StaticMemberSafety.CanReadStaticMember(memberInfo))
+                {
+                    AddError($"{expression}.{propertyOrFieldValue}", "Static member access is skipped because it could trigger the declaring type initializer.");
+                    return UndefinedValue();
+                }
+
                 return memberInfo.MemberType switch
                 {
                     MemberTypes.Field => Expression.Field(null, (FieldInfo)memberInfo),

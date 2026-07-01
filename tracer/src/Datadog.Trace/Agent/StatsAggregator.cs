@@ -112,6 +112,7 @@ namespace Datadog.Trace.Agent
         /// StatsBuffer is not thread-safe, this property is not intended to be used outside of the class,
         /// except for tests.
         /// </summary>
+        [TestingAndPrivateOnly]
         internal StatsBuffer CurrentBuffer => _buffers[_currentBuffer];
 
         public bool? CanComputeStats
@@ -427,7 +428,7 @@ namespace Datadog.Trace.Agent
         {
             if (results.BaseService is not null)
             {
-                return [EncodingHelpers.Utf8NoBom.GetBytes($"{Tags.BaseService}:{results.BaseService}")];
+                return [EncodeKeyValue(BaseServiceUtf8Prefix, results.BaseService)];
             }
 
             if (results.PeerTagCount == 0)
@@ -445,10 +446,27 @@ namespace Datadog.Trace.Agent
                 }
 
                 tagValue = IpAddressObfuscationUtil.QuantizePeerIpAddresses(tagValue);
-                result.Add(EncodingHelpers.Utf8NoBom.GetBytes($"{peerTag.Name}:{tagValue}"));
+                result.Add(EncodeKeyValue(peerTag.Utf8Prefix, tagValue));
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Builds a "key:value" UTF-8 byte array by reusing the pre-encoded <paramref name="utf8KeyPrefix"/>
+        /// (e.g. "tagKey:") and encoding only <paramref name="tagValue"/> directly into the destination
+        /// array — avoiding both the intermediate interpolated string and re-encoding the key prefix.
+        /// </summary>
+        private static byte[] EncodeKeyValue(byte[] utf8KeyPrefix, string tagValue)
+        {
+            var valueByteCount = EncodingHelpers.Utf8NoBom.GetByteCount(tagValue);
+            var encoded = new byte[utf8KeyPrefix.Length + valueByteCount];
+
+            // Copy the already-encoded "key:" bytes, then encode the value straight after them.
+            Buffer.BlockCopy(utf8KeyPrefix, 0, encoded, 0, utf8KeyPrefix.Length);
+            EncodingHelpers.Utf8NoBom.GetBytes(tagValue, charIndex: 0, charCount: tagValue.Length, encoded, byteIndex: utf8KeyPrefix.Length);
+
+            return encoded;
         }
 
         internal async Task Flush()
@@ -509,13 +527,6 @@ namespace Datadog.Trace.Agent
             return ns << shift;
         }
 
-        // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/weight.go
-        private static double GetWeight(Span span)
-        {
-            var rate = span.Context.TraceContext.AppliedSamplingRate;
-            return (rate is > 0) ? 1.0 / rate.Value : 1.0;
-        }
-
         private void AddToBuffer(Span span)
         {
             // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/span_concentrator.go#L210-L217
@@ -540,25 +551,22 @@ namespace Datadog.Trace.Agent
                 buffer.Buckets.Add(key, bucket);
             }
 
-            var weight = GetWeight(span);
-            bucket.Hits += weight;
+            bucket.Hits++;
 
             if (span.IsTopLevel)
             {
-                bucket.TopLevelHits += weight;
+                bucket.TopLevelHits++;
             }
 
             var duration = span.Duration.ToNanoseconds();
 
-            // Duration is weighted by sampling rate, matching the Go agent behavior:
-            // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/statsraw.go
-            bucket.Duration += duration * weight;
+            bucket.Duration += duration;
 
             // If we are using OTLP, the errors are tracked as a separate aggregation entirely (different AggregationKey)
             // As a result, if using OTLP we always add to the OkSummary sketch.
             if (span.Error && !_isOtlp)
             {
-                bucket.Errors += weight;
+                bucket.Errors++;
                 bucket.ErrorSummary.Add(ConvertTimestamp(duration));
             }
             else

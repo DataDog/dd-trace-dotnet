@@ -63,7 +63,7 @@ public sealed class PutEventsIntegration
         if (scope?.Span.Context is { } context)
         {
             var propagationContext = new PropagationContext(context, Baggage.Current);
-            ContextPropagation.InjectContext(tracer, request, propagationContext);
+            ContextPropagation.InjectContext(tracer, request, scope, propagationContext);
         }
 
         return new CallTargetState(scope);

@@ -5,7 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
@@ -55,6 +57,39 @@ public class QueryStringObfuscatorTests
             new(
                 "http://google.fr/waf?PassWord=12345&Token=token:1234&Bearer 1234&ecdsa-1-1 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa= test&old-pwd2=test&ssh-dss aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa= test&application_key=test&app-key=test2",
                 "http://google.fr/waf?<redacted>&<redacted>&<redacted>&<redacted>&<redacted>&<redacted>&<redacted>&<redacted>"),
+            // CJK in query strings: a secret value containing decoded CJK characters is still redacted
+            new(
+                "?password=パスワード&key=val",
+                "?<redacted>&key=val"),
+            // CJK arrives percent-encoded over the wire (e.g. UTF-8 of あ is %E3%81%82); still redacted
+            new(
+                "?token=%E3%81%82%E3%81%84%E3%81%86&x=1",
+                "?<redacted>&x=1"),
+            // CJK inside an encoded quoted/colon ("key":"value") secret value (mirrors the json case above)
+            new(
+                "?json=%7B%22token%22%3A%20%22あいう%22%7D",
+                "?json=%7B<redacted>%7D"),
+            // Negative: CJK-only/non-secret params must be left untouched (no catastrophic backtracking, no false redaction)
+            new(
+                "?名前=パスワード&q=ありがとう",
+                "?名前=パスワード&q=ありがとう"),
+            // Negative: a keyword substring ("token") inside a CJK value with no =/:/" must not trigger redaction
+            new(
+                "?q=ありがとうtokenありがとう",
+                "?q=ありがとうtokenありがとう"),
+            // Real-world vault file-download URL: high-byte URL-encoded Korean filename alongside an auth ticket.
+            // The encoded filename (%EC/%84/%A4...) must not derail obfuscation; only the token ticket is redacted.
+            new(
+                "dbName=CPMS&fileId=F4D7D9C025CF4FB29023189592B261D1&fileName=%EC%84%A4%EA%B3%84%EC%9E%90%EB%A3%8C%EC%86%A1%EB%B6%80%EC%84%9C_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&token=VAULTTOKEN1234567",
+                "dbName=CPMS&fileId=F4D7D9C025CF4FB29023189592B261D1&fileName=%EC%84%A4%EA%B3%84%EC%9E%90%EB%A3%8C%EC%86%A1%EB%B6%80%EC%84%9C_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&<redacted>"),
+            // High-byte URL-encoded Japanese filename + a 15-char token value
+            new(
+                "filename=%E6%97%A5%E6%9C%AC%E8%AA%9E%E3%83%86%E3%82%B9%E3%83%88.pdf&token=abc1234567890ab",
+                "filename=%E6%97%A5%E6%9C%AC%E8%AA%9E%E3%83%86%E3%82%B9%E3%83%88.pdf&<redacted>"),
+            // Negative: encoded Korean filename with only non-secret params (incl. a dotted value) — nothing redacted
+            new(
+                "database=CPMS&fileName=%EC%84%A4%EA%B3%84.xlsx&user=emma.bae",
+                "database=CPMS&fileName=%EC%84%A4%EA%B3%84.xlsx&user=emma.bae"),
         };
         return allData.Select(e => new[] { e.Data, e.Expected });
     }
@@ -95,6 +130,110 @@ public class QueryStringObfuscatorTests
         var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
         var result = queryStringObfuscator.Obfuscate(querystring);
         result.Should().Be(querystring);
+    }
+
+    // Culture-sensitive case-insensitive matching mis-cases non-ASCII characters (e.g. the Turkish
+    // dotted/dotless 'I'), which both produces a CPU spike when scanning non-ASCII query strings on
+    // .NET Framework and, worse, causes keywords containing an 'i' (api, public, signature, ...) to
+    // be missed entirely under cultures like tr-TR. The obfuscator must match culture-independently.
+    [SkippableTheory]
+    [InlineData("tr-TR")]
+    [InlineData("az-Latn-AZ")]
+    [InlineData("en-US")]
+    public void ObfuscatesIndependentlyOfCurrentCulture(string culture)
+    {
+        // the default regex seems to crash the regex engine on netcoreapp2.1 under arm64, with a null reference exception on the dotnet RegexRunner. Its ok as these arent supported in auto instrumentation, we just warn not to reuse this regex if 2.1&arm64 is the environment
+#if NETCOREAPP2_1
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+#endif
+        var originalCulture = Thread.CurrentThread.CurrentCulture;
+        try
+        {
+            Thread.CurrentThread.CurrentCulture = new CultureInfo(culture);
+
+            var logger = new Mock<IDatadogLogger>();
+            // Constructed under the test culture so the underlying Regex captures it.
+            var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
+
+            // Upper-case keywords containing 'I' only match when 'I' folds to 'i', which is false
+            // under Turkic cultures unless the regex is culture-invariant.
+            var result = queryStringObfuscator.Obfuscate("http://google.fr/waf?API_KEY=secret123&SIGNATURE=abc&PUBLIC_KEY=zzz&key=val");
+            result.Should().Be("http://google.fr/waf?<redacted>&<redacted>&<redacted>&key=val");
+        }
+        finally
+        {
+            Thread.CurrentThread.CurrentCulture = originalCulture;
+        }
+    }
+
+    // Same culture-folding root cause, exercised through a customer-style custom pattern over a
+    // query string carrying non-ASCII (Korean) secret values. Under a Turkic culture the upper-case
+    // keys containing 'I' (TICKET, EMPID) only match when 'I' folds to 'i', so without culture
+    // invariance their Korean secret values leak unredacted. (The pattern itself is linear - this is
+    // a correctness, not a backtracking, problem.)
+    [Fact]
+    public void ObfuscatesNonAsciiValuesWithCustomPatternIndependentlyOfCulture()
+    {
+        var originalCulture = Thread.CurrentThread.CurrentCulture;
+        try
+        {
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("tr-TR");
+
+            var logger = new Mock<IDatadogLogger>();
+            var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, @"(?i)(?<![a-zA-Z])(?:ticket|user|empid)=[^&]+", logger.Object);
+
+            var result = queryStringObfuscator.Obfuscate("TICKET=비밀번호&USER=관리자&EMPID=한국&x=공개");
+            result.Should().Be("<redacted>&<redacted>&<redacted>&x=공개");
+        }
+        finally
+        {
+            Thread.CurrentThread.CurrentCulture = originalCulture;
+        }
+    }
+
+    // Secrets must still be redacted - and surrounding multi-byte values left byte-for-byte intact -
+    // across a range of Unicode scripts (CJK, RTL, surrogate-pair emoji, combining accents, Cyrillic).
+    // This guards against the obfuscator mangling non-ASCII content or failing to match keywords when
+    // they sit next to it.
+    [SkippableTheory]
+    [InlineData("q=안녕하세요&password=secret123&x=세계", "q=안녕하세요&<redacted>&x=세계")] // Korean
+    [InlineData("q=こんにちは&token=abcdef123456&y=世界", "q=こんにちは&<redacted>&y=世界")] // Japanese
+    [InlineData("q=你好&api_key=xyz789&z=世界", "q=你好&<redacted>&z=世界")] // Chinese + api_key
+    [InlineData("q=مرحبا&pwd=p4ss&w=عالم", "q=مرحبا&<redacted>&w=عالم")] // Arabic (RTL)
+    [InlineData("q=😀🎉&secret=hunter2&r=🚀", "q=😀🎉&<redacted>&r=🚀")] // Emoji (surrogate pairs)
+    [InlineData("q=café&signature=abc&naïve=v", "q=café&<redacted>&naïve=v")] // Latin-1 accents
+    [InlineData("q=привет&access_key=k&s=мир", "q=привет&<redacted>&s=мир")] // Cyrillic + access_key
+    public void RedactsSecretsWhilePreservingUnicodeValues(string queryString, string expected)
+    {
+        // the default regex seems to crash the regex engine on netcoreapp2.1 under arm64, with a null reference exception on the dotnet RegexRunner. Its ok as these arent supported in auto instrumentation, we just warn not to reuse this regex if 2.1&arm64 is the environment
+#if NETCOREAPP2_1
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+#endif
+        var logger = new Mock<IDatadogLogger>();
+        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
+
+        var result = queryStringObfuscator.Obfuscate(queryString);
+
+        result.Should().Be(expected);
+    }
+
+    // The reported Vault "ticket" parameter is not actually matched by the default pattern (there is
+    // no "ticket" keyword and the value does not satisfy any keyword suffix), so the URL passes
+    // through unchanged - and, crucially, quickly.
+    [SkippableFact]
+    public void DefaultPatternPassesThroughUnmatchedVaultUrl()
+    {
+        // the default regex seems to crash the regex engine on netcoreapp2.1 under arm64, with a null reference exception on the dotnet RegexRunner. Its ok as these arent supported in auto instrumentation, we just warn not to reuse this regex if 2.1&arm64 is the environment
+#if NETCOREAPP2_1
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+#endif
+        var logger = new Mock<IDatadogLogger>();
+        var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, logger.Object);
+
+        var url = "/Vault/vaultserver.aspx?fileName=%EC%84%A4%EA%B3%84%EC%9E%90%EB%A3%8C_.xlsx&vaultId=67BBB9204FE84A8981ED8313049BA06C&ticket=VAULT_TOKEN";
+        var result = queryStringObfuscator.Obfuscate(url);
+
+        result.Should().Be(url);
     }
 
     [Fact]
