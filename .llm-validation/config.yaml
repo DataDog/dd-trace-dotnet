@@ -10,11 +10,22 @@ instruction_files:
   - .claude/skills/bump-libdatadog/SKILL.md   # also gate the libdatadog-bump skill
 
 # Testing-level presets (pick one via --level / LLMVAL_LEVEL). Explicit --case/--max-cases/--runs override.
-# Production default: `full` — validate the whole relevant suite; `files:` targeting scopes it to the cases whose
-# tagged file changed (~16 on an AGENTS.md PR). Switch to a curated `gate` preset to cap cost, or fall back to
-# `minimum`/`medium` if a full run ever approaches the job's 2h timeout.
-default_level: full
+# Production default: `gate` — a curated, high-signal set (below): the cases where AGENTS.md/the skill is the
+# *only* source of the right answer (so a degraded edit measurably drops the win-rate), one+ per monitored file
+# plus one control case, at runs=8 for tight CIs. `files:` targeting scopes it further to the file(s) that
+# actually changed. Use `full` for an on-demand deep sweep of the whole suite; `minimum`/`medium` are cheap
+# dev/fallback presets.
+default_level: gate
 presets:
+  gate:                                          # curated per-PR gate — highest-signal cases per monitored file + one control. The default.
+    cases:
+      - dotnet-tracer-logging-terminology-004         # AGENTS.md logging terminology — proven discriminator (the demo regression)
+      - dotnet-tracer-nuget-scope-hallucination-008   # non-obvious "NuGet ships only the manual API" fact — catches hallucination
+      - dotnet-tracer-repo-nav-integration-001        # where integration code + tests live — repo-specific paths
+      - dotnet-tracer-confirm-instrumentation-011     # "Method enqueued for ReJIT" native-log proof — very repo-specific
+      - dotnet-tracer-bump-libdatadog-013             # covers the monitored SKILL (SHA-256/512, dual version pins)
+      - dotnet-tracer-control-context-propagation-016 # control (only_warn): catches a bloated AGENTS.md degrading unrelated answers
+    runs: 8                                       # 16 pairwise comparisons — tight enough CI to separate real regressions from noise.
   minimum:                                       # the 2 known-regression cases (one per monitored file) — a cheap dev/fallback preset.
     cases: ["dotnet-tracer-logging-terminology-004", "dotnet-tracer-bump-libdatadog-013"]
     runs: 4                                       # 4 runs = 8 pairwise comparisons.
