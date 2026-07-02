@@ -37,8 +37,11 @@ namespace Datadog.Trace.AspNet
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TracingHttpModule));
 
-        private static bool _canReadHttpResponseHeaders = true;
-        private static bool _canInjectContextIntoRequestHeaders = true;
+        // Tracks whether we can access HTTP headers for the current request. Even when the pipeline reports
+        // as integrated (HttpRuntime.UsingIntegratedPipeline), the request may not be backed by a real
+        // IIS7WorkerRequest (e.g. Sitefinity's Project Manager mode), in which case reading response headers
+        // and writing request headers both throw PlatformNotSupportedException.
+        private static bool _canAccessHttpHeaders = true;
 
         private readonly string _httpContextScopeKey;
         private readonly string _requestOperationName;
@@ -100,7 +103,7 @@ namespace Datadog.Trace.AspNet
             if (!Tracer.Instance.CurrentTraceSettings.Settings.HeaderTags.IsNullOrEmpty() &&
                 httpContext != null &&
                 HttpRuntime.UsingIntegratedPipeline &&
-                _canReadHttpResponseHeaders)
+                _canAccessHttpHeaders)
             {
                 try
                 {
@@ -110,7 +113,7 @@ namespace Datadog.Trace.AspNet
                 {
                     // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
                     Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
-                    _canReadHttpResponseHeaders = false;
+                    _canAccessHttpHeaders = false;
                 }
                 catch (Exception ex)
                 {
@@ -211,7 +214,7 @@ namespace Datadog.Trace.AspNet
                 // Decorate the incoming HTTP Request with distributed tracing headers
                 // in case the next processor cannot access the stored Scope
                 // (e.g. WCF being hosted in IIS)
-                if (HttpRuntime.UsingIntegratedPipeline && _canInjectContextIntoRequestHeaders)
+                if (HttpRuntime.UsingIntegratedPipeline && _canAccessHttpHeaders)
                 {
                     try
                     {
@@ -225,7 +228,7 @@ namespace Datadog.Trace.AspNet
                         // This must not abort the rest of the request instrumentation, so swallow it and disable for the rest of the application lifetime.
                         // This is an expected environmental limitation of the host, not a tracer bug, so skip telemetry.
                         Log.ErrorSkipTelemetry(ex, "Unable to inject distributed tracing headers into the request. Disabling for the rest of the application lifetime.");
-                        _canInjectContextIntoRequestHeaders = false;
+                        _canAccessHttpHeaders = false;
                     }
                 }
 
@@ -322,7 +325,7 @@ namespace Datadog.Trace.AspNet
                             var args = securityCoordinator.GetBasicRequestArgsForWaf();
                             args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
 
-                            if (HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
+                            if (HttpRuntime.UsingIntegratedPipeline && _canAccessHttpHeaders)
                             {
                                 // path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
                                 try
@@ -333,7 +336,7 @@ namespace Datadog.Trace.AspNet
                                 {
                                     // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
                                     Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
-                                    _canReadHttpResponseHeaders = false;
+                                    _canAccessHttpHeaders = false;
                                 }
                                 catch (Exception ex)
                                 {
@@ -348,7 +351,7 @@ namespace Datadog.Trace.AspNet
 
                         if (Iast.Iast.Instance.Settings.Enabled && IastModule.AddRequestVulnerabilitiesAllowed())
                         {
-                            if (rootSpan is not null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
+                            if (rootSpan is not null && HttpRuntime.UsingIntegratedPipeline && _canAccessHttpHeaders)
                             {
                                 try
                                 {
@@ -366,7 +369,7 @@ namespace Datadog.Trace.AspNet
                                 {
                                     // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
                                     Log.Error(ex, "Unable to access response headers when analyzing headers. Disabling for the rest of the application lifetime.");
-                                    _canReadHttpResponseHeaders = false;
+                                    _canAccessHttpHeaders = false;
                                 }
                                 catch (Exception ex)
                                 {
