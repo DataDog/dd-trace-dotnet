@@ -13,7 +13,6 @@ version: "0.1"
 cases:
   - id: dotnet-tracer-repo-nav-integration-001
     files: [AGENTS.md]
-    only_warn: true
     input: |
       I want to add auto-instrumentation for a new HTTP client library. Where do the
       integration class and its tests live in this repo, and how do I scaffold it?
@@ -164,7 +163,6 @@ cases:
 
   - id: dotnet-tracer-confirm-instrumentation-011
     files: [AGENTS.md]
-    only_warn: true
     input: |
       How can I confirm, from this repo and its runtime logs, whether a given library
       method is auto-instrumented — both where the instrumentation is declared in source
