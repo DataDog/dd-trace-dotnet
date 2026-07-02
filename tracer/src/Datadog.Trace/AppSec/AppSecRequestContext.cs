@@ -166,8 +166,53 @@ internal sealed partial class AppSecRequestContext
 internal partial class AppSecRequestContext
 {
     private bool _isAdditiveContextDisposed;
+    private bool _requestScanCompleted;
+    private object? _pendingRequestBody;
+    private object? _pendingResponseBody;
 
     private IContext? _context;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the consolidated request-phase WAF scan has already run for this request.
+    /// Used to avoid duplicate scans and to gate the end-pipeline fallback scan.
+    /// </summary>
+    internal bool RequestScanCompleted
+    {
+        get => _requestScanCompleted;
+        set => _requestScanCompleted = value;
+    }
+
+    /// <summary>
+    /// Stashes the extracted request body to be flushed in the next request-phase WAF call.
+    /// Called from the model-binding hook; consumed by ActionResponseFilter.OnActionExecuting.
+    /// </summary>
+    internal void SetPendingRequestBody(object body) => _pendingRequestBody = body;
+
+    /// <summary>
+    /// Takes (and clears) the stashed request body.
+    /// </summary>
+    internal object? TakePendingRequestBody()
+    {
+        var body = _pendingRequestBody;
+        _pendingRequestBody = null;
+        return body;
+    }
+
+    /// <summary>
+    /// Stashes the extracted response body to be included in the response-phase WAF call.
+    /// Called from ActionResponseFilter.OnActionExecuted; consumed by CheckReturnedHeaders.
+    /// </summary>
+    internal void SetPendingResponseBody(object body) => _pendingResponseBody = body;
+
+    /// <summary>
+    /// Takes (and clears) the stashed response body.
+    /// </summary>
+    internal object? TakePendingResponseBody()
+    {
+        var body = _pendingResponseBody;
+        _pendingResponseBody = null;
+        return body;
+    }
 
     /// <summary>
     /// Disposes the WAF's context stored in HttpContext.Items[]. If it doesn't exist, nothing happens, no crash

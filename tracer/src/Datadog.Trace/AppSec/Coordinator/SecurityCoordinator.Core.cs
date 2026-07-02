@@ -90,6 +90,11 @@ internal readonly partial struct SecurityCoordinator
         {
             if (result.ShouldBlock)
             {
+                // Mark the request blocked as soon as we decide to block, before the exception unwinds and the
+                // block response is written. This lets the response-phase scan (CheckReturnedHeaders, which runs
+                // from FireOnStarting while the block response is being written) honor its !IsBlocked guard and
+                // skip response schema extraction (_dd.appsec.s.res.*) for a blocked request.
+                MarkBlocked();
                 throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo!);
             }
 
@@ -106,12 +111,13 @@ internal readonly partial struct SecurityCoordinator
             telemetrySucessReport.Invoke();
             if (result.ShouldBlock)
             {
+                MarkBlocked();
                 throw new BlockException(result, result.RedirectInfo ?? result.BlockInfo!, true);
             }
         }
     }
 
-    private Dictionary<string, object> GetBasicRequestArgsForWaf()
+    internal Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
         var request = _httpTransport.Context.Request;
         var headersDic = ExtractHeadersFromRequest(request.Headers);

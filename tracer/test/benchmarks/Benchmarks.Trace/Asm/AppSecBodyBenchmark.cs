@@ -88,7 +88,8 @@ namespace Benchmarks.Trace.Asm
             var span = new Span(spanContext, DateTimeOffset.Now);
 
 #if !NETFRAMEWORK
-            _security.CheckBody(_httpContext, span, body, false);
+            var securityTransport = SecurityCoordinator.Get(_security, span, new SecurityCoordinator.HttpTransport(_httpContext));
+            securityTransport.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestBody, ObjectExtractor.Extract(body) } });
             var context = _httpContext.Features.Get<IContext>();
             context?.Dispose();
             _httpContext.Features.Set<IContext>(null);

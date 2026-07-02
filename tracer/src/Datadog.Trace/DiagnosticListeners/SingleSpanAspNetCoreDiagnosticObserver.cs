@@ -271,10 +271,17 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.AspNetCoreRoute = routePattern.RawText?.ToLowerInvariant();
                 }
 
-                // We check appsec enabled in here, but this avoids the method call if it's not needed
+                // We check appsec enabled in here, but this avoids the method call if it's not needed.
+                // For MVC controller endpoints (controllerName != null) the request scan is deferred to
+                // ActionResponseFilter.OnActionExecuting (which runs after model binding, before the action).
                 if (_security.AppsecEnabled)
                 {
-                    _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
+                    object raw;
+                    var controllerName = routeValues.TryGetValue("controller", out raw) ? raw as string : null;
+                    if (controllerName is null)
+                    {
+                        _security.RunRequestScan(httpContext, rootSpan, routeValues, requestBody: null);
+                    }
                 }
 
                 if (_iast.Settings.Enabled)
@@ -286,12 +293,11 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnMvcBeforeAction(object arg)
         {
-            var appsecEnabled = _security.AppsecEnabled;
             var iastEnabled = _iast.Settings.Enabled;
             var codeOrigin = CurrentCodeOrigin;
             var isCodeOriginEnabled = codeOrigin is { Settings.CodeOriginForSpansEnabled: true };
 
-            if (!appsecEnabled && !iastEnabled && !isCodeOriginEnabled)
+            if (!iastEnabled && !isCodeOriginEnabled)
             {
                 return;
             }
@@ -311,8 +317,6 @@ namespace Datadog.Trace.DiagnosticListeners
                         Log.Debug("Could not extract type and method from {ActionDescriptor}", typedArg.ActionDescriptor?.DisplayName);
                     }
                 }
-
-                _security.CheckPathParamsFromAction(httpContext, rootSpan, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
 
                 if (iastEnabled)
                 {

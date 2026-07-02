@@ -79,29 +79,44 @@ internal sealed class BlockingMiddleware
         var security = Security.Instance;
         var endedResponse = false;
 
-        if (security.AppsecEnabled)
+        // The end-pipeline middleware handles the no-endpoint (404) fallback: if no request scan has run
+        // yet (because no action filter fired), perform the only WAF call for this request here.
+        // For normal matched requests, RequestScanCompleted is true and we skip to avoid a third WAF call
+        // (the two canonical calls are RunRequestScan in ActionResponseFilter.OnActionExecuting and
+        // CheckReturnedHeaders in FireOnStarting).
+        if (_endPipeline && security.AppsecEnabled)
         {
             if (Tracer.Instance?.ActiveScope?.Span is Span span)
             {
-                var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(context));
-                if (_endPipeline && !context.Response.HasStarted)
+                var appSecRequestContext = span.Context?.TraceContext?.AppSecRequestContext;
+                var requestScanCompleted = appSecRequestContext?.RequestScanCompleted ?? false;
+                if (!requestScanCompleted)
                 {
-                    context.Response.StatusCode = 404;
-                }
-
-                // _endPipeline: true won't happen unless the EndpointMiddleware couldn't find an endpoint to serve. Most of the time this middleware will be called just at the beginning of the pipeline. We still want it in the end to run discovery scans checks.
-                var result = securityCoordinator.Scan(_endPipeline);
-                if (result is not null)
-                {
-                    if (result.ShouldBlock)
+                    var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(context));
+                    if (!context.Response.HasStarted)
                     {
-                        var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), result.BlockInfo, result.RedirectInfo);
-                        await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
-                        securityCoordinator.MarkBlocked();
+                        context.Response.StatusCode = 404;
                     }
 
-                    securityCoordinator.Reporter.TryReport(result, endedResponse);
-                    // security will be disposed in endrequest of diagnostic observer in any case
+                    // Mark the request-phase scan as done so the response-phase scan (CheckReturnedHeaders)
+                    // doesn't redundantly re-add the basic request addresses for this 404/no-endpoint request.
+                    if (appSecRequestContext is not null)
+                    {
+                        appSecRequestContext.RequestScanCompleted = true;
+                    }
+
+                    var result = securityCoordinator.Scan(true);
+                    if (result is not null)
+                    {
+                        if (result.ShouldBlock)
+                        {
+                            var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), result.BlockInfo, result.RedirectInfo);
+                            await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
+                            securityCoordinator.MarkBlocked();
+                        }
+
+                        securityCoordinator.Reporter.TryReport(result, endedResponse);
+                    }
                 }
             }
             else
@@ -112,15 +127,19 @@ internal sealed class BlockingMiddleware
 
         if (_next != null && !endedResponse)
         {
-            // unlikely that security is disabled and there's a block exception, but might happen as race condition
+            // Catch BlockException thrown from within the pipeline (e.g. from ActionResponseFilter.OnActionExecuting
+            // or CheckReturnedHeaders / FireOnStarting) and write the blocking response here at the outermost
+            // middleware boundary.
             try
             {
                 await _next(context).ConfigureAwait(false);
             }
             catch (Exception e) when (GetBlockException(e) is { } blockException)
             {
-                // Use blockinfo here
-                var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), blockException.BlockInfo, null);
+                // Use the full result's block/redirect info so a redirect action (whose info is stored in
+                // blockException.BlockInfo as RedirectInfo) is written as a redirect, not as a block body with
+                // the redirect's 3xx status code.
+                var action = security.GetBlockingAction(context.Request.Headers.GetCommaSeparatedValues("Accept"), blockException.Result.BlockInfo, blockException.Result.RedirectInfo);
                 await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                 if (security.AppsecEnabled)
                 {
