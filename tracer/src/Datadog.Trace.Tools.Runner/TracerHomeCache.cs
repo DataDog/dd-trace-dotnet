@@ -79,6 +79,7 @@ internal static class TracerHomeCache
 
             var integrityManifest = CreateCacheIntegrityManifest(tracerHome);
             cachedTracerHome = Path.Combine(cacheRoot, integrityManifest.CacheKey);
+            PosixDirectoryAccess.ConfigureNativeFileMetadata(tracerHome);
             Ensure(tracerHome, cachedTracerHome, integrityManifest, cacheLockRetryDelay);
             return cachedTracerHome;
         }
@@ -101,18 +102,38 @@ internal static class TracerHomeCache
     private static string GetCacheRoot()
     {
         // Keep the cache under a user-local root instead of shared temp to avoid cross-user path hijacking.
-        var cacheRoot = Environment.GetEnvironmentVariable(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "LOCALAPPDATA" : "XDG_CACHE_HOME");
-        if (string.IsNullOrEmpty(cacheRoot))
-        {
-            cacheRoot = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        }
-
+        var cacheRoot = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                            ? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)
+                            : GetPosixCacheRoot();
         if (string.IsNullOrEmpty(cacheRoot))
         {
             throw new InvalidOperationException("Unable to locate a user-local cache directory.");
         }
 
         return Path.Combine(cacheRoot, "Datadog", "dd-trace", "runner", "tracer-home");
+    }
+
+    private static string GetPosixCacheRoot()
+    {
+        // XDG Base Directory Specification:
+        // https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+        // If XDG_CACHE_HOME is not set or empty, the standard cache default is $HOME/.cache.
+        // Relative XDG paths are invalid and should be ignored.
+        var cacheRoot = Environment.GetEnvironmentVariable("XDG_CACHE_HOME");
+        if (!string.IsNullOrEmpty(cacheRoot) && Path.IsPathRooted(cacheRoot))
+        {
+            return cacheRoot;
+        }
+
+        var home = Environment.GetEnvironmentVariable("HOME");
+        if (!string.IsNullOrEmpty(home) && Path.IsPathRooted(home))
+        {
+            return Path.Combine(home, ".cache");
+        }
+
+        // LocalApplicationData maps to user-local application data in .NET's Unix implementation
+        // rather than a cache directory, so use it only as a last-resort compatibility fallback.
+        return Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
     }
 
     /// <summary>

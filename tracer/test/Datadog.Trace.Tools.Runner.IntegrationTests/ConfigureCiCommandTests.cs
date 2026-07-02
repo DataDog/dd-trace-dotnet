@@ -102,7 +102,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiUsesCachedTemporaryTracerHomeWhenReducingPathLength()
         {
             using var setup = ConfigureCiTestSetup.Create(output);
@@ -135,7 +135,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [InlineData("managed-dependency")]
         [InlineData("profiler-engine")]
         [InlineData("injected-file")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiRebuildsCachedTracerHomeWhenCachedContentIsModified(string cachedContent)
         {
             using var setup = ConfigureCiTestSetup.Create(output);
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiFallsBackToOriginalTracerHomeWhenCachedTracerHomePathIsFile()
         {
             using var setup = ConfigureCiTestSetup.Create(output);
@@ -184,7 +184,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiRebuildsCachedTracerHomeWhenCachedTracerHomeDirectoryWasPrecreated()
         {
             using var setup = ConfigureCiTestSetup.Create(output);
@@ -201,7 +201,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableFact]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiFallsBackToOriginalTracerHomeWhenCachedTracerHomePathIsSymbolicLink()
         {
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
@@ -221,7 +221,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiFallsBackToOriginalTracerHomeWhenCacheLockPathIsDirectory()
         {
             using var setup = ConfigureCiTestSetup.Create(output);
@@ -236,7 +236,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableFact]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiFallsBackToOriginalTracerHomeWhenCacheLockPathIsSymbolicLink()
         {
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
@@ -256,7 +256,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiRetriesConcurrentCacheLock()
         {
             using var setup = ConfigureCiTestSetup.Create(output);
@@ -279,7 +279,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableFact]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiFallsBackToOriginalTracerHomeWhenSourceTracerHomeContainsSymbolicLink()
         {
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
@@ -303,7 +303,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [InlineData(".dd-trace-runner-cache")]
         [InlineData(".dd-trace-runner-cache.integrity")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiFallsBackToOriginalTracerHomeWhenSourceTracerHomeContainsReservedCacheMetadata(string reservedFileName)
         {
             using var setup = ConfigureCiTestSetup.Create(output);
@@ -317,7 +317,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableFact]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiCreatesPrivateCachedTracerHomeOnPosix()
         {
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
@@ -334,7 +334,26 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableFact]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME", "HOME")]
+        public void ConfigureCiUsesHomeDotCacheWhenXdgCacheHomeIsEmptyOnPosix()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+            using var setup = ConfigureCiTestSetup.Create(output);
+            setup.CreateTracerHome();
+            EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", string.Empty);
+            EnvironmentHelpers.SetEnvironmentVariable("HOME", setup.TempRoot);
+
+            var environmentVariables = setup.RunConfigureCi();
+            var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
+            var expectedCacheRoot = Path.GetFullPath(
+                Path.Combine(setup.TempRoot, ".cache", "Datadog", "dd-trace", "runner", "tracer-home")) + Path.DirectorySeparatorChar;
+            configuredTracerHome.Should().StartWith(expectedCacheRoot);
+            GetDirectoryMode(configuredTracerHome).Should().Be("700");
+        }
+
+        [SkippableFact]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiFallsBackToOriginalTracerHomeWhenCacheRootIsSharedWritable()
         {
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
@@ -350,7 +369,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableFact]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiFallsBackToOriginalTracerHomeWhenCacheRootIsUnderSharedWritableAncestor()
         {
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
@@ -368,7 +387,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableFact]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiFallsBackToOriginalTracerHomeWhenCacheRootIsSymbolicLink()
         {
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
@@ -387,14 +406,15 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiUsesCachedTracerHomeWhenWindowsCacheRootHasInheritOnlyBroadWrite()
         {
             SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
             using var setup = ConfigureCiTestSetup.Create(output, "cache-with-inherit-only-broad-write");
-            CreateTrustedCacheHome(setup.CacheHome);
-            GrantWindowsInheritOnlyModifyAccessToEveryone(setup.CacheHome);
+            Skip.If(setup.CacheRootExistedBefore, "Cannot safely modify the real LocalApplicationData runner cache root ACL.");
+            setup.CreateTrustedCacheHome();
+            GrantWindowsInheritOnlyModifyAccessToEveryone(setup.CacheRoot);
             setup.UseCacheHome();
             setup.CreateTracerHome();
 
@@ -404,14 +424,15 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiFallsBackToOriginalTracerHomeWhenWindowsCacheRootAllowsBroadWrites()
         {
             SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
             using var setup = ConfigureCiTestSetup.Create(output, "shared-cache");
-            Directory.CreateDirectory(setup.CacheHome);
-            GrantWindowsModifyAccessToEveryone(setup.CacheHome);
+            Skip.If(setup.CacheRootExistedBefore, "Cannot safely modify the real LocalApplicationData runner cache root ACL.");
+            Directory.CreateDirectory(setup.CacheRoot);
+            GrantWindowsModifyAccessToEveryone(setup.CacheRoot);
             setup.UseCacheHome();
             setup.CreateTracerHome();
 
@@ -421,7 +442,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        [EnvironmentRestorer("LOCALAPPDATA", "TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
         public void ConfigureCiUsesDifferentCachedTracerHomeWhenTracerAssemblyVersionChanges()
         {
             var assemblyTimestamp = DateTime.UtcNow.AddMinutes(-1);
@@ -733,12 +754,18 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         private sealed class ConfigureCiTestSetup : IDisposable
         {
             private readonly ITestOutputHelper _output;
+            private readonly List<string> _createdCachedTracerHomePaths = [];
+            private readonly bool _cacheRootExistedBefore;
 
             private ConfigureCiTestSetup(ITestOutputHelper output, string cacheDirectoryName)
             {
                 _output = output;
                 TempRoot = Path.Combine(Path.GetTempPath(), $"dd-trace-runner-temp-{Guid.NewGuid():N}");
-                CacheHome = Path.Combine(TempRoot, cacheDirectoryName);
+                CacheHome = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                                ? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)
+                                : Path.Combine(TempRoot, cacheDirectoryName);
+                CacheRoot = Path.GetFullPath(Path.Combine(CacheHome, "Datadog", "dd-trace", "runner", "tracer-home"));
+                _cacheRootExistedBefore = Directory.Exists(CacheRoot);
                 TracerHome = Path.Combine(
                     TempRoot,
                     "long-tracer-home-path-for-reduce-path-length",
@@ -751,13 +778,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             public string CacheHome { get; }
 
+            public string CacheRoot { get; }
+
             public string TracerHome { get; }
+
+            public bool CacheRootExistedBefore => _cacheRootExistedBefore;
 
             public string FixedTempTracerHome => Path.GetFullPath(Path.Combine(TempRoot, "dd"));
 
             public string ExpectedOriginalTracerHome => Path.GetFullPath(TracerHome);
 
-            public string ExpectedCacheRoot => Path.GetFullPath(Path.Combine(CacheHome, "Datadog", "dd-trace", "runner", "tracer-home")) + Path.DirectorySeparatorChar;
+            public string ExpectedCacheRoot => CacheRoot + Path.DirectorySeparatorChar;
 
             public static ConfigureCiTestSetup Create(ITestOutputHelper output, string cacheDirectoryName = "cache")
             {
@@ -766,6 +797,16 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             public void CreateTrustedCacheHome()
             {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    if (!Directory.Exists(CacheRoot))
+                    {
+                        ConfigureCiCommandTests.CreateTrustedCacheHome(CacheRoot);
+                    }
+
+                    return;
+                }
+
                 ConfigureCiCommandTests.CreateTrustedCacheHome(CacheHome);
             }
 
@@ -776,11 +817,13 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             public void UseCacheHome()
             {
-                EnvironmentHelpers.SetEnvironmentVariable("LOCALAPPDATA", CacheHome);
                 EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", TempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("TMP", TempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("TEMP", TempRoot + Path.DirectorySeparatorChar);
-                EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", CacheHome);
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", CacheHome);
+                }
             }
 
             public string CreateReadyCachedTracerHome()
@@ -798,12 +841,60 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
                 using var console = ConsoleHelper.Redirect();
                 Program.Main(commandLine.Split(' ')).Should().Be(0);
-                return GetJenkinsEnvironmentVariables(console.ReadLines());
+                var environmentVariables = GetJenkinsEnvironmentVariables(console.ReadLines());
+                TrackCachedTracerHome(environmentVariables);
+                return environmentVariables;
             }
 
             public void Dispose()
             {
+                var pathComparer = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+                foreach (var cachedTracerHomePath in _createdCachedTracerHomePaths.Distinct(pathComparer).OrderByDescending(path => path.Length))
+                {
+                    DeletePath(cachedTracerHomePath + ".lock");
+                    DeletePath(cachedTracerHomePath);
+                }
+
+                DeleteEmptyCacheRootIfCreatedByTest();
                 DeleteDirectory(TempRoot);
+            }
+
+            private void TrackCachedTracerHome(Dictionary<string, string> environmentVariables)
+            {
+                if (environmentVariables.TryGetValue("DD_DOTNET_TRACER_HOME", out var tracerHome))
+                {
+                    var configuredTracerHome = Path.GetFullPath(tracerHome);
+                    var comparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+                    if (configuredTracerHome.StartsWith(ExpectedCacheRoot, comparison))
+                    {
+                        _createdCachedTracerHomePaths.Add(configuredTracerHome);
+                    }
+                }
+            }
+
+            private void DeleteEmptyCacheRootIfCreatedByTest()
+            {
+                if (_cacheRootExistedBefore || !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    return;
+                }
+
+                if (Directory.Exists(CacheRoot) && !Directory.EnumerateFileSystemEntries(CacheRoot).Any())
+                {
+                    Directory.Delete(CacheRoot);
+                }
+            }
+
+            private void DeletePath(string path)
+            {
+                if (Directory.Exists(path))
+                {
+                    Directory.Delete(path, recursive: true);
+                }
+                else if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
             }
         }
     }

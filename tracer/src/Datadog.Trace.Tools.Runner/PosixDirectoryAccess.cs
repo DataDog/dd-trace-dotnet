@@ -25,6 +25,44 @@ internal static class PosixDirectoryAccess
     private const uint PrivateDirectoryMode = 448; // 0700
     private const uint RootUserId = 0;
 
+#if NETCOREAPP3_0_OR_GREATER
+    private static readonly object NativeFileMetadataLock = new();
+    private static string _nativeFileMetadataLibraryPath;
+    private static bool _nativeFileMetadataLoadAttempted;
+    private static IntPtr _nativeFileMetadataLibraryHandle;
+    private static GetFileMetadataForPathDelegate _getFileMetadataForPath;
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int GetFileMetadataForPathDelegate(
+        [MarshalAs(UnmanagedType.LPWStr)] string path,
+        int followSymlinks,
+        out uint mode,
+        out uint userId);
+#endif
+
+    /// <summary>
+    /// Configures the native metadata helper used to inspect POSIX paths without shelling out to <c>stat(1)</c>.
+    /// </summary>
+    /// <param name="tracerHome">The source tracer home path containing the native tracer library.</param>
+    internal static void ConfigureNativeFileMetadata(string tracerHome)
+    {
+#if NETCOREAPP3_0_OR_GREATER
+        var nativeLibraryPath = GetNativeFileMetadataLibraryPath(tracerHome);
+        lock (NativeFileMetadataLock)
+        {
+            if (string.Equals(_nativeFileMetadataLibraryPath, nativeLibraryPath, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _nativeFileMetadataLibraryPath = nativeLibraryPath;
+            _nativeFileMetadataLoadAttempted = false;
+            _nativeFileMetadataLibraryHandle = IntPtr.Zero;
+            _getFileMetadataForPath = null;
+        }
+#endif
+    }
+
     /// <summary>
     /// Attempts to create a directory with private POSIX permissions.
     /// </summary>
@@ -124,6 +162,11 @@ internal static class PosixDirectoryAccess
     /// <returns>The POSIX directory metadata.</returns>
     private static PosixDirectoryInfo GetDirectoryInfo(string path, bool followSymlinks = false)
     {
+        if (TryGetNativeDirectoryInfo(path, followSymlinks, out var nativeDirectoryInfo))
+        {
+            return nativeDirectoryInfo;
+        }
+
         // struct stat layout varies across libc, CPU architectures, and macOS inode eras. The stat(1)
         // output format is stable enough for the two fields we need: mode and owner uid.
         var isMacOs = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ||
@@ -177,6 +220,110 @@ internal static class PosixDirectoryAccess
 
         return new PosixDirectoryInfo(mode, userId);
     }
+
+    private static bool TryGetNativeDirectoryInfo(string path, bool followSymlinks, out PosixDirectoryInfo directoryInfo)
+    {
+        directoryInfo = default;
+#if NETCOREAPP3_0_OR_GREATER
+        var getFileMetadataForPath = GetNativeFileMetadataForPath();
+        if (getFileMetadataForPath is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            var result = getFileMetadataForPath(path, followSymlinks ? 1 : 0, out var mode, out var userId);
+            if (result != 0)
+            {
+                return false;
+            }
+
+            directoryInfo = new PosixDirectoryInfo(mode, userId);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+#else
+        return false;
+#endif
+    }
+
+#if NETCOREAPP3_0_OR_GREATER
+    private static GetFileMetadataForPathDelegate GetNativeFileMetadataForPath()
+    {
+        lock (NativeFileMetadataLock)
+        {
+            if (_nativeFileMetadataLoadAttempted)
+            {
+                return _getFileMetadataForPath;
+            }
+
+            _nativeFileMetadataLoadAttempted = true;
+            if (string.IsNullOrEmpty(_nativeFileMetadataLibraryPath) || !File.Exists(_nativeFileMetadataLibraryPath))
+            {
+                return null;
+            }
+
+            try
+            {
+                _nativeFileMetadataLibraryHandle = NativeLibrary.Load(_nativeFileMetadataLibraryPath);
+                if (!NativeLibrary.TryGetExport(_nativeFileMetadataLibraryHandle, "GetFileMetadataForPath", out var export))
+                {
+                    return null;
+                }
+
+                _getFileMetadataForPath = Marshal.GetDelegateForFunctionPointer<GetFileMetadataForPathDelegate>(export);
+                return _getFileMetadataForPath;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
+
+    private static string GetNativeFileMetadataLibraryPath(string tracerHome)
+    {
+        if (string.IsNullOrEmpty(tracerHome))
+        {
+            return null;
+        }
+
+        var nativeTracerFileName = RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+                                       ? "Datadog.Tracer.Native.dylib"
+                                       : "Datadog.Tracer.Native.so";
+        var nativeTracerDirectory = GetNativeTracerDirectory();
+        return nativeTracerDirectory is null
+                   ? null
+                   : Path.Combine(tracerHome, nativeTracerDirectory, nativeTracerFileName);
+    }
+
+    private static string GetNativeTracerDirectory()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ||
+            string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.Ordinal) ||
+            FrameworkDescription.Instance.OSDescription.StartsWith("Darwin", StringComparison.OrdinalIgnoreCase))
+        {
+            return "osx";
+        }
+
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            return null;
+        }
+
+        return RuntimeInformation.OSArchitecture switch
+        {
+            Architecture.X64 => Utils.IsAlpine() ? "linux-musl-x64" : "linux-x64",
+            Architecture.Arm64 => Utils.IsAlpine() ? "linux-musl-arm64" : "linux-arm64",
+            _ => null
+        };
+    }
+
+#endif
 
     /// <summary>
     /// Calls POSIX mkdir with the requested mode.
