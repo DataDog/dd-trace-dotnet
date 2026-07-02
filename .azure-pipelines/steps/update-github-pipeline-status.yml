@@ -59,7 +59,6 @@ stages:
       - coverage
       - execution_benchmarks
       - profiler_execution_benchmarks
-      - system_tests
       - smoke_x64_installer_tests
       - smoke_arm64_installer_tests
       - smoke_musl_x64_installer_tests
@@ -141,7 +140,6 @@ stages:
          in(dependencies.coverage.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.execution_benchmarks.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.profiler_execution_benchmarks.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.system_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_x64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_arm64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_musl_x64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
@@ -235,7 +233,6 @@ stages:
       - coverage
       - execution_benchmarks
       - profiler_execution_benchmarks
-      - system_tests
       - smoke_x64_installer_tests
       - smoke_arm64_installer_tests
       - smoke_musl_x64_installer_tests
@@ -317,7 +314,6 @@ stages:
          in(dependencies.coverage.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.execution_benchmarks.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.profiler_execution_benchmarks.result, 'Succeeded','SucceededWithIssues','Skipped'),
-         in(dependencies.system_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_x64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_arm64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
          in(dependencies.smoke_musl_x64_installer_tests.result, 'Succeeded','SucceededWithIssues','Skipped'),
