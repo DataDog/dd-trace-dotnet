@@ -703,13 +703,26 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
         private static void CreateTrustedCacheHome(string path)
         {
-            Directory.CreateDirectory(path);
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                RestrictWindowsDirectoryToTrustedWriters(path);
+                if (!Directory.Exists(path))
+                {
+                    var parentDirectory = Path.GetDirectoryName(Path.GetFullPath(path));
+                    if (!string.IsNullOrEmpty(parentDirectory))
+                    {
+                        Directory.CreateDirectory(parentDirectory);
+                    }
+
+                    WindowsDirectoryAccess.CreatePrivateDirectory(path);
+                }
+                else
+                {
+                    RestrictWindowsDirectoryToTrustedWriters(path);
+                }
             }
             else
             {
+                Directory.CreateDirectory(path);
                 SetDirectoryMode(path, "700");
             }
         }
