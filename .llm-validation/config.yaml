@@ -10,19 +10,14 @@ instruction_files:
   - .claude/skills/bump-libdatadog/SKILL.md   # also gate the libdatadog-bump skill
 
 # Testing-level presets (pick one via --level / LLMVAL_LEVEL). Explicit --case/--max-cases/--runs override.
-# TESTING: `minimum` (the 2 known cases) keeps test runs cheap while we validate the pipeline. For production,
-# switch to `full` (validate the whole relevant suite — `files:` targeting scopes it to ~16 cases on an
-# AGENTS.md PR) or a curated `gate` preset; `minimum`/`medium` also serve as a fallback if a full run ever
-# approaches the job's 2h timeout.
-default_level: minimum
+# Production default: `full` — validate the whole relevant suite; `files:` targeting scopes it to the cases whose
+# tagged file changed (~16 on an AGENTS.md PR). Switch to a curated `gate` preset to cap cost, or fall back to
+# `minimum`/`medium` if a full run ever approaches the job's 2h timeout.
+default_level: full
 presets:
-  minimum:                                       # the 2 known-regression cases — one per monitored file. The gating default.
+  minimum:                                       # the 2 known-regression cases (one per monitored file) — a cheap dev/fallback preset.
     cases: ["dotnet-tracer-logging-terminology-004", "dotnet-tracer-bump-libdatadog-013"]
-    runs: 8                                       # TESTING: raised 4 -> 8 (16 pairwise comparisons) to collect more
-                                                  # data on judge/answer-sampling noise — a no-op change swung 50% one
-                                                  # run and 87.5% (+7.7 quality) the next at runs=4. Now cheap: with
-                                                  # per-phase cache priming the extra runs are mostly 0.1x cache reads.
-                                                  # Revisit the gating default once we see how tight the CI gets at 8.
+    runs: 4                                       # 4 runs = 8 pairwise comparisons.
   medium:                                        # first 4 cases (incl. the logging regression). The PR #8774 run.
     max_cases: 4
     runs: 3
