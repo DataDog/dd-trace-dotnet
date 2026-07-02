@@ -14,6 +14,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 [Collection(nameof(TransportTestsCollection))]
+[Trait("Area", "CiVisibility")]
 public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
 {
     public MsTestV2RetriesTests(ITestOutputHelper output)

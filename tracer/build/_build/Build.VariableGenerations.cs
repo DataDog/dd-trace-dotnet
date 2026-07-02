@@ -18,6 +18,7 @@ partial class Build : NukeBuild
 {
     private const string TracerArea = "Tracer";
     private const string AsmArea = "ASM";
+    private const string CiVisibilityArea = "CiVisibility";
     private const string TracingDotnet = "@DataDog/tracing-dotnet";
     private const string ASMDotnet = "@DataDog/asm-dotnet";
     private const string DebuggerDotnet = "@DataDog/debugger-dotnet";
@@ -213,6 +214,9 @@ partial class Build : NukeBuild
             {
                 var targetFrameworks = GetTestingFrameworks(PlatformFamily.Windows);
                 var targetPlatforms = new[] { "x86", "x64" };
+                // CiVisibility is not split out on Windows: almost all CiVisibility tests are Linux-only,
+                // so a dedicated Windows job would spin up per framework/platform just to run the single
+                // IpcSampleTest. Keep those tests in the Windows Tracer job instead (see AddAreaFilter).
                 var areas = new[] { TracerArea, AsmArea };
                 var matrix = new Dictionary<string, object>();
 
@@ -374,7 +378,7 @@ partial class Build : NukeBuild
                         }
                         else
                         {
-                            var areas = new[] { TracerArea, AsmArea };
+                            var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
                             foreach (var area in areas)
                             {
                                 if (ShouldBeIncluded(area))

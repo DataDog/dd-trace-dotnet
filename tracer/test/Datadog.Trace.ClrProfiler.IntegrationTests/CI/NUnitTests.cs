@@ -21,6 +21,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     [UsesVerify]
+    [Trait("Area", "CiVisibility")]
     public class NUnitTests : TestingFrameworkTest
     {
         private const int ExpectedSpanCount = 33;

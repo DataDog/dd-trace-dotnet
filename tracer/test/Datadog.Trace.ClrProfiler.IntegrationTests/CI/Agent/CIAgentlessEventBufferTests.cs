@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 {
+    [Trait("Area", "CiVisibility")]
     public class CIAgentlessEventBufferTests
     {
         [Theory]
