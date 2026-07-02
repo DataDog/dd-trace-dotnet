@@ -16,11 +16,6 @@ on:
         description: 'Is this a hotfix release? If true, skips vNext milestone renaming'
         required: true
         type: boolean
-    secrets:
-      AZURE_DEVOPS_TOKEN:
-        required: true
-      NUGET_TRUSTED_PUBLISHING_USERNAME:
-        required: true
 
 jobs:
   create_draft_release:
