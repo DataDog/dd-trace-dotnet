@@ -98,7 +98,10 @@ namespace Datadog.Trace.Agent
 
             if (_isOtlp)
             {
-                CanComputeStats = true;
+                if (settings.OtelTracesSpanMetricsEnabled)
+                {
+                    CanComputeStats = true;
+                }
             }
             else
             {
