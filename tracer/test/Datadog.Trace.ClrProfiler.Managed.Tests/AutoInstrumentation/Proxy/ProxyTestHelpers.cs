@@ -59,7 +59,6 @@ internal static class ProxyTestHelpers
 
     internal static NameValueHeadersCollection CreateValidAzureFrontDoorHeaders(string? start = null)
     {
-
         var headers = new NameValueHeadersCollection([]);
         headers.Set(InferredProxyHeaders.Name, "azure-fd");
         headers.Set(InferredProxyHeaders.Domain, "myapp.azurefd.net");

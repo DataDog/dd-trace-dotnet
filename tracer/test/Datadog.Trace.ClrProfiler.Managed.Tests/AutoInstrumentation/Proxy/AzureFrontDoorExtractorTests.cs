@@ -54,7 +54,6 @@ public class AzureFrontDoorExtractorTests
         headers.Remove(InferredProxyHeaders.Path);
         headers.Remove(InferredProxyHeaders.Region);
         headers.Remove(InferredProxyHeaders.Stage);
-        
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeTrue();
