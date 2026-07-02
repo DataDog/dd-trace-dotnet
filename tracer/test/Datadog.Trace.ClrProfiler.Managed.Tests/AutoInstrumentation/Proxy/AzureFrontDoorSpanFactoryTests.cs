@@ -37,7 +37,7 @@ public class AzureFrontDoorSpanFactoryTests
         var tags = scope.Span.Tags;
         tags.Should().NotBeNull();
         tags.GetTag(Tags.HttpMethod).Should().Be("GET");
-        tags.GetTag(Tags.InstrumentationName).Should().Be("azure-frontdoor");
+        tags.GetTag(Tags.InstrumentationName).Should().Be("azure-fd");
         tags.GetTag(Tags.HttpUrl).Should().Be("myapp.azurefd.net/api/v1/users");
         tags.GetTag(Tags.HttpRoute).Should().Be("/api/v1/users");
     }

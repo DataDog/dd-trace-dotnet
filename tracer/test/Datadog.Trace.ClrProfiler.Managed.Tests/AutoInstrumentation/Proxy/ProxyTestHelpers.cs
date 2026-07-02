@@ -62,7 +62,7 @@ internal static class ProxyTestHelpers
         start ??= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(CultureInfo.InvariantCulture);
 
         var headers = new NameValueHeadersCollection([]);
-        headers.Set(InferredProxyHeaders.Name, "azure-frontdoor");
+        headers.Set(InferredProxyHeaders.Name, "azure-fd");
         headers.Set(InferredProxyHeaders.StartTime, start);
         headers.Set(InferredProxyHeaders.Domain, "myapp.azurefd.net");
         headers.Set(InferredProxyHeaders.HttpMethod, "GET");
