@@ -133,6 +133,8 @@ namespace Datadog.Trace.Agent
 
         public bool CanComputeStats => _apmTracingEnabled && _statsAggregator.CanComputeStats == true;
 
+        private bool ClientComputedStats => _apmTracingEnabled && _statsAggregator.IsClientComputingStats;
+
         public Task<bool> Ping() => _api.Ping();
 
         public void WriteTrace(in SpanCollection trace)
@@ -509,7 +511,7 @@ namespace Datadog.Trace.Agent
             // This allows the serialization thread to keep doing its job while a buffer is being flushed
             var buffer = _activeBuffer;
 
-            var writeStatus = buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority, CanComputeStats);
+            var writeStatus = buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority, ClientComputedStats);
 
             if (writeStatus == SpanBuffer.WriteStatus.Success)
             {
@@ -532,7 +534,7 @@ namespace Datadog.Trace.Agent
                 // One buffer is full, request an eager flush
                 RequestFlush();
 
-                if (buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority, CanComputeStats) == SpanBuffer.WriteStatus.Success)
+                if (buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority, ClientComputedStats) == SpanBuffer.WriteStatus.Success)
                 {
                     // Serialization to the secondary buffer succeeded
                     return;
