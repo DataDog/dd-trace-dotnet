@@ -25,12 +25,6 @@ include:
     file: '.gitlab/ci-dotnet-aspnet-realworld-parallel.yml'
     ref: 'main'
 
-# LLM Validation: cap the agent at 12 turns (default 20) to trim per-case cost/time. Read by the CLI agent
-# (LLMVAL_MAX_TURNS). Watch for under-exploration on the deeper cases — raise it if answers come back truncated.
-"llm validation":
-  variables:
-    LLMVAL_MAX_TURNS: "12"
-
 variables:
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"

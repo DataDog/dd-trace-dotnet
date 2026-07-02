@@ -13,8 +13,8 @@ instruction_files:
 # Production default: `gate` — a curated, high-signal set (below): the cases where AGENTS.md/the skill is the
 # *only* source of the right answer (so a degraded edit measurably drops the win-rate), one+ per monitored file
 # plus one control case, at runs=8 for tight CIs. `files:` targeting scopes it further to the file(s) that
-# actually changed. Use `full` for an on-demand deep sweep of the whole suite; `minimum`/`medium` are cheap
-# dev/fallback presets.
+# actually changed. Use `full` for an on-demand deep sweep of the whole suite; `minimum` is a cheap dev/fallback
+# preset.
 default_level: gate
 presets:
   gate:                                          # curated per-PR gate — highest-signal cases per monitored file + one control. The default.
@@ -29,9 +29,6 @@ presets:
   minimum:                                       # the 2 known-regression cases (one per monitored file) — a cheap dev/fallback preset.
     cases: ["dotnet-tracer-logging-terminology-004", "dotnet-tracer-bump-libdatadog-013"]
     runs: 4                                       # 4 runs = 8 pairwise comparisons.
-  medium:                                        # first 4 cases (incl. the logging regression). The PR #8774 run.
-    max_cases: 4
-    runs: 3
   full:                                          # whole suite.
     runs: 3
 
