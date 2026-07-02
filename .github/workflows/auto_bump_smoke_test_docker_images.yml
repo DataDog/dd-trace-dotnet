@@ -9,6 +9,7 @@ on:
 jobs:
   bump_smoke_test_docker_images:
     runs-on: windows-latest
+    environment: version-bump-env
     permissions:
       actions: read # read secrets
       id-token: write # Required for dd-octo-sts authentication
@@ -77,4 +78,4 @@ jobs:
               "github_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBOOK_URL_GENERATEPACKAGEVERSIONS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_GENERATEPACKAGEVERSIONS }}
