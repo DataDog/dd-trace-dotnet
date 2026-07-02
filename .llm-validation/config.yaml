@@ -1,0 +1,44 @@
+# LLM Validation Platform — dd-trace-dotnet config
+model: claude-opus-4-8
+runs: 3
+
+# The instruction file(s) this repo monitors (candidate = the PR's copy, baseline = master's). Repo-relative.
+# Single source of truth for *which* files are validated; the CI trigger derives its watch paths from this too.
+# List more than one to validate the combined instruction set (e.g. AGENTS.md + a Claude skill file).
+instruction_files:
+  - AGENTS.md
+  - .claude/skills/bump-libdatadog/SKILL.md   # also gate the libdatadog-bump skill
+
+# Testing-level presets (pick one via --level / LLMVAL_LEVEL). Explicit --case/--max-cases/--runs override.
+# Production default: `gate` — a curated, high-signal set (below): the cases where AGENTS.md/the skill is the
+# *only* source of the right answer (so a degraded edit measurably drops the win-rate), one+ per monitored file
+# plus one control case, at runs=8 for tight CIs. `files:` targeting scopes it further to the file(s) that
+# actually changed. Use `full` for an on-demand deep sweep of the whole suite; `minimum` is a cheap dev/fallback
+# preset.
+default_level: gate
+presets:
+  gate:                                          # curated per-PR gate — highest-signal cases per monitored file + one control. The default.
+    cases:
+      - dotnet-tracer-logging-terminology-004         # AGENTS.md logging terminology — proven discriminator (the demo regression)
+      - dotnet-tracer-nuget-scope-hallucination-008   # non-obvious "NuGet ships only the manual API" fact — catches hallucination
+      - dotnet-tracer-repo-nav-integration-001        # where integration code + tests live — repo-specific paths
+      - dotnet-tracer-confirm-instrumentation-011     # "Method enqueued for ReJIT" native-log proof — very repo-specific
+      - dotnet-tracer-bump-libdatadog-013             # covers the monitored SKILL (SHA-256/512, dual version pins)
+      - dotnet-tracer-control-context-propagation-016 # control (only_warn): catches a bloated AGENTS.md degrading unrelated answers
+    runs: 8                                       # 16 pairwise comparisons — tight enough CI to separate real regressions from noise.
+  minimum:                                       # the 2 known-regression cases (one per monitored file) — a cheap dev/fallback preset.
+    cases: ["dotnet-tracer-logging-terminology-004", "dotnet-tracer-bump-libdatadog-013"]
+    runs: 4                                       # 4 runs = 8 pairwise comparisons.
+  full:                                          # whole suite.
+    runs: 3
+
+# A case blocks the merge on a confident regression by default; mark a case `only_warn: true` to soften it.
+# These thresholds decide when a *blocking* case's pairwise regression actually FAILs:
+policy:
+  noise_threshold: 1.0
+  pairwise_win_floor: 0.45     # candidate loses the pairwise majority on a case -> regression (WARN for only_warn cases)
+  blocking_fail_floor: 0.45    # a blocking case below this can FAIL (== win floor: any majority loss).
+                               # Lower it (e.g. 0.40) to allow a blocking-case WARN band.
+  blocking_fail_ci_upper: 0.55 # ...but only when the win-rate CI upper bound is below this (a CONFIDENT loss).
+                               # A wide-CI coin-flip (e.g. 33% [0%-68%] at runs=3) WARNs instead of blocking.
+                               # Calibrated from real runs: 0% [0-0%] and 25% [0-53%] FAIL; 33% [0-68%] WARNs.
