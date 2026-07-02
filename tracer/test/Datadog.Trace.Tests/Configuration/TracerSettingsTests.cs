@@ -1066,6 +1066,20 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData(null, 2000)]   // Default
+        [InlineData("5000", 5000)] // User custom value
+        [InlineData("1", 1)]
+        [InlineData("0", 2000)]    // Invalid (not > 0) falls back to default
+        [InlineData("-100", 2000)] // Invalid (not > 0) falls back to default
+        [InlineData("not-a-number", 2000)] // Invalid falls back to default
+        public void OpenTelemetryMetricsCardinalityLimit(string value, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, value));
+            var settings = new TracerSettings(source);
+            settings.OpenTelemetryMetricsCardinalityLimit.Should().Be(expected);
+        }
+
+        [Theory]
         [InlineData(null, 7500)]
         [InlineData("3000", 3000)]  // User custom value
         [InlineData("30000", 30000)]  // OTel spec default

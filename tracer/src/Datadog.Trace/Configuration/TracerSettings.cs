@@ -793,6 +793,10 @@ namespace Datadog.Trace.Configuration
                 ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal);
 
+            OpenTelemetryMetricsCardinalityLimit = config
+                                    .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit)
+                                    .AsInt32(2000, value => value > 0).Value;
+
 #if NET6_0_OR_GREATER
             OtlpRuntimeMetricsEnabled = OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled && RuntimeMetricsEnabled;
 #else
@@ -890,6 +894,14 @@ namespace Datadog.Trace.Configuration
         /// Gets the names of enabled Meters.
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames"/>
         internal HashSet<string> OpenTelemetryMeterNames { get; }
+
+        /// <summary>
+        /// Gets the maximum number of distinct attribute sets (metric points) tracked per metric stream
+        /// for the experimental OpenTelemetry Metrics API support. Measurements beyond this limit are
+        /// aggregated into a single overflow metric point.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit"/>
+        internal int OpenTelemetryMetricsCardinalityLimit { get; }
 
         /// <summary>
         /// Gets a value indicating whether the OpenTelemetry metrics exporter is enabled.

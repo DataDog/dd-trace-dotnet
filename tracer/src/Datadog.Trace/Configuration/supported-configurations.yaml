@@ -2104,6 +2104,18 @@ supportedConfigurations:
     product: FeatureFlags
     const_name: OpenTelemetryMeterNames
     documentation: List of meters to add to the metrics exporter for the experimental OpenTelemetry Metrics API support.
+  DD_METRICS_OTEL_CARDINALITY_LIMIT:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '2000'
+    product: FeatureFlags
+    const_name: OpenTelemetryMetricsCardinalityLimit
+    documentation: |-
+      The maximum number of distinct attribute sets (metric points) tracked per metric stream for the
+      experimental OpenTelemetry Metrics API support. When this limit is exceeded, additional measurements
+      are aggregated into a single overflow metric point carrying the attribute 'otel.metric.overflow=true',
+      to avoid unbounded cardinality and memory growth.
   DD_ACTION_EXECUTION_ID:
   - implementation: A
     scope: managed
