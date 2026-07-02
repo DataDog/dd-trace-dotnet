@@ -23,7 +23,7 @@ internal sealed class MetricState
     private readonly MetricStreamIdentity _identity;
     private readonly AggregationTemporality? _temporality;
 
-    private readonly ConcurrentDictionary<TagSet, MetricPoint> _points = new();
+    private readonly ConcurrentDictionary<ulong, MetricPoint> _points = new();
 
     public MetricState(MetricStreamIdentity identity, AggregationTemporality? temporality)
     {
@@ -118,9 +118,9 @@ internal sealed class MetricState
 
     private MetricPoint GetOrCreatePoint(ReadOnlySpan<KeyValuePair<string, object?>> tags)
     {
-        var tagSet = TagSet.FromSpan(tags);
+        var hash = MetricTagsHash.Compute(tags);
 
-        if (_points.TryGetValue(tagSet, out var existingPoint))
+        if (_points.TryGetValue(hash, out var existingPoint))
         {
             return existingPoint;
         }
@@ -133,18 +133,19 @@ internal sealed class MetricState
         }
 
         return _points.GetOrAdd(
-            tagSet,
-            _ => new MetricPoint(
-                _identity.InstrumentName,
-                _identity.MeterName,
-                _identity.MeterVersion,
-                _identity.MeterTags,
-                _identity.InstrumentType,
-                _temporality,
-                dict,
-                _identity.Unit,
-                _identity.Description,
-                _identity.IsLongType));
+            hash,
+            static (_, x) => new MetricPoint(
+                x.state._identity.InstrumentName,
+                x.state._identity.MeterName,
+                x.state._identity.MeterVersion,
+                x.state._identity.MeterTags,
+                x.state._identity.InstrumentType,
+                x.state._temporality,
+                x.dict,
+                x.state._identity.Unit,
+                x.state._identity.Description,
+                x.state._identity.IsLongType),
+            (state: this, dict));
     }
 }
 #endif

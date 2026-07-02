@@ -142,6 +142,105 @@ namespace Datadog.Trace.Tests.Configuration
             settings.StatsComputationInterval.Should().Be(expected);
         }
 
+        [Fact]
+        public void StatsAdditionalTags_EmptyWhenExperimentalFeatureNotEnabled()
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.StatsAdditionalTags, "region,tenant_id"));
+            var settings = new TracerSettings(source);
+
+            settings.StatsAdditionalTags.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void StatsAdditionalTags_DeduplicatesAndSorts()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.ExperimentalFeaturesEnabled, ConfigurationKeys.StatsAdditionalTags),
+                (ConfigurationKeys.StatsAdditionalTags, "tenant, region , tenant ,, region"));
+            var settings = new TracerSettings(source);
+
+            settings.StatsAdditionalTags.Should().Equal("region", "tenant");
+        }
+
+        [Fact]
+        public void StatsAdditionalTags_EnabledByExperimentalFeaturesAll()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.ExperimentalFeaturesEnabled, "all"),
+                (ConfigurationKeys.StatsAdditionalTags, "region"));
+            var settings = new TracerSettings(source);
+
+            settings.StatsAdditionalTags.Should().Equal("region");
+        }
+
+        [Fact]
+        public void StatsAdditionalTags_CapsToFourKeysKeepingAlphabeticallyFirst()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.ExperimentalFeaturesEnabled, ConfigurationKeys.StatsAdditionalTags),
+                (ConfigurationKeys.StatsAdditionalTags, "h,g,f,e,d,c,b,a"));
+            var settings = new TracerSettings(source);
+
+            // dedup+sort then keep the first 4 alphabetically; "e" through "h" are dropped
+            settings.StatsAdditionalTags.Should().Equal("a", "b", "c", "d");
+        }
+
+        [Fact]
+        public void StatsAdditionalTagsCardinalityLimit_DefaultsTo100WhenNotSet()
+        {
+            var source = CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+
+            settings.StatsAdditionalTagsCardinalityLimit.Should().Be(100);
+        }
+
+        [Theory]
+        [InlineData("50", 50)]
+        [InlineData("1", 1)]
+        [InlineData("0", 100)]
+        [InlineData("-5", 100)]
+        [InlineData("not-a-number", 100)]
+        public void StatsAdditionalTagsCardinalityLimit_ValidatesAndFallsBack(string value, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.StatsAdditionalTagsCardinalityLimit, value));
+            var settings = new TracerSettings(source);
+
+            settings.StatsAdditionalTagsCardinalityLimit.Should().Be(expected);
+        }
+
+        [Fact]
+        public void StatsCardinalityLimits_DefaultWhenNotSet()
+        {
+            var source = CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+
+            settings.StatsResourceCardinalityLimit.Should().Be(1024);
+            settings.StatsHttpEndpointCardinalityLimit.Should().Be(512);
+            settings.StatsPeerTagsCardinalityLimit.Should().Be(512);
+            settings.StatsComputationBucketsCardinalityLimit.Should().Be(2048);
+        }
+
+        [Theory]
+        [InlineData("50", 50)]
+        [InlineData("1", 1)]
+        [InlineData("0", null)]
+        [InlineData("-5", null)]
+        [InlineData("not-a-number", null)]
+        public void StatsCardinalityLimits_ValidateAndFallBack(string value, int? expectedOverride)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.StatsResourceCardinalityLimit, value),
+                (ConfigurationKeys.StatsHttpEndpointCardinalityLimit, value),
+                (ConfigurationKeys.StatsPeerTagsCardinalityLimit, value),
+                (ConfigurationKeys.StatsComputationBucketsCardinalityLimit, value));
+            var settings = new TracerSettings(source);
+
+            settings.StatsResourceCardinalityLimit.Should().Be(expectedOverride ?? 1024);
+            settings.StatsHttpEndpointCardinalityLimit.Should().Be(expectedOverride ?? 512);
+            settings.StatsPeerTagsCardinalityLimit.Should().Be(expectedOverride ?? 512);
+            settings.StatsComputationBucketsCardinalityLimit.Should().Be(expectedOverride ?? 2048);
+        }
+
         [Theory]
         [InlineData("true", "none", true)]
         [InlineData("true", "otlp", true)]

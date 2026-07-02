@@ -288,7 +288,7 @@ namespace Datadog.Trace
             if (settings.Manager.InitialExporterSettings.TracesEncoding is TracesEncoding.OtlpProtobuf or TracesEncoding.OtlpJson)
             {
                 var otlpApi = new ManagedApiOtlp(settings);
-                var otlpStatsAggregator = StatsAggregator.Create(otlpApi, settings, discoveryService, isOtlp: true);
+                var otlpStatsAggregator = StatsAggregator.Create(otlpApi, settings, discoveryService, statsd, isOtlp: true);
                 return new AgentWriter(otlpApi, otlpStatsAggregator, statsd, settings);
             }
 
@@ -297,11 +297,11 @@ namespace Datadog.Trace
             if (settings.OtelTracesSpanMetricsEnabled)
             {
                 var otlpMetricsApi = new ManagedApiOtlp(settings);
-                var otlpSpanMetricsAggregator = StatsAggregator.Create(otlpMetricsApi, settings, discoveryService, isOtlp: true);
+                var otlpSpanMetricsAggregator = StatsAggregator.Create(otlpMetricsApi, settings, discoveryService, statsd, isOtlp: true);
                 return new AgentWriter(api, otlpSpanMetricsAggregator, statsd, settings);
             }
 
-            var statsAggregator = StatsAggregator.Create(api, settings, discoveryService, isOtlp: false);
+            var statsAggregator = StatsAggregator.Create(api, settings, discoveryService, statsd, isOtlp: false);
 
             return new AgentWriter(api, statsAggregator, statsd, settings);
         }
