@@ -48,7 +48,7 @@ public class AzureFrontDoorExtractorTests
         // this reduces precision to 1ms, so we can't compare extracted value to the original DateTimeOffset directly
         var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
-
+        
         var headers = ProxyTestHelpers.CreateValidAzureFrontDoorHeaders(unixTimeMilliseconds.ToString());
         headers.Remove(InferredProxyHeaders.HttpMethod);
         headers.Remove(InferredProxyHeaders.Path);
