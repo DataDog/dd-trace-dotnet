@@ -920,9 +920,9 @@
         "name": "MassTransit",
         "minVersionAvailableInclusive": "2.0.0",
         "minVersionSupportedInclusive": "7.0.0",
-        "minVersionTestedInclusive": "7.3.1",
+        "minVersionTestedInclusive": "7.3.0",
         "maxVersionSupportedInclusive": "7.3.1",
-        "maxVersionAvailableInclusive": "9.0.1",
+        "maxVersionAvailableInclusive": "9.1.2",
         "maxVersionTestedInclusive": "7.3.1"
       }
     ]

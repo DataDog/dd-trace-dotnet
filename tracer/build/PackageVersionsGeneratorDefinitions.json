@@ -6,6 +6,7 @@
     "MinVersion": "7.0.0",
     "MaxVersionExclusive": "8.0.0",
     "SpecificVersions": [
+      "7.3.0",
       "7.*.*"
     ]
   },
