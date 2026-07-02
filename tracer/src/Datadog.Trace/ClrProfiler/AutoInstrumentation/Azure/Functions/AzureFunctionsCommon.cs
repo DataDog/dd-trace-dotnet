@@ -42,6 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
         public const string OperationName = AzureFunctionsConstants.AzureFunctionName;
         public const string AzureApim = AzureFunctionsConstants.AzureApimName;
+        public const string AzureFrontDoor = AzureFunctionsConstants.AzureFrontDoorName;
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
@@ -129,8 +130,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
+                var opName = tracer.InternalActiveScope?.Root.Span.OperationName;
                 // Check if there's an inferred proxy span (e.g., azure.apim) that we shouldn't overwrite
-                var isProxySpan = tracer.InternalActiveScope?.Root.Span.OperationName == AzureApim;
+                var isProxySpan = opName == AzureApim || opName == AzureFrontDoor;
                 // Ignoring null because guaranteed running in AAS
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is { } activeScope)
