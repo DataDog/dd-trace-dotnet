@@ -594,6 +594,8 @@ namespace Datadog.Trace.Tests.Agent
 
             public bool? CanComputeStats => true;
 
+            public bool IsClientComputingStats => true;
+
             public void Add(params Span[] spans) => AddRange(new SpanCollection(spans));
 
             public void AddRange(in SpanCollection spans)
