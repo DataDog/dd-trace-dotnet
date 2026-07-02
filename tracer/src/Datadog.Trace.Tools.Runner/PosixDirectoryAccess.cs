@@ -4,8 +4,6 @@
 // </copyright>
 
 using System;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using Datadog.Trace.PlatformHelpers;
@@ -162,73 +160,11 @@ internal static class PosixDirectoryAccess
     /// <returns>The POSIX directory metadata.</returns>
     private static PosixDirectoryInfo GetDirectoryInfo(string path, bool followSymlinks = false)
     {
-        if (TryGetNativeDirectoryInfo(path, followSymlinks, out var nativeDirectoryInfo))
-        {
-            return nativeDirectoryInfo;
-        }
-
-        // struct stat layout varies across libc, CPU architectures, and macOS inode eras. The stat(1)
-        // output format is stable enough for the two fields we need: mode and owner uid.
-        var isMacOs = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ||
-                      string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.Ordinal) ||
-                      FrameworkDescription.Instance.OSDescription.StartsWith("Darwin", StringComparison.OrdinalIgnoreCase);
-        var statPath = isMacOs ? "/usr/bin/stat" : File.Exists("/usr/bin/stat") ? "/usr/bin/stat" : "/bin/stat";
-        var processStartInfo = new ProcessStartInfo(statPath)
-        {
-            RedirectStandardError = true,
-            RedirectStandardOutput = true,
-        };
-
-        if (followSymlinks)
-        {
-            processStartInfo.ArgumentList.Add("-L");
-        }
-
-        processStartInfo.ArgumentList.Add(isMacOs ? "-f" : "-c");
-        processStartInfo.ArgumentList.Add(isMacOs ? "%p %u" : "%f %u");
-        processStartInfo.ArgumentList.Add(path);
-
-        using var process = Process.Start(processStartInfo);
-        if (process is null)
-        {
-            throw new IOException($"Unable to inspect directory '{path}'.");
-        }
-
-        var output = process.StandardOutput.ReadToEnd();
-        var error = process.StandardError.ReadToEnd();
-        process.WaitForExit();
-        if (process.ExitCode != 0)
-        {
-            throw new IOException($"Unable to inspect directory '{path}'. {error}");
-        }
-
-        var values = output.Trim().Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
-        if (values.Length != 2 || !uint.TryParse(values[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var userId))
-        {
-            throw new IOException($"Unable to inspect directory '{path}'. Unexpected stat output: '{output.Trim()}'.");
-        }
-
-        uint mode;
-        try
-        {
-            mode = Convert.ToUInt32(values[0], isMacOs ? 8 : 16);
-        }
-        catch (Exception ex) when (ex is FormatException or OverflowException)
-        {
-            throw new IOException($"Unable to inspect directory '{path}'. Unexpected stat mode: '{values[0]}'.", ex);
-        }
-
-        return new PosixDirectoryInfo(mode, userId);
-    }
-
-    private static bool TryGetNativeDirectoryInfo(string path, bool followSymlinks, out PosixDirectoryInfo directoryInfo)
-    {
-        directoryInfo = default;
 #if NETCOREAPP3_0_OR_GREATER
         var getFileMetadataForPath = GetNativeFileMetadataForPath();
         if (getFileMetadataForPath is null)
         {
-            return false;
+            throw new IOException($"Unable to inspect directory '{path}' because the native tracer metadata helper is unavailable.");
         }
 
         try
@@ -236,18 +172,17 @@ internal static class PosixDirectoryAccess
             var result = getFileMetadataForPath(path, followSymlinks ? 1 : 0, out var mode, out var userId);
             if (result != 0)
             {
-                return false;
+                throw new IOException($"Unable to inspect directory '{path}'. Native metadata helper returned {result}.");
             }
 
-            directoryInfo = new PosixDirectoryInfo(mode, userId);
-            return true;
+            return new PosixDirectoryInfo(mode, userId);
         }
-        catch
+        catch (Exception ex) when (ex is not IOException)
         {
-            return false;
+            throw new IOException($"Unable to inspect directory '{path}' using the native tracer metadata helper.", ex);
         }
 #else
-        return false;
+        throw new IOException($"Unable to inspect directory '{path}' because the native tracer metadata helper requires .NET Core 3.0 or greater.");
 #endif
     }
 

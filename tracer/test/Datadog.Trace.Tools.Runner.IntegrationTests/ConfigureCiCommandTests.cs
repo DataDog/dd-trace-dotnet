@@ -150,6 +150,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             var environmentVariables = setup.RunConfigureCi();
             var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
             var cachedFilePath = GetCachedContentPath(cachedContent, environmentVariables);
+            var expectedContent = cachedContent == "injected-file" ? null : File.ReadAllBytes(cachedFilePath);
 
             File.WriteAllText(cachedFilePath, "tampered");
 
@@ -162,7 +163,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
             else
             {
-                File.ReadAllText(cachedFilePath).Should().Be("source");
+                File.ReadAllBytes(cachedFilePath).Should().Equal(expectedContent);
             }
         }
 
@@ -338,9 +339,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         public void ConfigureCiUsesHomeDotCacheWhenXdgCacheHomeIsEmptyOnPosix()
         {
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
+            SkipIfNativeMetadataHelperUnavailableOnPosix();
 
             using var setup = ConfigureCiTestSetup.Create(output);
             setup.CreateTracerHome();
+            CopyCurrentPlatformNativeTracer(setup.TracerHome);
             EnvironmentHelpers.SetEnvironmentVariable("XDG_CACHE_HOME", string.Empty);
             EnvironmentHelpers.SetEnvironmentVariable("HOME", setup.TempRoot);
 
@@ -350,6 +353,22 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
                 Path.Combine(setup.TempRoot, ".cache", "Datadog", "dd-trace", "runner", "tracer-home")) + Path.DirectorySeparatorChar;
             configuredTracerHome.Should().StartWith(expectedCacheRoot);
             GetDirectoryMode(configuredTracerHome).Should().Be("700");
+        }
+
+        [SkippableFact]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        public void ConfigureCiFallsBackToOriginalTracerHomeWhenNativeMetadataHelperIsUnavailableOnPosix()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+            using var setup = ConfigureCiTestSetup.Create(output);
+            setup.CreateTrustedCacheHome();
+            setup.UseCacheHome(requireNativeMetadataHelper: false);
+            setup.CreateTracerHome();
+            File.WriteAllText(GetCurrentPlatformNativeTracerPath(setup.TracerHome), "not a native library");
+
+            var environmentVariables = setup.RunConfigureCi();
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(setup.ExpectedOriginalTracerHome);
         }
 
         [SkippableFact]
@@ -579,6 +598,44 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
         }
 
+        private static void CopyCurrentPlatformNativeTracer(string tracerHome)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return;
+            }
+
+            var destinationPath = GetCurrentPlatformNativeTracerPath(tracerHome);
+            var platformDirectory = Path.GetFileName(Path.GetDirectoryName(destinationPath));
+            var nativeTracerFileName = Path.GetFileName(destinationPath);
+            var nativeBuildOutputPath = Path.Combine(
+                EnvironmentTools.GetSolutionDirectory(),
+                "artifacts",
+                "native-bin",
+                "Datadog.Tracer.Native",
+                nativeTracerFileName);
+            var monitoringHomePath = Path.Combine(EnvironmentHelper.GetMonitoringHomePath(), platformDirectory, nativeTracerFileName);
+            var sourcePath = File.Exists(nativeBuildOutputPath) ? nativeBuildOutputPath : monitoringHomePath;
+            File.Exists(sourcePath).Should().BeTrue($"the reduced cache validation requires the real native tracer at {sourcePath}");
+            File.Copy(sourcePath, destinationPath, overwrite: true);
+        }
+
+        private static void SkipIfNativeMetadataHelperUnavailableOnPosix()
+        {
+#if !NETCOREAPP3_0_OR_GREATER
+            Skip.If(
+                !RuntimeInformation.IsOSPlatform(OSPlatform.Windows),
+                "Reduced tracer home cache validation on POSIX requires the native metadata helper.");
+#endif
+        }
+
+        private static string GetCurrentPlatformNativeTracerPath(string tracerHome)
+        {
+            var nativeLoaderPath = EnvironmentHelper.GetNativeLoaderPath();
+            var platformDirectory = Path.GetFileName(Path.GetDirectoryName(nativeLoaderPath));
+            return Path.Combine(tracerHome, platformDirectory, GetNativeTracerFileName());
+        }
+
         private static string GetNativeTracerFileName()
         {
             if (FrameworkDescription.Instance.OSPlatform == OSPlatformName.Windows)
@@ -756,6 +813,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             private readonly ITestOutputHelper _output;
             private readonly List<string> _createdCachedTracerHomePaths = [];
             private readonly bool _cacheRootExistedBefore;
+            private bool _copyCurrentPlatformNativeTracer;
 
             private ConfigureCiTestSetup(ITestOutputHelper output, string cacheDirectoryName)
             {
@@ -813,10 +871,20 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             public void CreateTracerHome(string tracerAssemblyPath = null, DateTime? tracerAssemblyLastWriteTimeUtc = null)
             {
                 ConfigureCiCommandTests.CreateTracerHome(TracerHome, tracerAssemblyPath, tracerAssemblyLastWriteTimeUtc);
+                if (_copyCurrentPlatformNativeTracer)
+                {
+                    CopyCurrentPlatformNativeTracer(TracerHome);
+                }
             }
 
-            public void UseCacheHome()
+            public void UseCacheHome(bool requireNativeMetadataHelper = true)
             {
+                if (requireNativeMetadataHelper)
+                {
+                    SkipIfNativeMetadataHelperUnavailableOnPosix();
+                    _copyCurrentPlatformNativeTracer = true;
+                }
+
                 EnvironmentHelpers.SetEnvironmentVariable("TMPDIR", TempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("TMP", TempRoot + Path.DirectorySeparatorChar);
                 EnvironmentHelpers.SetEnvironmentVariable("TEMP", TempRoot + Path.DirectorySeparatorChar);
