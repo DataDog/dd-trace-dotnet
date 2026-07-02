@@ -6,6 +6,7 @@
 #if NETCOREAPP3_1_OR_GREATER
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
@@ -28,6 +29,14 @@ namespace Datadog.Trace.OpenTelemetry.Logs;
 /// </summary>
 internal sealed class OtlpExporter : IOtlpExporter
 {
+    // Initial size of the buffer rented per export; grows on demand for larger batches.
+    private const int InitialBufferSize = 64 * 1024;
+
+    // Upper bound for a serialized batch. The buffer grows up to this cap; a batch that still
+    // doesn't fit is dropped rather than allocating without bound. Matches the 3MB payload cap
+    // used by our own direct log submission (DirectSubmissionLogSink.MaxTotalSizeBytes).
+    private const int MaxBufferSize = 3 * 1024 * 1024;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpExporter));
     private readonly HttpClient _httpClient;
     private readonly OtlpGrpcExportClient? _grpcClient;
@@ -177,28 +186,40 @@ internal sealed class OtlpExporter : IOtlpExporter
 
     private async Task<bool> SendOtlpRequest(IReadOnlyList<LogPoint> logs)
     {
+        // For gRPC, reserve 5 bytes at the start for the frame header (added later).
+        // For HTTP, start at position 0.
+        var startPosition = _protocol == OtlpProtocol.Grpc ? 5 : 0;
+
+        // Rent a buffer to serialize into, growing it (doubling, up to MaxBufferSize) if the batch
+        // doesn't fit. The send path consumes the buffer synchronously, so it is safe to return it
+        // to the pool once the request completes.
+        var buffer = ArrayPool<byte>.Shared.Rent(InitialBufferSize);
         try
         {
-            // Serialize logs to protobuf format using vendored OpenTelemetry protobuf utilities
-            // For gRPC, reserve 5 bytes at the start for the frame header (added later)
-            // For HTTP, start at position 0
-            var startPosition = _protocol == OtlpProtocol.Grpc ? 5 : 0;
-            var otlpPayload = OtlpLogsSerializer.SerializeLogs(logs, _resourceTags, startPosition);
-
-            if (otlpPayload is null)
+            int bytesWritten;
+            while (!OtlpLogsSerializer.TrySerializeLogs(logs, buffer, _resourceTags, out bytesWritten, startPosition))
             {
-                // The batch is too large to serialize and cannot be sent. Drop it (retrying would
-                // just overflow again) but report success so the batching sink doesn't trip its
-                // circuit breaker for a non-transient issue.
-                Log.Warning<int>("Dropping OTLP log batch of {Count} logs: serialized payload exceeds the maximum size.", logs.Count);
-                return true;
+                if (buffer.Length >= MaxBufferSize)
+                {
+                    // The batch is too large to serialize and cannot be sent. Drop it (retrying
+                    // would just overflow again) but report success so the batching sink doesn't
+                    // trip its circuit breaker for a non-transient issue.
+                    Log.Warning<int>("Dropping OTLP log batch of {Count} logs: serialized payload exceeds the maximum size.", logs.Count);
+                    return true;
+                }
+
+                // Rent the larger buffer before returning the old one so a failed rent can't leave
+                // us returning the same array twice via the finally block.
+                var newBuffer = ArrayPool<byte>.Shared.Rent(Math.Min(buffer.Length * 2, MaxBufferSize));
+                ArrayPool<byte>.Shared.Return(buffer);
+                buffer = newBuffer;
             }
 
             return _protocol switch
             {
-                OtlpProtocol.HttpProtobuf => await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false),
-                OtlpProtocol.Grpc => await SendGrpcRequest(otlpPayload).ConfigureAwait(false),
-                _ => await SendHttpProtobufRequest(otlpPayload).ConfigureAwait(false)
+                OtlpProtocol.HttpProtobuf => await SendHttpProtobufRequest(buffer, bytesWritten).ConfigureAwait(false),
+                OtlpProtocol.Grpc => await SendGrpcRequest(buffer, bytesWritten).ConfigureAwait(false),
+                _ => await SendHttpProtobufRequest(buffer, bytesWritten).ConfigureAwait(false)
             };
         }
         catch (Exception ex)
@@ -206,16 +227,20 @@ internal sealed class OtlpExporter : IOtlpExporter
             Log.Error(ex, "Error sending OTLP request.");
             return false;
         }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
     }
 
-    private Task<bool> SendHttpProtobufRequest(byte[] otlpPayload)
+    private Task<bool> SendHttpProtobufRequest(byte[] otlpPayload, int contentLength)
     {
         try
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(_timeoutMs);
             var resp = _httpExportClient?.SendExportRequest(
                 otlpPayload,
-                otlpPayload.Length,
+                contentLength,
                 deadline);
 
             return Task.FromResult(resp is { Success: true });
@@ -227,7 +252,7 @@ internal sealed class OtlpExporter : IOtlpExporter
         }
     }
 
-    private Task<bool> SendGrpcRequest(byte[] otlpPayload)
+    private Task<bool> SendGrpcRequest(byte[] otlpPayload, int contentLength)
     {
         try
         {
@@ -237,8 +262,8 @@ internal sealed class OtlpExporter : IOtlpExporter
             // bytes 5+: the actual protobuf payload (already serialized at position 5)
             otlpPayload[0] = 0; // No compression
 
-            // Write message length in big-endian format (payload length - 5 header bytes)
-            var dataLength = otlpPayload.Length - 5;
+            // Write message length in big-endian format (content length - 5 header bytes)
+            var dataLength = contentLength - 5;
             System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(
                 new System.Span<byte>(otlpPayload, 1, 4),
                 (uint)dataLength);
@@ -246,7 +271,7 @@ internal sealed class OtlpExporter : IOtlpExporter
             var deadline = DateTime.UtcNow.AddMilliseconds(_timeoutMs);
             var resp = _grpcClient?.SendExportRequest(
                 otlpPayload,
-                otlpPayload.Length,
+                contentLength,
                 deadline);
             return Task.FromResult(resp is { Success: true });
         }

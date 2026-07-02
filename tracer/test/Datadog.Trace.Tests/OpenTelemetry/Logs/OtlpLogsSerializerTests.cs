@@ -5,7 +5,6 @@
 
 #if NETCOREAPP3_1_OR_GREATER
 
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Datadog.Trace.OpenTelemetry.Logs;
@@ -19,72 +18,77 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
         private const int InitialBufferSize = 64 * 1024;
 
         [Fact]
-        public void SerializeLogs_SmallBatch_ProducesPayload()
+        public void TrySerializeLogs_SmallBatch_SucceedsAndReportsLength()
         {
             var logs = new List<LogPoint>
             {
                 new() { Message = "hello", LogLevel = 2, CategoryName = "Test" },
             };
+            var buffer = new byte[InitialBufferSize];
 
-            var payload = OtlpLogsSerializer.SerializeLogs(logs, CreateResourceTags());
+            var result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out var bytesWritten);
 
-            payload.Should().NotBeNullOrEmpty();
+            result.Should().BeTrue();
+            bytesWritten.Should().BeGreaterThan(0);
         }
 
         [Fact]
-        public void SerializeLogs_EmptyBatch_ReturnsEmpty()
+        public void TrySerializeLogs_EmptyBatch_SucceedsWithZeroBytes()
         {
-            var payload = OtlpLogsSerializer.SerializeLogs(new List<LogPoint>(), CreateResourceTags());
+            var buffer = new byte[InitialBufferSize];
 
-            payload.Should().BeEmpty();
+            var result = OtlpLogsSerializer.TrySerializeLogs(new List<LogPoint>(), buffer, CreateResourceTags(), out var bytesWritten);
+
+            result.Should().BeTrue();
+            bytesWritten.Should().Be(0);
         }
 
         [Fact]
-        public void SerializeLogs_BatchLargerThanInitialBuffer_GrowsAndSucceeds()
+        public void TrySerializeLogs_BufferTooSmall_ReturnsFalseWithoutThrowing()
         {
-            // Each message is ~2 KB; 200 logs serialize to well over the initial 64 KB buffer,
-            // forcing multiple buffer resizes. Before the grow-and-retry fix this threw
-            // ArgumentOutOfRangeException from WriteLogRecord once writePosition passed 64 KB.
+            // A batch that serializes to ~400 KB cannot fit in a 64-byte buffer. Before the fix this
+            // threw ArgumentOutOfRangeException from WriteLogRecord; now it must report false so the
+            // caller can grow the buffer and retry.
             var logs = CreateLogs(count: 200, messageSize: 2048);
+            var buffer = new byte[64];
 
-            byte[] payload = null;
-            var act = () => payload = OtlpLogsSerializer.SerializeLogs(logs, CreateResourceTags());
+            var result = false;
+            var bytesWritten = -1;
+            var act = () => result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out bytesWritten);
 
             act.Should().NotThrow();
-            payload.Should().NotBeNull();
-
-            // The serialized payload must be larger than the initial buffer, proving the
-            // buffer grew rather than silently truncating the batch.
-            payload!.Length.Should().BeGreaterThan(InitialBufferSize);
+            result.Should().BeFalse();
+            bytesWritten.Should().Be(0);
         }
 
         [Fact]
-        public void SerializeLogs_BatchExceedingMaxSize_ReturnsNull()
+        public void TrySerializeLogs_BatchFitsInLargerBuffer_Succeeds()
         {
-            // ~4 MB of messages exceeds the 3 MB cap, so the batch can never fit.
-            // The serializer must give up and return null (signalling a drop) rather than
-            // growing without bound or throwing.
-            var logs = CreateLogs(count: 4, messageSize: 1024 * 1024);
+            // ~400 KB batch that overflows the initial 64 KB size but fits in a 1 MB buffer.
+            var logs = CreateLogs(count: 200, messageSize: 2048);
+            var buffer = new byte[1024 * 1024];
 
-            var payload = OtlpLogsSerializer.SerializeLogs(logs, CreateResourceTags());
+            var result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out var bytesWritten);
 
-            payload.Should().BeNull();
+            result.Should().BeTrue();
+            bytesWritten.Should().BeGreaterThan(InitialBufferSize);
         }
 
         [Fact]
-        public void SerializeLogs_RespectsStartPosition()
+        public void TrySerializeLogs_RespectsStartPosition()
         {
             var logs = new List<LogPoint>
             {
                 new() { Message = "hello", LogLevel = 2, CategoryName = "Test" },
             };
+            var buffer = new byte[InitialBufferSize];
 
             // gRPC reserves 5 bytes at the start for the frame header.
             const int startPosition = 5;
-            var payload = OtlpLogsSerializer.SerializeLogs(logs, CreateResourceTags(), startPosition);
+            var result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out var bytesWritten, startPosition);
 
-            payload.Should().NotBeNull();
-            payload!.Length.Should().BeGreaterThan(startPosition);
+            result.Should().BeTrue();
+            bytesWritten.Should().BeGreaterThan(startPosition);
         }
 
         private static List<LogPoint> CreateLogs(int count, int messageSize)
