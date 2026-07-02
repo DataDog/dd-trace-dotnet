@@ -13,7 +13,7 @@ using Datadog.Trace.Vendors.Serilog.Events;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 
 /// <summary>
-/// Extracts proxy metadata from Azure API Management headers.
+/// Extracts proxy metadata from Azure Frontdoor headers.
 /// </summary>
 internal sealed class AzureFrontDoorExtractor : IInferredProxyExtractor
 {
@@ -26,8 +26,11 @@ internal sealed class AzureFrontDoorExtractor : IInferredProxyExtractor
 
         try
         {
-            var startTimeHeaderValue = !string.IsNullOrEmpty(InferredProxyHeaders.StartTime) ?
-                ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.StartTime) : DateTimeOffset.UtcNow.ToString();
+            var startTimeHeaderValue = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.StartTime);
+            if (string.IsNullOrEmpty(startTimeHeaderValue))
+            {
+                startTimeHeaderValue = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+            }
             // we also need to validate that we have the start time header otherwise we won't be able to create the span
             if (!InferredProxySpanHelper.GetStartTime(startTimeHeaderValue, out var startTime))
             {
@@ -39,7 +42,7 @@ internal sealed class AzureFrontDoorExtractor : IInferredProxyExtractor
             var httpMethod = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.HttpMethod);
             var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
             var region = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Region);
-            data = new InferredProxyData(InferredProxySpanHelper.AzureProxyHeaderValue, startTime, domainName, httpMethod, path, null, region);
+            data = new InferredProxyData(InferredProxySpanHelper.AzureFrontDoorHeaderValue, startTime, domainName, httpMethod, path, null, region);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -52,7 +55,7 @@ internal sealed class AzureFrontDoorExtractor : IInferredProxyExtractor
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error extracting proxy data from {Proxy} headers", InferredProxySpanHelper.AzureProxyHeaderValue);
+            Log.Error(ex, "Error extracting proxy data from {Proxy} headers", InferredProxySpanHelper.AzureFrontDoorHeaderValue);
             return false;
         }
     }

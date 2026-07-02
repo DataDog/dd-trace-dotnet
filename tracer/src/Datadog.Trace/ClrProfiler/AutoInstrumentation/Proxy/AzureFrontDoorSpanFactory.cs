@@ -14,7 +14,7 @@ using Datadog.Trace.Util;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 
 /// <summary>
-/// Creates spans representing requests handled by Azure API Management.
+/// Creates spans representing requests handled by Azure Frontdoor.
 /// </summary>
 internal sealed class AzureFrontDoorSpanFactory : IInferredSpanFactory
 {
@@ -45,7 +45,7 @@ internal sealed class AzureFrontDoorSpanFactory : IInferredSpanFactory
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Error creating Azure API Management span");
+            Log.Error(ex, "Error creating Azure Frontdoor span");
             return null;
         }
     }
