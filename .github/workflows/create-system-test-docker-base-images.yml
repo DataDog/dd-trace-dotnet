@@ -23,6 +23,7 @@ on:
 jobs:
   build-and-publish-base-image:
     runs-on: ubuntu-latest
+    environment: publish-debug-symbols-env
     permissions:
       contents: read
       actions: read # read secrets
