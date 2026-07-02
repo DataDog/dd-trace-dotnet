@@ -344,18 +344,29 @@ partial class Build
                foreach (var entry in versionGenerator.BumpReport.CooldownEntries)
                {
                    Logger.Warning(
-                       "  {Package} {Version} overridden (published {Date})",
+                       "  {Package} {IgnoredVersion} ignored, keeping {KeptVersion} (published {Date})",
                        entry.PackageName,
-                       entry.OverriddenVersion,
+                       entry.IgnoredVersion,
+                       entry.KeptVersion ?? "(none)",
                        entry.PublishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "unknown");
                }
            }
 
-           if (versionGenerator.BumpReport.HasEntries)
+           if (versionGenerator.BumpReport.MajorAvailableEntries.Count > 0)
            {
-               var reportPath = TemporaryDirectory / "bump_report.md";
-               await versionGenerator.BumpReport.SaveToFile(reportPath);
-               Logger.Information("Bump report saved to {Path}", reportPath);
+               Logger.Information(
+                   "{Count} package(s) have a new major version available outside the supported range:",
+                   versionGenerator.BumpReport.MajorAvailableEntries.Count);
+
+               foreach (var entry in versionGenerator.BumpReport.MajorAvailableEntries)
+               {
+                   Logger.Information(
+                       "  {Package} ({Integration}): cap {Cap} -> latest available {Latest}",
+                       entry.PackageName,
+                       entry.IntegrationName,
+                       entry.CurrentCap,
+                       entry.LatestAvailable);
+               }
            }
 
            var assemblies = MonitoringHomeDirectory
@@ -370,6 +381,46 @@ partial class Build
            // so they accurately reflect what we're testing.
            var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(
                integrations, testedVersions, shouldUpdatePackage, previousSupportedVersions);
+
+           // Packages tracked in supported_versions.json but absent from PackageVersionsGeneratorDefinitions.json
+           // (e.g. IBMMQDotnetClient, which has no test samples) are never added to QueriedVersions, so
+           // ReportNewMajorVersionsAvailable misses them. Scan distinctIntegrations to fill the gap.
+           // This must run before saving bump_report.md so both sources are included.
+           // Skip packages already handled by the version generator (whether or not they were flagged):
+           // QueriedVersions uses MaxVersionExclusive from the definitions, which is the authoritative cap.
+           // Using MajorAvailableEntries instead would cause false positives for packages whose definitions
+           // cover a newer major than the [InstrumentMethod] attribute (e.g. a bumped-but-not-yet-committed integration).
+           var handledByGenerator = new HashSet<string>(
+               versionGenerator.QueriedVersions.Keys,
+               StringComparer.OrdinalIgnoreCase);
+
+           foreach (var integration in distinctIntegrations)
+           {
+               foreach (var pkg in integration.Packages)
+               {
+                   if (handledByGenerator.Contains(pkg.NugetName))
+                   {
+                       continue;
+                   }
+
+                   if (pkg.LatestVersion.Major > pkg.LatestSupportedVersion.Major)
+                   {
+                       var currentCap = (pkg.LatestTestedVersion ?? pkg.LatestSupportedVersion).ToString();
+                       versionGenerator.BumpReport.AddMajorAvailable(new PackageBumpReport.MajorAvailableEntry(
+                           pkg.NugetName,
+                           integration.IntegrationId,
+                           currentCap,
+                           pkg.LatestVersion.ToString()));
+                   }
+               }
+           }
+
+           if (versionGenerator.BumpReport.HasEntries)
+           {
+               var reportPath = TemporaryDirectory / "bump_report.md";
+               await versionGenerator.BumpReport.SaveToFile(reportPath);
+               Logger.Information("Bump report saved to {Path}", reportPath);
+           }
 
            var outputPath = TracerDirectory / "build" / "supported_versions.json";
            await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);

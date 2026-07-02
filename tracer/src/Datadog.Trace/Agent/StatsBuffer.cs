@@ -64,6 +64,7 @@ namespace Datadog.Trace.Agent
         private static ReadOnlySpan<byte> GrpcStatusCodeKeyBytes => "GRPCStatusCode"u8;
         private static ReadOnlySpan<byte> ServiceSourceKeyBytes => "srv_src"u8; // Wire name per the Go agent's generated msgpack code
         private static ReadOnlySpan<byte> PeerTagsKeyBytes => "PeerTags"u8;
+        private static ReadOnlySpan<byte> AdditionalMetricTagsKeyBytes => "AdditionalMetricTags"u8;
 
         // shared keys (used in multiple maps)
         private static ReadOnlySpan<byte> StatsKeyBytes => "Stats"u8;
@@ -191,7 +192,7 @@ namespace Datadog.Trace.Agent
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
         {
-            var fieldCount = 18;
+            var fieldCount = 19;
             if (bucket.PeerTags.Count != 0)
             {
                 fieldCount++;
@@ -264,6 +265,13 @@ namespace Datadog.Trace.Agent
                 {
                     MessagePackBinary.WriteStringBytes(stream, tag);
                 }
+            }
+
+            MessagePackBinary.WriteStringBytes(stream, AdditionalMetricTagsKeyBytes);
+            MessagePackBinary.WriteArrayHeader(stream, bucket.AdditionalMetricTags.Count);
+            foreach (var tag in bucket.AdditionalMetricTags)
+            {
+                MessagePackBinary.WriteStringBytes(stream, tag);
             }
         }
 

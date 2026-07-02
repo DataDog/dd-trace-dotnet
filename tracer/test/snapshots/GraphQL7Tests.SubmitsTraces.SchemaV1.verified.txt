@@ -290,9 +290,9 @@ errors: [
 {
 "line": 1,
 "column": 1
-},
+}
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
@@ -325,7 +325,7 @@ errors: [
 {
 "line": 1,
 "column": 24
-},
+}
 ]
 },
 {
@@ -335,9 +335,9 @@ errors: [
 {
 "line": 1,
 "column": 35
-},
+}
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
@@ -370,9 +370,9 @@ errors: [
 {
 "line": 1,
 "column": 1
-},
+}
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,

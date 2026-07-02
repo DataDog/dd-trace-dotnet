@@ -173,15 +173,15 @@
 errors: [
 {
 "message": "This API purposely throws a NotImplementedException",
-"path": "System.Object[]",
+"path": "throwNotImplementedException",
 "code": "NOT_IMPLEMENTED",
 "locations": [
 {
 "line": 1,
 "column": 32
-},
+}
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.ExecutionError,
@@ -216,7 +216,7 @@ errors: [
 {
 "line": 1,
 "column": 24
-},
+}
 ]
 },
 {
@@ -226,9 +226,9 @@ errors: [
 {
 "line": 1,
 "column": 35
-},
+}
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
