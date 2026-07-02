@@ -1171,7 +1171,7 @@ namespace Datadog.Trace.Tests.Agent
             span.Tags.SetTag("peer.service", "remote-service");
 
             List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
-            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+            var key = aggregator.BuildKey(span, peerTagKeys, out _, out _);
 
             key.PeerTagsHash.Should().Be(3430395298086625290UL);
         }
@@ -1193,7 +1193,7 @@ namespace Datadog.Trace.Tests.Agent
 
             // Keys must be pre-sorted (matching agent behavior)
             List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
-            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+            var key = aggregator.BuildKey(span, peerTagKeys, out _, out _);
 
             key.PeerTagsHash.Should().Be(9894752672193411515UL);
         }
@@ -1213,7 +1213,7 @@ namespace Datadog.Trace.Tests.Agent
             span.Tags.SetTag("messaging.system", "kafka");
 
             List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("messaging.destination"), new("messaging.system")];
-            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+            var key = aggregator.BuildKey(span, peerTagKeys, out _, out _);
 
             key.PeerTagsHash.Should().Be(0xf5eeb51fbe7929b4UL);
         }
@@ -1233,7 +1233,7 @@ namespace Datadog.Trace.Tests.Agent
             span.Tags.SetTag("db.system", string.Empty);
 
             List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
-            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+            var key = aggregator.BuildKey(span, peerTagKeys, out _, out _);
 
             key.PeerTagsHash.Should().Be(3430395298086625290UL);
         }
@@ -1253,7 +1253,7 @@ namespace Datadog.Trace.Tests.Agent
             span.Tags.SetTag("db.system", "postgres");
 
             List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
-            var key = aggregator.BuildKey(span, peerTagKeys, out var peerTagResults);
+            var key = aggregator.BuildKey(span, peerTagKeys, out var peerTagResults, out _);
             var encodedTags = StatsAggregator.GetEncodedPeerTags(span, peerTagKeys, in peerTagResults);
 
             // Hash the encoded tags the same way the Go agent does:
@@ -1279,7 +1279,7 @@ namespace Datadog.Trace.Tests.Agent
             span.Tags.SetTag(Tags.BaseService, "my-base-service");
 
             List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
-            var key = aggregator.BuildKey(span, peerTagKeys, out var peerTagResults);
+            var key = aggregator.BuildKey(span, peerTagKeys, out var peerTagResults, out _);
             var encodedTags = StatsAggregator.GetEncodedPeerTags(span, peerTagKeys, in peerTagResults);
 
             encodedTags.Should().HaveCount(1);
@@ -1299,10 +1299,299 @@ namespace Datadog.Trace.Tests.Agent
             // No peer tags set on the span
 
             List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
-            var key = aggregator.BuildKey(span, peerTagKeys, out _);
+            var key = aggregator.BuildKey(span, peerTagKeys, out _, out _);
 
             key.PeerTagsHash.Should().Be(0UL);
         }
+
+        [Fact]
+        public async Task AdditionalTags_PresentValuesDistinguishBuckets()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span1 = CreateTopLevelSpan(start, "svc");
+            span1.SetTag("region", "us-east-1");
+
+            var span2 = CreateTopLevelSpan(start, "svc");
+            span2.SetTag("region", "eu-west-1");
+
+            aggregator.Add(span1, span2);
+
+            // Otherwise-identical spans aggregate separately because their region values differ
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(2);
+            aggregator.BuildKey(span1).AdditionalMetricTagsHash.Should().NotBe(aggregator.BuildKey(span2).AdditionalMetricTagsHash);
+        }
+
+        [Fact]
+        public async Task AdditionalTags_MissingTagBucketsSeparatelyFromPresent()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var withRegion = CreateTopLevelSpan(start, "svc");
+            withRegion.SetTag("region", "us-east-1");
+
+            var withoutRegion = CreateTopLevelSpan(start, "svc");
+
+            aggregator.Add(withRegion, withoutRegion);
+
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(2);
+
+            // The span without the configured tag contributes no additional-tags dimension (hash 0, empty map)
+            var withoutKey = aggregator.BuildKey(withoutRegion);
+            withoutKey.AdditionalMetricTagsHash.Should().Be(0UL);
+            aggregator.CurrentBuffer.Buckets[withoutKey].AdditionalMetricTags.Should().BeEmpty();
+
+            var withKey = aggregator.BuildKey(withRegion);
+            withKey.AdditionalMetricTagsHash.Should().NotBe(0UL);
+            DecodeTags(aggregator.CurrentBuffer.Buckets[withKey].AdditionalMetricTags).Should().Equal("region:us-east-1");
+        }
+
+        [Fact]
+        public async Task AdditionalTags_HashIsConsistentAndOrderIndependent()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region,tenant"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            // Same values, but set on the span in a different order: the hash must match because
+            // hashing iterates the configured (sorted) key order, not the span's tag insertion order.
+            var span1 = CreateTopLevelSpan(start, "svc");
+            span1.SetTag("region", "us-east-1");
+            span1.SetTag("tenant", "acme");
+
+            var span2 = CreateTopLevelSpan(start, "svc");
+            span2.SetTag("tenant", "acme");
+            span2.SetTag("region", "us-east-1");
+
+            aggregator.BuildKey(span1).AdditionalMetricTagsHash
+                      .Should().Be(aggregator.BuildKey(span2).AdditionalMetricTagsHash)
+                      .And.NotBe(0UL);
+        }
+
+        [Fact]
+        public async Task AdditionalTags_MultipleKeysAggregateIndependently()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region,tenant"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            Span Make(string region, string tenant)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("region", region);
+                span.SetTag("tenant", tenant);
+                return span;
+            }
+
+            // Four distinct (region, tenant) combinations => four buckets
+            aggregator.Add(Make("us", "acme"), Make("us", "beta"), Make("eu", "acme"), Make("eu", "beta"));
+
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(4);
+        }
+
+        [Fact]
+        public async Task AdditionalTags_ValueExceedingLengthCap_SubstitutesBlockedByTracer()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetDuration(TimeSpan.FromMilliseconds(100));
+            span.SetTag("region", new string('x', 201)); // one over the 200-char cap
+
+            aggregator.Add(span);
+
+            var key = aggregator.BuildKey(span);
+            var bucket = aggregator.CurrentBuffer.Buckets[key];
+
+            // The oversized value is masked, but the dimension key and the span's base stats survive
+            DecodeTags(bucket.AdditionalMetricTags).Should().Equal("region:tracer_blocked_value");
+            bucket.Hits.Should().Be(1);
+            bucket.Duration.Should().Be(100 * 1_000_000);
+        }
+
+        [Fact]
+        public async Task AdditionalTags_ValueAtLengthCap_IsNotBlocked()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var value = new string('x', 200); // exactly at the cap is allowed
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag("region", value);
+
+            aggregator.Add(span);
+
+            var bucket = aggregator.CurrentBuffer.Buckets[aggregator.BuildKey(span)];
+            DecodeTags(bucket.AdditionalMetricTags).Should().Equal($"region:{value}");
+        }
+
+        [Fact]
+        public async Task AdditionalTags_EncodedTagsAreSortedByConfiguredKeyOrder()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("tenant,region,az"), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag("region", "us-east-1");
+            span.SetTag("tenant", "acme");
+            span.SetTag("az", "az-1");
+
+            aggregator.Add(span);
+
+            var bucket = aggregator.CurrentBuffer.Buckets[aggregator.BuildKey(span)];
+            // Configured keys are deduped+sorted in settings, so encoding is alphabetical: az, region, tenant
+            DecodeTags(bucket.AdditionalMetricTags).Should().Equal("az:az-1", "region:us-east-1", "tenant:acme");
+        }
+
+        [Fact]
+        public async Task AdditionalTags_DisabledFeature_NoHashContribution()
+        {
+            var start = DateTimeOffset.UtcNow;
+            // No additional tags configured (feature off)
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag("region", "us-east-1");
+
+            aggregator.Add(span);
+
+            var key = aggregator.BuildKey(span);
+            key.AdditionalMetricTagsHash.Should().Be(0UL);
+            aggregator.CurrentBuffer.Buckets[key].AdditionalMetricTags.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task AdditionalTags_PerBucketCap_BlocksOverflowAndMergesAdmitted()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("tenant", cardinalityLimit: 3), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            Span MakeTenant(string tenant)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("tenant", tenant);
+                return span;
+            }
+
+            // First 3 distinct tenants are admitted; "d" and "e" overflow into one masked "blocked" bucket.
+            aggregator.Add(MakeTenant("a"), MakeTenant("b"), MakeTenant("c"), MakeTenant("d"), MakeTenant("e"));
+
+            // 3 admitted + 1 blocked sink
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(4);
+
+            var blockedBucket = aggregator.CurrentBuffer.Buckets.Values
+                                          .Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "tenant:tracer_blocked_value" }));
+            blockedBucket.Hits.Should().Be(2); // d + e merged into the blocked bucket
+
+            // A repeat of an already-admitted key still merges into its existing entry, regardless of the cap.
+            aggregator.Add(MakeTenant("a"));
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(4);
+            aggregator.CurrentBuffer.Buckets[aggregator.BuildKey(MakeTenant("a"))].Hits.Should().Be(2);
+        }
+
+        [Fact]
+        public async Task AdditionalTags_PerBucketCap_DoesNotApplyToSpansWithoutAdditionalTags()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), Mock.Of<IDiscoveryService>(), isOtlp: false);
+
+            // Five distinct buckets (by resource) but none carry the configured tag, so the cap never triggers.
+            for (var i = 0; i < 5; i++)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.ResourceName = $"resource-{i}";
+                aggregator.Add(span);
+            }
+
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(5);
+            aggregator.CurrentBuffer.Buckets.Values.Should().OnlyContain(b => b.AdditionalMetricTags.Count == 0);
+
+            // A span that does carry the tag is still admitted, since the budget was never consumed.
+            var withRegion = CreateTopLevelSpan(start, "svc");
+            withRegion.ResourceName = "resource-with-region";
+            withRegion.SetTag("region", "us-east-1");
+            aggregator.Add(withRegion);
+
+            DecodeTags(aggregator.CurrentBuffer.Buckets[aggregator.BuildKey(withRegion)].AdditionalMetricTags)
+                .Should().Equal("region:us-east-1");
+        }
+
+        [Fact]
+        public async Task AdditionalTags_FlushResetsCardinalityBudget()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), new StubDiscoveryService(), isOtlp: false);
+
+            // Dispose so the background flush completes and explicit Flush() runs synchronously without delay.
+            await aggregator.DisposeAsync();
+
+            Span MakeRegion(string region)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("region", region);
+                return span;
+            }
+
+            aggregator.Add(MakeRegion("a")); // admitted (budget now full)
+            aggregator.Add(MakeRegion("b")); // blocked: budget of 1 exhausted
+
+            var bufferBeforeFlush = aggregator.CurrentBuffer;
+            bufferBeforeFlush.Buckets.Should().HaveCount(2); // region=a + blocked sink
+
+            // Flush swaps the buffer and resets the per-bucket cardinality budget.
+            await aggregator.Flush();
+
+            aggregator.Add(MakeRegion("c")); // fresh budget => admitted with its real value, not masked
+
+            var bufferAfterFlush = aggregator.CurrentBuffer;
+            bufferAfterFlush.Should().NotBeSameAs(bufferBeforeFlush);
+            DecodeTags(bufferAfterFlush.Buckets[aggregator.BuildKey(MakeRegion("c"))].AdditionalMetricTags)
+                .Should().Equal("region:c");
+        }
+
+        [Fact]
+        public async Task AdditionalTags_RetainedBucketIsGatedByCapWhenReactivated()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), new StubDiscoveryService(), isOtlp: false);
+
+            // Dispose so the background flush completes and explicit Flush() runs synchronously without delay.
+            await aggregator.DisposeAsync();
+
+            // Admit one real additional-tag bucket, then rotate two flushes back to the same buffer. region=a
+            // had hits, so it is retained (with Hits == 0) and the per-flush budget is reset to 0.
+            aggregator.Add(MakeRegion("a"));
+            var retainingBuffer = aggregator.CurrentBuffer;
+            await aggregator.Flush();
+            await aggregator.Flush();
+            aggregator.CurrentBuffer.Should().BeSameAs(retainingBuffer);
+
+            // In the new interval, activate two distinct additional-tag values. The first consumes the budget of
+            // 1; re-activating the retained region=a is over budget, so it is masked into the blocked sink rather
+            // than serializing its retained real bucket. This is the hard cap holding across the rotation.
+            aggregator.Add(MakeRegion("b")); // new, admitted real (budget now full)
+            aggregator.Add(MakeRegion("a")); // retained, first hit this interval, over budget => masked
+
+            var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
+
+            // Exactly one real additional-tag bucket has hits this interval; region=a's retained real bucket got none.
+            buckets.Count(b => b.AdditionalMetricTags.Count > 0 && b.Hits > 0 && DecodeTags(b.AdditionalMetricTags)[0] != "region:tracer_blocked_value")
+                   .Should().Be(1);
+            buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:b" })).Hits.Should().Be(1);
+            buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:a" })).Hits.Should().Be(0);
+            buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:tracer_blocked_value" })).Hits.Should().Be(1);
+
+            Span MakeRegion(string region)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("region", region);
+                return span;
+            }
+        }
+
+        private static List<string> DecodeTags(List<byte[]> encoded)
+            => encoded.Select(bytes => System.Text.Encoding.UTF8.GetString(bytes)).ToList();
 
         /// <summary>
         /// Creates a top-level span with a TraceContext.
@@ -1322,6 +1611,22 @@ namespace Datadog.Trace.Tests.Agent
                                : new TracerSettings();
 
             return settings;
+        }
+
+        private static TracerSettings GetSettingsWithAdditionalTags(string additionalTags, int? cardinalityLimit = null)
+        {
+            var config = new Dictionary<string, object>
+            {
+                { ConfigurationKeys.ExperimentalFeaturesEnabled, ConfigurationKeys.StatsAdditionalTags },
+                { ConfigurationKeys.StatsAdditionalTags, additionalTags },
+            };
+
+            if (cardinalityLimit.HasValue)
+            {
+                config[ConfigurationKeys.StatsAdditionalTagsCardinalityLimit] = cardinalityLimit.Value;
+            }
+
+            return TracerSettings.Create(config);
         }
 
         // Re-implement timestamp conversion to independently verify the operation

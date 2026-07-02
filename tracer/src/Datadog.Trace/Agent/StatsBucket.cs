@@ -12,12 +12,13 @@ namespace Datadog.Trace.Agent
 {
     internal sealed class StatsBucket
     {
-        public StatsBucket(StatsAggregationKey key, List<byte[]> peerTags)
+        public StatsBucket(StatsAggregationKey key, List<byte[]> peerTags, List<byte[]> additionalMetricTags)
         {
             Key = key;
             OkSummary = CreateSketch();
             ErrorSummary = CreateSketch();
             PeerTags = peerTags;
+            AdditionalMetricTags = additionalMetricTags;
         }
 
         public StatsAggregationKey Key { get; }
@@ -35,6 +36,8 @@ namespace Datadog.Trace.Agent
         public long TopLevelHits { get; set; }
 
         public List<byte[]> PeerTags { get; }
+
+        public List<byte[]> AdditionalMetricTags { get; }
 
         public void Clear()
         {
