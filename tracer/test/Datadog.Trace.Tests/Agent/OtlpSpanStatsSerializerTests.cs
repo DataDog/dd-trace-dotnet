@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
@@ -27,7 +28,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey();
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 0 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 0 });
 
             OtlpSpanStatsSerializer.Serialize(buffer, BucketDurationNs, false).Should().BeNull();
         }
@@ -37,7 +38,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey();
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 0 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 0 });
 
             OtlpSpanStatsSerializer.SerializeJson(buffer, BucketDurationNs, false).Should().BeNull();
         }
@@ -47,7 +48,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey();
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 5, Duration = 100_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 5, Duration = 100_000_000 });
 
             OtlpSpanStatsSerializer.Serialize(buffer, BucketDurationNs, false).Should().NotBeNull();
         }
@@ -57,7 +58,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey();
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 5, Duration = 100_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 5, Duration = 100_000_000 });
 
             OtlpSpanStatsSerializer.SerializeJson(buffer, BucketDurationNs, false).Should().NotBeNull();
         }
@@ -124,7 +125,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey(operationName: "http.request", type: "web");
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
             var json = SerializeToJson(buffer, otelSemanticsEnabled: false);
             var attrs = GetDataPointAttributes(json);
@@ -139,7 +140,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey(operationName: "http.request", type: "web");
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
             var json = SerializeToJson(buffer, otelSemanticsEnabled: true);
             var attrs = GetDataPointAttributes(json);
@@ -154,7 +155,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer(service: "my-service");
             var key = CreateKey(service: "my-service");
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
             var json = SerializeToJson(buffer);
             var attrs = GetDataPointAttributes(json);
@@ -167,7 +168,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer(service: "default-service");
             var key = CreateKey(service: "other-service");
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
             var json = SerializeToJson(buffer);
             var attrs = GetDataPointAttributes(json);
@@ -180,7 +181,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey(isError: true);
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
             var json = SerializeToJson(buffer);
             var attrs = GetDataPointAttributes(json);
@@ -193,7 +194,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey(isError: false);
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
             var json = SerializeToJson(buffer);
             var attrs = GetDataPointAttributes(json);
@@ -206,7 +207,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey();
-            var bucket = new StatsBucket(key, EmptyPeerTags)
+            var bucket = new StatsBucket(key, EmptyPeerTags, [])
             {
                 Hits = 1,
                 Duration = 5_000_000,
@@ -227,7 +228,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey();
-            var bucket = new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 };
+            var bucket = new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 };
             // MinDuration starts at double.MaxValue (sentinel), MaxDuration at 0 (sentinel)
             buffer.Buckets.Add(key, bucket);
 
@@ -318,7 +319,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey(grpcStatusCode: input);
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
             var attrs = GetDataPointAttributes(SerializeToJson(buffer));
 
@@ -334,7 +335,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey(grpcStatusCode: input);
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
             var attrs = GetDataPointAttributes(SerializeToJson(buffer));
 
@@ -346,7 +347,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey(grpcStatusCode: "5");
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
             var attrs = GetDataPointAttributes(SerializeToJson(buffer));
 
@@ -359,8 +360,8 @@ namespace Datadog.Trace.Tests.Agent
             var buffer = CreateBuffer();
             var topKey = CreateKey(isTopLevel: true);
             var nonTopKey = CreateKey(isTopLevel: false);
-            buffer.Buckets.Add(topKey, new StatsBucket(topKey, EmptyPeerTags) { Hits = 1, Duration = 1_000_000 });
-            buffer.Buckets.Add(nonTopKey, new StatsBucket(nonTopKey, EmptyPeerTags) { Hits = 1, Duration = 1_000_000 });
+            buffer.Buckets.Add(topKey, new StatsBucket(topKey, EmptyPeerTags, []) { Hits = 1, Duration = 1_000_000 });
+            buffer.Buckets.Add(nonTopKey, new StatsBucket(nonTopKey, EmptyPeerTags, []) { Hits = 1, Duration = 1_000_000 });
 
             var json = SerializeToJson(buffer, otelSemanticsEnabled: false);
             var dataPoints = json.SelectToken("$.resourceMetrics[0].scopeMetrics[0].metrics[0].histogram.dataPoints")!;
@@ -387,7 +388,7 @@ namespace Datadog.Trace.Tests.Agent
                     { ConfigurationKeys.Environment, env },
                     { ConfigurationKeys.ServiceVersion, version },
                 });
-            return new StatsBuffer(new ClientStatsPayload(settings));
+            return new StatsBuffer(new ClientStatsPayload(settings), new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance));
         }
 
         private static StatsAggregationKey CreateKey(
@@ -422,7 +423,9 @@ namespace Datadog.Trace.Tests.Agent
                 httpEndpoint,
                 grpcStatusCode,
                 serviceSource,
-                peerTagsHash);
+                peerTagsHash,
+                additionalMetricTagsHash: 0,
+                truncatedFields: StatsCardinalityTruncatedFields.None);
         }
 
         private static StatsBuffer CreateBufferWithOneHit(string service = "my-service")
@@ -435,7 +438,7 @@ namespace Datadog.Trace.Tests.Agent
         private static void AddHit(StatsBuffer buffer, string service = "my-service")
         {
             var key = CreateKey(service: service);
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags) { Hits = 1, Duration = 5_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
         }
 
         private static JObject SerializeToJson(StatsBuffer buffer, bool otelSemanticsEnabled = false)
