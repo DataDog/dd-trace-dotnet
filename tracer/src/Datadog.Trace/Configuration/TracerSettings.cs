@@ -1071,7 +1071,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets the maximum number of distinct peer-tag combinations admitted into client-side stats
-        /// per flush interval. Combinations beyond the cap have their peer tags cleared.
+        /// per flush interval. Combinations beyond the cap are collapsed to "tracer_blocked_value".
         /// </summary>
         /// <seealso cref="ConfigurationKeys.StatsPeerTagsCardinalityLimit"/>
         internal int StatsPeerTagsCardinalityLimit { get; }

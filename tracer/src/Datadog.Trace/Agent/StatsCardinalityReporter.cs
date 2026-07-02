@@ -10,7 +10,6 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent;
@@ -53,7 +52,7 @@ internal sealed class StatsCardinalityReporter(IMetricsTelemetryCollector teleme
             => fields switch
             {
                 StatsCardinalityLimitedFields.None => MetricTags.CollapsedStatsFields.None,
-                StatsCardinalityLimitedFields.WholeKey | StatsCardinalityLimitedFields.All => MetricTags.CollapsedStatsFields.WholeKey,
+                StatsCardinalityLimitedFields.WholeKey or StatsCardinalityLimitedFields.All => MetricTags.CollapsedStatsFields.WholeKey,
                 StatsCardinalityLimitedFields.Resource => MetricTags.CollapsedStatsFields.Resource,
                 StatsCardinalityLimitedFields.HttpEndpoint => MetricTags.CollapsedStatsFields.HttpEndpoint,
                 StatsCardinalityLimitedFields.PeerTags => MetricTags.CollapsedStatsFields.PeerTags,

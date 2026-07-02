@@ -84,16 +84,10 @@ internal sealed class StatsCardinalityLimiter
         return limitsApplied;
     }
 
-    private readonly struct Limiter<T>
+    private sealed class Limiter<T>(int limit)
     {
-        private readonly HashSet<T> _seen;
-        private readonly int _limit;
-
-        public Limiter(int limit)
-        {
-            _seen = [];
-            _limit = limit;
-        }
+        private readonly HashSet<T> _seen = [];
+        private readonly int _limit = limit;
 
         public bool ApplyLimit(T value)
         {

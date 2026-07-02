@@ -791,8 +791,8 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// Configuration key for the maximum number of distinct peer-tag combinations admitted into
-    /// client-side stats per flush interval. Combinations beyond the cap have their peer tags
-    /// cleared.
+    /// client-side stats per flush interval. Combinations beyond the cap are collapsed to
+    /// "tracer_blocked_value".
     /// </summary>
     public const string StatsPeerTagsCardinalityLimit = "DD_TRACE_STATS_PEER_TAGS_CARDINALITY_LIMIT";
 

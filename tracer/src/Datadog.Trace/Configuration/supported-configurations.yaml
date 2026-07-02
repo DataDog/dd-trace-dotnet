@@ -3511,8 +3511,8 @@ supportedConfigurations:
     const_name: StatsPeerTagsCardinalityLimit
     documentation: |-
       Configuration key for the maximum number of distinct peer-tag combinations admitted into
-      client-side stats per flush interval. Combinations beyond the cap have their peer tags
-      cleared.
+      client-side stats per flush interval. Combinations beyond the cap are collapsed to
+      "tracer_blocked_value".
   DD_TRACE_STATS_CARDINALITY_LIMIT:
   - implementation: A
     scope: managed
