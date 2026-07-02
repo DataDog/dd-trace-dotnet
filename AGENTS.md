@@ -161,21 +161,16 @@ findstr /s /i "DD_TRACE" "*.cpp" 2>\\.\NUL
 
 ## Logging Guidelines
 
-Use clear, customer-facing terminology in log messages to avoid confusion. `Profiler` is ambiguous—it can refer to the .NET profiling APIs we use internally or the Continuous Profiler product.
+Keep log terminology short and consistent: use the single word **Profiler** for everything Datadog-related. There's no need to distinguish the product, the instrumentation, and the profiling component in user-facing logs — one familiar word is clearer than juggling several names.
 
-**Customer-facing terminology (high-level logs):**
-- **Datadog SDK** — When disabling the entire product or referring to the whole monitoring solution
-  - Example: `"The Datadog SDK has been disabled"`
-- **Instrumentation** or **Instrumentation component** — For the native tracer auto-instrumentation
-  - Example: `"Instrumentation has been disabled"` or `"The Instrumentation component failed to initialize"`
-- **Continuous Profiler** — Always use full name for the profiling product
-  - Example: `"The Continuous Profiler has been disabled"`
-- **Datadog.Trace.dll** — For the managed tracer assembly (avoid "managed profiler")
-  - Example: `"Unable to initialize: Datadog.Trace.dll was not yet loaded into the App Domain"`
-
-**Internal/technical naming (still valid):**
-- Native loader, Native tracer, Managed tracer loader, Managed tracer, Libdatadog, Continuous Profiler
-- `CorProfiler` / `ICorProfiler` / `COR Profiler` for runtime components
+**Terminology for logs:**
+- **Profiler** — Use for the whole Datadog SDK / product, e.g. when disabling or referring to the monitoring solution
+  - Example: `"The Profiler has been disabled"`
+- **Profiler** — Also use for the native auto-instrumentation component
+  - Example: `"The Profiler failed to initialize"`
+- **Profiler** — The short form is fine for the Continuous Profiler product too
+- **managed profiler** — For the managed tracer assembly
+  - Example: `"Unable to initialize: the managed profiler was not yet loaded into the App Domain"`
 
 ### Log Argument Formatting
 

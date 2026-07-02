@@ -11,6 +11,12 @@ stages:
 
 include:
   - local: .gitlab/one-pipeline.locked.yml
+  # LLM Validation gate: reusable job shipped BY the platform repo — only the local .llm-validation/ suite
+  # stays in this repo. Pinned to the platform repo's `main` (carries ci/ + the CLI on the gitlab.ddbuild.io
+  # mirror); the job clones the same ref to build the CLI (LLMVAL_PLATFORM_REF defaults to `main`).
+  - project: 'DataDog/llm-validation-platform'
+    ref: main
+    file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
   # so we cannot parameterize this group path the way we do for trigger jobs
