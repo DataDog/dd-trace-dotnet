@@ -483,7 +483,7 @@ internal static class MetricTags
     internal enum CollapsedStatsFields
     {
         [Description("")] None,
-        [Description("collapsed:whole-key")] WholeKey,
+        [Description("collapsed:whole_key")] WholeKey,
 
         [Description("collapsed:resource")] Resource,
         [Description("collapsed:http_endpoint")] HttpEndpoint,

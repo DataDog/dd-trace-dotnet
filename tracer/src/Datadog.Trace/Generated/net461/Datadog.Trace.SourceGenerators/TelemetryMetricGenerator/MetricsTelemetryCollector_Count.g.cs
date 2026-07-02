@@ -221,8 +221,8 @@ internal sealed partial class MetricsTelemetryCollector
             // stats_collapsed_spans, index = 178
             new(null),
             new(new[] { "oversized:additional_metric_tags" }),
-            new(new[] { "collapsed:whole-key" }),
-            new(new[] { "collapsed:whole-key", "oversized:additional_metric_tags" }),
+            new(new[] { "collapsed:whole_key" }),
+            new(new[] { "collapsed:whole_key", "oversized:additional_metric_tags" }),
             new(new[] { "collapsed:resource" }),
             new(new[] { "collapsed:resource", "oversized:additional_metric_tags" }),
             new(new[] { "collapsed:http_endpoint" }),

@@ -98,7 +98,7 @@ internal sealed class StatsCardinalityReporter(IMetricsTelemetryCollector teleme
     // These are in a separate class to avoid triggering the array allocations if we're not going to need them
     private static class StatsdTags
     {
-        private const string WholeKeyTag = "collapsed:whole-key";
+        private const string WholeKeyTag = "collapsed:whole_key";
         private const string ResourceTag = "collapsed:resource";
         private const string HttpEndpointTag = "collapsed:http_endpoint";
         private const string PeerTagsTag = "collapsed:peer_tags";

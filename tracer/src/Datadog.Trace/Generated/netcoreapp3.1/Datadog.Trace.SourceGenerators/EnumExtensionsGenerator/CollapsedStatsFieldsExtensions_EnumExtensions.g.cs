@@ -31,7 +31,7 @@ internal static partial class CollapsedStatsFieldsExtensions
         => value switch
         {
             Datadog.Trace.Telemetry.Metrics.MetricTags.CollapsedStatsFields.None => "",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.CollapsedStatsFields.WholeKey => "collapsed:whole-key",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.CollapsedStatsFields.WholeKey => "collapsed:whole_key",
             Datadog.Trace.Telemetry.Metrics.MetricTags.CollapsedStatsFields.Resource => "collapsed:resource",
             Datadog.Trace.Telemetry.Metrics.MetricTags.CollapsedStatsFields.HttpEndpoint => "collapsed:http_endpoint",
             Datadog.Trace.Telemetry.Metrics.MetricTags.CollapsedStatsFields.PeerTags => "collapsed:peer_tags",
@@ -121,7 +121,7 @@ internal static partial class CollapsedStatsFieldsExtensions
         => new []
         {
             "",
-            "collapsed:whole-key",
+            "collapsed:whole_key",
             "collapsed:resource",
             "collapsed:http_endpoint",
             "collapsed:peer_tags",
