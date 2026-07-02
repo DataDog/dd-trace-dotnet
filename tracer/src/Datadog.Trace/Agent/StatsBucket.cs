@@ -35,6 +35,11 @@ namespace Datadog.Trace.Agent
 
         public long TopLevelHits { get; set; }
 
+        // Tracked for OTLP histogram data points; sentinels double.MaxValue/0 mean "not yet observed".
+        public double MinDuration { get; set; } = double.MaxValue;
+
+        public double MaxDuration { get; set; }
+
         public List<byte[]> PeerTags { get; }
 
         public List<byte[]> AdditionalMetricTags { get; }
@@ -45,6 +50,8 @@ namespace Datadog.Trace.Agent
             Errors = 0;
             Duration = 0;
             TopLevelHits = 0;
+            MinDuration = double.MaxValue;
+            MaxDuration = 0;
             OkSummary.Clear();
             ErrorSummary.Clear();
         }

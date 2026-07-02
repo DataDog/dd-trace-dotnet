@@ -167,7 +167,10 @@ namespace Datadog.Trace.Agent
 
             if (_isOtlp)
             {
-                CanComputeStats = true;
+                if (settings.OtelTracesSpanMetricsEnabled)
+                {
+                    CanComputeStats = true;
+                }
             }
             else
             {
@@ -559,17 +562,10 @@ namespace Datadog.Trace.Agent
             return result;
         }
 
-        /// <summary>
-        /// Builds a "key:value" UTF-8 byte array by reusing the pre-encoded <paramref name="utf8KeyPrefix"/>
-        /// (e.g. "tagKey:") and encoding only <paramref name="tagValue"/> directly into the destination
-        /// array — avoiding both the intermediate interpolated string and re-encoding the key prefix.
-        /// </summary>
         private static byte[] EncodeKeyValue(byte[] utf8KeyPrefix, string tagValue)
         {
             var valueByteCount = EncodingHelpers.Utf8NoBom.GetByteCount(tagValue);
             var encoded = new byte[utf8KeyPrefix.Length + valueByteCount];
-
-            // Copy the already-encoded "key:" bytes, then encode the value straight after them.
             Buffer.BlockCopy(utf8KeyPrefix, 0, encoded, 0, utf8KeyPrefix.Length);
             EncodingHelpers.Utf8NoBom.GetBytes(tagValue, charIndex: 0, charCount: tagValue.Length, encoded, byteIndex: utf8KeyPrefix.Length);
 
@@ -728,9 +724,8 @@ namespace Datadog.Trace.Agent
             var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind));
             var isSpanKindEligible = spanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Consumer or SpanKinds.Producer;
 
-            if (!_isOtlp // If we are using OTLP, we include both top-level and non-top-level spans
-                && (!(span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
-                 || span.GetMetric(Tags.PartialSnapshot) >= 0))
+            if (!(span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
+                 || span.GetMetric(Tags.PartialSnapshot) >= 0)
             {
                 return;
             }
@@ -798,6 +793,17 @@ namespace Datadog.Trace.Agent
             var duration = span.Duration.ToNanoseconds();
 
             bucket.Duration += duration;
+
+            // Track exact min/max for OTLP histogram data points (unweighted raw duration).
+            if (duration < bucket.MinDuration)
+            {
+                bucket.MinDuration = duration;
+            }
+
+            if (duration > bucket.MaxDuration)
+            {
+                bucket.MaxDuration = duration;
+            }
 
             // If we are using OTLP, the errors are tracked as a separate aggregation entirely (different AggregationKey)
             // As a result, if using OTLP we always add to the OkSummary sketch.

@@ -509,7 +509,7 @@ namespace Datadog.Trace.Agent
             // This allows the serialization thread to keep doing its job while a buffer is being flushed
             var buffer = _activeBuffer;
 
-            var writeStatus = buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority);
+            var writeStatus = buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority, CanComputeStats);
 
             if (writeStatus == SpanBuffer.WriteStatus.Success)
             {
@@ -532,7 +532,7 @@ namespace Datadog.Trace.Agent
                 // One buffer is full, request an eager flush
                 RequestFlush();
 
-                if (buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority) == SpanBuffer.WriteStatus.Success)
+                if (buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority, CanComputeStats) == SpanBuffer.WriteStatus.Success)
                 {
                     // Serialization to the secondary buffer succeeded
                     return;

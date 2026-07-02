@@ -36,6 +36,8 @@ namespace Datadog.Trace.Agent
 
         public long Start { get; private set; }
 
+        internal ClientStatsPayload Header => _header;
+
         /// <summary>
         /// Gets the number of buckets that have received at least one hit in the current flush window.
         /// This excludes zero-hit buckets retained across resets for sketch reuse, so the whole-key
