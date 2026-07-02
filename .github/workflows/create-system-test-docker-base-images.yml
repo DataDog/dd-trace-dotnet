@@ -28,8 +28,6 @@ jobs:
       contents: read
       actions: read # read secrets
       packages: write # pushing to ghcr.io
-    env:
-      AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
     steps:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -49,6 +47,7 @@ jobs:
       run: ./tracer/build.sh DownloadAzurePipelineFromBuild
       env:
         AzureDevopsBuildId: "${{ github.event.inputs.azdo_build_id }}"
+        AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
 
     - name: "Sanitize branch name"
       id: image_tag
