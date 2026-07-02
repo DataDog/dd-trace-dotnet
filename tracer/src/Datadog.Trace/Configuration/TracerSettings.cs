@@ -686,6 +686,22 @@ namespace Datadog.Trace.Configuration
                                                  .WithKeys(ConfigurationKeys.StatsAdditionalTagsCardinalityLimit)
                                                  .AsInt32(defaultValue: 100, validator: x => x > 0).Value;
 
+            StatsResourceCardinalityLimit = config
+                                           .WithKeys(ConfigurationKeys.StatsResourceCardinalityLimit)
+                                           .AsInt32(defaultValue: 1024, validator: x => x > 0).Value;
+
+            StatsHttpEndpointCardinalityLimit = config
+                                               .WithKeys(ConfigurationKeys.StatsHttpEndpointCardinalityLimit)
+                                               .AsInt32(defaultValue: 512, validator: x => x > 0).Value;
+
+            StatsPeerTagsCardinalityLimit = config
+                                           .WithKeys(ConfigurationKeys.StatsPeerTagsCardinalityLimit)
+                                           .AsInt32(defaultValue: 512, validator: x => x > 0).Value;
+
+            StatsComputationBucketsCardinalityLimit = config
+                                                     .WithKeys(ConfigurationKeys.StatsComputationBucketsCardinalityLimit)
+                                                     .AsInt32(defaultValue: 2048, validator: x => x > 0).Value;
+
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
                                    .AsString(GetDefaultHttpClientExclusions());
@@ -1038,6 +1054,34 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.StatsAdditionalTagsCardinalityLimit"/>
         internal int StatsAdditionalTagsCardinalityLimit { get; }
+
+        /// <summary>
+        /// Gets the maximum number of distinct resource values admitted into client-side stats
+        /// per flush interval. Values beyond the cap are collapsed to "tracer_blocked_value".
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsResourceCardinalityLimit"/>
+        internal int StatsResourceCardinalityLimit { get; }
+
+        /// <summary>
+        /// Gets the maximum number of distinct http.endpoint values admitted into client-side stats
+        /// per flush interval. Values beyond the cap are collapsed to "tracer_blocked_value".
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsHttpEndpointCardinalityLimit"/>
+        internal int StatsHttpEndpointCardinalityLimit { get; }
+
+        /// <summary>
+        /// Gets the maximum number of distinct peer-tag combinations admitted into client-side stats
+        /// per flush interval. Combinations beyond the cap are collapsed to "tracer_blocked_value".
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsPeerTagsCardinalityLimit"/>
+        internal int StatsPeerTagsCardinalityLimit { get; }
+
+        /// <summary>
+        /// Gets the hard upper bound on the number of distinct client-side stats buckets per flush
+        /// interval. New buckets beyond the cap collapse into a single "tracer_blocked_value" overflow bucket.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsComputationBucketsCardinalityLimit"/>
+        internal int StatsComputationBucketsCardinalityLimit { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable span linking for individual messages
