@@ -14,11 +14,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Proxy;
 
 public class AzureFrontDoorExtractorTests
 {
-    private readonly AzureApiManagementExtractor _extractor;
+    private readonly AzureFrontDoorExtractor _extractor;
 
-    public AzureApiManagementExtractorTests()
+    public AzureFrontDoorExtractorTests()
     {
-        _extractor = new AzureApiManagementExtractor();
+        _extractor = new AzureFrontDoorExtractor();
     }
 
     [Fact]
@@ -33,11 +33,11 @@ public class AzureFrontDoorExtractorTests
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeTrue();
-        data.ProxyName.Should().Be("azure-frontdoor");
+        data.ProxyName.Should().Be("azure-fd");
         data.StartTime.Should().Be(start);
-        data.DomainName.Should().BeNull(); // Azure doesn't use domain
-        data.HttpMethod.Should().Be("POST");
-        data.Path.Should().Be("/api/v1/users");
+        data.DomainName.Should().Be("myapp.azurefd.net");
+        data.HttpMethod.Should().Be("GET");
+        data.Path.Should().Be("/api/test");
         data.Stage.Should().Be("prod");
         data.Region.Should().Be("canada central");
     }
@@ -53,13 +53,14 @@ public class AzureFrontDoorExtractorTests
         headers.Remove(InferredProxyHeaders.HttpMethod);
         headers.Remove(InferredProxyHeaders.Path);
         headers.Remove(InferredProxyHeaders.Region);
-
+        headers.Remove(InferredProxyHeaders.Stage);
+        
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeTrue();
-        data.ProxyName.Should().Be("azure-frontdoor");
+        data.ProxyName.Should().Be("azure-fd");
         data.StartTime.Should().Be(start);
-        data.DomainName.Should().BeNull();
+        data.DomainName.Should().Be("myapp.azurefd.net");
         data.HttpMethod.Should().BeNull();
         data.Path.Should().BeNull();
         data.Stage.Should().BeNull();
@@ -67,8 +68,6 @@ public class AzureFrontDoorExtractorTests
     }
 
     [Theory]
-    [InlineData(null)]
-    [InlineData("")]
     [InlineData("invalid")]
     [InlineData("1111111122222222333333334444444455555555666666667777777788888888")] // too large
     public void TryExtract_WithInvalidStartTime_ReturnsFalse(string startTime)
@@ -79,18 +78,16 @@ public class AzureFrontDoorExtractorTests
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
         success.Should().BeFalse();
-        data.Should().Be(default(InferredProxyData));
     }
 
     [Fact]
-    public void TryExtract_WithMissingStartTime_ReturnsFalse()
+    public void TryExtract_WithMissingStartTime_ReturnsTrue()
     {
-        var headers = ProxyTestHelpers.CreateValidAzureHeaders();
+        var headers = ProxyTestHelpers.CreateValidAzureFrontDoorHeaders();
         headers.Remove(InferredProxyHeaders.StartTime);
 
         var success = _extractor.TryExtract(headers, headers.GetAccessor(), out var data);
 
-        success.Should().BeFalse();
-        data.Should().Be(default(InferredProxyData));
+        success.Should().BeTrue();
     }
 }

@@ -42,7 +42,8 @@ internal sealed class AzureFrontDoorExtractor : IInferredProxyExtractor
             var httpMethod = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.HttpMethod);
             var path = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Path);
             var region = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Region);
-            data = new InferredProxyData(InferredProxySpanHelper.AzureFrontDoorHeaderValue, startTime, domainName, httpMethod, path, null, region);
+            var stage = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.Stage);
+            data = new InferredProxyData(InferredProxySpanHelper.AzureFrontDoorHeaderValue, startTime, domainName, httpMethod, path, stage, region);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {

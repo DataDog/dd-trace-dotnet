@@ -35,6 +35,7 @@ internal sealed class AzureFrontDoorSpanFactory : IInferredSpanFactory
                 HttpRoute = resourceUrl,
                 InferredSpan = 1,
                 Region = data.Region,
+                Stage = data.Stage,
             };
 
             var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName, serviceNameSource: "azure-frontdoor");
