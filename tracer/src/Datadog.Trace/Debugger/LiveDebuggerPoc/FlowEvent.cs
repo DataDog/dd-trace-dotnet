@@ -13,7 +13,7 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
             sizeof(byte) +
             (sizeof(long) * 2) +
             (sizeof(int) * 3) +
-            (sizeof(ulong) * 7);
+            (sizeof(ulong) * 4);
 
         public FlowEvent(
             FlowEventKind kind,
@@ -24,11 +24,22 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
             ulong parentFrameId,
             int depth,
             int threadId,
-            ulong traceIdUpper,
-            ulong traceIdLower,
-            ulong rootSpanId,
-            ulong activeSpanId,
             long exceptionTypeId)
+            : this(kind, timestamp, methodMetadataIndex, flowId, frameId, parentFrameId, depth, threadId, exceptionTypeId, operationId: 0)
+        {
+        }
+
+        public FlowEvent(
+            FlowEventKind kind,
+            long timestamp,
+            int methodMetadataIndex,
+            ulong flowId,
+            ulong frameId,
+            ulong parentFrameId,
+            int depth,
+            int threadId,
+            long exceptionTypeId,
+            ulong operationId)
         {
             Kind = kind;
             Timestamp = timestamp;
@@ -38,11 +49,8 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
             ParentFrameId = parentFrameId;
             Depth = depth;
             ThreadId = threadId;
-            TraceIdUpper = traceIdUpper;
-            TraceIdLower = traceIdLower;
-            RootSpanId = rootSpanId;
-            ActiveSpanId = activeSpanId;
             ExceptionTypeId = exceptionTypeId;
+            OperationId = operationId;
         }
 
         public FlowEventKind Kind { get; }
@@ -61,14 +69,8 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
 
         public int ThreadId { get; }
 
-        public ulong TraceIdUpper { get; }
-
-        public ulong TraceIdLower { get; }
-
-        public ulong RootSpanId { get; }
-
-        public ulong ActiveSpanId { get; }
-
         public long ExceptionTypeId { get; }
+
+        public ulong OperationId { get; }
     }
 }

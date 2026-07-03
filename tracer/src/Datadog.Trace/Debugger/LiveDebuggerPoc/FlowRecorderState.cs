@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.Debugger.LiveDebuggerPoc
 {
     /// <summary>
@@ -10,17 +12,26 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
     /// </summary>
     public readonly struct FlowRecorderState
     {
-        internal FlowRecorderState(long generation, ulong flowId, ulong frameId, ulong parentFrameId, int depth, int methodMetadataIndex)
+        internal FlowRecorderState(long generation, FlowRecorderOperationContext? operationContext, ulong operationId, ulong flowId, ulong frameId, ulong parentFrameId, int depth, int methodMetadataIndex, ulong previousAsyncOperationId = 0, long previousAsyncOperationGeneration = 0, bool restoreAsyncOperationId = false)
         {
             Generation = generation;
+            OperationContext = operationContext;
+            OperationId = operationId;
             FlowId = flowId;
             FrameId = frameId;
             ParentFrameId = parentFrameId;
             Depth = depth;
             MethodMetadataIndex = methodMetadataIndex;
+            PreviousAsyncOperationId = previousAsyncOperationId;
+            PreviousAsyncOperationGeneration = previousAsyncOperationGeneration;
+            RestoreAsyncOperationId = restoreAsyncOperationId;
         }
 
         internal long Generation { get; }
+
+        internal FlowRecorderOperationContext? OperationContext { get; }
+
+        internal ulong OperationId { get; }
 
         internal ulong FlowId { get; }
 
@@ -31,6 +42,12 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
         internal int Depth { get; }
 
         internal int MethodMetadataIndex { get; }
+
+        internal ulong PreviousAsyncOperationId { get; }
+
+        internal long PreviousAsyncOperationGeneration { get; }
+
+        internal bool RestoreAsyncOperationId { get; }
 
         internal bool IsValid => FlowId != 0 && FrameId != 0;
     }

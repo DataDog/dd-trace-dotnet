@@ -1182,6 +1182,7 @@
       <type fullname="System.Threading.Mutex" />
       <type fullname="System.Threading.ReaderWriterLockSlim" />
       <type fullname="System.Threading.SemaphoreSlim" />
+      <type fullname="System.Threading.SpinWait" />
       <type fullname="System.Threading.SynchronizationContext" />
       <type fullname="System.Threading.ThreadLocal`1" />
       <type fullname="System.Threading.Volatile" />
