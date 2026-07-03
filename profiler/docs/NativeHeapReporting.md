@@ -190,7 +190,7 @@ Derives `ServiceBase` (like [HeapSnapshotManager.h](../src/ProfilerEngine/Datado
 - Timing logs: wrap the enumeration with `OpSysTools::GetHighPrecisionTimestamp()` (the pattern `HeapSnapshotManager` already uses) and emit a `Log::Info` line per export, e.g. `"!eeheap (cdac): enumerated N native heaps in X ms"` (include backend, heap count, and elapsed ms; total bytes optional). On the DAC path, also log the `Flush()`+enumeration split at `Log::Debug` so the live-runtime cost is visible. Consider logging per-source timing (code heaps / loader heaps / GC regions) at `Debug` to spot a slow source. Register a `ProxyMetric` `dotnet_eeheap_duration` mirroring `dotnet_heapsnapshot_duration` so the cost is trackable as a metric, not just logs.
 - JSON shape:
 ```json
-{ "heaps": [ { "address": "0x...", "size": 65536, "kind": "LoaderCodeHeap", "state": "Active" } ] }
+{ "heaps": [ { "address": "0x...", "size": 65536, "kind": "LoaderCodeHeap", "group": "Code", "state": "Active" } ] }
 ```
   Reuse `ProfileExporter`'s hand-rolled JSON writers (`ElementStart`/`AppendValue`) or a local `stringstream`. Optionally tag the source backend (`"source": "cdac"|"dac"`).
 
@@ -307,9 +307,14 @@ Follow-up to the enumerator above: surface BOTH virtual (reserved) and committed
 
 ```json
 { "source": "dac", "heaps": [
-  { "address": "0x...", "size": 1048576, "committed": 262144, "kind": "GCHeapSegment", "state": "Active", "gc_heap": 0, "generation": 2 }
+  { "address": "0x...", "size": 1048576, "committed": 262144, "kind": "GCHeapSegment", "group": "GC Object Heap", "state": "Active", "gc_heap": 0, "generation": 2 }
 ] }
 ```
+
+## Per-block group (group-per-kind)
+
+- Each heap block also carries a high-level `group` (`Code`, `Loader`, `Virtual Stub Dispatch`, `GC Object Heap`, `GC Bookkeeping & Handles`, `GC Free / Reserve`, `Other`). The group is fully determined by `kind`, so it is derived on demand by `GroupOf(NativeHeapKind)` in `ClrNativeHeapInfo.h` and emitted by `EEHeapReporter::ToJson` right after `kind` - it is not stored on the `ClrNativeHeapInfo` struct.
+- The mapping mirrors the EEHeapExplorer tool's `HeapKindGroup.ForKind` (`profiler/src/Tools/EEHeapExplorer/EEHeapModel/HeapKindGroup.cs`). The two tables are intentional duplicates (native profiler vs. standalone tool) and must be kept in sync. The tool reads the `group` field when present and falls back to `HeapKindGroup.ForKind` for reports produced before the field existed.
 
 ## Shared page-probe helper (page-probe-helper)
 

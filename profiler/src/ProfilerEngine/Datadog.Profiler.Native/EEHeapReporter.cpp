@@ -107,6 +107,7 @@ std::string EEHeapReporter::ToJson(const char* source, const std::vector<ClrNati
            << ",\"size\":" << heap.Size
            << ",\"committed\":" << heap.Committed
            << ",\"kind\":\"" << ToString(heap.Kind) << "\""
+           << ",\"group\":\"" << ToString(GroupOf(heap.Kind)) << "\""
            << ",\"state\":\"" << ToString(heap.State) << "\"";
         if (heap.GCHeap >= 0)
         {

@@ -33,12 +33,14 @@ bool LogicalDescriptor::ResolvePending()
     }
 
     bool mergedAny = false;
-    size_t countBeforePass;
-    // Re-run until a full pass resolves nothing new: merging one sub-descriptor can enqueue further
-    // slots (its own sub-descriptors), mirroring the runtime's do/while loop.
+    bool resolvedThisPass;
+    // Re-run until a full pass resolves no slot: merging one sub-descriptor can enqueue further slots
+    // (its own sub-descriptors), mirroring the runtime's do/while loop. Progress is tracked by whether
+    // a slot was resolved this pass, not by the pending-list size: a pass that erases one slot and
+    // enqueues another (e.g. a sub-descriptor cycle) keeps the size constant yet still made progress.
     do
     {
-        countBeforePass = _pendingSlots.size();
+        resolvedThisPass = false;
         for (int i = static_cast<int>(_pendingSlots.size()) - 1; i >= 0; i--)
         {
             SubDescriptorSlot slot = _pendingSlots[static_cast<size_t>(i)];
@@ -53,13 +55,16 @@ bool LogicalDescriptor::ResolvePending()
             }
 
             _pendingSlots.erase(_pendingSlots.begin() + i);
+            // The slot is resolved once its pointer is read, even if the target was already visited
+            // (a cycle), so Merge returning false must not stop the loop.
+            resolvedThisPass = true;
 
             if (Merge(subDescriptorAddress, /*isRoot*/ false))
             {
                 mergedAny = true;
             }
         }
-    } while (_pendingSlots.size() != countBeforePass);
+    } while (resolvedThisPass);
 
     return mergedAny;
 }

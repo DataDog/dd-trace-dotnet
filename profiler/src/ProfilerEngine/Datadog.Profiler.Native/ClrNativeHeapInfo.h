@@ -39,6 +39,22 @@ enum class NativeHeapKind
     GCFreeUohSegment,
 };
 
+// High-level group a native heap kind belongs to. These mirror the categories used by the CLR
+// runtime and SOS !eeheap: JIT code, loader-allocator metadata heaps, the Virtual Stub Dispatch
+// heaps, and the GC heap split into object storage, bookkeeping/handles, and free/reserve.
+// NOTE: kept in sync with the EEHeapExplorer tool's HeapKindGroup
+// (profiler/src/Tools/EEHeapExplorer/EEHeapModel/HeapKindGroup.cs). Update both together.
+enum class NativeHeapGroup
+{
+    Code,
+    Loader,
+    VirtualStubDispatch,
+    GCObjectHeap,
+    GCBookkeepingAndHandles,
+    GCFreeAndReserve,
+    Other,
+};
+
 // Extra state for a native heap region (mirrors ClrMD's ClrNativeHeapState).
 enum class NativeHeapState
 {
@@ -105,5 +121,69 @@ inline const char* ToString(NativeHeapState state)
         case NativeHeapState::RegionOfRegions: return "RegionOfRegions";
         case NativeHeapState::Reserved: return "Reserved";
         default: return "None";
+    }
+}
+
+// Maps a native heap kind to its high-level group. The group is fully determined by the kind, so it
+// is derived on demand rather than stored on each region. Mirrors HeapKindGroup.ForKind in the
+// EEHeapExplorer tool - keep both in sync.
+inline NativeHeapGroup GroupOf(NativeHeapKind kind)
+{
+    switch (kind)
+    {
+        case NativeHeapKind::LoaderCodeHeap:
+        case NativeHeapKind::HostCodeHeap:
+            return NativeHeapGroup::Code;
+
+        case NativeHeapKind::StubHeap:
+        case NativeHeapKind::HighFrequencyHeap:
+        case NativeHeapKind::LowFrequencyHeap:
+        case NativeHeapKind::StaticsHeap:
+        case NativeHeapKind::ExecutableHeap:
+        case NativeHeapKind::FixupPrecodeHeap:
+        case NativeHeapKind::NewStubPrecodeHeap:
+        case NativeHeapKind::DynamicHelpersStubHeap:
+        case NativeHeapKind::ThunkHeap:
+            return NativeHeapGroup::Loader;
+
+        case NativeHeapKind::IndirectionCellHeap:
+        case NativeHeapKind::LookupHeap:
+        case NativeHeapKind::ResolveHeap:
+        case NativeHeapKind::DispatchHeap:
+        case NativeHeapKind::CacheEntryHeap:
+        case NativeHeapKind::VtableHeap:
+            return NativeHeapGroup::VirtualStubDispatch;
+
+        case NativeHeapKind::GCHeapSegment:
+        case NativeHeapKind::NonGCHeap:
+            return NativeHeapGroup::GCObjectHeap;
+
+        case NativeHeapKind::HandleTable:
+        case NativeHeapKind::GCBookkeeping:
+            return NativeHeapGroup::GCBookkeepingAndHandles;
+
+        case NativeHeapKind::GCFreeRegion:
+        case NativeHeapKind::GCFreeGlobalHugeRegion:
+        case NativeHeapKind::GCFreeGlobalRegion:
+        case NativeHeapKind::GCFreeSohSegment:
+        case NativeHeapKind::GCFreeUohSegment:
+            return NativeHeapGroup::GCFreeAndReserve;
+
+        default:
+            return NativeHeapGroup::Other;
+    }
+}
+
+inline const char* ToString(NativeHeapGroup group)
+{
+    switch (group)
+    {
+        case NativeHeapGroup::Code: return "Code";
+        case NativeHeapGroup::Loader: return "Loader";
+        case NativeHeapGroup::VirtualStubDispatch: return "Virtual Stub Dispatch";
+        case NativeHeapGroup::GCObjectHeap: return "GC Object Heap";
+        case NativeHeapGroup::GCBookkeepingAndHandles: return "GC Bookkeeping & Handles";
+        case NativeHeapGroup::GCFreeAndReserve: return "GC Free / Reserve";
+        default: return "Other";
     }
 }

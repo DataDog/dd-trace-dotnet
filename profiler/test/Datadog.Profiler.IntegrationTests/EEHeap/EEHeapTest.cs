@@ -87,6 +87,10 @@ namespace Datadog.Profiler.IntegrationTests.EEHeap
                     var kind = heap.GetProperty("kind").GetString();
                     Assert.False(string.IsNullOrEmpty(kind), "heap entry has empty kind");
 
+                    // group is always emitted and derived from kind (a high-level category).
+                    var group = heap.GetProperty("group").GetString();
+                    Assert.False(string.IsNullOrEmpty(group), "heap entry has empty group");
+
                     var state = heap.GetProperty("state").GetString();
                     Assert.False(string.IsNullOrEmpty(state), "heap entry has empty state");
 

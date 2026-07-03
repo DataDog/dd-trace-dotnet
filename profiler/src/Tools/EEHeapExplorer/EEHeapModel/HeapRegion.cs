@@ -31,6 +31,12 @@ public sealed class HeapRegion
     public string Kind { get; init; } = "Unknown";
 
     /// <summary>
+    /// High-level group this kind belongs to (the JSON "group"). Emitted by the native profiler;
+    /// derived from <see cref="Kind"/> via <see cref="HeapKindGroup.ForKind"/> for older reports.
+    /// </summary>
+    public string Group { get; init; } = HeapKindGroup.Other;
+
+    /// <summary>
     /// Region state (Active, Reserved, Inactive, RegionOfRegions, ...).
     /// </summary>
     public string State { get; init; } = "None";

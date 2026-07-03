@@ -84,6 +84,7 @@ TEST(EEHeapReporterTest, ToJsonProducesExpectedShape)
     EXPECT_NE(json.find("\"address\":\"0x1000\""), std::string::npos);
     EXPECT_NE(json.find("\"size\":65536"), std::string::npos);
     EXPECT_NE(json.find("\"kind\":\"LoaderCodeHeap\""), std::string::npos);
+    EXPECT_NE(json.find("\"group\":\"Code\""), std::string::npos);
     EXPECT_NE(json.find("\"state\":\"Active\""), std::string::npos);
 
     // committed is always emitted (for both records).
@@ -93,6 +94,7 @@ TEST(EEHeapReporterTest, ToJsonProducesExpectedShape)
     // GC-heap-specific records carry the gc_heap index + generation; non-GC records omit them, and
     // the sentinel -1 is never serialized.
     EXPECT_NE(json.find("\"kind\":\"GCHeapSegment\""), std::string::npos);
+    EXPECT_NE(json.find("\"group\":\"GC Object Heap\""), std::string::npos);
     EXPECT_NE(json.find("\"gc_heap\":2"), std::string::npos);
     EXPECT_NE(json.find("\"generation\":2"), std::string::npos);
     EXPECT_EQ(json.find("\"generation\":-1"), std::string::npos);

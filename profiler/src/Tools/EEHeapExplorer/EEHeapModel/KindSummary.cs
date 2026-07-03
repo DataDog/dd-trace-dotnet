@@ -53,7 +53,10 @@ public sealed class KindSummary
             {
                 ulong reserved = g.Aggregate(0ul, (acc, h) => acc + h.Reserved);
                 ulong committed = g.Aggregate(0ul, (acc, h) => acc + h.Committed);
-                return (Kind: g.Key, Count: g.Count(), Reserved: reserved, Committed: committed, Group: HeapKindGroup.ForKind(g.Key));
+
+                // All regions of a kind share the same group; take it from the region (populated from
+                // the report's "group" field, or the local fallback mapping when it is absent).
+                return (Kind: g.Key, Count: g.Count(), Reserved: reserved, Committed: committed, Group: g.First().Group);
             })
             .ToList();
 

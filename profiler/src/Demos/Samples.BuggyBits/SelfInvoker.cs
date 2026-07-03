@@ -22,6 +22,7 @@ namespace BuggyBits
         private readonly int _nbIdleThreads;
         private readonly int _nbNewsThreads;
         private readonly bool _disableLogs;
+        private CountdownEvent _idleReady;
 
         public SelfInvoker(CancellationToken token, Scenario scenario, int nbIdleThreads, bool disableLogs)
         {
@@ -36,6 +37,7 @@ namespace BuggyBits
         public void Dispose()
         {
             _httpClient.Dispose();
+            _idleReady?.Dispose();
         }
 
         public async Task RunAsync(string rootUrl, int iterations = 0)
@@ -47,6 +49,10 @@ namespace BuggyBits
             if (_scenario == Scenario.None)
             {
                 await Task.Delay(Timeout.Infinite, _exitToken);
+            }
+            else if ((_scenario & Scenario.SteadyState) == Scenario.SteadyState)
+            {
+                await RunSteadyStateAsync(rootUrl, iterations);
             }
             else
             {
@@ -79,6 +85,65 @@ namespace BuggyBits
             }
 
             WriteLine($"{this.GetType().Name} stopped.");
+        }
+
+        private async Task RunSteadyStateAsync(string rootUrl, int iterations)
+        {
+            // Make sure the fixed set of idle threads is fully up before we settle.
+            WaitIdleThreadsParked();
+
+            List<string> endpoints = GetEndpoints(rootUrl);
+
+            try
+            {
+                // Bounded warmup so the JIT, tiered compilation and any profiler/tracer
+                // initialization settle before the memory snapshot is taken.
+                const int warmupIterations = 200;
+                for (int i = 0; (i < warmupIterations) && !_exitToken.IsCancellationRequested; i++)
+                {
+                    foreach (var endpoint in endpoints)
+                    {
+                        await ExecuteIterationAsync(endpoint);
+                    }
+                }
+
+                // Bring the heap to a known, collected state.
+                CleanupHeap();
+
+                // Signal the consistent point at which to capture the address space for
+                // every instrumentation configuration.
+                Console.WriteLine($"##READY_FOR_SNAPSHOT## pid={Process.GetCurrentProcess().Id} heap={GC.GetTotalMemory(true)}\n");
+
+                // Steady, controlled-allocation loop at a fixed cadence until exit.
+                int current = 0;
+                while (
+                    ((iterations == 0) && !_exitToken.IsCancellationRequested) ||
+                    (iterations > current))
+                {
+                    foreach (var endpoint in endpoints)
+                    {
+                        await ExecuteIterationAsync(endpoint);
+                    }
+
+                    CleanupHeap();
+                    Console.WriteLine($"                       pid={Process.GetCurrentProcess().Id} heap={GC.GetTotalMemory(true)}");
+
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+                    current++;
+                }
+            }
+            catch (Exception x)
+            {
+                Console.WriteLine($"{x.GetType().Name} | {x.Message}");
+            }
+        }
+
+        private void CleanupHeap()
+        {
+            // Force a full GC to bring the heap to a known state.
+            GC.Collect(2, GCCollectionMode.Forced, blocking: true);
+            GC.WaitForPendingFinalizers();
+            GC.Collect(2, GCCollectionMode.Forced, blocking: true);
         }
 
         private void StartThreadsForLeaks(string rootUrl, int iterations)
@@ -132,9 +197,42 @@ namespace BuggyBits
 
             WriteLine($"----- Creating {_nbIdleThreads} idle threads");
 
+            _idleReady = new CountdownEvent(_nbIdleThreads);
+
             for (var i = 0; i < _nbIdleThreads; i++)
             {
-                Task.Factory.StartNew(() => { _exitToken.WaitHandle.WaitOne(); }, TaskCreationOptions.LongRunning);
+                // Use dedicated OS threads with a fixed 1 MB stack so the number and size of
+                // stacks is reproducible in the address-space dump.
+                var thread = new Thread(IdleThreadLoop, 1 * 1024 * 1024)
+                {
+                    IsBackground = true,
+                    Name = $"idle-{i}"
+                };
+                thread.Start();
+            }
+        }
+
+        private void IdleThreadLoop()
+        {
+            // Signal that this thread is up, then park with no CPU or allocation until exit.
+            _idleReady.Signal();
+            _exitToken.WaitHandle.WaitOne();
+        }
+
+        private void WaitIdleThreadsParked()
+        {
+            if (_idleReady == null)
+            {
+                return;
+            }
+
+            try
+            {
+                _idleReady.Wait(_exitToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // The application is exiting before all idle threads were parked.
             }
         }
 
@@ -205,6 +303,11 @@ namespace BuggyBits
                 if ((_scenario & Scenario.ShortLived) == Scenario.ShortLived)
                 {
                     urls.Add($"{rootUrl}/CompanyInformation?ShortLived=true");
+                }
+
+                if ((_scenario & Scenario.SteadyState) == Scenario.SteadyState)
+                {
+                    urls.Add($"{rootUrl}/SteadyState");
                 }
             }
 

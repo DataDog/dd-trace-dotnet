@@ -55,12 +55,21 @@ public static class EEHeapLoader
 
     private static HeapRegion ParseRegion(JsonElement heap)
     {
+        var kind = heap.TryGetProperty("kind", out var kindElement) ? kindElement.GetString() ?? "Unknown" : "Unknown";
+
+        // Prefer the group emitted by the native profiler; fall back to the local kind->group mapping
+        // for reports produced before the "group" field existed.
+        var group = heap.TryGetProperty("group", out var groupElement) && groupElement.GetString() is { } g
+            ? g
+            : HeapKindGroup.ForKind(kind);
+
         return new HeapRegion
         {
             AddressHex = heap.TryGetProperty("address", out var address) ? address.GetString() ?? "0x0" : "0x0",
             Reserved = ReadUInt64(heap, "size"),
             Committed = ReadUInt64(heap, "committed"),
-            Kind = heap.TryGetProperty("kind", out var kind) ? kind.GetString() ?? "Unknown" : "Unknown",
+            Kind = kind,
+            Group = group,
             State = heap.TryGetProperty("state", out var state) ? state.GetString() ?? "None" : "None",
             GcHeap = ReadInt32(heap, "gc_heap", -1),
             Generation = ReadInt32(heap, "generation", -1),
