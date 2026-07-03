@@ -208,6 +208,39 @@ namespace Datadog.Trace.Tests.Configuration
             settings.StatsAdditionalTagsCardinalityLimit.Should().Be(expected);
         }
 
+        [Fact]
+        public void StatsCardinalityLimits_DefaultWhenNotSet()
+        {
+            var source = CreateConfigurationSource();
+            var settings = new TracerSettings(source);
+
+            settings.StatsResourceCardinalityLimit.Should().Be(1024);
+            settings.StatsHttpEndpointCardinalityLimit.Should().Be(512);
+            settings.StatsPeerTagsCardinalityLimit.Should().Be(512);
+            settings.StatsComputationBucketsCardinalityLimit.Should().Be(2048);
+        }
+
+        [Theory]
+        [InlineData("50", 50)]
+        [InlineData("1", 1)]
+        [InlineData("0", null)]
+        [InlineData("-5", null)]
+        [InlineData("not-a-number", null)]
+        public void StatsCardinalityLimits_ValidateAndFallBack(string value, int? expectedOverride)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.StatsResourceCardinalityLimit, value),
+                (ConfigurationKeys.StatsHttpEndpointCardinalityLimit, value),
+                (ConfigurationKeys.StatsPeerTagsCardinalityLimit, value),
+                (ConfigurationKeys.StatsComputationBucketsCardinalityLimit, value));
+            var settings = new TracerSettings(source);
+
+            settings.StatsResourceCardinalityLimit.Should().Be(expectedOverride ?? 1024);
+            settings.StatsHttpEndpointCardinalityLimit.Should().Be(expectedOverride ?? 512);
+            settings.StatsPeerTagsCardinalityLimit.Should().Be(expectedOverride ?? 512);
+            settings.StatsComputationBucketsCardinalityLimit.Should().Be(expectedOverride ?? 2048);
+        }
+
         [Theory]
         [InlineData("true", "none", true)]
         [InlineData("true", "otlp", true)]
@@ -1030,6 +1063,20 @@ namespace Datadog.Trace.Tests.Configuration
             var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.MetricExportIntervalMs, value));
             var settings = new TracerSettings(source);
             settings.OtelMetricExportIntervalMs.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(null, 2000)]   // Default
+        [InlineData("5000", 5000)] // User custom value
+        [InlineData("1", 1)]
+        [InlineData("0", 2000)]    // Invalid (not > 0) falls back to default
+        [InlineData("-100", 2000)] // Invalid (not > 0) falls back to default
+        [InlineData("not-a-number", 2000)] // Invalid falls back to default
+        public void OpenTelemetryMetricsCardinalityLimit(string value, int expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, value));
+            var settings = new TracerSettings(source);
+            settings.OpenTelemetryMetricsCardinalityLimit.Should().Be(expected);
         }
 
         [Theory]

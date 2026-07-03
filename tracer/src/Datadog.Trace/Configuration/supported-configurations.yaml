@@ -2104,6 +2104,18 @@ supportedConfigurations:
     product: FeatureFlags
     const_name: OpenTelemetryMeterNames
     documentation: List of meters to add to the metrics exporter for the experimental OpenTelemetry Metrics API support.
+  DD_METRICS_OTEL_CARDINALITY_LIMIT:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '2000'
+    product: FeatureFlags
+    const_name: OpenTelemetryMetricsCardinalityLimit
+    documentation: |-
+      The maximum number of distinct attribute sets (metric points) tracked per metric stream for the
+      experimental OpenTelemetry Metrics API support. When this limit is exceeded, additional measurements
+      are aggregated into a single overflow metric point carrying the attribute 'otel.metric.overflow=true',
+      to avoid unbounded cardinality and memory growth.
   DD_ACTION_EXECUTION_ID:
   - implementation: A
     scope: managed
@@ -3483,6 +3495,46 @@ supportedConfigurations:
       Configuration key for the maximum number of distinct stat entries with additional
       tags allowed per flush interval. New entries beyond the cap have their additional
       tag values replaced with "tracer_blocked_value".
+  DD_TRACE_STATS_RESOURCE_CARDINALITY_LIMIT:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '1024'
+    const_name: StatsResourceCardinalityLimit
+    documentation: |-
+      Configuration key for the maximum number of distinct resource values admitted into
+      client-side stats per flush interval. Values beyond the cap are collapsed to
+      "tracer_blocked_value".
+  DD_TRACE_STATS_HTTP_ENDPOINT_CARDINALITY_LIMIT:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '512'
+    const_name: StatsHttpEndpointCardinalityLimit
+    documentation: |-
+      Configuration key for the maximum number of distinct http.endpoint values admitted into
+      client-side stats per flush interval. Values beyond the cap are collapsed to
+      "tracer_blocked_value".
+  DD_TRACE_STATS_PEER_TAGS_CARDINALITY_LIMIT:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '512'
+    const_name: StatsPeerTagsCardinalityLimit
+    documentation: |-
+      Configuration key for the maximum number of distinct peer-tag combinations admitted into
+      client-side stats per flush interval. Combinations beyond the cap are collapsed to
+      "tracer_blocked_value".
+  DD_TRACE_STATS_CARDINALITY_LIMIT:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '2048'
+    const_name: StatsComputationBucketsCardinalityLimit
+    documentation: |-
+      Configuration key for the hard upper bound on the number of distinct client-side stats
+      buckets per flush interval. New buckets beyond the cap are collapsed into a single
+      "tracer_blocked_value" overflow bucket.
   DD_TRACE_STATS_COMPUTATION_ENABLED:
   - implementation: A
     scope: managed
