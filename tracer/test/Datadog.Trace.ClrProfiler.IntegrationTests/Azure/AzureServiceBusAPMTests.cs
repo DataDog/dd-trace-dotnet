@@ -303,7 +303,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         [Trait("Category", "EndToEnd")]
         public async Task TestProcessorConnectsToProducerTrace(string packageVersion, string metadataSchemaVersion)
         {
-            // Reproduces APMS-19950: a ServiceBusProcessor consumer with the Azure activity source
+            // Reproduces a ServiceBusProcessor consumer with the Azure activity source
             // enabled (AZURE_EXPERIMENTAL_ENABLE_ACTIVITY_SOURCE=true + DD_TRACE_OTEL_ENABLED=true).
             // The producer's send and the consumer's ServiceBusProcessor.ProcessMessage should end up
             // on the same distributed trace. Today the receive integration re-injects its own context
@@ -334,7 +334,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 processSpan.Should().NotBeNull("Expected a consumer servicebus.process span (ServiceBusProcessor.ProcessMessage activity)");
 
                 // The core assertion: producer and consumer must share the same distributed trace.
-                const string because = "the ServiceBusProcessor.ProcessMessage span must be part of the producer's trace, otherwise producer and consumer show up as two disconnected traces (APMS-19950)";
+                const string because = "the ServiceBusProcessor.ProcessMessage span must be part of the producer's trace, otherwise producer and consumer show up as two disconnected traces";
                 processSpan.TraceId.Should().Be(sendSpan.TraceId, because);
             }
         }
@@ -376,7 +376,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 producerSpan.Should().NotBeNull("Expected a producer 'Message' span from the Azure SDK activity source");
                 processSpan.Should().NotBeNull("Expected a consumer servicebus.process span");
 
-                const string because = "disabling the custom ASB integration should let the Azure SDK's own context propagation reconnect producer and consumer (APMS-19950)";
+                const string because = "disabling the custom ASB integration should let the Azure SDK's own context propagation reconnect producer and consumer";
                 processSpan.TraceId.Should().Be(producerSpan.TraceId, because);
                 processSpan.ParentId.Should().Be(producerSpan.SpanId, "the process span should be a child of the producer 'Message' span");
             }

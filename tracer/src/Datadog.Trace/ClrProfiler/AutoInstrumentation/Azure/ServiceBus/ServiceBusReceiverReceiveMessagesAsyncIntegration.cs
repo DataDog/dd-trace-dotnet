@@ -72,7 +72,7 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
         // activity to carry the trace. Outside Azure Functions (e.g. a ServiceBusProcessor consumer),
         // re-injecting here overwrites the producer's context on the message, so the SDK-created
         // ServiceBusProcessor.ProcessMessage activity parents to this receive span instead of the
-        // producer, splitting producer and consumer into two disconnected traces (APMS-19950).
+        // producer, splitting producer and consumer into two disconnected traces
         if (scope != null && messagesList != null && messageCount > 0 && tracer.Settings.IsRunningInAzureFunctions)
         {
             ReinjectContextIntoMessages(tracer, scope, messagesList);
