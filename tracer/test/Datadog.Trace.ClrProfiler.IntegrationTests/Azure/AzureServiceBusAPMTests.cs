@@ -339,6 +339,86 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             }
         }
 
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestProcessorWorkaround_BatchLinksDisabled(string packageVersion, string metadataSchemaVersion)
+        {
+            // Candidate customer workaround from the APMS-19950 investigation.
+            // NOTE: the batch-links flag only gates span-link EXTRACTION; the azure_servicebus.receive
+            // span and its context re-injection still run, so this is expected NOT to reconnect the trace.
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED", "false");
+            SetEnvironmentVariable("ASB_TEST_MODE", "Processor");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(1, operationName: "servicebus.process", returnAllOperations: true, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+                Output.WriteLine($"[BatchLinksDisabled] TOTAL SPANS FOUND: {spans.Count}");
+                foreach (var span in spans)
+                {
+                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, TraceId={span.TraceId}, SpanId={span.SpanId}, ParentId={span.ParentId}");
+                }
+
+                var sendSpan = spans.FirstOrDefault(span => span.Name == "azure_servicebus.send");
+                var processSpan = spans.FirstOrDefault(span => span.Name == "servicebus.process");
+
+                sendSpan.Should().NotBeNull("Expected a producer azure_servicebus.send span");
+                processSpan.Should().NotBeNull("Expected a consumer servicebus.process span");
+
+                const string because = "DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED=false should reconnect producer and consumer if it is a valid workaround (APMS-19950)";
+                processSpan.TraceId.Should().Be(sendSpan.TraceId, because);
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestProcessorWorkaround_ServiceBusIntegrationDisabled(string packageVersion, string metadataSchemaVersion)
+        {
+            // Candidate customer workaround: disable the custom Azure Service Bus integration entirely
+            // (which contains the harmful re-injection) and rely on the Azure SDK's own activity-source
+            // propagation. This is expected to reconnect the trace, at the cost of DSM and the custom
+            // azure_servicebus.* spans.
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "false");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "Processor");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(1, operationName: "servicebus.process", returnAllOperations: true, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+                Output.WriteLine($"[ServiceBusIntegrationDisabled] TOTAL SPANS FOUND: {spans.Count}");
+                foreach (var span in spans)
+                {
+                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, TraceId={span.TraceId}, SpanId={span.SpanId}, ParentId={span.ParentId}");
+                }
+
+                // With the custom integration disabled, the message carries the Azure SDK's per-message
+                // "Message" activity context (span.kind=producer, Resource=Message). That is the span the
+                // consumer's ProcessMessage activity parents to. Note the ServiceBusSender.Send
+                // (servicebus.publish) activity is intentionally placed on its own trace by the Azure SDK
+                // and linked, so it is NOT the correct producer anchor to compare against.
+                var producerSpan = spans.FirstOrDefault(span => span.Name == "producer");
+                var processSpan = spans.FirstOrDefault(span => span.Name == "servicebus.process");
+
+                producerSpan.Should().NotBeNull("Expected a producer 'Message' span from the Azure SDK activity source");
+                processSpan.Should().NotBeNull("Expected a consumer servicebus.process span");
+
+                const string because = "disabling the custom ASB integration should let the Azure SDK's own context propagation reconnect producer and consumer (APMS-19950)";
+                processSpan.TraceId.Should().Be(producerSpan.TraceId, because);
+                processSpan.ParentId.Should().Be(producerSpan.SpanId, "the process span should be a child of the producer 'Message' span");
+            }
+        }
+
         private static void ValidateSpanLinks(
             IList<MockSpan> sendSpans,
             IList<MockSpan> receiveSpans,
