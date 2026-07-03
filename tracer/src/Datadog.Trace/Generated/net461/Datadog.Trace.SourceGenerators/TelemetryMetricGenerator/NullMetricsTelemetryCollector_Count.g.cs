@@ -96,6 +96,10 @@ internal sealed partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountStatsCollapsedSpans(Datadog.Trace.Telemetry.Metrics.MetricTags.CollapsedStatsFields tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OversizedStatsFields tag2, int increment = 1)
+    {
+    }
+
     public void RecordCountOpenTelemetryConfigHiddenByDatadogConfig(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1)
     {
     }

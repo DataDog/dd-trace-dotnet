@@ -50,6 +50,38 @@
 
 
 
+
+## [Release 3.48.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.48.0)
+
+## Summary
+
+* [Tracing] Add support for IBMMQ 10.x.x
+* [Client side stats] Fix incorrect statistic generation introduced in 3.43.0
+
+## Changes
+
+### Tracer
+* Add support for IBM MQ 10.x.x (#8835)
+* Fix ObjectDisposedException race in DataStreamsWriter disposal (#8758)
+
+### CI Visibility
+* [CI Visibility] Avoid oversized coverage IPC messages (#8832)
+
+### Debugger
+* [Debugger] Guard static member capture (#8814)
+* [Debugger] Avoid resolving call tokens in exception replay IL scan (#8815)
+
+### Fixes
+* Remove sampling-based weighting in Client Side Stats (#8828)
+
+### Build / Test
+* Update to use dd-sts instead of long-lived credentials (#8809)
+* [Test Package Versions Bump] Updating package versions (#8810)
+* Fix GitHub Actions bugs and update documentation (#8812)
+* [CI] Add net10.0 to AWS Lambda test runtimes (#8819)
+
+[Changes since 3.47.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.47.0...v3.48.0)
+
 ## [Release 3.47.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.47.0)
 
 ## Summary

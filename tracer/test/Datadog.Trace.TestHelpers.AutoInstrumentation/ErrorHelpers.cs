@@ -85,6 +85,20 @@ public static class ErrorHelpers
             return true;
         }
 
+        // Linux/SIGABRT — BadImageFormatException with the "metadata is corrupt" message thrown
+        // while building host configuration at startup (ConfigurationBuilder.Build()). We deliberately
+        // anchor on that frame rather than matching the message anywhere: the retry only exists to
+        // paper over this one known-benign startup manifestation of the race. A "metadata is corrupt"
+        // crash on any other stack could be a genuine tracer-induced corruption and must fail loudly
+        // so it gets investigated (and a new fingerprint added deliberately).
+        if (exitCode == 134
+            && standardError.Contains("System.BadImageFormatException")
+            && standardError.Contains("The metadata is corrupt")
+            && standardError.Contains("Microsoft.Extensions.Configuration.ConfigurationBuilder.Build"))
+        {
+            return true;
+        }
+
         return false;
     }
 
