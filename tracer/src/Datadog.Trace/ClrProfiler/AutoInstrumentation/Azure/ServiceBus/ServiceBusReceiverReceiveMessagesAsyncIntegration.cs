@@ -66,8 +66,14 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
         var spanLinks = ExtractSpanLinksFromMessages(tracer, messagesList);
         var scope = CreateAndConfigureSpan(tracer, spanLinks, instance, messagesList);
 
-        // Re-inject the new span context into all messages so Azure Functions will use it as parent
-        if (scope != null && messagesList != null && messageCount > 0)
+        // Re-inject the new span context into all messages so Azure Functions will use it as parent.
+        // This must only happen under Azure Functions: there, the Functions host reads the message
+        // context to parent the function invocation, and there is no ServiceBusProcessor.ProcessMessage
+        // activity to carry the trace. Outside Azure Functions (e.g. a ServiceBusProcessor consumer),
+        // re-injecting here overwrites the producer's context on the message, so the SDK-created
+        // ServiceBusProcessor.ProcessMessage activity parents to this receive span instead of the
+        // producer, splitting producer and consumer into two disconnected traces (APMS-19950).
+        if (scope != null && messagesList != null && messageCount > 0 && tracer.Settings.IsRunningInAzureFunctions)
         {
             ReinjectContextIntoMessages(tracer, scope, messagesList);
         }
