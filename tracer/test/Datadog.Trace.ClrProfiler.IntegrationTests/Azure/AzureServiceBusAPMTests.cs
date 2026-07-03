@@ -298,6 +298,47 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             }
         }
 
+        [SkippableTheory]
+        [MemberData(nameof(GetEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestProcessorConnectsToProducerTrace(string packageVersion, string metadataSchemaVersion)
+        {
+            // Reproduces APMS-19950: a ServiceBusProcessor consumer with the Azure activity source
+            // enabled (AZURE_EXPERIMENTAL_ENABLE_ACTIVITY_SOURCE=true + DD_TRACE_OTEL_ENABLED=true).
+            // The producer's send and the consumer's ServiceBusProcessor.ProcessMessage should end up
+            // on the same distributed trace. Today the receive integration re-injects its own context
+            // into the message, so the process span lands on a fresh consumer-side trace instead.
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("ASB_TEST_MODE", "Processor");
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                // Wait until the consumer-side process span has been emitted, but return every span.
+                var spans = await agent.WaitForSpansAsync(1, operationName: "servicebus.process", returnAllOperations: true, timeoutInMilliseconds: 30000);
+
+                using var s = new AssertionScope();
+
+                Output.WriteLine($"TOTAL SPANS FOUND: {spans.Count}");
+                foreach (var span in spans)
+                {
+                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, Service={span.Service}, TraceId={span.TraceId}, SpanId={span.SpanId}, ParentId={span.ParentId}");
+                }
+
+                var sendSpan = spans.FirstOrDefault(span => span.Name == "azure_servicebus.send");
+                var processSpan = spans.FirstOrDefault(span => span.Name == "servicebus.process");
+
+                sendSpan.Should().NotBeNull("Expected a producer azure_servicebus.send span");
+                processSpan.Should().NotBeNull("Expected a consumer servicebus.process span (ServiceBusProcessor.ProcessMessage activity)");
+
+                // The core assertion: producer and consumer must share the same distributed trace.
+                const string because = "the ServiceBusProcessor.ProcessMessage span must be part of the producer's trace, otherwise producer and consumer show up as two disconnected traces (APMS-19950)";
+                processSpan.TraceId.Should().Be(sendSpan.TraceId, because);
+            }
+        }
+
         private static void ValidateSpanLinks(
             IList<MockSpan> sendSpans,
             IList<MockSpan> receiveSpans,
