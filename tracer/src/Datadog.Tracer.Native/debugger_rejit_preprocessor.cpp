@@ -350,7 +350,7 @@ void DebuggerRejitPreprocessor::EnqueueNewMethod(const std::shared_ptr<MethodPro
                                                  unsigned methodDef, const FunctionInfo& functionInfo,
                                                  RejitHandlerModule* moduleHandler)
 {
-    auto [hr, newMethodDef, newFunctionInfo] = 
+    auto [hr, newMethodDef, newFunctionInfo] =
         PickMethodToRejit(metadataImport, metadataEmit, typeDef, methodDef, functionInfo);
     if (hr != S_OK)
     {

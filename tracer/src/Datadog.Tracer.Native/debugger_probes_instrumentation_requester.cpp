@@ -17,9 +17,160 @@
 #include <fstream>
 #include <map>
 #include <random>
+#include <atomic>
+#include <mutex>
 
 namespace debugger
 {
+
+namespace
+{
+std::atomic<int> flowRecorderInstrumentAllMethodCount{0};
+std::mutex flowRecorderMetadataFileMutex;
+
+bool IsFlowRecorderGeneratedOrHelperMethod(const FunctionInfo& caller)
+{
+    return caller.type.name.rfind(WStr("__DD"), 0) == 0 ||
+           caller.type.name.find(WStr("FlowRecorder")) != WSTRING::npos ||
+           caller.type.name.find(WStr("LiveDebuggerPoc.Viewer")) != WSTRING::npos ||
+           caller.name.rfind(WStr("<"), 0) == 0 && caller.name != WStr("<Main>");
+}
+
+bool FlowRecorderNameMatchesTokenList(const FunctionInfo& caller, const WSTRING& filter)
+{
+    if (filter.empty())
+    {
+        return false;
+    }
+
+    const auto fullName = caller.type.name + WStr(".") + caller.name;
+    size_t start = 0;
+    while (start < filter.size())
+    {
+        auto end = filter.find_first_of(WStr(",;"), start);
+        if (end == WSTRING::npos)
+        {
+            end = filter.size();
+        }
+
+        if (end > start)
+        {
+            const auto token = filter.substr(start, end - start);
+            if (!token.empty() && fullName.find(token) != WSTRING::npos)
+            {
+                return true;
+            }
+        }
+
+        start = end + 1;
+    }
+
+    return false;
+}
+
+bool IsFlowRecorderValueCaptureMethod(const FunctionInfo& caller, const WSTRING& filter)
+{
+    return FlowRecorderNameMatchesTokenList(caller, filter);
+}
+
+bool IsFlowRecorderValueCaptureEnabled()
+{
+    const auto mode = GetDebuggerFlowRecorderCaptureValues();
+    return mode == WStr("all") ||
+           mode == WStr("entry") ||
+           mode == WStr("exit") ||
+           mode == WStr("exceptions");
+}
+
+bool ShouldCaptureFlowRecorderValuesForMethod(const FunctionInfo& caller)
+{
+    if (!IsFlowRecorderValueCaptureEnabled())
+    {
+        return false;
+    }
+
+    const auto filter = GetDebuggerFlowRecorderCaptureValueMethods();
+    return filter.empty() || IsFlowRecorderValueCaptureMethod(caller, filter);
+}
+
+bool IsFlowRecorderLowValueMethod(const FunctionInfo& caller)
+{
+    if (caller.name.rfind(WStr("get_"), 0) == 0 ||
+        caller.name.rfind(WStr("set_"), 0) == 0 ||
+        caller.name.rfind(WStr("add_"), 0) == 0 ||
+        caller.name.rfind(WStr("remove_"), 0) == 0 ||
+        caller.name.rfind(WStr("op_"), 0) == 0)
+    {
+        return true;
+    }
+
+    if (caller.name == WStr(".ctor") || caller.name == WStr(".cctor"))
+    {
+        return true;
+    }
+
+    if (caller.type.name.find(WStr("<>")) != WSTRING::npos ||
+        caller.type.name.find(WStr("__StaticArrayInitTypeSize")) != WSTRING::npos ||
+        caller.type.name.find(WStr("DisplayClass")) != WSTRING::npos ||
+        caller.type.name.find(WStr("AnonymousType")) != WSTRING::npos)
+    {
+        return true;
+    }
+
+    return FlowRecorderNameMatchesTokenList(caller, GetDebuggerFlowRecorderExcludeMethods());
+}
+
+std::string EscapeFlowRecorderMetadataField(const WSTRING& value)
+{
+    auto text = ToString(value);
+    std::string escaped;
+    escaped.reserve(text.size());
+    for (const auto ch : text)
+    {
+        switch (ch)
+        {
+            case '\\':
+                escaped += "\\\\";
+                break;
+            case '\t':
+                escaped += "\\t";
+                break;
+            case '\r':
+                escaped += "\\r";
+                break;
+            case '\n':
+                escaped += "\\n";
+                break;
+            default:
+                escaped += ch;
+                break;
+        }
+    }
+
+    return escaped;
+}
+
+void WriteFlowRecorderMethodMetadataSidecar(const int methodMetadataIndex, const FunctionInfo& caller)
+{
+    const auto outputPath = GetEnvironmentValue(environment::internal_flow_recorder_output_path);
+    if (outputPath.empty() || methodMetadataIndex < 0)
+    {
+        return;
+    }
+
+    const auto displayName = caller.type.name + WStr(".") + caller.name;
+    const auto sidecarPath = ToString(outputPath) + ".methods";
+    std::lock_guard lock(flowRecorderMetadataFileMutex);
+    std::ofstream sidecar(sidecarPath, std::ios::out | std::ios::app | std::ios::binary);
+    if (!sidecar.is_open())
+    {
+        Logger::Debug("Flow recorder could not open method metadata sidecar: ", sidecarPath);
+        return;
+    }
+
+    sidecar << methodMetadataIndex << '\t' << EscapeFlowRecorderMetadataField(displayName) << '\n';
+}
+}
 
 /**
  * \brief For testing purposes only. This method is used to determine if we are in "instrument-all mode", in which case
@@ -168,6 +319,7 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
             return;
         }
 
+        const auto isFlowRecorderEnabled = IsDebuggerFlowRecorderEnabled();
         const auto assembly_name = module_info.assembly.name;
 
         if (IsCoreLibOr3rdParty(assembly_name))
@@ -213,6 +365,20 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
                       " ModuleName=", module_info.assembly.name, " MethodName=", caller.name,
                       " TypeName=", caller.type.name);
 
+        if (isFlowRecorderEnabled && IsFlowRecorderGeneratedOrHelperMethod(caller))
+        {
+            Logger::Debug("Instrument-All: skipping flow recorder instrumentation for generated/helper method: ",
+                          caller.type.name, ".", caller.name);
+            return;
+        }
+
+        if (isFlowRecorderEnabled && IsFlowRecorderLowValueMethod(caller))
+        {
+            Logger::Debug("Instrument-All: skipping low-value flow recorder method: ",
+                          caller.type.name, ".", caller.name);
+            return;
+        }
+
         // In the Debugger product, we don't care about module versioning. Thus we intentionally avoid it.
         const static Version& minVersion = Version(0, 0, 0, 0);
         const static Version& maxVersion = Version(65535, 65535, 65535, 0);
@@ -234,10 +400,77 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
             signatureTypes.push_back(methodArguments[i].GetTypeTokName(metadataImport));
         }
 
-        const auto& methodProbe = std::make_shared<MethodProbeDefinition>(MethodProbeDefinition(
-            GenerateRandomProbeId(),
-            MethodReference(targetAssembly, caller.type.name, caller.name, minVersion, maxVersion, signatureTypes),
-            /* is_exact_signature_match */ false));
+        if (isFlowRecorderEnabled &&
+            (caller.name == WStr("<Main>") ||
+             (caller.name == WStr("MoveNext") && caller.type.name.find(WStr("<Main>")) != WSTRING::npos)))
+        {
+            Logger::Debug("Instrument-All: skipping flow recorder instrumentation for async Main orchestration method: ",
+                          caller.type.name, ".", caller.name);
+            return;
+        }
+
+        if (isFlowRecorderEnabled && caller.name != WStr("MoveNext"))
+        {
+            bool hasAsyncStateMachineAttribute = false;
+            hr = HasAsyncStateMachineAttribute(metadataImport, function_token, hasAsyncStateMachineAttribute);
+            if (FAILED(hr))
+            {
+                Logger::Debug("Instrument-All: failed to inspect AsyncStateMachineAttribute for flow recorder method: ",
+                              caller.type.name, ".", caller.name);
+                return;
+            }
+
+            if (hasAsyncStateMachineAttribute)
+            {
+                Logger::Debug("Instrument-All: skipping flow recorder instrumentation for async kickoff method: ",
+                              caller.type.name, ".", caller.name);
+                return;
+            }
+
+            const auto returnTypeName = caller.method_signature.GetReturnValue().GetTypeTokName(metadataImport);
+            if (returnTypeName.rfind(WStr("System.Threading.Tasks.Task"), 0) == 0 ||
+                returnTypeName.rfind(WStr("System.Threading.Tasks.ValueTask"), 0) == 0)
+            {
+                Logger::Debug("Instrument-All: skipping flow recorder instrumentation for task-like kickoff method: ",
+                              caller.type.name, ".", caller.name, " returnType=", returnTypeName);
+                return;
+            }
+        }
+
+        if (isFlowRecorderEnabled)
+        {
+            const auto maxMethods = GetDebuggerFlowRecorderMaxMethods();
+            const auto currentCount = flowRecorderInstrumentAllMethodCount.fetch_add(1) + 1;
+            if (currentCount > maxMethods)
+            {
+                if (currentCount == maxMethods + 1)
+                {
+                    Logger::Warn("Instrument-All: flow recorder method budget reached. Max methods=", maxMethods);
+                }
+
+                return;
+            }
+        }
+
+        const auto captureValues = isFlowRecorderEnabled && ShouldCaptureFlowRecorderValuesForMethod(caller);
+        if (isFlowRecorderEnabled)
+        {
+            const auto instrumentedMethodIndex =
+                ProbesMetadataTracker::Instance()->GetInstrumentedMethodIndex(module_id, function_token);
+            WriteFlowRecorderMethodMetadataSidecar(instrumentedMethodIndex, caller);
+        }
+
+        const auto& methodProbe = isFlowRecorderEnabled
+            ? std::static_pointer_cast<MethodProbeDefinition>(
+                std::make_shared<FlowRecorderProbeDefinition>(
+                    GenerateRandomProbeId(),
+                    MethodReference(targetAssembly, caller.type.name, caller.name, minVersion, maxVersion, signatureTypes),
+                    /* is_exact_signature_match */ false,
+                    captureValues))
+            : std::make_shared<MethodProbeDefinition>(
+                GenerateRandomProbeId(),
+                MethodReference(targetAssembly, caller.type.name, caller.name, minVersion, maxVersion, signatureTypes),
+                /* is_exact_signature_match */ false);
 
         const auto numReJITs = m_debugger_rejit_preprocessor->RequestRejitForLoadedModules(
             std::vector{module_id}, std::vector{methodProbe}, /* enqueueInSameThread */ true);
@@ -1036,6 +1269,43 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
 
         Logger::Debug("DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule: Added IsFirstEntry field [ModuleId=", moduleInfo.id, ", Assembly=", moduleInfo.assembly.name,
                       ", Type=", typeInfo.name, ", IsValueType=", typeInfo.valueType, "]");
+
+        if (IsDebuggerFlowRecorderEnabled() && !IsDebuggerFlowRecorderEntryOnlyRewriteMode())
+        {
+            COR_SIGNATURE flowRecorderAsyncFieldSignature[2];
+            flowRecorderAsyncFieldSignature[0] = IMAGE_CEE_CS_CALLCONV_FIELD;
+            flowRecorderAsyncFieldSignature[1] = ELEMENT_TYPE_I8;
+
+            mdFieldDef operationIdField = mdFieldDefNil;
+            hr = metadataEmit->DefineField(typeDef, managed_profiler_debugger_flow_recorder_async_operation_id_field_name.c_str(),
+                                           fdPrivate | mdHideBySig | fdSpecialName, flowRecorderAsyncFieldSignature,
+                                           sizeof(flowRecorderAsyncFieldSignature), 0, nullptr, 0, &operationIdField);
+            if (FAILED(hr))
+            {
+                Logger::Error("DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule: DefineField "
+                              "_flowRecorderOperationId failed");
+            }
+            else
+            {
+                Logger::Debug("DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule: Added Flow Recorder async operation id field [ModuleId=", moduleInfo.id, ", Assembly=", moduleInfo.assembly.name,
+                              ", Type=", typeInfo.name, ", IsValueType=", typeInfo.valueType, "]");
+            }
+
+            mdFieldDef generationField = mdFieldDefNil;
+            hr = metadataEmit->DefineField(typeDef, managed_profiler_debugger_flow_recorder_async_generation_field_name.c_str(),
+                                           fdPrivate | mdHideBySig | fdSpecialName, flowRecorderAsyncFieldSignature,
+                                           sizeof(flowRecorderAsyncFieldSignature), 0, nullptr, 0, &generationField);
+            if (FAILED(hr))
+            {
+                Logger::Error("DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule: DefineField "
+                              "_flowRecorderGeneration failed");
+            }
+            else
+            {
+                Logger::Debug("DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule: Added Flow Recorder async generation field [ModuleId=", moduleInfo.id, ", Assembly=", moduleInfo.assembly.name,
+                              ", Type=", typeInfo.name, ", IsValueType=", typeInfo.valueType, "]");
+            }
+        }
     }
 }
 

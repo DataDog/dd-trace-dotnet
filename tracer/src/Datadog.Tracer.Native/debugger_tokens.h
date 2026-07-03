@@ -64,6 +64,8 @@ static const WSTRING managed_profiler_debugger_async_linestatetype = WStr("Datad
 
 // Async method probes
 static const WSTRING managed_profiler_debugger_is_first_entry_field_name = WStr("<>dd_liveDebugger_isReEntryToMoveNext");
+static const WSTRING managed_profiler_debugger_flow_recorder_async_operation_id_field_name = WStr("<>dd_flowRecorder_operationId");
+static const WSTRING managed_profiler_debugger_flow_recorder_async_generation_field_name = WStr("<>dd_flowRecorder_generation");
 static const WSTRING managed_profiler_debugger_async_method_debugger_state_field_name = WStr("LogState"); // See `Datadog.Trace.Debugger.Instrumentation.AsyncDebuggerState.LogState`
 static const WSTRING managed_profiler_debugger_begin_async_method_name = WStr("BeginMethod");
 // Also defined in `dd_profiler_constants.h` as `asyncmethoddebuggerinvokerv2_type_name`
@@ -79,6 +81,21 @@ static const WSTRING managed_profiler_debugger_span_state_type = WStr("Datadog.T
 // Instrumentation Allocator
 static const WSTRING instrumentation_allocator_invoker_name = WStr("Datadog.Trace.Debugger.Instrumentation.InstrumentationAllocator");
 
+// Live debugger POC flow recorder
+static const WSTRING managed_profiler_debugger_flow_recorder_type = WStr("Datadog.Trace.Debugger.LiveDebuggerPoc.FlowRecorder");
+static const WSTRING managed_profiler_debugger_flow_recorder_state_type = WStr("Datadog.Trace.Debugger.LiveDebuggerPoc.FlowRecorderState");
+static const WSTRING managed_profiler_debugger_flow_recorder_enter_name = WStr("Enter");
+static const WSTRING managed_profiler_debugger_flow_recorder_enter_fast_name = WStr("EnterFast");
+static const WSTRING managed_profiler_debugger_flow_recorder_enter_async_step_name = WStr("EnterAsyncStep");
+static const WSTRING managed_profiler_debugger_flow_recorder_enter_async_step_fast_name = WStr("EnterAsyncStepFast");
+static const WSTRING managed_profiler_debugger_flow_recorder_enter_detached_name = WStr("EnterDetached");
+static const WSTRING managed_profiler_debugger_flow_recorder_exit_name = WStr("Exit");
+static const WSTRING managed_profiler_debugger_flow_recorder_exit_fast_name = WStr("ExitFast");
+static const WSTRING managed_profiler_debugger_flow_recorder_should_capture_values_name = WStr("ShouldCaptureValues");
+static const WSTRING managed_profiler_debugger_flow_recorder_log_arg_name = WStr("LogArg");
+static const WSTRING managed_profiler_debugger_flow_recorder_log_local_name = WStr("LogLocal");
+static const WSTRING managed_profiler_debugger_flow_recorder_log_field_name = WStr("LogField");
+static const WSTRING managed_profiler_debugger_flow_recorder_log_return_name = WStr("LogReturn");
 
 /// <summary>
 /// Class to control all the token references of the module where the Debugger will be called.
@@ -163,8 +180,26 @@ private:
     mdTypeRef methodSpanProbeDebuggerStateTypeRef = mdTypeRefNil;
     mdTypeRef methodSpanProbeDebuggerInvokerTypeRef = mdTypeRefNil;
 
+    // Live debugger POC flow recorder members:
+    mdTypeRef flowRecorderTypeRef = mdTypeRefNil;
+    mdTypeRef flowRecorderStateTypeRef = mdTypeRefNil;
+    mdMemberRef flowRecorderEnterRef = mdMemberRefNil;
+    mdMemberRef flowRecorderEnterFastRef = mdMemberRefNil;
+    mdMemberRef flowRecorderEnterAsyncStepRef = mdMemberRefNil;
+    mdMemberRef flowRecorderEnterAsyncStepFastRef = mdMemberRefNil;
+    mdMemberRef flowRecorderEnterDetachedRef = mdMemberRefNil;
+    mdMemberRef flowRecorderExitRef = mdMemberRefNil;
+    mdMemberRef flowRecorderExitFastRef = mdMemberRefNil;
+    mdMemberRef flowRecorderShouldCaptureValuesRef = mdMemberRefNil;
+    mdMemberRef flowRecorderLogArgRef = mdMemberRefNil;
+    mdMemberRef flowRecorderLogLocalRef = mdMemberRefNil;
+    mdMemberRef flowRecorderLogFieldRef = mdMemberRefNil;
+    mdMemberRef flowRecorderLogReturnRef = mdMemberRefNil;
+
     HRESULT WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeSignature& argOrLocal, ILInstr** instruction,
                                bool isArg, ProbeType probeType);
+    HRESULT WriteFlowRecorderLogArgOrLocal(void* rewriterWrapperPtr, const TypeSignature& argOrLocal,
+                                           ILInstr** instruction, bool isArg);
 
     [[nodiscard]] mdTypeRef GetDebuggerInvoker(const ProbeType probeType) const
     {
@@ -586,8 +621,24 @@ public:
     HRESULT WriteRentArray(void* rewriterWrapperPtr, const TypeSignature& currentType, ILInstr** instruction);
 
     HRESULT GetIsFirstEntryToMoveNextFieldToken(mdToken type, mdFieldDef& token);
+    HRESULT GetFlowRecorderAsyncOperationIdFieldToken(mdToken type, mdFieldDef& token);
+    HRESULT GetFlowRecorderAsyncGenerationFieldToken(mdToken type, mdFieldDef& token);
 
     HRESULT WriteDispose(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType);
+
+    mdTypeRef GetFlowRecorderStateTypeRef();
+    HRESULT WriteFlowRecorderEnter(void* rewriterWrapperPtr, ILInstr** instruction);
+    HRESULT WriteFlowRecorderEnterFast(void* rewriterWrapperPtr, ILInstr** instruction);
+    HRESULT WriteFlowRecorderEnterAsyncStep(void* rewriterWrapperPtr, ILInstr** instruction);
+    HRESULT WriteFlowRecorderEnterAsyncStepFast(void* rewriterWrapperPtr, ILInstr** instruction);
+    HRESULT WriteFlowRecorderEnterDetached(void* rewriterWrapperPtr, ILInstr** instruction);
+    HRESULT WriteFlowRecorderExit(void* rewriterWrapperPtr, ILInstr** instruction);
+    HRESULT WriteFlowRecorderExitFast(void* rewriterWrapperPtr, ILInstr** instruction);
+    HRESULT WriteFlowRecorderShouldCaptureValues(void* rewriterWrapperPtr, ILInstr** instruction);
+    HRESULT WriteFlowRecorderLogArg(void* rewriterWrapperPtr, const TypeSignature& argument, ILInstr** instruction);
+    HRESULT WriteFlowRecorderLogLocal(void* rewriterWrapperPtr, const TypeSignature& local, ILInstr** instruction);
+    HRESULT WriteFlowRecorderLogField(void* rewriterWrapperPtr, const TypeSignature& field, ILInstr** instruction);
+    HRESULT WriteFlowRecorderLogReturn(void* rewriterWrapperPtr, TypeSignature* returnArgument, ILInstr** instruction);
 };
 
 } // namespace debugger

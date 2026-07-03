@@ -100,6 +100,32 @@ struct MethodProbeDefinition : public ProbeDefinition
 
 typedef std::vector<std::shared_ptr<MethodProbeDefinition>> MethodProbeDefinitions;
 
+struct FlowRecorderProbeDefinition : public MethodProbeDefinition
+{
+    FlowRecorderProbeDefinition(shared::WSTRING probeId, trace::MethodReference&& targetMethod,
+                                bool is_exact_signature_match, bool captureValues = false) :
+        MethodProbeDefinition(std::move(probeId), std::move(targetMethod), is_exact_signature_match),
+        capture_values(captureValues)
+    {
+    }
+
+    FlowRecorderProbeDefinition(const FlowRecorderProbeDefinition& other) :
+        MethodProbeDefinition(other),
+        capture_values(other.capture_values)
+    {
+    }
+
+    inline bool operator==(const FlowRecorderProbeDefinition& other) const
+    {
+        return probeId == other.probeId && target_method == other.target_method &&
+               is_exact_signature_match == other.is_exact_signature_match;
+    }
+
+    bool capture_values;
+};
+
+typedef std::vector<std::shared_ptr<FlowRecorderProbeDefinition>> FlowRecorderProbeDefinitions;
+
 struct LineProbeDefinition : public ProbeDefinition
 {
     int bytecodeOffset;

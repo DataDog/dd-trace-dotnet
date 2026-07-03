@@ -23,6 +23,10 @@ public:
 private:
     static HRESULT GetFunctionLocalSignature(const ModuleMetadata& module_metadata, ILRewriter& rewriter,
                                              FunctionLocalSignature& localSignature);
+    static HRESULT ModifyLocalSigForFlowRecorder(ModuleMetadata& moduleMetadata, DebuggerTokens* debuggerTokens,
+                                                 ILRewriter& rewriter, TypeSignature* methodReturnValue,
+                                                 bool isVoid, ULONG* returnValueIndex, ULONG* exceptionIndex,
+                                                 ULONG* flowRecorderStateIndex);
     HRESULT LoadArgument(bool isStatic, const ILRewriterWrapper& rewriterWrapper,
                                 int argumentIndex, const TypeSignature& argument) const;
     HRESULT LoadLocal(const ILRewriterWrapper& rewriterWrapper, int localIndex,
@@ -45,6 +49,10 @@ private:
                                         ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex,
                                  ILInstr** beginCallInstruction, ProbeType probeType,
                                  mdFieldDef isReEntryFieldTok = mdFieldDefNil) const;
+    HRESULT WriteFlowRecorderValues(ModuleMetadata& moduleMetadata, DebuggerTokens* debuggerTokens, bool isStatic,
+                                    const std::vector<TypeSignature>& values, int numValues,
+                                    ILRewriter& rewriter, ILRewriterWrapper& rewriterWrapper,
+                                    ULONG flowRecorderStateIndex, bool isArgs) const;
     static HRESULT LoadInstanceIntoStack(FunctionInfo* caller, bool isStatic, const ILRewriterWrapper& rewriterWrapper,
                                          ILInstr** outLoadArgumentInstr, CallTargetTokens* callTargetTokens);
     HRESULT CallLineProbe(int instrumentedMethodIndex, ModuleID module_id,
@@ -70,9 +78,19 @@ private:
                              const std::vector<TypeSignature>& methodArguments, int numArgs, ILRewriter& rewriter,
                              const std::vector<TypeSignature>& methodLocals, int numLocals,
                              ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex, ULONG exceptionIndex,
-                             ULONG callTargetReturnIndex, ULONG returnValueIndex, ULONG multiProbeStatesIndex, mdToken callTargetReturnToken,
-                             ILInstr* firstInstruction, int instrumentedMethodIndex, ILInstr* const& beforeLineProbe,
+                             ULONG callTargetReturnIndex, ULONG returnValueIndex, ULONG multiProbeStatesIndex,
+                             mdToken callTargetReturnToken, ILInstr* firstInstruction, int instrumentedMethodIndex, ILInstr* const& beforeLineProbe,
                              std::vector<EHClause>& newClauses) const;
+
+    HRESULT ApplyFlowRecorderProbe(FunctionInfo* caller,
+                                   ModuleMetadata& moduleMetadata, DebuggerTokens* debuggerTokens, bool isVoid,
+                                   ILRewriter& rewriter, ILRewriterWrapper& rewriterWrapper,
+                                   ULONG exceptionIndex, ULONG returnValueIndex, ULONG flowRecorderStateIndex,
+                                   mdToken functionToken, int instrumentedMethodIndex, ILInstr* const& beforeLineProbe,
+                                   bool isAsyncMethod, bool captureValues, bool isStatic,
+                                   const std::vector<TypeSignature>& methodArguments, int numArgs,
+                                   const std::vector<TypeSignature>& methodLocals, int numLocals,
+                                   TypeSignature* methodReturnType, std::vector<EHClause>& newClauses) const;
 
     HRESULT ApplyMethodSpanProbe(ModuleID module_id, ModuleMetadata& module_metadata, FunctionInfo* caller,
                             DebuggerTokens* debuggerTokens, mdToken function_token, TypeSignature retFuncArg,
@@ -120,7 +138,8 @@ private:
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
                     ICorProfilerFunctionControl* pFunctionControl, ICorProfilerInfo* pCorProfilerInfo,
                     MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
-                    SpanProbeOnMethodDefinitions& spanProbesOnMethod) const;
+                    SpanProbeOnMethodDefinitions& spanProbesOnMethod,
+                    FlowRecorderProbeDefinitions& flowRecorderProbes) const;
     static std::vector<ILInstr*> GetBranchTargets(ILRewriter* pRewriter);
     static void AdjustBranchTargets(ILInstr* pFromInstr, ILInstr* pToInstr, const std::vector<ILInstr*>& branchTargets);
     static void AdjustExceptionHandlingClauses(ILInstr* pFromInstr, ILInstr* pToInstr, ILRewriter* pRewriter);
@@ -137,13 +156,18 @@ public:
     static HRESULT GetTaskReturnType(const ILInstr* instruction, ModuleMetadata& moduleMetadata,
                                      const std::vector<TypeSignature>& methodLocals, TypeSignature* returnType);
     static void MarkAllProbesAsInstrumented(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
-                                     SpanProbeOnMethodDefinitions& spanOnMethodProbes);
+                                     SpanProbeOnMethodDefinitions& spanOnMethodProbes,
+                                     FlowRecorderProbeDefinitions& flowRecorderProbes);
     static void MarkAllProbesAsError(MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
                                      SpanProbeOnMethodDefinitions& spanOnMethodProbes,
+                                     FlowRecorderProbeDefinitions& flowRecorderProbes,
                                      const WSTRING& reasoning);
     static void MarkAllLineProbesAsError(LineProbeDefinitions& lineProbes, const WSTRING& reasoning);
     static void MarkAllMethodProbesAsError(MethodProbeDefinitions& methodProbes, const WSTRING& reasoning);
     static void MarkAllSpanOnMethodProbesAsError(SpanProbeOnMethodDefinitions& spanProbes, const WSTRING& reasoning);
+    static void MarkAllFlowRecorderProbesAsInstrumented(FlowRecorderProbeDefinitions& flowRecorderProbes);
+    static void MarkAllFlowRecorderProbesAsError(FlowRecorderProbeDefinitions& flowRecorderProbes,
+                                                 const WSTRING& reasoning);
 };
 
 } // namespace debugger

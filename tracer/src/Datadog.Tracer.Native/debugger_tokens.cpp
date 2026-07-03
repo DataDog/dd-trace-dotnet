@@ -163,6 +163,116 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
     return S_OK;
 }
 
+HRESULT DebuggerTokens::WriteFlowRecorderLogArgOrLocal(void* rewriterWrapperPtr, const TypeSignature& argOrLocal,
+                                                       ILInstr** instruction, bool isArg)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+    mdMemberRef logArgOrLocalRef = isArg ? flowRecorderLogArgRef : flowRecorderLogLocalRef;
+
+    if (logArgOrLocalRef == mdMemberRefNil)
+    {
+        auto targetMemberName = isArg
+            ? managed_profiler_debugger_flow_recorder_log_arg_name.data()
+            : managed_profiler_debugger_flow_recorder_log_local_name.data();
+
+        unsigned flowRecorderStateTypeRefBuffer;
+        const auto flowRecorderStateTypeRefSize =
+            CorSigCompressToken(flowRecorderStateTypeRef, &flowRecorderStateTypeRefBuffer);
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+        signature[offset++] = 0x01; // one generic arg/local
+        signature[offset++] = 0x03; // value, index, state
+        signature[offset++] = ELEMENT_TYPE_VOID;
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_MVAR;
+        signature[offset++] = 0x00;
+        signature[offset++] = ELEMENT_TYPE_I4;
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &flowRecorderStateTypeRefBuffer, flowRecorderStateTypeRefSize);
+        offset += flowRecorderStateTypeRefSize;
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(
+            flowRecorderTypeRef, targetMemberName, signature, offset, &logArgOrLocalRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper flow recorder ", isArg ? "LogArg" : "LogLocal", " could not be defined.");
+            return hr;
+        }
+
+        if (isArg)
+        {
+            flowRecorderLogArgRef = logArgOrLocalRef;
+        }
+        else
+        {
+            flowRecorderLogLocalRef = logArgOrLocalRef;
+        }
+    }
+
+    PCCOR_SIGNATURE argumentSignatureBuffer;
+    ULONG argumentSignatureSize;
+    auto signatureLength = 2;
+    const auto [elementType, argTypeFlags] = argOrLocal.GetElementTypeAndFlags();
+    if (argTypeFlags & TypeFlagByRef)
+    {
+        PCCOR_SIGNATURE argSigBuff;
+        auto signatureSize = argOrLocal.GetSignature(argSigBuff);
+        if (argSigBuff[0] == ELEMENT_TYPE_BYREF || argSigBuff[0] == ELEMENT_TYPE_PTR)
+        {
+            argumentSignatureBuffer = argSigBuff + 1;
+            argumentSignatureSize = signatureSize - 1;
+            signatureLength += signatureSize - 1;
+        }
+        else if (argSigBuff[0] == ELEMENT_TYPE_PINNED)
+        {
+            argumentSignatureBuffer = argSigBuff + 2;
+            argumentSignatureSize = signatureSize - 2;
+            signatureLength += signatureSize - 2;
+        }
+        else
+        {
+            argumentSignatureBuffer = argSigBuff;
+            argumentSignatureSize = signatureSize;
+            signatureLength += signatureSize;
+        }
+    }
+    else
+    {
+        auto signatureSize = argOrLocal.GetSignature(argumentSignatureBuffer);
+        argumentSignatureSize = signatureSize;
+        signatureLength += signatureSize;
+    }
+
+    COR_SIGNATURE methodSpecSignature[signatureBufferSize];
+    unsigned offset = 0;
+    methodSpecSignature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+    methodSpecSignature[offset++] = 0x01;
+    memcpy(&methodSpecSignature[offset], argumentSignatureBuffer, argumentSignatureSize);
+    offset += argumentSignatureSize;
+
+    mdMethodSpec methodSpec = mdMethodSpecNil;
+    hr = module_metadata->metadata_emit->DefineMethodSpec(logArgOrLocalRef, methodSpecSignature, signatureLength,
+                                                          &methodSpec);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error creating FlowRecorder LogArg or LogLocal method spec.");
+        return hr;
+    }
+
+    *instruction = rewriterWrapper->CallMember(methodSpec, false);
+    return S_OK;
+}
+
 HRESULT DebuggerTokens::EnsureBaseCalltargetTokens()
 {
     std::lock_guard<std::recursive_mutex> guard(metadata_mutex);
@@ -280,6 +390,30 @@ HRESULT DebuggerTokens::EnsureBaseCalltargetTokens()
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper rentArrayTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure FlowRecorder type ref
+    if (flowRecorderTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(
+            profilerAssemblyRef, managed_profiler_debugger_flow_recorder_type.data(), &flowRecorderTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper flowRecorderTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure FlowRecorderState type ref
+    if (flowRecorderStateTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(
+            profilerAssemblyRef, managed_profiler_debugger_flow_recorder_state_type.data(), &flowRecorderStateTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper flowRecorderStateTypeRef could not be defined.");
             return hr;
         }
     }
@@ -1493,6 +1627,30 @@ HRESULT DebuggerTokens::GetIsFirstEntryToMoveNextFieldToken(const mdToken type, 
     return hr;
 }
 
+HRESULT DebuggerTokens::GetFlowRecorderAsyncOperationIdFieldToken(const mdToken type, mdFieldDef& token)
+{
+    const ModuleMetadata* module_metadata = GetMetadata();
+    ULONG cTokens;
+    HCORENUM henum = nullptr;
+    const HRESULT hr = module_metadata->metadata_import->EnumFieldsWithName(
+        &henum, type, managed_profiler_debugger_flow_recorder_async_operation_id_field_name.c_str(), &token, 1,
+        &cTokens);
+    module_metadata->metadata_import->CloseEnum(henum);
+    return hr;
+}
+
+HRESULT DebuggerTokens::GetFlowRecorderAsyncGenerationFieldToken(const mdToken type, mdFieldDef& token)
+{
+    const ModuleMetadata* module_metadata = GetMetadata();
+    ULONG cTokens;
+    HCORENUM henum = nullptr;
+    const HRESULT hr = module_metadata->metadata_import->EnumFieldsWithName(
+        &henum, type, managed_profiler_debugger_flow_recorder_async_generation_field_name.c_str(), &token, 1,
+        &cTokens);
+    module_metadata->metadata_import->CloseEnum(henum);
+    return hr;
+}
+
 HRESULT DebuggerTokens::WriteDispose(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType)
 {
     auto hr = EnsureBaseCalltargetTokens();
@@ -1549,6 +1707,512 @@ HRESULT DebuggerTokens::WriteDispose(void* rewriterWrapperPtr, ILInstr** instruc
     }
 
     *instruction = rewriterWrapper->CallMember(disposeRef, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderEnter(void* rewriterWrapperPtr, ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (flowRecorderEnterRef == mdMemberRefNil)
+    {
+        unsigned flowRecorderStateTypeRefBuffer;
+        const auto flowRecorderStateTypeRefSize =
+            CorSigCompressToken(flowRecorderStateTypeRef, &flowRecorderStateTypeRefBuffer);
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x01; // arguments count
+
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &flowRecorderStateTypeRefBuffer, flowRecorderStateTypeRefSize);
+        offset += flowRecorderStateTypeRefSize;
+
+        signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(
+            flowRecorderTypeRef, managed_profiler_debugger_flow_recorder_enter_name.data(), signature, offset,
+            &flowRecorderEnterRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper flowRecorderEnterRef could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(flowRecorderEnterRef, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderEnterFast(void* rewriterWrapperPtr, ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (flowRecorderEnterFastRef == mdMemberRefNil)
+    {
+        unsigned flowRecorderStateTypeRefBuffer;
+        const auto flowRecorderStateTypeRefSize =
+            CorSigCompressToken(flowRecorderStateTypeRef, &flowRecorderStateTypeRefBuffer);
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x01; // arguments count
+
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &flowRecorderStateTypeRefBuffer, flowRecorderStateTypeRefSize);
+        offset += flowRecorderStateTypeRefSize;
+
+        signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(
+            flowRecorderTypeRef, managed_profiler_debugger_flow_recorder_enter_fast_name.data(), signature, offset,
+            &flowRecorderEnterFastRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper flowRecorderEnterFastRef could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(flowRecorderEnterFastRef, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderEnterAsyncStep(void* rewriterWrapperPtr, ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (flowRecorderEnterAsyncStepRef == mdMemberRefNil)
+    {
+        unsigned flowRecorderStateTypeRefBuffer;
+        const auto flowRecorderStateTypeRefSize =
+            CorSigCompressToken(flowRecorderStateTypeRef, &flowRecorderStateTypeRefBuffer);
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x03; // arguments count
+
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &flowRecorderStateTypeRefBuffer, flowRecorderStateTypeRefSize);
+        offset += flowRecorderStateTypeRefSize;
+
+        signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_I8; // operationId
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_I8; // generation
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(
+            flowRecorderTypeRef, managed_profiler_debugger_flow_recorder_enter_async_step_name.data(), signature, offset,
+            &flowRecorderEnterAsyncStepRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper flowRecorderEnterAsyncStepRef could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(flowRecorderEnterAsyncStepRef, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderEnterAsyncStepFast(void* rewriterWrapperPtr, ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (flowRecorderEnterAsyncStepFastRef == mdMemberRefNil)
+    {
+        unsigned flowRecorderStateTypeRefBuffer;
+        const auto flowRecorderStateTypeRefSize =
+            CorSigCompressToken(flowRecorderStateTypeRef, &flowRecorderStateTypeRefBuffer);
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x03; // arguments count
+
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &flowRecorderStateTypeRefBuffer, flowRecorderStateTypeRefSize);
+        offset += flowRecorderStateTypeRefSize;
+
+        signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_I8; // operationId
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_I8; // generation
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(
+            flowRecorderTypeRef, managed_profiler_debugger_flow_recorder_enter_async_step_fast_name.data(), signature,
+            offset, &flowRecorderEnterAsyncStepFastRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper flowRecorderEnterAsyncStepFastRef could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(flowRecorderEnterAsyncStepFastRef, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderEnterDetached(void* rewriterWrapperPtr, ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (flowRecorderEnterDetachedRef == mdMemberRefNil)
+    {
+        unsigned flowRecorderStateTypeRefBuffer;
+        const auto flowRecorderStateTypeRefSize =
+            CorSigCompressToken(flowRecorderStateTypeRef, &flowRecorderStateTypeRefBuffer);
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x01; // arguments count
+
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &flowRecorderStateTypeRefBuffer, flowRecorderStateTypeRefSize);
+        offset += flowRecorderStateTypeRefSize;
+
+        signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(
+            flowRecorderTypeRef, managed_profiler_debugger_flow_recorder_enter_detached_name.data(), signature, offset,
+            &flowRecorderEnterDetachedRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper flowRecorderEnterDetachedRef could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(flowRecorderEnterDetachedRef, false);
+    return S_OK;
+}
+
+mdTypeRef DebuggerTokens::GetFlowRecorderStateTypeRef()
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return mdTypeRefNil;
+    }
+
+    return flowRecorderStateTypeRef;
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderExit(void* rewriterWrapperPtr, ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (flowRecorderExitRef == mdMemberRefNil)
+    {
+        unsigned flowRecorderStateTypeRefBuffer;
+        const auto flowRecorderStateTypeRefSize =
+            CorSigCompressToken(flowRecorderStateTypeRef, &flowRecorderStateTypeRefBuffer);
+
+        unsigned exTypeRefBuffer;
+        const auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x02; // arguments count
+        signature[offset++] = ELEMENT_TYPE_VOID;
+
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &flowRecorderStateTypeRefBuffer, flowRecorderStateTypeRefSize);
+        offset += flowRecorderStateTypeRefSize;
+
+        signature[offset++] = ELEMENT_TYPE_CLASS;
+        memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
+        offset += exTypeRefSize;
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(
+            flowRecorderTypeRef, managed_profiler_debugger_flow_recorder_exit_name.data(), signature, offset,
+            &flowRecorderExitRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper flowRecorderExitRef could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(flowRecorderExitRef, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderExitFast(void* rewriterWrapperPtr, ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (flowRecorderExitFastRef == mdMemberRefNil)
+    {
+        unsigned flowRecorderStateTypeRefBuffer;
+        const auto flowRecorderStateTypeRefSize =
+            CorSigCompressToken(flowRecorderStateTypeRef, &flowRecorderStateTypeRefBuffer);
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x01; // arguments count
+        signature[offset++] = ELEMENT_TYPE_VOID;
+
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &flowRecorderStateTypeRefBuffer, flowRecorderStateTypeRefSize);
+        offset += flowRecorderStateTypeRefSize;
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(
+            flowRecorderTypeRef, managed_profiler_debugger_flow_recorder_exit_fast_name.data(), signature, offset,
+            &flowRecorderExitFastRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper flowRecorderExitFastRef could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(flowRecorderExitFastRef, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderShouldCaptureValues(void* rewriterWrapperPtr, ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (flowRecorderShouldCaptureValuesRef == mdMemberRefNil)
+    {
+        unsigned flowRecorderStateTypeRefBuffer;
+        const auto flowRecorderStateTypeRefSize =
+            CorSigCompressToken(flowRecorderStateTypeRef, &flowRecorderStateTypeRefBuffer);
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x02; // state, phase
+        signature[offset++] = ELEMENT_TYPE_BOOLEAN;
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &flowRecorderStateTypeRefBuffer, flowRecorderStateTypeRefSize);
+        offset += flowRecorderStateTypeRefSize;
+        signature[offset++] = ELEMENT_TYPE_I4;
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(
+            flowRecorderTypeRef, managed_profiler_debugger_flow_recorder_should_capture_values_name.data(),
+            signature, offset, &flowRecorderShouldCaptureValuesRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper flowRecorderShouldCaptureValuesRef could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(flowRecorderShouldCaptureValuesRef, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderLogArg(void* rewriterWrapperPtr, const TypeSignature& argument, ILInstr** instruction)
+{
+    return WriteFlowRecorderLogArgOrLocal(rewriterWrapperPtr, argument, instruction, true);
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderLogLocal(void* rewriterWrapperPtr, const TypeSignature& local, ILInstr** instruction)
+{
+    return WriteFlowRecorderLogArgOrLocal(rewriterWrapperPtr, local, instruction, false);
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderLogField(void* rewriterWrapperPtr, const TypeSignature& field, ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (flowRecorderLogFieldRef == mdMemberRefNil)
+    {
+        unsigned flowRecorderStateTypeRefBuffer;
+        const auto flowRecorderStateTypeRefSize =
+            CorSigCompressToken(flowRecorderStateTypeRef, &flowRecorderStateTypeRefBuffer);
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+        signature[offset++] = 0x01;
+        signature[offset++] = 0x03; // field, name, state
+        signature[offset++] = ELEMENT_TYPE_VOID;
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_MVAR;
+        signature[offset++] = 0x00;
+        signature[offset++] = ELEMENT_TYPE_STRING;
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &flowRecorderStateTypeRefBuffer, flowRecorderStateTypeRefSize);
+        offset += flowRecorderStateTypeRefSize;
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(
+            flowRecorderTypeRef, managed_profiler_debugger_flow_recorder_log_field_name.data(),
+            signature, offset, &flowRecorderLogFieldRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper flowRecorderLogFieldRef could not be defined.");
+            return hr;
+        }
+    }
+
+    PCCOR_SIGNATURE fieldSignatureBuffer;
+    auto fieldSignatureSize = field.GetSignature(fieldSignatureBuffer);
+    COR_SIGNATURE methodSpecSignature[signatureBufferSize];
+    unsigned offset = 0;
+    methodSpecSignature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+    methodSpecSignature[offset++] = 0x01;
+    memcpy(&methodSpecSignature[offset], fieldSignatureBuffer, fieldSignatureSize);
+    offset += fieldSignatureSize;
+
+    mdMethodSpec methodSpec = mdMethodSpecNil;
+    hr = module_metadata->metadata_emit->DefineMethodSpec(flowRecorderLogFieldRef, methodSpecSignature, offset,
+                                                          &methodSpec);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error creating FlowRecorder LogField method spec.");
+        return hr;
+    }
+
+    *instruction = rewriterWrapper->CallMember(methodSpec, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderLogReturn(void* rewriterWrapperPtr, TypeSignature* returnArgument, ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
+    ModuleMetadata* module_metadata = GetMetadata();
+
+    if (flowRecorderLogReturnRef == mdMemberRefNil)
+    {
+        unsigned flowRecorderStateTypeRefBuffer;
+        const auto flowRecorderStateTypeRefSize =
+            CorSigCompressToken(flowRecorderStateTypeRef, &flowRecorderStateTypeRefBuffer);
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+        signature[offset++] = 0x01;
+        signature[offset++] = 0x02; // value, state
+        signature[offset++] = ELEMENT_TYPE_VOID;
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_MVAR;
+        signature[offset++] = 0x00;
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &flowRecorderStateTypeRefBuffer, flowRecorderStateTypeRefSize);
+        offset += flowRecorderStateTypeRefSize;
+
+        hr = module_metadata->metadata_emit->DefineMemberRef(
+            flowRecorderTypeRef, managed_profiler_debugger_flow_recorder_log_return_name.data(),
+            signature, offset, &flowRecorderLogReturnRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper flowRecorderLogReturnRef could not be defined.");
+            return hr;
+        }
+    }
+
+    PCCOR_SIGNATURE returnSignatureBuffer;
+    auto returnSignatureSize = returnArgument->GetSignature(returnSignatureBuffer);
+    COR_SIGNATURE methodSpecSignature[signatureBufferSize];
+    unsigned offset = 0;
+    methodSpecSignature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+    methodSpecSignature[offset++] = 0x01;
+    memcpy(&methodSpecSignature[offset], returnSignatureBuffer, returnSignatureSize);
+    offset += returnSignatureSize;
+
+    mdMethodSpec methodSpec = mdMethodSpecNil;
+    hr = module_metadata->metadata_emit->DefineMethodSpec(flowRecorderLogReturnRef, methodSpecSignature, offset,
+                                                          &methodSpec);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error creating FlowRecorder LogReturn method spec.");
+        return hr;
+    }
+
+    *instruction = rewriterWrapper->CallMember(methodSpec, false);
     return S_OK;
 }
 

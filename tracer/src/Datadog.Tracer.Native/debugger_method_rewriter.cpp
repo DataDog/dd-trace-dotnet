@@ -9,9 +9,175 @@
 #include "environment_variables_util.h"
 #include "debugger_probes_tracker.h"
 #include "instrumenting_product.h"
+#include "signature_builder.h"
 
 namespace debugger
 {
+
+namespace
+{
+enum class FlowRecorderRewriteMode
+{
+    ExceptionAware,
+    MinimalFinally,
+    EntryOnly,
+    Fast
+};
+
+FlowRecorderRewriteMode GetFlowRecorderRewriteMode()
+{
+    const auto mode = GetDebuggerFlowRecorderRewriteMode();
+    if (mode == WStr("minimal-finally"))
+    {
+        return FlowRecorderRewriteMode::MinimalFinally;
+    }
+
+    if (mode == WStr("entry-only"))
+    {
+        return FlowRecorderRewriteMode::EntryOnly;
+    }
+
+    if (mode == WStr("fast"))
+    {
+        return FlowRecorderRewriteMode::Fast;
+    }
+
+    return FlowRecorderRewriteMode::ExceptionAware;
+}
+
+bool IsNoisyFlowRecorderCapturedLocalType(const WSTRING& typeName)
+{
+    if (typeName.empty())
+    {
+        return false;
+    }
+
+    // This runs once during rewriting, before emitting LogLocal calls. Skipped locals have no runtime cost.
+    if (typeName.find(WStr("Datadog.Trace.Debugger.LiveDebuggerPoc.FlowRecorderState")) != WSTRING::npos ||
+        typeName.find(WStr("System.Exception")) != WSTRING::npos)
+    {
+        return true;
+    }
+
+    if (typeName.find(WStr("System.Runtime.CompilerServices.TaskAwaiter")) != WSTRING::npos ||
+        typeName.find(WStr("System.Runtime.CompilerServices.ConfiguredTaskAwaitable")) != WSTRING::npos ||
+        typeName.find(WStr("System.Runtime.CompilerServices.ConfiguredTaskAwaiter")) != WSTRING::npos ||
+        typeName.find(WStr("System.Runtime.CompilerServices.ValueTaskAwaiter")) != WSTRING::npos ||
+        typeName.find(WStr("System.Runtime.CompilerServices.AsyncTaskMethodBuilder")) != WSTRING::npos ||
+        typeName.find(WStr("System.Runtime.CompilerServices.AsyncValueTaskMethodBuilder")) != WSTRING::npos)
+    {
+        return true;
+    }
+
+    return typeName.find(WStr("<>")) != WSTRING::npos;
+}
+
+WSTRING GetFlowRecorderAsyncFieldDisplayName(const WSTRING& fieldName);
+
+bool IsNoisyFlowRecorderAsyncField(const WSTRING& fieldName, const WSTRING& typeName)
+{
+    if (fieldName.empty())
+    {
+        return true;
+    }
+
+    const auto displayName = GetFlowRecorderAsyncFieldDisplayName(fieldName);
+
+    if (fieldName.rfind(WStr("<>"), 0) == 0 ||
+        fieldName.rfind(WStr("__dd_"), 0) == 0 ||
+        fieldName.find(WStr("__DD")) != WSTRING::npos)
+    {
+        return true;
+    }
+
+    if (fieldName.find(WStr("<>u__")) != WSTRING::npos ||
+        fieldName.find(WStr("<>t__")) != WSTRING::npos ||
+        fieldName.find(WStr("<>1__state")) != WSTRING::npos ||
+        fieldName.find(WStr("<>4__this")) != WSTRING::npos)
+    {
+        return true;
+    }
+
+    if (displayName == WStr("recordManually") ||
+        displayName == WStr("operationId") ||
+        displayName == WStr("parentOperationId") ||
+        displayName == WStr("generation"))
+    {
+        return true;
+    }
+
+    return IsNoisyFlowRecorderCapturedLocalType(typeName);
+}
+
+struct FlowRecorderFieldCapture
+{
+    mdFieldDef Field;
+    WSTRING Name;
+    TypeSignature Type;
+};
+
+WSTRING GetFlowRecorderAsyncFieldDisplayName(const WSTRING& fieldName)
+{
+    if (fieldName.size() > 2 && fieldName[0] == WStr("<")[0])
+    {
+        const auto end = fieldName.find(WStr(">"));
+        if (end != WSTRING::npos && end > 1)
+        {
+            return fieldName.substr(1, end - 1);
+        }
+    }
+
+    return fieldName;
+}
+
+bool IsFlowRecorderSimpleLowValueBody(ILRewriter& rewriter)
+{
+    auto meaningfulInstructions = 0;
+    auto hasCallBranchOrThrow = false;
+    for (ILInstr* pInstr = rewriter.GetILList()->m_pNext; pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext)
+    {
+        if (pInstr->m_opcode == CEE_NOP)
+        {
+            continue;
+        }
+
+        meaningfulInstructions++;
+        switch (pInstr->m_opcode)
+        {
+            case CEE_CALL:
+            case CEE_CALLVIRT:
+            case CEE_NEWOBJ:
+            case CEE_THROW:
+            case CEE_RETHROW:
+            case CEE_BR:
+            case CEE_BR_S:
+            case CEE_BRFALSE:
+            case CEE_BRFALSE_S:
+            case CEE_BRTRUE:
+            case CEE_BRTRUE_S:
+            case CEE_BEQ:
+            case CEE_BEQ_S:
+            case CEE_BGE:
+            case CEE_BGE_S:
+            case CEE_BGT:
+            case CEE_BGT_S:
+            case CEE_BLE:
+            case CEE_BLE_S:
+            case CEE_BLT:
+            case CEE_BLT_S:
+            case CEE_BNE_UN:
+            case CEE_BNE_UN_S:
+            case CEE_SWITCH:
+                hasCallBranchOrThrow = true;
+                break;
+            default:
+                break;
+        }
+    }
+
+    return meaningfulInstructions <= 6 && !hasCallBranchOrThrow;
+}
+}
 
 // Get function locals
 HRESULT DebuggerMethodRewriter::GetFunctionLocalSignature(const ModuleMetadata& module_metadata, ILRewriter& rewriter, FunctionLocalSignature& localSignature)
@@ -44,6 +210,115 @@ HRESULT DebuggerMethodRewriter::GetFunctionLocalSignature(const ModuleMetadata& 
     }
 
     localSignature = FunctionLocalSignature(local_signature, local_signature_len, std::move(locals));
+    return S_OK;
+}
+
+HRESULT DebuggerMethodRewriter::ModifyLocalSigForFlowRecorder(
+    ModuleMetadata& moduleMetadata,
+    DebuggerTokens* debuggerTokens,
+    ILRewriter& rewriter,
+    TypeSignature* methodReturnValue,
+    bool isVoid,
+    ULONG* returnValueIndex,
+    ULONG* exceptionIndex,
+    ULONG* flowRecorderStateIndex)
+{
+    HRESULT hr = S_OK;
+    const auto flowRecorderStateTypeRef = debuggerTokens->GetFlowRecorderStateTypeRef();
+    const auto exceptionTypeRef = debuggerTokens->GetExceptionTypeRef();
+    if (exceptionTypeRef == mdTypeRefNil || flowRecorderStateTypeRef == mdTypeRefNil)
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::ModifyLocalSigForFlowRecorder() failed to resolve recorder local tokens.");
+        return E_FAIL;
+    }
+
+    PCCOR_SIGNATURE originalSignature = nullptr;
+    ULONG originalSignatureSize = 0;
+    mdToken localVarSig = rewriter.GetTkLocalVarSig();
+
+    if (localVarSig != mdTokenNil)
+    {
+        IfFailRet(moduleMetadata.metadata_import->GetSigFromToken(localVarSig, &originalSignature, &originalSignatureSize));
+
+        unsigned flowRecorderStateTypeRefBuffer;
+        const auto flowRecorderStateTypeRefSize =
+            CorSigCompressToken(flowRecorderStateTypeRef, &flowRecorderStateTypeRefBuffer);
+        if (originalSignatureSize > flowRecorderStateTypeRefSize &&
+            originalSignature[originalSignatureSize - flowRecorderStateTypeRefSize - 1] == ELEMENT_TYPE_VALUETYPE &&
+            memcmp(&originalSignature[originalSignatureSize - flowRecorderStateTypeRefSize],
+                   &flowRecorderStateTypeRefBuffer,
+                   flowRecorderStateTypeRefSize) == 0)
+        {
+            Logger::Warn("The flow recorder signature for this method has been already modified.");
+            return E_FAIL;
+        }
+    }
+
+    ULONG oldLocalsBuffer = 0;
+    ULONG oldLocalsLen = 0;
+    ULONG newLocalsCount = isVoid ? 2 : 3;
+
+    if (originalSignatureSize > 0)
+    {
+        oldLocalsLen = CorSigUncompressData(originalSignature + 1, &oldLocalsBuffer);
+        newLocalsCount += oldLocalsBuffer;
+    }
+
+    unsigned newLocalsBuffer;
+    const auto newLocalsLen = CorSigCompressData(newLocalsCount, &newLocalsBuffer);
+
+    SignatureBuilder newSignature;
+    newSignature.Append(IMAGE_CEE_CS_CALLCONV_LOCAL_SIG);
+    newSignature.Append(&newLocalsBuffer, newLocalsLen);
+
+    if (originalSignatureSize > 0)
+    {
+        const auto copyLength = originalSignatureSize - 1 - oldLocalsLen;
+        newSignature.Append(originalSignature + 1 + oldLocalsLen, copyLength);
+    }
+
+    if (!isVoid)
+    {
+        PCCOR_SIGNATURE returnSignatureType = nullptr;
+        const auto returnSignatureTypeSize = methodReturnValue->GetSignature(returnSignatureType);
+        newSignature.Append(returnSignatureType, returnSignatureTypeSize);
+    }
+
+    unsigned exceptionTypeRefBuffer;
+    const auto exceptionTypeRefSize = CorSigCompressToken(exceptionTypeRef, &exceptionTypeRefBuffer);
+    newSignature.Append(ELEMENT_TYPE_CLASS);
+    newSignature.Append(&exceptionTypeRefBuffer, exceptionTypeRefSize);
+
+    unsigned flowRecorderStateTypeRefBuffer;
+    const auto flowRecorderStateTypeRefSize =
+        CorSigCompressToken(flowRecorderStateTypeRef, &flowRecorderStateTypeRefBuffer);
+    newSignature.Append(ELEMENT_TYPE_VALUETYPE);
+    newSignature.Append(&flowRecorderStateTypeRefBuffer, flowRecorderStateTypeRefSize);
+
+    mdToken newLocalVarSig;
+    hr = moduleMetadata.metadata_emit->GetTokenFromSig(
+        newSignature.GetSignature(), static_cast<ULONG>(newSignature.Size()), &newLocalVarSig);
+    if (FAILED(hr))
+    {
+        Logger::Warn("Error creating new flow recorder locals var signature.");
+        return hr;
+    }
+
+    rewriter.SetTkLocalVarSig(newLocalVarSig);
+
+    if (!isVoid)
+    {
+        *returnValueIndex = oldLocalsBuffer;
+        *exceptionIndex = oldLocalsBuffer + 1;
+        *flowRecorderStateIndex = oldLocalsBuffer + 2;
+    }
+    else
+    {
+        *returnValueIndex = static_cast<ULONG>(ULONG_MAX);
+        *exceptionIndex = oldLocalsBuffer;
+        *flowRecorderStateIndex = oldLocalsBuffer + 1;
+    }
+
     return S_OK;
 }
 
@@ -197,6 +472,189 @@ DebuggerMethodRewriter::WriteCallsToLogLocal(ModuleMetadata& moduleMetadata,
                                      callTargetStateIndex, beginCallInstruction, /* IsArgs */ false, probeType, isReEntryFieldTok);
 }
 
+HRESULT DebuggerMethodRewriter::WriteFlowRecorderValues(
+    ModuleMetadata& moduleMetadata,
+    DebuggerTokens* debuggerTokens,
+    bool isStatic,
+    const std::vector<TypeSignature>& values,
+    int numValues,
+    ILRewriter& rewriter,
+    ILRewriterWrapper& rewriterWrapper,
+    ULONG flowRecorderStateIndex,
+    bool isArgs) const
+{
+    rewriterWrapper.LoadLocalAddress(flowRecorderStateIndex);
+    rewriterWrapper.LoadInt32(isArgs ? 1 : 2);
+    ILInstr* shouldCaptureInstruction = nullptr;
+    auto hr = debuggerTokens->WriteFlowRecorderShouldCaptureValues(&rewriterWrapper, &shouldCaptureInstruction);
+    IfFailRet(hr);
+
+    ILInstr* skipValuesInstruction = rewriter.NewILInstr();
+    skipValuesInstruction->m_opcode = CEE_BRFALSE;
+    rewriter.InsertAfter(shouldCaptureInstruction, skipValuesInstruction);
+
+    for (auto valueIndex = 0; valueIndex < numValues; valueIndex++)
+    {
+        const auto valueType = values[valueIndex];
+        const auto [elementType, valueTypeFlags] = valueType.GetElementTypeAndFlags();
+
+        bool isTypeIsByRefLike = false;
+        hr = IsTypeByRefLike(m_corProfiler->info_, moduleMetadata, valueType, debuggerTokens->GetCorLibAssemblyRef(), isTypeIsByRefLike);
+        if (FAILED(hr) || isTypeIsByRefLike || (valueTypeFlags & TypeFlagPinnedType))
+        {
+            continue;
+        }
+
+        auto metadataImport = moduleMetadata.metadata_import;
+        if (!isArgs && IsNoisyFlowRecorderCapturedLocalType(valueType.GetTypeTokName(metadataImport)))
+        {
+            continue;
+        }
+
+        hr = isArgs
+            ? LoadArgument(isStatic, rewriterWrapper, valueIndex, valueType)
+            : LoadLocal(rewriterWrapper, valueIndex, valueType);
+        IfFailRet(hr);
+
+        rewriterWrapper.LoadInt32(valueIndex);
+        rewriterWrapper.LoadLocalAddress(flowRecorderStateIndex);
+
+        ILInstr* logInstruction = nullptr;
+        hr = isArgs
+            ? debuggerTokens->WriteFlowRecorderLogArg(&rewriterWrapper, valueType, &logInstruction)
+            : debuggerTokens->WriteFlowRecorderLogLocal(&rewriterWrapper, valueType, &logInstruction);
+        IfFailRet(hr);
+    }
+
+    ILInstr* endValuesInstruction = rewriterWrapper.NOP();
+    skipValuesInstruction->m_pTarget = endValuesInstruction;
+
+    return S_OK;
+}
+
+HRESULT GetFlowRecorderAsyncFieldCaptures(
+    ICorProfilerInfo4* corProfilerInfo,
+    ModuleMetadata& moduleMetadata,
+    DebuggerTokens* debuggerTokens,
+    mdTypeDef stateMachineType,
+    std::vector<FlowRecorderFieldCapture>& fields)
+{
+    fields.clear();
+
+    HCORENUM fieldEnum = nullptr;
+    mdFieldDef fieldDefs[64];
+    ULONG fieldCount = 0;
+    auto hr = moduleMetadata.metadata_import->EnumFields(&fieldEnum, stateMachineType, fieldDefs, 64, &fieldCount);
+    while (SUCCEEDED(hr) && fieldCount > 0)
+    {
+        for (ULONG fieldIndex = 0; fieldIndex < fieldCount; fieldIndex++)
+        {
+            WCHAR fieldNameBuffer[kNameMaxSize]{};
+            ULONG fieldNameLength = 0;
+            DWORD fieldAttributes = 0;
+            PCCOR_SIGNATURE fieldSignature = nullptr;
+            ULONG fieldSignatureLength = 0;
+            mdTypeDef declaringType = mdTypeDefNil;
+            hr = moduleMetadata.metadata_import->GetFieldProps(
+                fieldDefs[fieldIndex],
+                &declaringType,
+                fieldNameBuffer,
+                kNameMaxSize,
+                &fieldNameLength,
+                &fieldAttributes,
+                &fieldSignature,
+                &fieldSignatureLength,
+                nullptr,
+                nullptr,
+                nullptr);
+            IfFailRet(hr);
+
+            if ((fieldAttributes & fdStatic) != 0 || fieldSignatureLength < 2 || fieldSignature[0] != IMAGE_CEE_CS_CALLCONV_FIELD)
+            {
+                continue;
+            }
+
+            TypeSignature fieldType = {1, fieldSignatureLength - 1, fieldSignature};
+            const auto [elementType, fieldTypeFlags] = fieldType.GetElementTypeAndFlags();
+            if ((fieldTypeFlags & TypeFlagByRef) || (fieldTypeFlags & TypeFlagPinnedType))
+            {
+                continue;
+            }
+
+            bool isTypeByRefLike = false;
+            hr = IsTypeByRefLike(corProfilerInfo, moduleMetadata, fieldType, debuggerTokens->GetCorLibAssemblyRef(), isTypeByRefLike);
+            if (FAILED(hr) || isTypeByRefLike)
+            {
+                continue;
+            }
+
+            auto metadataImport = moduleMetadata.metadata_import;
+            const WSTRING fieldName(fieldNameBuffer, fieldNameLength > 0 ? fieldNameLength - 1 : 0);
+            const auto typeName = fieldType.GetTypeTokName(metadataImport);
+            if (IsNoisyFlowRecorderAsyncField(fieldName, typeName))
+            {
+                continue;
+            }
+
+            fields.push_back({fieldDefs[fieldIndex], GetFlowRecorderAsyncFieldDisplayName(fieldName), fieldType});
+        }
+
+        hr = moduleMetadata.metadata_import->EnumFields(&fieldEnum, stateMachineType, fieldDefs, 64, &fieldCount);
+    }
+
+    if (fieldEnum != nullptr)
+    {
+        moduleMetadata.metadata_import->CloseEnum(fieldEnum);
+    }
+
+    return FAILED(hr) ? hr : S_OK;
+}
+
+HRESULT WriteFlowRecorderAsyncHoistedFields(
+    ModuleMetadata& moduleMetadata,
+    DebuggerTokens* debuggerTokens,
+    const std::vector<FlowRecorderFieldCapture>& fields,
+    ILRewriter& rewriter,
+    ILRewriterWrapper& rewriterWrapper,
+    ULONG flowRecorderStateIndex)
+{
+    if (fields.empty())
+    {
+        return S_OK;
+    }
+
+    rewriterWrapper.LoadLocalAddress(flowRecorderStateIndex);
+    rewriterWrapper.LoadInt32(2);
+    ILInstr* shouldCaptureInstruction = nullptr;
+    auto hr = debuggerTokens->WriteFlowRecorderShouldCaptureValues(&rewriterWrapper, &shouldCaptureInstruction);
+    IfFailRet(hr);
+
+    ILInstr* skipFieldsInstruction = rewriter.NewILInstr();
+    skipFieldsInstruction->m_opcode = CEE_BRFALSE;
+    rewriter.InsertAfter(shouldCaptureInstruction, skipFieldsInstruction);
+
+    for (auto fieldIndex = 0; fieldIndex < fields.size(); fieldIndex++)
+    {
+        rewriterWrapper.LoadArgument(0);
+        rewriterWrapper.LoadFieldAddress(fields[fieldIndex].Field);
+        mdString fieldNameToken;
+        hr = moduleMetadata.metadata_emit->DefineUserString(
+            fields[fieldIndex].Name.data(), static_cast<ULONG>(fields[fieldIndex].Name.size()), &fieldNameToken);
+        IfFailRet(hr);
+        rewriterWrapper.LoadStr(fieldNameToken);
+        rewriterWrapper.LoadLocalAddress(flowRecorderStateIndex);
+
+        ILInstr* logInstruction = nullptr;
+        hr = debuggerTokens->WriteFlowRecorderLogField(&rewriterWrapper, fields[fieldIndex].Type, &logInstruction);
+        IfFailRet(hr);
+    }
+
+    ILInstr* endFieldsInstruction = rewriterWrapper.NOP();
+    skipFieldsInstruction->m_pTarget = endFieldsInstruction;
+
+    return S_OK;
+}
+
 HRESULT DebuggerMethodRewriter::LoadInstanceIntoStack(FunctionInfo* caller, bool isStatic,
                                                       const ILRewriterWrapper& rewriterWrapper,
                                                       ILInstr** outLoadArgumentInstr,
@@ -285,6 +743,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     MethodProbeDefinitions methodProbes;
     LineProbeDefinitions lineProbes;
     SpanProbeOnMethodDefinitions spanOnMethodProbes;
+    FlowRecorderProbeDefinitions flowRecorderProbes;
 
     const auto& probes = debuggerMethodHandler->GetProbes();
 
@@ -299,6 +758,13 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     for (const auto& probe : probes)
     {
+        const auto flowRecorderProbe = std::dynamic_pointer_cast<FlowRecorderProbeDefinition>(probe);
+        if (flowRecorderProbe != nullptr)
+        {
+            flowRecorderProbes.emplace_back(flowRecorderProbe);
+            continue;
+        }
+
         const auto spanProbe = std::dynamic_pointer_cast<SpanProbeOnMethodDefinition>(probe);
         if (spanProbe != nullptr)
         {
@@ -321,25 +787,26 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
         }
     }
 
-    if (methodProbes.empty() && lineProbes.empty() && spanOnMethodProbes.empty())
+    if (methodProbes.empty() && lineProbes.empty() && spanOnMethodProbes.empty() && flowRecorderProbes.empty())
     {
         // No lines probes & method probes. Should not happen unless the user requested to undo the instrumentation
         // while the method got executed.
-        Logger::Info("There are no method probes, lines probes and span probes for methodDef",
+        Logger::Info("There are no method probes, lines probes, span probes, and flow recorder probes for methodDef",
                      methodHandler->GetMethodDef());
         return S_OK;
     }
     else
     {
         Logger::Info("Applying ", methodProbes.size(), " method probes, ", lineProbes.size(), " line probes and ",
-                     spanOnMethodProbes.size(), " span probes on methodDef: ", methodHandler->GetMethodDef());
+                     spanOnMethodProbes.size(), " span probes and ", flowRecorderProbes.size(),
+                     " flow recorder probes on methodDef: ", methodHandler->GetMethodDef());
 
         auto hr = Rewrite(moduleHandler, methodHandler, pFunctionControl, pCorProfilerInfo, methodProbes, lineProbes,
-                          spanOnMethodProbes);
+                          spanOnMethodProbes, flowRecorderProbes);
 
         if (hr == S_OK)
         {
-            MarkAllProbesAsInstrumented(methodProbes, lineProbes, spanOnMethodProbes);
+            MarkAllProbesAsInstrumented(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes);
         }
 
         return FAILED(hr) ? S_FALSE : S_OK;
@@ -372,9 +839,17 @@ WSTRING DebuggerMethodRewriter::GetInstrumentationId(RejitHandlerModule* moduleH
     MethodProbeDefinitions methodProbes;
     LineProbeDefinitions lineProbes;
     SpanProbeOnMethodDefinitions spanOnMethodProbes;
+    FlowRecorderProbeDefinitions flowRecorderProbes;
 
     for (const auto& probe : probes)
     {
+        const auto flowRecorderProbe = std::dynamic_pointer_cast<FlowRecorderProbeDefinition>(probe);
+        if (flowRecorderProbe != nullptr)
+        {
+            flowRecorderProbes.emplace_back(flowRecorderProbe);
+            continue;
+        }
+
         const auto spanProbe = std::dynamic_pointer_cast<SpanProbeOnMethodDefinition>(probe);
         if (spanProbe != nullptr)
         {
@@ -397,7 +872,7 @@ WSTRING DebuggerMethodRewriter::GetInstrumentationId(RejitHandlerModule* moduleH
         }
     }
 
-    if (methodProbes.empty() && lineProbes.empty() && spanOnMethodProbes.empty())
+    if (methodProbes.empty() && lineProbes.empty() && spanOnMethodProbes.empty() && flowRecorderProbes.empty())
     {
         return EmptyWStr;
     }
@@ -405,11 +880,11 @@ WSTRING DebuggerMethodRewriter::GetInstrumentationId(RejitHandlerModule* moduleH
 #ifdef MACOS
     std::stringstream instrumentationIdStream;
     instrumentationIdStream << "M" << methodProbes.size() << "L" << lineProbes.size() << "S"
-                            << spanOnMethodProbes.size();
+                            << spanOnMethodProbes.size() << "F" << flowRecorderProbes.size();
 #else
     WSTRINGSTREAM instrumentationIdStream;
     instrumentationIdStream << WStr("M") << methodProbes.size() << WStr("L") << lineProbes.size() << WStr("S")
-                            << spanOnMethodProbes.size();
+                            << spanOnMethodProbes.size() << WStr("F") << flowRecorderProbes.size();
 #endif
 
 #ifdef MACOS
@@ -996,6 +1471,370 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
 
     newClauses.push_back(beginMethodExClause);
     newClauses.push_back(endMethodExClause);
+    newClauses.push_back(exClause);
+    newClauses.push_back(finallyClause);
+
+    return S_OK;
+}
+
+HRESULT DebuggerMethodRewriter::ApplyFlowRecorderProbe(
+    FunctionInfo* caller,
+    ModuleMetadata& moduleMetadata,
+    DebuggerTokens* debuggerTokens,
+    bool isVoid,
+    ILRewriter& rewriter,
+    ILRewriterWrapper& rewriterWrapper,
+    ULONG exceptionIndex,
+    ULONG returnValueIndex,
+    ULONG flowRecorderStateIndex,
+    mdToken functionToken,
+    const int instrumentedMethodIndex,
+    ILInstr* const& beforeLineProbe,
+    bool isAsyncMethod,
+    bool captureValues,
+    bool isStatic,
+    const std::vector<TypeSignature>& methodArguments,
+    int numArgs,
+    const std::vector<TypeSignature>& methodLocals,
+    int numLocals,
+    TypeSignature* methodReturnType,
+    std::vector<EHClause>& newClauses) const
+{
+    LogDebugCallerInfo(caller, instrumentedMethodIndex);
+
+    rewriterWrapper.SetILPosition(beforeLineProbe);
+
+    const auto& branchTargets = GetBranchTargets(rewriterWrapper.GetILRewriter());
+    for (const auto& branchInstr : branchTargets)
+    {
+        if (branchInstr->m_pTarget == beforeLineProbe)
+        {
+            branchInstr->m_pTarget = nullptr;
+        }
+    }
+
+    const auto tryInstruction = beforeLineProbe->m_pPrev;
+    const auto rewriteMode = GetFlowRecorderRewriteMode();
+
+    if (rewriteMode != FlowRecorderRewriteMode::ExceptionAware)
+    {
+        if (captureValues)
+        {
+            Logger::Info("Flow recorder rewrite mode disables value capture for benchmark-only EH measurement.");
+        }
+
+        auto hr = S_OK;
+
+        mdFieldDef asyncOperationIdFieldTok = mdFieldDefNil;
+        mdFieldDef asyncGenerationFieldTok = mdFieldDefNil;
+        if (rewriteMode != FlowRecorderRewriteMode::EntryOnly && isAsyncMethod)
+        {
+            hr = debuggerTokens->GetFlowRecorderAsyncOperationIdFieldToken(caller->type.id, asyncOperationIdFieldTok);
+            IfFailRet(hr);
+            hr = debuggerTokens->GetFlowRecorderAsyncGenerationFieldToken(caller->type.id, asyncGenerationFieldTok);
+            IfFailRet(hr);
+
+            if (asyncOperationIdFieldTok == mdFieldDefNil || asyncGenerationFieldTok == mdFieldDefNil)
+            {
+                Logger::Warn("Flow recorder async operation fields were not found for ", caller->type.name, ".",
+                             caller->name, "; falling back to detached async recording.");
+            }
+        }
+
+        rewriterWrapper.LoadInt32(instrumentedMethodIndex);
+        if (rewriteMode != FlowRecorderRewriteMode::EntryOnly &&
+            isAsyncMethod && asyncOperationIdFieldTok != mdFieldDefNil && asyncGenerationFieldTok != mdFieldDefNil)
+        {
+            rewriterWrapper.LoadArgument(0);
+            rewriterWrapper.LoadFieldAddress(asyncOperationIdFieldTok);
+            rewriterWrapper.LoadArgument(0);
+            rewriterWrapper.LoadFieldAddress(asyncGenerationFieldTok);
+        }
+
+        ILInstr* enterCallInstr = nullptr;
+        hr = rewriteMode == FlowRecorderRewriteMode::EntryOnly
+            ? debuggerTokens->WriteFlowRecorderEnterDetached(&rewriterWrapper, &enterCallInstr)
+            : rewriteMode == FlowRecorderRewriteMode::Fast
+            ? isAsyncMethod
+                ? (asyncOperationIdFieldTok != mdFieldDefNil && asyncGenerationFieldTok != mdFieldDefNil
+                       ? debuggerTokens->WriteFlowRecorderEnterAsyncStepFast(&rewriterWrapper, &enterCallInstr)
+                       : debuggerTokens->WriteFlowRecorderEnterDetached(&rewriterWrapper, &enterCallInstr))
+                : debuggerTokens->WriteFlowRecorderEnterFast(&rewriterWrapper, &enterCallInstr)
+            : isAsyncMethod
+            ? (asyncOperationIdFieldTok != mdFieldDefNil && asyncGenerationFieldTok != mdFieldDefNil
+                   ? debuggerTokens->WriteFlowRecorderEnterAsyncStep(&rewriterWrapper, &enterCallInstr)
+                   : debuggerTokens->WriteFlowRecorderEnterDetached(&rewriterWrapper, &enterCallInstr))
+            : debuggerTokens->WriteFlowRecorderEnter(&rewriterWrapper, &enterCallInstr);
+        IfFailRet(hr);
+        rewriterWrapper.StLocal(flowRecorderStateIndex);
+
+        ILInstr* beginOriginalMethodInstr = rewriterWrapper.GetCurrentILInstr();
+        for (const auto& branchInstr : branchTargets)
+        {
+            if (branchInstr->m_pTarget == nullptr)
+            {
+                branchInstr->m_pTarget = beginOriginalMethodInstr;
+            }
+        }
+
+        if (rewriteMode == FlowRecorderRewriteMode::EntryOnly)
+        {
+            return S_OK;
+        }
+
+        ILInstr* methodReturnInstr = rewriter.NewILInstr();
+        methodReturnInstr->m_opcode = CEE_RET;
+        rewriter.InsertAfter(rewriter.GetILList()->m_pPrev, methodReturnInstr);
+        rewriterWrapper.SetILPosition(methodReturnInstr);
+
+        ILInstr* finallyStartInstr = rewriterWrapper.LoadLocalAddress(flowRecorderStateIndex);
+        ILInstr* exitCallInstr = nullptr;
+        if (rewriteMode == FlowRecorderRewriteMode::Fast)
+        {
+            hr = debuggerTokens->WriteFlowRecorderExitFast(&rewriterWrapper, &exitCallInstr);
+        }
+        else
+        {
+            rewriterWrapper.LoadNull();
+            hr = debuggerTokens->WriteFlowRecorderExit(&rewriterWrapper, &exitCallInstr);
+        }
+        IfFailRet(hr);
+
+        ILInstr* endFinallyInstr = rewriterWrapper.EndFinally();
+
+        if (!isVoid)
+        {
+            rewriterWrapper.LoadLocal(returnValueIndex);
+        }
+
+        for (ILInstr* pInstr = rewriter.GetILList()->m_pNext; pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext)
+        {
+            if (pInstr->m_opcode == CEE_RET && pInstr != methodReturnInstr)
+            {
+                if (isVoid)
+                {
+                    pInstr->m_opcode = CEE_LEAVE_S;
+                    pInstr->m_pTarget = endFinallyInstr->m_pNext;
+                }
+                else
+                {
+                    pInstr->m_opcode = CEE_STLOC;
+                    pInstr->m_Arg16 = static_cast<INT16>(returnValueIndex);
+                    if (pInstr->m_Arg16 < 0)
+                    {
+                        Logger::Error("The local variable index for the return value ('returnValueIndex') cannot be lower than zero.");
+                        return S_FALSE;
+                    }
+
+                    ILInstr* leaveInstr = rewriter.NewILInstr();
+                    leaveInstr->m_opcode = CEE_LEAVE_S;
+                    leaveInstr->m_pTarget = endFinallyInstr->m_pNext;
+                    rewriter.InsertAfter(pInstr, leaveInstr);
+                }
+            }
+        }
+
+        EHClause finallyClause = {};
+        finallyClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FINALLY;
+        finallyClause.m_pTryBegin = beginOriginalMethodInstr;
+        finallyClause.m_pTryEnd = finallyStartInstr;
+        finallyClause.m_pHandlerBegin = finallyStartInstr;
+        finallyClause.m_pHandlerEnd = endFinallyInstr;
+
+        newClauses.push_back(finallyClause);
+
+        return S_OK;
+    }
+
+    auto hr = S_OK;
+
+    mdFieldDef asyncOperationIdFieldTok = mdFieldDefNil;
+    mdFieldDef asyncGenerationFieldTok = mdFieldDefNil;
+    if (isAsyncMethod)
+    {
+        hr = debuggerTokens->GetFlowRecorderAsyncOperationIdFieldToken(caller->type.id, asyncOperationIdFieldTok);
+        IfFailRet(hr);
+        hr = debuggerTokens->GetFlowRecorderAsyncGenerationFieldToken(caller->type.id, asyncGenerationFieldTok);
+        IfFailRet(hr);
+
+        if (asyncOperationIdFieldTok == mdFieldDefNil || asyncGenerationFieldTok == mdFieldDefNil)
+        {
+            Logger::Warn("Flow recorder async operation fields were not found for ", caller->type.name, ".",
+                         caller->name, "; falling back to detached async recording.");
+        }
+    }
+
+    ILInstr* enterTryStartInstr = rewriterWrapper.LoadInt32(instrumentedMethodIndex);
+    if (isAsyncMethod && asyncOperationIdFieldTok != mdFieldDefNil && asyncGenerationFieldTok != mdFieldDefNil)
+    {
+        rewriterWrapper.LoadArgument(0);
+        rewriterWrapper.LoadFieldAddress(asyncOperationIdFieldTok);
+        rewriterWrapper.LoadArgument(0);
+        rewriterWrapper.LoadFieldAddress(asyncGenerationFieldTok);
+    }
+
+    ILInstr* enterCallInstr = nullptr;
+    hr = isAsyncMethod
+        ? (asyncOperationIdFieldTok != mdFieldDefNil && asyncGenerationFieldTok != mdFieldDefNil
+               ? debuggerTokens->WriteFlowRecorderEnterAsyncStep(&rewriterWrapper, &enterCallInstr)
+               : debuggerTokens->WriteFlowRecorderEnterDetached(&rewriterWrapper, &enterCallInstr))
+        : debuggerTokens->WriteFlowRecorderEnter(&rewriterWrapper, &enterCallInstr);
+    IfFailRet(hr);
+    rewriterWrapper.StLocal(flowRecorderStateIndex);
+    if (captureValues && numArgs > 0)
+    {
+        hr = WriteFlowRecorderValues(moduleMetadata, debuggerTokens, isStatic, methodArguments, numArgs,
+                                     rewriter, rewriterWrapper, flowRecorderStateIndex, true);
+        IfFailRet(hr);
+    }
+
+    ILInstr* enterTryLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+    ILInstr* enterCatchFirstInstr = rewriterWrapper.Pop();
+    ILInstr* enterCatchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+    EHClause enterExClause = {};
+    enterExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+    enterExClause.m_pTryBegin = enterTryStartInstr;
+    enterExClause.m_pTryEnd = enterCatchFirstInstr;
+    enterExClause.m_pHandlerBegin = enterCatchFirstInstr;
+    enterExClause.m_pHandlerEnd = enterCatchLeaveInstr;
+    enterExClause.m_ClassToken = debuggerTokens->GetExceptionTypeRef();
+
+    ILInstr* beginOriginalMethodInstr = rewriterWrapper.GetCurrentILInstr();
+    enterTryLeaveInstr->m_pTarget = beginOriginalMethodInstr;
+    enterCatchLeaveInstr->m_pTarget = beginOriginalMethodInstr;
+
+    for (const auto& branchInstr : branchTargets)
+    {
+        if (branchInstr->m_pTarget == nullptr)
+        {
+            branchInstr->m_pTarget = beginOriginalMethodInstr;
+        }
+    }
+
+    ILInstr* methodReturnInstr = rewriter.NewILInstr();
+    methodReturnInstr->m_opcode = CEE_RET;
+    rewriter.InsertAfter(rewriter.GetILList()->m_pPrev, methodReturnInstr);
+    rewriterWrapper.SetILPosition(methodReturnInstr);
+
+    ILInstr* startExceptionCatch = rewriterWrapper.StLocal(exceptionIndex);
+    rewriterWrapper.SetILPosition(methodReturnInstr);
+    ILInstr* rethrowInstr = rewriterWrapper.Rethrow();
+
+    if (captureValues && isAsyncMethod)
+    {
+        std::vector<FlowRecorderFieldCapture> fields;
+        hr = GetFlowRecorderAsyncFieldCaptures(m_corProfiler->info_, moduleMetadata, debuggerTokens, caller->type.id, fields);
+        IfFailRet(hr);
+
+        hr = WriteFlowRecorderAsyncHoistedFields(moduleMetadata, debuggerTokens, fields, rewriter, rewriterWrapper, flowRecorderStateIndex);
+        IfFailRet(hr);
+    }
+
+    ILInstr* exitTryStartInstr = rewriterWrapper.LoadLocalAddress(flowRecorderStateIndex);
+    rewriterWrapper.LoadLocal(exceptionIndex);
+    ILInstr* exitCallInstr = nullptr;
+    hr = debuggerTokens->WriteFlowRecorderExit(&rewriterWrapper, &exitCallInstr);
+    IfFailRet(hr);
+
+    if (captureValues)
+    {
+        if (!isAsyncMethod && numLocals > 0)
+        {
+            hr = WriteFlowRecorderValues(moduleMetadata, debuggerTokens, isStatic, methodLocals, numLocals,
+                                         rewriter, rewriterWrapper, flowRecorderStateIndex, false);
+            IfFailRet(hr);
+        }
+
+        if (!isVoid)
+        {
+            rewriterWrapper.LoadLocalAddress(flowRecorderStateIndex);
+            rewriterWrapper.LoadInt32(2);
+            ILInstr* shouldCaptureReturnInstr = nullptr;
+            hr = debuggerTokens->WriteFlowRecorderShouldCaptureValues(&rewriterWrapper, &shouldCaptureReturnInstr);
+            IfFailRet(hr);
+            ILInstr* skipReturnInstr = rewriter.NewILInstr();
+            skipReturnInstr->m_opcode = CEE_BRFALSE;
+            rewriter.InsertAfter(shouldCaptureReturnInstr, skipReturnInstr);
+
+            rewriterWrapper.LoadLocalAddress(returnValueIndex);
+            rewriterWrapper.LoadLocalAddress(flowRecorderStateIndex);
+            ILInstr* logReturnInstr = nullptr;
+            hr = debuggerTokens->WriteFlowRecorderLogReturn(&rewriterWrapper, methodReturnType, &logReturnInstr);
+            IfFailRet(hr);
+
+            ILInstr* endReturnInstr = rewriterWrapper.NOP();
+            skipReturnInstr->m_pTarget = endReturnInstr;
+        }
+    }
+
+    ILInstr* exitTryLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+    ILInstr* exitCatchFirstInstr = rewriterWrapper.Pop();
+    ILInstr* exitCatchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+    EHClause exitExClause = {};
+    exitExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+    exitExClause.m_pTryBegin = exitTryStartInstr;
+    exitExClause.m_pTryEnd = exitCatchFirstInstr;
+    exitExClause.m_pHandlerBegin = exitCatchFirstInstr;
+    exitExClause.m_pHandlerEnd = exitCatchLeaveInstr;
+    exitExClause.m_ClassToken = debuggerTokens->GetExceptionTypeRef();
+
+    ILInstr* endFinallyInstr = rewriterWrapper.EndFinally();
+    exitTryLeaveInstr->m_pTarget = endFinallyInstr;
+    exitCatchLeaveInstr->m_pTarget = endFinallyInstr;
+
+    if (!isVoid)
+    {
+        rewriterWrapper.LoadLocal(returnValueIndex);
+    }
+
+    for (ILInstr* pInstr = rewriter.GetILList()->m_pNext; pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext)
+    {
+        if (pInstr->m_opcode == CEE_RET && pInstr != methodReturnInstr)
+        {
+            if (isVoid)
+            {
+                pInstr->m_opcode = CEE_LEAVE_S;
+                pInstr->m_pTarget = endFinallyInstr->m_pNext;
+            }
+            else
+            {
+                pInstr->m_opcode = CEE_STLOC;
+                pInstr->m_Arg16 = static_cast<INT16>(returnValueIndex);
+                if (pInstr->m_Arg16 < 0)
+                {
+                    Logger::Error("The local variable index for the return value ('returnValueIndex') cannot be lower than zero.");
+                    return S_FALSE;
+                }
+
+                ILInstr* leaveInstr = rewriter.NewILInstr();
+                leaveInstr->m_opcode = CEE_LEAVE_S;
+                leaveInstr->m_pTarget = endFinallyInstr->m_pNext;
+                rewriter.InsertAfter(pInstr, leaveInstr);
+            }
+        }
+    }
+
+    EHClause exClause = {};
+    exClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+    exClause.m_pTryBegin = beginOriginalMethodInstr;
+    exClause.m_pTryEnd = startExceptionCatch;
+    exClause.m_pHandlerBegin = startExceptionCatch;
+    exClause.m_pHandlerEnd = rethrowInstr;
+    exClause.m_ClassToken = debuggerTokens->GetExceptionTypeRef();
+
+    EHClause finallyClause = {};
+    finallyClause.m_Flags = COR_ILEXCEPTION_CLAUSE_FINALLY;
+    finallyClause.m_pTryBegin = beginOriginalMethodInstr;
+    finallyClause.m_pTryEnd = rethrowInstr->m_pNext;
+    finallyClause.m_pHandlerBegin = rethrowInstr->m_pNext;
+    finallyClause.m_pHandlerEnd = endFinallyInstr;
+
+    newClauses.push_back(enterExClause);
+    newClauses.push_back(exitExClause);
     newClauses.push_back(exClause);
     newClauses.push_back(finallyClause);
 
@@ -2083,7 +2922,8 @@ HRESULT DebuggerMethodRewriter::GetTaskReturnType(const ILInstr* instruction, Mo
 }
 
 void DebuggerMethodRewriter::MarkAllProbesAsInstrumented(MethodProbeDefinitions& methodProbes,
-    LineProbeDefinitions& lineProbes, SpanProbeOnMethodDefinitions& spanOnMethodProbes)
+    LineProbeDefinitions& lineProbes, SpanProbeOnMethodDefinitions& spanOnMethodProbes,
+    FlowRecorderProbeDefinitions& flowRecorderProbes)
 {
     for (const auto& probe : methodProbes)
     {
@@ -2099,17 +2939,24 @@ void DebuggerMethodRewriter::MarkAllProbesAsInstrumented(MethodProbeDefinitions&
     {
         ProbesMetadataTracker::Instance()->SetProbeStatus(probe->probeId, ProbeStatus::INSTRUMENTED);
     }
+
+    for (const auto& probe : flowRecorderProbes)
+    {
+        ProbesMetadataTracker::Instance()->SetProbeStatus(probe->probeId, ProbeStatus::INSTRUMENTED);
+    }
 }
 
 void DebuggerMethodRewriter::MarkAllProbesAsError(MethodProbeDefinitions& methodProbes,
                                                   LineProbeDefinitions& lineProbes,
                                                   SpanProbeOnMethodDefinitions& spanOnMethodProbes,
+                                                  FlowRecorderProbeDefinitions& flowRecorderProbes,
                                                   const WSTRING& reasoning)
 {
     // Mark all probes as Error
     MarkAllLineProbesAsError(lineProbes, reasoning);
     MarkAllMethodProbesAsError(methodProbes, reasoning);
     MarkAllSpanOnMethodProbesAsError(spanOnMethodProbes, reasoning);
+    MarkAllFlowRecorderProbesAsError(flowRecorderProbes, reasoning);
 }
 
 void DebuggerMethodRewriter::MarkAllLineProbesAsError(LineProbeDefinitions& lineProbes, const WSTRING& reasoning)
@@ -2137,13 +2984,31 @@ void DebuggerMethodRewriter::MarkAllSpanOnMethodProbesAsError(SpanProbeOnMethodD
     }
 }
 
+void DebuggerMethodRewriter::MarkAllFlowRecorderProbesAsInstrumented(FlowRecorderProbeDefinitions& flowRecorderProbes)
+{
+    for (const auto& probe : flowRecorderProbes)
+    {
+        ProbesMetadataTracker::Instance()->SetProbeStatus(probe->probeId, ProbeStatus::INSTRUMENTED);
+    }
+}
+
+void DebuggerMethodRewriter::MarkAllFlowRecorderProbesAsError(FlowRecorderProbeDefinitions& flowRecorderProbes,
+                                                              const WSTRING& reasoning)
+{
+    for (const auto& probe : flowRecorderProbes)
+    {
+        ProbesMetadataTracker::Instance()->SetErrorProbeStatus(probe->probeId, reasoning);
+    }
+}
+
 HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                                         RejitHandlerModuleMethod* methodHandler,
                                         ICorProfilerFunctionControl* pFunctionControl,
                                         ICorProfilerInfo* pCorProfilerInfo,
                                         MethodProbeDefinitions& methodProbes,
                                         LineProbeDefinitions& lineProbes,
-                                        SpanProbeOnMethodDefinitions& spanOnMethodProbes) const
+                                        SpanProbeOnMethodDefinitions& spanOnMethodProbes,
+                                        FlowRecorderProbeDefinitions& flowRecorderProbes) const
 {
     ModuleID module_id = moduleHandler->GetModuleId();
     ModuleMetadata& module_metadata = *moduleHandler->GetModuleMetadata();
@@ -2156,12 +3021,21 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
     std::vector<TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
     int numArgs = caller->method_signature.NumberOfArguments();
+    const auto hasRegularDebuggerProbes = !methodProbes.empty() || !lineProbes.empty() || !spanOnMethodProbes.empty();
+
+    if (hasRegularDebuggerProbes && !flowRecorderProbes.empty())
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Flow recorder probes cannot be mixed with regular debugger probes in the recorder-only POC.");
+        MarkAllFlowRecorderProbesAsError(flowRecorderProbes, general_error_message);
+        return E_NOTIMPL;
+    }
 
     if (caller->type.name.rfind(L'@') != std::wstring::npos)
     {
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Encountered a type with '@' in it's name - it's not supported since the realization of generic is non-deterministic (it does not contain the ` in it's name if it's a generic type)."
                      "token=", function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
-        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, general_error_message);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
+                             general_error_message);
         return E_NOTIMPL;
     }
     
@@ -2174,7 +3048,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         const WSTRING& reasoning = caller->name == WStr(".ctor") || caller->name == WStr(".cctor")
                                        ? invalid_probe_probe_cctor_ctor_not_supported
                                        : invalid_probe_probe_byreflike_return_not_supported;
-        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, reasoning);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes, reasoning);
         return E_NOTIMPL;
     }
 
@@ -2185,7 +3059,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                      "not yet been loaded into AppDomain with id=",
                      module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
                      caller->name, "()");
-        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, profiler_assemly_is_not_loaded);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
+                             profiler_assemly_is_not_loaded);
         return S_FALSE;
     }
 
@@ -2196,7 +3071,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Call to ILRewriter.Import() failed for ", module_id, " ",
                      function_token);
-        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_failed_to_import_method_il);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
+                             invalid_probe_failed_to_import_method_il);
         return E_FAIL;
     }
 
@@ -2204,15 +3080,33 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         auto errorMessage = type_contains_invalid_symbol + WStr("caller_name =") +
                        caller->type.name + WStr(".") + caller->name;
-        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, errorMessage);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes, errorMessage);
         return E_NOTIMPL;
     }
 
     if (DoesILContainUnsupportedInstructions(rewriter))
     {
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite(): IL contain unsupported instructions (i.e. jmp, tail)");
-        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, non_supported_compiled_bytecode);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
+                             non_supported_compiled_bytecode);
         return E_NOTIMPL;
+    }
+
+    bool isAsyncMethod;
+    auto isAsyncMethodProbeHr = IsAsyncMethodProbe(module_metadata.metadata_import, caller, isAsyncMethod);
+
+    if (FAILED(isAsyncMethodProbeHr))
+    {
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
+                             failed_to_determine_if_method_is_async);
+        return isAsyncMethodProbeHr;
+    }
+
+    if (!flowRecorderProbes.empty() && !hasRegularDebuggerProbes && !isAsyncMethod && IsFlowRecorderSimpleLowValueBody(rewriter))
+    {
+        Logger::Debug("*** DebuggerMethodRewriter::Rewrite() skipping simple low-value flow recorder method: ",
+                      caller->type.name, ".", caller->name);
+        return S_FALSE;
     }
 
     // *** Store the original il code text if the dump_il option is enabled.
@@ -2231,7 +3125,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() failed to parse locals signature for ", module_id, " ",
                      function_token);
-        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_failed_to_parse_locals);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
+                             invalid_probe_failed_to_parse_locals);
         return E_FAIL;
     }
 
@@ -2258,23 +3153,22 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     mdToken callTargetReturnToken = mdTokenNil;
     ILInstr* firstInstruction;
 
-    bool isAsyncMethod;
-    auto isAsyncMethodProbeHr = IsAsyncMethodProbe(module_metadata.metadata_import, caller, isAsyncMethod);
-
-    if (FAILED(isAsyncMethodProbeHr))
+    if (!flowRecorderProbes.empty() && isAsyncMethod && caller->type.name.find(WStr("<Main>")) != WSTRING::npos)
     {
-        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, failed_to_determine_if_method_is_async);
-        return isAsyncMethodProbeHr;
+        Logger::Info("Skipping async Main flow recorder probe in instrument-all POC for ", caller->type.name, ".",
+                     caller->name);
+        return S_FALSE;
     }
 
     TypeSignature methodReturnType{};
-    if (isAsyncMethod)
+    if (isAsyncMethod && hasRegularDebuggerProbes)
     {
         hr = GetTaskReturnType(rewriterWrapper.GetILRewriter()->GetILList(), module_metadata, methodLocals, &methodReturnType);
 
         if (FAILED(hr))
         {
-            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, failed_to_retrieve_task_return_type);
+            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
+                                 failed_to_retrieve_task_return_type);
             return hr;
         }
         
@@ -2287,18 +3181,42 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         methodReturnType = caller->method_signature.GetReturnValue();
     }
-    auto debuggerLocals = std::vector<ULONG>(debuggerTokens->GetAdditionalLocalsCount(methodArguments));
-    hr = debuggerTokens->ModifyLocalSigAndInitialize(&rewriterWrapper, &methodReturnType, &methodArguments, caller, &callTargetStateIndex, &exceptionIndex,
-                                                     &callTargetReturnIndex, &staticValueTypeIndex, &returnValueIndex, &callTargetStateToken,
-                                                     &exceptionToken, &callTargetReturnToken, &firstInstruction, debuggerLocals, isAsyncMethod);
+    ULONG lineProbeCallTargetStateIndex = static_cast<ULONG>(ULONG_MAX);
+    ULONG spanMethodStateIndex = static_cast<ULONG>(ULONG_MAX);
+    ULONG multiProbeStatesIndex = static_cast<ULONG>(ULONG_MAX);
+    ULONG flowRecorderStateIndex = static_cast<ULONG>(ULONG_MAX);
+    auto debuggerLocals = hasRegularDebuggerProbes
+        ? std::vector<ULONG>(debuggerTokens->GetAdditionalLocalsCount(methodArguments))
+        : std::vector<ULONG>();
 
-    ULONG lineProbeCallTargetStateIndex = debuggerLocals[0];
-    ULONG spanMethodStateIndex = debuggerLocals[1];
-    ULONG multiProbeStatesIndex = debuggerLocals[2];
+    if (hasRegularDebuggerProbes)
+    {
+        hr = debuggerTokens->ModifyLocalSigAndInitialize(
+            &rewriterWrapper, &methodReturnType, &methodArguments, caller, &callTargetStateIndex, &exceptionIndex,
+            &callTargetReturnIndex, &staticValueTypeIndex, &returnValueIndex, &callTargetStateToken, &exceptionToken,
+            &callTargetReturnToken, &firstInstruction, debuggerLocals, isAsyncMethod);
+
+        if (SUCCEEDED(hr))
+        {
+            lineProbeCallTargetStateIndex = debuggerLocals[0];
+            spanMethodStateIndex = debuggerLocals[1];
+            multiProbeStatesIndex = debuggerLocals[2];
+        }
+    }
+    else
+    {
+        hr = ModifyLocalSigForFlowRecorder(module_metadata, debuggerTokens, rewriter, &methodReturnType, isVoid,
+                                           &returnValueIndex, &exceptionIndex, &flowRecorderStateIndex);
+        firstInstruction = rewriterWrapper.LoadNull();
+        rewriterWrapper.StLocal(exceptionIndex);
+        rewriterWrapper.LoadLocalAddress(flowRecorderStateIndex);
+        rewriterWrapper.InitObj(debuggerTokens->GetFlowRecorderStateTypeRef());
+    }
 
     if (FAILED(hr))
     {
-        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_failed_to_add_di_locals);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
+                             invalid_probe_failed_to_add_di_locals);
         // Error message is already written in ModifyLocalSigAndInitialize
         return S_FALSE; // TODO https://datadoghq.atlassian.net/browse/DEBUG-706
     }
@@ -2315,7 +3233,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         }
         else if (isTypeIsByRefLike)
         {
-            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_probe_byreflike_return_not_supported);
+            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
+                                 invalid_probe_probe_byreflike_return_not_supported);
             return E_NOTIMPL;
         }
     }
@@ -2329,7 +3248,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     }
     else if (isTypeIsByRefLike)
     {
-        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_type_is_by_ref_like);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
+                             invalid_probe_type_is_by_ref_like);
         return E_NOTIMPL;
     }
 
@@ -2362,7 +3282,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
         if (hr != E_NOTIMPL && FAILED(hr))
         {
-            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_failed_to_instrument_line_probe);
+            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
+                                 invalid_probe_failed_to_instrument_line_probe);
             // Appropriate error message is already logged in ApplyLineProbes.
             return E_FAIL;            
         }
@@ -2409,7 +3330,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
         if (hr != E_NOTIMPL && hr != E_UNEXPECTED && FAILED(hr))
         {
-            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes,
+            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
                                  invalid_probe_failed_to_instrument_method_probe);
             // Appropriate error message is already logged in ApplyMethodProbe / ApplyAsyncMethodProbe.
             return E_FAIL;
@@ -2448,13 +3369,15 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
             hr = ApplyMethodProbe(methodProbes, module_id, module_metadata, caller, debuggerTokens, function_token,
                                   retFuncArg, isVoid, isStatic, methodArguments, numArgs, rewriter,
                                   methodLocals, numLocals, rewriterWrapper, callTargetStateIndex, exceptionIndex,
-                                  callTargetReturnIndex, returnValueIndex, multiProbeStatesIndex, callTargetReturnToken,
-                                  firstInstruction, instrumentedMethodIndex, beforeLineProbe, newClauses);
+                                  callTargetReturnIndex, returnValueIndex, multiProbeStatesIndex,
+                                  callTargetReturnToken, firstInstruction, instrumentedMethodIndex, beforeLineProbe,
+                                  newClauses);
         }
 
         if (hr != E_NOTIMPL && hr != E_UNEXPECTED && FAILED(hr))
         {
-            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_failed_to_instrument_method_probe);
+            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
+                                 invalid_probe_failed_to_instrument_method_probe);
             // Appropriate error message is already logged in ApplyMethodProbe / ApplyAsyncMethodProbe.
             return E_FAIL;
         }
@@ -2467,10 +3390,37 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         appliedAtLeastOneMethodProbeInstrumentation = hr == S_OK;
     }
 
-    if (!appliedAtLeastOneMethodProbeInstrumentation && !appliedAtLeastOneLineProbeInstrumentation &&
-        !appliedAtLeastOneSpanProbeInstrumentation)
+    bool appliedFlowRecorderProbeInstrumentation = false;
+    if (!flowRecorderProbes.empty())
     {
-        Logger::Info("There are no Method, Span or Line probes instrumentations. Skipping method instrumentation.");
+        if (isAsyncMethod)
+        {
+            Logger::Info("Applying Async Flow Recorder instrumentation with ", flowRecorderProbes.size(), " probes.");
+        }
+        else
+        {
+            Logger::Info("Applying Non-Async Flow Recorder instrumentation with ", flowRecorderProbes.size(), " probes.");
+        }
+
+        const auto captureValues = flowRecorderProbes[0]->capture_values;
+        hr = ApplyFlowRecorderProbe(caller, module_metadata, debuggerTokens, isVoid, rewriter, rewriterWrapper,
+                                    exceptionIndex, returnValueIndex, flowRecorderStateIndex,
+                                    function_token, instrumentedMethodIndex, beforeLineProbe, isAsyncMethod,
+                                    captureValues, isStatic, methodArguments, numArgs, methodLocals, numLocals,
+                                    &methodReturnType, newClauses);
+        if (FAILED(hr))
+        {
+            MarkAllFlowRecorderProbesAsError(flowRecorderProbes, invalid_probe_failed_to_instrument_method_probe);
+            return E_FAIL;
+        }
+
+        appliedFlowRecorderProbeInstrumentation = hr == S_OK;
+    }
+
+    if (!appliedAtLeastOneMethodProbeInstrumentation && !appliedAtLeastOneLineProbeInstrumentation &&
+        !appliedAtLeastOneSpanProbeInstrumentation && !appliedFlowRecorderProbeInstrumentation)
+    {
+        Logger::Info("There are no Method, Span, Line, or Flow Recorder probes instrumentations. Skipping method instrumentation.");
         return S_FALSE;
     }
 
@@ -2511,7 +3461,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Call to ILRewriter.Export() failed for "
                      "ModuleID=",
                      module_id, " ", function_token);
-        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, failed_to_export_method_il);
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, flowRecorderProbes,
+                             failed_to_export_method_il);
         return E_FAIL;
     }
 

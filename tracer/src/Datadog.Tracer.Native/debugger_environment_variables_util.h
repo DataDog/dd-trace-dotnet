@@ -14,6 +14,13 @@ bool IsDynamicInstrumentationManagedActivationDisabled();
 bool IsExceptionReplayManagedActivationDisabled();
 bool IsDebuggerInstrumentAllEnabled();
 bool IsDebuggerInstrumentAllLinesEnabled();
+bool IsDebuggerFlowRecorderEnabled();
+int GetDebuggerFlowRecorderMaxMethods();
+WSTRING GetDebuggerFlowRecorderCaptureValues();
+WSTRING GetDebuggerFlowRecorderCaptureValueMethods();
+WSTRING GetDebuggerFlowRecorderExcludeMethods();
+WSTRING GetDebuggerFlowRecorderRewriteMode();
+bool IsDebuggerFlowRecorderEntryOnlyRewriteMode();
 
 } // namespace debugger
 
