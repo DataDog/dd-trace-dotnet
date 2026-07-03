@@ -215,6 +215,44 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void Policy_DefaultObjectCapture_DoesNotInvokeCustomerGetter()
+        {
+            var source = new GetterSideEffectContainer();
+
+            var localJson = GetLocalToken(source);
+
+            Assert.Equal(0, source.GetterCallCount);
+            Assert.Equal(42, localJson["fields"]?["BackingField"]?["value"]?.Value<int>());
+            Assert.Null(localJson["fields"]?["Getter"]);
+        }
+
+        [Fact]
+        public void Policy_ExceptionCapture_ReadsSelectedExceptionProperties()
+        {
+            var exception = new SideEffectException();
+
+            var localJson = GetLocalToken(exception);
+
+            Assert.Equal(1, exception.MessageCallCount);
+            Assert.Equal("policy-message", localJson["fields"]?["Message"]?["value"]?.Value<string>());
+        }
+
+        [Fact]
+        public void Policy_UnsupportedCollectionCapture_DoesNotReadCountOrEnumerate()
+        {
+            var collection = new SideEffectCollection([1, 2]);
+
+            var collectionJson = GetLocalToken(collection);
+
+            Assert.Equal(0, collection.CountCallCount);
+            Assert.Equal(0, collection.GetEnumeratorCallCount);
+            Assert.Equal(0, collection.MoveNextCallCount);
+            Assert.Equal("SideEffectCollection", collectionJson["type"]?.Value<string>());
+            Assert.Null(collectionJson["size"]);
+            Assert.Null(collectionJson["elements"]);
+        }
+
+        [Fact]
         public async Task ObjectStructure_Null()
         {
             await ValidateSingleValue(null);
@@ -922,6 +960,101 @@ namespace Datadog.Trace.Tests.Debugger
                 {
                     _index++;
                     return _index < _items.Length;
+                }
+
+                public void Reset()
+                {
+                    _index = -1;
+                }
+            }
+        }
+
+        private sealed class GetterSideEffectContainer
+        {
+            public int BackingField { get; } = 42;
+
+            public int GetterCallCount { get; private set; }
+
+            public int Getter
+            {
+                get
+                {
+                    GetterCallCount++;
+                    return 123;
+                }
+            }
+        }
+
+        private sealed class SideEffectException : Exception
+        {
+            public int MessageCallCount { get; private set; }
+
+            public override string Message
+            {
+                get
+                {
+                    MessageCallCount++;
+                    return "policy-message";
+                }
+            }
+        }
+
+        private sealed class SideEffectCollection : ICollection
+        {
+            private readonly object[] _items;
+
+            public SideEffectCollection(object[] items)
+            {
+                _items = items;
+            }
+
+            public int Count
+            {
+                get
+                {
+                    CountCallCount++;
+                    return _items.Length;
+                }
+            }
+
+            public int CountCallCount { get; private set; }
+
+            public int GetEnumeratorCallCount { get; private set; }
+
+            public int MoveNextCallCount { get; private set; }
+
+            public bool IsSynchronized => false;
+
+            public object SyncRoot => this;
+
+            public void CopyTo(Array array, int index)
+            {
+                _items.CopyTo(array, index);
+            }
+
+            public IEnumerator GetEnumerator()
+            {
+                GetEnumeratorCallCount++;
+                return new SideEffectEnumerator(this);
+            }
+
+            private sealed class SideEffectEnumerator : IEnumerator
+            {
+                private readonly SideEffectCollection _collection;
+                private int _index = -1;
+
+                public SideEffectEnumerator(SideEffectCollection collection)
+                {
+                    _collection = collection;
+                }
+
+                public object Current => _collection._items[_index];
+
+                public bool MoveNext()
+                {
+                    _collection.MoveNextCallCount++;
+                    _index++;
+                    return _index < _collection._items.Length;
                 }
 
                 public void Reset()

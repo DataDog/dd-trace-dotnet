@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
     [Trait("Category", "ArmUnsupported")]
+    [Collection(AzureMessagingEmulatorTestsCollection.Name)]
     public class AzureEventHubsTests : TracingIntegrationTest
     {
         public AzureEventHubsTests(ITestOutputHelper output)
