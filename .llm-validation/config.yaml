@@ -8,6 +8,7 @@ runs: 3
 instruction_files:
   - AGENTS.md
   - .claude/skills/bump-libdatadog/SKILL.md   # also gate the libdatadog-bump skill
+  - .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh   # + its helper script (part of the skill's behavior)
 
 # Testing-level presets (pick one via --level / LLMVAL_LEVEL). Explicit --case/--max-cases/--runs override.
 # Production default: `gate` — a curated, high-signal set (below): the cases where AGENTS.md/the skill is the
