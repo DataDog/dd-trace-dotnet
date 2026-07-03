@@ -1033,7 +1033,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             var supersededResultIds = coverageReports.Count > 1 ?
                                           coverageReports.Select(coverageReport => GetCoverletXmlFallbackResultId(sessionSpanId, coverageReport)).ToArray() :
                                           null;
-            _ = CoverageBackfillDataStore.RecordCoverageIpcResult(
+            var coverageResultId = CoverageBackfillDataStore.RecordCoverageIpcResult(
                 TestOptimization.Instance,
                 sessionSpanId,
                 CodeCoverageReportSource.CoverletXmlFallback,
@@ -1052,27 +1052,103 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 Log.Debug("CoverletXmlFallback.Enabling IPC client: {Name}", name);
                 using var ipcClient = new IpcClient(name);
                 Log.Debug("CoverletXmlFallback.Sending session code coverage: {Value}", coverageResult.Percentage);
-                if (!ipcClient.TrySendMessage(
-                        new SessionCodeCoverageMessage(
-                            CodeCoverageReportSource.CoverletXmlFallback,
-                            coverageResult.Percentage,
-                            coverageResult.Backfilled,
-                            coverageResult.ExecutableLines,
-                            coverageResult.CoveredLines,
-                            coverageResult.Diagnostic,
-                            stableCoverageResultId,
-                            backfillValidated,
-                            supersededResultIds: supersededResultIds)))
-                {
-                    Log.Warning("RunCiCommand: Could not send Coverlet XML fallback code coverage IPC message.");
-                    RecordCoverletXmlFallbackIpcFailure(sessionSpanId);
-                }
+                var sessionCodeCoverageMessage = CreateSessionCodeCoverageIpcMessage(
+                    CodeCoverageReportSource.CoverletXmlFallback,
+                    coverageResult.Percentage,
+                    coverageResult.Backfilled,
+                    coverageResult.ExecutableLines,
+                    coverageResult.CoveredLines,
+                    coverageResult.Diagnostic,
+                    inlineResultId: stableCoverageResultId,
+                    persistedResultId: coverageResultId,
+                    backfillValidated: backfillValidated,
+                    supersededResultIds: supersededResultIds);
+                TrySendSessionCodeCoverageIpcMessage(
+                    ipcClient,
+                    sessionCodeCoverageMessage,
+                    () =>
+                    {
+                        Log.Warning("RunCiCommand: Could not send Coverlet XML fallback code coverage IPC message.");
+                        RecordCoverletXmlFallbackIpcFailure(sessionSpanId);
+                    });
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "RunCiCommand: Error enabling IPC client and sending Coverlet XML fallback coverage data.");
                 RecordCoverletXmlFallbackIpcFailure(sessionSpanId);
             }
+        }
+
+        /// <summary>
+        /// Creates the coverage IPC notification sent by child coverage producers.
+        /// </summary>
+        /// <param name="source">Coverage source that produced the result.</param>
+        /// <param name="percentage">Line coverage percentage reported by the source.</param>
+        /// <param name="backfilled">Whether backend ITR coverage backfill was used.</param>
+        /// <param name="executableLines">Executable-line count, when available.</param>
+        /// <param name="coveredLines">Covered-line count, when available.</param>
+        /// <param name="diagnostic">Compact diagnostic text, when available.</param>
+        /// <param name="inlineResultId">Result id to preserve when falling back to a slim inline message.</param>
+        /// <param name="persistedResultId">Result id returned by persisted storage, or null when persistence failed.</param>
+        /// <param name="backfillValidated">Whether backend ITR coverage was reconciled without unsafe path ambiguity.</param>
+        /// <param name="backfillNotApplicable">Whether backend ITR coverage was evaluated and did not apply.</param>
+        /// <param name="backfillValidation">Backend ITR coverage validation data that requires persisted storage.</param>
+        /// <param name="supersededResultIds">Stable identities of partial producer results represented by this merged result.</param>
+        /// <returns>A small reference IPC message when persistence succeeded, a slim inline coverage message when safe, or null when delivery must fail closed.</returns>
+        internal static object? CreateSessionCodeCoverageIpcMessage(
+            CodeCoverageReportSource source,
+            double percentage,
+            bool backfilled,
+            double? executableLines,
+            double? coveredLines,
+            string? diagnostic,
+            string? inlineResultId,
+            string? persistedResultId,
+            bool backfillValidated = false,
+            bool backfillNotApplicable = false,
+            CodeCoverageBackfillValidation? backfillValidation = null,
+            string[]? supersededResultIds = null)
+        {
+            if (persistedResultId is not null)
+            {
+                return new SessionCodeCoverageReferenceMessage(source, persistedResultId);
+            }
+
+            if (backfillValidation is not null ||
+                supersededResultIds is { Length: > 0 })
+            {
+                return null;
+            }
+
+            return new SessionCodeCoverageMessage(
+                source,
+                percentage,
+                backfilled,
+                executableLines,
+                coveredLines,
+                diagnostic,
+                inlineResultId,
+                backfillValidated,
+                backfillNotApplicable);
+        }
+
+        /// <summary>
+        /// Sends a coverage IPC notification, or records the producer failure when no safe IPC message exists.
+        /// </summary>
+        /// <param name="ipcClient">IPC client connected to the parent test session.</param>
+        /// <param name="message">Coverage IPC message to send, or null when the producer must fail closed.</param>
+        /// <param name="recordFailure">Failure callback that records telemetry and a coverage IPC failure marker.</param>
+        /// <returns>True when a message was sent successfully.</returns>
+        internal static bool TrySendSessionCodeCoverageIpcMessage(IpcClient ipcClient, object? message, Action recordFailure)
+        {
+            if (message is not null &&
+                ipcClient.TrySendMessage(message))
+            {
+                return true;
+            }
+
+            recordFailure();
+            return false;
         }
 
         private static void RecordCoverletXmlFallbackIpcFailure(ulong sessionSpanId)

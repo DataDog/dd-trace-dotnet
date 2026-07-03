@@ -23,9 +23,9 @@ jobs:
 
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
+      - uses: octokit/request-action@b91aabaa861c777dcdb14e2387e30eddf04619ae # v3.0.0
         name: 'Open Code Freeze Milestone'
         id: milestones
         if: github.event_name == 'workflow_dispatch'

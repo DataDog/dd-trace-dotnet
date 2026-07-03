@@ -292,6 +292,210 @@ public class TestSessionCoverageTests
     }
 
     [Fact]
+    public void IpcCoverageReferenceLoadsFullPersistedResultMetadata()
+    {
+        var runFolder = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-coverage-ipc-{Guid.NewGuid():N}");
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, runFolder);
+        var session = CreateSession();
+        try
+        {
+            CoverageBackfillDataStore.RecordCoverageIpcResult(
+                TestOptimization.Instance,
+                session.Tags.SessionId,
+                CodeCoverageReportSource.Coverlet,
+                percentage: 80,
+                backfilled: true,
+                executableLines: 10,
+                coveredLines: 8,
+                diagnostic: "persisted-reference",
+                resultId: "coverlet-reference",
+                backfillValidated: true,
+                backfillValidation: CreateSimpleBackfillValidation());
+
+            InvokeIpcMessageReceived(
+                session,
+                new SessionCodeCoverageReferenceMessage(
+                    CodeCoverageReportSource.Coverlet,
+                    "coverlet-reference"));
+
+            session.SuppressUnvalidatedCodeCoverageResult(CodeCoverageReportSource.Coverlet);
+            session.PublishCodeCoverage();
+
+            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(80);
+            session.Tags.GetTag(CodeCoverageTags.Backfilled).Should().Be("true");
+        }
+        finally
+        {
+            CloseAndReset(session);
+            if (Directory.Exists(runFolder))
+            {
+                Directory.Delete(runFolder, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void IpcCoverageReferenceLoadsSupersededResultIds()
+    {
+        var runFolder = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-coverage-ipc-{Guid.NewGuid():N}");
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, runFolder);
+        var session = CreateSession();
+        try
+        {
+            session.RecordCodeCoverage(CodeCoverageReportSource.Coverlet, 0, backfilled: false, executableLines: 1, coveredLines: 0);
+            session.RecordCodeCoverage(CodeCoverageReportSource.CoverletXmlFallback, 0, backfilled: true, executableLines: 2, coveredLines: 0, resultId: "fallback-a");
+            CoverageBackfillDataStore.RecordCoverageIpcResult(
+                TestOptimization.Instance,
+                session.Tags.SessionId,
+                CodeCoverageReportSource.CoverletXmlFallback,
+                percentage: 50,
+                backfilled: true,
+                executableLines: 2,
+                coveredLines: 1,
+                resultId: "fallback-group",
+                supersededResultIds: ["fallback-a", "fallback-b"]);
+
+            InvokeIpcMessageReceived(
+                session,
+                new SessionCodeCoverageReferenceMessage(
+                    CodeCoverageReportSource.CoverletXmlFallback,
+                    "fallback-group"));
+            session.RecordCodeCoverage(CodeCoverageReportSource.CoverletXmlFallback, 100, backfilled: true, executableLines: 2, coveredLines: 2, resultId: "fallback-b");
+            session.PublishCodeCoverage();
+
+            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(50);
+            session.Tags.GetTag(CodeCoverageTags.Backfilled).Should().Be("true");
+        }
+        finally
+        {
+            CloseAndReset(session);
+            if (Directory.Exists(runFolder))
+            {
+                Directory.Delete(runFolder, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void IpcCoverageReferenceMissingResultFailsClosed()
+    {
+        var runFolder = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-coverage-ipc-{Guid.NewGuid():N}");
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, runFolder);
+        var session = CreateSession();
+        try
+        {
+            session.RecordCodeCoverage(
+                CodeCoverageReportSource.Coverlet,
+                10,
+                backfilled: false,
+                executableLines: 10,
+                coveredLines: 1,
+                diagnostic: "stale-prior-coverage");
+
+            InvokeIpcMessageReceived(
+                session,
+                new SessionCodeCoverageReferenceMessage(
+                    CodeCoverageReportSource.Coverlet,
+                    "missing-result"));
+
+            session.PublishCodeCoverage();
+
+            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().BeNull();
+            session.Tags.GetTag(CodeCoverageTags.Backfilled).Should().BeNull();
+            CoverageBackfillDataStore.TryReadCoverageIpcFailure(session.Tags.SessionId, out var reason).Should().BeTrue();
+            reason.Should().Contain(nameof(CodeCoverageReportSource.Coverlet));
+        }
+        finally
+        {
+            CloseAndReset(session);
+            if (Directory.Exists(runFolder))
+            {
+                Directory.Delete(runFolder, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void IpcCoverageReferenceRecoveredByPersistedFallbackPublishesCoverage()
+    {
+        var runFolder = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-coverage-ipc-{Guid.NewGuid():N}");
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, runFolder);
+        var session = CreateSession();
+        try
+        {
+            InvokeIpcMessageReceived(
+                session,
+                new SessionCodeCoverageReferenceMessage(
+                    CodeCoverageReportSource.Coverlet,
+                    "late-coverlet-result"));
+
+            CoverageBackfillDataStore.RecordCoverageIpcResult(
+                TestOptimization.Instance,
+                session.Tags.SessionId,
+                CodeCoverageReportSource.Coverlet,
+                percentage: 80,
+                backfilled: true,
+                executableLines: 10,
+                coveredLines: 8,
+                diagnostic: "late-coverlet-result",
+                resultId: "late-coverlet-result");
+
+            session.RecordPersistedCoverageIpcResults().Should().BeTrue();
+            session.PublishCodeCoverage();
+
+            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(80);
+            session.Tags.GetTag(CodeCoverageTags.Backfilled).Should().Be("true");
+        }
+        finally
+        {
+            CloseAndReset(session);
+            if (Directory.Exists(runFolder))
+            {
+                Directory.Delete(runFolder, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void IpcCoverageReferenceMissingResultDoesNotBlockExternalXmlCoverage()
+    {
+        var runFolder = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-coverage-ipc-{Guid.NewGuid():N}");
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, runFolder);
+        var session = CreateSession();
+        try
+        {
+            session.RecordCodeCoverage(
+                CodeCoverageReportSource.ExternalXml,
+                90,
+                backfilled: false,
+                executableLines: 10,
+                coveredLines: 9,
+                diagnostic: "external-xml");
+
+            InvokeIpcMessageReceived(
+                session,
+                new SessionCodeCoverageReferenceMessage(
+                    CodeCoverageReportSource.Coverlet,
+                    "missing-result"));
+
+            session.PublishCodeCoverage();
+
+            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(90);
+            session.Tags.GetTag(CodeCoverageTags.Backfilled).Should().BeNull();
+            CoverageBackfillDataStore.TryReadCoverageIpcFailure(session.Tags.SessionId, out var reason).Should().BeTrue();
+            reason.Should().Contain(nameof(CodeCoverageReportSource.Coverlet));
+        }
+        finally
+        {
+            CloseAndReset(session);
+            if (Directory.Exists(runFolder))
+            {
+                Directory.Delete(runFolder, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void SuppressUnvalidatedCodeCoverageKeepsValidatedCoverletResult()
     {
         var session = CreateSession();
@@ -2706,6 +2910,50 @@ public class TestSessionCoverageTests
     }
 
     [Fact]
+    public void CloseProcessesCoverageReferenceDeliveredThroughRealIpc()
+    {
+        var runFolder = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-coverage-ipc-{Guid.NewGuid():N}");
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, runFolder);
+        var session = CreateSession();
+        IpcClient? client = null;
+        try
+        {
+            session.EnableIpcServer().Should().BeTrue();
+            client = new IpcClient($"session_{session.Tags.SessionId}");
+            CoverageBackfillDataStore.RecordCoverageIpcResult(
+                TestOptimization.Instance,
+                session.Tags.SessionId,
+                CodeCoverageReportSource.Coverlet,
+                percentage: 80,
+                backfilled: true,
+                executableLines: 10,
+                coveredLines: 8,
+                diagnostic: "real-ipc-reference",
+                resultId: "coverlet-reference");
+
+            SendIpcMessage(
+                client,
+                new SessionCodeCoverageReferenceMessage(
+                    CodeCoverageReportSource.Coverlet,
+                    "coverlet-reference"));
+            session.DrainIpcMessages(TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(50), waitForFirstMessage: true);
+            session.Close(TestStatus.Pass);
+
+            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(80);
+            session.Tags.GetTag(CodeCoverageTags.Backfilled).Should().Be("true");
+        }
+        finally
+        {
+            client?.Dispose();
+            CloseAndReset(session);
+            if (Directory.Exists(runFolder))
+            {
+                Directory.Delete(runFolder, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public void CloseWaitsForCoverageIpcWhenLowerPriorityCoverageAlreadyExists()
     {
         Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test --collect \"XPlat Code Coverage\"");
@@ -3031,6 +3279,148 @@ public class TestSessionCoverageTests
         DotnetCommon.IsVSTestArtifactsPostprocessCommand(commandLine).Should().BeFalse();
     }
 
+    [Fact]
+    public void CreateSessionCodeCoverageIpcMessageUsesReferenceWhenPersistenceSucceeded()
+    {
+        var message = DotnetCommon.CreateSessionCodeCoverageIpcMessage(
+            CodeCoverageReportSource.Coverlet,
+            percentage: 80,
+            backfilled: true,
+            executableLines: 10,
+            coveredLines: 8,
+            diagnostic: "persisted",
+            inlineResultId: "inline-id",
+            persistedResultId: "persisted-id",
+            backfillValidated: true,
+            backfillNotApplicable: false,
+            backfillValidation: CreateSimpleBackfillValidation(),
+            supersededResultIds: ["partial-a"]);
+
+        var referenceMessage = message.Should().BeOfType<SessionCodeCoverageReferenceMessage>().Subject;
+        referenceMessage.Source.Should().Be(CodeCoverageReportSource.Coverlet);
+        referenceMessage.ResultId.Should().Be("persisted-id");
+    }
+
+    [Fact]
+    public void CreateSessionCodeCoverageIpcMessageUsesSlimInlineCoverageWhenPersistenceFailed()
+    {
+        var message = DotnetCommon.CreateSessionCodeCoverageIpcMessage(
+            CodeCoverageReportSource.CoverletXmlFallback,
+            percentage: 75,
+            backfilled: true,
+            executableLines: 4,
+            coveredLines: 3,
+            diagnostic: "inline-fallback",
+            inlineResultId: "stable-inline-id",
+            persistedResultId: null,
+            backfillValidated: true,
+            backfillNotApplicable: false,
+            backfillValidation: null,
+            supersededResultIds: null);
+
+        var inlineMessage = message.Should().BeOfType<SessionCodeCoverageMessage>().Subject;
+        inlineMessage.Source.Should().Be(CodeCoverageReportSource.CoverletXmlFallback);
+        inlineMessage.Value.Should().Be(75);
+        inlineMessage.Backfilled.Should().BeTrue();
+        inlineMessage.ExecutableLines.Should().Be(4);
+        inlineMessage.CoveredLines.Should().Be(3);
+        inlineMessage.Diagnostic.Should().Be("inline-fallback");
+        inlineMessage.ResultId.Should().Be("stable-inline-id");
+        inlineMessage.BackfillValidated.Should().BeTrue();
+        inlineMessage.BackfillValidation.Should().BeNull();
+        inlineMessage.SupersededResultIds.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateSessionCodeCoverageIpcMessageTreatsEmptySupersededResultIdsAsSlimInlineSafe()
+    {
+        var message = DotnetCommon.CreateSessionCodeCoverageIpcMessage(
+            CodeCoverageReportSource.CoverletXmlFallback,
+            percentage: 75,
+            backfilled: true,
+            executableLines: 4,
+            coveredLines: 3,
+            diagnostic: "inline-fallback",
+            inlineResultId: "stable-inline-id",
+            persistedResultId: null,
+            backfillValidated: true,
+            backfillNotApplicable: false,
+            backfillValidation: null,
+            supersededResultIds: []);
+
+        var inlineMessage = message.Should().BeOfType<SessionCodeCoverageMessage>().Subject;
+        inlineMessage.Source.Should().Be(CodeCoverageReportSource.CoverletXmlFallback);
+        inlineMessage.ResultId.Should().Be("stable-inline-id");
+        inlineMessage.BackfillValidation.Should().BeNull();
+        inlineMessage.SupersededResultIds.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void CreateSessionCodeCoverageIpcMessageFailsClosedWhenPersistenceFailsForMetadataDependentResult(bool hasBackfillValidation, bool hasSupersededResultIds)
+    {
+        var message = DotnetCommon.CreateSessionCodeCoverageIpcMessage(
+            CodeCoverageReportSource.CoverletXmlFallback,
+            percentage: 75,
+            backfilled: true,
+            executableLines: 4,
+            coveredLines: 3,
+            diagnostic: "metadata-dependent",
+            inlineResultId: "stable-inline-id",
+            persistedResultId: null,
+            backfillValidated: true,
+            backfillNotApplicable: false,
+            backfillValidation: hasBackfillValidation ? CreateSimpleBackfillValidation() : null,
+            supersededResultIds: hasSupersededResultIds ? ["partial-a", "partial-b"] : null);
+
+        message.Should().BeNull();
+    }
+
+    [Fact]
+    public void TrySendSessionCodeCoverageIpcMessageRecordsFailureWhenMessageFactoryFailsClosed()
+    {
+        var runFolder = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-coverage-ipc-{Guid.NewGuid():N}");
+        Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, runFolder);
+        var session = CreateSession();
+        IpcClient? client = null;
+        try
+        {
+            client = new IpcClient($"session_{session.Tags.SessionId}");
+            var message = DotnetCommon.CreateSessionCodeCoverageIpcMessage(
+                CodeCoverageReportSource.CoverletXmlFallback,
+                percentage: 75,
+                backfilled: true,
+                executableLines: 4,
+                coveredLines: 3,
+                diagnostic: "metadata-dependent",
+                inlineResultId: "stable-inline-id",
+                persistedResultId: null,
+                backfillValidated: true,
+                backfillNotApplicable: false,
+                backfillValidation: CreateSimpleBackfillValidation());
+
+            message.Should().BeNull();
+            DotnetCommon.TrySendSessionCodeCoverageIpcMessage(
+                client,
+                message,
+                () => CoverageBackfillDataStore.RecordCoverageIpcFailure(session.Tags.SessionId, nameof(CodeCoverageReportSource.CoverletXmlFallback))).Should().BeFalse();
+
+            CoverageBackfillDataStore.TryReadCoverageIpcFailure(session.Tags.SessionId, out var reason).Should().BeTrue();
+            reason.Should().Contain(nameof(CodeCoverageReportSource.CoverletXmlFallback));
+        }
+        finally
+        {
+            client?.Dispose();
+            CloseAndReset(session);
+            if (Directory.Exists(runFolder))
+            {
+                Directory.Delete(runFolder, recursive: true);
+            }
+        }
+    }
+
     private static TestSession CreateSession(bool propagateEnvironmentVariables = false, string? workingDirectory = null, string command = "dotnet test")
     {
         TestOptimization.Instance.Reset();
@@ -3083,6 +3473,15 @@ public class TestSessionCoverageTests
 
         return CoverageBackfillData.FromBackendCoverage(coverage);
     }
+
+    private static CodeCoverageBackfillValidation CreateSimpleBackfillValidation()
+        => CodeCoverageBackfillValidation.Create(
+            requiredBackendFilesWithCoverage: 1,
+            expectedCoveredLinesByBackendPath: new Dictionary<string, int> { ["src/Calculator.cs"] = 1 },
+            representedBackendLinesByBackendPath: new Dictionary<string, HashSet<int>> { ["src/Calculator.cs"] = [1] },
+            localCandidateByBackendPath: new Dictionary<string, string> { ["src/Calculator.cs"] = "/repo/src/Calculator.cs" },
+            requiredBackendPathsWithCoverage: ["src/Calculator.cs"],
+            requiredBackendLinesByBackendPath: new Dictionary<string, HashSet<int>> { ["src/Calculator.cs"] = [1] });
 
     private static void SetPrivateField(TestSession session, string fieldName, int value)
     {

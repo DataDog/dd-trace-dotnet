@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -13,6 +13,8 @@
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,
+      http.response.headers.content-length: 13,
+      http.response.headers.content-type: text/plain; charset=utf-8,
       http.route: iast/executequeryfrombodyquerydata,
       http.status_code: 200,
       http.url: http://localhost:00000/Iast/ExecuteQueryFromBodyQueryData,
