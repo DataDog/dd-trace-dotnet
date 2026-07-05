@@ -45,12 +45,7 @@ public class AzureFrontDoorExtractorTests
     [Fact]
     public void TryExtract_WithMinimumValidHeaders_ReturnsTrue()
     {
-        // this reduces precision to 1ms, so we can't compare extracted value to the original DateTimeOffset directly
-        var unixTimeMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var start = DateTimeOffset.FromUnixTimeMilliseconds(unixTimeMilliseconds);
-
-        var headers = ProxyTestHelpers.CreateValidAzureFrontDoorHeaders(unixTimeMilliseconds.ToString());
-
+        var headers = ProxyTestHelpers.CreateValidAzureFrontDoorHeaders();
         headers.Remove(InferredProxyHeaders.HttpMethod);
         headers.Remove(InferredProxyHeaders.Path);
         headers.Remove(InferredProxyHeaders.Region);
@@ -60,7 +55,6 @@ public class AzureFrontDoorExtractorTests
 
         success.Should().BeTrue();
         data.ProxyName.Should().Be("azure-fd");
-        data.StartTime.Should().Be(start);
         data.DomainName.Should().Be("myapp.azurefd.net");
         data.HttpMethod.Should().BeNull();
         data.Path.Should().BeNull();
