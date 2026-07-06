@@ -53,11 +53,41 @@ namespace Datadog.Trace.DiagnosticListeners
         private const string DiagnosticListenerName = "MassTransit";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<MassTransitDiagnosticObserver>();
 
+        // Not cached when false: this observer is checked against every DiagnosticListener created
+        // app-wide, and MassTransit's own listener may not exist yet the first few times we're asked
+        // (e.g. ASP.NET Core's listener is typically created before the bus starts). Once we do see
+        // MassTransit 7 loaded, remember it — the loaded major version can't change at runtime.
+        private static bool? _isMassTransit7Loaded;
+
         protected override string ListenerName => DiagnosticListenerName;
 
         public override bool IsSubscriberEnabled()
         {
-            return Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.MassTransit);
+            return Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.MassTransit)
+                && IsMassTransit7Loaded();
+        }
+
+        private static bool IsMassTransit7Loaded()
+        {
+            if (_isMassTransit7Loaded == true)
+            {
+                return true;
+            }
+
+            var found = false;
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (var i = 0; i < assemblies.Length; i++)
+            {
+                var name = assemblies[i].GetName();
+                if (name.Name == "MassTransit")
+                {
+                    found = name.Version?.Major == 7;
+                    break;
+                }
+            }
+
+            _isMassTransit7Loaded = found;
+            return found;
         }
 
         protected override void OnNext(string eventName, object arg)
