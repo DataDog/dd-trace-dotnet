@@ -525,6 +525,92 @@ public class SpanEnrichmentTests
     }
 
     // ---------------------------------------------------------------------
+    // Per-trace state: lazy creation, cross-trace isolation, root-only tags
+    // ---------------------------------------------------------------------
+
+    [Fact]
+    public async Task FeatureFlagEnrichment_LazilyCreated_ReturnsStableInstance()
+    {
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
+        await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
+
+        using var scope = (Scope)tracer.StartActive("root-op");
+        var traceContext = scope.Span.Context.TraceContext!;
+
+        traceContext.FeatureFlagEnrichment.Should().BeNull("no flag has been evaluated yet");
+
+        var created = traceContext.GetOrCreateFeatureFlagEnrichment();
+        created.Should().NotBeNull();
+        traceContext.FeatureFlagEnrichment.Should().BeSameAs(created, "the created state is now exposed");
+        traceContext.GetOrCreateFeatureFlagEnrichment().Should().BeSameAs(created, "subsequent calls reuse the same instance");
+    }
+
+    [Fact]
+    public async Task SeparateTraces_DoNotCrossContaminate()
+    {
+        // Turns the reviewer's "spans tagged with flags from a different trace" concern into a passing
+        // test: two independent traces accumulate disjoint serial ids, and each root finishes with
+        // ONLY its own ids — per-trace state makes cross-contamination structurally impossible.
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
+        await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
+
+        // Starts a root, accumulates, then deactivates the scope (FinishOnClose=false keeps the span
+        // alive). The next call therefore starts a brand-new trace, not a child of the first.
+        Span StartDetachedRoot(long[] ids)
+        {
+            using var scope = (Scope)tracer.StartActive("root-op", new SpanCreationSettings { FinishOnClose = false });
+            scope.Span.IsRootSpan.Should().BeTrue();
+            var enrichment = scope.Span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment();
+            foreach (var id in ids)
+            {
+                enrichment.Accumulate(serialId: id, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag", value: "on");
+            }
+
+            return scope.Span;
+        }
+
+        var idsA = new long[] { 1, 2, 3 };
+        var idsB = new long[] { 100, 108, 128 };
+
+        var spanA = StartDetachedRoot(idsA);
+        var spanB = StartDetachedRoot(idsB);
+
+        spanA.Context.TraceContext.Should().NotBeSameAs(spanB.Context.TraceContext, "each root owns its own trace context");
+
+        spanA.Finish();
+        spanB.Finish();
+
+        DecodeDeltaVarint(spanA.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(idsA);
+        DecodeDeltaVarint(spanB.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(idsB);
+    }
+
+    [Fact]
+    public async Task SpanFinish_TagsLandOnRootOnly_NotChildSpans()
+    {
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
+        await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
+
+        using var rootScope = (Scope)tracer.StartActive("root-op");
+        var root = rootScope.Span;
+
+        using (var childScope = (Scope)tracer.StartActive("child-op"))
+        {
+            var child = childScope.Span;
+            child.IsRootSpan.Should().BeFalse();
+
+            // The eval happens on the child, but enrichment is keyed to the shared trace context.
+            child.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()
+                .Accumulate(serialId: 100, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag", value: "on");
+
+            child.Finish();
+            child.GetTag(SpanEnrichmentState.TagFlagsEnc).Should().BeNull("a non-root span must never carry ffe tags");
+        }
+
+        root.Finish();
+        DecodeDeltaVarint(root.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(new long[] { 100 });
+    }
+
+    // ---------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------
 
