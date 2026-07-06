@@ -17,6 +17,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -37,6 +38,10 @@ namespace Datadog.Trace
 
         private IastRequestContext? _iastRequestContext;
         private AppSecRequestContext? _appSecRequestContext;
+
+        // Lazily created on the first feature-flag evaluation for this trace; null until then, so
+        // traces that never evaluate a flag pay nothing. State dies with the TraceContext.
+        private SpanEnrichmentState? _featureFlagEnrichment;
 
         // _rootSpan was chosen in #4125 to be the lock that protects
         // * _spans
@@ -127,8 +132,24 @@ namespace Datadog.Trace
 
         internal bool WafExecuted { get; set; }
 
+        /// <summary> Gets the feature-flag span-enrichment state for this trace, or null if no flag has been evaluated. </summary>
+        internal SpanEnrichmentState? FeatureFlagEnrichment => _featureFlagEnrichment;
+
         internal static TraceContext? GetTraceContext(in SpanCollection spans)
             => spans.FirstSpan?.Context.TraceContext;
+
+        /// <summary>
+        /// Gets the feature-flag span-enrichment state for this trace, creating it on first use.
+        /// </summary>
+        internal SpanEnrichmentState GetOrCreateFeatureFlagEnrichment()
+        {
+            if (Volatile.Read(ref _featureFlagEnrichment) is null)
+            {
+                Interlocked.CompareExchange(ref _featureFlagEnrichment, new(), null);
+            }
+
+            return _featureFlagEnrichment!;
+        }
 
         internal void EnableIastInRequest()
         {

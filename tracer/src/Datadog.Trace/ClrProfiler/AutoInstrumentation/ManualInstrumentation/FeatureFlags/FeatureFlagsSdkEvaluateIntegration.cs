@@ -47,10 +47,10 @@ public sealed class FeatureFlagsSdkEvaluateIntegration
         var tracer = Datadog.Trace.Tracer.Instance;
         var manager = tracer.TracerManager;
         var res = manager.FeatureFlags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey ?? string.Empty, parameters.Attributes);
-        var rootSpan = tracer.InternalActiveScope?.Span?.Context.TraceContext?.RootSpan;
-        if (rootSpan is not null)
+        var traceContext = tracer.InternalActiveScope?.Span?.Context.TraceContext;
+        if (traceContext is not null && tracer.Settings.IsSpanEnrichmentEnabled)
         {
-            manager.SpanEnrichment.AccumulateForRoot(rootSpan.SpanId, res, parameters.TargetingKey);
+            traceContext.GetOrCreateFeatureFlagEnrichment().AccumulateForRoot(res, parameters.TargetingKey);
         }
 
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());

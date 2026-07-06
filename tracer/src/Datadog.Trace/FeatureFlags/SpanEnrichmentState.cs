@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
@@ -43,6 +44,81 @@ namespace Datadog.Trace.FeatureFlags
 
         // flagKey -> value string (first-wins).
         private readonly Dictionary<string, string> _defaults = new();
+
+        /// <summary>
+        /// Accumulates a single flag evaluation into this trace's state. Never throws.
+        /// </summary>
+        /// <param name="serialId">The split serial id, or null when absent.</param>
+        /// <param name="doLog">Whether the allocation authorizes subject logging.</param>
+        /// <param name="targetingKey">The evaluation context targeting key, or null.</param>
+        /// <param name="hasVariant">Whether the evaluation produced a (non-empty) variant.</param>
+        /// <param name="flagKey">The flag key (used for runtime defaults).</param>
+        /// <param name="value">The evaluated value (used for runtime defaults).</param>
+        internal void Accumulate(long? serialId, bool doLog, string? targetingKey, bool hasVariant, string flagKey, object? value)
+        {
+            // A variant without a serial id is a plain evaluation with nothing to record.
+            if (serialId is null && hasVariant)
+            {
+                return;
+            }
+
+            try
+            {
+                if (serialId.HasValue)
+                {
+                    AddSerialId(serialId.Value);
+                    if (doLog && !StringUtil.IsNullOrEmpty(targetingKey))
+                    {
+                        AddSubject(targetingKey!, serialId.Value);
+                    }
+                }
+                else if (!hasVariant)
+                {
+                    AddDefault(flagKey, value);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Enrichment must never break flag evaluation.
+                Log.Debug(ex, "SpanEnrichmentState.Accumulate failed");
+            }
+        }
+
+        /// <summary>
+        /// Accumulates a native FeatureFlags SDK evaluation into this trace's state. Never throws.
+        /// </summary>
+        /// <param name="evaluation">The completed evaluation returned by the evaluator.</param>
+        /// <param name="targetingKey">The caller's targeting key, or null.</param>
+        internal void AccumulateForRoot(IEvaluation? evaluation, string? targetingKey)
+        {
+            if (evaluation is null)
+            {
+                return;
+            }
+
+            long? serialId = null;
+            var metadata = evaluation.FlagMetadata;
+            if (metadata is not null &&
+                metadata.TryGetValue(FeatureFlagMetadataKeys.SplitSerialId, out var serialIdStr) &&
+                !StringUtil.IsNullOrEmpty(serialIdStr) &&
+                long.TryParse(serialIdStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
+            {
+                serialId = parsed;
+            }
+
+            var doLog =
+                metadata is not null &&
+                metadata.TryGetValue(FeatureFlagMetadataKeys.DoLog, out var doLogStr) &&
+                string.Equals(doLogStr, "true", StringComparison.OrdinalIgnoreCase);
+
+            Accumulate(
+                serialId,
+                doLog,
+                targetingKey,
+                hasVariant: !StringUtil.IsNullOrEmpty(evaluation.Variant),
+                evaluation.FlagKey,
+                evaluation.Value);
+        }
 
         public void AddSerialId(long id)
         {
