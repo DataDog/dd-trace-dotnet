@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget
 
             if (scope != null && exception != null)
             {
-                scope.Span.SetExceptionTags(exception);
+                scope.Span.SetException(exception);
                 Log.Debug(
                     "NotifyFaultedIntegration.OnMethodBegin: Set exception on span SpanId={SpanId}, ExceptionType={ExceptionType}",
                     scope.Span.SpanId,
