@@ -12,33 +12,32 @@ namespace Datadog.Trace.Agent
 {
     internal sealed class StatsBucket
     {
-        public StatsBucket(StatsAggregationKey key, List<byte[]> peerTags)
+        public StatsBucket(StatsAggregationKey key, List<byte[]> peerTags, List<byte[]> additionalMetricTags)
         {
             Key = key;
             OkSummary = CreateSketch();
             ErrorSummary = CreateSketch();
             PeerTags = peerTags;
+            AdditionalMetricTags = additionalMetricTags;
         }
 
         public StatsAggregationKey Key { get; }
 
-        // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/weight.go
-        // Hits, Errors, and TopLevelHits are doubles to accumulate fractional sampling weights (1/rate)
-        public double Hits { get; set; }
+        public long Hits { get; set; }
 
-        public double Errors { get; set; }
+        public long Errors { get; set; }
 
-        // Duration is a double to accumulate fractional sampling weights (1/rate), like Hits/Errors/TopLevelHits.
-        // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/statsraw.go
-        public double Duration { get; set; }
+        public long Duration { get; set; }
 
         public DDSketch OkSummary { get; }
 
         public DDSketch ErrorSummary { get; }
 
-        public double TopLevelHits { get; set; }
+        public long TopLevelHits { get; set; }
 
         public List<byte[]> PeerTags { get; }
+
+        public List<byte[]> AdditionalMetricTags { get; }
 
         public void Clear()
         {

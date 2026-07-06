@@ -357,6 +357,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.InstrumentedTests",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.V4Isolated", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated\Samples.AzureFunctions.V4Isolated.csproj", "{BDEE131F-CCF5-49BD-9764-9C4A8864CE4E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AzureFunctions.V4Isolated.Messaging", "tracer\test\test-applications\azure-functions\Samples.AzureFunctions.V4Isolated.Messaging\Samples.AzureFunctions.V4Isolated.Messaging.csproj", "{52F40525-49F3-4386-B79E-D9A5BFD64981}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.SimpleNotificationService", "tracer\test\test-applications\integrations\Samples.AWS.SimpleNotificationService\Samples.AWS.SimpleNotificationService.csproj", "{901AC4F9-7DE5-4D13-85FD-384382E29F11}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.GraphQL7", "tracer\test\test-applications\integrations\Samples.GraphQL7\Samples.GraphQL7.csproj", "{A996927A-9222-43F4-8552-810B69FF04DF}"
@@ -907,6 +909,10 @@ Global
 		{BDEE131F-CCF5-49BD-9764-9C4A8864CE4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BDEE131F-CCF5-49BD-9764-9C4A8864CE4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BDEE131F-CCF5-49BD-9764-9C4A8864CE4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52F40525-49F3-4386-B79E-D9A5BFD64981}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52F40525-49F3-4386-B79E-D9A5BFD64981}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52F40525-49F3-4386-B79E-D9A5BFD64981}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52F40525-49F3-4386-B79E-D9A5BFD64981}.Release|Any CPU.Build.0 = Release|Any CPU
 		{901AC4F9-7DE5-4D13-85FD-384382E29F11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{901AC4F9-7DE5-4D13-85FD-384382E29F11}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{901AC4F9-7DE5-4D13-85FD-384382E29F11}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1233,6 +1239,7 @@ Global
 		{560E1104-9A6E-41E7-AB3D-85BA2740A0F7} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{64E32F7A-8989-480E-AFE7-3BD343424F6A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{BDEE131F-CCF5-49BD-9764-9C4A8864CE4E} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
+		{52F40525-49F3-4386-B79E-D9A5BFD64981} = {C4C1E313-C7C1-4490-AECE-0DD0062380A4}
 		{901AC4F9-7DE5-4D13-85FD-384382E29F11} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{A996927A-9222-43F4-8552-810B69FF04DF} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{87D57940-9A6E-473C-A4D6-777E3BAFD5F9} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}

@@ -27,11 +27,11 @@ updates:
       - dependency-name: "MessagePack" # Locked at a version that supports our net452 build target
       - dependency-name: "*" # Ignore patches for all integrations
         update-types: ["version-update:semver-patch"]
+    cooldown:
+      default-days: 2
 
   # Azure functions explicit testing - we can't include these with our "normal" process checks
   # Because they aren't compatible with the dotnet msbuild approach we're using
-    cooldown:
-      default-days: 2
   - package-ecosystem: "nuget"
     directory: "/tracer/test/test-applications/azure-functions/Samples.AzureFunctions.V4Isolated"
     registries: "*"
@@ -43,10 +43,10 @@ updates:
     ignore:
       - dependency-name: "*" # Ignore patches for all integrations
         update-types: ["version-update:semver-patch"]
-
-  # Src libraries
     cooldown:
       default-days: 2
+
+  # Src libraries
   - package-ecosystem: "nuget"
     directory: "/tracer/src"
     # This is a hacky way to get Dependabot to care primarily about

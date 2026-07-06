@@ -18,29 +18,94 @@ namespace Datadog.Trace.Processors
 
         private static readonly UTF8Encoding Encoding = new UTF8Encoding(false);
 
+        /// <summary>
+        /// Truncates <paramref name="value"/> so its UTF-8 byte length is at most <paramref name="limit"/>,
+        /// cutting at a code-point boundary so it never splits a UTF-8 multi-byte sequence (UTF-16 surrogate
+        /// pair). Matches the current trace-agent's strict-byte-ceiling behavior.
+        /// </summary>
+        /// <returns>true if the value was truncated. false otherwise</returns>
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/truncate.go#L36-L51
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TruncateUTF8(ref string value, int limit)
         {
-            if (string.IsNullOrEmpty(value) || Encoding.GetByteCount(value) <= limit)
+            // Each UTF-16 char is at most 3 UTF-8 bytes, so a string of length <= limit/3 can never exceed the byte limit.
+            if (string.IsNullOrEmpty(value) || value.Length <= limit / 3)
             {
                 return false;
             }
 
-            var charArray = new char[1];
-            var length = 0;
-            for (var i = 0; i < value.Length - 1; i++)
+            // Each char is at least 1 byte, so length > limit guarantees we're over the limit.
+            // We only count when length <= limit, where we need to count up to limit chars.
+            if (value.Length <= limit && Encoding.GetByteCount(value) <= limit)
             {
-                charArray[0] = value[i];
-                length += Encoding.GetByteCount(charArray, 0, 1);
-                if (length > limit)
-                {
-                    value = value.Substring(0, i);
-                    return true;
-                }
+                return false;
             }
 
-            return false;
+            // Extracted as uncommon slow path, to aid inlining
+            value = TruncateUTF8Slow(value, limit);
+            return true;
+
+            static string TruncateUTF8Slow(string value, int limit)
+            {
+                // Binary search to find the cutoff point
+                // Find the largest prefix whose UTF-8 byte count is <= limit by counting only (never
+                // materializing UTF-8 bytes), then cut there. Seed lo at limit/3 (a limit/3-char prefix
+                // always fits, since each char is <= 3 bytes) and cap hi at limit (the cut can't exceed
+                // `limit` chars, since each char is >= 1 byte).
+                var lo = limit / 3;
+                var hi = Math.Min(value.Length, limit);
+#if NETCOREAPP
+                while (lo < hi)
+                {
+                    // Bias the midpoint up so lo strictly advances and the loop terminates.
+                    var mid = lo + ((hi - lo + 1) >> 1);
+                    if (Encoding.GetByteCount(value.AsSpan(0, mid)) <= limit)
+                    {
+                        lo = mid;
+                    }
+                    else
+                    {
+                        hi = mid - 1;
+                    }
+                }
+#else
+                // .NET Framework / netstandard2.0 lack the span GetByteCount overload, and we avoid `fixed`.
+                // Copy the bounded prefix (at most `limit` chars) into a pooled buffer and count ranges of it.
+                var buffer = ArrayPool<char>.Shared.Rent(hi);
+                try
+                {
+                    value.CopyTo(0, buffer, 0, hi);
+                    while (lo < hi)
+                    {
+                        var mid = lo + ((hi - lo + 1) >> 1);
+                        if (Encoding.GetByteCount(buffer, 0, mid) <= limit)
+                        {
+                            lo = mid;
+                        }
+                        else
+                        {
+                            hi = mid - 1;
+                        }
+                    }
+                }
+                finally
+                {
+                    ArrayPool<char>.Shared.Return(buffer);
+                }
+#endif
+                var cut = lo;
+
+                // A count probe can land between a high and low surrogate. Drop a trailing lone high
+                // surrogate to snap back to a code-point boundary (this only reduces the byte count, so the
+                // result stays within the limit). Like the trace-agent, we cut at a code-point (rune)
+                // boundary only - no combining-mark / grapheme-cluster handling.
+                if (cut > 0 && char.IsHighSurrogate(value[cut - 1]))
+                {
+                    cut--;
+                }
+
+                return value.Substring(0, cut);
+            }
         }
 
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L214-L219

@@ -50,10 +50,10 @@ Expressions:
     var $dd_el_result = (this.NullableNullValue == null)
         ? "null"
         : {
-            fieldsArray = this.NullableNullValue
-                .GetType()
-                .GetFields(
-                    BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+            fieldsArray = ProbeExpressionParser<string>
+                .GetSafeFieldsForDump(
+                    this.NullableNullValue.GetType().GetFields(
+                        BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                 .OrderBy(fieldInfo => fieldInfo.MetadataToken)
                 .ToArray();
             fieldValues = new StringBuilder();
@@ -64,7 +64,7 @@ Expressions:
                 {
                     fieldValues.Append(
                         ProbeExpressionParser<string>.DumpObject(
-                            fieldsArray[index].GetValue(this.NullableNullValue),
+                            ProbeExpressionParser<string>.GetFieldValueForDump(fieldsArray[index], this.NullableNullValue),
                             fieldsArray[index].FieldType,
                             fieldsArray[index].Name,
                             0));

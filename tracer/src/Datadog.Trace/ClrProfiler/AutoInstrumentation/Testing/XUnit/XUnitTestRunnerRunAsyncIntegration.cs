@@ -67,20 +67,33 @@ public static class XUnitTestRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
+        var isEarlyFlakeDetectionEnabled = testOptimization.EarlyFlakeDetectionFeature?.Enabled == true;
+        var isFlakyRetryEnabled = testOptimization.FlakyRetryFeature?.Enabled == true;
+        var isTestManagementEnabled = testOptimization.TestManagementFeature?.Enabled == true;
+        var testManagementProperties = isTestManagementEnabled ? XUnitIntegration.GetTestManagementProperties(ref runnerInstance) : null;
+        var isDisabledByTestManagement = Common.IsDisabledByTestManagement(testManagementProperties);
+
         // Check if the test should be skipped by the ITR
-        if (XUnitIntegration.ShouldSkip(ref runnerInstance, out _, out _))
+        if (Common.CanApplyItrSkip(testManagementProperties) &&
+            XUnitIntegration.ShouldSkip(ref runnerInstance, out _, out _, out var skippableTest))
         {
             Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Test skipped by test skipping feature: {Class}.{Name}", runnerInstance.TestClass?.ToString() ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty);
             // Refresh values after skip reason change, and create Skip by ITR span.
             runnerInstance.SkipReason = IntelligentTestRunnerTags.SkippedByReason;
             testRunnerInstance.SkipReason = runnerInstance.SkipReason;
+            if (skippableTest is { } matchedSkippableTest)
+            {
+                var moduleName = XUnitIntegration.GetTestModuleName(ref runnerInstance);
+                Common.RecordTestSkipCoverageBackfill(matchedSkippableTest, moduleName);
+            }
+            else
+            {
+                Common.RecordTestSkipCoverageBackfill();
+            }
+
             XUnitIntegration.CreateTest(ref runnerInstance);
             return CallTargetState.GetDefault();
         }
-
-        var isEarlyFlakeDetectionEnabled = testOptimization.EarlyFlakeDetectionFeature?.Enabled == true;
-        var isFlakyRetryEnabled = testOptimization.FlakyRetryFeature?.Enabled == true;
-        var isTestManagementEnabled = testOptimization.TestManagementFeature?.Enabled == true;
 
         // If there's no...
         // - EarlyFlakeDetectionFeature enabled
@@ -125,7 +138,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
         }
 
         // We skip the test if the tesk management property is set to Disabled and there's no attempt to fix
-        if (XUnitIntegration.GetTestManagementProperties(ref runnerInstance) is { Disabled: true, AttemptToFix: false })
+        if (isDisabledByTestManagement)
         {
             runnerInstance.SkipReason = "Flaky test is disabled by Datadog";
             testRunnerInstance.SkipReason = runnerInstance.SkipReason;

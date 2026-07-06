@@ -18,6 +18,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -166,7 +167,8 @@ internal static class MsTestIntegration
 
         // Get test parameters
         var methodParameters = testMethod?.GetParameters();
-        if (methodParameters?.Length > 0)
+        var hasDisplayName = !string.IsNullOrEmpty(displayName) && displayName != testName;
+        if (methodParameters?.Length > 0 || hasDisplayName)
         {
             var testParameters = new TestParameters
             {
@@ -174,20 +176,23 @@ internal static class MsTestIntegration
                 Arguments = new Dictionary<string, object?>()
             };
 
-            if (!string.IsNullOrEmpty(displayName) && displayName != testName)
+            if (hasDisplayName)
             {
                 testParameters.Metadata[TestTags.MetadataTestName] = displayName;
             }
 
-            for (var i = 0; i < methodParameters.Length; i++)
+            if (methodParameters is not null)
             {
-                if (testMethodArguments != null && i < testMethodArguments.Length)
+                for (var i = 0; i < methodParameters.Length; i++)
                 {
-                    testParameters.Arguments[methodParameters[i].Name ?? i.ToString(CultureInfo.InvariantCulture)] = Common.GetParametersValueData(testMethodArguments[i]);
-                }
-                else
-                {
-                    testParameters.Arguments[methodParameters[i].Name ?? i.ToString(CultureInfo.InvariantCulture)] = "(default)";
+                    if (testMethodArguments != null && i < testMethodArguments.Length)
+                    {
+                        testParameters.Arguments[methodParameters[i].Name ?? i.ToString(CultureInfo.InvariantCulture)] = Common.GetParametersValueData(testMethodArguments[i]);
+                    }
+                    else
+                    {
+                        testParameters.Arguments[methodParameters[i].Name ?? i.ToString(CultureInfo.InvariantCulture)] = "(default)";
+                    }
                 }
             }
 
@@ -275,9 +280,14 @@ internal static class MsTestIntegration
 
     internal static bool ShouldSkip<TTestMethod>(TTestMethod testMethodInfo, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>?>? traits = null)
         where TTestMethod : ITestMethod
+        => ShouldSkip(testMethodInfo, out isUnskippable, out isForcedRun, out _, traits);
+
+    internal static bool ShouldSkip<TTestMethod>(TTestMethod testMethodInfo, out bool isUnskippable, out bool isForcedRun, out SkippableTest? skippableTest, Dictionary<string, List<string>?>? traits = null)
+        where TTestMethod : ITestMethod
     {
         isUnskippable = false;
         isForcedRun = false;
+        skippableTest = null;
 
         if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled != true)
         {
@@ -286,11 +296,73 @@ internal static class MsTestIntegration
 
         var testClass = testMethodInfo.TestClassName;
         var testMethod = testMethodInfo.MethodInfo;
-        var itrShouldSkip = Common.ShouldSkip(testClass ?? string.Empty, testMethod?.Name ?? string.Empty, testMethodInfo.Arguments, testMethod?.GetParameters());
+        var testMethodName = testMethod?.Name ?? string.Empty;
+        var metadataTestName = testMethodInfo.TestMethodName;
+        var hasResolvedDisplayName = !StringUtil.IsNullOrEmpty(metadataTestName) &&
+                                     !string.Equals(metadataTestName, testMethodName, StringComparison.Ordinal);
+        var methodParameters = testMethod?.GetParameters();
+        var hasRowIdentity = testMethodInfo.Arguments?.Length > 0 || methodParameters?.Length > 0;
+        var moduleName = GetTestModuleName(testMethodInfo);
+        var itrShouldSkip = Common.ShouldSkip(
+            testClass ?? string.Empty,
+            testMethodName,
+            testMethodInfo.Arguments,
+            methodParameters,
+            out var matchedSkippableTest,
+            moduleName,
+            metadataTestName: hasResolvedDisplayName ? metadataTestName : null,
+            allowParametersMetadataMismatch: !hasResolvedDisplayName && hasRowIdentity);
         traits ??= GetTraits(testMethod);
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
-        isForcedRun = itrShouldSkip && isUnskippable;
-        return itrShouldSkip && !isUnskippable;
+        isForcedRun = matchedSkippableTest is not null && isUnskippable;
+        var shouldSkip = itrShouldSkip && !isUnskippable;
+        skippableTest = shouldSkip ? matchedSkippableTest : null;
+        return shouldSkip;
+    }
+
+    /// <summary>
+    /// Records coverage-backfill state for an MSTest ITR skip using the method's module when no current module scope exists yet.
+    /// </summary>
+    /// <typeparam name="TTestMethod">Duck-typed MSTest method shape.</typeparam>
+    /// <param name="testMethodInfo">MSTest method being skipped.</param>
+    internal static void RecordTestSkipCoverageBackfill<TTestMethod>(TTestMethod testMethodInfo)
+        where TTestMethod : ITestMethod
+        => Common.RecordTestSkipCoverageBackfill(GetTestModuleName(testMethodInfo));
+
+    /// <summary>
+    /// Records coverage-backfill state for the exact MSTest backend candidate skipped by ITR.
+    /// </summary>
+    /// <typeparam name="TTestMethod">Duck-typed MSTest method shape.</typeparam>
+    /// <param name="testMethodInfo">MSTest method being skipped.</param>
+    /// <param name="skippableTest">Backend candidate that was actually skipped.</param>
+    internal static void RecordTestSkipCoverageBackfill<TTestMethod>(TTestMethod testMethodInfo, SkippableTest skippableTest)
+        where TTestMethod : ITestMethod
+        => Common.RecordTestSkipCoverageBackfill(skippableTest, GetTestModuleName(testMethodInfo));
+
+    /// <summary>
+    /// Resolves the local MSTest module or bundle name used to scope ITR decisions.
+    /// </summary>
+    /// <typeparam name="TTestMethod">Duck-typed MSTest method shape.</typeparam>
+    /// <param name="testMethodInfo">MSTest method being evaluated.</param>
+    /// <returns>The current module scope when available, otherwise the declaring assembly name for the test method.</returns>
+    internal static string? GetTestModuleName<TTestMethod>(TTestMethod testMethodInfo)
+        where TTestMethod : ITestMethod
+    {
+        var currentModule = TestModule.Current;
+        if (currentModule is not null)
+        {
+            if (!StringUtil.IsNullOrWhiteSpace(currentModule.Tags.Bundle))
+            {
+                return currentModule.Tags.Bundle;
+            }
+
+            if (!StringUtil.IsNullOrWhiteSpace(currentModule.Tags.Module))
+            {
+                return currentModule.Tags.Module;
+            }
+        }
+
+        return testMethodInfo.MethodInfo?.DeclaringType?.Assembly.GetName().Name;
     }
 
     internal static TestOptimizationClient.TestManagementResponseTestPropertiesAttributes GetTestProperties<TTestMethod>(TTestMethod testMethodInfo)

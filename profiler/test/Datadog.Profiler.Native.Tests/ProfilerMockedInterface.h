@@ -96,12 +96,15 @@ public:
     MOCK_METHOD(bool, IsManagedActivationEnabled, (), (const override));
     MOCK_METHOD(void, SetEnablementStatus, (EnablementStatus status), (override));
     MOCK_METHOD(bool, IsHeapSnapshotEnabled, (), (const override));
+    MOCK_METHOD(bool, IsHeapSnapshotSkipTraversal, (), (const override));
     MOCK_METHOD(std::chrono::minutes, GetHeapSnapshotInterval, (), (const override));
     MOCK_METHOD(std::chrono::milliseconds, GetHeapSnapshotCheckInterval, (), (const override));
     MOCK_METHOD(uint32_t, GetHeapSnapshotMemoryPressureThreshold, (), (const override));
+    MOCK_METHOD(std::chrono::seconds, GetTestHeapSnapshotInterval, (), (const override));
     MOCK_METHOD(uint32_t, GetHeapHandleLimit, (), (const override));
     MOCK_METHOD(bool, UseManagedCodeCache, (), (const override));
     MOCK_METHOD(bool, IsMemoryFootprintEnabled, (), (const override));
+    MOCK_METHOD(uint32_t, GetReferenceTreeFormat, (), (const override));
 };
 
 class MockExporter : public IExporter

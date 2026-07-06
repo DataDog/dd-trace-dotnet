@@ -78,7 +78,7 @@ public class SeleniumTests : TestingFrameworkEvpTest
         ipcServer.SetMessageReceivedCallback(
             o =>
             {
-                codeCoverageReceived.Value = codeCoverageReceived.Value || o is SessionCodeCoverageMessage;
+                codeCoverageReceived.Value = codeCoverageReceived.Value || o is SessionCodeCoverageMessage or SessionCodeCoverageReferenceMessage;
             });
 
         using var agent = MockTracerAgent.Create(Output);
