@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             try
             {
-                if (_headersProxy.TryGetHeader(name, out var value) && value?.ToString() is { } result)
+                if (_headersProxy.TryGetHeader(name, out var value) && value is string result)
                 {
                     return [result];
                 }

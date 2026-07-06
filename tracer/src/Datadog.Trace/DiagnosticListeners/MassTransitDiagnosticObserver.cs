@@ -150,15 +150,12 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            // Extract metadata from SendContext — returns the duck-typed proxy for reuse
             var sendContextProxy = MassTransitCommon.ExtractSendContextMetadata(arg, out var destinationAddress, out var messageId, out var conversationId, out var correlationId);
             var scope = MassTransitCommon.CreateProduceSpan(Tracer.Instance, destinationAddress);
 
             if (scope is not null)
             {
                 MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
-
-                // Inject trace context into message headers — reuses the proxy from above, no second DuckCast
                 MassTransitCommon.InjectTraceContext(Tracer.Instance, sendContextProxy, scope);
             }
         }
@@ -170,11 +167,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            // Duck cast to IReceiveContext — BaseReceiveContext.InputAddress and TransportHeaders
-            // are public concrete properties, so this always succeeds for well-formed receive contexts.
-            var castSucceeded = arg.TryDuckCast<IReceiveContext>(out var receiveCtx);
-            var inputAddress = receiveCtx?.InputAddress?.ToString();
-            var transportHeaders = receiveCtx?.TransportHeaders;
+            var receiveCtx = arg.DuckCast<IReceiveContext>();
+            var inputAddress = receiveCtx.InputAddress?.ToString();
+            var transportHeaders = receiveCtx.TransportHeaders;
 
             PropagationContext parentContext = default;
             if (transportHeaders != null)
@@ -182,18 +177,9 @@ namespace Datadog.Trace.DiagnosticListeners
                 var adapter = new ContextPropagationExtractAdapter(transportHeaders);
                 parentContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(adapter);
             }
-            else if (!castSucceeded)
-            {
-                Log.Warning(
-                    "MassTransitDiagnosticObserver.OnReceiveStart: Duck cast failed for ArgType={ArgType} — receive span will have no parent",
-                    arg.GetType().FullName);
-            }
 
             // Merge extracted baggage into ambient context. CreateReceiveSpan only forwards
-            // parentContext.SpanContext to StartActiveInternal, so without this baggage from the
-            // incoming message would be dropped instead of flowing to the consume span.
             parentContext = parentContext.MergeBaggageInto(Baggage.Current);
-
             MassTransitCommon.CreateReceiveSpan(Tracer.Instance, inputAddress, parentContext);
         }
 
@@ -204,6 +190,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
+            // The direct cast fails for Consume/Handle events (arg is a MessageConsumeContext<T>, which uses explicit interface implementations)
             var directCastSucceeded = arg.TryDuckCast<IConsumeContext>(out var consumeContext);
             if (!directCastSucceeded)
             {
@@ -214,15 +201,13 @@ namespace Datadog.Trace.DiagnosticListeners
                 }
                 else
                 {
-                    Log.Warning(
+                    Log.Debug(
                         "MassTransitDiagnosticObserver.OnConsumeStart: All casts failed ArgType={ArgType}, DirectCast=false, InnerCast={InnerCast}, InnerContext={InnerContext}",
                         arg.GetType().FullName,
                         innerCastSucceeded,
                         inner?.Context?.GetType().FullName ?? "null");
                 }
             }
-
-            var messageType = MassTransitCommon.GetConsumeMessageType(consumeContext);
 
             PropagationContext parentContext = default;
             if (consumeContext?.Headers != null)
@@ -231,12 +216,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 parentContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(adapter);
             }
 
-            // Merge extracted baggage into ambient context. CreateProcessSpan only forwards
-            // parentContext.SpanContext to StartActiveInternal, and the parent override below
-            // also rebuilds the context from Baggage.Current, so without this the baggage from
-            // the incoming message would be dropped.
             parentContext = parentContext.MergeBaggageInto(Baggage.Current);
-
             var inputAddress = consumeContext?.ReceiveContext?.InputAddress?.ToString();
 
             // For Process/Consume/Handle spans, check if there's an active Receive span to use as parent.
@@ -249,23 +229,19 @@ namespace Datadog.Trace.DiagnosticListeners
                 parentContext = new PropagationContext(activeScope.Span.Context as SpanContext, Baggage.Current);
             }
 
-            MassTransitCommon.CreateProcessSpan(Tracer.Instance, inputAddress, messageType, parentContext);
+            MassTransitCommon.CreateProcessSpan(Tracer.Instance, inputAddress, MassTransitCommon.GetConsumeMessageType(consumeContext), parentContext);
         }
 
         private void OnStop(string operationType)
         {
-            // Datadog scopes use AsyncLocal, so ActiveScope at Stop time is exactly the scope
-            // created at Start time for this operation (MassTransit fires Stop events in LIFO order).
-            var scope = Tracer.Instance.ActiveScope as Scope;
-
-            if (scope == null)
+            if (Tracer.Instance.ActiveScope is not Scope scope)
             {
                 return;
             }
 
             // Guard: verify this is a MassTransit span before closing, to avoid silently closing
             // an unrelated span if MT event ordering is unexpected.
-            if (scope.Span.GetTag(Tags.InstrumentationName) != MassTransitConstants.ComponentTagName)
+            if (scope.Span.Tags is not MassTransitTags)
             {
                 Log.Warning(
                     "MassTransitDiagnosticObserver.OnStop: Active scope is not a MassTransit span " +

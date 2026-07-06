@@ -322,7 +322,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 }
                 else
                 {
-                    Log.Warning("MassTransitCommon.InjectTraceContext: Could not inject — Headers null");
+                    Log.Debug("MassTransitCommon.InjectTraceContext: Could not inject — Headers null");
                 }
             }
             catch (Exception ex)
