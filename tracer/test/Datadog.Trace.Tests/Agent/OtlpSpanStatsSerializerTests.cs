@@ -186,7 +186,7 @@ namespace Datadog.Trace.Tests.Agent
             var json = SerializeToJson(buffer);
             var attrs = GetDataPointAttributes(json);
 
-            attrs.Should().ContainKey("status.code").WhoseValue.Should().Be("2");
+            attrs.Should().ContainKey("status.code").WhoseValue.Should().Be("STATUS_CODE_ERROR");
         }
 
         [Fact]
