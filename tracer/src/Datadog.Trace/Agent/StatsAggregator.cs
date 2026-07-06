@@ -193,7 +193,6 @@ namespace Datadog.Trace.Agent
             private set => Volatile.Write(ref _computeStatsState, value switch { true => 1, false => -1, _ => 0, });
         }
 
-
         public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService, IStatsdManager statsd, bool isOtlp)
         {
             return isOtlp || settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService, statsd, isOtlp) : new NullStatsAggregator();

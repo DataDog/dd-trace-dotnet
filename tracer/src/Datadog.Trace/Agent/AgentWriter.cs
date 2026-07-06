@@ -133,7 +133,6 @@ namespace Datadog.Trace.Agent
 
         public bool CanComputeStats => _apmTracingEnabled && _statsAggregator.CanComputeStats == true;
 
-
         public Task<bool> Ping() => _api.Ping();
 
         public void WriteTrace(in SpanCollection trace)
