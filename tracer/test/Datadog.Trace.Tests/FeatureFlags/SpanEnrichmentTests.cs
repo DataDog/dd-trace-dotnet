@@ -298,21 +298,19 @@ public class SpanEnrichmentTests
     }
 
     [Fact]
-    public async System.Threading.Tasks.Task Store_AccumulateForActiveRoot_NativeEvaluationMetadata_WritesRootTags()
+    public async System.Threading.Tasks.Task AccumulateForRoot_NativeEvaluationMetadata_WritesRootTags()
     {
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
         await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
         TracerRestorerAttribute.SetTracer(tracer);
 
-        var spanEnrichment = tracer.TracerManager.SpanEnrichment;
-        spanEnrichment.Clear();
         var rootScope = (Scope)tracer.StartActive("root-op", new SpanCreationSettings { FinishOnClose = false });
         var rootSpan = rootScope.Span;
         rootSpan.IsRootSpan.Should().BeTrue();
 
         try
         {
-            using (tracer.StartActive("child-op"))
+            using (var childScope = tracer.StartActive("child-op"))
             {
                 var evaluation = new Evaluation(
                     "native-flag",
@@ -325,7 +323,10 @@ public class SpanEnrichmentTests
                         [FeatureFlagsEvaluator.MetadataDoLog] = "true"
                     });
 
-                spanEnrichment.AccumulateForRoot(rootSpan.SpanId, evaluation, "user-123");
+                // The evaluation happens on the child, but enrichment is keyed to the trace, so it
+                // accumulates onto the shared trace context and surfaces on the local root span.
+                ((Scope)childScope).Span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()
+                    .AccumulateForRoot(evaluation, "user-123");
             }
         }
         finally
@@ -365,21 +366,16 @@ public class SpanEnrichmentTests
         var scope = (Scope)tracer.StartActive("root-op");
         var span = scope.Span;
         span.IsRootSpan.Should().BeTrue();
-        var rootSpanId = span.SpanId;
-        var spanEnrichment = tracer.TracerManager.SpanEnrichment;
 
-        spanEnrichment.Clear();
-        spanEnrichment.Accumulate(rootSpanId, serialId: 100, doLog: true, targetingKey: "user-123", hasVariant: true, flagKey: "flag", value: "on");
-        spanEnrichment.Accumulate(rootSpanId, serialId: 108, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag2", value: "off");
+        var enrichment = span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment();
+        enrichment.Accumulate(serialId: 100, doLog: true, targetingKey: "user-123", hasVariant: true, flagKey: "flag", value: "on");
+        enrichment.Accumulate(serialId: 108, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag2", value: "off");
 
         span.Finish();
 
         span.GetTag(SpanEnrichmentState.TagFlagsEnc).Should().NotBeNullOrEmpty();
         DecodeDeltaVarint(span.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(new long[] { 100, 108 });
         span.GetTag(SpanEnrichmentState.TagSubjectsEnc).Should().NotBeNullOrEmpty();
-
-        // State is cleared in the IsRootSpan block after writing.
-        spanEnrichment.GetAndClear(rootSpanId).Should().BeNull();
     }
 
     [Fact]

@@ -484,26 +484,22 @@ namespace Datadog.Trace
                 {
                     DebuggerManager.Instance.ExceptionReplay?.EndRequest();
 
-                    var spanEnrichment = (Context.TraceContext?.Tracer as Tracer)?.TracerManager.SpanEnrichment;
-                    if (spanEnrichment?.IsEnabled == true)
+                    var enrichmentState = Context.TraceContext?.FeatureFlagEnrichment;
+                    if (enrichmentState is not null && enrichmentState.HasData())
                     {
                         try
                         {
-                            var enrichmentState = spanEnrichment.GetAndClear(SpanId);
-                            if (enrichmentState is not null && enrichmentState.HasData())
+                            foreach (var tag in enrichmentState.ToSpanTags())
                             {
-                                foreach (var tag in enrichmentState.ToSpanTags())
+                                if (!StringUtil.IsNullOrEmpty(tag.Value))
                                 {
-                                    if (!StringUtil.IsNullOrEmpty(tag.Value))
-                                    {
-                                        Tags.SetTag(tag.Key, tag.Value);
-                                    }
+                                    Tags.SetTag(tag.Key, tag.Value);
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            Log.Warning(ex, "FFE span enrichment failed for root span {SpanId}", SpanId);
+                            Log.Debug(ex, "FFE span enrichment failed for root span {SpanId}", SpanId);
                         }
                     }
                 }
