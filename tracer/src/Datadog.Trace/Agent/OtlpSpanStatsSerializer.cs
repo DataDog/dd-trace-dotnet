@@ -26,7 +26,6 @@ namespace Datadog.Trace.Agent
         private const long StatusCodeError = 2;
 
         private const string MetricUnit = "s";
-        private const double NsToS = 1.0 / 1_000_000_000.0;
 
         // 16 explicit bounds (seconds) → 17 buckets.  Mirrors the OTel spanmetrics-connector defaults.
         private static readonly double[] BoundsS =
@@ -291,7 +290,7 @@ namespace Datadog.Trace.Agent
             writer.WriteValue(count.ToString());
 
             writer.WritePropertyName("sum");
-            writer.WriteValue(bucket.Duration * NsToS);
+            writer.WriteValue((double)TimeHelpers.NanosecondsToSeconds(bucket.Duration));
 
             writer.WritePropertyName("bucketCounts");
             writer.WriteStartArray();
@@ -315,13 +314,13 @@ namespace Datadog.Trace.Agent
             if (bucket.MinDuration < double.MaxValue)
             {
                 writer.WritePropertyName("min");
-                writer.WriteValue(bucket.MinDuration * NsToS);
+                writer.WriteValue((double)TimeHelpers.NanosecondsToSeconds(bucket.MinDuration));
             }
 
             if (bucket.MaxDuration > 0)
             {
                 writer.WritePropertyName("max");
-                writer.WriteValue(bucket.MaxDuration * NsToS);
+                writer.WriteValue((double)TimeHelpers.NanosecondsToSeconds(bucket.MaxDuration));
             }
 
             writer.WriteEndObject();
@@ -566,9 +565,8 @@ namespace Datadog.Trace.Agent
             WriteTag(writer, FieldNumbers.HistogramDataPointCount, WireTypeFixed64);
             writer.Write((ulong)bucket.Hits);
 
-            var sumS = bucket.Duration * NsToS;
             WriteTag(writer, FieldNumbers.HistogramDataPointSum, WireTypeFixed64);
-            writer.Write(sumS);
+            writer.Write((double)TimeHelpers.NanosecondsToSeconds(bucket.Duration));
 
             // In OTLP mode errors go into a separate aggregation key, so OkSummary holds the full distribution.
             var bucketCounts = ProjectSketch(bucket.OkSummary);
@@ -587,13 +585,13 @@ namespace Datadog.Trace.Agent
             if (bucket.MinDuration < double.MaxValue)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointMin, WireTypeFixed64);
-                writer.Write(bucket.MinDuration * NsToS);
+                writer.Write((double)TimeHelpers.NanosecondsToSeconds(bucket.MinDuration));
             }
 
             if (bucket.MaxDuration > 0)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointMax, WireTypeFixed64);
-                writer.Write(bucket.MaxDuration * NsToS);
+                writer.Write((double)TimeHelpers.NanosecondsToSeconds(bucket.MaxDuration));
             }
 
             writer.Flush();

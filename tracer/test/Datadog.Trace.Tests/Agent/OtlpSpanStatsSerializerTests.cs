@@ -210,17 +210,17 @@ namespace Datadog.Trace.Tests.Agent
             var bucket = new StatsBucket(key, EmptyPeerTags, [])
             {
                 Hits = 1,
-                Duration = 5_000_000,
-                MinDuration = 1_000_000,   // 1ms in ns → 0.001s
-                MaxDuration = 50_000_000,  // 50ms in ns → 0.05s
+                Duration = 5_000_000_000L,
+                MinDuration = 2_000_000_000L,  // 2s in ns → 2s
+                MaxDuration = 10_000_000_000L, // 10s in ns → 10s
             };
             buffer.Buckets.Add(key, bucket);
 
             var json = SerializeToJson(buffer);
             var dp = json.SelectToken("$.resourceMetrics[0].scopeMetrics[0].metrics[0].histogram.dataPoints[0]")!;
 
-            ((double)dp["min"]!).Should().BeApproximately(0.001, 1e-9);
-            ((double)dp["max"]!).Should().BeApproximately(0.05, 1e-9);
+            ((double)dp["min"]!).Should().Be(2_000_000_000L / 1_000_000_000);
+            ((double)dp["max"]!).Should().Be(10_000_000_000L / 1_000_000_000);
         }
 
         [Fact]

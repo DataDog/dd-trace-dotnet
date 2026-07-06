@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Util;
 using Xunit;
 
 namespace Datadog.Trace.Tests
@@ -23,6 +24,14 @@ namespace Datadog.Trace.Tests
         {
             var date = DateTimeOffset.UtcNow;
             Assert.Equal(date.ToUnixTimeMilliseconds(), date.ToUnixTimeNanoseconds() / 1000000);
+        }
+
+        [Fact]
+        public void NanosecondsToSeconds_ReturnsWholeSeconds()
+        {
+            Assert.Equal(5, TimeHelpers.NanosecondsToSeconds(5_000_000_000L));
+            Assert.Equal(0, TimeHelpers.NanosecondsToSeconds(999_999_999L));
+            Assert.Equal(10, TimeHelpers.NanosecondsToSeconds(10_500_000_000L));
         }
     }
 }
