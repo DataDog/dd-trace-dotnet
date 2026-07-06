@@ -1049,7 +1049,8 @@ partial class Build
                 throw new Exception("Could not resolve single-file report URL");
             }
 
-            var fullMarkdown = summaryMarkdown + $"\n\n📄 **[Download the full report (charts + all metrics) →]({reportUrl})**";
+            var viewerUrl = $"https://andrewlock.github.io/merview/?zen=1&url={Uri.EscapeDataString(reportUrl)}";
+            var fullMarkdown = summaryMarkdown + $"\n\n📄 **[View the full report (charts + all metrics) →]({viewerUrl})**";
 
             Logger.Information("Updating PR comment on GitHub");
             await ReplaceCommentInPullRequest(prNumber, "## Execution-Time Benchmarks Report", fullMarkdown);
