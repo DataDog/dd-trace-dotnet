@@ -53,7 +53,7 @@ public class CompareExecutionTime
                               });
                          return $"""
                         <details open>
-                          <summary><h3 id="{sampleName.ToLower()}-charts">{sampleName}</h3></summary>
+                          <summary><h4 id="{sampleName.ToLower()}-charts" style="display:inline-block">{sampleName}</h4></summary>
 
                         {string.Join(Environment.NewLine + Environment.NewLine, frameworkCharts)}
                         </details>
@@ -247,7 +247,7 @@ public class CompareExecutionTime
 
         if (hasRegressions)
         {
-            finalOutput.AppendLine("<h3>⚠️ Potential regressions detected</h3>");
+            finalOutput.AppendLine("⚠️ Potential regressions detected");
             finalOutput.AppendLine();
             finalOutput.Append(regressionsMarkdown);
         }
@@ -258,7 +258,7 @@ public class CompareExecutionTime
         }
 
         finalOutput.AppendLine("<details open>");
-        finalOutput.AppendLine("  <summary><h2 id=\"full-metrics-comparison\">Full Metrics Comparison</h2></summary>");
+        finalOutput.AppendLine("  <summary><h3 id=\"full-metrics-comparison\" style=\"display:inline-block\">Full Metrics Comparison</h3></summary>");
         finalOutput.AppendLine();
         finalOutput.Append(detailsMarkdown);
         finalOutput.AppendLine("</details>");
@@ -418,7 +418,7 @@ public class CompareExecutionTime
             // Build table for this sample in details
             if (detailsTableRows.Length > 0)
             {
-                detailsOutput.AppendLine($"<h3 id=\"{sampleName.ToLower()}-metrics\">{sampleName}</h3>");
+                detailsOutput.AppendLine($"<h4 id=\"{sampleName.ToLower()}-metrics\">{sampleName}</h4>");
                 detailsOutput.AppendLine("<table>");
                 detailsOutput.AppendLine("  <thead>");
                 detailsOutput.AppendLine("    <tr>");
@@ -440,7 +440,7 @@ public class CompareExecutionTime
             if (sampleHasRegressions)
             {
                 hasRegressions = true;
-                regressionsOutput.AppendLine($"<h3>{sampleName}</h3>");
+                regressionsOutput.AppendLine($"<h4>{sampleName}</h4>");
                 regressionsOutput.AppendLine("<table>");
                 regressionsOutput.AppendLine("  <thead>");
                 regressionsOutput.AppendLine("    <tr>");
@@ -552,7 +552,7 @@ public class CompareExecutionTime
             {{comparisonTable}}
 
             <details>
-              <summary><h2 id="comparison-explanation">Comparison Explanation</h2></summary>
+              <summary><span id="comparison-explanation">Comparison Explanation</span></summary>
               <p>
               Execution-time benchmarks measure the whole time it takes to execute a program, and are intended to measure the one-off costs.
               Cases where the execution time results for the PR are worse than latest master results are highlighted in **red**.
@@ -570,8 +570,10 @@ public class CompareExecutionTime
               </p>
             </details>
 
+            ---
+
             <details open>
-            <summary><h2 id="duration-charts">Duration Charts</h2></summary>
+            <summary><h3 id="duration-charts" style="display:inline-block">Duration Charts</h3></summary>
             {{string.Join('\n', charts)}}
             </details>
             """;
