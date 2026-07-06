@@ -253,24 +253,18 @@ internal partial class ProbeExpressionParser<T>
             return Expression.Constant(false);
         }
 
-        Type type = null;
-        try
-        {
-            type = Type.GetType(typeName);
-        }
-        catch (Exception e)
-        {
-            AddError($"{value} is {typeName}", e.Message);
-            return Expression.Constant(false);
-        }
+        var instanceOfMethod = ProbeExpressionParserHelper.GetMethodByReflection(
+            typeof(InstanceOfHelper),
+            nameof(InstanceOfHelper.IsInstanceOf),
+            [value.Type, typeof(string)],
+            [value.Type]);
+        var isInstanceOfExpression = Expression.Call(
+            null,
+            instanceOfMethod,
+            value,
+            Expression.Constant(typeName));
 
-        if (type == null)
-        {
-            AddError($"{value} is {typeName}", $"'{typeName}' is unknown type");
-            return Expression.Constant(false);
-        }
-
-        return RedactDictionaryOperation(value, Expression.TypeIs(value, type));
+        return RedactDictionaryOperation(value, isInstanceOfExpression);
     }
 
     private Expression GetTypeName(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -379,6 +373,17 @@ internal partial class ProbeExpressionParser<T>
 
             if (isStatic)
             {
+                if (memberInfo is FieldInfo { IsLiteral: true } literalField)
+                {
+                    return Expression.Constant(StaticMemberSafety.GetRawConstantValue(literalField), literalField.FieldType);
+                }
+
+                if (!StaticMemberSafety.CanReadStaticMember(memberInfo))
+                {
+                    AddError($"{expression}.{propertyOrFieldValue}", "Static member access is skipped because it could trigger the declaring type initializer.");
+                    return UndefinedValue();
+                }
+
                 return memberInfo.MemberType switch
                 {
                     MemberTypes.Field => Expression.Field(null, (FieldInfo)memberInfo),

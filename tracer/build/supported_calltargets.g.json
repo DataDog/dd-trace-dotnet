@@ -2300,7 +2300,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 1,
+      "Item1": 2,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -8806,6 +8806,55 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "HotChocolate",
+    "AssemblyName": "HotChocolate.Types",
+    "TargetTypeName": "HotChocolate.Execution.DefaultRequestExecutor",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
+    "TargetParameterTypes": [
+      "HotChocolate.Execution.IOperationRequest",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 16,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 16,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationV14",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "HotChocolate",
+    "AssemblyName": "HotChocolate.Types",
+    "TargetTypeName": "HotChocolate.Execution.Processing.QueryExecutor",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
+    "TargetParameterTypes": [
+      "HotChocolate.Execution.Processing.OperationContext"
+    ],
+    "MinimumVersion": {
+      "Item1": 16,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 16,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtraV16",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "HttpMessageHandler",
     "AssemblyName": "Ocelot",
     "TargetTypeName": "Ocelot.Requester.MessageInvokerPool",
@@ -9070,7 +9119,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -9095,7 +9144,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 9,
+      "Item1": 10,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18465,7 +18514,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18518,7 +18567,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18542,7 +18591,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18568,11 +18617,65 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "StackExchangeRedis",
+    "AssemblyName": "StackExchange.Redis",
+    "TargetTypeName": "StackExchange.Redis.RedisBase",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<!!0>",
+    "TargetParameterTypes": [
+      "StackExchange.Redis.Message",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
+      "!!0",
+      "StackExchange.Redis.ServerEndPoint"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration_2_6_48",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "StackExchangeRedis",
+    "AssemblyName": "StackExchange.Redis",
+    "TargetTypeName": "StackExchange.Redis.RedisBase",
+    "TargetMethodName": "ExecuteSync",
+    "TargetReturnType": "!!0",
+    "TargetParameterTypes": [
+      "StackExchange.Redis.Message",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
+      "StackExchange.Redis.ServerEndPoint",
+      "!!0"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteSyncDefaultIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -18620,7 +18723,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18647,7 +18750,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18673,7 +18776,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18700,7 +18803,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18834,11 +18937,65 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "StackExchangeRedis",
+    "AssemblyName": "StackExchange.Redis.StrongName",
+    "TargetTypeName": "StackExchange.Redis.RedisBase",
+    "TargetMethodName": "ExecuteAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1<!!0>",
+    "TargetParameterTypes": [
+      "StackExchange.Redis.Message",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
+      "!!0",
+      "StackExchange.Redis.ServerEndPoint"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration_2_6_48",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "StackExchangeRedis",
+    "AssemblyName": "StackExchange.Redis.StrongName",
+    "TargetTypeName": "StackExchange.Redis.RedisBase",
+    "TargetMethodName": "ExecuteSync",
+    "TargetReturnType": "!!0",
+    "TargetParameterTypes": [
+      "StackExchange.Redis.Message",
+      "StackExchange.Redis.ResultProcessor`1[!!0]",
+      "StackExchange.Redis.ServerEndPoint",
+      "!!0"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 3,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteSyncDefaultIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -18886,7 +19043,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18913,7 +19070,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18939,7 +19096,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },
@@ -18966,7 +19123,7 @@
       "Item3": 0
     },
     "MaximumVersion": {
-      "Item1": 2,
+      "Item1": 3,
       "Item2": 65535,
       "Item3": 65535
     },

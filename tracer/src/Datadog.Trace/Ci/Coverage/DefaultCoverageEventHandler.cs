@@ -46,7 +46,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                         var filesLines = (byte*)moduleValue.FilesLines + moduleFile.Offset;
                         for (var i = 0; i < fileBitmapLastExecutableLine; i++)
                         {
-                            if (filesLines[i] == 1)
+                            if (filesLines[i] > 0)
                             {
                                 fileBitmap.Set(i + 1);
                             }
@@ -57,7 +57,7 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                         var filesLines = (int*)moduleValue.FilesLines + moduleFile.Offset;
                         for (var i = 0; i < fileBitmapLastExecutableLine; i++)
                         {
-                            if (filesLines[i] == 1)
+                            if (filesLines[i] > 0)
                             {
                                 fileBitmap.Set(i + 1);
                             }
@@ -92,11 +92,12 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                         if (fileCoverage.Bitmap is { } bitmap)
                         {
                             using var currentBitmap = new FileBitmap(bitmap);
-                            fileCoverage.Bitmap = FileBitmap.Or(fileBitmap, currentBitmap, true).GetInternalArrayOrToArrayAndDispose();
+                            var mergedBitmap = fileBitmap | currentBitmap;
+                            fileCoverage.Bitmap = mergedBitmap.GetInternalArrayOrToArrayAndDispose();
                         }
                         else
                         {
-                            fileCoverage.Bitmap = fileBitmap.GetInternalArrayOrToArrayAndDispose();
+                            fileCoverage.Bitmap = fileBitmap.ToArray();
                         }
                     }
                 }

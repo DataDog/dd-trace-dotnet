@@ -371,7 +371,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             if (!IsRunningInCi())
             {
                 // native loader output folder
-                var binFolder = Path.Combine(GetSolutionDirectory(), "shared", "src", "Datadog.Trace.ClrProfiler.Native", "bin");
+                var binFolder = Path.Combine(GetSolutionDirectory(), "native-bin", "Datadog.Trace.ClrProfiler.Native", "bin");
 
                 return GetOS() switch
                 {

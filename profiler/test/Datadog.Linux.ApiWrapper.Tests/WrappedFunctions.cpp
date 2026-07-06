@@ -5,8 +5,10 @@
 
 #define _GNU_SOURCE
 #include <dlfcn.h>
+#include <fcntl.h>
 #include <link.h>
 #include <pthread.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -56,6 +58,47 @@ INSTANTIATE_TEST_SUITE_P(
         (void*)::connect,
         (void*)::send,
         (void*)::sendto,
-        (void*)::sendmsg));
+        (void*)::sendmsg,
+        (void*)::open,
+        (void*)::openat,
+        (void*)::read,
+        (void*)::write,
+        (void*)::pread,
+        (void*)::pwrite,
+        // Use dlsym instead of (void*)::symbol because on glibc < 2.33,
+        // stat/lstat/fstatat are inline functions (calling __xstat etc.),
+        // so (void*)::stat would resolve to a local inline, not our wrapper.
+        dlsym(RTLD_DEFAULT, "stat"),
+        dlsym(RTLD_DEFAULT, "lstat"),
+        dlsym(RTLD_DEFAULT, "fstat"),
+        dlsym(RTLD_DEFAULT, "fstatat"),
+        dlsym(RTLD_DEFAULT, "__xstat"),
+        dlsym(RTLD_DEFAULT, "__lxstat"),
+        dlsym(RTLD_DEFAULT, "__fxstat"),
+        dlsym(RTLD_DEFAULT, "__fxstatat"),
+        // Large-file (*64) variants: the .NET runtime is compiled with
+        // _FILE_OFFSET_BITS=64, so it references these symbols rather than the
+        // un-suffixed ones. They are exported unconditionally (the universal
+        // binary is built on musl but must cover glibc consumers), so they are
+        // verified on every platform.
+        dlsym(RTLD_DEFAULT, "open64"),
+        dlsym(RTLD_DEFAULT, "openat64"),
+        dlsym(RTLD_DEFAULT, "pread64"),
+        dlsym(RTLD_DEFAULT, "pwrite64"),
+        dlsym(RTLD_DEFAULT, "__xstat64"),
+        dlsym(RTLD_DEFAULT, "__lxstat64"),
+        dlsym(RTLD_DEFAULT, "__fxstat64"),
+        dlsym(RTLD_DEFAULT, "__fxstatat64"),
+        // Fortified (_FORTIFY_SOURCE) entry points. Applications compiled with
+        // -D_FORTIFY_SOURCE bind read/pread/open/openat to these instead of the
+        // plain symbols. Exported unconditionally for the same universal-binary
+        // reason as the *64 variants above.
+        dlsym(RTLD_DEFAULT, "__read_chk"),
+        dlsym(RTLD_DEFAULT, "__pread_chk"),
+        dlsym(RTLD_DEFAULT, "__pread64_chk"),
+        dlsym(RTLD_DEFAULT, "__open_2"),
+        dlsym(RTLD_DEFAULT, "__open64_2"),
+        dlsym(RTLD_DEFAULT, "__openat_2"),
+        dlsym(RTLD_DEFAULT, "__openat64_2")));
 
 } // namespace WrappedFunctionsTest

@@ -80,14 +80,22 @@
     "SampleProjectName": "Samples.Amazon.Lambda.RuntimeSupport",
     "NugetPackageSearchName": "Amazon.Lambda.RuntimeSupport",
     "MinVersion": "1.4.0",
-    "MaxVersionExclusive": "2.0.0",
+    "MaxVersionExclusive": "3.0.0",
     "SpecificVersions": [
-      "1.*.*"
+      "1.*.*",
+      "2.*.*"
     ],
-    "VersionConditions": [{
-      "MinVersion": "1.4.0",
-      "IncludeOnlyTargetFrameworks": ["net6.0","net7.0","net8.0"]
-    }]
+    "VersionConditions": [
+      {
+        "MinVersion": "1.4.0",
+        "MaxVersionExclusive": "2.0.0",
+        "IncludeOnlyTargetFrameworks": ["net6.0", "net7.0", "net8.0"]
+      },
+      {
+        "MinVersion": "2.0.0",
+        "IncludeOnlyTargetFrameworks": ["net8.0", "net9.0", "net10.0"]
+      }
+    ]
   },
   {
     "IntegrationName": "AwsSqs",
@@ -279,13 +287,13 @@
     "SampleProjectName": "Samples.HotChocolate",
     "NugetPackageSearchName": "HotChocolate.AspNetCore",
     "MinVersion": "11.0.0",
-    "MaxVersionExclusive": "16.0.0",
+    "MaxVersionExclusive": "17.0.0",
     "SpecificVersions": [
       "11.*.*",
-      "12.*.*",
       "13.*.*",
       "14.*.*",
-      "15.*.*"
+      "15.*.*",
+      "16.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "12.22.0",
@@ -412,7 +420,7 @@
     "SampleProjectName": "Samples.StackExchange.Redis",
     "NugetPackageSearchName": "StackExchange.Redis",
     "MinVersion": "1.0.187",
-    "MaxVersionExclusive": "3.0.0",
+    "MaxVersionExclusive": "4.0.0",
     "VersionConditions": [{
       "MaxVersionExclusive": "1.1.700",
       "IncludeOnlyTargetFrameworks": ["net48"]
@@ -426,7 +434,8 @@
     "SpecificVersions": [
       "1.0.*",
       "1.2.*",
-      "2.*.*"
+      "2.*.*",
+      "3.*.*"
     ]
   },
   {

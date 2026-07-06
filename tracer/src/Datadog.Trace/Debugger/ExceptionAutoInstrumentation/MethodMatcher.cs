@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Util;
 
 #nullable enable
@@ -330,8 +331,7 @@ internal static class MethodMatcher
 
     private static bool HasMatchingAsyncMethodBuilder(MethodInfo method)
     {
-        return method.GetCustomAttributes()
-                    .Any(attr => attr.GetType().Name.EndsWith("AsyncStateMachineAttribute"));
+        return StateMachineAttributeHelper.HasAsyncStateMachineAttribute(method);
     }
 
     private static MethodInfo? ResolveIteratorMethod(MethodBase moveNextMethod)
