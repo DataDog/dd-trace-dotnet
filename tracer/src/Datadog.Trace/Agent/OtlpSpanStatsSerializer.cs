@@ -366,7 +366,6 @@ namespace Datadog.Trace.Agent
             WriteVarInt(writer, resourceData.Length);
             writer.Write(resourceData);
 
-            // Single scope-metrics entry (no InstrumentationScope — omitted per spec)
             var scopeMetricsData = SerializeScopeMetrics(buffer, bucketDurationNs, otelSemanticsEnabled);
             WriteTag(writer, FieldNumbers.ScopeMetrics, WireTypeLengthDelimited);
             WriteVarInt(writer, scopeMetricsData.Length);
