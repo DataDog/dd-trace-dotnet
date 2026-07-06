@@ -27,12 +27,12 @@ internal sealed class AzureFrontDoorExtractor : IInferredProxyExtractor
         try
         {
             var startTimeHeaderValue = ParseUtility.ParseString(carrier, carrierGetter, InferredProxyHeaders.StartTime);
-            if (string.IsNullOrEmpty(startTimeHeaderValue))
+            if (StringUtil.IsNullOrEmpty(startTimeHeaderValue))
             {
                 startTimeHeaderValue = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
             }
 
-            // we also need to validate that we have the start time header otherwise we won't be able to create the span
+            // validate the start time is a parseable Unix timestamp in milliseconds
             if (!InferredProxySpanHelper.GetStartTime(startTimeHeaderValue, out var startTime))
             {
                 return false;
