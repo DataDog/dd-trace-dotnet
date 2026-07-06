@@ -21,31 +21,41 @@ public class CompareExecutionTime
         Logger.Information("Reading execution benchmarkResults results");
         var results = sources.SelectMany(ReadJsonResults).ToList();
 
-        // Group execution time benchmarks by Sample Name, Framework
+        // Group execution time benchmarks by Sample Name; show all frameworks inline within each group
         Logger.Information($"Found {results.Count} results: building markdown");
         var charts = results
-                    .GroupBy(x => (x.TestSample, x.Framework))
-                    .Select(group =>
+                    .GroupBy(x => x.TestSample)
+                    .OrderBy(g => g.Key)
+                    .Select(sampleGroup =>
                      {
-                         var scenarios = group
-                                        .Select(x => x)
-                                        .OrderBy(x => x.Scenario == "Baseline" ? 0 : 1 )
-                                        .ThenBy(x => x.Scenario)
-                                        .GroupBy(x => x.Scenario)
-                                        .Select((scenarioResults, i) => GetMermaidSection(scenarioResults.Key, scenarioResults));
-                         var chartTitle = $"{group.Key.TestSample} ({GetName(group.Key.Framework)})";
+                         var sampleName = sampleGroup.Key.ToString();
+                         var frameworkCharts = sampleGroup
+                             .GroupBy(x => x.Framework)
+                             .OrderBy(g => g.Key)
+                             .Select(frameworkGroup =>
+                              {
+                                  var frameworkName = GetName(frameworkGroup.Key);
+                                  var scenarios = frameworkGroup
+                                      .OrderBy(x => x.Scenario == "Baseline" ? 0 : 1)
+                                      .ThenBy(x => x.Scenario)
+                                      .GroupBy(x => x.Scenario)
+                                      .Select((scenarioResults, i) => GetMermaidSection(scenarioResults.Key, scenarioResults));
+                                  return $"""
+                                 ```mermaid
+                                 gantt
+                                     title Execution time (ms) {sampleName} ({frameworkName})
+                                     dateFormat  x
+                                     axisFormat %Q
+                                     todayMarker off
+                                 {string.Join(Environment.NewLine, scenarios)}
+                                 ```
+                                 """;
+                              });
                          return $"""
-                        <details>
-                          <summary>{chartTitle}</summary>
+                        <details open>
+                          <summary><h3>{sampleName}</h3></summary>
 
-                        ```mermaid
-                        gantt
-                            title Execution time (ms) {chartTitle}
-                            dateFormat  x
-                            axisFormat %Q
-                            todayMarker off
-                        {string.Join(Environment.NewLine, scenarios)}
-                        ```
+                        {string.Join(Environment.NewLine + Environment.NewLine, frameworkCharts)}
                         </details>
                         """;
                      });
@@ -212,7 +222,7 @@ public class CompareExecutionTime
             : "✅ No regressions detected";
 
         return $$"""
-            ## Execution-Time Benchmarks Report :stopwatch:
+            ## Execution-Time Benchmarks Report ⏱️
 
             Execution-time results for samples comparing {{string.Join(" and ", sources.Select(x => x.Markdown))}}.
 
@@ -226,20 +236,23 @@ public class CompareExecutionTime
 
         var finalOutput = new StringBuilder();
 
+        finalOutput.AppendLine("<h2 id=\"comparison-results\">Comparison Results</h2>");
+        finalOutput.AppendLine();
+
         if (hasRegressions)
         {
-            finalOutput.AppendLine("### ⚠️ Potential regressions detected");
+            finalOutput.AppendLine("<h3>⚠️ Potential regressions detected</h3>");
             finalOutput.AppendLine();
             finalOutput.Append(regressionsMarkdown);
         }
         else
         {
-            finalOutput.AppendLine("✅ No regressions detected - check the details below");
+            finalOutput.AppendLine("✅ No regressions detected");
             finalOutput.AppendLine();
         }
 
-        finalOutput.AppendLine("<details>");
-        finalOutput.AppendLine("  <summary>Full Metrics Comparison</summary>");
+        finalOutput.AppendLine("<details open>");
+        finalOutput.AppendLine("  <summary><h2 id=\"full-metrics-comparison\">Full Metrics Comparison</h2></summary>");
         finalOutput.AppendLine();
         finalOutput.Append(detailsMarkdown);
         finalOutput.AppendLine("</details>");
@@ -399,7 +412,7 @@ public class CompareExecutionTime
             // Build table for this sample in details
             if (detailsTableRows.Length > 0)
             {
-                detailsOutput.AppendLine($"<h4>{sampleName}</h4>");
+                detailsOutput.AppendLine($"<h3>{sampleName}</h3>");
                 detailsOutput.AppendLine("<table>");
                 detailsOutput.AppendLine("  <thead>");
                 detailsOutput.AppendLine("    <tr>");
@@ -421,7 +434,7 @@ public class CompareExecutionTime
             if (sampleHasRegressions)
             {
                 hasRegressions = true;
-                regressionsOutput.AppendLine($"<h4>{sampleName}</h4>");
+                regressionsOutput.AppendLine($"<h3>{sampleName}</h3>");
                 regressionsOutput.AppendLine("<table>");
                 regressionsOutput.AppendLine("  <thead>");
                 regressionsOutput.AppendLine("    <tr>");
@@ -514,14 +527,16 @@ public class CompareExecutionTime
     static string GetCommentMarkdown(List<ExecutionTimeResultSource> sources, IEnumerable<string> charts, string comparisonTable)
     {
         return $$"""
-            ## Execution-Time Benchmarks Report :stopwatch:
+            <h1>Execution-Time Benchmarks Report ⏱️</h1>
 
             Execution-time results for samples comparing {{string.Join(" and ", sources.Select(x => x.Markdown))}}.
+
+            **Contents:** [Comparison Results](#comparison-results) | [Full Metrics Comparison](#full-metrics-comparison) | [Comparison Explanation](#comparison-explanation) | [Duration Charts](#duration-charts)
 
             {{comparisonTable}}
 
             <details>
-              <summary>Comparison explanation</summary>
+              <summary><h2 id="comparison-explanation">Comparison Explanation</h2></summary>
               <p>
               Execution-time benchmarks measure the whole time it takes to execute a program, and are intended to measure the one-off costs.
               Cases where the execution time results for the PR are worse than latest master results are highlighted in **red**.
@@ -539,8 +554,8 @@ public class CompareExecutionTime
               </p>
             </details>
 
-            <details>
-            <summary>Duration charts</summary>
+            <details open>
+            <summary><h2 id="duration-charts">Duration Charts</h2></summary>
             {{string.Join('\n', charts)}}
             </details>
             """;
