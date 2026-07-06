@@ -133,22 +133,27 @@ public sealed class CoverageGetCoverageResultIntegration
                         Common.Log.Debug("DataCollector.Enabling IPC client: {Name}", name);
                         using var ipcClient = new IpcClient(name);
                         Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", percentage);
-                        if (!ipcClient.TrySendMessage(
-                                new SessionCodeCoverageMessage(
-                                    CodeCoverageReportSource.Coverlet,
-                                    percentage,
-                                    backfilled,
-                                    coverageDetails.Total,
-                                    coverageDetails.Covered,
-                                    resultId: coverageResultId,
-                                    backfillValidated: backfillValidated,
-                                    backfillNotApplicable: backfillNotApplicable,
-                                    backfillValidation: backfillValidation)))
-                        {
-                            Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not send Coverlet code coverage IPC message.");
-                            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
-                            CoverageBackfillDataStore.RecordCoverageIpcFailure(sessionSpanId, nameof(CodeCoverageReportSource.Coverlet));
-                        }
+                        var sessionCodeCoverageMessage = DotnetCommon.CreateSessionCodeCoverageIpcMessage(
+                            CodeCoverageReportSource.Coverlet,
+                            percentage,
+                            backfilled,
+                            coverageDetails.Total,
+                            coverageDetails.Covered,
+                            diagnostic: null,
+                            inlineResultId: coverageResultId,
+                            persistedResultId: coverageResultId,
+                            backfillValidated: backfillValidated,
+                            backfillNotApplicable: backfillNotApplicable,
+                            backfillValidation: backfillValidation);
+                        DotnetCommon.TrySendSessionCodeCoverageIpcMessage(
+                            ipcClient,
+                            sessionCodeCoverageMessage,
+                            () =>
+                            {
+                                Common.Log.Warning("CoverageGetCoverageResultIntegration: Could not send Coverlet code coverage IPC message.");
+                                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                                CoverageBackfillDataStore.RecordCoverageIpcFailure(sessionSpanId, nameof(CodeCoverageReportSource.Coverlet));
+                            });
                     }
                     catch (Exception ex)
                     {

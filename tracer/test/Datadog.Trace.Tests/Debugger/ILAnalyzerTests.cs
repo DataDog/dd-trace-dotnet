@@ -4,14 +4,15 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
-using System.Text;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Emit;
 using Xunit;
 
 #nullable enable
@@ -96,6 +97,156 @@ public class ILAnalyzerTests
 
         // Assert
         result.Should().BeFalse();
+    }
+
+    [Fact]
+    public void HasDirectCallTo_LdNullBeforeTargetCall_ReturnsTrue()
+    {
+        var assemblyName = "ILAnalyzerLdNull_" + Guid.NewGuid().ToString("N");
+        var targetPath = Path.Combine(Path.GetTempPath(), assemblyName + ".dll");
+
+        try
+        {
+            var targetSource = """
+                               namespace GeneratedTarget
+                               {
+                                   public class TargetType
+                                   {
+                                       public void ContainsNullArgumentCall()
+                                       {
+                                           Target(null);
+                                       }
+
+                                       private static void Target(object value)
+                                       {
+                                       }
+                                   }
+                               }
+                               """;
+
+            EmitAssembly(targetPath, assemblyName, targetSource);
+
+            var targetAssembly = Assembly.LoadFile(targetPath);
+            var type = targetAssembly.GetType("GeneratedTarget.TargetType")!;
+            var method = type.GetMethod("ContainsNullArgumentCall");
+            method.Should().NotBeNull("Test setup failed - method not found");
+
+            var result = ILAnalyzer.HasDirectCallTo(method!, type, "Target");
+
+            result.Should().BeTrue("ldnull has no operand, so it must not cause the scanner to skip the following call");
+        }
+        finally
+        {
+            TryDelete(targetPath);
+        }
+    }
+
+    [Fact]
+    public void HasDirectCallTo_UnavailableDependencyCall_DoesNotResolveDependency()
+    {
+        var assemblyName = "ILAnalyzerDependency_" + Guid.NewGuid().ToString("N");
+        var dependencyPath = Path.Combine(Path.GetTempPath(), assemblyName + ".dll");
+        var targetPath = Path.Combine(Path.GetTempPath(), assemblyName + ".Target.dll");
+        var dependencyResolveCount = 0;
+
+        ResolveEventHandler resolver = (_, args) =>
+        {
+            if (args.Name?.StartsWith(assemblyName, StringComparison.Ordinal) == true)
+            {
+                dependencyResolveCount++;
+            }
+
+            return null;
+        };
+
+        AppDomain.CurrentDomain.AssemblyResolve += resolver;
+        try
+        {
+            var dependencySource = """
+                                   namespace MissingDependency
+                                   {
+                                       public class DependencyType
+                                       {
+                                           public string GetValue() => nameof(DependencyType);
+                                       }
+                                   }
+                                   """;
+            var targetSource = """
+                               namespace GeneratedTarget
+                               {
+                                   public class TargetType
+                                   {
+                                       public void ContainsUnavailableDependencyCall()
+                                       {
+                                           if (System.DateTime.UtcNow.Ticks == long.MinValue)
+                                           {
+                                               _ = new MissingDependency.DependencyType().GetValue();
+                                           }
+                                       }
+                                   }
+                               }
+                               """;
+
+            EmitAssembly(dependencyPath, assemblyName, dependencySource);
+            EmitAssembly(targetPath, assemblyName + ".Target", targetSource, MetadataReference.CreateFromFile(dependencyPath));
+
+            File.Delete(dependencyPath);
+
+            var targetAssembly = Assembly.LoadFile(targetPath);
+            var method = targetAssembly.GetType("GeneratedTarget.TargetType")!.GetMethod("ContainsUnavailableDependencyCall");
+            method.Should().NotBeNull("Test setup failed - method not found");
+
+            var result = ILAnalyzer.HasDirectCallTo(method!, typeof(ExceptionDispatchInfo), "Throw");
+
+            result.Should().BeFalse();
+            dependencyResolveCount.Should().Be(0, "metadata scanning should not resolve call tokens through the runtime loader");
+        }
+        finally
+        {
+            AppDomain.CurrentDomain.AssemblyResolve -= resolver;
+            TryDelete(dependencyPath);
+            TryDelete(targetPath);
+        }
+    }
+
+    private static void EmitAssembly(string path, string assemblyName, string source, params MetadataReference[] additionalReferences)
+    {
+        var references = new MetadataReference[additionalReferences.Length + 1];
+        references[0] = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
+        Array.Copy(additionalReferences, 0, references, 1, additionalReferences.Length);
+
+        var compilation = CSharpCompilation.Create(
+            assemblyName,
+            syntaxTrees: [CSharpSyntaxTree.ParseText(source)],
+            references: references,
+            options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        var emitResult = compilation.Emit(path);
+        emitResult.Success.Should().BeTrue(GetErrors(emitResult));
+    }
+
+    private static string GetErrors(EmitResult emitResult)
+    {
+        return string.Join(
+            Environment.NewLine,
+            emitResult.Diagnostics
+                      .Where(d => d.Severity == DiagnosticSeverity.Error)
+                      .Select(d => $"{d.Id}: {d.GetMessage()}"));
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch
+        {
+            // Best-effort cleanup for assemblies that may remain locked by the test runtime.
+        }
     }
 
     // Test helper class
