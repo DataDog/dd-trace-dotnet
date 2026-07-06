@@ -314,13 +314,13 @@ namespace Datadog.Trace.Agent
             if (bucket.MinDuration < double.MaxValue)
             {
                 writer.WritePropertyName("min");
-                writer.WriteValue((double)TimeHelpers.NanosecondsToSeconds(bucket.MinDuration));
+                writer.WriteValue((double)TimeHelpers.NanosecondsToSeconds((long)bucket.MinDuration));
             }
 
             if (bucket.MaxDuration > 0)
             {
                 writer.WritePropertyName("max");
-                writer.WriteValue((double)TimeHelpers.NanosecondsToSeconds(bucket.MaxDuration));
+                writer.WriteValue((double)TimeHelpers.NanosecondsToSeconds((long)bucket.MaxDuration));
             }
 
             writer.WriteEndObject();
@@ -585,13 +585,13 @@ namespace Datadog.Trace.Agent
             if (bucket.MinDuration < double.MaxValue)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointMin, WireTypeFixed64);
-                writer.Write((double)TimeHelpers.NanosecondsToSeconds(bucket.MinDuration));
+                writer.Write((double)TimeHelpers.NanosecondsToSeconds((long)bucket.MinDuration));
             }
 
             if (bucket.MaxDuration > 0)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointMax, WireTypeFixed64);
-                writer.Write((double)TimeHelpers.NanosecondsToSeconds(bucket.MaxDuration));
+                writer.Write((double)TimeHelpers.NanosecondsToSeconds((long)bucket.MaxDuration));
             }
 
             writer.Flush();
