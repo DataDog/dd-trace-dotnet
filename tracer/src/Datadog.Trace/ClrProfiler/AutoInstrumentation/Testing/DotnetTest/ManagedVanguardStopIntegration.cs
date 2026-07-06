@@ -215,20 +215,24 @@ public sealed class ManagedVanguardStopIntegration
             Common.Log.Debug("DataCollector.Enabling IPC client: {Name}", name);
             using var ipcClient = new IpcClient(name);
             Common.Log.Debug("DataCollector.Sending session code coverage: {Value}", coverageResult.Percentage);
-            if (!ipcClient.TrySendMessage(
-                    new SessionCodeCoverageMessage(
-                        CodeCoverageReportSource.MicrosoftCodeCoverage,
-                        coverageResult.Percentage,
-                        coverageResult.Backfilled,
-                        coverageResult.ExecutableLines,
-                        coverageResult.CoveredLines,
-                        coverageResult.Diagnostic,
-                        coverageResultId,
-                        backfillValidated)))
-            {
-                Common.Log.Warning("ManagedVanguardStopIntegration: Could not send Microsoft CodeCoverage IPC message.");
-                RecordMicrosoftCoverageIpcFailure(sessionSpanId);
-            }
+            var sessionCodeCoverageMessage = DotnetCommon.CreateSessionCodeCoverageIpcMessage(
+                CodeCoverageReportSource.MicrosoftCodeCoverage,
+                coverageResult.Percentage,
+                coverageResult.Backfilled,
+                coverageResult.ExecutableLines,
+                coverageResult.CoveredLines,
+                coverageResult.Diagnostic,
+                inlineResultId: stableResultId,
+                persistedResultId: coverageResultId,
+                backfillValidated: backfillValidated);
+            DotnetCommon.TrySendSessionCodeCoverageIpcMessage(
+                ipcClient,
+                sessionCodeCoverageMessage,
+                () =>
+                {
+                    Common.Log.Warning("ManagedVanguardStopIntegration: Could not send Microsoft CodeCoverage IPC message.");
+                    RecordMicrosoftCoverageIpcFailure(sessionSpanId);
+                });
         }
         catch (Exception ex)
         {

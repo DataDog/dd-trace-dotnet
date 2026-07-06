@@ -41,6 +41,8 @@ namespace Datadog.Trace.Tests.Debugger
 
         private const string MetricsFolder = "Metrics";
 
+        private static int _staticExpressionInitializedCount;
+
         public DebuggerExpressionLanguageTests()
         {
             TestObject = new TestStruct
@@ -70,6 +72,11 @@ namespace Datadog.Trace.Tests.Debugger
             };
 
             TestObject.Nested.CreateCircleRef();
+        }
+
+        internal enum StaticExpressionEnum
+        {
+            One = 1
         }
 
         internal TestStruct TestObject { get; set; }
@@ -2510,6 +2517,156 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
+        [Fact]
+        public void ProbeExpressionParser_StaticMemberOnCctorFreeType_StillEvaluates()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.InvocationTarget = new ScopeMember("this", typeof(StaticExpressionWithoutCctor), new StaticExpressionWithoutCctor(), ScopeMemberKind.This);
+
+            const string json = """
+                                {
+                                  "getmember": [
+                                    {
+                                      "ref": "this"
+                                    },
+                                    "StaticProperty"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal("safe-property", result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_StaticMemberOnTypeWithCctor_IsUndefinedWithoutInitializingType()
+        {
+            _staticExpressionInitializedCount = 0;
+
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.InvocationTarget = new ScopeMember("this", typeof(StaticExpressionWithCctor), null, ScopeMemberKind.This);
+
+            const string json = """
+                                {
+                                  "getmember": [
+                                    {
+                                      "ref": "this"
+                                    },
+                                    "StaticProperty"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Same(UndefinedValue.Instance, result);
+            Assert.Equal(0, _staticExpressionInitializedCount);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Contains("could trigger the declaring type initializer", error.Message);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_UndefinedValueStringDump_PreservesLegacyMarker()
+        {
+            var scopeMembers = CreateScopeMembers();
+
+            const string json = """
+                                {
+                                  "ref": "missing"
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal(nameof(UndefinedValue), result);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Contains("The property or field does not exist", error.Message);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_StaticConstantOnTypeWithCctor_StillEvaluatesWithoutInitializingType()
+        {
+            _staticExpressionInitializedCount = 0;
+
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.InvocationTarget = new ScopeMember("this", typeof(StaticExpressionWithCctor), null, ScopeMemberKind.This);
+
+            const string json = """
+                                {
+                                  "getmember": [
+                                    {
+                                      "ref": "this"
+                                    },
+                                    "ConstantField"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal("constant-value", result);
+            Assert.Equal(0, _staticExpressionInitializedCount);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_StaticEnumConstantOnTypeWithCctor_PreservesFieldType()
+        {
+            _staticExpressionInitializedCount = 0;
+
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.InvocationTarget = new ScopeMember("this", typeof(StaticExpressionWithCctor), null, ScopeMemberKind.This);
+
+            const string json = """
+                                {
+                                  "getmember": [
+                                    {
+                                      "ref": "this"
+                                    },
+                                    "EnumConstantField"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<StaticExpressionEnum>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal(StaticExpressionEnum.One, result);
+            Assert.Equal(0, _staticExpressionInitializedCount);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
         private static string CreateInstanceOfJson(string valueJson, string typeName)
         {
             return $$"""
@@ -2752,6 +2909,8 @@ namespace Datadog.Trace.Tests.Debugger
         {
             // remove corlib assembly name
             template = template.Replace("mscorlib, ", string.Empty).Replace("System.Private.CoreLib, ", string.Empty);
+            template = template.Replace("Empty=00000000-0000-0000-0000-000000000000, ", string.Empty);
+            template = template.Replace("_a=0, _b=0, _c=0, _d=0, _e=0, ...", "_a=0, _b=0, _c=0, _d=0, ...");
 
             // remove assembly PublicKeyToken
             var tokenStartString = ", PublicKeyToken=";
@@ -2769,6 +2928,8 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 template = template.Substring(0, versionIndex) + template.Substring(versionIndex + versionExample.Length, template.Length - (versionIndex + versionExample.Length));
             }
+
+            template = template.Replace(",  Culture=", ", Culture=");
 
             return template;
         }
@@ -2949,6 +3110,25 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        internal class StaticExpressionWithoutCctor
+        {
+            public static string StaticProperty => "safe-property";
+        }
+
+        internal class StaticExpressionWithCctor
+        {
+            public const string ConstantField = "constant-value";
+
+            public const StaticExpressionEnum EnumConstantField = StaticExpressionEnum.One;
+
+            static StaticExpressionWithCctor()
+            {
+                _staticExpressionInitializedCount++;
+            }
+
+            public static string StaticProperty { get; } = "unsafe-property";
         }
 
         internal class GenericValueTypeTarget<T>

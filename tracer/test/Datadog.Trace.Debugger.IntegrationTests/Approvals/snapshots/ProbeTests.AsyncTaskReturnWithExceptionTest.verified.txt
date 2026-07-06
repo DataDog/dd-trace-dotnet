@@ -15,35 +15,7 @@
             },
             "staticFields": {
               "Rooms": {
-                "elements": [
-                  {
-                    "fields": {
-                      "Id": {
-                        "type": "String",
-                        "value": "Foo"
-                      },
-                      "Status": {
-                        "type": "RoomStatus",
-                        "value": "Ready"
-                      }
-                    },
-                    "type": "Room"
-                  },
-                  {
-                    "fields": {
-                      "Id": {
-                        "type": "String",
-                        "value": "Bar"
-                      },
-                      "Status": {
-                        "type": "RoomStatus",
-                        "value": "Ready"
-                      }
-                    },
-                    "type": "Room"
-                  }
-                ],
-                "size": 2,
+                "notCapturedReason": "typeInitializer",
                 "type": "List`1"
               }
             }
@@ -89,35 +61,7 @@
             },
             "staticFields": {
               "Rooms": {
-                "elements": [
-                  {
-                    "fields": {
-                      "Id": {
-                        "type": "String",
-                        "value": "Foo"
-                      },
-                      "Status": {
-                        "type": "RoomStatus",
-                        "value": "Ready"
-                      }
-                    },
-                    "type": "Room"
-                  },
-                  {
-                    "fields": {
-                      "Id": {
-                        "type": "String",
-                        "value": "Bar"
-                      },
-                      "Status": {
-                        "type": "RoomStatus",
-                        "value": "Ready"
-                      }
-                    },
-                    "type": "Room"
-                  }
-                ],
-                "size": 2,
+                "notCapturedReason": "typeInitializer",
                 "type": "List`1"
               }
             },

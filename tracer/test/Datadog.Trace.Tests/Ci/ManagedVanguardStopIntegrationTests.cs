@@ -11,6 +11,7 @@ using System.IO;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Backfill;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -83,6 +84,62 @@ public class ManagedVanguardStopIntegrationTests
             result.Percentage.Should().Be(100);
             result.Backfilled.Should().BeTrue();
             result.BackfillValidated.Should().BeTrue();
+        }
+        finally
+        {
+            try
+            {
+                session?.Close(TestStatus.Pass);
+                TestOptimization.Instance.Close();
+                TestOptimization.Instance.Reset();
+            }
+            finally
+            {
+                Directory.SetCurrentDirectory(previousCurrentDirectory);
+                DeleteWorkspacePath(workspacePath);
+            }
+        }
+    }
+
+    [Fact]
+    public void SendsReferenceCoverageIpcMessageAndSessionPublishesPersistedMicrosoftCoverage()
+    {
+        var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-vanguard-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(workspacePath);
+        var reportPath = Path.Combine(workspacePath, "coverage.xml");
+        var previousCurrentDirectory = Environment.CurrentDirectory;
+        TestSession? session = null;
+
+        try
+        {
+            Directory.SetCurrentDirectory(workspacePath);
+            TestOptimization.Instance.Reset();
+            Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, Path.Combine(Environment.CurrentDirectory, ".dd", TestOptimization.Instance.RunId));
+            const string CoverageXml =
+                """
+                <report>
+                  <file path="src/Calculator.cs">
+                    <line number="1" hits="0" />
+                  </file>
+                </report>
+                """;
+            File.WriteAllText(reportPath, CoverageXml);
+            CoverageBackfillDataStore.Persist(TestOptimization.Instance, CoverageBackfillData.FromBackendCoverage(new Dictionary<string, string> { ["src/Calculator.cs"] = Convert.ToBase64String([0b_1000_0000]) }));
+            session = TestSession.GetOrCreate("dotnet test", workingDirectory: workspacePath, framework: null, startDate: null, propagateEnvironmentVariables: true);
+            session.EnableIpcServer().Should().BeTrue();
+            CoverageBackfillDataStore.RecordActualItrSkip(session.Tags.SessionId);
+            var proxy = new ManagedVanguardProxy([reportPath]);
+
+            ManagedVanguardStopIntegration.OnMethodEnd(proxy, exception: null, default(CallTargetState));
+
+            CoverageBackfillDataStore.TryReadCoverageIpcResults(session.Tags.SessionId, out var persistedResults).Should().BeTrue();
+            persistedResults.Should().ContainSingle().Which.Source.Should().Be(CodeCoverageReportSource.MicrosoftCodeCoverage);
+            session.DrainIpcMessages(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(50), waitForFirstMessage: true);
+            session.PublishCodeCoverage();
+
+            session.Tags.GetMetric(CodeCoverageTags.PercentageOfTotalLines).Should().Be(100);
+            session.Tags.GetTag(CodeCoverageTags.Backfilled).Should().Be("true");
+            CoverageBackfillDataStore.TryReadCoverageIpcFailure(session.Tags.SessionId, out _).Should().BeFalse();
         }
         finally
         {

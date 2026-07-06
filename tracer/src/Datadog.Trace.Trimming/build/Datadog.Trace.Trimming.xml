@@ -30,6 +30,7 @@
    <assembly fullname="Grpc.Net.Client" />
    <assembly fullname="Hangfire.Core" />
    <assembly fullname="HotChocolate.Execution" />
+   <assembly fullname="HotChocolate.Types" />
    <assembly fullname="log4net" />
    <assembly fullname="MassTransit" />
    <assembly fullname="Microsoft.AspNetCore.Authentication.Abstractions" />
@@ -145,6 +146,7 @@
    </assembly>
    <assembly fullname="System.Collections">
       <type fullname="System.Collections.BitArray" />
+      <type fullname="System.Collections.Generic.CollectionExtensions" />
       <type fullname="System.Collections.Generic.Comparer`1" />
       <type fullname="System.Collections.Generic.Dictionary`2" />
       <type fullname="System.Collections.Generic.Dictionary`2/Enumerator" />

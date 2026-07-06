@@ -1,0 +1,192 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: azure_functions.invoke,
+    Resource: POST /api/seed/servicebus,
+    Service: AzureFunctionsMessagingTriggerTests,
+    Type: serverless,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.binding: Microsoft.Azure.WebJobs.Host.Executors.BindingSource,
+      aas.function.name: SeedServiceBusMessage,
+      aas.function.trigger: Http,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsMessagingTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: http://localhost:00000/api/seed/servicebus,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: azure_functions.invoke,
+    Resource: Http SeedServiceBusMessage,
+    Service: AzureFunctionsMessagingTriggerTests,
+    Type: serverless,
+    ParentId: Id_2,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Messaging.MessagingTriggers.SeedServiceBusMessage,
+      aas.function.name: SeedServiceBusMessage,
+      aas.function.trigger: Http,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsMessagingTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_2,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: azure_servicebus.send,
+    Resource: samples-azureservicebus-queue,
+    Service: AzureFunctionsMessagingTriggerTests-azureservicebus,
+    Type: queue,
+    ParentId: Id_3,
+    Tags: {
+      aas.site.name: AzureFunctionsMessagingTriggerTests,
+      aas.site.type: function,
+      component: AzureServiceBus,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: samples-azureservicebus-queue,
+      messaging.message_id: Guid_3,
+      messaging.operation: send,
+      messaging.system: servicebus,
+      network.destination.name: localhost,
+      network.destination.port: 5671,
+      runtime-id: Guid_2,
+      span.kind: producer,
+      _dd.base_service: AzureFunctionsMessagingTriggerTests,
+      _dd.svc_src: azureservicebus
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: azure_servicebus.receive,
+    Resource: samples-azureservicebus-queue,
+    Service: AzureFunctionsMessagingTriggerTests-azureservicebus,
+    Type: queue,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsMessagingTriggerTests,
+      aas.site.type: function,
+      component: AzureServiceBus,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: samples-azureservicebus-queue,
+      messaging.message_id: Guid_3,
+      messaging.operation: receive,
+      messaging.system: servicebus,
+      runtime-id: Guid_1,
+      server.address: localhost,
+      span.kind: consumer,
+      _dd.base_service: AzureFunctionsMessagingTriggerTests,
+      _dd.svc_src: azureservicebus
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    },
+    SpanLinks: [
+      {
+        TraceIdLow: 0,
+        TraceIdHigh: 0,
+        SpanId: Id_4,
+        TraceFlags: 0,
+        TraceState: scrubbed
+      }
+    ]
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_7,
+    Name: azure_functions.invoke,
+    Resource: ServiceBus ServiceBusTrigger,
+    Service: AzureFunctionsMessagingTriggerTests,
+    Type: serverless,
+    ParentId: Id_6,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Messaging.MessagingTriggers.ServiceBusTrigger,
+      aas.function.name: ServiceBusTrigger,
+      aas.function.trigger: ServiceBus,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsMessagingTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_2,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_8,
+    Name: Manual inside ServiceBusTrigger,
+    Resource: Manual inside ServiceBusTrigger,
+    Service: AzureFunctionsMessagingTriggerTests,
+    ParentId: Id_7,
+    Tags: {
+      aas.site.name: AzureFunctionsMessagingTriggerTests,
+      aas.site.type: function,
+      env: integration_tests,
+      language: dotnet
+    }
+  }
+]

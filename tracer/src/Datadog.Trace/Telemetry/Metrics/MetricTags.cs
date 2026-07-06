@@ -478,6 +478,41 @@ internal static class MetricTags
         [Description("encoding:json")] Json,
     }
 
+    // Note that these tags need to remain in sync with StatsCardinalityReporter.StatsdTags.Tags
+    // (both order and values)
+    [EnumExtensions]
+    internal enum CollapsedStatsFields
+    {
+        [Description("")] None,
+        [Description("collapsed:whole_key")] WholeKey,
+
+        [Description("collapsed:resource")] Resource,
+        [Description("collapsed:http_endpoint")] HttpEndpoint,
+        [Description("collapsed:peer_tags")] PeerTags,
+        [Description("collapsed:additional_metric_tags")] AdditionalMetricTags,
+
+        [Description("collapsed:resource;collapsed:http_endpoint")] ResourceAndHttpEndpoint,
+        [Description("collapsed:resource;collapsed:peer_tags")] ResourceAndPeerTags,
+        [Description("collapsed:resource;collapsed:additional_metric_tags")] ResourceAndAdditionalMetricTags,
+
+        [Description("collapsed:http_endpoint;collapsed:peer_tags")] HttpEndpointAndPeerTags,
+        [Description("collapsed:http_endpoint;collapsed:additional_metric_tags")] HttpEndpointAndAdditionalMetricTags,
+        [Description("collapsed:peer_tags;collapsed:additional_metric_tags")] PeerTagsAndAdditionalMetricTags,
+
+        [Description("collapsed:resource;collapsed:http_endpoint;collapsed:peer_tags")] ResourceAndHttpEndpointAndPeerTags,
+        [Description("collapsed:resource;collapsed:http_endpoint;collapsed:additional_metric_tags")] ResourceAndHttpEndpointAndAdditionalMetricTags,
+        [Description("collapsed:resource;collapsed:peer_tags;collapsed:additional_metric_tags")] ResourceAndPeerTagsAndAdditionalMetricTags,
+        [Description("collapsed:http_endpoint;collapsed:peer_tags;collapsed:additional_metric_tags")] HttpEndpointAndPeerTagsAndAdditionalMetricTags,
+
+        [Description("collapsed:resource;collapsed:http_endpoint;collapsed:peer_tags;collapsed:additional_metric_tags")] ResourceAndHttpEndpointAndPeerTagsAndAdditionalMetricTags,
+    }
+
+    internal enum OversizedStatsFields
+    {
+        [Description("")] None,
+        [Description("oversized:additional_metric_tags")] AdditionalMetricTags,
+    }
+
     public enum CIVisibilityTestFramework
     {
         [Description("test_framework:xunit")] XUnit,
