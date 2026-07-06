@@ -512,7 +512,6 @@ namespace Datadog.Trace.Tests.Agent
             aggregator.CanComputeStats.Should().BeTrue();
         }
 
-
         [Fact]
         public async Task Otlp_ProcessTrace_WhenTraceSampled_ReturnsAggregateAndExport()
         {
