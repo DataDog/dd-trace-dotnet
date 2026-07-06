@@ -178,7 +178,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 parentContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(adapter);
             }
 
-            // Merge extracted baggage into ambient context. CreateReceiveSpan only forwards
             parentContext = parentContext.MergeBaggageInto(Baggage.Current);
             MassTransitCommon.CreateReceiveSpan(Tracer.Instance, inputAddress, parentContext);
         }
