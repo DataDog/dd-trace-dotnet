@@ -193,7 +193,69 @@ public class CompareExecutionTime
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Returns a concise summary of the comparison results for use in a PR comment.
+    /// Contains only the regressions table (no Mermaid charts, no full metrics details),
+    /// so that the comment remain small. The caller is expected to append a direct 
+    /// link to the full report artifact.
+    /// </summary>
+    public static string GetCommentSummary(List<ExecutionTimeResultSource> sources)
+    {
+        Logger.Information("Reading execution benchmark results for comment summary");
+        var results = sources.SelectMany(ReadJsonResults).ToList();
+
+        Logger.Information($"Found {results.Count} results: building comment summary");
+        var (regressionsMarkdown, _, hasRegressions) = BuildComparisonSections(results);
+
+        var regressionsSummary = hasRegressions
+            ? "### ⚠️ Potential regressions detected\n\n" + regressionsMarkdown
+            : "✅ No regressions detected";
+
+        return $$"""
+            ## Execution-Time Benchmarks Report :stopwatch:
+
+            Execution-time results for samples comparing {{string.Join(" and ", sources.Select(x => x.Markdown))}}.
+
+            {{regressionsSummary}}
+            """;
+    }
+
     static string GetComparisonTable(List<ExecutionTimeResult> results)
+    {
+        var (regressionsMarkdown, detailsMarkdown, hasRegressions) = BuildComparisonSections(results);
+
+        var finalOutput = new StringBuilder();
+
+        if (hasRegressions)
+        {
+            finalOutput.AppendLine("### ⚠️ Potential regressions detected");
+            finalOutput.AppendLine();
+            finalOutput.Append(regressionsMarkdown);
+        }
+        else
+        {
+            finalOutput.AppendLine("✅ No regressions detected - check the details below");
+            finalOutput.AppendLine();
+        }
+
+        finalOutput.AppendLine("<details>");
+        finalOutput.AppendLine("  <summary>Full Metrics Comparison</summary>");
+        finalOutput.AppendLine();
+        finalOutput.Append(detailsMarkdown);
+        finalOutput.AppendLine("</details>");
+
+        return finalOutput.ToString();
+    }
+
+    /// <summary>
+    /// Builds both the regressions-only and full-details comparison sections from the given results.
+    /// </summary>
+    /// <returns>
+    /// <c>regressionsMarkdown</c>: HTML table rows for regressions only (no surrounding header).
+    /// <c>detailsMarkdown</c>: HTML table rows for all metrics (no surrounding <c>&lt;details&gt;</c>).
+    /// <c>hasRegressions</c>: whether any statistically-significant regressions were found.
+    /// </returns>
+    static (string regressionsMarkdown, string detailsMarkdown, bool hasRegressions) BuildComparisonSections(List<ExecutionTimeResult> results)
     {
         // Key metrics to compare
         var keyMetrics = new[]
@@ -378,28 +440,7 @@ public class CompareExecutionTime
             }
         }
 
-        var finalOutput = new StringBuilder();
-
-        if (hasRegressions)
-        {
-            finalOutput.AppendLine("### ⚠️ Potential regressions detected");
-            finalOutput.AppendLine();
-            finalOutput.Append(regressionsOutput);
-        }
-        else
-        {
-            finalOutput.AppendLine("✅ No regressions detected - check the details below");
-            finalOutput.AppendLine();
-
-        }
-
-        finalOutput.AppendLine("<details>");
-        finalOutput.AppendLine("  <summary>Full Metrics Comparison</summary>");
-        finalOutput.AppendLine();
-        finalOutput.Append(detailsOutput);
-        finalOutput.AppendLine("</details>");
-
-        return finalOutput.ToString();
+        return (regressionsOutput.ToString(), detailsOutput.ToString(), hasRegressions);
     }
 
     static (string html, bool isRegression) FormatMetricRowFromStats(
