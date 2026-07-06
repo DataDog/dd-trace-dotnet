@@ -120,25 +120,25 @@ namespace Datadog.Trace.Agent
             writer.WritePropertyName("attributes");
             writer.WriteStartArray();
 
-            WriteStringKvJson(writer, "telemetry.sdk.name", "datadog");
-            WriteStringKvJson(writer, "telemetry.sdk.language", "dotnet");
-            WriteStringKvJson(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
-            WriteStringKvJson(writer, "service.name", details.DefaultServiceName);
-
-            if (!StringUtil.IsNullOrEmpty(details.Environment))
-            {
-                WriteStringKvJson(writer, "deployment.environment.name", details.Environment!);
-            }
+            WriteStringKvJson(writer, "service.name", details.DefaultServiceName ?? "unknown_service:dotnet");
 
             if (!StringUtil.IsNullOrEmpty(details.Version))
             {
                 WriteStringKvJson(writer, "service.version", details.Version!);
             }
 
+            if (!StringUtil.IsNullOrEmpty(details.Environment))
+            {
+                WriteStringKvJson(writer, "deployment.environment.name", details.Environment!);
+            }
+
+            WriteStringKvJson(writer, "telemetry.sdk.name", TracerConstants.TelemetrySdkName);
+            WriteStringKvJson(writer, "telemetry.sdk.language", TracerConstants.Language);
+            WriteStringKvJson(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
+            WriteStringKvJson(writer, "datadog.runtime_id", Tracer.RuntimeId);
+
             if (!otelSemanticsEnabled)
             {
-                WriteStringKvJson(writer, "datadog.runtime_id", Tracer.RuntimeId);
-
                 foreach (var tag in details.DdTags)
                 {
                     if (TryParseTag(tag, out var key, out var value) && !OtlpMapper.IsHandledResourceAttribute(key))
@@ -391,25 +391,25 @@ namespace Datadog.Trace.Agent
 
             var details = buffer.Header.Details;
 
-            WriteAttribute(writer, "telemetry.sdk.name", "datadog");
-            WriteAttribute(writer, "telemetry.sdk.language", "dotnet");
-            WriteAttribute(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
-            WriteAttribute(writer, "service.name", details.DefaultServiceName);
-
-            if (!StringUtil.IsNullOrEmpty(details.Environment))
-            {
-                WriteAttribute(writer, "deployment.environment.name", details.Environment!);
-            }
+            WriteAttribute(writer, "service.name", details.DefaultServiceName ?? "unknown_service:dotnet");
 
             if (!StringUtil.IsNullOrEmpty(details.Version))
             {
                 WriteAttribute(writer, "service.version", details.Version!);
             }
 
+            if (!StringUtil.IsNullOrEmpty(details.Environment))
+            {
+                WriteAttribute(writer, "deployment.environment.name", details.Environment!);
+            }
+
+            WriteAttribute(writer, "telemetry.sdk.name", TracerConstants.TelemetrySdkName);
+            WriteAttribute(writer, "telemetry.sdk.language", TracerConstants.Language);
+            WriteAttribute(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
+            WriteAttribute(writer, "datadog.runtime_id", Tracer.RuntimeId);
+
             if (!otelSemanticsEnabled)
             {
-                WriteAttribute(writer, "datadog.runtime_id", Tracer.RuntimeId);
-
                 foreach (var tag in details.DdTags)
                 {
                     if (TryParseTag(tag, out var key, out var value) && !OtlpMapper.IsHandledResourceAttribute(key))
