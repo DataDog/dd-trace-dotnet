@@ -185,11 +185,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 return "rabbitmq";
             }
 
-            // this scenario is untested
-            if (address.StartsWith("sb://", StringComparison.OrdinalIgnoreCase))
-            {
-                return "azureservicebus";
-            }
+            // TODO: Add Azure Service Bus support ("sb://" -> "azureservicebus") once verified against
+            // a real Azure Service Bus transport — this address scheme is untested.
 
             if (address.StartsWith("amazonsqs://", StringComparison.OrdinalIgnoreCase))
             {

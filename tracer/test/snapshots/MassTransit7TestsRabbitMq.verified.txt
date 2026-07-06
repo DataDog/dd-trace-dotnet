@@ -28,13 +28,13 @@
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_3,
+    TraceId: Id_3,
+    SpanId: Id_4,
     Name: masstransit.receive,
     Resource: GettingStartedWithRabbitMq receive,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_4,
+    ParentId: Id_5,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -55,13 +55,13 @@
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_5,
+    TraceId: Id_3,
+    SpanId: Id_6,
     Name: masstransit.process,
     Resource: GettingStartedWithRabbitMq process,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_3,
+    ParentId: Id_4,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -76,8 +76,8 @@
     }
   },
   {
-    TraceId: Id_6,
-    SpanId: Id_7,
+    TraceId: Id_7,
+    SpanId: Id_8,
     Name: masstransit.send,
     Resource: GettingStartedWithRabbitMq send,
     Service: Samples.MassTransit7,
@@ -104,13 +104,13 @@
     }
   },
   {
-    TraceId: Id_6,
-    SpanId: Id_8,
+    TraceId: Id_9,
+    SpanId: Id_10,
     Name: masstransit.receive,
     Resource: GettingStartedWithRabbitMq receive,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_9,
+    ParentId: Id_11,
     Tags: {
       component: masstransit,
       env: integration_tests,
@@ -131,13 +131,13 @@
     }
   },
   {
-    TraceId: Id_6,
-    SpanId: Id_10,
+    TraceId: Id_9,
+    SpanId: Id_12,
     Name: masstransit.process,
     Resource: GettingStartedWithRabbitMq process,
     Service: Samples.MassTransit7,
     Type: queue,
-    ParentId: Id_8,
+    ParentId: Id_10,
     Tags: {
       component: masstransit,
       env: integration_tests,
