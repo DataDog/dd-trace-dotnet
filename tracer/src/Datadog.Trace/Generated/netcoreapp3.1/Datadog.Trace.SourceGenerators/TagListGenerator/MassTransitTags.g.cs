@@ -29,8 +29,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         // DestinationNameBytes = MessagePack.Serialize("messaging.destination.name");
         private static ReadOnlySpan<byte> DestinationNameBytes => [186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101];
 
-        // MessageIdBytes = MessagePack.Serialize("messaging.masstransit.message_id");
-        private static ReadOnlySpan<byte> MessageIdBytes => [217, 32, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 97, 115, 115, 116, 114, 97, 110, 115, 105, 116, 46, 109, 101, 115, 115, 97, 103, 101, 95, 105, 100];
+        // MessageIdBytes = MessagePack.Serialize("messaging.message.id");
+        private static ReadOnlySpan<byte> MessageIdBytes => [180, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 101, 115, 115, 97, 103, 101, 46, 105, 100];
 
         // ConversationIdBytes = MessagePack.Serialize("messaging.message.conversation_id");
         private static ReadOnlySpan<byte> ConversationIdBytes => [217, 33, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 109, 101, 115, 115, 97, 103, 101, 46, 99, 111, 110, 118, 101, 114, 115, 97, 116, 105, 111, 110, 95, 105, 100];
@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 "messaging.operation" => MessagingOperation,
                 "messaging.system" => MessagingSystem,
                 "messaging.destination.name" => DestinationName,
-                "messaging.masstransit.message_id" => MessageId,
+                "messaging.message.id" => MessageId,
                 "messaging.message.conversation_id" => ConversationId,
                 "messaging.masstransit.correlation_id" => CorrelationId,
                 "messaging.masstransit.initiator_id" => InitiatorId,
@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 case "messaging.destination.name": 
                     DestinationName = value;
                     break;
-                case "messaging.masstransit.message_id": 
+                case "messaging.message.id": 
                     MessageId = value;
                     break;
                 case "messaging.message.conversation_id": 
@@ -143,7 +143,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             if (MessageId is not null)
             {
-                processor.Process(new TagItem<string>("messaging.masstransit.message_id", MessageId, MessageIdBytes));
+                processor.Process(new TagItem<string>("messaging.message.id", MessageId, MessageIdBytes));
             }
 
             if (ConversationId is not null)
@@ -218,7 +218,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             if (MessageId is not null)
             {
-                sb.Append("messaging.masstransit.message_id (tag):")
+                sb.Append("messaging.message.id (tag):")
                   .Append(MessageId)
                   .Append(',');
             }

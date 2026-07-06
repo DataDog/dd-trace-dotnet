@@ -523,7 +523,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("messaging.operation")
                 .IsOptional("messaging.system")
                 .IsOptional("messaging.destination.name")
-                .IsOptional("messaging.masstransit.message_id")
+                .IsOptional("messaging.message.id")
                 .IsOptional("messaging.masstransit.message_types")
                 .IsOptional("messaging.masstransit.destination_address")
                 .IsOptional("messaging.masstransit.input_address")
