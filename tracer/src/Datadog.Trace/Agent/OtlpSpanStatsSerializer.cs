@@ -23,7 +23,7 @@ namespace Datadog.Trace.Agent
         private const int WireTypeFixed64 = 1;
         private const int WireTypeLengthDelimited = 2;
         private const int AggregationTemporalityDelta = 1;
-        private const string StatusCodeError = "Error";
+        private const long StatusCodeError = 2;
 
         private const string MetricUnit = "s";
 
@@ -249,7 +249,7 @@ namespace Datadog.Trace.Agent
 
             if (key.IsError)
             {
-                WriteStringKvJson(writer, "status.code", StatusCodeError);
+                WriteIntKvJson(writer, "status.code", (int)StatusCodeError);
             }
 
             if (!StringUtil.IsNullOrEmpty(key.Service) && !string.Equals(key.Service, defaultServiceName, StringComparison.OrdinalIgnoreCase))
@@ -528,7 +528,7 @@ namespace Datadog.Trace.Agent
 
             if (key.IsError)
             {
-                WriteAttribute(writer, "status.code", StatusCodeError, FieldNumbers.HistogramDataPointAttributes);
+                WriteIntAttribute(writer, "status.code", (int)StatusCodeError, FieldNumbers.HistogramDataPointAttributes);
             }
 
             if (!StringUtil.IsNullOrEmpty(key.Service) && !string.Equals(key.Service, defaultServiceName, StringComparison.OrdinalIgnoreCase))
