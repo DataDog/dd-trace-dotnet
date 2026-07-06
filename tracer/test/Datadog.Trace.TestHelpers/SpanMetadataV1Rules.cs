@@ -528,6 +528,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("messaging.masstransit.destination_address")
                 .IsOptional("messaging.masstransit.input_address")
                 .IsOptional("messaging.masstransit.correlation_id")
+                .IsOptional("messaging.masstransit.initiator_id")
                 .IsOptional("messaging.message.conversation_id")
                 .IsOptional("_dd.base_service")
                 .IsOptional("_dd.tags.process"));

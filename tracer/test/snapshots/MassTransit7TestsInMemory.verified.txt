@@ -751,6 +751,7 @@
       messaging.destination.name: urn:message:MassTransit:Fault[[Samples.MassTransit.Contracts:OrderFailed]],
       messaging.masstransit.correlation_id: Guid_22,
       messaging.masstransit.destination_address: loopback://localhost/urn:message:MassTransit:Fault[[Samples.MassTransit.Contracts:OrderFailed]],
+      messaging.masstransit.initiator_id: Guid_22,
       messaging.masstransit.message_id: Guid_23,
       messaging.message.conversation_id: Guid_21,
       messaging.operation: send,

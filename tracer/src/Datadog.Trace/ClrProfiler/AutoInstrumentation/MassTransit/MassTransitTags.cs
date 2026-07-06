@@ -51,6 +51,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         [Tag(Trace.Tags.MassTransitCorrelationId)]
         public string? CorrelationId { get; set; }
 
+        [Tag(Trace.Tags.MassTransitInitiatorId)]
+        public string? InitiatorId { get; set; }
+
         [Tag(Trace.Tags.MassTransitDestinationAddress)]
         public string? DestinationAddress { get; set; }
 

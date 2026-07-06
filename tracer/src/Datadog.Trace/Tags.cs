@@ -772,6 +772,7 @@ namespace Datadog.Trace
         internal const string MassTransitMessageId = "messaging.masstransit.message_id";
         internal const string MassTransitConversationId = "messaging.message.conversation_id";
         internal const string MassTransitCorrelationId = "messaging.masstransit.correlation_id";
+        internal const string MassTransitInitiatorId = "messaging.masstransit.initiator_id";
         internal const string MassTransitDestinationAddress = "messaging.masstransit.destination_address";
         internal const string MassTransitInputAddress = "messaging.masstransit.input_address";
         internal const string MassTransitMessageTypes = "messaging.masstransit.message_types";

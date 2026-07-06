@@ -150,12 +150,12 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var sendContextProxy = MassTransitCommon.ExtractSendContextMetadata(arg, out var destinationAddress, out var messageId, out var conversationId, out var correlationId);
+            var sendContextProxy = MassTransitCommon.ExtractSendContextMetadata(arg, out var destinationAddress, out var messageId, out var conversationId, out var correlationId, out var initiatorId);
             var scope = MassTransitCommon.CreateProduceSpan(Tracer.Instance, destinationAddress);
 
             if (scope is not null)
             {
-                MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId);
+                MassTransitCommon.SetContextTags(scope, messageId, conversationId, correlationId, initiatorId);
                 MassTransitCommon.InjectTraceContext(Tracer.Instance, sendContextProxy, scope);
             }
         }

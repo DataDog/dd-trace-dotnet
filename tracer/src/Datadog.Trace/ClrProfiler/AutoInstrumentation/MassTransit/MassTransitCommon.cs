@@ -213,7 +213,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// <summary>
         /// Sets additional context tags on a span.
         /// </summary>
-        internal static void SetContextTags(Scope scope, Guid? messageId, Guid? conversationId, Guid? correlationId)
+        internal static void SetContextTags(Scope scope, Guid? messageId, Guid? conversationId, Guid? correlationId, Guid? initiatorId)
         {
             if (scope?.Span?.Tags is not MassTransitTags tags)
             {
@@ -237,6 +237,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             {
                 tags.CorrelationId = correlationId.Value.ToString();
             }
+
+            if (initiatorId.HasValue)
+            {
+                tags.InitiatorId = initiatorId.Value.ToString();
+            }
         }
 
         /// <summary>
@@ -249,7 +254,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             out string? destinationAddress,
             out Guid? messageId,
             out Guid? conversationId,
-            out Guid? correlationId)
+            out Guid? correlationId,
+            out Guid? initiatorId)
         {
             if (sendContext is null || !sendContext.TryDuckCast<MessageSendContextStruct>(out var context))
             {
@@ -259,6 +265,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 messageId = null;
                 conversationId = null;
                 correlationId = null;
+                initiatorId = null;
                 return null;
             }
 
@@ -266,6 +273,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             messageId = context.MessageId;
             conversationId = context.ConversationId;
             correlationId = context.CorrelationId;
+            initiatorId = context.InitiatorId;
             return context;
         }
 
