@@ -86,6 +86,18 @@ public class MassTransit7Tests : TracingIntegrationTest
         await RunTransportTest(packageVersion, expectedMassTransitSpanCount, "Sqs");
     }
 
+    private static string GetVersionSuffix(string packageVersion)
+    {
+        if (string.IsNullOrEmpty(packageVersion))
+        {
+            return string.Empty;
+        }
+
+        // InMemoryTransportMessageIntegration only engages for versions <= 7.3.0 (MassTransit
+        // copies SendContext headers to InMemoryTransportMessage natively from 7.3.1 onward).
+        return new Version(packageVersion) <= new Version(7, 3, 0) ? ".v7_3_and_below" : string.Empty;
+    }
+
     private static VerifySettings BuildSpanVerifierSettings()
     {
         var settings = VerifyHelper.GetSpanVerifierSettings();
@@ -158,7 +170,8 @@ public class MassTransit7Tests : TracingIntegrationTest
                         "process" => 2,
                         _ => 3
                     }))
-                .UseFileName(nameof(MassTransit7Tests) + snapshotSuffix);
+                .DisableRequireUniquePrefix() // multiple package versions may converge on one snapshot bucket
+                .UseFileName(nameof(MassTransit7Tests) + snapshotSuffix + GetVersionSuffix(packageVersion));
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
         }
