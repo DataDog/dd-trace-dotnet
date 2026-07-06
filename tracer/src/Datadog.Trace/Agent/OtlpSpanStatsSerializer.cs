@@ -135,10 +135,11 @@ namespace Datadog.Trace.Agent
             WriteStringKvJson(writer, "telemetry.sdk.name", TracerConstants.TelemetrySdkName);
             WriteStringKvJson(writer, "telemetry.sdk.language", TracerConstants.Language);
             WriteStringKvJson(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
-            WriteStringKvJson(writer, "datadog.runtime_id", Tracer.RuntimeId);
 
             if (!otelSemanticsEnabled)
             {
+                WriteStringKvJson(writer, "datadog.runtime_id", Tracer.RuntimeId);
+
                 foreach (var tag in details.DdTags)
                 {
                     if (TryParseTag(tag, out var key, out var value) && !OtlpMapper.IsHandledResourceAttribute(key))
@@ -406,10 +407,11 @@ namespace Datadog.Trace.Agent
             WriteAttribute(writer, "telemetry.sdk.name", TracerConstants.TelemetrySdkName);
             WriteAttribute(writer, "telemetry.sdk.language", TracerConstants.Language);
             WriteAttribute(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
-            WriteAttribute(writer, "datadog.runtime_id", Tracer.RuntimeId);
 
             if (!otelSemanticsEnabled)
             {
+                WriteAttribute(writer, "datadog.runtime_id", Tracer.RuntimeId);
+
                 foreach (var tag in details.DdTags)
                 {
                     if (TryParseTag(tag, out var key, out var value) && !OtlpMapper.IsHandledResourceAttribute(key))
