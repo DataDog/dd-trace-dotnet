@@ -53,16 +53,22 @@ public class CompareExecutionTime
                               });
                          return $"""
                         <details open>
-                          <summary><h3>{sampleName}</h3></summary>
+                          <summary><h3 id="{sampleName.ToLower()}-charts">{sampleName}</h3></summary>
 
                         {string.Join(Environment.NewLine + Environment.NewLine, frameworkCharts)}
                         </details>
                         """;
                      });
 
+        var sampleNames = results
+            .Select(x => x.TestSample.ToString())
+            .Distinct()
+            .OrderBy(x => x)
+            .ToList();
+
         var comparisonTable = GetComparisonTable(results);
 
-        return GetCommentMarkdown(sources, charts, comparisonTable);
+        return GetCommentMarkdown(sources, charts, comparisonTable, sampleNames);
     }
  
     static EquivalenceTestConclusion CalculateSignificance(double[] masterValues, double[] currentValues)
@@ -412,7 +418,7 @@ public class CompareExecutionTime
             // Build table for this sample in details
             if (detailsTableRows.Length > 0)
             {
-                detailsOutput.AppendLine($"<h3>{sampleName}</h3>");
+                detailsOutput.AppendLine($"<h3 id=\"{sampleName.ToLower()}-metrics\">{sampleName}</h3>");
                 detailsOutput.AppendLine("<table>");
                 detailsOutput.AppendLine("  <thead>");
                 detailsOutput.AppendLine("    <tr>");
@@ -524,14 +530,24 @@ public class CompareExecutionTime
             : ("✅", false); // Improvement (faster/lower is better)
     }
 
-    static string GetCommentMarkdown(List<ExecutionTimeResultSource> sources, IEnumerable<string> charts, string comparisonTable)
+    static string GetCommentMarkdown(List<ExecutionTimeResultSource> sources, IEnumerable<string> charts, string comparisonTable, IReadOnlyList<string> sampleNames)
     {
+        var subLinks = (string section) =>
+            string.Join(" · ", sampleNames.Select(n => $"[{n}](#{n.ToLower()}-{section})"));
+
+        var toc = $"""
+            - [Comparison Results](#comparison-results)
+            - [Full Metrics Comparison](#full-metrics-comparison) — {subLinks("metrics")}
+            - [Comparison Explanation](#comparison-explanation)
+            - [Duration Charts](#duration-charts) — {subLinks("charts")}
+            """;
+
         return $$"""
             <h1>Execution-Time Benchmarks Report ⏱️</h1>
 
             Execution-time results for samples comparing {{string.Join(" and ", sources.Select(x => x.Markdown))}}.
 
-            **Contents:** [Comparison Results](#comparison-results) | [Full Metrics Comparison](#full-metrics-comparison) | [Comparison Explanation](#comparison-explanation) | [Duration Charts](#duration-charts)
+            {{toc}}
 
             {{comparisonTable}}
 
