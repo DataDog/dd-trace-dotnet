@@ -29,7 +29,7 @@ public sealed class OpenFeatureSdkIsSpanEnrichmentEnabledIntegration
 {
     internal static CallTargetReturn<bool> OnMethodEnd<TTarget>(bool returnValue, Exception? exception, in CallTargetState state)
     {
-        var enabled = Datadog.Trace.Tracer.Instance.TracerManager.SpanEnrichment.IsEnabled;
+        var enabled = Datadog.Trace.Tracer.Instance.Settings.IsSpanEnrichmentEnabled;
         return new CallTargetReturn<bool>(enabled);
     }
 }

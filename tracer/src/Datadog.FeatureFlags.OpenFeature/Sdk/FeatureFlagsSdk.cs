@@ -62,14 +62,6 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    /// <summary>
-    /// Clears all accumulated FFE span-enrichment state on provider close.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    internal static void ClearSpanEnrichment()
-    {
-    }
-
     public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, EvaluationContext? context) =>
         GetResolutionDetails<T>(Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, GetContextAttributes(context)));
 

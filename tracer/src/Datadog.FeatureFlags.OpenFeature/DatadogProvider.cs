@@ -169,13 +169,8 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
 #if NET6_0_OR_GREATER
         _metricsHook.Dispose();
 #endif
-        if (_spanEnrichmentHook is not null)
-        {
-            _spanEnrichmentHook.Dispose();
-
-            // Provider-close cleanup: clear any per-root-span state accumulated in the core
-            // tracer so a reconfigured provider does not leak state (symmetric with hook teardown).
-            FeatureFlagsSdk.ClearSpanEnrichment();
-        }
+        // Per-trace enrichment state lives on the trace context and is released with the trace,
+        // so there is no global state to clear on provider close.
+        _spanEnrichmentHook?.Dispose();
     }
 }

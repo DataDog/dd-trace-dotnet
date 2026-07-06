@@ -63,8 +63,7 @@ internal sealed class SpanEnrichmentHook : Hook, IDisposable
     /// <inheritdoc/>
     public void Dispose()
     {
-        // No owned resources; provider-close cleanup of accumulated state is performed by
-        // DatadogProvider.Dispose() via the SpanEnrichmentStore bridge.
+        // No owned resources; per-trace enrichment state is released with its trace context.
     }
 
     private static object? ToPlainObject(Value? value)
