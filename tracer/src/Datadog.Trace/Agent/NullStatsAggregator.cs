@@ -13,8 +13,6 @@ namespace Datadog.Trace.Agent
     {
         public bool? CanComputeStats => false;
 
-        public bool IsClientComputingStats => false;
-
         public void Add(params Span[] spans)
         {
         }

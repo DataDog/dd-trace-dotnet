@@ -81,7 +81,7 @@ namespace Datadog.Trace.Agent
             var state = new SendStatsState(stats, bucketDuration, tracerObfuscationVersion);
 
             // We are supposed to be fire and forget for these stats, with no retries
-            return SendWithRetry(_statsEndpoint, _sendStats, state, retryLimit: 0, _metricsRequestFactory);
+            return SendWithRetry(_statsEndpoint, _metricsRequestFactory, _sendStats, state, retryLimit: 0);
         }
 
         public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
@@ -90,10 +90,10 @@ namespace Datadog.Trace.Agent
 
             var state = new SendTracesState(traces, numberOfTraces, statsComputationEnabled, numberOfDroppedP0Traces, numberOfDroppedP0Spans, apmTracingEnabled);
 
-            return SendWithRetry(_tracesEndpoint, _sendTraces, state);
+            return SendWithRetry(_tracesEndpoint, _apiRequestFactory, _sendTraces, state);
         }
 
-        private async Task<bool> SendWithRetry<T>(Uri endpoint, SendCallback<T> callback, T state, int retryLimit = 5, IApiRequestFactory requestFactory = null)
+        private async Task<bool> SendWithRetry<T>(Uri endpoint, IApiRequestFactory requestFactory, SendCallback<T> callback, T state, int retryLimit = 5)
         {
             // retry up to 5 times with exponential back-off
             var retryCount = 1;
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    request = (requestFactory ?? _apiRequestFactory).Create(endpoint);
+                    request = requestFactory.Create(endpoint);
                 }
                 catch (Exception ex)
                 {

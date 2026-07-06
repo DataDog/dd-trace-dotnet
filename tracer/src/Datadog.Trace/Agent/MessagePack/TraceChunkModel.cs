@@ -78,9 +78,8 @@ internal readonly struct TraceChunkModel
     /// <param name="spans">The spans that will be within this <see cref="TraceChunkModel"/>.</param>
     /// <param name="samplingPriority">Optional sampling priority to override the <see cref="TraceContext"/> sampling priority.</param>
     /// <param name="isFirstChunkInPayload">Indicates if this is the first trace chunk being written to the output buffer.</param>
-    /// <param name="clientComputedStats">Whether the tracer computed trace metrics for these spans client-side.</param>
-    public TraceChunkModel(in SpanCollection spans, int? samplingPriority = null, bool isFirstChunkInPayload = false, bool clientComputedStats = false)
-        : this(in spans, TraceContext.GetTraceContext(in spans), samplingPriority, isFirstChunkInPayload, clientComputedStats)
+    public TraceChunkModel(in SpanCollection spans, int? samplingPriority = null, bool isFirstChunkInPayload = false)
+        : this(in spans, TraceContext.GetTraceContext(in spans), samplingPriority, isFirstChunkInPayload)
     {
         // since all we have is an array of spans, use the trace context from the first span
         // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
@@ -89,13 +88,12 @@ internal readonly struct TraceChunkModel
     }
 
     // used only to chain constructors
-    private TraceChunkModel(in SpanCollection spans, TraceContext? traceContext, int? samplingPriority, bool isFirstChunkInPayload, bool clientComputedStats)
+    private TraceChunkModel(in SpanCollection spans, TraceContext? traceContext, int? samplingPriority, bool isFirstChunkInPayload)
         : this(in spans, traceContext?.RootSpan)
     {
         // sampling decision override takes precedence over TraceContext.SamplingPriority
         SamplingPriority = samplingPriority;
         IsFirstChunkInPayload = isFirstChunkInPayload;
-        ClientComputedStats = clientComputedStats;
 
         if (traceContext is not null)
         {
@@ -120,6 +118,7 @@ internal readonly struct TraceChunkModel
                     IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
                     AzureAppServiceSettings = settings.AzureAppServiceMetadata;
                     IsApmEnabled = settings.ApmTracingEnabled;
+                    ClientComputedStats = settings.OtelTracesSpanMetricsEnabled;
                 }
 
                 if (tracer.PerTraceSettings is { } perTraceSettings)

@@ -512,20 +512,6 @@ namespace Datadog.Trace.Tests.Agent
             aggregator.CanComputeStats.Should().BeTrue();
         }
 
-        [Fact]
-        public void CreateStatsAggregator_Otlp_IsClientComputingStats_TrueWhenSpanMetricsEnabled()
-        {
-            var settings = TracerSettings.Create(new() { { ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled, "true" } });
-            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), settings, NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
-            aggregator.IsClientComputingStats.Should().BeTrue();
-        }
-
-        [Fact]
-        public void CreateStatsAggregator_Otlp_IsClientComputingStats_FalseWhenSpanMetricsDisabled()
-        {
-            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
-            aggregator.IsClientComputingStats.Should().BeFalse();
-        }
 
         [Fact]
         public async Task Otlp_ProcessTrace_WhenTraceSampled_ReturnsAggregateAndExport()

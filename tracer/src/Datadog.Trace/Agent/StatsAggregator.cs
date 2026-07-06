@@ -100,7 +100,6 @@ namespace Datadog.Trace.Agent
         private int _maxResourceLengthBytes = DefaultMaxResourceLengthBytes;
 
         private bool _traceMetricsEnabled;
-        private bool _isClientComputingStats;
 
         internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, IStatsdManager statsd, bool isOtlp)
         {
@@ -168,7 +167,6 @@ namespace Datadog.Trace.Agent
 
             if (_isOtlp)
             {
-                _isClientComputingStats = settings.OtelTracesSpanMetricsEnabled;
                 CanComputeStats = true;
             }
             else
@@ -195,9 +193,6 @@ namespace Datadog.Trace.Agent
             private set => Volatile.Write(ref _computeStatsState, value switch { true => 1, false => -1, _ => 0, });
         }
 
-        // True only when stats are actually exported; controls _dd.stats_computed on OTLP traces.
-        // Distinct from CanComputeStats, which also gates P0 dropping independently of export.
-        public bool IsClientComputingStats => _isOtlp ? _isClientComputingStats : CanComputeStats == true;
 
         public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService, IStatsdManager statsd, bool isOtlp)
         {

@@ -28,8 +28,6 @@ namespace Datadog.Trace.Agent
         /// </summary>
         bool? CanComputeStats { get; }
 
-        bool IsClientComputingStats { get; }
-
         /// <summary>
         /// Receives an array of spans and computes stats points for them.
         /// </summary>
