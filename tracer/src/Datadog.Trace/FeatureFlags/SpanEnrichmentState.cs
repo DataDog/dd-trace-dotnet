@@ -33,8 +33,9 @@ namespace Datadog.Trace.FeatureFlags
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanEnrichmentState));
 
-        // Per-instance lock guarding bounded state updates. Tag production snapshots under this
-        // lock and performs encoding/JSON serialization after releasing it.
+        // Guards the bounded state against concurrent flag evaluations on the same trace (e.g. a
+        // Task.WhenAll fan-out). Tag production snapshots under this lock, then encodes and
+        // serializes after releasing it.
         private readonly object _gate = new();
 
         private readonly HashSet<long> _serialIds = new();
@@ -44,6 +45,8 @@ namespace Datadog.Trace.FeatureFlags
 
         // flagKey -> value string (first-wins).
         private readonly Dictionary<string, string> _defaults = new();
+
+        internal static string HashTargetingKey(string targetingKey) => Sha256Helper.ComputeHashAsHexString(targetingKey);
 
         /// <summary>
         /// Accumulates a single flag evaluation into this trace's state. Never throws.
@@ -120,7 +123,7 @@ namespace Datadog.Trace.FeatureFlags
                 evaluation.Value);
         }
 
-        public void AddSerialId(long id)
+        internal void AddSerialId(long id)
         {
             lock (_gate)
             {
@@ -134,7 +137,7 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        public void AddSubject(string targetingKey, long id)
+        internal void AddSubject(string targetingKey, long id)
         {
             var hashed = HashTargetingKey(targetingKey);
 
@@ -162,7 +165,7 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        public void AddDefault(string flagKey, object? value)
+        internal void AddDefault(string flagKey, object? value)
         {
             var valueStr = StringifyDefault(value);
             if (valueStr.Length > MaxDefaultValueLength)
@@ -188,7 +191,7 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        public bool HasData()
+        internal bool HasData()
         {
             lock (_gate)
             {
@@ -196,7 +199,7 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        public IReadOnlyList<KeyValuePair<string, string>> ToSpanTags()
+        internal IReadOnlyList<KeyValuePair<string, string>> ToSpanTags()
         {
             var tags = new List<KeyValuePair<string, string>>(3);
             long[]? serialIds = null;
@@ -256,10 +259,7 @@ namespace Datadog.Trace.FeatureFlags
             return tags;
         }
 
-        internal static string HashTargetingKey(string targetingKey) => Sha256Helper.ComputeHashAsHexString(targetingKey);
-
-        // Object default -> JSON (matches Node's JSON.stringify); scalars -> their string form.
-        // A bare string is emitted as-is (Node's String(value) for a string is the string itself).
+        // Object default -> JSON; scalars -> their string form. A bare string is emitted as-is.
         private static string StringifyDefault(object? value)
         {
             switch (value)

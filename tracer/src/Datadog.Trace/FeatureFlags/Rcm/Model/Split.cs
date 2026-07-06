@@ -19,6 +19,8 @@ internal sealed class Split
 
     public Dictionary<string, string>? ExtraLogging { get; set; }
 
+    // Optional: absent in configs produced by older backends. When null, the split simply
+    // contributes no serial id to FFE span enrichment, so old/new tracer + config skew is safe.
     [JsonProperty("serialId")]
     public long? SerialId { get; set; }
 }

@@ -75,11 +75,11 @@ internal sealed class SpanEnrichmentHook : Hook, IDisposable
 
         if (value.IsStructure)
         {
-            var dict = new Dictionary<string, object?>();
-            var structure = value.AsStructure!;
-            foreach (var key in structure.Keys)
+            var structure = value.AsStructure!.AsDictionary();
+            var dict = new Dictionary<string, object?>(structure.Count);
+            foreach (var pair in structure)
             {
-                dict[key] = ToPlainObject(structure[key]);
+                dict[pair.Key] = ToPlainObject(pair.Value);
             }
 
             return dict;
