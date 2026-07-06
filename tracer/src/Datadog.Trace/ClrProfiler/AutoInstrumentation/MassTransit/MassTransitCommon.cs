@@ -27,90 +27,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// Creates a produce (send) span for an outbound message.
         /// </summary>
         internal static Scope? CreateProduceSpan(Tracer tracer, string? destinationAddress)
-            => CreateProducerScope(tracer, MassTransitConstants.OperationSend, MassTransitConstants.SendOperationName, destinationAddress);
+            => CreateScope(tracer, SpanKinds.Producer, MassTransitConstants.OperationSend, MassTransitConstants.SendOperationName, destinationAddress, messageType: null, parentContext: default);
 
         /// <summary>
         /// Creates a receive span for an inbound message at the transport level.
         /// </summary>
         internal static Scope? CreateReceiveSpan(Tracer tracer, string? inputAddress, PropagationContext parentContext)
-            => CreateConsumerScope(tracer, MassTransitConstants.OperationReceive, MassTransitConstants.ReceiveOperationName, inputAddress, messageType: null, parentContext);
+            => CreateScope(tracer, SpanKinds.Consumer, MassTransitConstants.OperationReceive, MassTransitConstants.ReceiveOperationName, inputAddress, messageType: null, parentContext);
 
         /// <summary>
         /// Creates a process span for message processing by a consumer, handler, or saga.
         /// </summary>
         internal static Scope? CreateProcessSpan(Tracer tracer, string? inputAddress, string? messageType, PropagationContext parentContext)
-            => CreateConsumerScope(tracer, MassTransitConstants.OperationProcess, MassTransitConstants.ProcessOperationName, inputAddress, messageType, parentContext);
+            => CreateScope(tracer, SpanKinds.Consumer, MassTransitConstants.OperationProcess, MassTransitConstants.ProcessOperationName, inputAddress, messageType, parentContext);
 
         /// <summary>
-        /// Creates a producer/send scope for outbound messages.
+        /// Creates a producer or consumer scope for a MassTransit send/receive/process operation.
+        /// For a producer scope (<paramref name="spanKind"/> is <see cref="SpanKinds.Producer"/>), <paramref name="address"/>
+        /// is the destination address and <paramref name="parentContext"/> is left at its default (no explicit parent —
+        /// the ambient active scope, if any, is used). For a consumer scope, <paramref name="address"/> is the input
+        /// address and <paramref name="messageType"/> is set when known (e.g. for process spans, not receive spans).
         /// </summary>
-        internal static Scope? CreateProducerScope(
+        internal static Scope? CreateScope(
             Tracer tracer,
+            string spanKind,
             string operation,
             string operationName,
-            string? destinationAddress)
-        {
-            var settings = tracer.CurrentTraceSettings.Settings;
-            if (!settings.IsIntegrationEnabled(MassTransitConstants.IntegrationId))
-            {
-                return null;
-            }
-
-            Scope? scope = null;
-
-            try
-            {
-                var tags = new MassTransitTags(SpanKinds.Producer)
-                {
-                    MessagingOperation = operation,
-                };
-
-                // Determine messaging system from destination
-                var messagingSystem = DetermineMessagingSystem(destinationAddress);
-                tags.MessagingSystem = messagingSystem;
-
-                scope = tracer.StartActiveInternal(
-                    operationName,
-                    tags: tags);
-
-                var span = scope.Span;
-                span.Type = SpanTypes.Queue;
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MassTransitConstants.IntegrationId);
-
-                // Set resource name
-                var cleanDestination = ExtractDestinationName(destinationAddress);
-                if (string.IsNullOrEmpty(cleanDestination))
-                {
-                    cleanDestination = "unknown";
-                }
-
-                span.ResourceName = $"{cleanDestination} {operation}";
-
-                // Set destination tags - always set DestinationName (required by span validation)
-                tags.DestinationName = cleanDestination;
-                if (!string.IsNullOrEmpty(destinationAddress))
-                {
-                    tags.DestinationAddress = destinationAddress;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "MassTransitCommon.CreateProducerScope: Error creating producer scope");
-            }
-
-            return scope;
-        }
-
-        /// <summary>
-        /// Creates a consumer scope for inbound messages.
-        /// </summary>
-        internal static Scope? CreateConsumerScope(
-            Tracer tracer,
-            string operation,
-            string operationName,
-            string? inputAddress,
+            string? address,
             string? messageType,
-            PropagationContext parentContext = default)
+            PropagationContext parentContext)
         {
             var settings = tracer.CurrentTraceSettings.Settings;
             if (!settings.IsIntegrationEnabled(MassTransitConstants.IntegrationId))
@@ -122,14 +67,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             try
             {
-                var tags = new MassTransitTags(SpanKinds.Consumer)
+                var tags = new MassTransitTags(spanKind)
                 {
                     MessagingOperation = operation,
                 };
 
-                // Determine messaging system from input address
-                var messagingSystem = DetermineMessagingSystem(inputAddress);
-                tags.MessagingSystem = messagingSystem;
+                // Determine messaging system from address
+                tags.MessagingSystem = DetermineMessagingSystem(address);
 
                 scope = tracer.StartActiveInternal(
                     operationName,
@@ -141,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MassTransitConstants.IntegrationId);
 
                 // Set resource name
-                var cleanDestination = ExtractDestinationName(inputAddress);
+                var cleanDestination = ExtractDestinationName(address);
                 if (string.IsNullOrEmpty(cleanDestination))
                 {
                     cleanDestination = "unknown";
@@ -151,9 +95,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
                 // Set destination tags - always set DestinationName (required by span validation)
                 tags.DestinationName = cleanDestination;
-                if (!string.IsNullOrEmpty(inputAddress))
+                if (!string.IsNullOrEmpty(address))
                 {
-                    tags.InputAddress = inputAddress;
+                    if (spanKind == SpanKinds.Producer)
+                    {
+                        tags.DestinationAddress = address;
+                    }
+                    else
+                    {
+                        tags.InputAddress = address;
+                    }
                 }
 
                 // Set message type if provided
@@ -164,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "MassTransitCommon.CreateConsumerScope: Error creating consumer scope");
+                Log.Error(ex, "MassTransitCommon.CreateScope: Error creating {SpanKind} scope", spanKind);
             }
 
             return scope;
