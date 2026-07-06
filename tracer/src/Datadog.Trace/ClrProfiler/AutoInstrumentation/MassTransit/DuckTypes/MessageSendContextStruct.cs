@@ -1,4 +1,4 @@
-// <copyright file="IMessageSendContext.cs" company="Datadog">
+// <copyright file="MessageSendContextStruct.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,64 +6,67 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 
 /// <summary>
-/// Duck-typing interface for MassTransit.MessageSendContext&lt;T&gt;.
+/// Duck-typing struct for MassTransit.MessageSendContext&lt;T&gt;.
 /// Targets MessageSendContext&lt;T&gt; directly — both loopback and transport-specific send contexts
 /// (e.g. BasicPublishRabbitMqSendContext) inherit from MessageSendContext&lt;T&gt;.
+/// https://raw.githubusercontent.com/MassTransit/MassTransit/refs/tags/v7.3.1/src/MassTransit/Context/MessageSendContext.cs
 /// </summary>
-internal interface IMessageSendContext
+[DuckCopy]
+internal struct MessageSendContextStruct
 {
     /// <summary>
-    /// Gets the message ID
+    /// The message ID
     /// </summary>
-    Guid? MessageId { get; }
+    public Guid? MessageId;
 
     /// <summary>
-    /// Gets the conversation ID
+    /// The conversation ID
     /// </summary>
-    Guid? ConversationId { get; }
+    public Guid? ConversationId;
 
     /// <summary>
-    /// Gets the correlation ID
+    /// The correlation ID
     /// </summary>
-    Guid? CorrelationId { get; }
+    public Guid? CorrelationId;
 
     /// <summary>
-    /// Gets the initiator ID (for sagas)
+    /// The initiator ID (for sagas)
     /// </summary>
-    Guid? InitiatorId { get; }
+    public Guid? InitiatorId;
 
     /// <summary>
-    /// Gets the request ID (for request/response)
+    /// The request ID (for request/response)
     /// </summary>
-    Guid? RequestId { get; }
+    public Guid? RequestId;
 
     /// <summary>
-    /// Gets the source address
+    /// The source address
     /// </summary>
-    Uri? SourceAddress { get; }
+    public Uri? SourceAddress;
 
     /// <summary>
-    /// Gets the destination address
+    /// The destination address
     /// </summary>
-    Uri? DestinationAddress { get; }
+    public Uri? DestinationAddress;
 
     /// <summary>
-    /// Gets the response address
+    /// The response address
     /// </summary>
-    Uri? ResponseAddress { get; }
+    public Uri? ResponseAddress;
 
     /// <summary>
-    /// Gets the fault address
+    /// The fault address
     /// </summary>
-    Uri? FaultAddress { get; }
+    public Uri? FaultAddress;
 
     /// <summary>
-    /// Gets the message headers for trace context injection.
+    /// The message headers for trace context injection.
     /// Duck-copied from the underlying DictionarySendHeaders, exposing its private _headers field.
     /// </summary>
-    DictionarySendHeadersInnerCopy? Headers { get; }
+    public DictionarySendHeadersStruct? Headers;
 }

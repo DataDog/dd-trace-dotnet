@@ -240,6 +240,7 @@ namespace Datadog.Trace.DiagnosticListeners
             var inputAddress = consumeContext?.ReceiveContext?.InputAddress?.ToString();
 
             // For Process/Consume/Handle spans, check if there's an active Receive span to use as parent.
+            // This allows the new span to be a child span rather a sibling of the active span, which better represents the workflow.
             var activeScope = Tracer.Instance.ActiveScope;
             if (activeScope?.Span != null &&
                 activeScope.Span.OperationName == MassTransitConstants.ReceiveOperationName &&

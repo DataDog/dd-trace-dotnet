@@ -244,16 +244,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// Returns the duck-typed proxy so the caller can reuse it (e.g. for header injection)
         /// without casting again.
         /// </summary>
-        internal static IMessageSendContext? ExtractSendContextMetadata(
+        internal static MessageSendContextStruct? ExtractSendContextMetadata(
             object? sendContext,
             out string? destinationAddress,
             out Guid? messageId,
             out Guid? conversationId,
             out Guid? correlationId)
         {
-            if (sendContext is null || !sendContext.TryDuckCast<IMessageSendContext>(out var context))
+            if (sendContext is null || !sendContext.TryDuckCast<MessageSendContextStruct>(out var context))
             {
-                // Either no SendContext or its shape diverges from IMessageSendContext. Returning
+                // Either no SendContext or its shape diverges from MessageSendContextStruct. Returning
                 // null lets the caller create a producer span without metadata rather than throwing.
                 destinationAddress = null;
                 messageId = null;
@@ -301,7 +301,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         /// Injects trace context into MassTransit SendContext headers.
         /// Accepts the already duck-typed proxy to avoid casting sendContext again.
         /// </summary>
-        internal static void InjectTraceContext(Tracer tracer, IMessageSendContext? sendContext, Scope scope)
+        internal static void InjectTraceContext(Tracer tracer, MessageSendContextStruct? sendContext, Scope scope)
         {
             if (sendContext is null || scope.Span is null)
             {
@@ -312,7 +312,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
 
             try
             {
-                var internalHeaders = sendContext.Headers?.Headers;
+                var internalHeaders = sendContext.Value.Headers?.Headers;
                 if (internalHeaders != null)
                 {
                     var adapter = new CarrierWithDelegate<IDictionary<string, object>>(
@@ -322,9 +322,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
                 }
                 else
                 {
-                    Log.Warning(
-                        "MassTransitCommon.InjectTraceContext: Could not inject — Headers null for SendContextType={Type}",
-                        (sendContext as IDuckType)?.Instance?.GetType().FullName ?? "unknown");
+                    Log.Warning("MassTransitCommon.InjectTraceContext: Could not inject — Headers null");
                 }
             }
             catch (Exception ex)

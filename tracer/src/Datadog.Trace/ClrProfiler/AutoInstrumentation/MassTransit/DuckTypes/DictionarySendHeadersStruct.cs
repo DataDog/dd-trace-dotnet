@@ -1,4 +1,4 @@
-// <copyright file="DictionarySendHeadersInnerCopy.cs" company="Datadog">
+// <copyright file="DictionarySendHeadersStruct.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,9 +15,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 /// DuckCopy struct targeting DictionarySendHeaders directly.
 /// Used in a two-step approach: IMessageSendContext.Headers gives us the DictionarySendHeaders object,
 /// then we DuckCopy it here to read its private _headers (IDictionary&lt;string, object&gt;).
+/// https://raw.githubusercontent.com/MassTransit/MassTransit/refs/tags/v7.3.1/src/MassTransit/Context/DictionarySendHeaders.cs
 /// </summary>
 [DuckCopy]
-internal struct DictionarySendHeadersInnerCopy
+internal struct DictionarySendHeadersStruct
 {
     /// <summary>
     /// The underlying headers dictionary from DictionarySendHeaders._headers.
