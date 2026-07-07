@@ -289,7 +289,7 @@ public class SpanEnrichmentTests
     }
 
     [Fact]
-    public async Task AccumulateForRoot_NativeEvaluationMetadata_WritesRootTags()
+    public async Task AccumulateEvaluation_NativeEvaluationMetadata_WritesRootTags()
     {
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
         await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
@@ -316,8 +316,8 @@ public class SpanEnrichmentTests
 
                 // The evaluation happens on the child, but enrichment is keyed to the trace, so it
                 // accumulates onto the shared trace context and surfaces on the local root span.
-                ((Scope)childScope).Span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()
-                    .AccumulateForRoot(evaluation, "user-123");
+                ((Scope)childScope).Span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!
+                    .AccumulateEvaluation(evaluation, "user-123");
             }
         }
         finally
@@ -347,7 +347,7 @@ public class SpanEnrichmentTests
         var span = scope.Span;
         span.IsRootSpan.Should().BeTrue();
 
-        var enrichment = span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment();
+        var enrichment = span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!;
         enrichment.Accumulate(serialId: 100, doLog: true, targetingKey: "user-123", hasVariant: true, flagKey: "flag", value: "on");
         enrichment.Accumulate(serialId: 108, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag2", value: "off");
 
@@ -394,6 +394,28 @@ public class SpanEnrichmentTests
 
         span.GetTag(SpanEnrichmentState.TagFlagsEnc).Should().BeNull();
         span.GetTag(SpanEnrichmentState.TagRuntimeDefaults).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SpanFinish_EnrichmentThrows_DoesNotBreakSpanFinish()
+    {
+        // Span.Finish() is core span lifecycle: a throw in the enrichment write path (encode/SetTag)
+        // must never propagate out and break span closing. Force a deterministic throw from
+        // ToSpanTags and assert Finish still completes.
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
+        await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
+
+        var scope = (Scope)tracer.StartActive("root-op");
+        var span = scope.Span;
+        span.IsRootSpan.Should().BeTrue();
+
+        var enrichment = span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!;
+        enrichment.AddSerialId(100); // give it data so Finish reaches ToSpanTags
+        enrichment.OnToSpanTagsForTesting = static () => throw new System.InvalidOperationException("boom: simulated enrichment failure");
+
+        var finish = () => span.Finish();
+        finish.Should().NotThrow("enrichment must never break span finish");
+        span.IsFinished.Should().BeTrue("the span must still finish even when enrichment throws");
     }
 
     // ---------------------------------------------------------------------
@@ -560,7 +582,7 @@ public class SpanEnrichmentTests
         {
             using var scope = (Scope)tracer.StartActive("root-op", new SpanCreationSettings { FinishOnClose = false });
             scope.Span.IsRootSpan.Should().BeTrue();
-            var enrichment = scope.Span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment();
+            var enrichment = scope.Span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!;
             foreach (var id in ids)
             {
                 enrichment.Accumulate(serialId: id, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag", value: "on");
@@ -599,7 +621,7 @@ public class SpanEnrichmentTests
             child.IsRootSpan.Should().BeFalse();
 
             // The eval happens on the child, but enrichment is keyed to the shared trace context.
-            child.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()
+            child.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!
                 .Accumulate(serialId: 100, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag", value: "on");
 
             child.Finish();

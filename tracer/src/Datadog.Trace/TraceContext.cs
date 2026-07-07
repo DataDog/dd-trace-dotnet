@@ -140,15 +140,22 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Gets the feature-flag span-enrichment state for this trace, creating it on first use.
+        /// Returns null when span enrichment is disabled, so callers can no-op via <c>?.</c> without
+        /// repeating the gate check at every callsite.
         /// </summary>
-        internal SpanEnrichmentState GetOrCreateFeatureFlagEnrichment()
+        internal SpanEnrichmentState? GetOrCreateFeatureFlagEnrichment()
         {
+            if (!Tracer.Settings.IsSpanEnrichmentEnabled)
+            {
+                return null;
+            }
+
             if (Volatile.Read(ref _featureFlagEnrichment) is null)
             {
                 Interlocked.CompareExchange(ref _featureFlagEnrichment, new(), null);
             }
 
-            return _featureFlagEnrichment!;
+            return _featureFlagEnrichment;
         }
 
         internal void EnableIastInRequest()

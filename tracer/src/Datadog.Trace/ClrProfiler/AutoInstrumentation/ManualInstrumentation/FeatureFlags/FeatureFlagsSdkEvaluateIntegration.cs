@@ -48,10 +48,7 @@ public sealed class FeatureFlagsSdkEvaluateIntegration
         var manager = tracer.TracerManager;
         var res = manager.FeatureFlags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey ?? string.Empty, parameters.Attributes);
         var traceContext = tracer.InternalActiveScope?.Span?.Context.TraceContext;
-        if (traceContext is not null && tracer.Settings.IsSpanEnrichmentEnabled)
-        {
-            traceContext.GetOrCreateFeatureFlagEnrichment().AccumulateForRoot(res, parameters.TargetingKey);
-        }
+        traceContext?.GetOrCreateFeatureFlagEnrichment()?.AccumulateEvaluation(res, parameters.TargetingKey);
 
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
     }

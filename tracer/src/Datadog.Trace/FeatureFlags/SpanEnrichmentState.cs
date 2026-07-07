@@ -46,6 +46,12 @@ namespace Datadog.Trace.FeatureFlags
         // flagKey -> value string (first-wins).
         private readonly Dictionary<string, string> _defaults = new();
 
+        /// <summary>
+        /// Gets or sets a fault-injection hook invoked at the start of <see cref="ToSpanTags"/>. Test-only,
+        /// used to verify the write path in <c>Span.Finish()</c> never lets enrichment break span finish.
+        /// </summary>
+        internal Action? OnToSpanTagsForTesting { get; set; }
+
         internal static string HashTargetingKey(string targetingKey) => Sha256Helper.ComputeHashAsHexString(targetingKey);
 
         /// <summary>
@@ -92,7 +98,7 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         /// <param name="evaluation">The completed evaluation returned by the evaluator.</param>
         /// <param name="targetingKey">The caller's targeting key, or null.</param>
-        internal void AccumulateForRoot(IEvaluation? evaluation, string? targetingKey)
+        internal void AccumulateEvaluation(IEvaluation? evaluation, string? targetingKey)
         {
             if (evaluation is null)
             {
@@ -201,6 +207,8 @@ namespace Datadog.Trace.FeatureFlags
 
         internal IReadOnlyList<KeyValuePair<string, string>> ToSpanTags()
         {
+            OnToSpanTagsForTesting?.Invoke();
+
             var tags = new List<KeyValuePair<string, string>>(3);
             long[]? serialIds = null;
             Dictionary<string, long[]>? subjects = null;

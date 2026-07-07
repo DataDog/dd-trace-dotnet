@@ -31,11 +31,8 @@ public sealed class OpenFeatureSdkAccumulateSpanEnrichmentIntegration
     {
         var tracer = Datadog.Trace.Tracer.Instance;
         var traceContext = tracer.InternalActiveScope?.Span?.Context.TraceContext;
-        if (traceContext is not null && tracer.Settings.IsSpanEnrichmentEnabled)
-        {
-            traceContext.GetOrCreateFeatureFlagEnrichment()
-                        .Accumulate(serialId, doLog, targetingKey, hasVariant, flagKey, value);
-        }
+        traceContext?.GetOrCreateFeatureFlagEnrichment()
+                    ?.Accumulate(serialId, doLog, targetingKey, hasVariant, flagKey, value);
 
         return CallTargetState.GetDefault();
     }
