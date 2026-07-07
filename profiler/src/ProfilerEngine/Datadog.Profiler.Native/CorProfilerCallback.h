@@ -43,6 +43,7 @@
 #include "IEtwEventsManager.h"
 #include "ISsiLifetime.h"
 #include "HeapSnapshotManager.h"
+#include "EEHeapReporter.h"
 #include "GCThreadsCpuProvider.h"
 #include "PInvoke.h"
 
@@ -266,6 +267,7 @@ private :
     NetworkProvider* _pNetworkProvider = nullptr;
     RuntimeIdStore* _pRuntimeIdStore = nullptr;
     HeapSnapshotManager* _pHeapSnapshotManager = nullptr;
+    EEHeapReporter* _pEEHeapReporter = nullptr;
     INativeThreadList* _pNativeThreadList = nullptr;
 
 #ifdef LINUX

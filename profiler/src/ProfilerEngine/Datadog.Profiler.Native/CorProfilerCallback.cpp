@@ -657,6 +657,18 @@ void CorProfilerCallback::InitializeServices()
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get(), _pRuntimeInfo.get());
 
+    // The eeheap report (a from-scratch SOS !eeheap) works on both .NET Core (cDAC for .NET 11+,
+    // DAC otherwise) and .NET Framework (mscordacwks DAC), so it is registered outside the
+    // event-pipe/ETW runtime branches, gated only by its config flag.
+    if (_pConfiguration->IsEEHeapEnabled())
+    {
+        _pEEHeapReporter = RegisterService<EEHeapReporter>(
+            _pConfiguration.get(),
+            _pRuntimeInfo.get(),
+            _metricsRegistry
+            );
+    }
+
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
     _pExporter = std::make_unique<ProfileExporter>(
@@ -669,7 +681,8 @@ void CorProfilerCallback::InitializeServices()
         _pMetadataProvider.get(),
         _pSsiManager.get(),
         _pAllocationsRecorder.get(),
-        _pHeapSnapshotManager
+        _pHeapSnapshotManager,
+        _pEEHeapReporter
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&

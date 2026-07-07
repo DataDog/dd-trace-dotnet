@@ -121,6 +121,7 @@ Configuration::Configuration()
     _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, DefaultCpuProfilerType);
     _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
     _isHeapSnapshotEnabled = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotEnabled, false);
+    _isEEHeapEnabled = GetEnvironmentValue(EnvironmentVariables::EEHeapEnabled, false);
     _isHeapSnapshotSkipTraversal = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotSkipTraversal, false);
     _heapSnapshotInterval = ExtractHeapSnapshotInterval();
     _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
@@ -863,6 +864,11 @@ std::chrono::milliseconds Configuration::GetHttpRequestDurationThreshold() const
 bool Configuration::IsHeapSnapshotEnabled() const
 {
     return _isHeapSnapshotEnabled;
+}
+
+bool Configuration::IsEEHeapEnabled() const
+{
+    return _isEEHeapEnabled;
 }
 
 bool Configuration::IsHeapSnapshotSkipTraversal() const

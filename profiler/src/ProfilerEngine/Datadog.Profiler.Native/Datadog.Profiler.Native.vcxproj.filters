@@ -57,6 +57,9 @@
     <Filter Include="HeapSnapshot">
       <UniqueIdentifier>{98823685-380d-47c7-ab99-ce5bd24a3b00}</UniqueIdentifier>
     </Filter>
+    <Filter Include="EEHeap">
+      <UniqueIdentifier>{b2c9f5a1-4e3d-4f27-9c1a-7a6e0d2b8c11}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -504,6 +507,69 @@
     <ClInclude Include="HeapSnapshotManager.h">
       <Filter>HeapSnapshot</Filter>
     </ClInclude>
+    <ClInclude Include="ClrNativeHeapInfo.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="INativeHeapEnumerator.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="IMemoryReader.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="InProcessMemoryReader.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="ContractDescriptorLocator.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="ContractDescriptorReader.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="ContractDescriptorParser.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="CdacDescriptorTypes.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="CdacJson.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="LogicalDescriptor.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="CdacTarget.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="CdacLoaderContract.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="CdacGCContract.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="CdacNativeHeapEnumerator.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="DacInterface.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="DacInterface13.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="LiveDataTarget.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="DacNativeHeapEnumerator.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="CommittedMemoryProbe.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="IEEHeapReporter.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="EEHeapReporter.h">
+      <Filter>EEHeap</Filter>
+    </ClInclude>
     <ClInclude Include="SnapshotCooldown.h">
       <Filter>HeapSnapshot</Filter>
     </ClInclude>
@@ -802,6 +868,48 @@
     </ClCompile>
     <ClCompile Include="HeapSnapshotManager.cpp">
       <Filter>HeapSnapshot</Filter>
+    </ClCompile>
+    <ClCompile Include="InProcessMemoryReader.cpp">
+      <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="ContractDescriptorLocator.cpp">
+      <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="ContractDescriptorReader.cpp">
+      <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="ContractDescriptorParser.cpp">
+      <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="CdacJson.cpp">
+      <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="LogicalDescriptor.cpp">
+      <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="CdacLoaderContract.cpp">
+      <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="CdacGCContract.cpp">
+      <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="CdacNativeHeapEnumerator.cpp">
+      <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="DacInterface.cpp">
+      <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="LiveDataTarget.cpp">
+      <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="DacNativeHeapEnumerator.cpp">
+      <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="CommittedMemoryProbe.cpp">
+      <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="EEHeapReporter.cpp">
+      <Filter>EEHeap</Filter>
     </ClCompile>
     <ClCompile Include="InlineVTCache.cpp">
       <Filter>HeapSnapshot</Filter>
