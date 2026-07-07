@@ -39,6 +39,9 @@ namespace Datadog.Trace
             PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName),
             ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
+            RequirePipeBound = ShouldRequirePipeBound(
+                EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName),
+                EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsdPort)),
         };
 
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>(2);
@@ -51,6 +54,41 @@ namespace Datadog.Trace
             ReadyToStart,
             Faulted,
             Healthy
+        }
+
+        /// <summary>
+        /// Determines whether a dogstatsd process must be judged healthy by its named pipe binding
+        /// alone. A pipe-only dogstatsd (named pipe set, UDP explicitly disabled) can stay alive but
+        /// fully non-functional after failing to bind its pipe, so process liveness is not a reliable
+        /// health signal. When UDP is available (port unset or greater than zero) the process-alive
+        /// fallback is kept.
+        /// </summary>
+        internal static bool ShouldRequirePipeBound(string pipeName, string dogStatsdPort)
+        {
+            if (string.IsNullOrWhiteSpace(pipeName))
+            {
+                return false;
+            }
+
+            // Unset/blank port means the default UDP transport is active, so keep the fallback.
+            if (string.IsNullOrWhiteSpace(dogStatsdPort))
+            {
+                return false;
+            }
+
+            // Only require pipe binding when UDP is explicitly disabled (port <= 0).
+            return int.TryParse(dogStatsdPort, out var port) && port <= 0;
+        }
+
+        internal static bool EvaluateHealth(bool pipeBound, bool programRunning, bool requirePipeBound)
+        {
+            return requirePipeBound ? pipeBound : (pipeBound || programRunning);
+        }
+
+        // Split out so the debounce arithmetic can be unit tested without touching the filesystem.
+        internal static int NextUnboundCount(int current)
+        {
+            return current + 1;
         }
 
         /// <summary>
@@ -212,11 +250,29 @@ namespace Datadog.Trace
                                 else if (metadata.ProcessState == ProcessState.Healthy || metadata.ProcessState == ProcessState.Faulted)
                                 {
                                     // This means we have tried to start from this domain before
-                                    metadata.ProcessState = metadata.ProcessIsHealthy() ? ProcessState.Healthy : ProcessState.ReadyToStart;
+                                    metadata.ProcessState = metadata.IsHealthyDebounced() ? ProcessState.Healthy : ProcessState.ReadyToStart;
                                 }
 
                                 if (metadata.ProcessState == ProcessState.ReadyToStart)
                                 {
+                                    // For a pipe-only process the tracked instance may still be alive but broken
+                                    // (it failed to bind its pipe). Kill it before restarting so we don't leak
+                                    // our own broken instances across restart cycles. Scoped to metadata.Process,
+                                    // the instance this manager started, so it can never touch another worker's process.
+                                    if (metadata.RequirePipeBound && metadata.Process is { HasExited: false } stale)
+                                    {
+                                        try
+                                        {
+                                            Log.Information<string, int>("Killing broken {Process} (pid {Pid}) before restart; its named pipe never bound.", path, stale.Id);
+                                            stale.Kill();
+                                            stale.WaitForExit(2000);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Log.Warning(ex, "Failed to kill stale {Process} before restart.", path);
+                                        }
+                                    }
+
                                     Log.Information("Attempting to start {Process}.", path);
 
                                     var startInfo = new ProcessStartInfo
@@ -238,6 +294,7 @@ namespace Datadog.Trace
                                         if (metadata.ProcessIsHealthy())
                                         {
                                             metadata.SequentialFailures = 0;
+                                            metadata.ConsecutiveUnboundPipeChecks = 0;
                                             metadata.ProcessState = ProcessState.Healthy;
                                             Log.Information("Successfully started {Process}.", path);
                                             break;
@@ -290,6 +347,10 @@ namespace Datadog.Trace
 
         internal sealed class ProcessMetadata
         {
+            // Number of consecutive unbound-pipe checks tolerated before a pipe-only process is
+            // declared unhealthy, to ride out transient File.Exists blips on the named pipe.
+            internal const int UnboundPipeGraceChecks = 2;
+
             private string _processPath;
 
             public string PipeName { get; set; }
@@ -306,6 +367,14 @@ namespace Datadog.Trace
             public bool IsBeingManaged { get; set; }
 
             public int SequentialFailures { get; set; }
+
+            /// <summary>
+            /// Gets or sets a value indicating whether the process is only healthy when its named pipe
+            /// is bound (a pipe-only process that fails to bind stays alive but non-functional).
+            /// </summary>
+            public bool RequirePipeBound { get; set; }
+
+            public int ConsecutiveUnboundPipeChecks { get; set; }
 
             public ProcessState ProcessState { get; set; } = ProcessState.NeverChecked;
 
@@ -325,8 +394,33 @@ namespace Datadog.Trace
 
             public bool ProcessIsHealthy()
             {
+                if (RequirePipeBound)
+                {
+                    // A pipe-only process that failed to bind its named pipe stays alive but
+                    // non-functional, so process liveness must not count as healthy.
+                    return NamedPipeIsBound();
+                }
+
                 // Named pipe can return false in some circumstances while it is being written to, so have a fallback
                 return NamedPipeIsBound() || ProgramIsRunning();
+            }
+
+            // Steady-state health check that debounces transient unbound-pipe reads for pipe-only processes.
+            public bool IsHealthyDebounced()
+            {
+                if (!RequirePipeBound)
+                {
+                    return ProcessIsHealthy();
+                }
+
+                if (NamedPipeIsBound())
+                {
+                    ConsecutiveUnboundPipeChecks = 0;
+                    return true;
+                }
+
+                ConsecutiveUnboundPipeChecks = NextUnboundCount(ConsecutiveUnboundPipeChecks);
+                return ConsecutiveUnboundPipeChecks < UnboundPipeGraceChecks;
             }
 
             private bool ProgramIsRunning()
