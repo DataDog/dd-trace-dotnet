@@ -229,6 +229,12 @@ The tracer runs in-process with customer applications and must have minimal perf
 - **Avoid Allocation in Logging**: Use format strings (`Log("value: {0}", x)`) instead of interpolation (`Log($"value: {x}")`)
 - **Avoid params Array Allocations**: Provide overloads for common cases (0, 1, 2 args)
 
+## Debugger / Dynamic Instrumentation Safety
+
+Debugger code runs inside customer processes while inspecting live customer objects. Before changing debugger capture, expression evaluation, Exception Replay, Code Origin, or symbol-resolution paths, check:
+
+- **`docs/development/DebuggerSafetyBoundaries.md`** — guidance for reflection paths that may resolve customer assemblies/types/members early, trigger type initializers, instantiate attributes, or execute customer code such as getters, enumerators, exception overrides, or `ToString()`.
+
 ## Testing
 
 **Frameworks:** xUnit (managed), GoogleTest (native)
@@ -263,6 +269,7 @@ The tracer runs in-process with customer applications and must have minimal perf
 - `docs/development/AzureFunctions.md` — Azure Functions integration
 - `docs/development/for-ai/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
 - `docs/development/AwsLambdaIntegrationTests.md` — AWS Lambda integration tests
+- `docs/development/DebuggerSafetyBoundaries.md` — Debugger reflection/type-loading and customer-code execution safety guide
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)
 - `docs/development/GitHubActionsSecurity.md` — GitHub Actions SHA-pinning policy, action allowlist, and reviewer checklist
