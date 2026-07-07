@@ -8,7 +8,7 @@ using Samples.MassTransit.Consumers;
 using Samples.MassTransit7;
 using Samples.MassTransit7.Sagas;
 
-var waitTimeout = TimeSpan.FromSeconds(30);
+var waitTimeout = TimeSpan.FromSeconds(60);
 
 var transport = Environment.GetEnvironmentVariable("MASSTRANSIT_TRANSPORT")?.Trim().ToLowerInvariant();
 

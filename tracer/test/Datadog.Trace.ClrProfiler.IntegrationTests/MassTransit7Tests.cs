@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.AWS;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -20,6 +21,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
+[Collection(nameof(AwsSqsTests.AwsSqsTestsCollection))]
 public class MassTransit7Tests : TracingIntegrationTest
 {
     public MassTransit7Tests(ITestOutputHelper output)
