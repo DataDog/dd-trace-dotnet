@@ -39,9 +39,6 @@ namespace Datadog.Trace
             PipeName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName),
             ProcessPath = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDPath),
             ProcessArguments = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsDArgs),
-            RequirePipeBound = ShouldRequirePipeBound(
-                EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.MetricsPipeName),
-                EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.DogStatsdPort)),
         };
 
         private static readonly List<ProcessMetadata> Processes = new List<ProcessMetadata>(2);
@@ -54,30 +51,6 @@ namespace Datadog.Trace
             ReadyToStart,
             Faulted,
             Healthy
-        }
-
-        /// <summary>
-        /// Determines whether a dogstatsd process must be judged healthy by its named pipe binding
-        /// alone. A pipe-only dogstatsd (named pipe set, UDP explicitly disabled) can stay alive but
-        /// fully non-functional after failing to bind its pipe, so process liveness is not a reliable
-        /// health signal. When UDP is available (port unset or greater than zero) the process-alive
-        /// fallback is kept.
-        /// </summary>
-        internal static bool ShouldRequirePipeBound(string pipeName, string dogStatsdPort)
-        {
-            if (string.IsNullOrWhiteSpace(pipeName))
-            {
-                return false;
-            }
-
-            // Unset/blank port means the default UDP transport is active, so keep the fallback.
-            if (string.IsNullOrWhiteSpace(dogStatsdPort))
-            {
-                return false;
-            }
-
-            // Only require pipe binding when UDP is explicitly disabled (port <= 0).
-            return int.TryParse(dogStatsdPort, out var port) && port <= 0;
         }
 
         internal static bool EvaluateHealth(bool pipeBound, bool programRunning, bool requirePipeBound)
@@ -135,6 +108,13 @@ namespace Datadog.Trace
                 }
                 else
                 {
+                    // A pipe-only dogstatsd (named pipe transport selected) can stay alive but fully
+                    // non-functional after failing to bind its pipe, so process liveness is not a
+                    // reliable health signal. Resolve the transport from configuration rather than
+                    // re-deriving it, so this matches whatever the metrics client will actually use.
+                    var exporterSettings = new ExporterSettings(GlobalConfigurationSource.Instance, File.Exists, NullConfigurationTelemetry.Instance);
+                    DogStatsDMetadata.RequirePipeBound = exporterSettings.MetricsTransport == Vendors.StatsdClient.Transport.TransportType.NamedPipe;
+
                     Processes.Add(DogStatsDMetadata);
                 }
 
@@ -210,7 +190,7 @@ namespace Datadog.Trace
                                 {
                                     // This means we have never tried from this domain
 
-                                    if (metadata.ProcessIsHealthy())
+                                    if (metadata.IsHealthyDebounced())
                                     {
                                         // This means one of two things:
                                         // - Another domain has already started this process
@@ -228,7 +208,7 @@ namespace Datadog.Trace
                                         {
                                             await Task.Delay((int)delay).ConfigureAwait(false);
 
-                                            if (metadata.ProcessIsHealthy())
+                                            if (metadata.IsHealthyDebounced())
                                             {
                                                 // Should result in a max delay of ~3.28 seconds before giving up
                                                 delay = delay * 1.75d;
@@ -394,15 +374,10 @@ namespace Datadog.Trace
 
             public bool ProcessIsHealthy()
             {
-                if (RequirePipeBound)
-                {
-                    // A pipe-only process that failed to bind its named pipe stays alive but
-                    // non-functional, so process liveness must not count as healthy.
-                    return NamedPipeIsBound();
-                }
-
-                // Named pipe can return false in some circumstances while it is being written to, so have a fallback
-                return NamedPipeIsBound() || ProgramIsRunning();
+                // Named pipe can return false in some circumstances while it is being written to, so
+                // process liveness is a fallback - except for a pipe-only process, which stays alive but
+                // non-functional when it fails to bind its pipe (see EvaluateHealth).
+                return EvaluateHealth(NamedPipeIsBound(), ProgramIsRunning(), RequirePipeBound);
             }
 
             // Steady-state health check that debounces transient unbound-pipe reads for pipe-only processes.

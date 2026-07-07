@@ -11,26 +11,6 @@ namespace Datadog.Trace.Tests.Agent
     public class AgentProcessManagerTests
     {
         [Theory]
-        // Pipe set, UDP explicitly disabled -> require the pipe to be bound (the Azure App Service case).
-        [InlineData("dogstatsd-guid", "0", true)]
-        [InlineData("dogstatsd-guid", "-1", true)]
-        // Pipe set, but UDP available (unset or a real port) -> keep the process-alive fallback.
-        [InlineData("dogstatsd-guid", null, false)]
-        [InlineData("dogstatsd-guid", "", false)]
-        [InlineData("dogstatsd-guid", "   ", false)]
-        [InlineData("dogstatsd-guid", "8125", false)]
-        // Unparseable port -> safe fallback (no behavior change).
-        [InlineData("dogstatsd-guid", "abc", false)]
-        // No pipe configured -> nothing pipe-specific to require.
-        [InlineData(null, "0", false)]
-        [InlineData("", "0", false)]
-        [InlineData("   ", "0", false)]
-        public void ShouldRequirePipeBound_ReturnsExpected(string pipeName, string dogStatsdPort, bool expected)
-        {
-            AgentProcessManager.ShouldRequirePipeBound(pipeName, dogStatsdPort).Should().Be(expected);
-        }
-
-        [Theory]
         // requirePipeBound = true: only the bound pipe counts as healthy.
         [InlineData(true, true, true, true)]
         [InlineData(true, false, true, true)]

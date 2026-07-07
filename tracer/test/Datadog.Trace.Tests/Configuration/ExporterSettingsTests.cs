@@ -234,6 +234,16 @@ namespace Datadog.Trace.Tests.Configuration
             AssertMetricsPipeIsConfigured(settings, "somepipe");
         }
 
+        [Fact]
+        public void Metrics_PipeNameWithPortZero_UsesWindowsNamedPipe()
+        {
+            // The Azure App Service configuration: a metrics pipe with UDP disabled via port 0.
+            // AgentProcessManager keys its pipe-only health check off this resolving to NamedPipe.
+            var settings = Setup(DefaultMetricsSocketFilesExist(), "DD_DOGSTATSD_PIPE_NAME:somepipe", "DD_DOGSTATSD_PORT:0");
+            settings.MetricsTransport.Should().Be(MetricsTransportType.NamedPipe);
+            settings.MetricsPipeName.Should().Be("somepipe");
+        }
+
 #if NETCOREAPP3_1_OR_GREATER
         [Fact]
         public void Metrics_SocketFilesExist_ExplicitUdsConfig_UsesExplicitConfig()
