@@ -211,16 +211,16 @@ namespace Datadog.Trace.Tests.Agent
             {
                 Hits = 1,
                 Duration = 5_000_000_000L,
-                MinDuration = 2_000_000_000L,  // 2s in ns → 2s
-                MaxDuration = 10_000_000_000L, // 10s in ns → 10s
+                MinDuration = 1_000_000L,  // 1ms in ns → 0.001s
+                MaxDuration = 50_000_000L, // 50ms in ns → 0.05s
             };
             buffer.Buckets.Add(key, bucket);
 
             var json = SerializeToJson(buffer);
             var dp = json.SelectToken("$.resourceMetrics[0].scopeMetrics[0].metrics[0].histogram.dataPoints[0]")!;
 
-            ((double)dp["min"]!).Should().Be(2_000_000_000L / 1_000_000_000);
-            ((double)dp["max"]!).Should().Be(10_000_000_000L / 1_000_000_000);
+            ((double)dp["min"]!).Should().Be(0.001);
+            ((double)dp["max"]!).Should().Be(0.05);
         }
 
         [Fact]
@@ -229,7 +229,7 @@ namespace Datadog.Trace.Tests.Agent
             var buffer = CreateBuffer();
             var key = CreateKey();
             var bucket = new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 };
-            // MinDuration starts at double.MaxValue (sentinel), MaxDuration at 0 (sentinel)
+            // MinDuration starts at long.MaxValue (sentinel), MaxDuration at 0 (sentinel)
             buffer.Buckets.Add(key, bucket);
 
             var json = SerializeToJson(buffer);

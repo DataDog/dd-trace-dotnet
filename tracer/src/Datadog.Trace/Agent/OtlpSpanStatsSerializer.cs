@@ -291,7 +291,7 @@ namespace Datadog.Trace.Agent
             writer.WriteValue(count.ToString());
 
             writer.WritePropertyName("sum");
-            writer.WriteValue((double)TimeHelpers.NanosecondsToSeconds(bucket.Duration));
+            writer.WriteValue(TimeHelpers.NanosecondsToSeconds(bucket.Duration));
 
             writer.WritePropertyName("bucketCounts");
             writer.WriteStartArray();
@@ -312,16 +312,16 @@ namespace Datadog.Trace.Agent
 
             writer.WriteEndArray();
 
-            if (bucket.MinDuration < double.MaxValue)
+            if (bucket.MinDuration < long.MaxValue)
             {
                 writer.WritePropertyName("min");
-                writer.WriteValue((double)TimeHelpers.NanosecondsToSeconds((long)bucket.MinDuration));
+                writer.WriteValue(TimeHelpers.NanosecondsToSeconds(bucket.MinDuration));
             }
 
             if (bucket.MaxDuration > 0)
             {
                 writer.WritePropertyName("max");
-                writer.WriteValue((double)TimeHelpers.NanosecondsToSeconds((long)bucket.MaxDuration));
+                writer.WriteValue(TimeHelpers.NanosecondsToSeconds(bucket.MaxDuration));
             }
 
             writer.WriteEndObject();
@@ -567,7 +567,7 @@ namespace Datadog.Trace.Agent
             writer.Write((ulong)bucket.Hits);
 
             WriteTag(writer, FieldNumbers.HistogramDataPointSum, WireTypeFixed64);
-            writer.Write((double)TimeHelpers.NanosecondsToSeconds(bucket.Duration));
+            writer.Write(TimeHelpers.NanosecondsToSeconds(bucket.Duration));
 
             // In OTLP mode errors go into a separate aggregation key, so OkSummary holds the full distribution.
             var bucketCounts = ProjectSketch(bucket.OkSummary);
@@ -583,16 +583,16 @@ namespace Datadog.Trace.Agent
                 writer.Write(bound);
             }
 
-            if (bucket.MinDuration < double.MaxValue)
+            if (bucket.MinDuration < long.MaxValue)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointMin, WireTypeFixed64);
-                writer.Write((double)TimeHelpers.NanosecondsToSeconds((long)bucket.MinDuration));
+                writer.Write(TimeHelpers.NanosecondsToSeconds(bucket.MinDuration));
             }
 
             if (bucket.MaxDuration > 0)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointMax, WireTypeFixed64);
-                writer.Write((double)TimeHelpers.NanosecondsToSeconds((long)bucket.MaxDuration));
+                writer.Write(TimeHelpers.NanosecondsToSeconds(bucket.MaxDuration));
             }
 
             writer.Flush();

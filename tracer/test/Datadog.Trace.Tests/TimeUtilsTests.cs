@@ -27,11 +27,11 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void NanosecondsToSeconds_ReturnsWholeSeconds()
+        public void NanosecondsToSeconds_ReturnsDouble()
         {
-            Assert.Equal(5, TimeHelpers.NanosecondsToSeconds(5_000_000_000L));
-            Assert.Equal(0, TimeHelpers.NanosecondsToSeconds(999_999_999L));
-            Assert.Equal(10, TimeHelpers.NanosecondsToSeconds(10_500_000_000L));
+            Assert.Equal(5.0, TimeHelpers.NanosecondsToSeconds(5_000_000_000L));
+            Assert.Equal(0.5, TimeHelpers.NanosecondsToSeconds(500_000_000L));
+            Assert.Equal(0.001, TimeHelpers.NanosecondsToSeconds(1_000_000L));
         }
     }
 }
