@@ -110,8 +110,20 @@ public abstract class ConsoleTestHelper : ToolTestHelper
 
         if (completed == helper.Task)
         {
+            // Startup exited before readiness. Include the exit code and drained output so
+            // crashes show native exit codes and any stack traces from the child process.
+            var exitCode = helper.Process.HasExited ? helper.Process.ExitCode : (int?)null;
+            var standardOutput = helper.StandardOutput;
+            var errorOutput = helper.ErrorOutput;
+
             helper.Dispose();
-            throw new Exception("The target process unexpectedly exited");
+
+            var exitCodeText = exitCode is { } code ? $"0x{code:X8}" : "unknown";
+
+            throw new Exception(
+                $"The target process unexpectedly exited with exit code {exitCodeText}" + Environment.NewLine +
+                "Standard output:" + Environment.NewLine + standardOutput + Environment.NewLine +
+                "Error output:" + Environment.NewLine + errorOutput);
         }
 
         // Try to capture a memory dump before giving up
