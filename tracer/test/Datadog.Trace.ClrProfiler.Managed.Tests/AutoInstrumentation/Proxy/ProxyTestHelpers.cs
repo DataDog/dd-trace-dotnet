@@ -61,6 +61,11 @@ internal static class ProxyTestHelpers
     {
         var headers = new NameValueHeadersCollection([]);
         headers.Set(InferredProxyHeaders.Name, "azure-fd");
+        if (start is not null)
+        {
+            headers.Set(InferredProxyHeaders.StartTime, start);
+        }
+
         headers.Set(InferredProxyHeaders.Domain, "myapp.azurefd.net");
         headers.Set(InferredProxyHeaders.HttpMethod, "GET");
         headers.Set(InferredProxyHeaders.Path, "/api/test");
