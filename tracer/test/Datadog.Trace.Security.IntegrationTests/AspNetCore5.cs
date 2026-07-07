@@ -81,6 +81,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var spans = await agent.WaitForSpansAsync(1, minDateTime: dateTime);
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.ScrubSessionFingerprint();
+            settings.ScrubbResponseContentLength();
             await VerifyHelper.VerifySpans(spans, settings).UseFileName($"{GetTestName()}.test-null-action");
         }
 

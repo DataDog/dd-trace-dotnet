@@ -66,6 +66,8 @@ internal sealed partial class SecurityReporter
         { "X-SigSci-Tags", string.Empty },
     };
 
+    private static readonly Dictionary<string, string?> AlwaysResponseHeaders = new() { { "content-length", string.Empty }, { "content-type", string.Empty } };
+
     private static readonly Dictionary<string, string?> ResponseHeaders = new() { { "content-length", string.Empty }, { "content-type", string.Empty }, { "Content-Encoding", string.Empty }, { "Content-Language", string.Empty } };
     private readonly HttpTransportBase _httpTransport;
     private readonly Span _span;
@@ -93,7 +95,17 @@ internal sealed partial class SecurityReporter
     {
         if (_span.IsAppsecEvent())
         {
-            AddResponseHeaderTags();
+            var route = _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
+            if (route != null)
+            {
+                _span.SetTag(Tags.HttpEndpoint, route);
+            }
+        }
+
+        if (CanAccessHeaders)
+        {
+            var headers = _span.IsAppsecEvent() ? ResponseHeaders : AlwaysResponseHeaders;
+            AddHeaderTags(_span, _httpTransport.GetResponseHeaders(), headers, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
     }
 
@@ -338,17 +350,15 @@ internal sealed partial class SecurityReporter
 
     internal void AddResponseHeaderTags()
     {
-        TryAddEndPoint();
-        var headers = CanAccessHeaders ? _httpTransport.GetResponseHeaders() : new NameValueHeadersCollection(new NameValueCollection());
-        AddHeaderTags(_span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
-    }
-
-    private void TryAddEndPoint()
-    {
         var route = _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
         if (route != null)
         {
             _span.SetTag(Tags.HttpEndpoint, route);
+        }
+
+        if (CanAccessHeaders)
+        {
+            AddHeaderTags(_span, _httpTransport.GetResponseHeaders(), ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
     }
 }

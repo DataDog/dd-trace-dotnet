@@ -195,8 +195,17 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
         _flushTimer?.Dispose();
 #endif
         await FlushAndCloseAsync().ConfigureAwait(false);
-        _flushSemaphore.Dispose();
-        _drainSignal.Dispose();
+
+        // We deliberately do NOT dispose _flushSemaphore or _drainSignal here.
+        // FlushAndCloseAsync waits for the process/flush tasks to complete, but has a 1s
+        // fallback so process exit can never hang. On an overloaded host that fallback can
+        // fire while the flush task is still inside FlushAggregatorAsync (e.g. blocked in
+        // _api.SendAsync). Disposing the primitives would then cause the task's
+        // _flushSemaphore.Release()/_drainSignal.Wait() to throw ObjectDisposedException,
+        // faulting the task and logging a spurious error during shutdown.
+        // Neither primitive's wait handle is ever materialized (we only use
+        // WaitAsync/Wait/Release/Set/Reset/IsSet, never AvailableWaitHandle/WaitHandle), so
+        // they hold no unmanaged resources and Dispose() is unnecessary here.
     }
 
     private async Task FlushAndCloseAsync()

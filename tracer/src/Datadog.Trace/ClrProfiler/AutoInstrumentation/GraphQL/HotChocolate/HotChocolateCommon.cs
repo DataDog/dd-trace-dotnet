@@ -9,6 +9,8 @@ using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
@@ -119,7 +121,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             }
         }
 
-        private static string ConstructErrorMessage(List<IError> executionErrors)
+        [TestingAndPrivateOnly]
+        internal static string ConstructErrorMessage(List<IError> executionErrors)
         {
             if (executionErrors == null)
             {
@@ -130,30 +133,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             try
             {
-                const string tab = "    ";
                 builder.AppendLine("errors: [");
 
                 for (int i = 0; i < executionErrors.Count; i++)
                 {
+                    if (builder.Length >= TruncatorTagsProcessor.MaxMetaValLen)
+                    {
+                        // Too big, give up
+                        break;
+                    }
+
+                    if (i > 0)
+                    {
+                        builder.Append(',').AppendLine();
+                    }
+
                     var executionError = executionErrors[i];
 
-                    builder.Append(tab).AppendLine("{");
+                    builder.AppendLine($"{Tab}{{");
 
                     var message = executionError.Message;
                     if (message != null)
                     {
-                        builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
+                        builder.Append($"{Tab + Tab}\"message\": \"")
+                               .Append(message.Replace("\r", "\\r").Replace("\n", "\\n"))
+                               .AppendLine("\",");
                     }
 
                     var locations = executionError.Locations;
-                    if (locations != null)
+                    if (locations != null && builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
                     {
-                        ConstructErrorLocationsMessage(builder, tab, locations);
+                        ConstructErrorLocationsMessage(builder, locations);
                     }
 
-                    builder.AppendLine($"{tab}}},");
+                    builder.Append($"{Tab}}}");
                 }
 
+                builder.AppendLine();
                 builder.AppendLine("]");
             }
             catch (Exception ex)
@@ -163,7 +179,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 return "errors: []";
             }
 
-            return Util.StringBuilderCache.GetStringAndRelease(builder);
+            if (builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
+            {
+                return Util.StringBuilderCache.GetStringAndRelease(builder);
+            }
+
+            // pre-truncate if we got too large
+            var result = builder.ToString(startIndex: 0, length: TruncatorTagsProcessor.MaxMetaValLen);
+            Util.StringBuilderCache.Release(builder);
+            return result;
         }
 
         private static List<SpanEvent> ConstructErrorEvents(List<IError> executionErrors)
