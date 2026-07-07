@@ -25,13 +25,13 @@ internal sealed class AzureFrontDoorSpanFactory : IInferredSpanFactory
     {
         try
         {
-            var resourceUrl = data.Path is null ? string.Empty : UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
+            var resourceUrl = data.Path is null ? string.Empty : UriHelpers.GetCleanUriPath($"/{data.Path}").ToLowerInvariant();
 
             var tags = new InferredProxyTags
             {
                 HttpMethod = data.HttpMethod,
                 InstrumentationName = data.ProxyName,
-                HttpUrl = $"{data.DomainName}{data.Path}",
+                HttpUrl = $"{data.DomainName}/{data.Path}",
                 HttpRoute = resourceUrl,
                 InferredSpan = 1,
                 Region = data.Region,

@@ -22,7 +22,7 @@ public class AzureFrontDoorSpanFactoryTests
         var factory = new AzureFrontDoorSpanFactory();
         await using var tracer = ProxyTestHelpers.GetMockTracer();
         var startTime = DateTimeOffset.UtcNow;
-        var data = new InferredProxyData("azure-fd", startTime, "myapp.azurefd.net", "GET", "/api/v1/users", null, null);
+        var data = new InferredProxyData("azure-fd", startTime, "myapp.azurefd.net", "GET", "api/v1/users", null, null);
 
         var scope = factory.CreateSpan(tracer, data);
 
