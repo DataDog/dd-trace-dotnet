@@ -62,8 +62,10 @@ private:
     bool corlib_module_loaded = false;
     ModuleID corlib_module_id = 0;
     AppDomainID corlib_app_domain_id = 0;
-    ModuleID managed_profiler_domain_neutral_module_id = 0;
-    std::unordered_map<AppDomainID, ModuleID> managed_profiler_loaded_app_domains;
+    // Written and read from different CLR callback threads.
+    std::atomic<ModuleID> managed_profiler_domain_neutral_module_id{0};
+    // Uses a dedicated lock because these accesses do not all happen under module_ids.
+    Synchronized<std::unordered_map<AppDomainID, ModuleID>> managed_profiler_loaded_app_domains;
     std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
     bool is_desktop_iis = false;
 
