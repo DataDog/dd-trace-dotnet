@@ -103,7 +103,9 @@ public abstract class ConsoleTestHelper : ToolTestHelper
                             startedTask.Task,
                             Task.Delay(TimeSpan.FromSeconds(30)));
 
-        if (completed == startedTask.Task)
+        // Crash samples can print "Waiting" and exit before this await resumes. If both
+        // tasks are complete, WhenAny may return either, so readiness should win.
+        if (startedTask.Task.IsCompleted)
         {
             return helper;
         }
