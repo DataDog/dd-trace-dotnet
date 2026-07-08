@@ -692,6 +692,12 @@ namespace Datadog.Trace.Agent
             while (!_processExit.Task.IsCompleted);
         }
 
+        private static double GetWeight(Span span)
+        {
+            var rate = span.Context.TraceContext.AppliedSamplingRate;
+            return (rate is > 0) ? 1.0 / rate.Value : 1.0;
+        }
+
         /// <summary>
         /// Converts a nanosec timestamp into a float nanosecond timestamp truncated to a fixed precision.
         /// Span timestamps must have maximum precision, but we can reduce precision of timestamps for
@@ -699,12 +705,6 @@ namespace Datadog.Trace.Agent
         /// </summary>
         /// <param name="ns">Timestamp to convert</param>
         /// <returns>Timestamp with truncated precision</returns>
-        private static double GetWeight(Span span)
-        {
-            var rate = span.Context.TraceContext.AppliedSamplingRate;
-            return (rate is > 0) ? 1.0 / rate.Value : 1.0;
-        }
-
         private static double ConvertTimestamp(long ns)
         {
             // 10 bits precision (any value will be +/- 1/1024)

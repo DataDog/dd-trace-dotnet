@@ -626,7 +626,7 @@ namespace Datadog.Trace.Agent
                 counts[bucket] += (ulong)Math.Round(bin.Count);
             }
 
-            if (sketch.NegativeValueStore.TotalCount > 0)
+            if (sketch.NegativeValueStore.GetTotalCount() > 0)
             {
                 Log.Debug("Span with negative duration detected (possible clock skew); excluded from OTLP histogram.");
             }
