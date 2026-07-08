@@ -3018,12 +3018,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Equal(nameof(UndefinedValue), result);
             var error = Assert.Single(compiled.Errors);
@@ -3179,12 +3174,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Same(UndefinedValue.Instance, result);
             Assert.Equal(0, _staticExpressionInitializedCount);
@@ -3204,12 +3194,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Equal(nameof(UndefinedValue), result);
             var error = Assert.Single(compiled.Errors);
@@ -3236,12 +3221,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Equal("constant-value", result);
             Assert.Equal(0, _staticExpressionInitializedCount);
@@ -3268,12 +3248,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<StaticExpressionEnum>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Equal(StaticExpressionEnum.One, result);
             Assert.Equal(0, _staticExpressionInitializedCount);
@@ -3813,8 +3788,8 @@ namespace Datadog.Trace.Tests.Debugger
 
             public static string StaticProperty { get; } = "unsafe-property";
         }
-		
-		internal class PropertyHolder
+
+        internal class PropertyHolder
         {
             public static string StaticValue => "static value";
         }
