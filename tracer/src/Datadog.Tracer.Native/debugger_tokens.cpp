@@ -2089,7 +2089,12 @@ HRESULT DebuggerTokens::WriteFlowRecorderLogLocal(void* rewriterWrapperPtr, cons
     return WriteFlowRecorderLogArgOrLocal(rewriterWrapperPtr, local, instruction, false);
 }
 
-HRESULT DebuggerTokens::WriteFlowRecorderLogField(void* rewriterWrapperPtr, const TypeSignature& field, ILInstr** instruction)
+HRESULT DebuggerTokens::WriteFlowRecorderLogNamedField(
+    void* rewriterWrapperPtr,
+    const TypeSignature& field,
+    ILInstr** instruction,
+    mdMemberRef& fieldRef,
+    const WSTRING& methodName)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -2100,7 +2105,7 @@ HRESULT DebuggerTokens::WriteFlowRecorderLogField(void* rewriterWrapperPtr, cons
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
 
-    if (flowRecorderLogFieldRef == mdMemberRefNil)
+    if (fieldRef == mdMemberRefNil)
     {
         unsigned flowRecorderStateTypeRefBuffer;
         const auto flowRecorderStateTypeRefSize =
@@ -2122,11 +2127,11 @@ HRESULT DebuggerTokens::WriteFlowRecorderLogField(void* rewriterWrapperPtr, cons
         offset += flowRecorderStateTypeRefSize;
 
         hr = module_metadata->metadata_emit->DefineMemberRef(
-            flowRecorderTypeRef, managed_profiler_debugger_flow_recorder_log_field_name.data(),
-            signature, offset, &flowRecorderLogFieldRef);
+            flowRecorderTypeRef, methodName.data(),
+            signature, offset, &fieldRef);
         if (FAILED(hr))
         {
-            Logger::Warn("Wrapper flowRecorderLogFieldRef could not be defined.");
+            Logger::Warn("Wrapper FlowRecorder named field member ref could not be defined.");
             return hr;
         }
     }
@@ -2141,11 +2146,11 @@ HRESULT DebuggerTokens::WriteFlowRecorderLogField(void* rewriterWrapperPtr, cons
     offset += fieldSignatureSize;
 
     mdMethodSpec methodSpec = mdMethodSpecNil;
-    hr = module_metadata->metadata_emit->DefineMethodSpec(flowRecorderLogFieldRef, methodSpecSignature, offset,
+    hr = module_metadata->metadata_emit->DefineMethodSpec(fieldRef, methodSpecSignature, offset,
                                                           &methodSpec);
     if (FAILED(hr))
     {
-        Logger::Warn("Error creating FlowRecorder LogField method spec.");
+        Logger::Warn("Error creating FlowRecorder named field method spec.");
         return hr;
     }
 
@@ -2153,7 +2158,32 @@ HRESULT DebuggerTokens::WriteFlowRecorderLogField(void* rewriterWrapperPtr, cons
     return S_OK;
 }
 
-HRESULT DebuggerTokens::WriteFlowRecorderLogReturn(void* rewriterWrapperPtr, TypeSignature* returnArgument, ILInstr** instruction)
+HRESULT DebuggerTokens::WriteFlowRecorderLogField(void* rewriterWrapperPtr, const TypeSignature& field, ILInstr** instruction)
+{
+    return WriteFlowRecorderLogNamedField(
+        rewriterWrapperPtr,
+        field,
+        instruction,
+        flowRecorderLogFieldRef,
+        managed_profiler_debugger_flow_recorder_log_field_name);
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderLogFieldArgument(void* rewriterWrapperPtr, const TypeSignature& field, ILInstr** instruction)
+{
+    return WriteFlowRecorderLogNamedField(
+        rewriterWrapperPtr,
+        field,
+        instruction,
+        flowRecorderLogFieldArgumentRef,
+        managed_profiler_debugger_flow_recorder_log_field_argument_name);
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderLogReturnValue(
+    void* rewriterWrapperPtr,
+    TypeSignature* returnArgument,
+    ILInstr** instruction,
+    mdMemberRef& returnRef,
+    const WSTRING& methodName)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -2164,7 +2194,7 @@ HRESULT DebuggerTokens::WriteFlowRecorderLogReturn(void* rewriterWrapperPtr, Typ
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*)rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
 
-    if (flowRecorderLogReturnRef == mdMemberRefNil)
+    if (returnRef == mdMemberRefNil)
     {
         unsigned flowRecorderStateTypeRefBuffer;
         const auto flowRecorderStateTypeRefSize =
@@ -2185,11 +2215,11 @@ HRESULT DebuggerTokens::WriteFlowRecorderLogReturn(void* rewriterWrapperPtr, Typ
         offset += flowRecorderStateTypeRefSize;
 
         hr = module_metadata->metadata_emit->DefineMemberRef(
-            flowRecorderTypeRef, managed_profiler_debugger_flow_recorder_log_return_name.data(),
-            signature, offset, &flowRecorderLogReturnRef);
+            flowRecorderTypeRef, methodName.data(),
+            signature, offset, &returnRef);
         if (FAILED(hr))
         {
-            Logger::Warn("Wrapper flowRecorderLogReturnRef could not be defined.");
+            Logger::Warn("Wrapper FlowRecorder return member ref could not be defined.");
             return hr;
         }
     }
@@ -2204,16 +2234,36 @@ HRESULT DebuggerTokens::WriteFlowRecorderLogReturn(void* rewriterWrapperPtr, Typ
     offset += returnSignatureSize;
 
     mdMethodSpec methodSpec = mdMethodSpecNil;
-    hr = module_metadata->metadata_emit->DefineMethodSpec(flowRecorderLogReturnRef, methodSpecSignature, offset,
+    hr = module_metadata->metadata_emit->DefineMethodSpec(returnRef, methodSpecSignature, offset,
                                                           &methodSpec);
     if (FAILED(hr))
     {
-        Logger::Warn("Error creating FlowRecorder LogReturn method spec.");
+        Logger::Warn("Error creating FlowRecorder return method spec.");
         return hr;
     }
 
     *instruction = rewriterWrapper->CallMember(methodSpec, false);
     return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderLogReturn(void* rewriterWrapperPtr, TypeSignature* returnArgument, ILInstr** instruction)
+{
+    return WriteFlowRecorderLogReturnValue(
+        rewriterWrapperPtr,
+        returnArgument,
+        instruction,
+        flowRecorderLogReturnRef,
+        managed_profiler_debugger_flow_recorder_log_return_name);
+}
+
+HRESULT DebuggerTokens::WriteFlowRecorderLogAsyncReturn(void* rewriterWrapperPtr, TypeSignature* returnArgument, ILInstr** instruction)
+{
+    return WriteFlowRecorderLogReturnValue(
+        rewriterWrapperPtr,
+        returnArgument,
+        instruction,
+        flowRecorderLogAsyncReturnRef,
+        managed_profiler_debugger_flow_recorder_log_async_return_name);
 }
 
 } // namespace debugger

@@ -40,6 +40,22 @@ public class LiveDebuggerPocNativeTests : TestHelper
         Suppressed = 6
     }
 
+    private enum FlowCapturePhase : byte
+    {
+        Entry = 1,
+        Exit = 2,
+        Exception = 3
+    }
+
+    private enum FlowValueKind : byte
+    {
+        This = 1,
+        Argument = 2,
+        Local = 3,
+        Return = 4,
+        Exception = 5
+    }
+
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
     public async Task NativeInstrumentAllRecordsBalancedNonAsyncFlowEvents()
@@ -171,6 +187,43 @@ public class LiveDebuggerPocNativeTests : TestHelper
                .And.NotContain("Datadog.Trace.Debugger.LiveDebuggerPoc.FlowRecorderState")
                .And.NotContain("System.Exception")
                .And.NotContain(typeName => typeName.Contains("TaskAwaiter", StringComparison.Ordinal));
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task NativeInstrumentAllCanCaptureAsyncStateMachineValues()
+    {
+        SetEnvironmentVariable(ConfigurationKeys.InternalDebuggerFlowRecorderCaptureValues, "all");
+        SetEnvironmentVariable(ConfigurationKeys.InternalDebuggerFlowRecorderCaptureValueMethods, "AsyncValueAsync,AsyncLeafAsync");
+
+        var (capturePath, _) = await RunNativeRecorderSample("async");
+
+        var capture = ReadFlowCapture(capturePath, requireEvents: true);
+        var methodNamesById = capture.Methods.ToDictionary(method => method.MethodMetadataIndex, method => method.DisplayName);
+        var valuesByMethod = capture.Values
+                                    .Select(value => new
+                                    {
+                                        Value = value,
+                                        Name = capture.Strings[value.NameId],
+                                        Type = capture.Types[value.TypeId],
+                                        MethodName = GetValueMethodName(capture.Events, methodNamesById, value)
+                                    })
+                                    .Where(item => item.MethodName.Contains("AsyncValueAsync", StringComparison.Ordinal) ||
+                                                   item.MethodName.Contains("AsyncLeafAsync", StringComparison.Ordinal))
+                                    .ToArray();
+
+        valuesByMethod.Should().Contain(item => item.Name == "value" &&
+                                                item.Value.Phase == (byte)FlowCapturePhase.Entry &&
+                                                item.Value.Kind == (byte)FlowValueKind.Argument);
+        valuesByMethod.Should().Contain(item => item.Name == "@return" &&
+                                                item.Value.Phase == (byte)FlowCapturePhase.Exit &&
+                                                item.Value.Kind == (byte)FlowValueKind.Return);
+        valuesByMethod.Select(item => item.Type)
+                      .Should()
+                      .NotContain(typeName => typeName.Contains("AsyncTaskMethodBuilder", StringComparison.Ordinal))
+                      .And.NotContain(typeName => typeName.Contains("TaskAwaiter", StringComparison.Ordinal))
+                      .And.NotContain(typeName => typeName.Contains("ValueTaskAwaiter", StringComparison.Ordinal))
+                      .And.NotContain(typeName => typeName.Contains("Enumerator", StringComparison.Ordinal));
     }
 
     private static FlowCapture ReadFlowCapture(string path, bool requireEvents)
@@ -443,6 +496,14 @@ public class LiveDebuggerPocNativeTests : TestHelper
         process.WaitForExit(30_000).Should().BeTrue();
         process.ExitCode.Should().Be(0, standardError);
         return standardOutput;
+    }
+
+    private static string GetValueMethodName(FlowEvent[] events, IReadOnlyDictionary<int, string> methodNamesById, FlowCapturedValue value)
+    {
+        var enter = events.First(flowEvent => flowEvent.FlowId == value.FlowId &&
+                                             flowEvent.FrameId == value.FrameId &&
+                                             flowEvent.Kind == FlowEventKind.Enter);
+        return methodNamesById[enter.MethodMetadataIndex];
     }
 
     private async Task<(string CapturePath, string LogDirectory)> RunNativeRecorderSample(string scenario = "checkout", string rewriteMode = null)

@@ -95,7 +95,9 @@ static const WSTRING managed_profiler_debugger_flow_recorder_should_capture_valu
 static const WSTRING managed_profiler_debugger_flow_recorder_log_arg_name = WStr("LogArg");
 static const WSTRING managed_profiler_debugger_flow_recorder_log_local_name = WStr("LogLocal");
 static const WSTRING managed_profiler_debugger_flow_recorder_log_field_name = WStr("LogField");
+static const WSTRING managed_profiler_debugger_flow_recorder_log_field_argument_name = WStr("LogFieldArgument");
 static const WSTRING managed_profiler_debugger_flow_recorder_log_return_name = WStr("LogReturn");
+static const WSTRING managed_profiler_debugger_flow_recorder_log_async_return_name = WStr("LogAsyncReturn");
 
 /// <summary>
 /// Class to control all the token references of the module where the Debugger will be called.
@@ -195,11 +197,18 @@ private:
     mdMemberRef flowRecorderLogLocalRef = mdMemberRefNil;
     mdMemberRef flowRecorderLogFieldRef = mdMemberRefNil;
     mdMemberRef flowRecorderLogReturnRef = mdMemberRefNil;
+    mdMemberRef flowRecorderLogFieldArgumentRef = mdMemberRefNil;
+    mdMemberRef flowRecorderLogAsyncReturnRef = mdMemberRefNil;
 
     HRESULT WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeSignature& argOrLocal, ILInstr** instruction,
                                bool isArg, ProbeType probeType);
     HRESULT WriteFlowRecorderLogArgOrLocal(void* rewriterWrapperPtr, const TypeSignature& argOrLocal,
                                            ILInstr** instruction, bool isArg);
+    HRESULT WriteFlowRecorderLogNamedField(void* rewriterWrapperPtr, const TypeSignature& field, ILInstr** instruction,
+                                           mdMemberRef& fieldRef, const WSTRING& methodName);
+    HRESULT WriteFlowRecorderLogReturnValue(void* rewriterWrapperPtr, TypeSignature* returnArgument,
+                                            ILInstr** instruction, mdMemberRef& returnRef,
+                                            const WSTRING& methodName);
 
     [[nodiscard]] mdTypeRef GetDebuggerInvoker(const ProbeType probeType) const
     {
@@ -638,7 +647,9 @@ public:
     HRESULT WriteFlowRecorderLogArg(void* rewriterWrapperPtr, const TypeSignature& argument, ILInstr** instruction);
     HRESULT WriteFlowRecorderLogLocal(void* rewriterWrapperPtr, const TypeSignature& local, ILInstr** instruction);
     HRESULT WriteFlowRecorderLogField(void* rewriterWrapperPtr, const TypeSignature& field, ILInstr** instruction);
+    HRESULT WriteFlowRecorderLogFieldArgument(void* rewriterWrapperPtr, const TypeSignature& field, ILInstr** instruction);
     HRESULT WriteFlowRecorderLogReturn(void* rewriterWrapperPtr, TypeSignature* returnArgument, ILInstr** instruction);
+    HRESULT WriteFlowRecorderLogAsyncReturn(void* rewriterWrapperPtr, TypeSignature* returnArgument, ILInstr** instruction);
 };
 
 } // namespace debugger

@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -567,6 +568,19 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
         }
 
         /// <summary>
+        /// Records a named argument field for async state-machine frames.
+        /// </summary>
+        /// <typeparam name="TField">The field type.</typeparam>
+        /// <param name="field">The field value.</param>
+        /// <param name="name">The source argument name.</param>
+        /// <param name="state">The active recorder frame state.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void LogFieldArgument<TField>(ref TField field, string name, ref FlowRecorderState state)
+        {
+            LogNamedValue(ref field, name, FlowCapturePhase.Entry, FlowValueKind.Argument, ref state);
+        }
+
+        /// <summary>
         /// Records a return value for a value-capable recorder frame.
         /// </summary>
         /// <typeparam name="TReturn">The return type.</typeparam>
@@ -576,6 +590,24 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
         public static void LogReturn<TReturn>(ref TReturn value, ref FlowRecorderState state)
         {
             LogValue(ref value, -1, FlowCapturePhase.Exit, FlowValueKind.Return, ref state);
+        }
+
+        /// <summary>
+        /// Records the logical return value for an async state-machine completion path.
+        /// </summary>
+        /// <typeparam name="TReturn">The logical async return type.</typeparam>
+        /// <param name="value">The logical return value.</param>
+        /// <param name="state">The active recorder frame state.</param>
+        public static void LogAsyncReturn<TReturn>(ref TReturn value, ref FlowRecorderState state)
+        {
+            try
+            {
+                LogValue(ref value, -1, FlowCapturePhase.Exit, FlowValueKind.Return, ref state);
+            }
+            catch
+            {
+                // Async return capture runs from SetResult and must never affect customer code.
+            }
         }
 
         /// <summary>
@@ -661,6 +693,9 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
             int valueBufferSize = FlowRecorderSettings.DefaultValueBufferSize,
             int maxStringLength = FlowRecorderSettings.DefaultMaxStringLength,
             int maxCollectionItems = FlowRecorderSettings.DefaultMaxCollectionItems,
+            FlowValuePreviewMode valuePreviewMode = FlowValuePreviewMode.Off,
+            int maxObjectFields = FlowRecorderSettings.DefaultMaxObjectFields,
+            int maxChildValuesPerValue = FlowRecorderSettings.DefaultMaxChildValuesPerValue,
             int maxStackLength = FlowRecorderSettings.DefaultMaxStackLength,
             int maxEventsPerOperation = FlowRecorderSettings.DefaultMaxEventsPerOperation,
             int maxDepth = FlowRecorderSettings.DefaultMaxDepth,
@@ -670,7 +705,7 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
         {
             lock (SyncRoot)
             {
-                var settings = new FlowRecorderSettingsForTesting(enabled, bufferSize, valueCaptureMode, valueCaptureMethodFilter, valueBufferSize, maxStringLength, maxCollectionItems, maxStackLength, maxEventsPerOperation, maxDepth, maxDurationMs, maxUniqueMethodsPerOperation, allowRecordingWithoutOperation);
+                var settings = new FlowRecorderSettingsForTesting(enabled, bufferSize, valueCaptureMode, valueCaptureMethodFilter, valueBufferSize, maxStringLength, maxCollectionItems, valuePreviewMode, maxObjectFields, maxChildValuesPerValue, maxStackLength, maxEventsPerOperation, maxDepth, maxDurationMs, maxUniqueMethodsPerOperation, allowRecordingWithoutOperation);
                 ClearThreadStaticState();
                 var generation = ++_generation;
                 _nextFlowId = 0;
@@ -1139,6 +1174,10 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
         private sealed class FlowRecorderSink
         {
             private const int MethodRegistrationStateCount = 16_384;
+            private const int MaxPreviewTypeCount = 4_096;
+            private const int MaxPreviewNameCount = 32_768;
+
+            private static readonly MethodInfo TryEnqueueTypedChildValueMethod = typeof(FlowRecorderSink).GetMethod(nameof(TryEnqueueTypedChildValue), BindingFlags.Instance | BindingFlags.NonPublic)!;
 
             private readonly BoundedRecorderBuffer<FlowEvent> _queue;
             private readonly BoundedRecorderBuffer<FlowExceptionDetails> _exceptionQueue;
@@ -1146,13 +1185,18 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
             private readonly int[] _methodRegistrationStates;
             private readonly object _metadataLock = new();
             private readonly object _stringLock = new();
+            private readonly object _previewTypeLock = new();
             private readonly Dictionary<int, FlowMethodMetadata> _methods = new();
             private readonly Dictionary<ulong, FlowOperationMetadata> _operations = new();
             private readonly Dictionary<ulong, OperationBudgetState> _operationBudgets = new();
+            private readonly Dictionary<Type, FieldPreviewDescriptor[]> _previewTypes = new();
+            private readonly Dictionary<FieldPreviewNameKey, CollectionItemNameCache> _previewFieldNames = new();
+            private readonly Dictionary<CollectionItemNameKey, CollectionItemNameCache> _previewItemNames = new();
             private Dictionary<string, int> _strings = new();
             private List<string> _stringTable = new();
             private Dictionary<string, int> _types = new();
             private List<string> _typeTable = new();
+            private int _stringTableGeneration;
             private int _activeDrainFileWriters;
             private int _drainingFile;
 
@@ -1163,6 +1207,8 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
                 _valueQueue = new BoundedRecorderBuffer<FlowCapturedValue>(valueBufferSize);
                 _methodRegistrationStates = new int[MethodRegistrationStateCount];
             }
+
+            private delegate bool FieldPreviewWriter(FlowRecorderSink sink, object target, ulong flowId, ulong frameId, FlowCapturePhase phase, FlowValueKind kind, int nameId, FlowRecorderSettings settings, ref int remaining);
 
             public bool TryEnqueue(RecorderSession session, in FlowEvent flowEvent)
             {
@@ -1216,10 +1262,21 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
                 try
                 {
                     var type = typeof(T);
-                    var nameId = GetStringId(GetValueName(kind, index));
+                    var name = GetValueName(kind, index);
+                    var nameId = GetStringId(name);
                     var typeId = GetTypeId(type);
                     var captured = CreateCapturedValue(flowId, frameId, phase, kind, nameId, typeId, value, type, settings);
-                    return _valueQueue.TryEnqueue(captured);
+                    if (!_valueQueue.TryEnqueue(captured))
+                    {
+                        return false;
+                    }
+
+                    if (settings.ValuePreviewMode == FlowValuePreviewMode.Shallow)
+                    {
+                        TryEnqueueValuePreview(flowId, frameId, phase, kind, name, value, settings);
+                    }
+
+                    return true;
                 }
                 finally
                 {
@@ -1237,10 +1294,21 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
                 try
                 {
                     var type = typeof(T);
-                    var nameId = GetStringId(StringUtil.IsNullOrEmpty(name) ? GetValueName(kind, -1) : name);
+                    var valueName = StringUtil.IsNullOrEmpty(name) ? GetValueName(kind, -1) : name;
+                    var nameId = GetStringId(valueName);
                     var typeId = GetTypeId(type);
                     var captured = CreateCapturedValue(flowId, frameId, phase, kind, nameId, typeId, value, type, settings);
-                    return _valueQueue.TryEnqueue(captured);
+                    if (!_valueQueue.TryEnqueue(captured))
+                    {
+                        return false;
+                    }
+
+                    if (settings.ValuePreviewMode == FlowValuePreviewMode.Shallow)
+                    {
+                        TryEnqueueValuePreview(flowId, frameId, phase, kind, valueName, value, settings);
+                    }
+
+                    return true;
                 }
                 finally
                 {
@@ -1425,6 +1493,10 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
                         _stringTable = new List<string>();
                         _types = new Dictionary<string, int>();
                         _typeTable = new List<string>();
+                        unchecked
+                        {
+                            _stringTableGeneration++;
+                        }
                     }
 
                     FlowOperationMetadata[] operations;
@@ -1541,6 +1613,11 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
             {
                 var declaringType = method.DeclaringType ?? type;
                 return declaringType.FullName + "." + method.Name;
+            }
+
+            private static MethodInfo GetTypedChildValueWriter(Type fieldType)
+            {
+                return TryEnqueueTypedChildValueMethod.MakeGenericMethod(fieldType);
             }
 
             private void TryRegisterMethodsFromSidecar(string? capturePath)
@@ -1761,6 +1838,439 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
                 return new FlowCapturedValue(flowId, frameId, phase, kind, nameId, typeId, FlowValueTag.String, reason, 0, GetStringId(truncated), -1, -1);
             }
 
+            private void TryEnqueueValuePreview<T>(
+                ulong flowId,
+                ulong frameId,
+                FlowCapturePhase phase,
+                FlowValueKind kind,
+                string rootName,
+                T value,
+                FlowRecorderSettings settings)
+            {
+                if (settings.MaxChildValuesPerValue <= 0)
+                {
+                    return;
+                }
+
+                if (value is null || value is string)
+                {
+                    return;
+                }
+
+                try
+                {
+                    var remaining = settings.MaxChildValuesPerValue;
+                    if (TryEnqueueCollectionPreview(flowId, frameId, phase, kind, rootName, value, settings, ref remaining))
+                    {
+                        return;
+                    }
+
+                    if (!ShouldPreviewObjectFields(typeof(T), value))
+                    {
+                        return;
+                    }
+
+                    TryEnqueueObjectFieldPreview(flowId, frameId, phase, kind, rootName, value!, settings, ref remaining);
+                }
+                catch
+                {
+                    // Value preview must never affect customer code. The root value was already captured.
+                }
+            }
+
+            private bool TryEnqueueCollectionPreview<T>(
+                ulong flowId,
+                ulong frameId,
+                FlowCapturePhase phase,
+                FlowValueKind kind,
+                string rootName,
+                T value,
+                FlowRecorderSettings settings,
+                ref int remaining)
+            {
+                if (remaining <= 0 || value is null)
+                {
+                    return false;
+                }
+
+                if (value is Array array)
+                {
+                    if (array.Rank != 1)
+                    {
+                        return true;
+                    }
+
+                    if (value is object[] objectArray)
+                    {
+                        TryEnqueueArrayPreview(flowId, frameId, phase, kind, rootName, objectArray, settings, ref remaining);
+                        return true;
+                    }
+
+                    if (value is string[] stringArray)
+                    {
+                        TryEnqueueArrayPreview(flowId, frameId, phase, kind, rootName, stringArray, settings, ref remaining);
+                        return true;
+                    }
+
+                    var count = Math.Min(array.Length, settings.MaxCollectionItems);
+                    for (var i = 0; i < count && remaining > 0; i++)
+                    {
+                        var item = array.GetValue(i);
+                        var itemName = GetCollectionItemName(rootName, i);
+                        if (!TryEnqueueChildValue(flowId, frameId, phase, kind, itemName.NameId, item, item?.GetType() ?? typeof(object), settings, ref remaining))
+                        {
+                            return true;
+                        }
+
+                        if (item is not null && remaining > 0 && ShouldPreviewObjectFields(item.GetType(), item))
+                        {
+                            TryEnqueueObjectFieldPreview(flowId, frameId, phase, kind, itemName.Name, item, settings, ref remaining);
+                        }
+                    }
+
+                    return true;
+                }
+
+                if (value is IList list)
+                {
+                    var count = Math.Min(list.Count, settings.MaxCollectionItems);
+                    for (var i = 0; i < count && remaining > 0; i++)
+                    {
+                        object? item;
+                        try
+                        {
+                            item = list[i];
+                        }
+                        catch
+                        {
+                            return true;
+                        }
+
+                        var itemName = GetCollectionItemName(rootName, i);
+                        if (!TryEnqueueChildValue(flowId, frameId, phase, kind, itemName.NameId, item, item?.GetType() ?? typeof(object), settings, ref remaining))
+                        {
+                            return true;
+                        }
+
+                        if (item is not null && remaining > 0 && ShouldPreviewObjectFields(item.GetType(), item))
+                        {
+                            TryEnqueueObjectFieldPreview(flowId, frameId, phase, kind, itemName.Name, item, settings, ref remaining);
+                        }
+                    }
+
+                    return true;
+                }
+
+                return value is IEnumerable;
+            }
+
+            private void TryEnqueueArrayPreview<TItem>(
+                ulong flowId,
+                ulong frameId,
+                FlowCapturePhase phase,
+                FlowValueKind kind,
+                string rootName,
+                TItem[] array,
+                FlowRecorderSettings settings,
+                ref int remaining)
+            {
+                var count = Math.Min(array.Length, settings.MaxCollectionItems);
+                for (var i = 0; i < count && remaining > 0; i++)
+                {
+                    var item = array[i];
+                    var itemName = GetCollectionItemName(rootName, i);
+                    var itemType = item?.GetType() ?? typeof(TItem);
+                    if (!TryEnqueueChildValue(flowId, frameId, phase, kind, itemName.NameId, item, itemType, settings, ref remaining))
+                    {
+                        return;
+                    }
+
+                    if (item is not null && remaining > 0 && ShouldPreviewObjectFields(itemType, item))
+                    {
+                        TryEnqueueObjectFieldPreview(flowId, frameId, phase, kind, itemName.Name, item, settings, ref remaining);
+                    }
+                }
+            }
+
+            private void TryEnqueueObjectFieldPreview(
+                ulong flowId,
+                ulong frameId,
+                FlowCapturePhase phase,
+                FlowValueKind kind,
+                string rootName,
+                object value,
+                FlowRecorderSettings settings,
+                ref int remaining)
+            {
+                if (remaining <= 0 || settings.MaxObjectFields <= 0)
+                {
+                    return;
+                }
+
+                var descriptors = GetFieldPreviewDescriptors(value.GetType());
+                var count = Math.Min(descriptors.Length, settings.MaxObjectFields);
+                for (var i = 0; i < count && remaining > 0; i++)
+                {
+                    var descriptor = descriptors[i];
+                    var fieldName = GetFieldPreviewName(rootName, descriptors, i);
+                    if (!descriptor.Writer(this, value, flowId, frameId, phase, kind, fieldName.NameId, settings, ref remaining))
+                    {
+                        return;
+                    }
+                }
+            }
+
+            private bool TryEnqueueTypedChildValue<TField>(
+                ulong flowId,
+                ulong frameId,
+                FlowCapturePhase phase,
+                FlowValueKind kind,
+                int nameId,
+                TField value,
+                FlowRecorderSettings settings,
+                ref int remaining)
+            {
+                if (remaining <= 0)
+                {
+                    return false;
+                }
+
+                var type = typeof(TField);
+                var typeId = GetTypeId(type);
+                var captured = CreateCapturedValue(flowId, frameId, phase, kind, nameId, typeId, value, type, settings);
+                if (!_valueQueue.TryEnqueue(captured))
+                {
+                    remaining = 0;
+                    return false;
+                }
+
+                remaining--;
+                return true;
+            }
+
+            private bool TryEnqueueChildValue(
+                ulong flowId,
+                ulong frameId,
+                FlowCapturePhase phase,
+                FlowValueKind kind,
+                int nameId,
+                object? value,
+                Type type,
+                FlowRecorderSettings settings,
+                ref int remaining)
+            {
+                if (remaining <= 0)
+                {
+                    return false;
+                }
+
+                var typeId = GetTypeId(type);
+                var captured = CreateCapturedValue<object?>(flowId, frameId, phase, kind, nameId, typeId, value, type, settings);
+                if (!_valueQueue.TryEnqueue(captured))
+                {
+                    remaining = 0;
+                    return false;
+                }
+
+                remaining--;
+                return true;
+            }
+
+            private FieldPreviewDescriptor[] CreateFieldPreviewDescriptors(Type type)
+            {
+                FieldInfo[] fields;
+                try
+                {
+                    fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                }
+                catch
+                {
+                    return Array.Empty<FieldPreviewDescriptor>();
+                }
+
+                if (fields.Length == 0)
+                {
+                    return Array.Empty<FieldPreviewDescriptor>();
+                }
+
+                var descriptors = new FieldPreviewDescriptor[fields.Length];
+                var count = 0;
+                for (var i = 0; i < fields.Length; i++)
+                {
+                    var field = fields[i];
+                    if (field.IsStatic || ShouldSkipField(field))
+                    {
+                        continue;
+                    }
+
+                    var writer = TryCreateFieldPreviewWriter(field);
+                    if (writer is null)
+                    {
+                        continue;
+                    }
+
+                    descriptors[count++] = new FieldPreviewDescriptor(NormalizeFieldName(field.Name), writer);
+                }
+
+                if (count != descriptors.Length)
+                {
+                    Array.Resize(ref descriptors, count);
+                }
+
+                return descriptors;
+            }
+
+            private FieldPreviewWriter? TryCreateFieldPreviewWriter(FieldInfo field)
+            {
+                try
+                {
+                    var declaringType = field.DeclaringType;
+                    if (declaringType is null || declaringType.ContainsGenericParameters || field.FieldType.ContainsGenericParameters)
+                    {
+                        return null;
+                    }
+
+                    var dynamicMethod = new DynamicMethod(
+                        "DatadogFlowRecorderFieldPreview",
+                        typeof(bool),
+                        new[] { typeof(FlowRecorderSink), typeof(object), typeof(ulong), typeof(ulong), typeof(FlowCapturePhase), typeof(FlowValueKind), typeof(int), typeof(FlowRecorderSettings), typeof(int).MakeByRefType() },
+                        typeof(FlowRecorderSink),
+                        skipVisibility: true);
+
+                    var il = dynamicMethod.GetILGenerator();
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldarg_2);
+                    il.Emit(OpCodes.Ldarg_3);
+                    il.Emit(OpCodes.Ldarg_S, 4);
+                    il.Emit(OpCodes.Ldarg_S, 5);
+                    il.Emit(OpCodes.Ldarg_S, 6);
+                    il.Emit(OpCodes.Ldarg_1);
+                    il.Emit(OpCodes.Castclass, declaringType);
+                    il.Emit(OpCodes.Ldfld, field);
+                    il.Emit(OpCodes.Ldarg_S, 7);
+                    il.Emit(OpCodes.Ldarg_S, 8);
+                    il.Emit(OpCodes.Call, GetTypedChildValueWriter(field.FieldType));
+                    il.Emit(OpCodes.Ret);
+                    return (FieldPreviewWriter)dynamicMethod.CreateDelegate(typeof(FieldPreviewWriter));
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            private CollectionItemNameCache GetFieldPreviewName(string rootName, FieldPreviewDescriptor[] descriptors, int index)
+            {
+                var key = new FieldPreviewNameKey(rootName, descriptors, index);
+                lock (_previewTypeLock)
+                {
+                    if (_previewFieldNames.TryGetValue(key, out var cached) && cached.Generation == _stringTableGeneration)
+                    {
+                        return cached;
+                    }
+
+                    var name = rootName + "." + descriptors[index].Name;
+                    cached = new CollectionItemNameCache(_stringTableGeneration, name, GetStringId(name));
+                    if (_previewFieldNames.Count < MaxPreviewNameCount)
+                    {
+                        _previewFieldNames[key] = cached;
+                    }
+
+                    return cached;
+                }
+            }
+
+            private FieldPreviewDescriptor[] GetFieldPreviewDescriptors(Type type)
+            {
+                FieldPreviewDescriptor[]? descriptors;
+                lock (_previewTypeLock)
+                {
+                    if (!_previewTypes.TryGetValue(type, out descriptors))
+                    {
+                        descriptors = CreateFieldPreviewDescriptors(type);
+                        if (_previewTypes.Count < MaxPreviewTypeCount)
+                        {
+                            _previewTypes[type] = descriptors;
+                        }
+                    }
+                }
+
+                return descriptors;
+            }
+
+            private bool ShouldSkipField(FieldInfo field)
+            {
+                var fieldType = field.FieldType;
+                if (fieldType.IsPointer || fieldType.IsByRef)
+                {
+                    return true;
+                }
+
+                var name = field.Name;
+                return name.Length > 0 && name[0] == '<' && !IsAutoPropertyBackingField(name);
+            }
+
+            private bool ShouldPreviewObjectFields<T>(Type staticType, T value)
+            {
+                if (value is null)
+                {
+                    return false;
+                }
+
+                var type = value.GetType();
+                return !type.IsPrimitive &&
+                       !type.IsEnum &&
+                       !type.IsValueType &&
+                       !type.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false) &&
+                       type != typeof(string) &&
+                       type != typeof(decimal) &&
+                       type != typeof(DateTime) &&
+                       type != typeof(DateTimeOffset) &&
+                       type != typeof(TimeSpan) &&
+                       !(value is IEnumerable);
+            }
+
+            private string NormalizeFieldName(string name)
+            {
+                if (IsAutoPropertyBackingField(name))
+                {
+                    var endIndex = name.IndexOf('>');
+                    if (endIndex > 1)
+                    {
+                        return name.Substring(1, endIndex - 1);
+                    }
+                }
+
+                return name;
+            }
+
+            private bool IsAutoPropertyBackingField(string name)
+            {
+                return name.StartsWith("<", StringComparison.Ordinal) &&
+                       name.EndsWith(">k__BackingField", StringComparison.Ordinal);
+            }
+
+            private CollectionItemNameCache GetCollectionItemName(string rootName, int index)
+            {
+                var key = new CollectionItemNameKey(rootName, index);
+                lock (_previewTypeLock)
+                {
+                    if (_previewItemNames.TryGetValue(key, out var cached) && cached.Generation == _stringTableGeneration)
+                    {
+                        return cached;
+                    }
+
+                    var name = rootName + "[" + index + "]";
+                    cached = new CollectionItemNameCache(_stringTableGeneration, name, GetStringId(name));
+                    if (_previewItemNames.Count < MaxPreviewNameCount)
+                    {
+                        _previewItemNames[key] = cached;
+                    }
+
+                    return cached;
+                }
+            }
+
             private int GetStringId(string? value)
             {
                 if (StringUtil.IsNullOrEmpty(value))
@@ -1834,6 +2344,94 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
                 while (Volatile.Read(ref _activeDrainFileWriters) != 0)
                 {
                     spinner.SpinOnce();
+                }
+            }
+
+            private readonly struct FieldPreviewDescriptor
+            {
+                public FieldPreviewDescriptor(string name, FieldPreviewWriter writer)
+                {
+                    Name = name;
+                    Writer = writer;
+                }
+
+                public string Name { get; }
+
+                public FieldPreviewWriter Writer { get; }
+            }
+
+            private readonly struct CollectionItemNameCache
+            {
+                public CollectionItemNameCache(int generation, string name, int nameId)
+                {
+                    Generation = generation;
+                    Name = name;
+                    NameId = nameId;
+                }
+
+                public int Generation { get; }
+
+                public string Name { get; }
+
+                public int NameId { get; }
+            }
+
+            private readonly struct FieldPreviewNameKey : IEquatable<FieldPreviewNameKey>
+            {
+                private readonly string _rootName;
+                private readonly FieldPreviewDescriptor[] _descriptors;
+                private readonly int _index;
+
+                public FieldPreviewNameKey(string rootName, FieldPreviewDescriptor[] descriptors, int index)
+                {
+                    _rootName = rootName;
+                    _descriptors = descriptors;
+                    _index = index;
+                }
+
+                public bool Equals(FieldPreviewNameKey other)
+                {
+                    return _index == other._index &&
+                           ReferenceEquals(_descriptors, other._descriptors) &&
+                           string.Equals(_rootName, other._rootName, StringComparison.Ordinal);
+                }
+
+                public override bool Equals(object? obj)
+                {
+                    return obj is FieldPreviewNameKey other && Equals(other);
+                }
+
+                public override int GetHashCode()
+                {
+                    return (((RuntimeHelpers.GetHashCode(_descriptors) * 397) ^ _index) * 397) ^ StringComparer.Ordinal.GetHashCode(_rootName);
+                }
+            }
+
+            private readonly struct CollectionItemNameKey : IEquatable<CollectionItemNameKey>
+            {
+                private readonly string _rootName;
+                private readonly int _index;
+
+                public CollectionItemNameKey(string rootName, int index)
+                {
+                    _rootName = rootName;
+                    _index = index;
+                }
+
+                public bool Equals(CollectionItemNameKey other)
+                {
+                    return _index == other._index &&
+                           string.Equals(_rootName, other._rootName, StringComparison.Ordinal);
+                }
+
+                public override bool Equals(object? obj)
+                {
+                    return obj is CollectionItemNameKey other && Equals(other);
+                }
+
+                public override int GetHashCode()
+                {
+                    return (_index * 397) ^ StringComparer.Ordinal.GetHashCode(_rootName);
                 }
             }
 
@@ -2102,6 +2700,9 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
                 int valueBufferSize,
                 int maxStringLength,
                 int maxCollectionItems,
+                FlowValuePreviewMode valuePreviewMode,
+                int maxObjectFields,
+                int maxChildValuesPerValue,
                 int maxStackLength,
                 int maxEventsPerOperation,
                 int maxDepth,
@@ -2119,6 +2720,9 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
                     valueBufferSize,
                     maxStringLength,
                     maxCollectionItems,
+                    valuePreviewMode,
+                    maxObjectFields,
+                    maxChildValuesPerValue,
                     maxStackLength,
                     maxEventsPerOperation,
                     maxDepth,

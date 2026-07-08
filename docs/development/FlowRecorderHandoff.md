@@ -78,10 +78,11 @@ Benchmark output:
 - Inactive gate: callbacks first check whether any operation is active and return before enqueue/trace work when no operation is active, unless broad stress mode is explicitly enabled.
 - Operation stop/drain semantics: disposing the operation clears the active gate before capture is flushed.
 - Preallocated lock-free append buffers for events, values, and exception details; flush waits for reserved slots to publish before draining.
+- Optional shallow value preview (`DD_INTERNAL_DEBUGGER_FLOW_RECORDER_VALUE_PREVIEW=shallow`) that emits bounded flat child records for object fields and safe collection items while keeping the `.dflp` value record fixed-size.
 - Conservative native method filters for generated/helper/framework/Datadog/low-value methods.
 - Operation budgets for max events, max depth, max duration, and max unique methods.
 - Explicit `Truncated` and `Suppressed` marker events.
-- Viewer sections for operation context, capture limits, async logical operations, spans, values, exceptions, timeline, and call flow.
+- Viewer sections for operation context, capture limits, async logical operations, spans, values, exceptions, timeline, and call flow. Expanded shallow-preview values are reconstructed into a visual hierarchy by the viewer after reading flat `.dflp` value records.
 - Sample logical/traced root modes.
 - Focused managed and native tests.
 
@@ -124,18 +125,21 @@ The local Agent helper reads `DD_API_KEY`, `DD_SITE`, and port settings from `C:
 
 Validate backend ingestion with Datadog MCP after the viewer prints trace ids: load `datadog/traces`, then call `get_datadog_trace` for each trace id with `only_service_entry_spans=true`. The response should include a `trace_deep_link_url`; the `exception` trace should show `status: error`, `error.*` metadata, and usually Error Tracking issue metadata. This is preferred over local API scripts when `DD_APPLICATION_KEY` is not available.
 
-Latest known validation from the operation-lifecycle implementation pass:
+Latest known validation from the shallow value preview implementation pass:
 
-- Managed FlowRecorder tests: 34 passed.
-- Native LiveDebuggerPoc tests: 6 passed.
-- `BuildTracerHome`: passed.
-- Small benchmark matrix: not rerun after lifecycle changes.
+- Managed FlowRecorder tests: 41 passed.
+- Viewer sample build: passed.
+- Console benchmark sample build: passed.
+- Small preview benchmark matrix: latest 2,000 iterations / 200 warmup run at `artifacts\tmp\live-debugger-poc\benchmark-values-preview-idcache\summary.csv`. Bounded name/id caching removes some repeated string-table work, but shallow preview still adds substantial allocation/latency from extra child records and reflection/boxing. `MAX_COLLECTION_ITEMS` now defaults to `20`, but shallow preview stays opt-in; do not enable preview by default without a deeper hot-path redesign and larger repeated benchmark runs.
+- Native LiveDebuggerPoc tests: not rerun in this pass.
+- `BuildTracerHome`: not rerun in this pass.
 
 ## Important Assumptions And Constraints
 
 - Do not use `AsyncLocal` for per-frame state. The operation gate may use a coarse operation context; keep per-frame context thread-static or state-machine-local.
 - Do not reuse Exception Replay deep snapshot serialization on the recorder hot path.
 - Keep value capture shallow, bounded, and opt-in.
+- Prefer hot-path capture/write efficiency over viewer convenience. Keep hierarchy reconstruction in the viewer unless binary metadata is effectively free.
 - Keep broad instrument-all as a benchmark/stress path, not the product promise.
 - Operation-scoped inactive overhead matters more than broad active-capture throughput.
 - Viewer explanations are part of the product contract. If capture is filtered, suppressed, or truncated, the UI must say so.

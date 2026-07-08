@@ -80,6 +80,21 @@ internal static partial class ConfigurationKeys
     public const string InternalDebuggerFlowRecorderMaxCollectionItems = "DD_INTERNAL_DEBUGGER_FLOW_RECORDER_MAX_COLLECTION_ITEMS";
 
     /// <summary>
+    /// Internal POC value preview mode for the live debugger flow recorder.
+    /// </summary>
+    public const string InternalDebuggerFlowRecorderValuePreview = "DD_INTERNAL_DEBUGGER_FLOW_RECORDER_VALUE_PREVIEW";
+
+    /// <summary>
+    /// Internal POC maximum object fields previewed by the flow recorder.
+    /// </summary>
+    public const string InternalDebuggerFlowRecorderMaxObjectFields = "DD_INTERNAL_DEBUGGER_FLOW_RECORDER_MAX_OBJECT_FIELDS";
+
+    /// <summary>
+    /// Internal POC maximum child value records captured for one root value by the flow recorder.
+    /// </summary>
+    public const string InternalDebuggerFlowRecorderMaxChildValuesPerValue = "DD_INTERNAL_DEBUGGER_FLOW_RECORDER_MAX_CHILD_VALUES_PER_VALUE";
+
+    /// <summary>
     /// Internal POC maximum stack trace length captured by the flow recorder.
     /// </summary>
     public const string InternalDebuggerFlowRecorderMaxStackLength = "DD_INTERNAL_DEBUGGER_FLOW_RECORDER_MAX_STACK_LENGTH";

@@ -25,8 +25,8 @@ private:
                                              FunctionLocalSignature& localSignature);
     static HRESULT ModifyLocalSigForFlowRecorder(ModuleMetadata& moduleMetadata, DebuggerTokens* debuggerTokens,
                                                  ILRewriter& rewriter, TypeSignature* methodReturnValue,
-                                                 bool isVoid, ULONG* returnValueIndex, ULONG* exceptionIndex,
-                                                 ULONG* flowRecorderStateIndex);
+                                                 bool isVoid, bool hasAsyncReturnValue, ULONG* returnValueIndex,
+                                                 ULONG* exceptionIndex, ULONG* flowRecorderStateIndex);
     HRESULT LoadArgument(bool isStatic, const ILRewriterWrapper& rewriterWrapper,
                                 int argumentIndex, const TypeSignature& argument) const;
     HRESULT LoadLocal(const ILRewriterWrapper& rewriterWrapper, int localIndex,
@@ -91,6 +91,10 @@ private:
                                    const std::vector<TypeSignature>& methodArguments, int numArgs,
                                    const std::vector<TypeSignature>& methodLocals, int numLocals,
                                    TypeSignature* methodReturnType, std::vector<EHClause>& newClauses) const;
+    HRESULT WriteFlowRecorderAsyncReturnValue(ModuleMetadata& moduleMetadata, DebuggerTokens* debuggerTokens,
+                                              TypeSignature* methodReturnType, ILRewriter& rewriter,
+                                              ILRewriterWrapper& rewriterWrapper, ULONG returnValueIndex,
+                                              ULONG flowRecorderStateIndex) const;
 
     HRESULT ApplyMethodSpanProbe(ModuleID module_id, ModuleMetadata& module_metadata, FunctionInfo* caller,
                             DebuggerTokens* debuggerTokens, mdToken function_token, TypeSignature retFuncArg,

@@ -689,6 +689,138 @@ namespace Datadog.Trace.Tests.Debugger.LiveDebuggerPoc
         }
 
         [Fact]
+        public void LogArg_WithShallowPreview_RecordsObjectFields()
+        {
+            FlowRecorder.ConfigureForTesting(enabled: true, valueCaptureMode: FlowValueCaptureMode.Entry, valuePreviewMode: FlowValuePreviewMode.Shallow, maxObjectFields: 3);
+
+            var state = FlowRecorder.Enter(methodMetadataIndex: 42);
+            var value = new PreviewOrder(123, "ready", new PreviewCustomer("Ada"));
+            FlowRecorder.LogArg(ref value, index: 0, ref state);
+            FlowRecorder.Exit(ref state);
+
+            var file = FlowRecorder.DrainFileForTesting();
+            file.Values.Should().HaveCount(4);
+            GetValue(file, "arg0").Tag.Should().Be(FlowValueTag.TypeSummary);
+            GetValue(file, "arg0.Id").NumberValue.Should().Be(123);
+            GetStringValue(file, "arg0.Status").Should().Be("ready");
+            GetValue(file, "arg0.Customer").Tag.Should().Be(FlowValueTag.TypeSummary);
+        }
+
+        [Fact]
+        public void LogArg_WithShallowPreview_RecordsPrimitiveFieldsThroughCachedAccessors()
+        {
+            FlowRecorder.ConfigureForTesting(enabled: true, valueCaptureMode: FlowValueCaptureMode.Entry, valuePreviewMode: FlowValuePreviewMode.Shallow, maxObjectFields: 4);
+
+            var state = FlowRecorder.Enter(methodMetadataIndex: 42);
+            var value = new PreviewMetrics(enabled: true, count: 123, duration: 45.5);
+            FlowRecorder.LogArg(ref value, index: 0, ref state);
+            FlowRecorder.Exit(ref state);
+
+            var file = FlowRecorder.DrainFileForTesting();
+            GetValue(file, "arg0").Tag.Should().Be(FlowValueTag.TypeSummary);
+            GetValue(file, "arg0.Enabled").NumberValue.Should().Be(1);
+            GetValue(file, "arg0.Count").NumberValue.Should().Be(123);
+            GetStringValue(file, "arg0.Duration").Should().Be("45.5");
+        }
+
+        [Fact]
+        public void LogArg_WithShallowPreview_RecordsArrayItemsAndItemFields()
+        {
+            FlowRecorder.ConfigureForTesting(enabled: true, valueCaptureMode: FlowValueCaptureMode.Entry, valuePreviewMode: FlowValuePreviewMode.Shallow, maxCollectionItems: 2, maxObjectFields: 1, maxChildValuesPerValue: 6);
+
+            var state = FlowRecorder.Enter(methodMetadataIndex: 42);
+            var value = new[] { new PreviewOrder(1, "one", new PreviewCustomer("Ada")), new PreviewOrder(2, "two", new PreviewCustomer("Grace")), new PreviewOrder(3, "three", new PreviewCustomer("Linus")) };
+            FlowRecorder.LogArg(ref value, index: 0, ref state);
+            FlowRecorder.Exit(ref state);
+
+            var file = FlowRecorder.DrainFileForTesting();
+            GetValue(file, "arg0").Tag.Should().Be(FlowValueTag.CollectionSummary);
+            GetValue(file, "arg0").ItemCount.Should().Be(3);
+            GetValue(file, "arg0").CapturedItemCount.Should().Be(2);
+            GetValue(file, "arg0[0]").Tag.Should().Be(FlowValueTag.TypeSummary);
+            GetValue(file, "arg0[0].Id").NumberValue.Should().Be(1);
+            GetValue(file, "arg0[1]").Tag.Should().Be(FlowValueTag.TypeSummary);
+            GetValue(file, "arg0[1].Id").NumberValue.Should().Be(2);
+            file.Values.Should().HaveCount(5);
+        }
+
+        [Fact]
+        public void LogArg_WithShallowPreview_RespectsChildValueCap()
+        {
+            FlowRecorder.ConfigureForTesting(enabled: true, valueCaptureMode: FlowValueCaptureMode.Entry, valuePreviewMode: FlowValuePreviewMode.Shallow, maxObjectFields: 4, maxChildValuesPerValue: 2);
+
+            var state = FlowRecorder.Enter(methodMetadataIndex: 42);
+            var value = new PreviewOrder(123, "ready", new PreviewCustomer("Ada"));
+            FlowRecorder.LogArg(ref value, index: 0, ref state);
+            FlowRecorder.Exit(ref state);
+
+            var file = FlowRecorder.DrainFileForTesting();
+            file.Values.Should().HaveCount(3);
+            GetValue(file, "arg0.Id").NumberValue.Should().Be(123);
+            GetStringValue(file, "arg0.Status").Should().Be("ready");
+            file.Strings.Should().NotContain("arg0.Customer");
+        }
+
+        [Fact]
+        public void LogArg_WithShallowPreview_DoesNotEnumerateArbitraryEnumerable()
+        {
+            FlowRecorder.ConfigureForTesting(enabled: true, valueCaptureMode: FlowValueCaptureMode.Entry, valuePreviewMode: FlowValuePreviewMode.Shallow, maxCollectionItems: 2);
+
+            var state = FlowRecorder.Enter(methodMetadataIndex: 42);
+            var value = new ThrowingEnumerable();
+            FlowRecorder.LogArg(ref value, index: 0, ref state);
+            FlowRecorder.Exit(ref state);
+
+            var file = FlowRecorder.DrainFileForTesting();
+            file.Values.Should().ContainSingle();
+            file.Values[0].Tag.Should().Be(FlowValueTag.CollectionSummary);
+            file.Values[0].ItemCount.Should().Be(-1);
+        }
+
+        [Fact]
+        public void LogLocal_WithShallowPreview_DoesNotPreviewValueTypeFields()
+        {
+            FlowRecorder.ConfigureForTesting(enabled: true, valueCaptureMode: FlowValueCaptureMode.Exit, valuePreviewMode: FlowValuePreviewMode.Shallow, maxObjectFields: 4);
+
+            var values = new System.Collections.Generic.List<PreviewOrder> { new(1, "ready", new PreviewCustomer("Ada")) };
+            var enumerator = values.GetEnumerator();
+            var state = FlowRecorder.Enter(methodMetadataIndex: 42);
+            FlowRecorder.LogLocal(ref enumerator, index: 0, ref state);
+            FlowRecorder.Exit(ref state);
+
+            var file = FlowRecorder.DrainFileForTesting();
+            file.Values.Should().ContainSingle();
+            GetValue(file, "local0").Tag.Should().Be(FlowValueTag.TypeSummary);
+            file.Strings.Should().NotContain("local0._list");
+            file.Strings.Should().NotContain("local0._current");
+        }
+
+        [Fact]
+        public void BinaryFormat_RoundTripsExpandedValueRecords()
+        {
+            var file = new FlowEventFile(
+                Array.Empty<FlowEvent>(),
+                Array.Empty<FlowMethodMetadata>(),
+                new[] { "arg0", "arg0.Id" },
+                new[] { typeof(PreviewOrder).FullName!, typeof(int).FullName! },
+                Array.Empty<FlowExceptionDetails>(),
+                new[]
+                {
+                    new FlowCapturedValue(1, 2, FlowCapturePhase.Entry, FlowValueKind.Argument, nameId: 0, typeId: 0, FlowValueTag.TypeSummary, FlowNotCapturedReason.None, numberValue: 0, stringId: -1, itemCount: -1, capturedItemCount: -1),
+                    new FlowCapturedValue(1, 2, FlowCapturePhase.Entry, FlowValueKind.Argument, nameId: 1, typeId: 1, FlowValueTag.Int64, FlowNotCapturedReason.None, numberValue: 123, stringId: -1, itemCount: -1, capturedItemCount: -1)
+                });
+
+            using var stream = new MemoryStream();
+            FlowEventBinaryFormat.Write(stream, file);
+            stream.Position = 0;
+
+            var roundTripped = FlowEventBinaryFormat.Read(stream);
+            roundTripped.Values.Should().BeEquivalentTo(file.Values);
+            roundTripped.Strings.Should().BeEquivalentTo(file.Strings);
+            roundTripped.Types.Should().BeEquivalentTo(file.Types);
+        }
+
+        [Fact]
         public void DrainFile_RotatesStringAndTypeTablesWithCapturedValues()
         {
             FlowRecorder.ConfigureForTesting(enabled: true, valueCaptureMode: FlowValueCaptureMode.Entry);
@@ -730,6 +862,19 @@ namespace Datadog.Trace.Tests.Debugger.LiveDebuggerPoc
             FlowRecorder.DrainFileForTesting().Values.Should().BeEmpty();
         }
 
+        private static FlowCapturedValue GetValue(FlowEventFile file, string name)
+        {
+            var value = file.Values.Single(value => file.Strings[value.NameId] == name);
+            return value;
+        }
+
+        private static string GetStringValue(FlowEventFile file, string name)
+        {
+            var value = GetValue(file, name);
+            value.Tag.Should().Be(FlowValueTag.String);
+            return file.Strings[value.StringId];
+        }
+
         private static void RecordChildAfterBarrier(int methodMetadataIndex, Barrier barrier)
         {
             barrier.SignalAndWait(TimeSpan.FromSeconds(5));
@@ -749,6 +894,56 @@ namespace Datadog.Trace.Tests.Debugger.LiveDebuggerPoc
             catch
             {
                 // Best-effort cleanup for temp files.
+            }
+        }
+
+        private sealed class PreviewOrder
+        {
+            public PreviewOrder(int id, string status, PreviewCustomer customer)
+            {
+                Id = id;
+                Status = status;
+                Customer = customer;
+            }
+
+            public int Id { get; }
+
+            public string Status { get; }
+
+            public PreviewCustomer Customer { get; }
+        }
+
+        private sealed class PreviewCustomer
+        {
+            public PreviewCustomer(string name)
+            {
+                Name = name;
+            }
+
+            public string Name { get; }
+        }
+
+        private sealed class PreviewMetrics
+        {
+            public PreviewMetrics(bool enabled, int count, double duration)
+            {
+                Enabled = enabled;
+                Count = count;
+                Duration = duration;
+            }
+
+            public bool Enabled { get; }
+
+            public int Count { get; }
+
+            public double Duration { get; }
+        }
+
+        private sealed class ThrowingEnumerable : System.Collections.IEnumerable
+        {
+            public System.Collections.IEnumerator GetEnumerator()
+            {
+                throw new InvalidOperationException("should not enumerate");
             }
         }
     }

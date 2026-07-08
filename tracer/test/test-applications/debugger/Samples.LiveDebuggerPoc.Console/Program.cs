@@ -101,9 +101,9 @@ internal static class Program
             await Task.Delay(probeInstallDelayMs);
         }
 
-        using (StartBenchmarkRecorderRoot("benchmark-warmup"))
+        for (var i = 0; i < warmup; i++)
         {
-            for (var i = 0; i < warmup; i++)
+            using (StartBenchmarkRecorderRoot("warmup"))
             {
                 try
                 {
@@ -129,9 +129,9 @@ internal static class Program
         var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
         var start = Stopwatch.GetTimestamp();
 
-        using (StartBenchmarkRecorderRoot("benchmark-measured"))
+        for (var i = 0; i < iterations; i++)
         {
-            for (var i = 0; i < iterations; i++)
+            using (StartBenchmarkRecorderRoot("measured"))
             {
                 var iterationStart = Stopwatch.GetTimestamp();
                 try
@@ -218,7 +218,13 @@ internal static class Program
                 "sku-" + (iteration % 11),
                 "sku-" + (iteration % 13)
             };
-            return new DemoCart("cart-" + iteration, "customer-" + (iteration % 100), items);
+            var lineItems = new List<DemoLineItem>(3)
+            {
+                new(items[0], 1, 12.50m),
+                new(items[1], 1, 13.50m),
+                new(items[2], 1, 14.50m)
+            };
+            return new DemoCart("cart-" + iteration, "customer-" + (iteration % 100), items, lineItems);
         }
         finally
         {
@@ -385,7 +391,8 @@ internal static class Program
         Exception? exception = null;
         try
         {
-            ValidateCart(recordManually);
+            var cart = BuildDemoCart(recordManually);
+            ValidateCart(cart, recordManually);
             await PriceCartAsync(delayMilliseconds, recordManually);
             ChargePayment(throwAtPayment, recordManually);
         }
@@ -400,12 +407,16 @@ internal static class Program
         }
     }
 
-    private static void ValidateCart(bool recordManually)
+    private static void ValidateCart(DemoCart cart, bool recordManually)
     {
         var state = EnterManual(recordManually, methodMetadataIndex: 101);
         try
         {
             _ = DateTime.UtcNow.DayOfWeek;
+            if (cart.LineItems.Count == 0)
+            {
+                throw new InvalidOperationException("The cart must have at least one item.");
+            }
         }
         finally
         {
@@ -491,7 +502,18 @@ internal static class Program
         try
         {
             var items = new List<string> { "debugger-hoodie", "trace-stickers", "async-map-poster" };
-            return new DemoCart("cart-live-debugger-poc", "customer-42", items);
+            var lineItems = new List<DemoLineItem>
+            {
+                new("debugger-hoodie", 1, 39.90m),
+                new("trace-stickers", 4, 2.50m),
+                new("async-map-poster", 1, 12.00m),
+                new("profiler-mug", 2, 9.95m),
+                new("runtime-pins", 5, 1.25m),
+                new("calltarget-socks", 1, 7.75m),
+                new("snapshot-notebook", 3, 4.50m),
+                new("flow-recorder-tote", 1, 14.25m)
+            };
+            return new DemoCart("cart-live-debugger-poc", "customer-42", items, lineItems);
         }
         finally
         {
@@ -522,7 +544,7 @@ internal static class Program
         var state = EnterManual(recordManually, methodMetadataIndex: 113);
         try
         {
-            if (cart.Items.Count == 0)
+            if (cart.LineItems.Count == 0)
             {
                 throw new InvalidOperationException("The presentation cart must have at least one item.");
             }
@@ -589,7 +611,14 @@ internal static class Program
         var state = EnterManual(recordManually, methodMetadataIndex: 117);
         try
         {
-            return 39.90m + (cart.Items.Count * 7.50m);
+            var subtotal = 0m;
+            for (var i = 0; i < cart.LineItems.Count; i++)
+            {
+                var item = cart.LineItems[i];
+                subtotal += item.UnitPrice * item.Quantity;
+            }
+
+            return subtotal;
         }
         finally
         {
@@ -862,7 +891,9 @@ internal static class Program
         return value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
     }
 
-    private sealed record DemoCart(string CartId, string CustomerId, List<string> Items);
+    private sealed record DemoCart(string CartId, string CustomerId, List<string> Items, List<DemoLineItem> LineItems);
+
+    private sealed record DemoLineItem(string Sku, int Quantity, decimal UnitPrice);
 
     private readonly record struct CustomerEligibility(string LoyaltyTier, bool ExpressShipping);
 

@@ -16,7 +16,9 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
         internal const int DefaultBufferSize = 100_000;
         internal const int DefaultValueBufferSize = 10_000;
         internal const int DefaultMaxStringLength = 256;
-        internal const int DefaultMaxCollectionItems = 3;
+        internal const int DefaultMaxCollectionItems = 20;
+        internal const int DefaultMaxObjectFields = 4;
+        internal const int DefaultMaxChildValuesPerValue = 16;
         internal const int DefaultMaxStackLength = 2_048;
         internal const int DefaultMaxEventsPerOperation = 25_000;
         internal const int DefaultMaxDepth = 128;
@@ -34,6 +36,9 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
             int valueBufferSize = DefaultValueBufferSize,
             int maxStringLength = DefaultMaxStringLength,
             int maxCollectionItems = DefaultMaxCollectionItems,
+            FlowValuePreviewMode valuePreviewMode = FlowValuePreviewMode.Off,
+            int maxObjectFields = DefaultMaxObjectFields,
+            int maxChildValuesPerValue = DefaultMaxChildValuesPerValue,
             int maxStackLength = DefaultMaxStackLength,
             int maxEventsPerOperation = DefaultMaxEventsPerOperation,
             int maxDepth = DefaultMaxDepth,
@@ -57,6 +62,9 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
             ValueBufferSize = valueBufferSize;
             MaxStringLength = maxStringLength;
             MaxCollectionItems = maxCollectionItems;
+            ValuePreviewMode = valuePreviewMode;
+            MaxObjectFields = maxObjectFields;
+            MaxChildValuesPerValue = maxChildValuesPerValue;
             MaxStackLength = maxStackLength;
             MaxEventsPerOperation = maxEventsPerOperation;
             MaxDepth = maxDepth;
@@ -90,6 +98,12 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
         public int MaxStringLength { get; }
 
         public int MaxCollectionItems { get; }
+
+        public FlowValuePreviewMode ValuePreviewMode { get; }
+
+        public int MaxObjectFields { get; }
+
+        public int MaxChildValuesPerValue { get; }
 
         public int MaxStackLength { get; }
 
@@ -127,6 +141,9 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
             var valueBufferSizeValue = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.InternalDebuggerFlowRecorderValueBufferSize);
             var maxStringLengthValue = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.InternalDebuggerFlowRecorderMaxStringLength);
             var maxCollectionItemsValue = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.InternalDebuggerFlowRecorderMaxCollectionItems);
+            var valuePreviewValue = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.InternalDebuggerFlowRecorderValuePreview);
+            var maxObjectFieldsValue = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.InternalDebuggerFlowRecorderMaxObjectFields);
+            var maxChildValuesPerValueValue = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.InternalDebuggerFlowRecorderMaxChildValuesPerValue);
             var maxStackLengthValue = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.InternalDebuggerFlowRecorderMaxStackLength);
             var maxEventsPerOperationValue = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.InternalDebuggerFlowRecorderMaxEventsPerOperation);
             var maxDepthValue = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.InternalDebuggerFlowRecorderMaxDepth);
@@ -151,6 +168,9 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
                 ParsePositiveInt(valueBufferSizeValue, DefaultValueBufferSize),
                 ParsePositiveInt(maxStringLengthValue, DefaultMaxStringLength),
                 ParsePositiveInt(maxCollectionItemsValue, DefaultMaxCollectionItems),
+                ParseValuePreviewMode(valuePreviewValue),
+                ParsePositiveInt(maxObjectFieldsValue, DefaultMaxObjectFields),
+                ParsePositiveInt(maxChildValuesPerValueValue, DefaultMaxChildValuesPerValue),
                 ParsePositiveInt(maxStackLengthValue, DefaultMaxStackLength),
                 ParsePositiveInt(maxEventsPerOperationValue, DefaultMaxEventsPerOperation),
                 ParsePositiveInt(maxDepthValue, DefaultMaxDepth),
@@ -205,6 +225,21 @@ namespace Datadog.Trace.Debugger.LiveDebuggerPoc
             }
 
             return FlowValueCaptureMode.Off;
+        }
+
+        private static FlowValuePreviewMode ParseValuePreviewMode(string? value)
+        {
+            if (StringUtil.IsNullOrEmpty(value))
+            {
+                return FlowValuePreviewMode.Off;
+            }
+
+            if (string.Equals(value, "shallow", StringComparison.OrdinalIgnoreCase))
+            {
+                return FlowValuePreviewMode.Shallow;
+            }
+
+            return FlowValuePreviewMode.Off;
         }
     }
 }

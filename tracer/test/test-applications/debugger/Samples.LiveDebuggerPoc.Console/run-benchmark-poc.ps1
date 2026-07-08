@@ -4,6 +4,7 @@ param(
     [int]$ProbeInstallDelayMs = 5000,
     [string]$Configuration = "Release",
     [string]$OutputDirectory = "",
+    [string]$AgentUrl = "http://127.0.0.1:9126",
     [switch]$SkipBuild,
     [switch]$IncludeDiagnosticVariants,
     [switch]$TraceDebugLogs
@@ -83,6 +84,10 @@ function Clear-PocEnv {
     $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_OUTPUT_PATH = $null
     $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_CAPTURE_VALUES = $null
     $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_CAPTURE_VALUE_METHODS = $null
+    $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_VALUE_PREVIEW = $null
+    $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_MAX_OBJECT_FIELDS = $null
+    $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_MAX_CHILD_VALUES_PER_VALUE = $null
+    $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_MAX_COLLECTION_ITEMS = $null
     $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_EXCLUDE_METHODS = $null
     $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_BUFFER_SIZE = $null
     $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_VALUE_BUFFER_SIZE = $null
@@ -96,7 +101,7 @@ function Clear-PocEnv {
 
 function Set-CommonEnv {
     $env:DD_TRACE_ENABLED = "true"
-    $env:DD_TRACE_AGENT_URL = "http://127.0.0.1:9"
+    $env:DD_TRACE_AGENT_URL = $AgentUrl
     $env:DD_SERVICE = "live-debugger-flow-recorder-poc-benchmark"
     $env:DD_ENV = "local-poc"
     $env:DD_VERSION = "flow-recorder-poc"
@@ -147,6 +152,10 @@ function Run-Variant {
         [bool]$DynamicInstrumentation,
         [bool]$Recorder,
         [string]$CaptureMode = "off",
+        [string]$ValuePreview = "off",
+        [int]$MaxCollectionItems = 3,
+        [int]$MaxObjectFields = 4,
+        [int]$MaxChildValuesPerValue = 16,
         [bool]$ProbeFile = $false,
         [bool]$SkipEventEnqueue = $false,
         [string]$BaselineName = "tracer-only"
@@ -184,6 +193,12 @@ function Run-Variant {
     if ($CaptureMode -ne "off") {
         $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_CAPTURE_VALUES = $CaptureMode
         $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_CAPTURE_VALUE_METHODS = Get-BenchmarkValueMethodFilter
+        $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_MAX_COLLECTION_ITEMS = $MaxCollectionItems.ToString()
+        if ($ValuePreview -ne "off") {
+            $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_VALUE_PREVIEW = $ValuePreview
+            $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_MAX_OBJECT_FIELDS = $MaxObjectFields.ToString()
+            $env:DD_INTERNAL_DEBUGGER_FLOW_RECORDER_MAX_CHILD_VALUES_PER_VALUE = $MaxChildValuesPerValue.ToString()
+        }
     }
 
     if ($SkipEventEnqueue) {
@@ -242,15 +257,17 @@ function Run-Variant {
 New-BenchmarkMethodProbeFile -Path $probeFilePath
 
 $variants = @(
-    @{ Name = "baseline-no-profiler"; Profiler = $false; DynamicInstrumentation = $false; Recorder = $false; CaptureMode = "off"; ProbeFile = $false; SkipEventEnqueue = $false; BaselineName = "baseline-no-profiler" },
-    @{ Name = "tracer-only"; Profiler = $true; DynamicInstrumentation = $false; Recorder = $false; CaptureMode = "off"; ProbeFile = $false; SkipEventEnqueue = $false; BaselineName = "tracer-only" },
-    @{ Name = "di-method-probes-values"; Profiler = $true; DynamicInstrumentation = $true; Recorder = $false; CaptureMode = "off"; ProbeFile = $true; SkipEventEnqueue = $false; BaselineName = "tracer-only" },
-    @{ Name = "flow-recorder-values"; Profiler = $true; DynamicInstrumentation = $true; Recorder = $true; CaptureMode = "all"; ProbeFile = $false; SkipEventEnqueue = $false; BaselineName = "tracer-only" }
+    @{ Name = "baseline-no-profiler"; Profiler = $false; DynamicInstrumentation = $false; Recorder = $false; CaptureMode = "off"; ValuePreview = "off"; MaxCollectionItems = 3; MaxObjectFields = 4; MaxChildValuesPerValue = 16; ProbeFile = $false; SkipEventEnqueue = $false; BaselineName = "baseline-no-profiler" },
+    @{ Name = "tracer-only"; Profiler = $true; DynamicInstrumentation = $false; Recorder = $false; CaptureMode = "off"; ValuePreview = "off"; MaxCollectionItems = 3; MaxObjectFields = 4; MaxChildValuesPerValue = 16; ProbeFile = $false; SkipEventEnqueue = $false; BaselineName = "tracer-only" },
+    @{ Name = "di-method-probes-values"; Profiler = $true; DynamicInstrumentation = $true; Recorder = $false; CaptureMode = "off"; ValuePreview = "off"; MaxCollectionItems = 3; MaxObjectFields = 4; MaxChildValuesPerValue = 16; ProbeFile = $true; SkipEventEnqueue = $false; BaselineName = "tracer-only" },
+    @{ Name = "flow-recorder-values"; Profiler = $true; DynamicInstrumentation = $true; Recorder = $true; CaptureMode = "all"; ValuePreview = "off"; MaxCollectionItems = 3; MaxObjectFields = 4; MaxChildValuesPerValue = 16; ProbeFile = $false; SkipEventEnqueue = $false; BaselineName = "tracer-only" },
+    @{ Name = "flow-recorder-values-expanded"; Profiler = $true; DynamicInstrumentation = $true; Recorder = $true; CaptureMode = "all"; ValuePreview = "shallow"; MaxCollectionItems = 20; MaxObjectFields = 4; MaxChildValuesPerValue = 64; ProbeFile = $false; SkipEventEnqueue = $false; BaselineName = "tracer-only" }
 )
 
 if ($IncludeDiagnosticVariants) {
     $variants += @(
-        @{ Name = "flow-recorder-values-skip-enqueue"; Profiler = $true; DynamicInstrumentation = $true; Recorder = $true; CaptureMode = "all"; ProbeFile = $false; SkipEventEnqueue = $true; BaselineName = "tracer-only" }
+        @{ Name = "flow-recorder-values-skip-enqueue"; Profiler = $true; DynamicInstrumentation = $true; Recorder = $true; CaptureMode = "all"; ValuePreview = "off"; MaxCollectionItems = 3; ProbeFile = $false; SkipEventEnqueue = $true; BaselineName = "tracer-only" },
+        @{ Name = "flow-recorder-values-expanded-skip-enqueue"; Profiler = $true; DynamicInstrumentation = $true; Recorder = $true; CaptureMode = "all"; ValuePreview = "shallow"; MaxCollectionItems = 20; MaxObjectFields = 4; MaxChildValuesPerValue = 64; ProbeFile = $false; SkipEventEnqueue = $true; BaselineName = "tracer-only" }
     )
 }
 

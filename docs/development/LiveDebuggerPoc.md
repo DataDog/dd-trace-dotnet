@@ -228,7 +228,8 @@ Native recorder-only instrumentation can optionally capture argument, local, and
   - by-ref-like and pinned values are skipped;
   - value callbacks live in the same catch-swallowing protected blocks as the recorder enter/exit.
 - Value capture is **opt-in per method** via `DD_INTERNAL_DEBUGGER_FLOW_RECORDER_CAPTURE_VALUE_METHODS` (comma/semicolon substring filter on `Type.Method`) and gated by `DD_INTERNAL_DEBUGGER_FLOW_RECORDER_CAPTURE_VALUES` mode (`off|exceptions|entry|exit|all`).
-- Captured values are compact numeric records (`FlowCapturedValue`) with interned string/type tables. Common non-nullable primitive value types use `typeof(T) == typeof(...)` fast paths with `Unsafe.As` to avoid boxing; strings and collection counts use bounded summary paths; complex objects currently degrade to a type-name summary. Strict caps: `MAX_STRING_LENGTH` (256), `MAX_COLLECTION_ITEMS` (3), `MAX_STACK_LENGTH` (2048), and a separate bounded `VALUE_BUFFER_SIZE` queue.
+- Captured values are compact numeric records (`FlowCapturedValue`) with interned string/type tables. Common non-nullable primitive value types use `typeof(T) == typeof(...)` fast paths with `Unsafe.As` to avoid boxing; strings and collection counts use bounded summary paths. Complex objects degrade to a type-name summary unless `DD_INTERNAL_DEBUGGER_FLOW_RECORDER_VALUE_PREVIEW=shallow` is enabled. Shallow preview emits extra flat child value records for a bounded set of object fields and safe collection items (`Array`/`IList` only); nested reference fields remain type summaries. Strict caps: `MAX_STRING_LENGTH` (256), `MAX_COLLECTION_ITEMS` (20 by default), `MAX_OBJECT_FIELDS` (4), `MAX_CHILD_VALUES_PER_VALUE` (16), `MAX_STACK_LENGTH` (2048), and a separate bounded `VALUE_BUFFER_SIZE` queue.
+- Shallow preview keeps the `.dflp` value record fixed-size and does not add a nested payload format. Child values are stored as normal interned-name records such as `arg0.Id` and `arg0[0].Sku`; the viewer reconstructs hierarchy after reading. This intentionally favors hot-path write simplicity over HTML rendering convenience.
 - Exception details (`FlowExceptionDetails`) capture the interned type name, message, stack trace, and HResult on the throwing frame.
 - Binary format is now version 6. Version 4 added the string table, type table, exception details, and captured values after the method metadata section; version 5 added per-event recorder operation id plus operation metadata; version 6 removed the per-event trace/span id fields (correlation now lives only in operation metadata) and uses length-prefixed UTF-8 string/type table entries. Readers still accept v1-v5.
 
@@ -237,7 +238,7 @@ Native recorder-only instrumentation can optionally capture argument, local, and
 The viewer (`Samples.LiveDebuggerPoc.Viewer`) HTML report now includes:
 
 - A dedicated **Exception panel** (type/message/HResult, reconstructed call stack with per-frame captured values, collapsible raw stack trace, span deep-link).
-- **Structured captured values** (kind badge + name + value + short type + not-captured/truncation flag) in both the call-flow tree and the exception panel, replacing the previous raw string.
+- **Structured captured values** (kind badge + name + value + short type + not-captured/truncation flag) in both the call-flow tree and the exception panel, replacing the previous raw string. Expanded shallow-preview values are grouped visually as a small hierarchy in the HTML report after reading the flat `.dflp` records.
 - A **sticky section nav** with scroll-spy, an exception counter, a **global method search** (dims timeline rows / hides non-matching flow cards), and a **light/dark toggle**.
 - Existing sections retained: metrics, legend, APM span correlation, wall-clock timeline, thread swim-lanes, call flow, hot spots.
 
@@ -279,7 +280,7 @@ Capture policy belongs to the recorder operation context. The operation owns tri
 - The always-on path stays **numeric + interned + allocation-light**: fixed `FlowEvent` records, preallocated bounded buffers, `AggressiveInlining`, and no per-event string formatting.
 - Value capture must stay **bounded and opt-in**: prefer **trace-scoped or operation-scoped** capture windows over process-wide, keep the strict length/collection/depth caps, and keep the separate value buffer.
 - The value dispatch in `FlowRecorder.CreateCapturedValue<T>` now uses `typeof(T) == typeof(...)` fast paths for common non-nullable primitive value types so those branches are JIT-constant-folded and avoid boxing. Preserve this constraint for any value-path change.
-- Ref-type capture, when added, is limited to **1-2 levels** with a hard field cap: emit a type plus a few interned primitive fields rather than walking an object graph.
+- Ref-type capture is limited to shallow preview with hard caps: emit a type plus a few interned primitive/string/type-summary fields rather than walking an object graph. Do not make the hot path more expensive just to simplify viewer hierarchy; reconstruct in the viewer whenever possible.
 
 ## Overhead Benchmark Plan
 
@@ -287,7 +288,7 @@ The recorder is designed to be low overhead, but current benchmark evidence show
 
 Recommended scenario:
 
-- Use the console sample's `--scenario benchmark` mode and `run-benchmark-poc.ps1`. The benchmark mode does **not** flush inside the measured loop; it drains warmup events before measuring and reports flush duration after the loop.
+- Use the console sample's `--scenario benchmark` mode and `run-benchmark-poc.ps1`. The benchmark mode starts a separate recorder operation for each checkout request, so the per-operation event budget is evaluated against one realistic flow boundary rather than one giant loop. It does **not** flush inside the measured loop; it drains warmup events before measuring and reports flush duration after the loop.
 - Workload shape: a small checkout request loop with synchronous leaf methods, direct async awaits, nested async calls, one `Task.Yield`, one `Task.Delay(0)`/completed task path, primitive math, string arguments, a small collection argument, and an optional exception every N requests.
 - Scale: warm up first, then run at least `100_000` requests per variant in a single process; repeat each variant at least 5 times from a fresh process to include JIT/ReJIT startup separately from steady state.
 - Keep the agent path constant: either disable trace export for all variants or use the same local mock/blackhole agent for all variants. Do not compare recorder-on with tracing-on against recorder-off with tracing-off.
@@ -300,13 +301,11 @@ Current runner:
 
 Benchmark variants:
 
-1. Baseline app, no profiler.
-2. Profiler/tracer loaded, Dynamic Instrumentation disabled.
-3. Profiler/tracer loaded, `DD_DYNAMIC_INSTRUMENTATION_ENABLED=true`, no recorder.
-4. Recorder enabled with instrument-all, event-only capture.
-5. Recorder enabled with instrument-all and value capture armed for one hot method, `DD_INTERNAL_DEBUGGER_FLOW_RECORDER_CAPTURE_VALUES=entry`.
-6. Recorder enabled with value capture armed for one hot method, `DD_INTERNAL_DEBUGGER_FLOW_RECORDER_CAPTURE_VALUES=all`.
-7. Regular DI method probe on the same hot method, if easy to configure, to compare against the existing `MethodDebuggerInvoker` snapshot path.
+1. `baseline-no-profiler`
+2. `tracer-only`
+3. `di-method-probes-values`
+4. `flow-recorder-values`
+5. `flow-recorder-values-expanded`
 
 Metrics to collect:
 

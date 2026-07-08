@@ -254,6 +254,7 @@ internal static class Program
         private FlowReport(string capturePath, FlowEventFile file, List<FlowSummary> flows, List<Frame> frames, List<AsyncOperation> asyncOperations, List<AsyncEdge> asyncEdges, List<OperationSummary> operations, List<CaptureMarker> markers, Dictionary<FrameKey, List<Frame>> children, Dictionary<FrameKey, Frame> frameByKey, List<Frame> exceptionFrames)
         {
             CapturePath = capturePath;
+            CaptureDisplayPath = ToDisplayPath(capturePath);
             CaptureName = Path.GetFileName(capturePath);
             Events = file.Events;
             Methods = file.Methods;
@@ -269,6 +270,8 @@ internal static class Program
         }
 
         public string CapturePath { get; }
+
+        public string CaptureDisplayPath { get; }
 
         public string CaptureName { get; }
 
@@ -308,6 +311,55 @@ internal static class Program
             var markers = BuildMarkers(file);
             LinkAsyncOperations(asyncOperations, asyncEdges);
             return new FlowReport(capturePath, file, flows, frames, asyncOperations, asyncEdges, operations, markers, children, frameByKey, exceptionFrames);
+        }
+
+        private static string ToDisplayPath(string capturePath)
+        {
+            if (string.IsNullOrWhiteSpace(capturePath))
+            {
+                return capturePath;
+            }
+
+            try
+            {
+                var fullPath = Path.GetFullPath(capturePath);
+                var repoRoot = FindRepositoryRoot(AppContext.BaseDirectory);
+                if (repoRoot is null)
+                {
+                    return capturePath;
+                }
+
+                var repoParent = Directory.GetParent(repoRoot)?.FullName;
+                if (repoParent is null)
+                {
+                    return capturePath;
+                }
+
+                var relativePath = Path.GetRelativePath(repoParent, fullPath);
+                return relativePath.StartsWith("..", StringComparison.Ordinal) || Path.IsPathRooted(relativePath)
+                           ? capturePath
+                           : relativePath;
+            }
+            catch (Exception)
+            {
+                return capturePath;
+            }
+        }
+
+        private static string FindRepositoryRoot(string startDirectory)
+        {
+            var directory = new DirectoryInfo(startDirectory);
+            while (directory is not null)
+            {
+                if (Directory.Exists(Path.Combine(directory.FullName, ".git")))
+                {
+                    return directory.FullName;
+                }
+
+                directory = directory.Parent;
+            }
+
+            return null;
         }
 
         public IReadOnlyList<Frame> GetChildren(Frame frame)
@@ -411,7 +463,7 @@ internal static class Program
                 _ => value.Tag.ToString()
             };
 
-            return new CapturedValueView(value.Phase, value.Kind, name, formatted, type, value.NotCapturedReason);
+            return new CapturedValueView(value.Phase, value.Kind, name, name, formatted, type, value.NotCapturedReason);
         }
 
         private static string GetTableValue(string[] table, int id)
@@ -767,12 +819,12 @@ internal static class Program
             html.AppendLine("<div class=\"masthead-text\">");
             html.AppendLine("<p class=\"eyebrow\">Datadog Live Debugger POC</p>");
             html.AppendLine("<h1>Flow Recorder</h1>");
-            html.AppendLine("<p class=\"subtitle\">One execution capture, read three ways: a wall-clock <strong>timeline</strong>, the <strong>async causality</strong> behind it, and the <strong>physical frames</strong> underneath.</p>");
+            html.AppendLine("<p class=\"subtitle\">A single execution capture shown as a <strong>timeline</strong>, <strong>async call flow</strong>, and the <strong>work segments</strong> that ran between awaits.</p>");
             html.AppendLine("</div>");
             html.AppendLine("<div class=\"capture-card\">");
             html.AppendLine("<span class=\"capture-label\">Capture</span>");
             html.AppendLine("<strong>" + H(report.CaptureName) + "</strong>");
-            html.AppendLine("<code>" + H(report.CapturePath) + "</code>");
+            html.AppendLine("<code title=\"" + H(report.CaptureDisplayPath) + "\">" + H(report.CaptureDisplayPath) + "</code>");
             if (!string.IsNullOrEmpty(traceId) || spanFlow is not null)
             {
                 html.AppendLine("<div class=\"capture-ids\">");
@@ -795,13 +847,13 @@ internal static class Program
             RenderNav(html, report, spanSummaries.Count > 0, rows.Count > 0);
 
             html.AppendLine("<section class=\"metrics\" id=\"overview\">");
-            Metric(html, "Events", report.Events.Length.ToString(CultureInfo.InvariantCulture), "fixed binary records");
-            Metric(html, "Frames", report.Frames.Count.ToString(CultureInfo.InvariantCulture), "enter / exit segments");
-            Metric(html, "Recorder ops", report.Operations.Count.ToString(CultureInfo.InvariantCulture), "operation-scoped windows");
-            Metric(html, "Async ops", report.AsyncOperations.Count.ToString(CultureInfo.InvariantCulture), "logical state machines");
-            Metric(html, "APM spans", spanSummaries.Count.ToString(CultureInfo.InvariantCulture), "active span ids");
-            Metric(html, "Threads", threadCount.ToString(CultureInfo.InvariantCulture), "distinct OS threads");
-            Metric(html, "Wall time", Format(spanMs) + " ms", "capture duration");
+            Metric(html, "Events", report.Events.Length.ToString(CultureInfo.InvariantCulture), "recorded runtime facts", "Raw records written by the recorder, such as method enter/exit, async edges, values, exceptions, and capture markers.");
+            Metric(html, "Frames", report.Frames.Count.ToString(CultureInfo.InvariantCulture), "work segments", "Method execution segments reconstructed from enter and exit events. Async methods can produce multiple frames as they resume after awaits.");
+            Metric(html, "Recorder ops", report.Operations.Count.ToString(CultureInfo.InvariantCulture), "captured operations", "Operation-scoped capture windows opened by the recorder.");
+            Metric(html, "Async ops", report.AsyncOperations.Count.ToString(CultureInfo.InvariantCulture), "async methods", "Logical async methods stitched together from their resume segments.");
+            Metric(html, "APM spans", spanSummaries.Count.ToString(CultureInfo.InvariantCulture), "correlated spans", "Distinct active APM span ids seen during the capture.");
+            Metric(html, "Threads", threadCount.ToString(CultureInfo.InvariantCulture), "OS threads", "Distinct operating system threads that ran recorded work.");
+            Metric(html, "Wall time", Format(spanMs) + " ms", "capture duration", "Elapsed time between the first and last recorded event.");
             html.AppendLine("</section>");
 
             RenderLegend(html);
@@ -829,9 +881,9 @@ internal static class Program
         private static void RenderLegend(StringBuilder html)
         {
             html.AppendLine("<section class=\"legend\">");
-            html.AppendLine("<div class=\"legend-item\"><span class=\"chip flow\">Flow</span><p>One execution context. Each async method gets its own flow because it resumes after every await.</p></div>");
-            html.AppendLine("<div class=\"legend-item\"><span class=\"chip frame\">Frame</span><p>A single enter/exit segment &mdash; the synchronous CPU work that ran before hitting the next await.</p></div>");
-            html.AppendLine("<div class=\"legend-item\"><span class=\"chip async\">Async op</span><p>The logical method, stitched back together from its resume segments across one flow.</p></div>");
+            html.AppendLine("<div class=\"legend-item\"><span class=\"chip flow\">Flow</span><p>A recorded execution lane. Async work may continue in a new flow after an await, and the viewer links those flows back together.</p></div>");
+            html.AppendLine("<div class=\"legend-item\"><span class=\"chip frame\">Frame</span><p>One uninterrupted run of a method: from enter to exit, exception, or the next await.</p></div>");
+            html.AppendLine("<div class=\"legend-item\"><span class=\"chip async\">Async op</span><p>The original async method view, reconstructed from all of its resume frames.</p></div>");
             html.AppendLine("<div class=\"legend-item heat-legend\"><span class=\"chip\">Heat</span><div class=\"heat-scale\"><i class=\"heat-1\"></i><i class=\"heat-2\"></i><i class=\"heat-3\"></i><i class=\"heat-4\"></i><i class=\"heat-5\"></i></div><p>fast &rarr; slow, relative to the longest segment.</p></div>");
             html.AppendLine("</section>");
         }
@@ -1173,7 +1225,8 @@ internal static class Program
 
             foreach (var flow in report.Flows.OrderBy(flow => flow.FlowId))
             {
-                var trivial = flow.DurationMs < 1.0;
+                var hasCapturedDetails = flow.RootFrames.Any(frame => HasCapturedDetails(report, frame));
+                var trivial = flow.DurationMs < 1.0 && !hasCapturedDetails;
                 var isAsync = asyncFlowIds.Contains(flow.FlowId);
                 html.AppendLine("<article class=\"flow-card" + (trivial ? " trivial" : string.Empty) + "\" id=\"flow-" + flow.FlowId + "\" data-trivial=\"" + (trivial ? "1" : "0") + "\">");
                 html.Append("<div class=\"flow-head\" role=\"button\" tabindex=\"0\">");
@@ -1258,6 +1311,13 @@ internal static class Program
             }
         }
 
+        private static bool HasCapturedDetails(FlowReport report, Frame frame)
+        {
+            return frame.ExceptionType is not null ||
+                   frame.Values.Count > 0 ||
+                   report.GetChildren(frame).Any(child => HasCapturedDetails(report, child));
+        }
+
         private static void AppendValueRows(StringBuilder html, List<CapturedValueView> values)
         {
             if (values.Count == 0)
@@ -1266,42 +1326,118 @@ internal static class Program
             }
 
             html.Append("<div class=\"val-list\">");
-            foreach (var value in values)
+            foreach (var node in BuildValueTree(values))
             {
-                var kindClass = value.Kind switch
-                {
-                    FlowValueKind.Argument => "arg",
-                    FlowValueKind.Local => "local",
-                    FlowValueKind.Return => "ret",
-                    FlowValueKind.This => "this",
-                    FlowValueKind.Exception => "exc",
-                    _ => "val"
-                };
-                var kindLabel = value.Kind switch
-                {
-                    FlowValueKind.Argument => "arg",
-                    FlowValueKind.Local => "local",
-                    FlowValueKind.Return => "return",
-                    FlowValueKind.This => "this",
-                    FlowValueKind.Exception => "exception",
-                    _ => value.Kind.ToString().ToLowerInvariant()
-                };
-
-                html.Append("<div class=\"val-row\">");
-                html.Append("<span class=\"val-kind k-" + kindClass + "\">" + kindLabel + "</span>");
-                html.Append("<span class=\"val-name\">" + H(value.Name) + "</span>");
-                html.Append("<span class=\"val-eq\">=</span>");
-                html.Append("<span class=\"val-val\">" + H(value.Value) + "</span>");
-                html.Append("<span class=\"val-type\" title=\"" + H(value.TypeName) + "\">" + H(ShortTypeName(value.TypeName)) + "</span>");
-                if (value.NotCaptured != FlowNotCapturedReason.None)
-                {
-                    html.Append("<span class=\"val-flag\" title=\"value not fully captured\">" + H(value.NotCaptured.ToString()) + "</span>");
-                }
-
-                html.Append("</div>");
+                AppendValueNode(html, node, depth: 0);
             }
 
             html.Append("</div>");
+        }
+
+        private static void AppendValueNode(StringBuilder html, CapturedValueNode node, int depth)
+        {
+            var value = node.Value;
+            var kindClass = value.Kind switch
+            {
+                FlowValueKind.Argument => "arg",
+                FlowValueKind.Local => "local",
+                FlowValueKind.Return => "ret",
+                FlowValueKind.This => "this",
+                FlowValueKind.Exception => "exc",
+                _ => "val"
+            };
+            var kindLabel = value.Kind switch
+            {
+                FlowValueKind.Argument => "arg",
+                FlowValueKind.Local => "local",
+                FlowValueKind.Return => "return",
+                FlowValueKind.This => "this",
+                FlowValueKind.Exception => "exception",
+                _ => value.Kind.ToString().ToLowerInvariant()
+            };
+
+            html.Append("<div class=\"val-row depth-" + Math.Min(depth, 4) + "\">");
+            html.Append("<span class=\"val-kind k-" + kindClass + "\">" + kindLabel + "</span>");
+            html.Append("<span class=\"val-name\">" + H(value.DisplayName) + "</span>");
+            html.Append("<span class=\"val-eq\">=</span>");
+            html.Append("<span class=\"val-val\">" + H(value.Value) + "</span>");
+            html.Append("<span class=\"val-type\" title=\"" + H(value.TypeName) + "\">" + H(ShortTypeName(value.TypeName)) + "</span>");
+            if (value.NotCaptured != FlowNotCapturedReason.None)
+            {
+                html.Append("<span class=\"val-flag\" title=\"value not fully captured\">" + H(value.NotCaptured.ToString()) + "</span>");
+            }
+
+            html.Append("</div>");
+            foreach (var child in node.Children)
+            {
+                AppendValueNode(html, child, depth + 1);
+            }
+        }
+
+        private static List<CapturedValueNode> BuildValueTree(List<CapturedValueView> values)
+        {
+            var roots = new List<CapturedValueNode>();
+            var nodesByName = new Dictionary<string, CapturedValueNode>(StringComparer.Ordinal);
+            foreach (var value in values)
+            {
+                var node = new CapturedValueNode(value);
+                nodesByName[value.Name] = node;
+            }
+
+            foreach (var value in values)
+            {
+                var node = nodesByName[value.Name];
+                var parentName = GetParentValueName(value.Name);
+                if (parentName is not null && nodesByName.TryGetValue(parentName, out var parent))
+                {
+                    node.Value = value.WithDisplayName(GetValueLeafName(value.Name, parentName));
+                    parent.Children.Add(node);
+                }
+                else
+                {
+                    roots.Add(node);
+                }
+            }
+
+            return roots;
+        }
+
+        private static string GetValueLeafName(string name, string parentName)
+        {
+            if (name.Length <= parentName.Length)
+            {
+                return name;
+            }
+
+            var start = parentName.Length;
+            if (name[start] == '.')
+            {
+                start++;
+            }
+
+            return name.Substring(start);
+        }
+
+        private static string GetParentValueName(string name)
+        {
+            if (String.IsNullOrEmpty(name))
+            {
+                return null;
+            }
+
+            var lastDot = name.LastIndexOf('.');
+            var lastBracket = name.LastIndexOf('[');
+            if (lastDot > 0 && lastDot > lastBracket)
+            {
+                return name.Substring(0, lastDot);
+            }
+
+            if (lastBracket > 0 && name.EndsWith("]", StringComparison.Ordinal))
+            {
+                return name.Substring(0, lastBracket);
+            }
+
+            return null;
         }
 
         private static string ShortTypeName(string typeName)
@@ -1661,9 +1797,9 @@ internal static class Program
 
         private readonly record struct SpanSummary(ulong SpanId, ulong RootSpanId, string TraceId, int FrameCount, int FlowCount, double CpuMs, long FirstTimestamp);
 
-        private static void Metric(StringBuilder html, string label, string value, string detail)
+        private static void Metric(StringBuilder html, string label, string value, string detail, string tooltip)
         {
-            html.AppendLine("<article><span>" + H(label) + "</span><strong>" + H(value) + "</strong><em>" + H(detail) + "</em></article>");
+            html.AppendLine("<article title=\"" + H(tooltip) + "\" aria-label=\"" + H(label + ": " + value + ". " + tooltip) + "\"><span>" + H(label) + "</span><strong>" + H(value) + "</strong><em>" + H(detail) + "</em></article>");
         }
 
         private static string H(string value)
@@ -1919,6 +2055,10 @@ a.chip-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2p
 .val-list { grid-column: 1 / -1; display: grid; gap: 4px; margin-top: 6px; }
 .exc-frame .val-list { margin-top: 8px; }
 .val-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-family: var(--mono); font-size: 11px; padding: 3px 8px; border-radius: 6px; background: rgba(0,0,0,0.2); }
+.val-row.depth-1 { margin-left: 18px; }
+.val-row.depth-2 { margin-left: 36px; }
+.val-row.depth-3 { margin-left: 54px; }
+.val-row.depth-4 { margin-left: 72px; }
 .val-kind { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border-strong); color: var(--muted); flex: none; }
 .val-kind.k-arg { color: #c2f0e7; border-color: rgba(70,194,172,0.4); background: rgba(70,194,172,0.14); }
 .val-kind.k-local { color: #d2d6ff; border-color: rgba(139,123,255,0.4); background: var(--accent-soft); }
@@ -1950,6 +2090,42 @@ body.light {
     linear-gradient(180deg, #f4f6fc 0%, #eef1f9 100%);
 }
 body.light .topnav { background: rgba(255,255,255,0.9); }
+body.light .legend-item,
+body.light .lane-legend { background: rgba(255,255,255,0.78); border-color: rgba(106,90,240,0.14); box-shadow: 0 1px 2px rgba(15,20,40,0.04); }
+body.light .nav-search,
+body.light .flow-filter { background: #ffffff; border-color: rgba(106,90,240,0.24); color: var(--text); box-shadow: inset 0 1px 2px rgba(15,20,40,0.04); }
+body.light .nav-search::placeholder,
+body.light .flow-filter::placeholder { color: #747c94; }
+body.light .nav-toggle,
+body.light .tl-toggle { background: #ffffff; border-color: rgba(106,90,240,0.22); color: #545c74; }
+body.light .nav-links a:hover { background: rgba(106,90,240,0.08); }
+body.light .span-card,
+body.light .flow-card,
+body.light .exc-frame { background: rgba(255,255,255,0.72); }
+body.light .frame { background: rgba(255,255,255,0.64); }
+body.light .frame-bar { background: rgba(106,90,240,0.10); }
+body.light .frame-values { background: rgba(106,90,240,0.045); border-color: rgba(106,90,240,0.14); }
+body.light .val-row { background: rgba(255,255,255,0.78); border: 1px solid rgba(106,90,240,0.10); box-shadow: 0 1px 0 rgba(15,20,40,0.03); }
+body.light .chip { color: #26304f; background: #ffffff; border-color: rgba(84,92,116,0.22); }
+body.light .chip.flow,
+body.light .trace-chip,
+body.light .span-chip,
+body.light .flow-chip,
+body.light .exc-chip { color: #5141d8; background: rgba(106,90,240,0.12); border-color: rgba(106,90,240,0.28); }
+body.light .chip.frame { color: #08745f; background: rgba(20,135,111,0.11); border-color: rgba(20,135,111,0.26); }
+body.light .chip.async,
+body.light .flow-kind,
+body.light .span-root,
+body.light .resume,
+body.light .val-flag { color: #8a5a00; background: rgba(184,134,11,0.12); border-color: rgba(184,134,11,0.30); }
+body.light .frame-span,
+body.light .tl-spanid { color: #5141d8; background: rgba(106,90,240,0.08); border-color: rgba(106,90,240,0.18); }
+body.light .val-kind.k-arg { color: #08745f; border-color: rgba(20,135,111,0.30); background: rgba(20,135,111,0.10); }
+body.light .val-kind.k-local { color: #5141d8; border-color: rgba(106,90,240,0.28); background: rgba(106,90,240,0.10); }
+body.light .val-kind.k-ret { color: #8a5a00; border-color: rgba(184,134,11,0.30); background: rgba(184,134,11,0.12); }
+body.light .val-kind.k-this,
+body.light .exc-badge,
+body.light .exc-frame-tag { color: #b42d28; border-color: rgba(214,69,69,0.30); background: rgba(214,69,69,0.10); }
 body.light .val-val { color: #197a3a; }
 body.light .exc-type { color: #c0362f; }
 
@@ -2131,9 +2307,28 @@ body.light .exc-type { color: #c0362f; }
         FlowCapturePhase Phase,
         FlowValueKind Kind,
         string Name,
+        string DisplayName,
         string Value,
         string TypeName,
-        FlowNotCapturedReason NotCaptured);
+        FlowNotCapturedReason NotCaptured)
+    {
+        public CapturedValueView WithDisplayName(string displayName)
+        {
+            return new CapturedValueView(Phase, Kind, Name, displayName, Value, TypeName, NotCaptured);
+        }
+    }
+
+    private sealed class CapturedValueNode
+    {
+        public CapturedValueNode(CapturedValueView value)
+        {
+            Value = value;
+        }
+
+        public CapturedValueView Value { get; set; }
+
+        public List<CapturedValueNode> Children { get; } = new();
+    }
 
     private static class FlowEventReader
     {
