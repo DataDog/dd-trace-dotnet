@@ -511,10 +511,9 @@ internal partial class ProbeExpressionParser<T>
                 return RedactedValue();
             }
 
-            if (propertyOrFieldValue == nameof(KeyValuePair<int, int>.Value) &&
-                TryRedactDictionaryValueMember(expression, out var redactedValue))
+            if (TryGetDictionaryEntryMember(expression, propertyOrFieldValue, out var dictionaryEntryMember))
             {
-                return redactedValue;
+                return dictionaryEntryMember;
             }
 
             if (TryGetRedactedDictionaryValue(expression, out var redactedDictionaryValue))
