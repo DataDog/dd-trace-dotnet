@@ -98,14 +98,17 @@ public abstract class ConsoleTestHelper : ToolTestHelper
 
         var helper = new CustomProcessHelper(agent, Process.Start(processStart)!, callback);
 
+        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
         var completed = await Task.WhenAny(
                             helper.Task,
                             startedTask.Task,
-                            Task.Delay(TimeSpan.FromSeconds(30)));
+                            timeoutTask);
 
         // Crash samples can print "Waiting" and exit before this await resumes. If both
-        // tasks are complete, WhenAny may return either, so readiness should win.
-        if (startedTask.Task.IsCompleted)
+        // the process-exit and readiness tasks are complete, WhenAny may return either,
+        // so readiness should win. Don't apply that to timeouts: readiness after the
+        // timeout must still take the timeout/memory-dump path.
+        if (completed == startedTask.Task || (completed == helper.Task && startedTask.Task.IsCompleted))
         {
             return helper;
         }
