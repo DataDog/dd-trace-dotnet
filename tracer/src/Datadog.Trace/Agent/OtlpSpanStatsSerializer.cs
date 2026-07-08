@@ -8,6 +8,7 @@
 using System;
 using System.IO;
 using System.Text;
+using Datadog.Trace.Logging;
 using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Datadog.Sketches;
@@ -17,6 +18,8 @@ namespace Datadog.Trace.Agent
 {
     internal sealed class OtlpSpanStatsSerializer
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OtlpSpanStatsSerializer>();
+
         internal const string MetricName = "traces.span.sdk.metrics.duration";
 
         private const int WireTypeVarInt = 0;
@@ -291,7 +294,7 @@ namespace Datadog.Trace.Agent
             writer.WriteValue(count.ToString());
 
             writer.WritePropertyName("sum");
-            writer.WriteValue(TimeHelpers.NanosecondsToSeconds(bucket.Duration));
+            writer.WriteValue(TimeHelpers.NanosecondsToSeconds((long)bucket.Duration));
 
             writer.WritePropertyName("bucketCounts");
             writer.WriteStartArray();
@@ -567,7 +570,7 @@ namespace Datadog.Trace.Agent
             writer.Write((ulong)bucket.Hits);
 
             WriteTag(writer, FieldNumbers.HistogramDataPointSum, WireTypeFixed64);
-            writer.Write(TimeHelpers.NanosecondsToSeconds(bucket.Duration));
+            writer.Write(TimeHelpers.NanosecondsToSeconds((long)bucket.Duration));
 
             // In OTLP mode errors go into a separate aggregation key, so OkSummary holds the full distribution.
             var bucketCounts = ProjectSketch(bucket.OkSummary);
@@ -623,19 +626,25 @@ namespace Datadog.Trace.Agent
                 counts[bucket] += (ulong)Math.Round(bin.Count);
             }
 
+            if (sketch.NegativeValueStore.TotalCount > 0)
+            {
+                Log.Debug("Span with negative duration detected (possible clock skew); excluded from OTLP histogram.");
+            }
+
             return counts;
         }
 
         private static int FindBucketIndex(double valueNs)
         {
-            if (valueNs < BoundsNs[0])
+            // OTel histogram upper bounds are inclusive per spec.
+            if (valueNs <= BoundsNs[0])
             {
                 return 0;
             }
 
             for (int i = 1; i < BoundsNs.Length; i++)
             {
-                if (valueNs < BoundsNs[i])
+                if (valueNs <= BoundsNs[i])
                 {
                     return i;
                 }

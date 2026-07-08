@@ -23,17 +23,19 @@ namespace Datadog.Trace.Agent
 
         public StatsAggregationKey Key { get; }
 
-        public long Hits { get; set; }
+        // Hits, Errors, and TopLevelHits are doubles to accumulate fractional sampling weights (1/rate)
+        public double Hits { get; set; }
 
-        public long Errors { get; set; }
+        public double Errors { get; set; }
 
-        public long Duration { get; set; }
+        // Duration is a double to accumulate fractional sampling weights (1/rate), like Hits/Errors/TopLevelHits.
+        public double Duration { get; set; }
 
         public DDSketch OkSummary { get; }
 
         public DDSketch ErrorSummary { get; }
 
-        public long TopLevelHits { get; set; }
+        public double TopLevelHits { get; set; }
 
         // Tracked for OTLP histogram data points; sentinels long.MaxValue/0 mean "not yet observed".
         public long MinDuration { get; set; } = long.MaxValue;
