@@ -3102,6 +3102,115 @@ namespace Datadog.Trace.Tests.Debugger
             var error = Assert.Single(compiled.Errors);
             Assert.Contains("cannot be safely read", error.Message);
         }
+		
+		[Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_RedactsSensitiveObjectFields()
+        {
+            const string passwordSecret = "DD_PASSWORD_SECRET";
+            const string apiKeySecret = "DD_API_KEY_SECRET";
+            const string publicValue = "DD_PUBLIC_VALUE";
+            var scopeMembers = CreateScopeMembers();
+            var holder = new DumpRedactionObjectHolder(passwordSecret, apiKeySecret, publicValue);
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpRedactionObjectHolder), holder, ScopeMemberKind.Local));
+
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().NotContain(passwordSecret);
+            result.Template.Should().NotContain(apiKeySecret);
+            result.Template.Should().Contain("{REDACTED}");
+            result.Template.Should().Contain(publicValue);
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_RedactsSensitiveCollectionFieldBeforeDispatch()
+        {
+            const string authorizationSecret = "Bearer DD_AUTHORIZATION_SECRET";
+            const string authorizationPublicValue = "DD_AUTHORIZATION_PUBLIC_VALUE";
+            var scopeMembers = CreateScopeMembers();
+            var holder = new DumpRedactionCollectionFieldHolder(authorizationSecret, authorizationPublicValue);
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpRedactionCollectionFieldHolder), holder, ScopeMemberKind.Local));
+
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Contain("Authorization={REDACTED}");
+            result.Template.Should().NotContain(authorizationSecret);
+            result.Template.Should().NotContain(authorizationPublicValue);
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_RedactsSensitiveDictionaryValues()
+        {
+            const string authorizationSecret = "Bearer DD_AUTHORIZATION_SECRET";
+            const string publicValue = "DD_PUBLIC_VALUE";
+            var scopeMembers = CreateScopeMembers();
+            var holder = new DumpRedactionDictionaryHolder(authorizationSecret, publicValue);
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpRedactionDictionaryHolder), holder, ScopeMemberKind.Local));
+
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Contain("Authorization");
+            result.Template.Should().Contain("{REDACTED}");
+            result.Template.Should().NotContain(authorizationSecret);
+            result.Template.Should().Contain(publicValue);
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_SpanDecorationDump_RedactsSensitiveObjectFields()
+        {
+            const string passwordSecret = "DD_PASSWORD_SECRET";
+            const string apiKeySecret = "DD_API_KEY_SECRET";
+            const string publicValue = "DD_PUBLIC_VALUE";
+            var scopeMembers = CreateScopeMembers();
+            var holder = new DumpRedactionObjectHolder(passwordSecret, apiKeySecret, publicValue);
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpRedactionObjectHolder), holder, ScopeMemberKind.Local));
+
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations:
+                [
+                    new KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>(
+                        null,
+                        [new KeyValuePair<string, DebuggerExpression?[]>("tag", [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)])])
+                ],
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+            var decoration = result.Decorations.Should().ContainSingle().Subject;
+
+            decoration.TagName.Should().Be("tag");
+            decoration.Value.Should().NotContain(passwordSecret);
+            decoration.Value.Should().NotContain(apiKeySecret);
+            decoration.Value.Should().Contain("{REDACTED}");
+            decoration.Value.Should().Contain(publicValue);
+            decoration.Errors.Should().BeNullOrEmpty();
+            result.Errors.Should().BeNullOrEmpty();
+        }
 
         [Fact]
         public void ProbeExpressionParser_StaticMemberOnTypeWithCctor_IsUndefinedWithoutInitializingType()
@@ -3721,6 +3830,52 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 { "hello", null },
             };
+        }
+
+        private class DumpRedactionObjectHolder
+        {
+            private readonly string _password;
+
+            private readonly string publicData;
+
+            public DumpRedactionObjectHolder(string password, string apiKey, string publicData)
+            {
+                _password = password;
+                ApiKey = apiKey;
+                this.publicData = publicData;
+            }
+
+            private string ApiKey { get; }
+        }
+
+        private class DumpRedactionCollectionFieldHolder
+        {
+#pragma warning disable SA1306
+            private readonly Hashtable Authorization;
+#pragma warning restore SA1306
+
+            public DumpRedactionCollectionFieldHolder(string authorizationSecret, string authorizationPublicValue)
+            {
+                Authorization = new Hashtable
+                {
+                    { "public", authorizationPublicValue },
+                    { "header", authorizationSecret },
+                };
+            }
+        }
+
+        private class DumpRedactionDictionaryHolder
+        {
+            private readonly Hashtable headers;
+
+            public DumpRedactionDictionaryHolder(string authorizationSecret, string publicValue)
+            {
+                headers = new Hashtable
+                {
+                    { "Authorization", authorizationSecret },
+                    { "public", publicValue },
+                };
+            }
         }
 
         private sealed class ThrowingGetTypeAssembly : Assembly
