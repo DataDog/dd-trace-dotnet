@@ -81,6 +81,11 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
+        if (ShouldRedactDumpValue(null, expression.Type))
+        {
+            return Expression.Constant(RedactedValueDump);
+        }
+
         if (expression.Type == ProbeExpressionParserHelper.UndefinedValueType)
         {
             return Expression.Constant(UndefinedValueDump);
@@ -274,6 +279,11 @@ internal partial class ProbeExpressionParser<T>
         if (ShouldRedactDumpValue(name, type))
         {
             return hasName ? $"{name}={RedactedValueDump}" : RedactedValueDump;
+        }
+
+        if (type == null)
+        {
+            return hasName ? $"{name}=" : string.Empty;
         }
 
         // only one level depth of collection

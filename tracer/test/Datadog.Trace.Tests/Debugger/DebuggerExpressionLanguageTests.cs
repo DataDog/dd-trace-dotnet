@@ -3130,6 +3130,26 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_RedactsSensitiveRootTypeBeforeDispatch()
+        {
+            var scopeMembers = CreateScopeMembers();
+            using var credential = new System.Security.SecureString();
+            scopeMembers.AddMember(new ScopeMember("CredentialLocal", typeof(System.Security.SecureString), credential, ScopeMemberKind.Local));
+
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""CredentialLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be("{REDACTED}");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
         public void ProbeExpressionEvaluator_TemplateDump_RedactsSensitiveCollectionFieldBeforeDispatch()
         {
             const string authorizationSecret = "Bearer DD_AUTHORIZATION_SECRET";
