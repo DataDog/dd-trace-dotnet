@@ -559,10 +559,17 @@ namespace Datadog.Trace.Agent
             return result;
         }
 
+        /// <summary>
+        /// Builds a "key:value" UTF-8 byte array by reusing the pre-encoded <paramref name="utf8KeyPrefix"/>
+        /// (e.g. "tagKey:") and encoding only <paramref name="tagValue"/> directly into the destination
+        /// array — avoiding both the intermediate interpolated string and re-encoding the key prefix.
+        /// </summary>
         private static byte[] EncodeKeyValue(byte[] utf8KeyPrefix, string tagValue)
         {
             var valueByteCount = EncodingHelpers.Utf8NoBom.GetByteCount(tagValue);
             var encoded = new byte[utf8KeyPrefix.Length + valueByteCount];
+
+            // Copy the already-encoded "key:" bytes, then encode the value straight after them.
             Buffer.BlockCopy(utf8KeyPrefix, 0, encoded, 0, utf8KeyPrefix.Length);
             EncodingHelpers.Utf8NoBom.GetBytes(tagValue, charIndex: 0, charCount: tagValue.Length, encoded, byteIndex: utf8KeyPrefix.Length);
 
