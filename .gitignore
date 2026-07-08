@@ -402,3 +402,8 @@ tools/dumps/
 
 # test optimization temp/run folder
 .dd/
+
+# sphinx review corpus: advisor/lenses/meta are committed as a shared baseline,
+# raw scrape data and the KG index are regenerated locally by /sphinx learn
+.sphinx/raw/
+.sphinx/kg.db
