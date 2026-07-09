@@ -23,6 +23,11 @@ namespace Samples.MySql
                 await RelationalDatabaseTestHarness.RunAllAsync<MySqlCommand>(connection, commandFactory, commandExecutor, cts.Token, useTransactionScope: false);
             }
 
+            // Flush the first phase's trace before starting the next phase. Each phase produces a single
+            // large trace, so draining this one first stops the two from competing for the writer's buffers
+            // (a locally dropped trace here would fail the exact span-count assertion in the test).
+            await SampleHelpers.ForceTracerFlushAsync();
+
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile
             // On .NET Core this results in a new assembly being loaded whose types are not considered the same
             // as the types loaded through the default loading mechanism, potentially causing type casting issues in CallSite instrumentation
@@ -33,8 +38,8 @@ namespace Samples.MySql
                 await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token, useTransactionScope: false);
             }
 
-            // allow time to flush
-            await Task.Delay(2000, cts.Token);
+            // Flush before exit so all spans are delivered (deterministic, unlike a fixed delay).
+            await SampleHelpers.ForceTracerFlushAsync();
         }
 
         private static DbConnection OpenConnection(Type connectionType)
