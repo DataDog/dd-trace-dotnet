@@ -312,6 +312,9 @@ macrobenchmarks:
   needs: []
   trigger:
     include: .gitlab/benchmarks/macrobenchmarks.yml
+  # Forward the external S3 destination override to the benchmark child pipeline.
+  variables:
+    BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL
   allow_failure: true
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^hotfix/)'
@@ -326,6 +329,9 @@ microbenchmarks:
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
     strategy: depend
+  # Forward the external S3 destination override to the benchmark child pipeline.
+  variables:
+    BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL
   allow_failure: true
   rules:
     - if: $CI_COMMIT_TAG
@@ -336,6 +342,9 @@ dsm_throughput:
   stage: benchmarks
   trigger:
     include: .gitlab/benchmarks/dsm-throughput.yml
+  # Forward the external S3 destination override to the benchmark child pipeline.
+  variables:
+    BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL
   allow_failure: true
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
