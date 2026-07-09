@@ -17,6 +17,10 @@ public class AllTriggers
     private static readonly HttpClient HttpClient = new();
     private static readonly ManualResetEventSlim _mutex = new(initialState: false, spinCount: 0);
 
+    // Single source of truth for the function host base URL. Both the readiness wait and the self-calls
+    // derive from this so they always target the same host and port.
+    private static readonly string FunctionBaseUrl = $"http://{Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") ?? "localhost:7071"}";
+
     private readonly ILogger _logger;
 
     public AllTriggers(ILogger<AllTriggers> logger, IHostApplicationLifetime lifetime)
@@ -28,16 +32,28 @@ public class AllTriggers
     [Function("TriggerAllTimer")]
     public async Task TriggerAllTimer([TimerTrigger(AtMidnightOnFirstJan, RunOnStartup = true)] TimerInfo myTimer)
     {
-        _logger.LogInformation($"Profiler attached: {SampleHelpers.IsProfilerAttached()}");
-        _logger.LogInformation($"Profiler assembly location: {SampleHelpers.GetTracerAssemblyLocation()}");
+        try
+        {
+            _logger.LogInformation($"Profiler attached: {SampleHelpers.IsProfilerAttached()}");
+            _logger.LogInformation($"Profiler assembly location: {SampleHelpers.GetTracerAssemblyLocation()}");
 
-        var envVars = string.Join(", ", SampleHelpers.GetDatadogEnvironmentVariables().Select(x => $"{x.Key}={x.Value}"));
-        _logger.LogInformation("$Profiler env vars: {EnvVars}", envVars);
+            var envVars = string.Join(", ", SampleHelpers.GetDatadogEnvironmentVariables().Select(x => $"{x.Key}={x.Value}"));
+            _logger.LogInformation("$Profiler env vars: {EnvVars}", envVars);
 
-        _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
-        await CallFunctionHttp("trigger");
-        _logger.LogInformation($"Trigger All Timer complete: {DateTime.Now}");
-        _mutex.Set();
+            _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
+
+            // The RunOnStartup timer can fire before the Functions host has bound its port and registered
+            // routes, so wait for readiness before making the (traced) self-call; otherwise it fails with
+            // connection-refused (or a 404) and none of the downstream spans are produced.
+            await SampleHelpers.WaitForFunctionHostReadyAsync(FunctionBaseUrl);
+            await CallFunctionHttp("trigger");
+
+            _logger.LogInformation($"Trigger All Timer complete: {DateTime.Now}");
+        }
+        finally
+        {
+            _mutex.Set();
+        }
     }
 
     [Function("ExitApp")]
@@ -135,8 +151,7 @@ public class AllTriggers
 
     private async Task<string> CallFunctionHttp(string path)
     {
-        var httpFunctionUrl = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") ?? "localhost:7071";
-        var uri = $"{$"http://{httpFunctionUrl}"}/api/{path}";
+        var uri = $"{FunctionBaseUrl}/api/{path}";
         _logger.LogInformation("Calling Uri {Uri}", uri);
         var simpleResponse = await HttpClient.GetStringAsync(uri);
         return simpleResponse;

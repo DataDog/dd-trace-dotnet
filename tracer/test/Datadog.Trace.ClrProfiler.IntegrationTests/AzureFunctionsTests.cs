@@ -28,6 +28,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 /// </summary>
 public abstract class AzureFunctionsTests : TestHelper
 {
+    // The sample waits for host readiness by probing /admin/host/ping, which the host records as one or
+    // more "GET /admin/host/ping" spans. They are not part of the traces under test, so they are excluded
+    // from the agent's span waits and results (see SuppressReadinessPingSpans).
+    protected const string ReadinessPingResource = "GET /admin/host/ping";
+
     protected AzureFunctionsTests(string sampleAppName, ITestOutputHelper output)
         : base(sampleAppName, samplePathOverrides: Path.Combine("test", "test-applications", "azure-functions"), output)
     {
@@ -46,6 +51,11 @@ public abstract class AzureFunctionsTests : TestHelper
         // as they are already covered by the existing excludes
         SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS", ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions + ", devstoreaccount1/azure-webjobs-hosts");
     }
+
+    // Excludes the readiness-probe spans (see ReadinessPingResource) from this agent's span waits and
+    // results, so the number of probe attempts never affects WaitForSpansAsync counts.
+    protected static void SuppressReadinessPingSpans(MockTracerAgent agent)
+        => agent.SpanFilters.Add(s => s.Resource != ReadinessPingResource);
 
     protected static IList<MockSpan> FilterOutSocketsHttpHandler(IImmutableList<MockSpan> spans)
     {
@@ -253,6 +263,8 @@ public abstract class AzureFunctionsTests : TestHelper
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
+            SuppressReadinessPingSpans(agent);
+
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 21;
@@ -284,6 +296,8 @@ public abstract class AzureFunctionsTests : TestHelper
         public async Task SubmitsTraces()
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            SuppressReadinessPingSpans(agent);
+
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 31;
@@ -328,6 +342,8 @@ public abstract class AzureFunctionsTests : TestHelper
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.ILogger), hostName);
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
+            SuppressReadinessPingSpans(agent);
 
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
@@ -377,6 +393,8 @@ public abstract class AzureFunctionsTests : TestHelper
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
+            SuppressReadinessPingSpans(agent);
+
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 21;
@@ -415,6 +433,8 @@ public abstract class AzureFunctionsTests : TestHelper
         public async Task SubmitsTraces()
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
+            SuppressReadinessPingSpans(agent);
 
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
@@ -460,6 +480,8 @@ public abstract class AzureFunctionsTests : TestHelper
             SetEnvironmentVariable("DD_TEST_APIM_ENABLED", "1");
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+            SuppressReadinessPingSpans(agent);
+
             using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 // 6 spans: Timer TriggerAllTimer, http.request, azure.apim, host span (GET /api/simple),
