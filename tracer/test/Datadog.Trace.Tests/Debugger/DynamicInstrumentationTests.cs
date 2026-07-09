@@ -1022,6 +1022,20 @@ public class DynamicInstrumentationTests
                     ""captureSnapshot"": true
                 },
                 {
+                    ""id"": ""method-log-probe-without-type-name"",
+                    ""language"": ""dotnet"",
+                    ""type"": ""LOG_PROBE"",
+                    ""where"": { ""methodName"": ""MyMethod"" },
+                    ""captureSnapshot"": false
+                },
+                {
+                    ""id"": ""method-log-probe-without-method-name"",
+                    ""language"": ""dotnet"",
+                    ""type"": ""LOG_PROBE"",
+                    ""where"": { ""typeName"": ""MyClass"" },
+                    ""captureSnapshot"": false
+                },
+                {
                     ""id"": ""metric-probe"",
                     ""language"": ""dotnet"",
                     ""type"": ""METRIC_PROBE"",
@@ -1052,6 +1066,7 @@ public class DynamicInstrumentationTests
             var debugger = CreateDebugger(settings, new DiscoveryServiceWithoutRcmMock());
             debugger.Initialize();
             await WaitUntilAsync(() => GetFileProbes(debugger) is not null);
+            await WaitUntilAsync(() => GetCurrentConfiguration(debugger).LogProbes.Any(probe => probe.Id == "method-log-probe"));
 
             var fileProbes = GetFileProbes(debugger);
             fileProbes.Should().NotBeNull();

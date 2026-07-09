@@ -221,12 +221,12 @@ namespace Datadog.Trace.Debugger
 
         private bool IsSupportedAgentlessLocalProbe(LogProbe probe)
         {
-            if (probe.Where?.MethodName is { Length: > 0 })
+            if (probe.Where is { TypeName.Length: > 0, MethodName.Length: > 0 })
             {
                 return true;
             }
 
-            Log.Information("Dynamic Instrumentation agentless local mode ignored line probe {ProbeId}. Line probes require PDB/source resolution and are not supported in this mode yet.", probe.Id);
+            Log.Information("Dynamic Instrumentation agentless local mode ignored probe {ProbeId}. Only method log probes with type and method names are supported.", probe.Id);
             return false;
         }
 

@@ -56,7 +56,7 @@ namespace Datadog.Trace.Debugger.Upload
             var uri = BuildUri();
             if (StringUtil.IsNullOrEmpty(uri))
             {
-                Log.Warning("Failed to upload snapshot: debugger endpoint not yet retrieved from discovery service");
+                Log.Warning("Failed to upload snapshot: debugger upload endpoint is not configured");
                 return false;
             }
 
