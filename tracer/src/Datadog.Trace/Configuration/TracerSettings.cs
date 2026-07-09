@@ -115,10 +115,6 @@ namespace Datadog.Trace.Configuration
                                        .AsBoolResult()
                                        .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
 
-            OpenTelemetrySemanticsEnabled = config
-                                                    .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetrySemanticsEnabled)
-                                                    .AsBool(defaultValue: false);
-
             PeerServiceTagsEnabled = config
                .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
                .AsBool(defaultValue: false);
@@ -808,6 +804,10 @@ namespace Datadog.Trace.Configuration
             OtlpRuntimeMetricsEnabled = false;
 #endif
 
+            OtelSemanticsEnabled = config
+                .WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled)
+                .AsBool(defaultValue: false);
+
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
@@ -888,13 +888,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
         internal bool ApmTracingEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether OpenTelemetry semantics mode is enabled.
-        /// Default is <c>false</c>.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetrySemanticsEnabled"/>
-        internal bool OpenTelemetrySemanticsEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether OpenTelemetry Metrics are enabled.
@@ -1258,6 +1251,15 @@ namespace Datadog.Trace.Configuration
         /// When true, OTLP takes precedence over DogStatsD for runtime metrics.
         /// </summary>
         internal bool OtlpRuntimeMetricsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether OpenTelemetry semantics mode is enabled.
+        /// When enabled, traces and OTLP span metrics data points will only emit OTel semantic-convention attributes,
+        /// suppressing Datadog-specific attributes.
+        /// Default is <c>false</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
+        internal bool OtelSemanticsEnabled { get; }
 
         /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.

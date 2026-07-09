@@ -118,13 +118,6 @@ internal static partial class ConfigurationKeys
         public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
 
         /// <summary>
-        /// Enables OpenTelemetry semantics mode.
-        /// Default is <c>false</c> (disabled).
-        /// </summary>
-        /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.OpenTelemetrySemanticsEnabled"/>
-        public const string OpenTelemetrySemanticsEnabled = "DD_TRACE_OTEL_SEMANTICS_ENABLED";
-
-        /// <summary>
         /// Feature Flag: enables updated resource names on `aspnet.request`, `aspnet-mvc.request`,
         /// `aspnet-webapi.request`, and `aspnet_core.request` spans. Enables `aspnet_core_mvc.request` spans and
         /// additional features on `aspnet_core.request` spans.

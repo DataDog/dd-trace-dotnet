@@ -415,7 +415,7 @@ namespace Datadog.Trace
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId, serviceNameSource);
 
-            var span = new Span(spanContext, startTime, tags, links, Settings.OpenTelemetrySemanticsEnabled)
+            var span = new Span(spanContext, startTime, tags, links, Settings.OtelSemanticsEnabled)
             {
                 OperationName = operationName,
             };

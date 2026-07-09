@@ -67,7 +67,7 @@ namespace Datadog.Trace.Agent
         private bool _traceMetricsEnabled;
 
         public AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, TracerSettings settings)
-            : this(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabled, initialTracerMetricsEnabled: settings.Manager.InitialMutableSettings.TracerMetricsEnabled, openTelemetrySemanticsEnabled: settings.OpenTelemetrySemanticsEnabled)
+            : this(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabled, initialTracerMetricsEnabled: settings.Manager.InitialMutableSettings.TracerMetricsEnabled, openTelemetrySemanticsEnabled: settings.OtelSemanticsEnabled)
         {
             settings.Manager.SubscribeToChanges(changes =>
             {

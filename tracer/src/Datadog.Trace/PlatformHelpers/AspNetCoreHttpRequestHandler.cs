@@ -233,7 +233,7 @@ namespace Datadog.Trace.PlatformHelpers
                 // Tracer.Instance.ActiveScope, but if a customer is not disposing a span somewhere,
                 // that will not necessarily be true, so make sure you use the RequestTrackingFeature.
                 var span = rootScope.Span;
-                CopyAspNetCoreActivityTagsIfRequired(span, tracer.Settings.OpenTelemetrySemanticsEnabled);
+                CopyAspNetCoreActivityTagsIfRequired(span, tracer.Settings.OtelSemanticsEnabled);
                 var isMissingHttpStatusCode = !span.HasHttpStatusCode();
 
                 var settings = tracer.CurrentTraceSettings.Settings;

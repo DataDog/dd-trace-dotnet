@@ -23,6 +23,12 @@ internal static partial class ConfigurationKeys
         public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
 
         /// <summary>
+        /// When enabled, suppresses all Datadog-specific data-point attributes from the traces and OTLP span metrics data points,
+        /// emitting only OpenTelemetry semantic-convention attributes.
+        /// </summary>
+        public const string OtelSemanticsEnabled = "DD_TRACE_OTEL_SEMANTICS_ENABLED";
+
+        /// <summary>
         /// Configuration key to set the OTLP endpoint URL (fallback for metrics-specific endpoint).
         /// Used when <see cref="ExporterOtlpMetricsEndpoint"/> is not set.
         /// Expects values like `unix:///path/to/socket.sock` for UDS, `\\.\pipename\` for Windows Named Pipes.
