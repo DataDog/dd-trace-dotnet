@@ -414,19 +414,24 @@ namespace Datadog.Profiler.IntegrationTests
 
                     _log("Starting wait for connection " + instance);
                     var connectTask = serverStream.WaitForConnectionAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
-                    stopEvent.Set();
+                    stopEvent?.Set();
 
                     _log("Awaiting connection " + instance);
                     await connectTask;
 
                     _log("Connection accepted, starting new server" + instance);
 
-                    // start a new Named pipe server to handle additional connections
-                    // Yes, this is madness, but apparently the way it's supposed to be done
-                    using var m = new ManualResetEventSlim();
-                    _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
-                    // Wait for the next instance to start listening before we handle this one
-                    m.Wait(5_000);
+                    // Start a fresh listener to accept the NEXT connection, but do not block this
+                    // one waiting for it to come up: we keep a pool of ConcurrentInstanceCount
+                    // listeners, so another is already waiting for the next client.
+                    //
+                    // The old code blocked here (m.Wait) until the replacement was listening. Under
+                    // CI CPU load (the profiled sample saturates the cores) the replacement's
+                    // Task.Run could be starved, leaving this already-accepted connection unread for
+                    // up to 5 seconds, long enough for the profiler's export to time out. The
+                    // request was then never read, so it was never counted, which is what made this
+                    // test flaky (profiles were written to disk but "not sent" to the agent).
+                    _tasks.Add(Task.Run(() => StartNamedPipeServer(null)));
                     _log("Executing read for " + instance);
 
                     await _handleReadFunc(serverStream, _cancellationTokenSource.Token);
@@ -443,11 +448,9 @@ namespace Datadog.Profiler.IntegrationTests
                 }
                 catch (Exception ex)
                 {
-                    // unexpected exception, so start another listener
+                    // unexpected exception, so start another listener (without blocking on it)
                     _log("Unexpected exception " + instance + " " + ex.ToString());
-                    using var m = new ManualResetEventSlim();
-                    _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
-                    m.Wait(5_000);
+                    _tasks.Add(Task.Run(() => StartNamedPipeServer(null)));
                 }
             }
 
