@@ -1493,11 +1493,12 @@ namespace Datadog.Trace.Tests.Debugger
 
                 Action firstLookup = () => InstanceOfHelper.ResolveType("LazyLoaded.TypeForInstanceOf");
                 firstLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+                var callsAfterFirstLookup = calls;
 
                 includeSecondAssembly = true;
                 InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
                 InstanceOfHelper.IsInstanceOf(instance, "LazyLoaded.TypeForInstanceOf").Should().BeTrue();
-                calls.Should().BeGreaterThan(1);
+                calls.Should().BeGreaterThan(callsAfterFirstLookup);
             }
             finally
             {
@@ -1591,13 +1592,18 @@ namespace Datadog.Trace.Tests.Debugger
 
                 Action firstLookup = () => InstanceOfHelper.ResolveType("Missing.TypeForInstanceOf");
                 firstLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+                var callsAfterFirstLookup = calls;
 
                 includeSecondAssembly = true;
                 InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
                 Action secondLookup = () => InstanceOfHelper.ResolveType("Missing.TypeForInstanceOf");
                 secondLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
 
-                calls.Should().BeGreaterThan(1);
+                // Assert the delta rather than an absolute count: the second lookup must rescan
+                // (re-invoke the provider) after the new assembly appears rather than serve the cached
+                // miss. Both lookups throw *unknown type*, so an unrelated retry inflating the first
+                // lookup's count must not be able to satisfy this on its own.
+                calls.Should().BeGreaterThan(callsAfterFirstLookup);
             }
             finally
             {
@@ -1635,12 +1641,13 @@ namespace Datadog.Trace.Tests.Debugger
 
                 Action firstLookup = () => InstanceOfHelper.ResolveType("LargeMissCache.ResolvedType");
                 firstLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+                var callsAfterFirstLookup = calls;
 
                 includeResolvedAssembly = true;
                 InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
                 InstanceOfHelper.ResolveType("LargeMissCache.ResolvedType").Should().Be(resolvedAssembly.GetType("LargeMissCache.ResolvedType"));
 
-                calls.Should().BeGreaterThan(1);
+                calls.Should().BeGreaterThan(callsAfterFirstLookup);
             }
             finally
             {
