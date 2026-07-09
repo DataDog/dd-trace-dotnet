@@ -1475,14 +1475,18 @@ namespace Datadog.Trace.Tests.Debugger
             var secondAssembly = CreateDynamicAssembly(
                 "InstanceOfLazyAssembly",
                 "LazyLoaded.TypeForInstanceOf");
+            var includeSecondAssembly = false;
             var calls = 0;
 
             try
             {
+                // Gate the second assembly on an explicit flag rather than the call count: an unrelated
+                // assembly load can bump the generation and make ResolveType retry, so the provider may be
+                // invoked more than once per lookup.
                 InstanceOfHelper.SetAssemblyProviderForTests(() =>
                 {
                     calls++;
-                    return calls == 1 ? [firstAssembly] : [firstAssembly, secondAssembly];
+                    return includeSecondAssembly ? [firstAssembly, secondAssembly] : [firstAssembly];
                 });
 
                 var instance = Activator.CreateInstance(secondAssembly.GetType("LazyLoaded.TypeForInstanceOf"));
@@ -1490,9 +1494,10 @@ namespace Datadog.Trace.Tests.Debugger
                 Action firstLookup = () => InstanceOfHelper.ResolveType("LazyLoaded.TypeForInstanceOf");
                 firstLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
 
+                includeSecondAssembly = true;
                 InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
                 InstanceOfHelper.IsInstanceOf(instance, "LazyLoaded.TypeForInstanceOf").Should().BeTrue();
-                calls.Should().Be(2);
+                calls.Should().BeGreaterThan(1);
             }
             finally
             {
@@ -1570,24 +1575,29 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var firstAssembly = typeof(string).Assembly;
             var secondAssembly = typeof(TestStruct.NestedObject).Assembly;
+            var includeSecondAssembly = false;
             var calls = 0;
 
             try
             {
+                // Gate the second assembly on an explicit flag rather than the call count: an unrelated
+                // assembly load can bump the generation and make ResolveType retry, so the provider may be
+                // invoked more than once per lookup.
                 InstanceOfHelper.SetAssemblyProviderForTests(() =>
                 {
                     calls++;
-                    return calls == 1 ? [firstAssembly] : [firstAssembly, secondAssembly];
+                    return includeSecondAssembly ? [firstAssembly, secondAssembly] : [firstAssembly];
                 });
 
                 Action firstLookup = () => InstanceOfHelper.ResolveType("Missing.TypeForInstanceOf");
                 firstLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
 
+                includeSecondAssembly = true;
                 InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
                 Action secondLookup = () => InstanceOfHelper.ResolveType("Missing.TypeForInstanceOf");
                 secondLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
 
-                calls.Should().Be(2);
+                calls.Should().BeGreaterThan(1);
             }
             finally
             {
@@ -1609,23 +1619,28 @@ namespace Datadog.Trace.Tests.Debugger
             var resolvedAssembly = CreateDynamicAssembly(
                 "InstanceOfLargeMissCacheResolvedAssembly",
                 "LargeMissCache.ResolvedType");
+            var includeResolvedAssembly = false;
             var calls = 0;
 
             try
             {
+                // Gate the resolved assembly on an explicit flag rather than the call count: an unrelated
+                // assembly load can bump the generation and make ResolveType retry, so the provider may be
+                // invoked more than once per lookup.
                 InstanceOfHelper.SetAssemblyProviderForTests(() =>
                 {
                     calls++;
-                    return calls == 1 ? initialAssemblies : [.. initialAssemblies, resolvedAssembly];
+                    return includeResolvedAssembly ? [.. initialAssemblies, resolvedAssembly] : initialAssemblies;
                 });
 
                 Action firstLookup = () => InstanceOfHelper.ResolveType("LargeMissCache.ResolvedType");
                 firstLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
 
+                includeResolvedAssembly = true;
                 InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
                 InstanceOfHelper.ResolveType("LargeMissCache.ResolvedType").Should().Be(resolvedAssembly.GetType("LargeMissCache.ResolvedType"));
 
-                calls.Should().Be(2);
+                calls.Should().BeGreaterThan(1);
             }
             finally
             {
