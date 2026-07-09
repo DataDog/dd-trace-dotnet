@@ -339,16 +339,12 @@ namespace Datadog.Trace.TestHelpers
                 },
                 MockTracerAgent.TcpUdpAgent { StatsdPort: not 0 } tcp => new Dictionary<string, string>
                 {
-                    // URL takes precedence over HOSTNAME+PORT _sometimes_ so we set both here (and below)
-                    //  to make sure this won't get "polluted" by env variables set in the parent env.
-                    { "DD_TRACE_AGENT_URL", $"http://127.0.0.1:{tcp.Port}" },
                     { "DD_TRACE_AGENT_HOSTNAME", "127.0.0.1" },
                     { "DD_TRACE_AGENT_PORT", tcp.Port.ToString() },
                     { "DD_DOGSTATSD_PORT", tcp.StatsdPort.ToString() },
                 },
                 MockTracerAgent.TcpUdpAgent tcp => new Dictionary<string, string>
                 {
-                    { "DD_TRACE_AGENT_URL", $"http://127.0.0.1:{tcp.Port}" },
                     { "DD_TRACE_AGENT_HOSTNAME", "127.0.0.1" },
                     { "DD_TRACE_AGENT_PORT", tcp.Port.ToString() },
                 },
@@ -360,6 +356,8 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables[envVar.Key] = envVar.Value;
             }
 
+            // URL can take precedence over HOSTNAME+PORT, so we remove it to ensure what we configured above gets actually used.
+            environmentVariables.Remove("DD_TRACE_AGENT_URL");
             // Remove OTEL exporter env vars that could redirect traces away from the mock agent
             environmentVariables.Remove("OTEL_TRACES_EXPORTER");
             environmentVariables.Remove("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT");
