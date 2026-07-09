@@ -339,12 +339,16 @@ namespace Datadog.Trace.TestHelpers
                 },
                 MockTracerAgent.TcpUdpAgent { StatsdPort: not 0 } tcp => new Dictionary<string, string>
                 {
+                    // URL takes precedence over HOSTNAME+PORT _sometimes_ so we set both here (and below)
+                    //  to make sure this won't get "polluted" by env variables set in the parent env.
+                    { "DD_TRACE_AGENT_URL", $"http://127.0.0.1:{tcp.Port}" },
                     { "DD_TRACE_AGENT_HOSTNAME", "127.0.0.1" },
                     { "DD_TRACE_AGENT_PORT", tcp.Port.ToString() },
                     { "DD_DOGSTATSD_PORT", tcp.StatsdPort.ToString() },
                 },
                 MockTracerAgent.TcpUdpAgent tcp => new Dictionary<string, string>
                 {
+                    { "DD_TRACE_AGENT_URL", $"http://127.0.0.1:{tcp.Port}" },
                     { "DD_TRACE_AGENT_HOSTNAME", "127.0.0.1" },
                     { "DD_TRACE_AGENT_PORT", tcp.Port.ToString() },
                 },
@@ -355,6 +359,17 @@ namespace Datadog.Trace.TestHelpers
             {
                 environmentVariables[envVar.Key] = envVar.Value;
             }
+
+            // Remove OTEL exporter env vars that could redirect traces away from the mock agent
+            environmentVariables.Remove("OTEL_TRACES_EXPORTER");
+            environmentVariables.Remove("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT");
+            environmentVariables.Remove("OTEL_EXPORTER_OTLP_ENDPOINT");
+            environmentVariables.Remove("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT");
+            environmentVariables.Remove("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT");
+            environmentVariables.Remove("OTEL_METRICS_EXPORTER");
+            environmentVariables.Remove("OTEL_LOGS_EXPORTER");
+            environmentVariables.Remove("OTEL_EXPORTER_OTLP_PROTOCOL");
+            environmentVariables.Remove("OTEL_RESOURCE_ATTRIBUTES");
         }
 
         public string GetSampleApplicationPath(string packageVersion = "", string framework = "", bool usePublishWithRID = false)
