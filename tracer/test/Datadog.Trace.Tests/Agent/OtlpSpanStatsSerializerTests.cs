@@ -240,6 +240,29 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void SerializeJson_MinMaxWritten_WhenDurationIsZero()
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey();
+            // A span whose observed duration is exactly 0 (e.g. clamped clock skew): min/max
+            // must still be emitted as 0, distinct from the "never observed" sentinels.
+            var bucket = new StatsBucket(key, EmptyPeerTags, [])
+            {
+                Hits = 1,
+                Duration = 0,
+                MinDuration = 0,
+                MaxDuration = 0,
+            };
+            buffer.Buckets.Add(key, bucket);
+
+            var json = SerializeToJson(buffer);
+            var dp = json.SelectToken("$.resourceMetrics[0].scopeMetrics[0].metrics[0].histogram.dataPoints[0]")!;
+
+            ((double)dp["min"]!).Should().Be(0);
+            ((double)dp["max"]!).Should().Be(0);
+        }
+
+        [Fact]
         public void SerializeJson_ResourceAttributes_IncludeServiceName()
         {
             var buffer = CreateBuffer(service: "my-service");
