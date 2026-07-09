@@ -9,7 +9,6 @@ using System;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Logging;
-using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -142,14 +141,6 @@ namespace Datadog.Trace.Agent
             if (!otelSemanticsEnabled)
             {
                 WriteStringKvJson(writer, "datadog.runtime_id", Tracer.RuntimeId);
-
-                foreach (var tag in details.DdTags)
-                {
-                    if (TryParseTag(tag, out var key, out var value) && !OtlpMapper.IsHandledResourceAttribute(key))
-                    {
-                        WriteStringKvJson(writer, key, value);
-                    }
-                }
             }
 
             writer.WriteEndArray();
@@ -414,14 +405,6 @@ namespace Datadog.Trace.Agent
             if (!otelSemanticsEnabled)
             {
                 WriteAttribute(writer, "datadog.runtime_id", Tracer.RuntimeId);
-
-                foreach (var tag in details.DdTags)
-                {
-                    if (TryParseTag(tag, out var key, out var value) && !OtlpMapper.IsHandledResourceAttribute(key))
-                    {
-                        WriteAttribute(writer, key, value);
-                    }
-                }
             }
 
             writer.Flush();
@@ -694,20 +677,6 @@ namespace Datadog.Trace.Agent
             }
 
             return null;
-        }
-
-        private static bool TryParseTag(byte[] tag, out string key, out string value)
-        {
-            var sep = Array.IndexOf(tag, (byte)':');
-            if (sep <= 0)
-            {
-                key = value = string.Empty;
-                return false;
-            }
-
-            key = Encoding.UTF8.GetString(tag, 0, sep);
-            value = Encoding.UTF8.GetString(tag, sep + 1, tag.Length - sep - 1);
-            return true;
         }
 
         private static void WriteAttribute(BinaryWriter writer, string key, string value, int fieldNumber = FieldNumbers.Attributes)
