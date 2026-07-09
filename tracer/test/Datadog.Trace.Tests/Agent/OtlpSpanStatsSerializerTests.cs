@@ -229,7 +229,7 @@ namespace Datadog.Trace.Tests.Agent
             var buffer = CreateBuffer();
             var key = CreateKey();
             var bucket = new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 };
-            // MinDuration starts at long.MaxValue (sentinel), MaxDuration at 0 (sentinel)
+            // MinDuration sentinel is long.MaxValue, MaxDuration sentinel is long.MinValue
             buffer.Buckets.Add(key, bucket);
 
             var json = SerializeToJson(buffer);

@@ -252,13 +252,13 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, bucket.Key.Type);
 
             MessagePackBinary.WriteStringBytes(stream, HitsKeyBytes);
-            MessagePackBinary.WriteInt64(stream, (long)bucket.Hits);
+            MessagePackBinary.WriteInt64(stream, bucket.Hits);
 
             MessagePackBinary.WriteStringBytes(stream, ErrorsKeyBytes);
-            MessagePackBinary.WriteInt64(stream, (long)bucket.Errors);
+            MessagePackBinary.WriteInt64(stream, bucket.Errors);
 
             MessagePackBinary.WriteStringBytes(stream, DurationKeyBytes);
-            MessagePackBinary.WriteInt64(stream, (long)bucket.Duration);
+            MessagePackBinary.WriteInt64(stream, bucket.Duration);
 
             MessagePackBinary.WriteStringBytes(stream, OkSummaryKeyBytes);
             SerializeSketch(stream, bucket.OkSummary);
@@ -267,7 +267,7 @@ namespace Datadog.Trace.Agent
             SerializeSketch(stream, bucket.ErrorSummary);
 
             MessagePackBinary.WriteStringBytes(stream, TopLevelHitsKeyBytes);
-            MessagePackBinary.WriteInt64(stream, (long)bucket.TopLevelHits);
+            MessagePackBinary.WriteInt64(stream, bucket.TopLevelHits);
 
             // Based on https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/aggregation.go
             MessagePackBinary.WriteStringBytes(stream, SpanKindKeyBytes);

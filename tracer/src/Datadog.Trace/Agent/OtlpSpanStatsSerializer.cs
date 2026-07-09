@@ -294,7 +294,7 @@ namespace Datadog.Trace.Agent
             writer.WriteValue(count.ToString());
 
             writer.WritePropertyName("sum");
-            writer.WriteValue(TimeHelpers.NanosecondsToSeconds((long)bucket.Duration));
+            writer.WriteValue(TimeHelpers.NanosecondsToSeconds(bucket.Duration));
 
             writer.WritePropertyName("bucketCounts");
             writer.WriteStartArray();
@@ -321,7 +321,7 @@ namespace Datadog.Trace.Agent
                 writer.WriteValue(TimeHelpers.NanosecondsToSeconds(bucket.MinDuration));
             }
 
-            if (bucket.MaxDuration > 0)
+            if (bucket.MaxDuration != long.MinValue)
             {
                 writer.WritePropertyName("max");
                 writer.WriteValue(TimeHelpers.NanosecondsToSeconds(bucket.MaxDuration));
@@ -570,7 +570,7 @@ namespace Datadog.Trace.Agent
             writer.Write((ulong)bucket.Hits);
 
             WriteTag(writer, FieldNumbers.HistogramDataPointSum, WireTypeFixed64);
-            writer.Write(TimeHelpers.NanosecondsToSeconds((long)bucket.Duration));
+            writer.Write(TimeHelpers.NanosecondsToSeconds(bucket.Duration));
 
             // In OTLP mode errors go into a separate aggregation key, so OkSummary holds the full distribution.
             var bucketCounts = ProjectSketch(bucket.OkSummary);
@@ -592,7 +592,7 @@ namespace Datadog.Trace.Agent
                 writer.Write(TimeHelpers.NanosecondsToSeconds(bucket.MinDuration));
             }
 
-            if (bucket.MaxDuration > 0)
+            if (bucket.MaxDuration != long.MinValue)
             {
                 WriteTag(writer, FieldNumbers.HistogramDataPointMax, WireTypeFixed64);
                 writer.Write(TimeHelpers.NanosecondsToSeconds(bucket.MaxDuration));

@@ -699,12 +699,6 @@ namespace Datadog.Trace.Agent
             while (!_processExit.Task.IsCompleted);
         }
 
-        private static double GetWeight(Span span)
-        {
-            var rate = span.Context.TraceContext.AppliedSamplingRate;
-            return (rate is > 0) ? 1.0 / rate.Value : 1.0;
-        }
-
         /// <summary>
         /// Converts a nanosec timestamp into a float nanosecond timestamp truncated to a fixed precision.
         /// Span timestamps must have maximum precision, but we can reduce precision of timestamps for
@@ -794,19 +788,16 @@ namespace Datadog.Trace.Agent
                 buffer.IncrementActiveBucketCount();
             }
 
-            var weight = GetWeight(span);
-            bucket.Hits += weight;
+            bucket.Hits++;
 
             if (span.IsTopLevel)
             {
-                bucket.TopLevelHits += weight;
+                bucket.TopLevelHits++;
             }
 
             var duration = span.Duration.ToNanoseconds();
 
-            // Duration is weighted by sampling rate, matching the Go agent behavior:
-            // https://github.com/DataDog/datadog-agent/blob/main/pkg/trace/stats/statsraw.go
-            bucket.Duration += duration * weight;
+            bucket.Duration += duration;
 
             if (duration < bucket.MinDuration)
             {
@@ -822,7 +813,7 @@ namespace Datadog.Trace.Agent
             // As a result, if using OTLP we always add to the OkSummary sketch.
             if (span.Error && !_isOtlp)
             {
-                bucket.Errors += weight;
+                bucket.Errors++;
                 bucket.ErrorSummary.Add(ConvertTimestamp(duration));
             }
             else
