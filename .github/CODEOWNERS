@@ -180,6 +180,7 @@ Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 
 # CI
 /tracer/src/Datadog.Trace/Ci/             @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
+/tracer/test/Datadog.Trace.Tests/Ci/                          @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/CI/   @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/PDBs/MethodSymbolResolver.cs        @DataDog/ci-app-libraries-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/  @DataDog/ci-app-libraries-dotnet
