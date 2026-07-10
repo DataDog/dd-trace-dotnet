@@ -1716,7 +1716,7 @@ stages:
       retryCountOnTaskFailure: 3
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-        enable_crash_dumps: true
+        enable_crash_dumps: false
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
 
@@ -1725,7 +1725,7 @@ stages:
       condition: ne(variables['area'], 'ASM')
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-        enable_crash_dumps: true
+        enable_crash_dumps: false
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
         Area: $(area)
@@ -1736,7 +1736,7 @@ stages:
       retryCountOnTaskFailure: 2
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-        enable_crash_dumps: true
+        enable_crash_dumps: false
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
         Area: $(area)
@@ -4052,7 +4052,7 @@ stages:
       displayName: Build and Test dd-dotnet
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-        enable_crash_dumps: true
+        enable_crash_dumps: false
 
     - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
