@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using Microsoft.Azure.Functions.Worker;
@@ -15,7 +14,7 @@ public class AllTriggers
     private readonly IHostApplicationLifetime _lifetime;
     private const string AtMidnightOnFirstJan = "0 0 0 1 Jan *";
     private static readonly HttpClient HttpClient = new();
-    private static readonly ManualResetEventSlim _mutex = new(initialState: false, spinCount: 0);
+    private static int _shutdownStarted;
 
     // Single source of truth for the function host base URL. Both the readiness wait and the self-calls
     // derive from this so they always target the same host and port.
@@ -32,50 +31,29 @@ public class AllTriggers
     [Function("TriggerAllTimer")]
     public async Task TriggerAllTimer([TimerTrigger(AtMidnightOnFirstJan, RunOnStartup = true)] TimerInfo myTimer)
     {
-        try
-        {
-            _logger.LogInformation($"Profiler attached: {SampleHelpers.IsProfilerAttached()}");
-            _logger.LogInformation($"Profiler assembly location: {SampleHelpers.GetTracerAssemblyLocation()}");
+        _logger.LogInformation($"Profiler attached: {SampleHelpers.IsProfilerAttached()}");
+        _logger.LogInformation($"Profiler assembly location: {SampleHelpers.GetTracerAssemblyLocation()}");
 
-            var envVars = string.Join(", ", SampleHelpers.GetDatadogEnvironmentVariables().Select(x => $"{x.Key}={x.Value}"));
-            _logger.LogInformation("$Profiler env vars: {EnvVars}", envVars);
+        var envVars = string.Join(", ", SampleHelpers.GetDatadogEnvironmentVariables().Select(x => $"{x.Key}={x.Value}"));
+        _logger.LogInformation("$Profiler env vars: {EnvVars}", envVars);
 
-            _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
+        _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
 
-            // The RunOnStartup timer can fire before the Functions host has bound its port and registered
-            // routes, so wait for readiness before making the (traced) self-call; otherwise it fails with
-            // connection-refused (or a 404) and none of the downstream spans are produced.
-            await SampleHelpers.WaitForFunctionHostReadyAsync(FunctionBaseUrl);
-            await CallFunctionHttp("trigger");
+        // The RunOnStartup timer can fire before the Functions host has bound its port and registered
+        // routes, so wait for readiness before making the (traced) self-call; otherwise it fails with
+        // connection-refused (or a 404) and none of the downstream spans are produced.
+        await SampleHelpers.WaitForFunctionHostReadyAsync(FunctionBaseUrl);
+        await CallFunctionHttp("trigger");
 
-            _logger.LogInformation($"Trigger All Timer complete: {DateTime.Now}");
-        }
-        finally
-        {
-            _mutex.Set();
-        }
+        _logger.LogInformation($"Trigger All Timer complete: {DateTime.Now}");
     }
 
-    [Function("ExitApp")]
-    public void ExitApp([TimerTrigger(AtMidnightOnFirstJan, RunOnStartup = true)] TimerInfo myTimer)
+    [Function("Shutdown")]
+    public HttpResponseData Shutdown(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "shutdown")] HttpRequestData req)
     {
-        _logger.LogInformation($"Waiting for mutex");
-        if (!_mutex.Wait(TimeSpan.FromMinutes(5)))
-        {
-            _logger.LogError($"Error waiting for mutex: not obtained after 5 minutes!");
-        }
-
-        _logger.LogInformation($"Pausing for 3s");
-        Thread.Sleep(3_000); // just need time for the TriggerAllTimer to finish up etc
-
-        _logger.LogInformation($"Calling StopApplication()");
-        _lifetime.StopApplication();
-        // brutally kill the host, as can't find any other way to signal it should stop
-        foreach (var process in Process.GetProcessesByName("func"))
-        {
-            _logger.LogInformation("Killing {PID} ({Name})", process.Id, process.ProcessName);
-            process.Kill();
-        }
+        ScheduleShutdown();
+        return req.CreateResponse(HttpStatusCode.Accepted);
     }
 
     [Function("SimpleHttpTrigger")]
@@ -155,6 +133,24 @@ public class AllTriggers
         _logger.LogInformation("Calling Uri {Uri}", uri);
         var simpleResponse = await HttpClient.GetStringAsync(uri);
         return simpleResponse;
+    }
+
+    private void ScheduleShutdown()
+    {
+        if (Interlocked.Exchange(ref _shutdownStarted, 1) == 1)
+        {
+            return;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            // Let the shutdown HTTP response complete before stopping the isolated worker. The test owns
+            // the func.exe lifecycle and uses targeted process-tree cleanup if Core Tools remains running.
+            await Task.Delay(TimeSpan.FromMilliseconds(250));
+            await SampleHelpers.ForceTracerFlushAsync();
+            _logger.LogInformation("Stopping Azure Functions worker");
+            _lifetime.StopApplication();
+        });
     }
 
     private async Task Attempt(string endpoint, bool expectFailure = false)
