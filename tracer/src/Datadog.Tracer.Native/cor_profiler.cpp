@@ -361,8 +361,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         {
             Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version, " matched profiler version v",
                          expected_version);
-            managed_profiler_loaded_app_domains.Get()->insert(
-                {assembly_info.app_domain_id, assembly_info.manifest_module_id});
+            managed_profiler_loaded_app_domains.insert({assembly_info.app_domain_id, assembly_info.manifest_module_id});
 
             // Load defaults values if the version are the same as expected
             if (assembly_metadata.version == expected_assembly_reference.version)
@@ -1257,36 +1256,24 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
     auto new_end = std::remove(modules.begin(), modules.end(), module_id);
     modules.erase(new_end, modules.end());
 
-    auto new_internal_end = std::remove(managedInternalModules_.begin(), managedInternalModules_.end(), module_id);
-    managedInternalModules_.erase(new_internal_end, managedInternalModules_.end());
-
-    // Clear the cached domain-neutral Datadog.Trace.dll module id if this is it.
-    if (managed_profiler_domain_neutral_module_id == module_id)
+    const auto& moduleInfo = GetModuleInfo(this->info_, module_id);
+    if (!moduleInfo.IsValid())
     {
-        managed_profiler_domain_neutral_module_id = 0;
+        DBG("ModuleUnloadStarted: ", module_id);
+        return S_OK;
     }
 
-    // Datadog.Trace.dll can unload without AppDomainShutdownFinished, such as from a collectible
-    // AssemblyLoadContext. Remove entries pointing at this module without querying CLR metadata.
-    // Pre-existing limitation: the map tracks one profiler module per AppDomain.
-    {
-        auto loadedAppDomains = managed_profiler_loaded_app_domains.Get();
-        auto& loadedAppDomainsMap = loadedAppDomains.Ref();
-        for (auto it = loadedAppDomainsMap.begin(); it != loadedAppDomainsMap.end();)
-        {
-            if (it->second == module_id)
-            {
-                it = loadedAppDomainsMap.erase(it);
-            }
-            else
-            {
-                ++it;
-            }
-        }
-    }
+    DBG("ModuleUnloadStarted: ", module_id, " ", moduleInfo.assembly.name, " AppDomain ",
+        moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
 
-    // Do not query CLR metadata here; ModuleUnloadStarted can run after module state is partially torn down.
-    DBG("ModuleUnloadStarted: ", module_id);
+    const auto is_instrumentation_assembly = moduleInfo.assembly.name == managed_profiler_name;
+    if (is_instrumentation_assembly)
+    {
+        const auto appDomainId = moduleInfo.assembly.app_domain_id;
+
+        // remove appdomain id from managed_profiler_loaded_app_domains set
+        managed_profiler_loaded_app_domains.erase(appDomainId);
+    }
 
     return S_OK;
 }
@@ -1320,7 +1307,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
         Logger::Debug("   ModuleIds: ", modules->size());
         Logger::Debug("   IntegrationDefinitions: ", integration_definitions_.size());
         Logger::Debug("   DefinitionsIds: ", definitions->size());
-        Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.Get()->size());
+        Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
         Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
     }
     Logger::Info("Stats: ", Stats::Instance()->ToString());
@@ -1670,22 +1657,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
         return S_OK;
     }
 
-    // A failed AppDomain unload can leave the domain alive, so preserve per-domain state unless unload succeeds.
-    if (FAILED(hrStatus))
-    {
-        DBG("AppDomainShutdownFinished: AppDomain: ", appDomainId,
-            " reported a failed unload (hrStatus=", hrStatus,
-            "); leaving AppDomain-scoped state intact in case the domain is still alive");
-        return S_OK;
-    }
-
     if (_dataflow != nullptr)
     {
         _dataflow->AppDomainShutdown(appDomainId);
     }
 
-    // remove appdomain metadata from maps
-    managed_profiler_loaded_app_domains.Get()->erase(appDomainId);
+    // remove appdomain metadata from map
     const auto& count = first_jit_compilation_app_domains.erase(appDomainId);
 
     DBG("AppDomainShutdownFinished: AppDomain: ", appDomainId, ", removed ", count, " elements");
@@ -2435,13 +2412,8 @@ bool CorProfiler::GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleI
 
 bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id)
 {
-    if (managed_profiler_domain_neutral_module_id > 0)
-    {
-        return true;
-    }
-
-    auto loadedAppDomains = managed_profiler_loaded_app_domains.Get();
-    return loadedAppDomains->find(app_domain_id) != loadedAppDomains->end();
+    return managed_profiler_domain_neutral_module_id > 0 ||
+           managed_profiler_loaded_app_domains.find(app_domain_id) != managed_profiler_loaded_app_domains.end();
 }
 
 ModuleID CorProfiler::GetProfilerAssemblyModuleId(AppDomainID appDomainId)
@@ -2451,9 +2423,8 @@ ModuleID CorProfiler::GetProfilerAssemblyModuleId(AppDomainID appDomainId)
         return managed_profiler_domain_neutral_module_id;
     }
 
-    auto loadedAppDomains = managed_profiler_loaded_app_domains.Get();
-    auto it = loadedAppDomains->find(appDomainId);
-    if (it != loadedAppDomains->end())
+    auto it = managed_profiler_loaded_app_domains.find(appDomainId);
+    if (it != managed_profiler_loaded_app_domains.end())
     {
         return it->second;
     }
