@@ -92,7 +92,7 @@ namespace Datadog.Trace.TestHelpers
 
                     void OnDataReceived(string output)
                     {
-                        if (output == procdumpStarted)
+                        if (output.Replace("\0", string.Empty) == procdumpStarted)
                         {
                             tcs.TrySetResult(true);
                         }
@@ -113,7 +113,7 @@ namespace Datadog.Trace.TestHelpers
 
                     // It looks like there's a small race condition where this could happen before the OnDataReceived callback is called.
                     // So redo the check before setting the task as cancelled.
-                    if (helper.StandardOutput.Contains(procdumpStarted))
+                    if (helper.StandardOutput.Replace("\0", string.Empty).Contains(procdumpStarted))
                     {
                         tcs.TrySetResult(true);
                     }
