@@ -68,6 +68,11 @@ internal static class OtlpMapper
         }
 
         writeKeyValue(ref state, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
+
+        if (traceChunk.ClientComputedStats)
+        {
+            writeKeyValue(ref state, new KeyValue("_dd.stats_computed", "true"));
+        }
     }
 
     public static bool IsHandledResourceAttribute(string tagKey)

@@ -23,6 +23,12 @@ internal static partial class ConfigurationKeys
         public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
 
         /// <summary>
+        /// When true, suppresses all datadog.* data-point attributes from the OTLP span metrics export,
+        /// emitting only OpenTelemetry semantic-convention attributes.
+        /// </summary>
+        public const string OtelSemanticsEnabled = "DD_TRACE_OTEL_SEMANTICS_ENABLED";
+
+        /// <summary>
         /// Configuration key to set the OTLP endpoint URL (fallback for metrics-specific endpoint).
         /// Used when <see cref="ExporterOtlpMetricsEndpoint"/> is not set.
         /// Expects values like `unix:///path/to/socket.sock` for UDS, `\\.\pipename\` for Windows Named Pipes.
@@ -210,7 +216,7 @@ internal static partial class ConfigurationKeys
         /// Configuration key to set the exporter for traces.
         /// We only recognize the values 'otlp' and 'none'. The value 'otlp' enables
         /// the experimental export of traces using OTLP. The value 'none' disables
-        /// the export of traces entirely, which is the equivalent of setting 
+        /// the export of traces entirely, which is the equivalent of setting
         /// <see cref="ConfigurationKeys.TraceEnabled"/> to false.
         /// </summary>
         public const string TracesExporter = "OTEL_TRACES_EXPORTER";
@@ -227,5 +233,13 @@ internal static partial class ConfigurationKeys
         /// to false.
         /// </summary>
         public const string TracesSamplerArg = "OTEL_TRACES_SAMPLER_ARG";
+
+        /// <summary>
+        /// Tri-state gate for OTLP span metrics export (traces.span.sdk.metrics.duration).
+        /// When unset, auto-enables iff OTEL_TRACES_EXPORTER=otlp and DD_METRICS_OTEL_ENABLED=true.
+        /// When true, always enables span metrics export regardless of other settings.
+        /// When false, always disables span metrics export.
+        /// </summary>
+        public const string TracesSpanMetricsEnabled = "OTEL_TRACES_SPAN_METRICS_ENABLED";
     }
 }
