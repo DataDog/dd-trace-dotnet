@@ -3102,8 +3102,8 @@ namespace Datadog.Trace.Tests.Debugger
             var error = Assert.Single(compiled.Errors);
             Assert.Contains("cannot be safely read", error.Message);
         }
-		
-		[Fact]
+
+        [Fact]
         public void ProbeExpressionEvaluator_TemplateDump_RedactsSensitiveObjectFields()
         {
             const string passwordSecret = "DD_PASSWORD_SECRET";
