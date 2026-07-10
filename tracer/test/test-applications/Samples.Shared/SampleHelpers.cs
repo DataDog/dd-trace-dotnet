@@ -36,7 +36,7 @@ namespace Samples
         private static readonly MethodInfo? ExtractMethod = SpanContextExtractorType?.GetMethod("Extract", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo? InjectMethod = SpanContextInjectorType?.GetMethod("Inject", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo? SetParent = SpanCreationSettingsType?.GetProperty("Parent")?.SetMethod;
-        private static readonly MethodInfo? ForceFlushAsyncMethod = TracerType?.GetMethod("ForceFlushAsync", BindingFlags.Public | BindingFlags.Instance);
+        private static readonly MethodInfo? FlushAsyncMethod = TracerType?.GetMethod("FlushAsync", BindingFlags.Public | BindingFlags.Instance);
         private static readonly MethodInfo? ActiveScopeProperty = TracerType?.GetProperty("ActiveScope")?.GetMethod;
         private static readonly MethodInfo? ConfigureMethod = TracerType?.GetMethod("Configure");
         private static readonly MethodInfo? TraceIdProperty = SpanContextType?.GetProperty("TraceId")?.GetMethod;
@@ -273,13 +273,13 @@ namespace Samples
 
         public static Task ForceTracerFlushAsync()
         {
-            if (GetTracerInstance is null || ForceFlushAsyncMethod is null)
+            if (GetTracerInstance is null || FlushAsyncMethod is null)
             {
                 return Task.CompletedTask;
             }
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
-            return (Task?)ForceFlushAsyncMethod.Invoke(tracer, Array.Empty<object>()) ?? Task.CompletedTask;
+            return (Task?)FlushAsyncMethod.Invoke(tracer, Array.Empty<object>()) ?? Task.CompletedTask;
         }
 
         public static IDisposable GetActiveScope()
