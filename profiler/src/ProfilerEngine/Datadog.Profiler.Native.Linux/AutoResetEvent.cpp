@@ -56,6 +56,14 @@ bool AutoResetEvent::Wait(std::chrono::milliseconds timeout)
         clock_gettime(CLOCK_REALTIME, &ts);
         ts.tv_nsec += timeout.count() % 1000 * 1'000'000;
         ts.tv_sec += timeout.count() / 1000;
+
+        // pthread_cond_timedwait requires tv_nsec to be less than one second.
+        constexpr auto NanosecondsPerSecond = 1'000'000'000;
+        if (ts.tv_nsec >= NanosecondsPerSecond)
+        {
+            ts.tv_nsec -= NanosecondsPerSecond;
+            ts.tv_sec++;
+        }
     }
 
     while(!_impl->_isSet)
@@ -68,6 +76,13 @@ bool AutoResetEvent::Wait(std::chrono::milliseconds timeout)
                 // We have a race when the timeout occurs but the lock was taken
                 // before pthread_cond_timedwait acquires the lock on returned.
                 isSignaled = _impl->_isSet;
+                break;
+            }
+
+            if (res != 0)
+            {
+                LogOnce(Debug, "AutoResetEvent::Wait: pthread_cond_timedwait failed with error code ", res);
+                isSignaled = false;
                 break;
             }
         }

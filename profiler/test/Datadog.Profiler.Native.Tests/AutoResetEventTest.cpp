@@ -6,6 +6,8 @@
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native/AutoResetEvent.h"
 
 #include <future>
+#include <thread>
+#include <time.h>
 
 #include "gtest/gtest.h"
 
@@ -75,6 +77,29 @@ std::shared_ptr<EventWrapper> CreateEvent(bool initialValue)
     return std::make_shared<EventWrapper>(initialValue);
 }
 
+void WaitAcrossSecondBoundary(const std::shared_ptr<EventWrapper>& event)
+{
+    struct timespec currentTime;
+    long currentMilliseconds;
+    do
+    {
+        clock_gettime(CLOCK_REALTIME, &currentTime);
+        currentMilliseconds = currentTime.tv_nsec / 1'000'000;
+        std::this_thread::sleep_for(1ms);
+    } while (currentMilliseconds < 100 || currentMilliseconds > 500);
+
+    // Force the absolute timeout calculated by AutoResetEvent::Wait to cross
+    // a second boundary while keeping the test itself short.
+    auto timeout = std::chrono::milliseconds(1'001 - currentMilliseconds);
+    auto setThread = std::thread([event] {
+        std::this_thread::sleep_for(10ms);
+        event->Set();
+    });
+
+    event->Wait(timeout);
+    setThread.join();
+}
+
 std::shared_ptr<ThreadInfo> RunInThread(std::function<void()> callback)
 {
     auto result = std::make_shared<ThreadInfo>();
@@ -138,6 +163,14 @@ TEST(AutoResetEventTest, CheckCaseWhenEventHasTimeOutButSignaledLater)
 
     ASSERT_DURATION_LE(50ms, event->Set());
     ASSERT_DURATION_LE(50ms, event->Wait(100s));
+    ASSERT_TRUE(event->IsSet());
+}
+
+TEST(AutoResetEventTest, EnsureTimeoutAcrossSecondBoundaryIsHandled)
+{
+    auto event = CreateEvent(false);
+
+    ASSERT_DURATION_LE(10s, WaitAcrossSecondBoundary(event));
     ASSERT_TRUE(event->IsSet());
 }
 #endif
