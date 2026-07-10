@@ -22,9 +22,9 @@ include:
 variables:
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
-  # Default so the benchmark triggers forward an empty value on normal runs
-  # (an unset reference would forward the literal "$BP_EXTERNAL_S3_URL"). An
-  # external orchestrator overrides it to redirect benchmark uploads.
+  # Benchmark trigger jobs forward $BP_EXTERNAL_S3_URL to downstream pipelines so
+  # an external orchestrator can override the S3 destination of benchmark results.
+  # Defaulted to empty here so an unset value forwards as "" rather than a literal.
   BP_EXTERNAL_S3_URL: ""
   REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
   # GitLab org for internal cross-repo references - parameterized for org migration resilience
