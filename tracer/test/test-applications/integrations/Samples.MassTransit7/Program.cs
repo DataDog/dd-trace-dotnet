@@ -288,7 +288,7 @@ async Task RunExceptionTest()
 async Task RunHandlerExceptionTest()
 {
     Console.WriteLine("\n========== Testing HANDLER EXCEPTION HANDLING ==========");
-    Console.WriteLine("[handler-exception] NOTE: Handlers use a different Activity than Consumers - testing for gaps");
+    Console.WriteLine("[handler-exception] NOTE: Handlers emit Consumer.Handle diagnostic events instead of Consumer.Consume - verifying error spans work for that event shape too");
 
     var services = new ServiceCollection();
     services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
@@ -344,7 +344,7 @@ async Task RunHandlerExceptionTest()
 async Task RunSagaExceptionTest()
 {
     Console.WriteLine("\n========== Testing SAGA EXCEPTION HANDLING ==========");
-    Console.WriteLine("[saga-exception] NOTE: Sagas use their own Activity - testing for gaps");
+    Console.WriteLine("[saga-exception] NOTE: Sagas emit Saga.RaiseEvent diagnostic events, handled by the same diagnostic listener - verifying error attribution lands on the right span");
 
     var services = new ServiceCollection();
     services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
