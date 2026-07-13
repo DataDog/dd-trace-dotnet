@@ -106,6 +106,24 @@ internal enum DistributionCIVisibility
     KnownTestsResponseTests,
 
     /// <summary>
+    /// The number of pages fetched during known tests pagination by CI Visibility
+    /// </summary>
+    [TelemetryMetric("known_tests.pages_fetched", isCommon: true, NS.CIVisibility)]
+    KnownTestsPagesFetched,
+
+    /// <summary>
+    /// The total wall-clock time in ms for fetching all known tests pages by CI Visibility
+    /// </summary>
+    [TelemetryMetric("known_tests.total_fetch_ms", isCommon: true, NS.CIVisibility)]
+    KnownTestsTotalFetchMs,
+
+    /// <summary>
+    /// The sum of request durations in ms across all known tests pages by CI Visibility
+    /// </summary>
+    [TelemetryMetric("known_tests.total_request_ms", isCommon: true, NS.CIVisibility)]
+    KnownTestsTotalRequestMs,
+
+    /// <summary>
     /// The time it takes to get the response of the impacted tests detection endpoint request in ms by CI Visibility
     /// </summary>
     [TelemetryMetric("impacted_tests_detection.request_ms", isCommon: true, NS.CIVisibility)] ImpactedTestsDetectionRequestMs,
