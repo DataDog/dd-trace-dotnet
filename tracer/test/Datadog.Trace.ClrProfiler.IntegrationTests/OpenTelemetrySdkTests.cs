@@ -420,6 +420,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         span[parentSpanIdKey] = "normalized-parent-span-id";
                     }
+
+                    // Our JSON and Protobuf OTLP exporters differ in serialization behavior when there are no attributes.
+                    // Standardize them here by removing an empty array
+                    if (span["attributes"] is JArray attributes && attributes.Count == 0)
+                    {
+                        ((JObject)span).Remove("attributes");
+                    }
                 }
 
                 foreach (var attribute in tracesRequests.SelectTokens("$..spans[*].attributes[?(@.key == 'otel.trace_id')]"))
