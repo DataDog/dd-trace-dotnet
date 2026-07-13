@@ -31,8 +31,11 @@ public partial interface IEvaluation
     /// <summary> Gets the evaluation result variant </summary>
     string? Variant { get; }
 
-    /// <summary> Gets the evaluation error </summary>
+    /// <summary> Gets the evaluation error message </summary>
     string? Error { get; }
+
+    /// <summary> Gets the evaluation error code </summary>
+    ErrorCode ErrorCode { get; }
 
     /// <summary> Gets the evaluation metadata </summary>
     IDictionary<string, string>? FlagMetadata { get; }

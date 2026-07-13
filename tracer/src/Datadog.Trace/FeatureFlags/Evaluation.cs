@@ -14,7 +14,7 @@ using System.Web;
 
 namespace Datadog.Trace.FeatureFlags;
 
-internal sealed class Evaluation(string flagKey, object? value, EvaluationReason reason, string? variant = null, string? error = null, IDictionary<string, string>? metadata = null)
+internal sealed class Evaluation(string flagKey, object? value, EvaluationReason reason, string? variant = null, string? error = null, ErrorCode errorCode = ErrorCode.None, IDictionary<string, string>? metadata = null)
     : IEvaluation
 {
     public string FlagKey { get; } = flagKey;
@@ -26,6 +26,8 @@ internal sealed class Evaluation(string flagKey, object? value, EvaluationReason
     public string? Variant { get; } = variant;
 
     public string? Error { get; } = error;
+
+    public ErrorCode ErrorCode { get; } = errorCode;
 
     public IDictionary<string, string>? FlagMetadata { get; } = metadata;
 }
