@@ -3241,6 +3241,16 @@ supportedConfigurations:
     - DD_TRACE_ACTIVITY_LISTENER_ENABLED
     const_name: OpenTelemetryEnabled
     documentation: Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
+  DD_TRACE_OTEL_SEMANTICS_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'false'
+    product: OpenTelemetry
+    const_name: OtelSemanticsEnabled
+    documentation: |-
+      When true, suppresses all datadog.* data-point attributes from the OTLP span metrics export,
+      emitting only OpenTelemetry semantic-convention attributes.
   DD_TRACE_PARTIAL_FLUSH_ENABLED:
   - implementation: A
     scope: managed
@@ -3920,7 +3930,7 @@ supportedConfigurations:
       Configuration key to set the exporter for traces.
       We only recognize the values 'otlp' and 'none'. The value 'otlp' enables
       the experimental export of traces using OTLP. The value 'none' disables
-      the export of traces entirely, which is the equivalent of setting 
+      the export of traces entirely, which is the equivalent of setting
       <see cref="ConfigurationKeys.TraceEnabled"/> to false.
   OTEL_TRACES_SAMPLER:
   - implementation: C
@@ -3943,6 +3953,18 @@ supportedConfigurations:
       Configuration key to set an additional argument for the
       traces sampler.
       to false.
+  OTEL_TRACES_SPAN_METRICS_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: null
+    product: OpenTelemetry
+    const_name: TracesSpanMetricsEnabled
+    documentation: |-
+      Tri-state gate for OTLP span metrics export (traces.span.sdk.metrics.duration).
+      When unset, auto-enables iff OTEL_TRACES_EXPORTER=otlp and DD_METRICS_OTEL_ENABLED=true.
+      When true, always enables span metrics export regardless of other settings.
+      When false, always disables span metrics export.
   _DD_EXTENSION_ENDPOINT:
   - implementation: A
     scope: managed
