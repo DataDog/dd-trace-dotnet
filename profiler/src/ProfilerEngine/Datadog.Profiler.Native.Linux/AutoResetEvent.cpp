@@ -81,7 +81,6 @@ bool AutoResetEvent::Wait(std::chrono::milliseconds timeout)
 
             if (res != 0)
             {
-                LogOnce(Debug, "AutoResetEvent::Wait: pthread_cond_timedwait failed with error code ", res);
                 isSignaled = false;
                 break;
             }
