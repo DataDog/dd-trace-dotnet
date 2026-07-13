@@ -30,7 +30,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
             }
 
             var spanContextData = performingContext.GetJobParameter<Dictionary<string, string?>?>(HangfireConstants.DatadogContextKey);
-            PropagationContext propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData).MergeBaggageInto(Baggage.Current);
+            var propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData);
+
+            // Hangfire workers reuse one ExecutionContext across sequential jobs
+            Baggage.Current = propagationContext.Baggage ?? new Baggage();
+
             var parentContext = propagationContext.SpanContext;
             Scope? scope = HangfireCommon.CreateScope(Tracer.Instance, new HangfireTags(), performingContext, parentContext);
             ((Dictionary<string, object?>)performingContext.Items).Add(HangfireConstants.DatadogScopeKey, scope);
@@ -43,6 +47,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
         public void OnPerformed(object context)
         {
+            // Clear because the worker's ExecutionContext is persistent across jobs.
+            Baggage.Current = new Baggage();
+
             if (context.TryDuckCast<IPerformedContextProxy>(out var performedContext))
             {
                 if (performedContext.Items.TryGetValue(HangfireConstants.DatadogScopeKey, out var scope))
