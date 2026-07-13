@@ -586,7 +586,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
 
     auto promise = std::make_shared<std::promise<std::vector<MethodIdentifier>>>();
     std::future<std::vector<MethodIdentifier>> future = promise->get_future();
-    m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(modules.Ref(), methodProbeDefinitions, promise);
+    m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(modules.Ref().list, methodProbeDefinitions, promise);
 
     const auto& methodProbeRequests = future.get();
 
@@ -648,7 +648,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
 
         std::promise<std::vector<MethodIdentifier>> promise;
         std::future<std::vector<MethodIdentifier>> future = promise.get_future();
-        m_debugger_rejit_preprocessor->EnqueuePreprocessLineProbes(modules.Ref(), lineProbeDefinitions, &promise);
+        m_debugger_rejit_preprocessor->EnqueuePreprocessLineProbes(modules.Ref().list, lineProbeDefinitions, &promise);
 
         const auto& lineProbeRequests = future.get();
 
