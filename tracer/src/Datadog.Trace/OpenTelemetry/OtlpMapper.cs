@@ -272,6 +272,7 @@ internal static class OtlpMapper
             if (_openTelemetrySemanticsEnabled
                 && (key == Tags.ErrorMsg
                     || key == "otel.status_code"
+                    || key == "otel.status_description"
                     || key == "span.kind"
                     || key == "service.name"
                     || key == "service.version"

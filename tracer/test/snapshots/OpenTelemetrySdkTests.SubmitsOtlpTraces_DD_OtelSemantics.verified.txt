@@ -1,4 +1,4 @@
-{
+﻿{
   "resourceSpans": [
     {
       "resource": {
@@ -80,15 +80,7 @@
               "name": "InnerSpanError",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "otel.status_description",
-                  "value": {
-                    "stringValue": "Something went wrong"
-                  }
-                }
-              ]
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
@@ -97,8 +89,7 @@
               "name": "InnerSpanOk",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": []
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
@@ -108,14 +99,6 @@
               "kind": 1,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "otel.status_description",
-                  "value": {
-                    "stringValue": "Example argument exception"
-                  }
-                }
-              ],
               "events": [
                 {
                   "timeUnixNano": "0",
@@ -457,8 +440,7 @@
               "name": "ResourceName",
               "kind": 2,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": []
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
@@ -484,8 +466,7 @@
               "name": "ResourceName",
               "kind": 3,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": []
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
@@ -494,8 +475,7 @@
               "name": "ResourceName",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": []
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
@@ -504,8 +484,7 @@
               "name": "ResourceName",
               "kind": 5,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": []
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
@@ -514,8 +493,7 @@
               "name": "ResourceName",
               "kind": 4,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": []
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
@@ -524,8 +502,7 @@
               "name": "Response",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": []
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
@@ -944,8 +921,7 @@
               "name": "StartActiveSpan.Child",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": []
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
@@ -954,8 +930,7 @@
               "name": "StartRootSpan",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": []
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
@@ -964,8 +939,7 @@
               "name": "StartSpan",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": []
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
@@ -974,8 +948,7 @@
               "name": "StartSpan2",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": []
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
