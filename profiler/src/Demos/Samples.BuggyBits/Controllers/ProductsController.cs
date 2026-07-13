@@ -230,6 +230,19 @@ namespace BuggyBits.Controllers
             return View("Index");
         }
 
+        // GET: Products/EndpointProfiling
+        [Route("Products/EndpointProfiling")]
+        public IActionResult EndpointProfiling()
+        {
+            var sw = Stopwatch.StartNew();
+            while (sw.ElapsedMilliseconds < 250)
+            {
+                Thread.SpinWait(1000);
+            }
+
+            return Ok("Endpoint profiling");
+        }
+
         // GET: Products/Details/BugSpray
         [Route("Products/Details/{productName}")]
         public IActionResult Details(string productName)
