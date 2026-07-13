@@ -56,6 +56,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget
                 return CallTargetState.GetDefault();
             }
 
+            // instance IS the ReceiveContext — see MassTransitCommon.PendingSagaProcessScopes.
+            if (instance is not null && MassTransitCommon.PendingSagaProcessScopes.TryGetValue(instance, out var sagaScope))
+            {
+                MassTransitCommon.PendingSagaProcessScopes.Remove(instance);
+
+                if (exception != null)
+                {
+                    sagaScope.Span.SetException(exception);
+                }
+
+                sagaScope.Span.Finish();
+                return CallTargetState.GetDefault();
+            }
+
             // Set the exception directly on the active scope — AsyncLocal ensures it is exactly
             // the scope for the faulted operation.
             var scope = Tracer.Instance.ActiveScope as Scope;

@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
@@ -22,6 +23,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
     internal static class MassTransitCommon
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MassTransitCommon));
+
+        /// <summary>
+        /// Saga "process" (RaiseEvent) spans awaiting NotifyConsumed/NotifyFaulted, keyed by ReceiveContext
+        /// instance — ActiveScope isn't reliable across that gap for sagas.
+        /// </summary>
+        internal static readonly ConditionalWeakTable<object, Scope> PendingSagaProcessScopes = new();
 
         /// <summary>
         /// Creates a produce (send) span for an outbound message.
@@ -233,6 +240,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit
         internal static string? GetConsumeMessageType(IConsumeContext? consumeContext)
         {
             return consumeContext?.SupportedMessageTypes is { } types ? JoinMessageTypes(types) : null;
+        }
+
+        /// <summary>
+        /// Unwraps the raw ReceiveContext behind the IReceiveContext duck-type proxy, for use as a
+        /// <see cref="PendingSagaProcessScopes"/> key.
+        /// </summary>
+        internal static object? GetReceiveContextInstance(IConsumeContext? consumeContext)
+        {
+            return (consumeContext?.ReceiveContext as IDuckType)?.Instance;
         }
 
         private static string? JoinMessageTypes(IEnumerable enumerable)

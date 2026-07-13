@@ -45,8 +45,10 @@ namespace Datadog.Trace.DiagnosticListeners
     /// <para/>
     /// Exception handling:
     /// MassTransit 7 does NOT emit exception information through DiagnosticSource events (Stop event arg
-    /// is always null). We use CallTarget instrumentation on BaseReceiveContext.NotifyFaulted to set
-    /// error tags directly on the active span — AsyncLocal ensures it is the correct span.
+    /// is always null). CallTarget instrumentation on BaseReceiveContext.NotifyFaulted/NotifyConsumed sets
+    /// error tags and finishes the span instead. For sagas specifically, ambient ActiveScope is unreliable
+    /// by the time those run, so those spans are correlated via MassTransitCommon.PendingSagaProcessScopes
+    /// instead — see there for why.
     /// </remarks>
     internal sealed class MassTransitDiagnosticObserver : DiagnosticObserver
     {
@@ -130,23 +132,16 @@ namespace Datadog.Trace.DiagnosticListeners
                         OnStop("Handle");
                         break;
 
-                    // Saga events (for state machine sagas)
-                    // NOTE: MassTransit fires MULTIPLE events for the same saga operation:
-                    // - Saga.Send (when saga receives message) + Saga.RaiseEvent (when state machine transitions)
-                    // We only instrument RaiseEvent to avoid duplicate spans
-                    // Saga.Send.Start/Stop - SKIPPED to avoid duplicates
-
-                    // Saga.RaiseEvent fires when a saga state machine raises an event
+                    // Saga events (for state machine sagas). MassTransit fires both Saga.Send and
+                    // Saga.RaiseEvent per operation; only RaiseEvent gets a span, to avoid duplicates.
+                    // Saga.Send.Start/Stop, SendQuery, Initiate, Orchestrate, Observe - SKIPPED.
                     case "MassTransit.Saga.RaiseEvent.Start":
                         OnConsumeStart(arg, "SagaRaiseEvent");
                         break;
                     case "MassTransit.Saga.RaiseEvent.Stop":
+                        // Pops the ambient scope but doesn't finish it — see PendingSagaProcessScopes.
                         OnStop("SagaRaiseEvent");
                         break;
-
-                    // Additional Saga events - SKIPPED to avoid duplicates with RaiseEvent
-                    // These fire alongside RaiseEvent for specific scenarios
-                    // SendQuery, Initiate, Orchestrate, Observe.Start/Stop - SKIPPED
 
                     // Routing Slip (Courier) Activity events
                     case "MassTransit.Activity.Execute.Start":
@@ -258,7 +253,19 @@ namespace Datadog.Trace.DiagnosticListeners
                 parentContext = new PropagationContext(activeScope.Span.Context as SpanContext, Baggage.Current);
             }
 
-            MassTransitCommon.CreateProcessSpan(Tracer.Instance, inputAddress, MassTransitCommon.GetConsumeMessageType(consumeContext), parentContext);
+            var scope = MassTransitCommon.CreateProcessSpan(Tracer.Instance, inputAddress, MassTransitCommon.GetConsumeMessageType(consumeContext), parentContext);
+
+            if (operationType == "SagaRaiseEvent" && scope is not null)
+            {
+                // Finished later by NotifyConsumedIntegration/NotifyFaultedIntegration — see PendingSagaProcessScopes.
+                scope.SetFinishOnClose(false);
+                var key = MassTransitCommon.GetReceiveContextInstance(consumeContext);
+                if (key is not null)
+                {
+                    MassTransitCommon.PendingSagaProcessScopes.Remove(key);
+                    MassTransitCommon.PendingSagaProcessScopes.Add(key, scope);
+                }
+            }
         }
 
         private void OnStop(string operationType)
