@@ -71,6 +71,11 @@ namespace Samples.SqlServer
                 await RelationalDatabaseTestHarness.RunSingleAsync(connection, commandFactory, commandExecutorVb, cts.Token);
             }
 
+            // Flush the first phase's traces before starting the next phase. The default-provider phase
+            // produces large traces, so draining them first stops them from competing with the next phase
+            // for the writer's buffers (a locally dropped trace here would fail the exact span-count assertion in the test).
+            await SampleHelpers.ForceTracerFlushAsync();
+
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile
             // On .NET Core this results in a new assembly being loaded whose types are not considered the same
             // as the types loaded through the default loading mechanism, potentially causing type casting issues in CallSite instrumentation
@@ -91,8 +96,8 @@ namespace Samples.SqlServer
             // we don't have tests for stored procedures
             await StoredProcedure.RunStoredProcedureTestAsync(connectionString, cts.Token);
 
-            // allow time to flush
-            await Task.Delay(2000, cts.Token);
+            // Flush before exit so all spans are delivered (deterministic, unlike a fixed delay).
+            await SampleHelpers.ForceTracerFlushAsync();
 
             return 0;
         }
