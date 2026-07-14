@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid;
     AssemblyName = "Azure.Messaging.EventGrid",
     TypeName = "Azure.Messaging.EventGrid.EventGridPublisherClient",
     MethodName = "SendEventsAsync",
-    ReturnTypeName = ClrNames.Task,
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Azure.Core.Response]",
     ParameterTypeNames = ["System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]", ClrNames.CancellationToken],
     MinimumVersion = "4.0.0",
     MaximumVersion = "5.*.*",

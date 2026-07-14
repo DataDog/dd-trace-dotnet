@@ -3563,7 +3563,7 @@
     "AssemblyName": "Azure.Messaging.EventGrid",
     "TargetTypeName": "Azure.Messaging.EventGrid.EventGridPublisherClient",
     "TargetMethodName": "SendEventsAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Core.Response]",
     "TargetParameterTypes": [
       "System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]",
       "System.Threading.CancellationToken"
@@ -3588,7 +3588,7 @@
     "AssemblyName": "Azure.Messaging.EventGrid",
     "TargetTypeName": "Azure.Messaging.EventGrid.EventGridPublisherClient",
     "TargetMethodName": "SendEventsAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Core.Response]",
     "TargetParameterTypes": [
       "System.Collections.Generic.IEnumerable`1[Azure.Messaging.EventGrid.EventGridEvent]",
       "System.Threading.CancellationToken"
