@@ -366,6 +366,18 @@ namespace Datadog.Trace.Configuration
                 telemetry.Record(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, true, ConfigurationOrigins.Calculated);
             }
 
+#if NETFRAMEWORK
+            if (ExperimentalFeaturesEnabled.Contains(ConfigurationKeys.FeatureFlags.AspNetCoreNetFrameworkEnabled))
+            {
+                AspNetCoreNetFrameworkEnabled = config
+                                               .WithKeys(ConfigurationKeys.FeatureFlags.AspNetCoreNetFrameworkEnabled)
+                                               .AsBool(defaultValue: false);
+            }
+            else
+            {
+                AspNetCoreNetFrameworkEnabled = false;
+            }
+#endif
 #if NET6_0_OR_GREATER
             if (OtelSemanticsEnabled && !SingleSpanAspNetCoreEnabled)
             {
@@ -1336,6 +1348,14 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled"/>
         internal bool SingleSpanAspNetCoreEnabled { get; }
+
+#if NETFRAMEWORK
+        /// <summary>
+        /// Gets a value indicating whether ASP.NET Core request tracing is enabled in .NET Framework processes.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.AspNetCoreNetFrameworkEnabled"/>
+        internal bool AspNetCoreNetFrameworkEnabled { get; }
+#endif
 
         /// <summary>
         /// Gets the direct log submission settings.
