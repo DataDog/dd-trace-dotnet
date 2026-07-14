@@ -138,6 +138,39 @@ public abstract class AzureFunctionsTests : TestHelper
         return logsIntake.Logs;
     }
 
+    protected async Task<IImmutableList<MockLogsIntake.Log>> WaitForLogsToStabilizeAsync(
+        MockLogsIntake logsIntake,
+        int minimumCount,
+        int quietPeriodInMilliseconds = 2_000,
+        int timeoutInMilliseconds = 20_000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+        var quietPeriod = TimeSpan.FromMilliseconds(quietPeriodInMilliseconds);
+        var previousCount = logsIntake.Logs.Count;
+
+        while (DateTime.UtcNow < deadline)
+        {
+            var remaining = deadline - DateTime.UtcNow;
+            if (remaining < quietPeriod)
+            {
+                await Task.Delay(remaining);
+                break;
+            }
+
+            await Task.Delay(quietPeriod);
+            var logs = logsIntake.Logs;
+            if (logs.Count >= minimumCount && logs.Count == previousCount)
+            {
+                return logs;
+            }
+
+            previousCount = logs.Count;
+        }
+
+        throw new TimeoutException(
+            $"Logs did not stabilize at or above {minimumCount} entries within {timeoutInMilliseconds}ms. Last count: {logsIntake.Logs.Count}.");
+    }
+
     protected async Task<ProcessHelper> StartAzureFunction(MockTracerAgent agent, string framework)
     {
         var binFolder = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion: string.Empty, framework);
@@ -550,7 +583,9 @@ public abstract class AzureFunctionsTests : TestHelper
                 });
 
             // Worker logs are submitted during shutdown, but the hundreds of host logs must remain disabled.
-            var logs = await WaitForLogsAsync(logsIntake, static logs => logs.Count > 10);
+            // Wait for submissions to become quiet before checking the upper bound so a later batch cannot
+            // invalidate the assertion after the first worker-log batch satisfies the lower bound.
+            var logs = await WaitForLogsToStabilizeAsync(logsIntake, minimumCount: 11);
             logs.Should().HaveCountGreaterThan(10);
             logs.Should().HaveCountLessThanOrEqualTo(20);
         }
