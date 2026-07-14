@@ -1,0 +1,189 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: azure_eventgrid.receive,
+    Resource: /Samples.AzureFunctions.Messaging/eventgrid-output-binding,
+    Service: AzureFunctionsMessagingTriggerTests-azureeventgrid,
+    Type: queue,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsMessagingTriggerTests,
+      aas.site.type: function,
+      component: AzureEventGrid,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: /Samples.AzureFunctions.Messaging/eventgrid-output-binding,
+      messaging.message_id: Guid_1,
+      messaging.operation: receive,
+      messaging.system: eventgrid,
+      runtime-id: Guid_2,
+      span.kind: consumer,
+      _dd.base_service: AzureFunctionsMessagingTriggerTests,
+      _dd.svc_src: azureeventgrid
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    },
+    SpanLinks: [
+      {
+        TraceIdLow: 0,
+        TraceIdHigh: 0,
+        SpanId: Id_3,
+        TraceFlags: 0,
+        TraceState: scrubbed
+      }
+    ]
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: azure_functions.invoke,
+    Resource: EventGrid EventGridTrigger,
+    Service: AzureFunctionsMessagingTriggerTests,
+    Type: serverless,
+    ParentId: Id_2,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Messaging.MessagingTriggers.EventGridTrigger,
+      aas.function.name: EventGridTrigger,
+      aas.function.trigger: EventGrid,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsMessagingTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_2,
+      span.kind: server
+    },
+    Metrics: {
+      _dd.top_level: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: Manual inside EventGridTrigger,
+    Resource: Manual inside EventGridTrigger,
+    Service: AzureFunctionsMessagingTriggerTests,
+    ParentId: Id_4,
+    Tags: {
+      aas.site.name: AzureFunctionsMessagingTriggerTests,
+      aas.site.type: function,
+      env: integration_tests,
+      language: dotnet
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_7,
+    Name: azure_functions.invoke,
+    Resource: POST /api/output/eventgrid,
+    Service: AzureFunctionsMessagingTriggerTests,
+    Type: serverless,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.binding: Microsoft.Azure.WebJobs.Host.Executors.BindingSource,
+      aas.function.name: EventGridOutputBinding,
+      aas.function.trigger: Http,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsMessagingTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: http://localhost:00000/api/output/eventgrid,
+      language: dotnet,
+      runtime-id: Guid_3,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_8,
+    Name: azure_functions.invoke,
+    Resource: Http EventGridOutputBinding,
+    Service: AzureFunctionsMessagingTriggerTests,
+    Type: serverless,
+    ParentId: Id_7,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Messaging.MessagingTriggers.EventGridOutputBinding,
+      aas.function.name: EventGridOutputBinding,
+      aas.function.trigger: Http,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsMessagingTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_2,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_3,
+    Name: azure_eventgrid.send,
+    Resource: localhost,
+    Service: AzureFunctionsMessagingTriggerTests-azureeventgrid,
+    Type: queue,
+    ParentId: Id_7,
+    Tags: {
+      aas.site.name: AzureFunctionsMessagingTriggerTests,
+      aas.site.type: function,
+      component: AzureEventGrid,
+      env: integration_tests,
+      language: dotnet,
+      messaging.destination.name: localhost,
+      messaging.message_id: Guid_1,
+      messaging.operation: send,
+      messaging.system: eventgrid,
+      network.destination.name: localhost,
+      network.destination.port: 6500,
+      runtime-id: Guid_3,
+      span.kind: producer,
+      _dd.base_service: AzureFunctionsMessagingTriggerTests,
+      _dd.svc_src: azureeventgrid
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  }
+]

@@ -11,6 +11,7 @@
    <assembly fullname="AWSSDK.SQS" />
    <assembly fullname="AWSSDK.StepFunctions" />
    <assembly fullname="Azure.Messaging.EventGrid" />
+   <assembly fullname="Azure.Messaging.EventGrid.Namespaces" />
    <assembly fullname="Azure.Messaging.EventHubs" />
    <assembly fullname="Azure.Messaging.ServiceBus" />
    <assembly fullname="Confluent.Kafka" />

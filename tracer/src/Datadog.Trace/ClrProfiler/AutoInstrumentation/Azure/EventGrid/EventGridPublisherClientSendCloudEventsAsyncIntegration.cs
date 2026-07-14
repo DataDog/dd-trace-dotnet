@@ -12,7 +12,6 @@ using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid;
 
@@ -33,7 +32,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid;
 public sealed class EventGridPublisherClientSendCloudEventsAsyncIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TEvents>(TTarget instance, TEvents events, CancellationToken cancellationToken)
-        where TTarget : IEventGridPublisherClient, IDuckType
     {
         return EventGridCommon.CreateProducerSpan(instance, events as IEnumerable);
     }

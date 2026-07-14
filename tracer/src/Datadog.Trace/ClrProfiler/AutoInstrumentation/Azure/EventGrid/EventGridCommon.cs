@@ -8,6 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
@@ -23,7 +24,6 @@ internal static class EventGridCommon
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventGridCommon));
 
     internal static CallTargetState CreateProducerSpan<TTarget>(TTarget instance, IEnumerable? events)
-        where TTarget : IEventGridPublisherClient, IDuckType
     {
         var tracer = Tracer.Instance;
         if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid))
@@ -31,7 +31,18 @@ internal static class EventGridCommon
             return CallTargetState.GetDefault();
         }
 
-        var uriBuilder = instance.UriBuilder;
+        // The Functions host loads the Event Grid extension in a separate AssemblyLoadContext. Accessing
+        // this private field through a duck-type proxy can fail with MissingFieldException even though the
+        // field exists, so retrieve the field value from the concrete target type before duck casting it.
+        IRequestUriBuilder? uriBuilder = null;
+        if ((object?)instance is { } target)
+        {
+            uriBuilder = target.GetType()
+                               .GetField("_uriBuilder", BindingFlags.Instance | BindingFlags.NonPublic)?
+                               .GetValue(target)?
+                               .DuckCast<IRequestUriBuilder>();
+        }
+
         var host = uriBuilder?.Host;
         var port = uriBuilder?.Port ?? -1;
         return CreateProducerSpan(tracer, GetTopicFromHost(host), host, port, events, singleEvent: null);

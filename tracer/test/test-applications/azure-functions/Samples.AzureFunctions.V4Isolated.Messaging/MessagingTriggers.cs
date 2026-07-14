@@ -139,6 +139,21 @@ public class MessagingTriggers
         return req.CreateResponse(HttpStatusCode.OK);
     }
 
+    [Function("EventGridOutputBinding")]
+    [EventGridOutput(TopicEndpointUri = "EVENTGRID_TOPIC_ENDPOINT", TopicKeySetting = "EVENTGRID_TOPIC_KEY")]
+    public CloudEvent EventGridOutputBinding(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "output/eventgrid")] HttpRequestData req)
+    {
+        var testId = Environment.GetEnvironmentVariable(TestIdEnvironmentVariable) ?? string.Empty;
+        return new CloudEvent(
+            source: "/Samples.AzureFunctions.Messaging/eventgrid-output-binding",
+            type: nameof(EventGridTrigger),
+            jsonSerializableData: new { message = $"Output binding event {testId}", testId })
+        {
+            Id = testId,
+        };
+    }
+
     private void ScheduleShutdown()
     {
         if (Interlocked.Exchange(ref _shutdownStarted, 1) == 1)
