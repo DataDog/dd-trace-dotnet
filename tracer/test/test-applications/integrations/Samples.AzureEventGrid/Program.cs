@@ -22,6 +22,8 @@ namespace Samples.AzureEventGrid
         SendCloudEventAsync,
         SendCloudEvents,
         SendCloudEventsAsync,
+        SendCloudEventToChannelAsync,
+        SendCloudEventsToChannelAsync,
     }
 
     public class Program
@@ -78,6 +80,12 @@ namespace Samples.AzureEventGrid
                         break;
                     case TestMode.SendCloudEventsAsync:
                         await SendCloudEventsAsync(client);
+                        break;
+                    case TestMode.SendCloudEventToChannelAsync:
+                        await SendCloudEventToChannelAsync(client);
+                        break;
+                    case TestMode.SendCloudEventsToChannelAsync:
+                        await SendCloudEventsToChannelAsync(client);
                         break;
                     default:
                         throw new ArgumentException($"Unhandled test mode: {testMode}");
@@ -161,6 +169,24 @@ namespace Samples.AzureEventGrid
             var enumerationCount = 0;
             var events = CreateCloudEvents(() => enumerationCount++);
             await client.SendEventsAsync(events);
+            AssertEnumeratedOnce(enumerationCount);
+            Console.WriteLine("Sent 3 CloudEvents successfully");
+        }
+
+        private static async Task SendCloudEventToChannelAsync(EventGridPublisherClient client)
+        {
+            Console.WriteLine("\n=== SendEventAsync (CloudEvent with partner channel) ===");
+            var ev = CreateCloudEvent("1");
+            await ((dynamic)client).SendEventAsync(ev, "test-channel");
+            Console.WriteLine("CloudEvent sent successfully");
+        }
+
+        private static async Task SendCloudEventsToChannelAsync(EventGridPublisherClient client)
+        {
+            Console.WriteLine("\n=== SendEventsAsync (CloudEvent with partner channel) ===");
+            var enumerationCount = 0;
+            var events = CreateCloudEvents(() => enumerationCount++);
+            await ((dynamic)client).SendEventsAsync(events, "test-channel");
             AssertEnumeratedOnce(enumerationCount);
             Console.WriteLine("Sent 3 CloudEvents successfully");
         }

@@ -32,6 +32,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
+        // Partner channel overloads were introduced in Azure.Messaging.EventGrid 5.0.0.
+        public static IEnumerable<object[]> GetPartnerChannelEnabledConfig()
+            => from packageVersionArray in PackageVersions.AzureEventGrid
+               let packageVersion = (string)packageVersionArray[0]
+               where string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version(5, 0, 0)
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               from testMode in new[] { "SendCloudEventToChannelAsync", "SendCloudEventsToChannelAsync" }
+               select new[] { packageVersion, metadataSchemaVersion, testMode };
+
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Tags["span.kind"] switch
             {
@@ -230,6 +239,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 using var s = new AssertionScope();
 
                 spans.Should().HaveCountGreaterOrEqualTo(1, "Expected at least 1 producer span for azure_eventgrid.send (SendEventsAsync with IEnumerable<CloudEvent>)");
+
+                foreach (var span in spans)
+                {
+                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                    result.Success.Should().BeTrue($"Span validation failed: {result}");
+                }
+            }
+        }
+
+        [SkippableTheory]
+        [MemberData(nameof(GetPartnerChannelEnabledConfig))]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestSendCloudEventsToPartnerChannelAsync(string packageVersion, string metadataSchemaVersion, string testMode)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("EVENTGRID_TEST_MODE", testMode);
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            {
+                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 5000, operationName: ExpectedOperationName, assertExpectedCount: false);
+
+                using var s = new AssertionScope();
+
+                spans.Should().HaveCountGreaterOrEqualTo(1, $"Expected at least 1 producer span for azure_eventgrid.send ({testMode})");
 
                 foreach (var span in spans)
                 {

@@ -178,6 +178,7 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendEventsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsToChannelAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendEventsAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendEventsIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendIntegration"
