@@ -315,8 +315,12 @@ public class OtlpMapperTests
     }
 
     [Theory]
+    [InlineData("error.msg")]
+    [InlineData("error.stack")]
     [InlineData("otel.status_code")]
+    [InlineData("otel.status_description")]
     [InlineData("span.kind")]
+    [InlineData("service.name")]
     [InlineData("service.version")]
     [InlineData("service.instance.id")]
     [InlineData("component")]
@@ -333,11 +337,15 @@ public class OtlpMapperTests
     }
 
     [Theory]
+    [InlineData("error.msg")]
+    [InlineData("error.stack")]
     [InlineData("otel.library.name")]
     [InlineData("otel.library.version")]
     [InlineData("otel.status_code")]
+    [InlineData("otel.status_description")]
     [InlineData("otel.trace_id")]
     [InlineData("span.kind")]
+    [InlineData("service.name")]
     [InlineData("service.version")]
     [InlineData("service.instance.id")]
     [InlineData("component")]

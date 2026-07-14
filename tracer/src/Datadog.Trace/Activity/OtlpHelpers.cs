@@ -172,9 +172,11 @@ namespace Datadog.Trace.Activity
             {
                 tags.OtelStatusCode = tags.OtelStatusCode switch
                 {
+                    null => "STATUS_CODE_UNSET",
                     "OK" => "STATUS_CODE_OK",
                     "ERROR" => "STATUS_CODE_ERROR",
-                    _ => "STATUS_CODE_UNSET",
+                    "UNSET" => "STATUS_CODE_UNSET",
+                    string s => s,
                 };
             }
 
