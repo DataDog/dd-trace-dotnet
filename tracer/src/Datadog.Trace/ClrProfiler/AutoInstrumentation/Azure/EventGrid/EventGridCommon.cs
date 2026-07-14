@@ -31,6 +31,40 @@ internal static class EventGridCommon
             return CallTargetState.GetDefault();
         }
 
+        var uriBuilder = instance.UriBuilder;
+        var host = uriBuilder?.Host;
+        var port = uriBuilder?.Port ?? -1;
+        return CreateProducerSpan(tracer, GetTopicFromHost(host), host, port, events, singleEvent: null);
+    }
+
+    internal static CallTargetState CreateNamespaceProducerSpanForEvent<TTarget>(TTarget instance, object? cloudEvent)
+        where TTarget : IEventGridSenderClient, IDuckType
+    {
+        var tracer = Tracer.Instance;
+        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid))
+        {
+            return CallTargetState.GetDefault();
+        }
+
+        var endpoint = instance.Endpoint;
+        return CreateProducerSpan(tracer, instance.TopicName, endpoint?.Host, endpoint?.Port ?? -1, events: null, cloudEvent);
+    }
+
+    internal static CallTargetState CreateNamespaceProducerSpanForEvents<TTarget>(TTarget instance, IEnumerable? cloudEvents)
+        where TTarget : IEventGridSenderClient, IDuckType
+    {
+        var tracer = Tracer.Instance;
+        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid))
+        {
+            return CallTargetState.GetDefault();
+        }
+
+        var endpoint = instance.Endpoint;
+        return CreateProducerSpan(tracer, instance.TopicName, endpoint?.Host, endpoint?.Port ?? -1, cloudEvents, singleEvent: null);
+    }
+
+    private static CallTargetState CreateProducerSpan(Tracer tracer, string? topic, string? host, int port, IEnumerable? events, object? singleEvent)
+    {
         Scope? scope = null;
 
         try
@@ -38,19 +72,15 @@ internal static class EventGridCommon
             var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureEventGridTags(SpanKinds.Producer);
             tags.MessagingOperation = "send";
 
-            var uriBuilder = instance.UriBuilder;
-            var host = uriBuilder?.Host;
-            var topic = GetTopicFromHost(host);
             tags.MessagingDestinationName = topic;
             tags.NetworkDestinationName = host;
 
-            var port = uriBuilder?.Port ?? -1;
             if (port is not -1)
             {
                 tags.NetworkDestinationPort = port.ToString();
             }
 
-            var messageCount = events is ICollection collection ? collection.Count : 0;
+            var messageCount = singleEvent is not null ? 1 : events is ICollection collection ? collection.Count : 0;
             if (messageCount > 1)
             {
                 tags.MessagingBatchMessageCount = messageCount.ToString();
@@ -63,7 +93,11 @@ internal static class EventGridCommon
             span.Type = SpanTypes.Queue;
             span.ResourceName = topic;
 
-            if (events is not null)
+            if (singleEvent is not null)
+            {
+                ProcessEvent(singleEvent, messageCount, span, scope);
+            }
+            else if (events is not null)
             {
                 foreach (var evt in events)
                 {
@@ -72,22 +106,7 @@ internal static class EventGridCommon
                         continue;
                     }
 
-                    if (messageCount == 1 && evt.DuckCast<IEventGridEventId>() is { Id: { } id } && id.Length > 0)
-                    {
-                        span.SetTag(Tags.MessagingMessageId, id);
-                    }
-
-                    // Inject W3C trace context into CloudEvent ExtensionAttributes.
-                    // CloudEvent extension attribute names only allow [a-z0-9], so we can't use
-                    // SpanContextPropagator (which also injects Datadog headers with hyphens).
-                    // Instead, inject W3C traceparent/tracestate directly — this is the standard
-                    // for CloudEvents distributed tracing. Pre-populating these keys also prevents
-                    // the Azure SDK from overwriting with its own Activity-based context.
-                    if (evt.TryDuckCast<ICloudEvent>(out var cloudEvent)
-                        && cloudEvent.ExtensionAttributes is { } attrs)
-                    {
-                        InjectW3CContext(attrs, scope);
-                    }
+                    ProcessEvent(evt, messageCount, span, scope);
                 }
             }
 
@@ -100,6 +119,26 @@ internal static class EventGridCommon
             Log.Error(ex, "Error creating Azure Event Grid producer span");
             scope?.Dispose();
             return CallTargetState.GetDefault();
+        }
+    }
+
+    private static void ProcessEvent(object evt, int messageCount, Span span, Scope scope)
+    {
+        if (messageCount == 1 && evt.DuckCast<IEventGridEventId>() is { Id: { } id } && id.Length > 0)
+        {
+            span.SetTag(Tags.MessagingMessageId, id);
+        }
+
+        // Inject W3C trace context into CloudEvent ExtensionAttributes.
+        // CloudEvent extension attribute names only allow [a-z0-9], so we can't use
+        // SpanContextPropagator (which also injects Datadog headers with hyphens).
+        // Instead, inject W3C traceparent/tracestate directly — this is the standard
+        // for CloudEvents distributed tracing. Pre-populating these keys also prevents
+        // the Azure SDK from overwriting with its own Activity-based context.
+        if (evt.TryDuckCast<ICloudEvent>(out var cloudEvent)
+            && cloudEvent.ExtensionAttributes is { } attrs)
+        {
+            InjectW3CContext(attrs, scope);
         }
     }
 

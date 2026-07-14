@@ -322,8 +322,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             // function span directly under the producer, create a dedicated
                             // azure_eventgrid.receive consumer span (in a new trace) that links to the
                             // producer, and parent the function span under that receive span.
-                            var producerContext = ExtractPropagatedContextFromEventGrid(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
-                            extractedContext = CreateEventGridReceiveSpan(tracer, functionContext, entry.Key as string, producerContext);
+                            var producerContexts = ExtractPropagatedContextsFromEventGrid(functionContext, entry.Key as string);
+                            var baggage = producerContexts.Count == 1
+                                              ? producerContexts[0].MergeBaggageInto(Baggage.Current).Baggage
+                                              : null;
+                            extractedContext = CreateEventGridReceiveSpan(tracer, functionContext, entry.Key as string, producerContexts, baggage);
                             break;
                         }
                     }
@@ -592,54 +595,65 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        internal static PropagationContext ExtractPropagatedContextFromEventGrid<T>(T context, string? bindingName)
+        internal static List<PropagationContext> ExtractPropagatedContextsFromEventGrid<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
+            var extractedContexts = new List<PropagationContext>();
+
             try
             {
-                // Single dispatch sends a JSON object, batch dispatch sends a JSON array.
-                // Only reparent for single events — batch triggers can receive events from different producers.
-                if (!TryGetSingleEventGridCloudEvent(context, bindingName, out var cloudEventProps))
+                var cloudEvents = GetEventGridCloudEvents(context, bindingName);
+                if (cloudEvents.Length == 0)
                 {
-                    return default;
+                    return extractedContexts;
                 }
 
-                // Extract W3C trace context from CloudEvent extension attributes.
-                // These were injected by EventGridCommon.InjectW3CContext() on the publisher side.
-                var traceProperties = new Dictionary<string, object>();
+                var uniqueSpanContexts = new HashSet<SpanContext>(new SpanContextComparer());
 
-                if (cloudEventProps!.TryGetValue(W3CTraceContextPropagator.TraceParentHeaderName, out var traceparent) && traceparent is string)
+                foreach (var cloudEventProps in cloudEvents)
                 {
-                    traceProperties[W3CTraceContextPropagator.TraceParentHeaderName] = traceparent;
-                }
+                    // Extract W3C trace context from CloudEvent extension attributes.
+                    // These were injected by EventGridCommon.InjectW3CContext() on the publisher side.
+                    var traceProperties = new Dictionary<string, object>();
 
-                if (cloudEventProps.TryGetValue(W3CTraceContextPropagator.TraceStateHeaderName, out var tracestate) && tracestate is string)
-                {
-                    traceProperties[W3CTraceContextPropagator.TraceStateHeaderName] = tracestate;
-                }
+                    if (cloudEventProps.TryGetValue(W3CTraceContextPropagator.TraceParentHeaderName, out var traceparent) && traceparent is string)
+                    {
+                        traceProperties[W3CTraceContextPropagator.TraceParentHeaderName] = traceparent;
+                    }
 
-                if (traceProperties.Count == 0)
-                {
-                    return default;
-                }
+                    if (cloudEventProps.TryGetValue(W3CTraceContextPropagator.TraceStateHeaderName, out var tracestate) && tracestate is string)
+                    {
+                        traceProperties[W3CTraceContextPropagator.TraceStateHeaderName] = tracestate;
+                    }
 
-                return Shared.AzureMessagingCommon.ExtractContext(traceProperties);
+                    if (traceProperties.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    var extractedContext = Shared.AzureMessagingCommon.ExtractContext(traceProperties);
+                    if (extractedContext.SpanContext is { } spanContext && uniqueSpanContexts.Add(spanContext))
+                    {
+                        extractedContexts.Add(extractedContext);
+                    }
+                }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error extracting propagated context from EventGrid binding");
-                return default;
             }
+
+            return extractedContexts;
         }
 
         /// <summary>
-        /// Creates an <c>azure_eventgrid.receive</c> consumer span that links to the producer's
-        /// <c>azure_eventgrid.send</c> span (when a W3C context was extracted from the CloudEvent),
+        /// Creates an <c>azure_eventgrid.receive</c> consumer span that links to the producers'
+        /// <c>azure_eventgrid.send</c> spans (when W3C contexts were extracted from the CloudEvents),
         /// and returns a <see cref="PropagationContext"/> pointing at the receive span so the
         /// function-invoke span is parented under it. This mirrors the Event Hubs / Service Bus
         /// receive-span topology (new trace, span-linked to the producer).
         /// </summary>
-        private static PropagationContext CreateEventGridReceiveSpan<T>(Tracer tracer, T context, string? bindingName, PropagationContext producerContext)
+        private static PropagationContext CreateEventGridReceiveSpan<T>(Tracer tracer, T context, string? bindingName, List<PropagationContext> producerContexts, Baggage? baggage)
             where T : IFunctionContext
         {
             try
@@ -647,9 +661,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureEventGridTags(SpanKinds.Consumer);
                 tags.MessagingOperation = "receive";
 
-                IEnumerable<SpanLink>? links = producerContext.SpanContext is { } producerSpanContext
-                    ? new[] { new SpanLink(producerSpanContext) }
-                    : null;
+                var links = CreateEventGridSpanLinks(producerContexts);
 
                 var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AzureEventGrid);
 
@@ -667,9 +679,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
 
+                var cloudEvents = GetEventGridCloudEvents(context, bindingName);
                 string? source = null;
-                if (TryGetSingleEventGridCloudEvent(context, bindingName, out var cloudEventProps))
+                if (cloudEvents.Length == 1)
                 {
+                    var cloudEventProps = cloudEvents[0];
                     if (cloudEventProps!.TryGetValue("source", out var sourceObj) && sourceObj is string s && s.Length > 0)
                     {
                         source = s;
@@ -681,49 +695,111 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         span.SetTag(Tags.MessagingMessageId, id);
                     }
                 }
+                else if (cloudEvents.Length > 1)
+                {
+                    tags.MessagingBatchMessageCount = cloudEvents.Length.ToString();
+                    source = GetCommonEventGridSource(cloudEvents);
+                    if (source is not null)
+                    {
+                        tags.MessagingDestinationName = source;
+                    }
+                }
 
                 span.ResourceName = source ?? "eventgrid";
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventGrid);
 
-                return new PropagationContext(span.Context, producerContext.Baggage);
+                return new PropagationContext(span.Context, baggage);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error creating Azure Event Grid receive span");
-                return producerContext;
+                return producerContexts.Count == 1 ? producerContexts[0] : default;
             }
         }
 
+        internal static List<SpanLink>? CreateEventGridSpanLinks(List<PropagationContext> producerContexts)
+        {
+            if (producerContexts.Count == 0)
+            {
+                return null;
+            }
+
+            var links = new List<SpanLink>(producerContexts.Count);
+            foreach (var producerContext in producerContexts)
+            {
+                if (producerContext.SpanContext is { } producerSpanContext)
+                {
+                    links.Add(new SpanLink(producerSpanContext));
+                }
+            }
+
+            return links;
+        }
+
         /// <summary>
-        /// Reads the single CloudEvent JSON object for the given binding from <c>InputData</c>.
+        /// Reads the CloudEvent JSON object or array for the given binding from <c>InputData</c>.
         /// The full CloudEvent JSON (including extension attributes) lives in InputData, not
-        /// TriggerMetadata (which only contains <c>{"data": ...}</c> for Event Grid). Returns
-        /// <c>false</c> for batch dispatch (a JSON array) or when the binding/data is missing.
+        /// TriggerMetadata (which only contains <c>{"data": ...}</c> for Event Grid).
         /// </summary>
-        private static bool TryGetSingleEventGridCloudEvent<T>(T context, string? bindingName, [NotNullWhen(true)] out Dictionary<string, object>? cloudEventProps)
+        private static Dictionary<string, object>[] GetEventGridCloudEvents<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
-            cloudEventProps = null;
-
-            if (string.IsNullOrEmpty(bindingName))
+            if (StringUtil.IsNullOrEmpty(bindingName))
             {
-                return false;
+                return [];
             }
 
             var bindingsFeature = GetFeatureFromContext<T, FunctionBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
             if (bindingsFeature == null)
             {
-                return false;
+                return [];
             }
 
             if (bindingsFeature.Value.InputData is null
-             || !bindingsFeature.Value.InputData.TryGetValue(bindingName!, out var inputDataObj))
+             || !bindingsFeature.Value.InputData.TryGetValue(bindingName!, out var inputDataObj)
+             || inputDataObj is not string inputDataJson)
             {
-                return false;
+                return [];
             }
 
-            return TryParseJson<Dictionary<string, object>>(inputDataObj, out cloudEventProps);
+            var firstNonWhitespaceIndex = 0;
+            while (firstNonWhitespaceIndex < inputDataJson.Length && char.IsWhiteSpace(inputDataJson[firstNonWhitespaceIndex]))
+            {
+                firstNonWhitespaceIndex++;
+            }
+
+            if (firstNonWhitespaceIndex == inputDataJson.Length)
+            {
+                return [];
+            }
+
+            if (inputDataJson[firstNonWhitespaceIndex] == '[')
+            {
+                return TryParseJson<Dictionary<string, object>[]>(inputDataJson, out var cloudEventBatch) ? cloudEventBatch : [];
+            }
+
+            return TryParseJson<Dictionary<string, object>>(inputDataJson, out var cloudEventProps) ? [cloudEventProps] : [];
+        }
+
+        private static string? GetCommonEventGridSource(Dictionary<string, object>[] cloudEvents)
+        {
+            string? commonSource = null;
+            foreach (var cloudEvent in cloudEvents)
+            {
+                if (!cloudEvent.TryGetValue("source", out var sourceObj) || sourceObj is not string source || source.Length == 0)
+                {
+                    return null;
+                }
+
+                commonSource ??= source;
+                if (!commonSource.Equals(source, StringComparison.Ordinal))
+                {
+                    return null;
+                }
+            }
+
+            return commonSource;
         }
 
         private static bool TryParseJson<T>(object? jsonObj, [NotNullWhen(true)] out T? result)

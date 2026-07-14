@@ -138,6 +138,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> AzureEventGrid => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureEventGrid : PackageVersionsLatestSpecific.AzureEventGrid;
 
+        public static IEnumerable<object[]> AzureEventGridNamespaces => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AzureEventGridNamespaces : PackageVersionsLatestSpecific.AzureEventGridNamespaces;
+
         public static IEnumerable<object[]> Selenium => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Selenium : PackageVersionsLatestSpecific.Selenium;
 
         public static IEnumerable<object[]> OpenFeature => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.OpenFeature : PackageVersionsLatestSpecific.OpenFeature;

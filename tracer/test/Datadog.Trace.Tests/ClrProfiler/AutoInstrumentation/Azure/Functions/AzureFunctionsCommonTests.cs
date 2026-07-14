@@ -91,7 +91,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
         }
 
         [Fact]
-        public void ExtractPropagatedContextFromEventGrid_SingleCloudEvent_ExtractsContext()
+        public void ExtractPropagatedContextsFromEventGrid_SingleCloudEvent_ExtractsContext()
         {
             var cloudEvent = new Dictionary<string, object>
             {
@@ -104,13 +104,14 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             };
             var context = CreateMockFunctionContextWithInputData("myEvent", JsonConvert.SerializeObject(cloudEvent));
 
-            var extractedContext = AzureFunctionsCommon.ExtractPropagatedContextFromEventGrid(context, "myEvent");
+            var extractedContexts = AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(context, "myEvent");
 
-            extractedContext.SpanContext.Should().NotBeNull();
+            extractedContexts.Should().ContainSingle();
+            extractedContexts[0].SpanContext.Should().NotBeNull();
         }
 
         [Fact]
-        public void ExtractPropagatedContextFromEventGrid_SingleCloudEvent_TraceparentOnly()
+        public void ExtractPropagatedContextsFromEventGrid_SingleCloudEvent_TraceparentOnly()
         {
             var cloudEvent = new Dictionary<string, object>
             {
@@ -122,13 +123,14 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             };
             var context = CreateMockFunctionContextWithInputData("myEvent", JsonConvert.SerializeObject(cloudEvent));
 
-            var extractedContext = AzureFunctionsCommon.ExtractPropagatedContextFromEventGrid(context, "myEvent");
+            var extractedContexts = AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(context, "myEvent");
 
-            extractedContext.SpanContext.Should().NotBeNull();
+            extractedContexts.Should().ContainSingle();
+            extractedContexts[0].SpanContext.Should().NotBeNull();
         }
 
         [Fact]
-        public void ExtractPropagatedContextFromEventGrid_NoTraceContext_ReturnsDefault()
+        public void ExtractPropagatedContextsFromEventGrid_NoTraceContext_ReturnsEmpty()
         {
             var cloudEvent = new Dictionary<string, object>
             {
@@ -139,13 +141,13 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             };
             var context = CreateMockFunctionContextWithInputData("myEvent", JsonConvert.SerializeObject(cloudEvent));
 
-            var extractedContext = AzureFunctionsCommon.ExtractPropagatedContextFromEventGrid(context, "myEvent");
+            var extractedContexts = AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(context, "myEvent");
 
-            extractedContext.SpanContext.Should().BeNull();
+            extractedContexts.Should().BeEmpty();
         }
 
         [Fact]
-        public void ExtractPropagatedContextFromEventGrid_BatchCloudEvents_ReturnsDefault()
+        public void ExtractPropagatedContextsFromEventGrid_BatchCloudEvents_ExtractsAllContexts()
         {
             var batch = new[]
             {
@@ -168,19 +170,51 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             };
             var context = CreateMockFunctionContextWithInputData("myEvents", JsonConvert.SerializeObject(batch));
 
-            var extractedContext = AzureFunctionsCommon.ExtractPropagatedContextFromEventGrid(context, "myEvents");
+            var extractedContexts = AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(context, "myEvents");
+            var spanLinks = AzureFunctionsCommon.CreateEventGridSpanLinks(extractedContexts);
 
-            extractedContext.SpanContext.Should().BeNull();
+            extractedContexts.Should().HaveCount(2);
+            extractedContexts[0].SpanContext!.SpanId.Should().Be(1);
+            extractedContexts[1].SpanContext!.SpanId.Should().Be(2);
+            spanLinks.Should().HaveCount(2);
+            spanLinks![0].Context.SpanId.Should().Be(1);
+            spanLinks[1].Context.SpanId.Should().Be(2);
         }
 
         [Fact]
-        public void ExtractPropagatedContextFromEventGrid_NullBindingName_ReturnsDefault()
+        public void ExtractPropagatedContextsFromEventGrid_BatchCloudEvents_DeduplicatesContextsAndSkipsMissingContexts()
+        {
+            var batch = new[]
+            {
+                new Dictionary<string, object>
+                {
+                    ["traceparent"] = $"00-{1:x32}-{1:x16}-01",
+                },
+                new Dictionary<string, object>
+                {
+                    ["traceparent"] = $"00-{1:x32}-{1:x16}-01",
+                },
+                new Dictionary<string, object>
+                {
+                    ["specversion"] = "1.0",
+                },
+            };
+            var context = CreateMockFunctionContextWithInputData("myEvents", JsonConvert.SerializeObject(batch));
+
+            var extractedContexts = AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(context, "myEvents");
+
+            extractedContexts.Should().ContainSingle();
+            extractedContexts[0].SpanContext!.SpanId.Should().Be(1);
+        }
+
+        [Fact]
+        public void ExtractPropagatedContextsFromEventGrid_NullBindingName_ReturnsEmpty()
         {
             var context = CreateMockFunctionContextWithInputData("myEvent", "{}");
 
-            var extractedContext = AzureFunctionsCommon.ExtractPropagatedContextFromEventGrid(context, null);
+            var extractedContexts = AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(context, null);
 
-            extractedContext.SpanContext.Should().BeNull();
+            extractedContexts.Should().BeEmpty();
         }
 
         private static MockFunctionContext CreateMockFunctionContext(string propertyKey, Dictionary<string, object>? headerProperties)

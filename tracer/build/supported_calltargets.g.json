@@ -3609,6 +3609,106 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid.Namespaces",
+    "TargetTypeName": "Azure.Messaging.EventGrid.Namespaces.EventGridSenderClient",
+    "TargetMethodName": "Send",
+    "TargetReturnType": "Azure.Core.Response",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendEventsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid.Namespaces",
+    "TargetTypeName": "Azure.Messaging.EventGrid.Namespaces.EventGridSenderClient",
+    "TargetMethodName": "Send",
+    "TargetReturnType": "Azure.Core.Response",
+    "TargetParameterTypes": [
+      "Azure.Messaging.CloudEvent",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid.Namespaces",
+    "TargetTypeName": "Azure.Messaging.EventGrid.Namespaces.EventGridSenderClient",
+    "TargetMethodName": "SendAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Core.Response]",
+    "TargetParameterTypes": [
+      "Azure.Messaging.CloudEvent",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid.Namespaces",
+    "TargetTypeName": "Azure.Messaging.EventGrid.Namespaces.EventGridSenderClient",
+    "TargetMethodName": "SendAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Core.Response]",
+    "TargetParameterTypes": [
+      "System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendEventsAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "AzureEventHubs",
     "AssemblyName": "Azure.Messaging.EventHubs",
     "TargetTypeName": "Azure.Core.Shared.MessagingClientDiagnostics",

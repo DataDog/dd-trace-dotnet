@@ -971,6 +971,17 @@
     ]
   },
   {
+    "IntegrationName": "AzureEventGridNamespaces",
+    "SampleProjectName": "Samples.AzureEventGridNamespaces",
+    "NugetPackageSearchName": "Azure.Messaging.EventGrid.Namespaces",
+    "MinVersion": "1.0.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.0.*",
+      "1.*.*"
+    ]
+  },
+  {
     "IntegrationName": "Selenium",
     "SampleProjectName": "Samples.Selenium",
     "NugetPackageSearchName": "Selenium.WebDriver",
