@@ -268,6 +268,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                                                 "attempt_to_fix": true
                                                             }
                                                         },
+                                                        "SimpleErrorParameterizedTest": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
@@ -280,7 +285,72 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     1,
                     38,
                     40,
-                    "quarantined_tests");
+                    "quarantined_and_disabled");
+
+                yield return row.Concat(
+                    new MockData(
+                        GetSettingsJson("false", "false", "true", "10"),
+                        string.Empty,
+                        """
+                        {
+                            "data": {
+                                "id": "878448902e138d339eb9f26a778851f35582b5ea3622ae8ab446209d232399af",
+                                "type": "ci_app_libraries_tests",
+                                "attributes": {
+                                    "modules": {
+                                        "Samples.MSTestTests": {
+                                            "suites": {
+                                                "Samples.MSTestTests.TestSuite": {
+                                                    "tests": {
+                                                        "SimplePassTest": {
+                                                            "properties": {
+                                                                "quarantined": true,
+                                                                "attempt_to_fix": true
+                                                            }
+                                                        },
+                                                        "TraitPassTest": {
+                                                            "properties": {
+                                                                "disabled": true,
+                                                                "attempt_to_fix": true
+                                                            }
+                                                        },
+                                                        "TraitErrorTest": {
+                                                            "properties": {
+                                                                "quarantined": true
+                                                            }
+                                                        },
+                                                        "SimpleErrorTest": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        },
+                                                        "SimpleErrorParameterizedTest": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "Samples.MSTestTests.ClassInitializeExceptionTestSuite": {
+                                                    "tests": {
+                                                        "ClassInitializeExceptionTestMethod": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        """),
+                    0,
+                    38,
+                    40,
+                    "quarantined_and_disabled_attempt_to_fix_passes");
             }
         }
 
