@@ -46,6 +46,8 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     // by the 7th doubling to maintain efficient allocation without frequent resizing.
     private const int InitialBufferSize = 750000;
 
+    private readonly bool _openTelemetrySemanticsEnabled;
+
     // Absolute positions of the length placeholders. INVARIANT: these are offsets
     // into the caller's eventual `_buffer` (the destination), NOT into the temporary
     // serialization buffer (`bytes` in SerializeSpans). This works because
@@ -55,6 +57,11 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
     // Set on the first SerializeSpans call and patched in FinishBody.
     private int _resourceSpansLengthPos = -1;
     private int _scopeSpansLengthPos = -1;
+
+    public OtlpTracesProtobufSerializer(bool openTelemetrySemanticsEnabled)
+    {
+        _openTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
+    }
 
     public int HeaderSize => 0;
 
@@ -196,134 +203,6 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
             static (ref WriteAttributesState s, KeyValue kv) =>
                 s.Position = WriteKeyValueAttribute(s.Bytes, s.Position, Resource_Attributes, kv));
         return state.Position;
-    }
-
-    private static int WriteSpan(byte[] bytes, int writePosition, in SpanModel spanModel)
-    {
-        writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, ScopeSpans_Span, ProtobufWireType.LEN);
-        int spanLengthPos = writePosition;
-        writePosition += ReserveSizeForLength;
-
-        // trace_id (field 1, LEN, 16 bytes)
-        writePosition = WriteTraceIdField(bytes, writePosition, Span_Trace_Id, spanModel.Span.TraceId128);
-
-        // span_id (field 2, LEN, 8 bytes)
-        writePosition = WriteSpanIdField(bytes, writePosition, Span_Span_Id, spanModel.Span.SpanId);
-
-        // parent_span_id (field 4, LEN, 8 bytes) — only if parent exists and is non-zero
-        if (spanModel.Span.Context.ParentId is ulong parentId && parentId > 0)
-        {
-            writePosition = WriteSpanIdField(bytes, writePosition, Span_Parent_Span_Id, parentId);
-        }
-
-        // name (field 5, string)
-        writePosition = ProtobufSerializer.WriteStringWithTag(bytes, writePosition, Span_Name, spanModel.Span.ResourceName);
-
-        // kind (field 6, enum)
-        var spanKind = spanModel.Span.GetTag(Tags.SpanKind) switch
-        {
-            SpanKinds.Server => Span_Kind_Server,
-            SpanKinds.Client => Span_Kind_Client,
-            SpanKinds.Producer => Span_Kind_Producer,
-            SpanKinds.Consumer => Span_Kind_Consumer,
-            _ => Span_Kind_Internal,
-        };
-        writePosition = ProtobufSerializer.WriteEnumWithTag(bytes, writePosition, Span_Kind, spanKind);
-
-        // start_time_unix_nano (field 7, fixed64)
-        var startNs = (ulong)spanModel.Span.StartTime.ToUnixTimeNanoseconds();
-        writePosition = ProtobufSerializer.WriteFixed64WithTag(bytes, writePosition, Span_Start_Time_Unix_Nano, startNs);
-
-        // end_time_unix_nano (field 8, fixed64)
-        var endNs = (ulong)(spanModel.Span.StartTime + spanModel.Span.Duration).ToUnixTimeNanoseconds();
-        writePosition = ProtobufSerializer.WriteFixed64WithTag(bytes, writePosition, Span_End_Time_Unix_Nano, endNs);
-
-        // attributes (field 9, repeated KeyValue)
-        var attributesState = new WriteAttributesState(bytes, writePosition);
-        int droppedAttributes = OtlpMapper.EmitAttributesFromSpan(
-            in spanModel,
-            SpanAttributeCountLimit,
-            ref attributesState,
-            static (ref WriteAttributesState s, KeyValue kv) =>
-                s.Position = WriteKeyValueAttribute(s.Bytes, s.Position, Span_Attributes, kv));
-        writePosition = attributesState.Position;
-
-        if (droppedAttributes > 0)
-        {
-            writePosition = ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, Span_Dropped_Attributes_Count, (ulong)droppedAttributes);
-        }
-
-        // events (field 11, repeated Event)
-        int droppedEvents = 0;
-        if (spanModel.Span.SpanEvents is { Count: > 0 } events)
-        {
-            int written = 0;
-            foreach (var evt in events)
-            {
-                if (written < EventCountLimit)
-                {
-                    writePosition = WriteSpanEvent(bytes, writePosition, evt);
-                    written++;
-                }
-                else
-                {
-                    droppedEvents++;
-                }
-            }
-
-            if (droppedEvents > 0)
-            {
-                writePosition = ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, Span_Dropped_Events_Count, (ulong)droppedEvents);
-            }
-        }
-
-        // links (field 13, repeated Link)
-        int droppedLinks = 0;
-        if (spanModel.Span.SpanLinks is { Count: > 0 } links)
-        {
-            int written = 0;
-            foreach (var link in links)
-            {
-                if (written < LinkCountLimit)
-                {
-                    writePosition = WriteSpanLink(bytes, writePosition, link);
-                    written++;
-                }
-                else
-                {
-                    droppedLinks++;
-                }
-            }
-
-            if (droppedLinks > 0)
-            {
-                writePosition = ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, Span_Dropped_Links_Count, (ulong)droppedLinks);
-            }
-        }
-
-        // status (field 15)
-        int? statusCode = spanModel.Span.GetTag("otel.status_code") switch
-        {
-            "STATUS_CODE_OK" => StatusCode_Ok,
-            "STATUS_CODE_ERROR" => StatusCode_Error,
-            _ => null,
-        };
-        if (statusCode is not null)
-        {
-            writePosition = WriteSpanStatus(bytes, writePosition, statusCode.Value, spanModel.Span.GetTag(Tags.ErrorMsg));
-        }
-
-        // flags (field 16, fixed32) — only when sampling priority is known
-        if (spanModel.Span.Context.SamplingPriority is int samplingPriority)
-        {
-            // Bit 0: trace flag for "sampled" (set when priority keeps the trace)
-            uint flags = SamplingPriorityValues.IsKeep(samplingPriority) ? 1u : 0u;
-            writePosition = ProtobufSerializer.WriteFixed32WithTag(bytes, writePosition, Span_Flags, flags);
-        }
-
-        // Patch the Span length
-        ProtobufSerializer.WriteReservedLength(bytes, spanLengthPos, writePosition - (spanLengthPos + ReserveSizeForLength));
-        return writePosition;
     }
 
     private static int WriteSpanEvent(byte[] bytes, int writePosition, Datadog.Trace.SpanEvent evt)
@@ -555,6 +434,135 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         writePosition = ProtobufSerializer.WriteLength(bytes, writePosition, SpanIdSize);
         BinaryPrimitives.WriteUInt64BigEndian(new Span<byte>(bytes, writePosition, SpanIdSize), spanId);
         return writePosition + SpanIdSize;
+    }
+
+    private int WriteSpan(byte[] bytes, int writePosition, in SpanModel spanModel)
+    {
+        writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, ScopeSpans_Span, ProtobufWireType.LEN);
+        int spanLengthPos = writePosition;
+        writePosition += ReserveSizeForLength;
+
+        // trace_id (field 1, LEN, 16 bytes)
+        writePosition = WriteTraceIdField(bytes, writePosition, Span_Trace_Id, spanModel.Span.TraceId128);
+
+        // span_id (field 2, LEN, 8 bytes)
+        writePosition = WriteSpanIdField(bytes, writePosition, Span_Span_Id, spanModel.Span.SpanId);
+
+        // parent_span_id (field 4, LEN, 8 bytes) — only if parent exists and is non-zero
+        if (spanModel.Span.Context.ParentId is ulong parentId && parentId > 0)
+        {
+            writePosition = WriteSpanIdField(bytes, writePosition, Span_Parent_Span_Id, parentId);
+        }
+
+        // name (field 5, string)
+        writePosition = ProtobufSerializer.WriteStringWithTag(bytes, writePosition, Span_Name, spanModel.Span.ResourceName);
+
+        // kind (field 6, enum)
+        var spanKind = spanModel.Span.GetTag(Tags.SpanKind) switch
+        {
+            SpanKinds.Server => Span_Kind_Server,
+            SpanKinds.Client => Span_Kind_Client,
+            SpanKinds.Producer => Span_Kind_Producer,
+            SpanKinds.Consumer => Span_Kind_Consumer,
+            _ => Span_Kind_Internal,
+        };
+        writePosition = ProtobufSerializer.WriteEnumWithTag(bytes, writePosition, Span_Kind, spanKind);
+
+        // start_time_unix_nano (field 7, fixed64)
+        var startNs = (ulong)spanModel.Span.StartTime.ToUnixTimeNanoseconds();
+        writePosition = ProtobufSerializer.WriteFixed64WithTag(bytes, writePosition, Span_Start_Time_Unix_Nano, startNs);
+
+        // end_time_unix_nano (field 8, fixed64)
+        var endNs = (ulong)(spanModel.Span.StartTime + spanModel.Span.Duration).ToUnixTimeNanoseconds();
+        writePosition = ProtobufSerializer.WriteFixed64WithTag(bytes, writePosition, Span_End_Time_Unix_Nano, endNs);
+
+        // attributes (field 9, repeated KeyValue)
+        var attributesState = new WriteAttributesState(bytes, writePosition);
+        int droppedAttributes = OtlpMapper.EmitAttributesFromSpan(
+            in spanModel,
+            SpanAttributeCountLimit,
+            _openTelemetrySemanticsEnabled,
+            ref attributesState,
+            static (ref WriteAttributesState s, KeyValue kv) =>
+                s.Position = WriteKeyValueAttribute(s.Bytes, s.Position, Span_Attributes, kv));
+        writePosition = attributesState.Position;
+
+        if (droppedAttributes > 0)
+        {
+            writePosition = ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, Span_Dropped_Attributes_Count, (ulong)droppedAttributes);
+        }
+
+        // events (field 11, repeated Event)
+        int droppedEvents = 0;
+        if (spanModel.Span.SpanEvents is { Count: > 0 } events)
+        {
+            int written = 0;
+            foreach (var evt in events)
+            {
+                if (written < EventCountLimit)
+                {
+                    writePosition = WriteSpanEvent(bytes, writePosition, evt);
+                    written++;
+                }
+                else
+                {
+                    droppedEvents++;
+                }
+            }
+
+            if (droppedEvents > 0)
+            {
+                writePosition = ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, Span_Dropped_Events_Count, (ulong)droppedEvents);
+            }
+        }
+
+        // links (field 13, repeated Link)
+        int droppedLinks = 0;
+        if (spanModel.Span.SpanLinks is { Count: > 0 } links)
+        {
+            int written = 0;
+            foreach (var link in links)
+            {
+                if (written < LinkCountLimit)
+                {
+                    writePosition = WriteSpanLink(bytes, writePosition, link);
+                    written++;
+                }
+                else
+                {
+                    droppedLinks++;
+                }
+            }
+
+            if (droppedLinks > 0)
+            {
+                writePosition = ProtobufSerializer.WriteInt64WithTag(bytes, writePosition, Span_Dropped_Links_Count, (ulong)droppedLinks);
+            }
+        }
+
+        // status (field 15)
+        int? statusCode = spanModel.Span.GetTag("otel.status_code") switch
+        {
+            "STATUS_CODE_OK" => StatusCode_Ok,
+            "STATUS_CODE_ERROR" => StatusCode_Error,
+            _ => null,
+        };
+        if (statusCode is not null)
+        {
+            writePosition = WriteSpanStatus(bytes, writePosition, statusCode.Value, spanModel.Span.GetTag(Tags.ErrorMsg));
+        }
+
+        // flags (field 16, fixed32) — only when sampling priority is known
+        if (spanModel.Span.Context.SamplingPriority is int samplingPriority)
+        {
+            // Bit 0: trace flag for "sampled" (set when priority keeps the trace)
+            uint flags = SamplingPriorityValues.IsKeep(samplingPriority) ? 1u : 0u;
+            writePosition = ProtobufSerializer.WriteFixed32WithTag(bytes, writePosition, Span_Flags, flags);
+        }
+
+        // Patch the Span length
+        ProtobufSerializer.WriteReservedLength(bytes, spanLengthPos, writePosition - (spanLengthPos + ReserveSizeForLength));
+        return writePosition;
     }
 
     private struct WriteAttributesState

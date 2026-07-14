@@ -1269,8 +1269,10 @@ namespace Datadog.Trace.Configuration
         internal bool OtelTracesSpanMetricsEnabled { get; }
 
         /// <summary>
-        /// Gets a value indicating whether only OTel semantic-convention attributes are emitted
-        /// on OTLP span metrics data points, suppressing all datadog.* attributes.
+        /// Gets a value indicating whether OpenTelemetry semantics mode is enabled.
+        /// When enabled, traces and OTLP span metrics data points will only emit OTel semantic-convention attributes,
+        /// suppressing Datadog-specific attributes.
+        /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
         internal bool OtelSemanticsEnabled { get; }

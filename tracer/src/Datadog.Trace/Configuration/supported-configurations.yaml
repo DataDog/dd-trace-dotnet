@@ -3249,7 +3249,7 @@ supportedConfigurations:
     product: OpenTelemetry
     const_name: OtelSemanticsEnabled
     documentation: |-
-      When true, suppresses all datadog.* data-point attributes from the OTLP span metrics export,
+      When enabled, suppresses all Datadog-specific data-point attributes from the traces and OTLP span metrics data points,
       emitting only OpenTelemetry semantic-convention attributes.
   DD_TRACE_PARTIAL_FLUSH_ENABLED:
   - implementation: A
