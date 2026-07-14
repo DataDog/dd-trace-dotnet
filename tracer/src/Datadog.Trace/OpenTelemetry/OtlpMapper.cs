@@ -270,6 +270,9 @@ internal static class OtlpMapper
             // OTLP-native fields or Datadog-specific attributes not relevant to OTel consumers.
             if (_openTelemetrySemanticsEnabled
                 && (key == Tags.ErrorMsg
+                    || key == Tags.ErrorStack
+                    // Do not exclude "error.type" because it is a stable OTel attribute,
+                    // see https://opentelemetry.io/docs/specs/semconv/registry/attributes/error/
                     || key == "otel.status_code"
                     || key == "otel.status_description"
                     || key == "span.kind"
