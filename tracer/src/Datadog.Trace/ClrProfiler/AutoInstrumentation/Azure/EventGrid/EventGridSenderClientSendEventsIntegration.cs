@@ -6,8 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -32,10 +30,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class EventGridSenderClientSendEventsIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget, TCloudEvents>(TTarget instance, TCloudEvents cloudEvents, CancellationToken cancellationToken)
+    internal static CallTargetState OnMethodBegin<TTarget, TCloudEvents>(TTarget instance, ref TCloudEvents cloudEvents, CancellationToken cancellationToken)
         where TTarget : IEventGridSenderClient, IDuckType
     {
-        return EventGridCommon.CreateNamespaceProducerSpanForEvents(instance, cloudEvents as IEnumerable);
+        return EventGridCommon.CreateNamespaceProducerSpanForEvents(instance, ref cloudEvents);
     }
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)

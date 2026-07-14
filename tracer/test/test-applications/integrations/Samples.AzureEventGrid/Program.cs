@@ -112,27 +112,21 @@ namespace Samples.AzureEventGrid
         private static void SendEventGridEvents(EventGridPublisherClient client)
         {
             Console.WriteLine("\n=== SendEvents (EventGridEvent) ===");
-            var events = new List<EventGridEvent>
-            {
-                CreateEventGridEvent("1"),
-                CreateEventGridEvent("2"),
-                CreateEventGridEvent("3"),
-            };
+            var enumerationCount = 0;
+            var events = CreateEventGridEvents(() => enumerationCount++);
             client.SendEvents(events);
-            Console.WriteLine($"Sent {events.Count} events successfully");
+            AssertEnumeratedOnce(enumerationCount);
+            Console.WriteLine("Sent 3 events successfully");
         }
 
         private static async Task SendEventGridEventsAsync(EventGridPublisherClient client)
         {
             Console.WriteLine("\n=== SendEventsAsync (EventGridEvent) ===");
-            var events = new List<EventGridEvent>
-            {
-                CreateEventGridEvent("1"),
-                CreateEventGridEvent("2"),
-                CreateEventGridEvent("3"),
-            };
+            var enumerationCount = 0;
+            var events = CreateEventGridEvents(() => enumerationCount++);
             await client.SendEventsAsync(events);
-            Console.WriteLine($"Sent {events.Count} events successfully");
+            AssertEnumeratedOnce(enumerationCount);
+            Console.WriteLine("Sent 3 events successfully");
         }
 
         private static void SendCloudEvent(EventGridPublisherClient client)
@@ -154,27 +148,45 @@ namespace Samples.AzureEventGrid
         private static void SendCloudEvents(EventGridPublisherClient client)
         {
             Console.WriteLine("\n=== SendEvents (CloudEvent) ===");
-            var events = new List<CloudEvent>
-            {
-                CreateCloudEvent("1"),
-                CreateCloudEvent("2"),
-                CreateCloudEvent("3"),
-            };
+            var enumerationCount = 0;
+            var events = CreateCloudEvents(() => enumerationCount++);
             client.SendEvents(events);
-            Console.WriteLine($"Sent {events.Count} CloudEvents successfully");
+            AssertEnumeratedOnce(enumerationCount);
+            Console.WriteLine("Sent 3 CloudEvents successfully");
         }
 
         private static async Task SendCloudEventsAsync(EventGridPublisherClient client)
         {
             Console.WriteLine("\n=== SendEventsAsync (CloudEvent) ===");
-            var events = new List<CloudEvent>
-            {
-                CreateCloudEvent("1"),
-                CreateCloudEvent("2"),
-                CreateCloudEvent("3"),
-            };
+            var enumerationCount = 0;
+            var events = CreateCloudEvents(() => enumerationCount++);
             await client.SendEventsAsync(events);
-            Console.WriteLine($"Sent {events.Count} CloudEvents successfully");
+            AssertEnumeratedOnce(enumerationCount);
+            Console.WriteLine("Sent 3 CloudEvents successfully");
+        }
+
+        private static IEnumerable<EventGridEvent> CreateEventGridEvents(Action onEnumeration)
+        {
+            onEnumeration();
+            yield return CreateEventGridEvent("1");
+            yield return CreateEventGridEvent("2");
+            yield return CreateEventGridEvent("3");
+        }
+
+        private static IEnumerable<CloudEvent> CreateCloudEvents(Action onEnumeration)
+        {
+            onEnumeration();
+            yield return CreateCloudEvent("1");
+            yield return CreateCloudEvent("2");
+            yield return CreateCloudEvent("3");
+        }
+
+        private static void AssertEnumeratedOnce(int enumerationCount)
+        {
+            if (enumerationCount != 1)
+            {
+                throw new InvalidOperationException($"Expected the events to be enumerated once, but they were enumerated {enumerationCount} times.");
+            }
         }
 
         private static EventGridEvent CreateEventGridEvent(string suffix) =>

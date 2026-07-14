@@ -50,10 +50,10 @@ namespace Samples.AzureEventGridNamespaces
                         await client.SendAsync(CreateCloudEvent("1"));
                         break;
                     case TestMode.SendBatch:
-                        client.Send(CreateCloudEvents());
+                        SendBatch(client);
                         break;
                     case TestMode.SendBatchAsync:
-                        await client.SendAsync(CreateCloudEvents());
+                        await SendBatchAsync(client);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(testMode), testMode, "Unhandled test mode");
@@ -63,12 +63,35 @@ namespace Samples.AzureEventGridNamespaces
             await SampleHelpers.ForceTracerFlushAsync();
         }
 
-        private static List<CloudEvent> CreateCloudEvents() =>
-        [
-            CreateCloudEvent("1"),
-            CreateCloudEvent("2"),
-            CreateCloudEvent("3"),
-        ];
+        private static void SendBatch(EventGridSenderClient client)
+        {
+            var enumerationCount = 0;
+            client.Send(CreateCloudEvents(() => enumerationCount++));
+            AssertEnumeratedOnce(enumerationCount);
+        }
+
+        private static async Task SendBatchAsync(EventGridSenderClient client)
+        {
+            var enumerationCount = 0;
+            await client.SendAsync(CreateCloudEvents(() => enumerationCount++));
+            AssertEnumeratedOnce(enumerationCount);
+        }
+
+        private static IEnumerable<CloudEvent> CreateCloudEvents(Action onEnumeration)
+        {
+            onEnumeration();
+            yield return CreateCloudEvent("1");
+            yield return CreateCloudEvent("2");
+            yield return CreateCloudEvent("3");
+        }
+
+        private static void AssertEnumeratedOnce(int enumerationCount)
+        {
+            if (enumerationCount != 1)
+            {
+                throw new InvalidOperationException($"Expected the events to be enumerated once, but they were enumerated {enumerationCount} times.");
+            }
+        }
 
         private static CloudEvent CreateCloudEvent(string suffix) =>
             new CloudEvent(

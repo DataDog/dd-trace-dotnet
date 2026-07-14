@@ -23,7 +23,7 @@ internal static class EventGridCommon
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventGridCommon));
 
-    internal static CallTargetState CreateProducerSpan<TTarget>(TTarget instance, IEnumerable? events)
+    internal static CallTargetState CreateProducerSpan<TTarget, TEvents>(TTarget instance, ref TEvents events, bool injectContext)
     {
         var tracer = Tracer.Instance;
         if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid))
@@ -45,7 +45,7 @@ internal static class EventGridCommon
 
         var host = uriBuilder?.Host;
         var port = uriBuilder?.Port ?? -1;
-        return CreateProducerSpan(tracer, GetTopicFromHost(host), host, port, events, singleEvent: null);
+        return CreateProducerSpan(tracer, GetTopicFromHost(host), host, port, ref events, injectContext);
     }
 
     internal static CallTargetState CreateNamespaceProducerSpanForEvent<TTarget>(TTarget instance, object? cloudEvent)
@@ -61,7 +61,7 @@ internal static class EventGridCommon
         return CreateProducerSpan(tracer, instance.TopicName, endpoint?.Host, endpoint?.Port ?? -1, events: null, cloudEvent);
     }
 
-    internal static CallTargetState CreateNamespaceProducerSpanForEvents<TTarget>(TTarget instance, IEnumerable? cloudEvents)
+    internal static CallTargetState CreateNamespaceProducerSpanForEvents<TTarget, TEvents>(TTarget instance, ref TEvents cloudEvents)
         where TTarget : IEventGridSenderClient, IDuckType
     {
         var tracer = Tracer.Instance;
@@ -71,7 +71,29 @@ internal static class EventGridCommon
         }
 
         var endpoint = instance.Endpoint;
-        return CreateProducerSpan(tracer, instance.TopicName, endpoint?.Host, endpoint?.Port ?? -1, cloudEvents, singleEvent: null);
+        return CreateProducerSpan(tracer, instance.TopicName, endpoint?.Host, endpoint?.Port ?? -1, ref cloudEvents, injectContext: true);
+    }
+
+    private static CallTargetState CreateProducerSpan<TEvents>(Tracer tracer, string? topic, string? host, int port, ref TEvents events, bool injectContext)
+    {
+        var enumerable = events as IEnumerable;
+        var state = CreateProducerSpan(tracer, topic, host, port, enumerable, singleEvent: null);
+        if (state.Scope is not { } scope || enumerable is null)
+        {
+            return state;
+        }
+
+        try
+        {
+            var observer = new EventGridMemoizingEnumerableObserver(scope, enumerable is ICollection collection ? collection.Count : null, injectContext);
+            EventGridMemoizingEnumerable.TryWrap(ref events, observer);
+        }
+        catch (Exception ex)
+        {
+            Log.Debug(ex, "Error wrapping Azure Event Grid events for context injection");
+        }
+
+        return state;
     }
 
     private static CallTargetState CreateProducerSpan(Tracer tracer, string? topic, string? host, int port, IEnumerable? events, object? singleEvent)
@@ -108,18 +130,6 @@ internal static class EventGridCommon
             {
                 ProcessEvent(singleEvent, messageCount, span, scope);
             }
-            else if (events is not null)
-            {
-                foreach (var evt in events)
-                {
-                    if (evt is null)
-                    {
-                        continue;
-                    }
-
-                    ProcessEvent(evt, messageCount, span, scope);
-                }
-            }
 
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventGrid);
 
@@ -135,9 +145,9 @@ internal static class EventGridCommon
 
     private static void ProcessEvent(object evt, int messageCount, Span span, Scope scope)
     {
-        if (messageCount == 1 && evt.DuckCast<IEventGridEventId>() is { Id: { } id } && id.Length > 0)
+        if (messageCount == 1)
         {
-            span.SetTag(Tags.MessagingMessageId, id);
+            SetMessageId(evt, span);
         }
 
         // Inject W3C trace context into CloudEvent ExtensionAttributes.
@@ -146,10 +156,23 @@ internal static class EventGridCommon
         // Instead, inject W3C traceparent/tracestate directly — this is the standard
         // for CloudEvents distributed tracing. Pre-populating these keys also prevents
         // the Azure SDK from overwriting with its own Activity-based context.
+        InjectContext(evt, scope);
+    }
+
+    private static void InjectContext(object evt, Scope scope)
+    {
         if (evt.TryDuckCast<ICloudEvent>(out var cloudEvent)
             && cloudEvent.ExtensionAttributes is { } attrs)
         {
             InjectW3CContext(attrs, scope);
+        }
+    }
+
+    private static void SetMessageId(object evt, Span span)
+    {
+        if (evt.DuckCast<IEventGridEventId>() is { Id: { } id } && id.Length > 0)
+        {
+            span.SetTag(Tags.MessagingMessageId, id);
         }
     }
 
@@ -196,5 +219,64 @@ internal static class EventGridCommon
 
         var dotIndex = host.IndexOf('.');
         return dotIndex > 0 ? host.Substring(0, dotIndex) : host;
+    }
+
+    private sealed class EventGridMemoizingEnumerableObserver : IEventGridMemoizingEnumerableObserver
+    {
+        private readonly Scope _scope;
+        private readonly int? _knownCount;
+        private readonly bool _injectContext;
+        private object? _firstItem;
+
+        public EventGridMemoizingEnumerableObserver(Scope scope, int? knownCount, bool injectContext)
+        {
+            _scope = scope;
+            _knownCount = knownCount;
+            _injectContext = injectContext;
+        }
+
+        public void OnItem(object? item)
+        {
+            try
+            {
+                _firstItem ??= item;
+                if (item is not null)
+                {
+                    if (_knownCount == 1)
+                    {
+                        SetMessageId(item, _scope.Span);
+                    }
+
+                    if (_injectContext)
+                    {
+                        InjectContext(item, _scope);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error processing an Azure Event Grid event");
+            }
+        }
+
+        public void OnCompleted(int count)
+        {
+            try
+            {
+                if (!_knownCount.HasValue && count > 1)
+                {
+                    _scope.Span.SetTag(Tags.MessagingBatchMessageCount, count.ToString());
+                }
+
+                if (!_knownCount.HasValue && count == 1 && _firstItem is not null)
+                {
+                    SetMessageId(_firstItem, _scope.Span);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error finalizing Azure Event Grid event processing");
+            }
+        }
     }
 }
