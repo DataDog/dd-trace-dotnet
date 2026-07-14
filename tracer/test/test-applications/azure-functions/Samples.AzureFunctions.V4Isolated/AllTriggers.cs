@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
 using System.Net;
-using System.Net.Http.Headers;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Hosting;
@@ -16,8 +13,6 @@ public class AllTriggers
     private static readonly HttpClient HttpClient = new();
     private static int _shutdownStarted;
 
-    // Single source of truth for the function host base URL. Both the readiness wait and the self-calls
-    // derive from this so they always target the same host and port.
     private static readonly string FunctionBaseUrl = $"http://{Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") ?? "localhost:7071"}";
 
     private readonly ILogger _logger;
@@ -39,9 +34,7 @@ public class AllTriggers
 
         _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
 
-        // Function routes are registered before timer listeners run, but the RunOnStartup timer can fire
-        // before the outer HTTP server accepts connections. Wait for the listener before making the traced
-        // self-call so a connection-refused error doesn't prevent the downstream spans from being produced.
+        // The startup timer can run before the HTTP listener is ready, which would lose the self-call spans.
         await AzureFunctionsTestHelpers.WaitForFunctionHostToAcceptHttpRequestsAsync(FunctionBaseUrl);
 
         // Check if we should test APIM proxy headers
@@ -138,12 +131,11 @@ public class AllTriggers
         return req.CreateResponse(HttpStatusCode.BadRequest);
     }
 
-    private async Task<string> CallFunctionHttp(string path)
+    private Task<string> CallFunctionHttp(string path)
     {
         var uri = $"{FunctionBaseUrl}/api/{path}";
         _logger.LogInformation("Calling Uri {Uri}", uri);
-        var simpleResponse = await HttpClient.GetStringAsync(uri);
-        return simpleResponse;
+        return HttpClient.GetStringAsync(uri);
     }
 
     private async Task<string> CallFunctionHttpWithProxy(string path)
@@ -172,20 +164,20 @@ public class AllTriggers
 
     private void ScheduleShutdown()
     {
-        if (Interlocked.Exchange(ref _shutdownStarted, 1) == 1)
+        // Concurrent shutdown requests must not race to stop the shared worker.
+        if (Interlocked.Exchange(ref _shutdownStarted, 1) == 0)
         {
-            return;
+            _ = StopWorkerAsync();
         }
+    }
 
-        _ = Task.Run(async () =>
-        {
-            // Let the shutdown HTTP response complete before stopping the isolated worker. The test owns
-            // the func.exe lifecycle and uses targeted process-tree cleanup if Core Tools remains running.
-            await Task.Delay(TimeSpan.FromMilliseconds(250));
-            await SampleHelpers.ForceTracerFlushAsync();
-            _logger.LogInformation("Stopping Azure Functions worker");
-            _lifetime.StopApplication();
-        });
+    private async Task StopWorkerAsync()
+    {
+        // Give the shutdown response time to reach the test before stopping the worker.
+        await Task.Delay(TimeSpan.FromMilliseconds(250));
+        await SampleHelpers.ForceTracerFlushAsync();
+        _logger.LogInformation("Stopping Azure Functions worker");
+        _lifetime.StopApplication();
     }
 
     private async Task Attempt(string endpoint, bool expectFailure = false)

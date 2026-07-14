@@ -29,10 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 /// </summary>
 public abstract class AzureFunctionsTests : TestHelper
 {
-    // The sample waits for the HTTP listener by probing /admin/host/ping, which the host records as one or
-    // more "GET /admin/host/ping" spans. They are not part of the traces under test, so they are excluded
-    // from the agent's span waits and results (see SuppressReadinessPingSpans).
-    protected const string ReadinessPingResource = "GET /admin/host/ping";
+    private const string ReadinessPingResource = "GET /admin/host/ping";
 
     protected AzureFunctionsTests(string sampleAppName, ITestOutputHelper output)
         : base(sampleAppName, samplePathOverrides: Path.Combine("test", "test-applications", "azure-functions"), output)
@@ -53,8 +50,7 @@ public abstract class AzureFunctionsTests : TestHelper
         SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS", ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions + ", devstoreaccount1/azure-webjobs-hosts");
     }
 
-    // Excludes the readiness-probe spans (see ReadinessPingResource) from this agent's span waits and
-    // results, so the number of probe attempts never affects WaitForSpansAsync counts.
+    // Readiness probes create host spans that must not affect test counts or snapshots.
     protected static void SuppressReadinessPingSpans(MockTracerAgent agent)
         => agent.SpanFilters.Add(s => s.Resource != ReadinessPingResource);
 
@@ -207,8 +203,7 @@ public abstract class AzureFunctionsTests : TestHelper
                 Output.WriteLine($"Unable to request Azure Functions worker shutdown: {ex.Message}");
             }
 
-            // Core Tools may remain alive after the isolated worker stops. Give it a short grace period,
-            // then terminate only this test's process tree. All expected spans and logs were awaited above.
+            // Give the worker time to flush and stop before terminating this test's Core Tools process tree.
             _ = await Task.WhenAny(helper.Task, Task.Delay(TimeSpan.FromSeconds(2)));
         }
 
@@ -322,7 +317,7 @@ public abstract class AzureFunctionsTests : TestHelper
     {
         // This only waits for the Functions host HTTP endpoint to accept requests. The ping action itself
         // does not report whether the script host and its trigger listeners have finished initializing.
-        using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
         var pingUrl = $"http://127.0.0.1:{port}/admin/host/ping";
         var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
         while (DateTime.UtcNow < deadline)
@@ -337,7 +332,7 @@ public abstract class AzureFunctionsTests : TestHelper
             }
             catch
             {
-                // Host not yet listening
+                // Connection failures are expected while the host starts.
             }
 
             await Task.Delay(500);
@@ -582,9 +577,7 @@ public abstract class AzureFunctionsTests : TestHelper
                     await AssertIsolatedSpans(spans, filename: $"{nameof(AzureFunctionsTests)}.Isolated.V4.HostLogsDisabled");
                 });
 
-            // Worker logs are submitted during shutdown, but the hundreds of host logs must remain disabled.
-            // Wait for submissions to become quiet before checking the upper bound so a later batch cannot
-            // invalidate the assertion after the first worker-log batch satisfies the lower bound.
+            // Wait for shutdown logs to settle so a late host batch cannot evade the upper-bound assertion.
             var logs = await WaitForLogsToStabilizeAsync(logsIntake, minimumCount: 11);
             logs.Should().HaveCountGreaterThan(10);
             logs.Should().HaveCountLessThanOrEqualTo(20);
