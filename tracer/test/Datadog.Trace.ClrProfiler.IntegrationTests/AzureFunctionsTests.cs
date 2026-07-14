@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 /// </summary>
 public abstract class AzureFunctionsTests : TestHelper
 {
-    // The sample waits for host readiness by probing /admin/host/ping, which the host records as one or
+    // The sample waits for the HTTP listener by probing /admin/host/ping, which the host records as one or
     // more "GET /admin/host/ping" spans. They are not part of the traces under test, so they are excluded
     // from the agent's span waits and results (see SuppressReadinessPingSpans).
     protected const string ReadinessPingResource = "GET /admin/host/ping";
@@ -85,7 +85,7 @@ public abstract class AzureFunctionsTests : TestHelper
 
         if (seedAsync is not null)
         {
-            await WaitForFunctionAppReadyAsync();
+            await WaitForFunctionHostHttpEndpointAsync();
             await seedAsync();
         }
 
@@ -101,7 +101,7 @@ public abstract class AzureFunctionsTests : TestHelper
         using var helper = await StartAzureFunction(agent, framework);
         try
         {
-            await WaitForFunctionAppReadyAsync();
+            await WaitForFunctionHostHttpEndpointAsync();
 
             // Keep func.exe and its isolated worker alive until the test has received and asserted all
             // expected data. Shutting down first can discard the host process's final trace batch.
@@ -285,10 +285,10 @@ public abstract class AzureFunctionsTests : TestHelper
                           .DisableRequireUniquePrefix();
     }
 
-    private static async Task WaitForFunctionAppReadyAsync(int port = 7071, int timeoutSeconds = 60)
+    private static async Task WaitForFunctionHostHttpEndpointAsync(int port = 7071, int timeoutSeconds = 60)
     {
-        // Poll the host ping endpoint; it returns 200 only when the host is fully initialized and
-        // all function routes are registered.
+        // This only waits for the Functions host HTTP endpoint to accept requests. The ping action itself
+        // does not report whether the script host and its trigger listeners have finished initializing.
         using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(2) };
         var pingUrl = $"http://127.0.0.1:{port}/admin/host/ping";
         var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);

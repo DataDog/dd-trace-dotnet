@@ -4,11 +4,8 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net.Sockets;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Samples
@@ -555,117 +552,6 @@ namespace Samples
         public static void RunCommand(string cmd, string? args = null)
         {
             RunCommandMethod?.Invoke(null, new object?[] { cmd, args });
-        }
-
-        // Waits for the Azure Functions host to be ready to serve function routes by polling its
-        // /admin/host/ping endpoint until it returns 200. A bare TCP connect only proves the port is
-        // open, but the host accepts connections before its function routes are registered; the ping
-        // endpoint returns 200 only once the host is fully initialized and all routes are registered,
-        // so waiting for it guarantees a subsequent self-call reaches a live route.
-        //
-        // Uses a raw socket rather than HttpClient so the readiness check isn't traced and doesn't add
-        // a stray http.request client span. (The host still records a single "GET /admin/host/ping"
-        // span for the successful probe, which the integration tests filter out.)
-        //
-        // baseUrl should be the same base the caller uses for its self-call (e.g. "http://localhost:7071")
-        // so the readiness check and the self-call always target the same host and port.
-        public static async Task WaitForFunctionHostReadyAsync(string baseUrl, int timeoutSeconds = 60)
-        {
-            var uri = new Uri(baseUrl);
-            var request = Encoding.ASCII.GetBytes(
-                $"GET /admin/host/ping HTTP/1.1\r\nHost: {uri.Authority}\r\nConnection: close\r\n\r\n");
-
-            var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
-            while (DateTime.UtcNow < deadline)
-            {
-                // Bound each attempt so a stalled connect/write/read can't hang past the overall deadline
-                // (e.g. the host accepts the socket but never sends a response). Without this the whole
-                // TriggerAllTimer could block until the test's 5-minute mutex fires, recreating the flake.
-                var remaining = deadline - DateTime.UtcNow;
-                var attemptTimeout = remaining < TimeSpan.FromSeconds(5) ? remaining : TimeSpan.FromSeconds(5);
-
-                if (await TryPingHostAsync(uri, request, attemptTimeout))
-                {
-                    return;
-                }
-
-                await Task.Delay(500);
-            }
-
-            throw new TimeoutException($"Azure Functions host at {baseUrl} was not ready within {timeoutSeconds}s.");
-        }
-
-        // Performs a single /admin/host/ping attempt, returning true only on a 200 response. Anything else
-        // (host not listening, connection dropped, or the attempt exceeding attemptTimeout) is reported as
-        // "not ready yet" so the caller retries. The attempt is raced against attemptTimeout: on timeout we
-        // return immediately (disposing the socket to abort the pending operation) rather than awaiting it, so
-        // a stalled connect/read cannot outlive the budget even if disposal doesn't cancel it promptly.
-        private static async Task<bool> TryPingHostAsync(Uri uri, byte[] request, TimeSpan attemptTimeout)
-        {
-            if (attemptTimeout <= TimeSpan.Zero)
-            {
-                return false;
-            }
-
-            var client = new TcpClient();
-            var pingTask = PingHostAsync(client, uri, request);
-            var completed = await Task.WhenAny(pingTask, Task.Delay(attemptTimeout));
-            if (completed != pingTask)
-            {
-                // Timed out: dispose the socket to abort the pending operation, but don't await pingTask (its
-                // completion may lag behind disposal). Observe its eventual exception out-of-band so it isn't
-                // reported as an unobserved task exception, then return so the budget is strictly enforced.
-                client.Dispose();
-                ObserveFault(pingTask);
-                return false;
-            }
-
-            // The attempt finished within budget; surface its result and dispose the socket.
-            client.Dispose();
-            try
-            {
-                return await pingTask;
-            }
-            catch (SocketException)
-            {
-                // Host is not accepting connections yet
-                return false;
-            }
-            catch (IOException)
-            {
-                // Connection dropped mid-exchange
-                return false;
-            }
-            catch (ObjectDisposedException)
-            {
-                // Socket disposed from under the attempt
-                return false;
-            }
-        }
-
-        // Observes a discarded task's exception (if any) so it doesn't surface as an unobserved task exception.
-        private static void ObserveFault(Task task)
-            => task.ContinueWith(
-                t => { _ = t.Exception; },
-                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
-
-        private static async Task<bool> PingHostAsync(TcpClient client, Uri uri, byte[] request)
-        {
-            await client.ConnectAsync(uri.Host, uri.Port);
-            using var stream = client.GetStream();
-            await stream.WriteAsync(request, 0, request.Length);
-
-            using var reader = new StreamReader(stream, Encoding.ASCII);
-            // The status line looks like "HTTP/1.1 200 OK"; a 200 means the host is initialized and its
-            // function routes are registered.
-            var statusLine = await reader.ReadLineAsync();
-            if (statusLine is null)
-            {
-                return false;
-            }
-
-            var parts = statusLine.Split(' ');
-            return parts.Length >= 2 && parts[1] == "200";
         }
 
         private class NoOpDisposable : IDisposable

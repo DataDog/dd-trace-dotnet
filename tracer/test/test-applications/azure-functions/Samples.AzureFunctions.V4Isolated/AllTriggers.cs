@@ -39,10 +39,10 @@ public class AllTriggers
 
         _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
 
-        // The RunOnStartup timer can fire before the Functions host has bound its port and registered
-        // routes, so wait for readiness before making the (traced) self-call; otherwise it fails with
-        // connection-refused (or a 404) and none of the downstream spans are produced.
-        await SampleHelpers.WaitForFunctionHostReadyAsync(FunctionBaseUrl);
+        // Function routes are registered before timer listeners run, but the RunOnStartup timer can fire
+        // before the outer HTTP server accepts connections. Wait for the listener before making the traced
+        // self-call so a connection-refused error doesn't prevent the downstream spans from being produced.
+        await AzureFunctionsTestHelpers.WaitForFunctionHostToAcceptHttpRequestsAsync(FunctionBaseUrl);
 
         // Check if we should test APIM proxy headers
         var testApim = Environment.GetEnvironmentVariable("DD_TEST_APIM_ENABLED");
