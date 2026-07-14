@@ -647,6 +647,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.AutoInstrumentation
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.AutoInstrumentation.Generator.Cli", "tracer\src\Datadog.AutoInstrumentation.Generator.Cli\Datadog.AutoInstrumentation.Generator.Cli.csproj", "{8D722514-8BAD-4069-84D0-15797026E0ED}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetCoreNetFramework", "tracer\test\test-applications\integrations\Samples.AspNetCoreNetFramework\Samples.AspNetCoreNetFramework.csproj", "{52A1FCF0-9F04-4C5C-9955-939F2EF8FBDE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1579,6 +1581,10 @@ Global
 		{8D722514-8BAD-4069-84D0-15797026E0ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D722514-8BAD-4069-84D0-15797026E0ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8D722514-8BAD-4069-84D0-15797026E0ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52A1FCF0-9F04-4C5C-9955-939F2EF8FBDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52A1FCF0-9F04-4C5C-9955-939F2EF8FBDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52A1FCF0-9F04-4C5C-9955-939F2EF8FBDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52A1FCF0-9F04-4C5C-9955-939F2EF8FBDE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1836,6 +1842,7 @@ Global
 		{08C6510D-42DC-C8B4-CC79-26349F2D6DBB} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{B3A07CA3-3536-4D43-81A3-A5A73FB76F22} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{8D722514-8BAD-4069-84D0-15797026E0ED} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{52A1FCF0-9F04-4C5C-9955-939F2EF8FBDE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
