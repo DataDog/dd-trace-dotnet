@@ -323,9 +323,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             // azure_eventgrid.receive consumer span (in a new trace) that links to the
                             // producer, and parent the function span under that receive span.
                             var producerContexts = ExtractPropagatedContextsFromEventGrid(functionContext, entry.Key as string);
-                            var baggage = producerContexts.Count == 1
-                                              ? producerContexts[0].MergeBaggageInto(Baggage.Current).Baggage
-                                              : null;
+                            // As with Service Bus and Event Hubs batches, use the first extracted
+                            // producer context as the source of ambient baggage.
+                            var baggage = MergeBaggageFromFirstContext(producerContexts, Baggage.Current);
                             extractedContext = CreateEventGridReceiveSpan(tracer, functionContext, entry.Key as string, producerContexts, baggage);
                             break;
                         }
@@ -612,7 +612,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 foreach (var cloudEventProps in cloudEvents)
                 {
-                    // Extract W3C trace context from CloudEvent extension attributes.
+                    // Extract W3C trace context and baggage from CloudEvent extension attributes.
                     // These were injected by EventGridCommon.InjectW3CContext() on the publisher side.
                     var traceProperties = new Dictionary<string, object>();
 
@@ -624,6 +624,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     if (cloudEventProps.TryGetValue(W3CTraceContextPropagator.TraceStateHeaderName, out var tracestate) && tracestate is string)
                     {
                         traceProperties[W3CTraceContextPropagator.TraceStateHeaderName] = tracestate;
+                    }
+
+                    if (cloudEventProps.TryGetValue(W3CBaggagePropagator.BaggageHeaderName, out var baggage) && baggage is string)
+                    {
+                        traceProperties[W3CBaggagePropagator.BaggageHeaderName] = baggage;
                     }
 
                     if (traceProperties.Count == 0)
@@ -644,6 +649,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
 
             return extractedContexts;
+        }
+
+        internal static Baggage? MergeBaggageFromFirstContext(IReadOnlyList<PropagationContext> producerContexts, Baggage destination)
+        {
+            return producerContexts.Count > 0
+                       ? producerContexts[0].MergeBaggageInto(destination).Baggage
+                       : null;
         }
 
         /// <summary>

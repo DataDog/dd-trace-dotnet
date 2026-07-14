@@ -101,6 +101,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
                 ["id"] = "test-id",
                 ["traceparent"] = $"00-{1:x32}-{1:x16}-01",
                 ["tracestate"] = "dd=s:1",
+                ["baggage"] = "user.id=123",
             };
             var context = CreateMockFunctionContextWithInputData("myEvent", JsonConvert.SerializeObject(cloudEvent));
 
@@ -108,6 +109,8 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             extractedContexts.Should().ContainSingle();
             extractedContexts[0].SpanContext.Should().NotBeNull();
+            extractedContexts[0].Baggage.Should().NotBeNull();
+            extractedContexts[0].Baggage!["user.id"].Should().Be("123");
         }
 
         [Fact]
@@ -147,7 +150,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
         }
 
         [Fact]
-        public void ExtractPropagatedContextsFromEventGrid_BatchCloudEvents_ExtractsAllContexts()
+        public void ExtractPropagatedContextsFromEventGrid_BatchCloudEvents_ExtractsAllContextsAndMergesFirstBaggage()
         {
             var batch = new[]
             {
@@ -158,6 +161,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
                     ["source"] = "/test/source",
                     ["id"] = "test-id-1",
                     ["traceparent"] = $"00-{1:x32}-{1:x16}-01",
+                    ["baggage"] = "tenant=first,first.only=true",
                 },
                 new Dictionary<string, object>
                 {
@@ -166,16 +170,25 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
                     ["source"] = "/test/source",
                     ["id"] = "test-id-2",
                     ["traceparent"] = $"00-{2:x32}-{2:x16}-01",
+                    ["baggage"] = "tenant=second,second.only=true",
                 },
             };
             var context = CreateMockFunctionContextWithInputData("myEvents", JsonConvert.SerializeObject(batch));
 
             var extractedContexts = AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(context, "myEvents");
             var spanLinks = AzureFunctionsCommon.CreateEventGridSpanLinks(extractedContexts);
+            var destinationBaggage = new Baggage { ["existing"] = "value" };
+            var selectedBaggage = AzureFunctionsCommon.MergeBaggageFromFirstContext(extractedContexts, destinationBaggage);
 
             extractedContexts.Should().HaveCount(2);
             extractedContexts[0].SpanContext!.SpanId.Should().Be(1);
             extractedContexts[1].SpanContext!.SpanId.Should().Be(2);
+            selectedBaggage.Should().NotBeNull();
+            selectedBaggage!["tenant"].Should().Be("first");
+            destinationBaggage["existing"].Should().Be("value");
+            destinationBaggage["tenant"].Should().Be("first");
+            destinationBaggage["first.only"].Should().Be("true");
+            destinationBaggage.TryGetValue("second.only", out _).Should().BeFalse();
             spanLinks.Should().HaveCount(2);
             spanLinks![0].Context.SpanId.Should().Be(1);
             spanLinks[1].Context.SpanId.Should().Be(2);
