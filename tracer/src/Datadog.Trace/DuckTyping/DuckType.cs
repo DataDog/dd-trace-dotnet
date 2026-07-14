@@ -225,6 +225,11 @@ namespace Datadog.Trace.DuckTyping
 
                         // Create Type
                         Type proxyType = proxyTypeBuilder!.CreateTypeInfo()!.AsType();
+                        if (!dryRun)
+                        {
+                            DuckTypeReporter.ReportDuckType(proxyDefinitionType, targetType);
+                        }
+
                         return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, GetCreateProxyInstanceDelegate(moduleBuilder, proxyDefinitionType, proxyType, targetType), null);
                     }
                 }
@@ -306,6 +311,11 @@ namespace Datadog.Trace.DuckTyping
 
                     // Create Type
                     Type? proxyType = proxyTypeBuilder!.CreateTypeInfo()!.AsType();
+                    if (!dryRun)
+                    {
+                        DuckTypeReporter.ReportDuckType(typeToDeriveFrom, typeToDelegateTo);
+                    }
+
                     return new CreateTypeResult(typeToDeriveFrom, proxyType, typeToDelegateTo, GetCreateProxyInstanceDelegate(moduleBuilder, typeToDeriveFrom, proxyType, typeToDelegateTo), null);
                 }
                 catch (DuckTypeException ex)
