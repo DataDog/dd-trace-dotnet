@@ -40,6 +40,7 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
     private const string EventHubConsumerGroup = "cg1";
     private const string TestIdEnvironmentVariable = "DD_AZURE_FUNCTIONS_MESSAGING_TEST_ID";
     private const string TestModeEnvironmentVariable = "DD_AZURE_FUNCTIONS_MESSAGING_TEST_MODE";
+    private const string EventGridFunctionsTopicEndpointEnvironmentVariable = "EVENTGRID_AZURE_FUNCTIONS_TOPIC_ENDPOINT";
     private const string LocalServiceBusConnectionString = "Endpoint=sb://localhost:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;";
     private const string LocalEventHubsConnectionString = "Endpoint=sb://localhost:5673;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;";
     private const string AzuriteAccountKey = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
@@ -60,7 +61,7 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         // and the W3C context injected into the CloudEvent are unaffected by the exclusion.
         SetEnvironmentVariable(
             "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS",
-            ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions + ", devstoreaccount1/azure-webjobs-hosts, samples-eventgrid-topic/api/events");
+            ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions + ", devstoreaccount1/azure-webjobs-hosts, samples-azure-functions-eventgrid-topic/api/events");
     }
 
     private static int ExpectedFuncKillExitCode
@@ -314,11 +315,11 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
     // The seeder publishes a CloudEvent to the Event Grid emulator's topic endpoint; the emulator forwards it
     // to the function host's webhook — preserving the CloudEvent (and its traceparent) and adding the required
     // aeg-event-type header — so the receive span links back to the producer's send span. In CI the endpoint
-    // is the emulator container (injected via EVENTGRID_TOPIC_ENDPOINT); locally it falls back to the
-    // emulator's published port on localhost.
+    // is the emulator container (injected via EVENTGRID_AZURE_FUNCTIONS_TOPIC_ENDPOINT); locally it falls
+    // back to the emulator's published port on localhost.
     private static string GetEventGridTopicEndpoint()
-        => Environment.GetEnvironmentVariable("EVENTGRID_TOPIC_ENDPOINT")
-        ?? "http://localhost:6500/samples-eventgrid-topic/api/events";
+        => Environment.GetEnvironmentVariable(EventGridFunctionsTopicEndpointEnvironmentVariable)
+        ?? "http://localhost:6500/samples-azure-functions-eventgrid-topic/api/events";
 
     private static string GetAzuriteConnectionString()
     {
