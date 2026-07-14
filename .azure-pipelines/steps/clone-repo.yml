@@ -5,6 +5,10 @@ parameters:
   - name: targetBranch
     type: string
 
+  - name: shallowFetch
+    type: boolean
+    default: false
+
 steps:
 - ${{ if endsWith(variables['build.sourceBranch'], '/merge') }}:
   - checkout: none
@@ -165,3 +169,6 @@ steps:
 
   - checkout: self
     clean: true
+    ${{ if eq(parameters.shallowFetch, true) }}:
+      fetchDepth: 1
+      fetchTags: false

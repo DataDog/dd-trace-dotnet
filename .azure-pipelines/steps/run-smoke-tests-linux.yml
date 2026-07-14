@@ -24,6 +24,7 @@ jobs:
     parameters:
       targetShaId: $(targetShaId)
       targetBranch: $(targetBranch)
+      shallowFetch: true
 
   # Download required artifacts. runner-standalone-* artifacts are tar.gz
   # archives that need to be extracted; all others download directly.
