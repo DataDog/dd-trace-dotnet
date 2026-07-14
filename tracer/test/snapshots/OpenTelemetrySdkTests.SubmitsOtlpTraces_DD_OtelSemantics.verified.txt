@@ -143,15 +143,7 @@
               "name": "OperationNameRootSpan",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "runtime-id",
-                  "value": {
-                    "stringValue": "Guid_1"
-                  }
-                }
-              ]
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
@@ -524,12 +516,6 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
-                  "key": "runtime-id",
-                  "value": {
-                    "stringValue": "Guid_1"
-                  }
-                },
-                {
                   "key": "operation.name",
                   "value": {
                     "stringValue": "Saying hello!"
@@ -848,14 +834,6 @@
               "kind": 1,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "runtime-id",
-                  "value": {
-                    "stringValue": "Guid_1"
-                  }
-                }
-              ],
               "links": [
                 {
                   "traceId": "normalized-trace-id",
@@ -871,14 +849,6 @@
               "kind": 1,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "runtime-id",
-                  "value": {
-                    "stringValue": "Guid_1"
-                  }
-                }
-              ],
               "links": [
                 {
                   "traceId": "normalized-trace-id",
@@ -898,15 +868,7 @@
               "name": "service.name should be the DefaultServiceName value",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "runtime-id",
-                  "value": {
-                    "stringValue": "Guid_1"
-                  }
-                }
-              ]
+              "endTimeUnixNano": "0"
             },
             {
               "traceId": "normalized-trace-id",
@@ -1008,15 +970,7 @@
               "name": "Transform",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "runtime-id",
-                  "value": {
-                    "stringValue": "Guid_1"
-                  }
-                }
-              ]
+              "endTimeUnixNano": "0"
             }
           ]
         }

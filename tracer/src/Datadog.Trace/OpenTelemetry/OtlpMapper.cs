@@ -142,6 +142,21 @@ internal static class OtlpMapper
             {
                 droppedAttributesCount++;
             }
+
+            // add "runtime-id" tag to service-entry (aka top-level) spans
+            var testOptimization = Ci.TestOptimization.Instance;
+            if (spanModel.Span.IsTopLevel && (!testOptimization.IsRunning || !testOptimization.Settings.Agentless))
+            {
+                if (count < limit)
+                {
+                    writeKeyValue(ref state, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
+                    count++;
+                }
+                else
+                {
+                    droppedAttributesCount++;
+                }
+            }
         }
 
         // Write trace tags
@@ -150,22 +165,6 @@ internal static class OtlpMapper
             if (count < limit)
             {
                 writeKeyValue(ref state, new KeyValue(Trace.Tags.LastParentId, spanModel.Span.Context.LastParentId));
-                count++;
-            }
-            else
-            {
-                droppedAttributesCount++;
-            }
-        }
-
-        // TODO: Only write these as resource attributes
-        // add "runtime-id" tag to service-entry (aka top-level) spans
-        var testOptimization = Ci.TestOptimization.Instance;
-        if (spanModel.Span.IsTopLevel && (!testOptimization.IsRunning || !testOptimization.Settings.Agentless))
-        {
-            if (count < limit)
-            {
-                writeKeyValue(ref state, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
                 count++;
             }
             else
