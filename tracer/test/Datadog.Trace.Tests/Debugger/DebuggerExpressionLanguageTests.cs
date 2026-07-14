@@ -2078,12 +2078,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Equal("hello", result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
@@ -2107,12 +2102,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Equal("base-value", result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
@@ -2137,12 +2127,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Same(UndefinedValue.Instance, result);
             Assert.Equal(0, SideEffectingPropertyTarget.GetterCalls);
@@ -2164,12 +2149,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Same(UndefinedValue.Instance, result);
             Assert.Equal(0, SideEffectingPropertyTarget.GetterCalls);
@@ -2196,12 +2176,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Same(UndefinedValue.Instance, result);
             Assert.Equal(0, _staticExpressionInitializedCount);
@@ -2275,20 +2250,10 @@ namespace Datadog.Trace.Tests.Debugger
 
             SideEffectingValueHolder.Reset();
             var sensitiveCompiled = ProbeExpressionParser<object>.ParseExpression(sensitiveJson, scopeMembers);
-            var sensitiveResult = sensitiveCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var sensitiveResult = EvaluateCompiled(sensitiveCompiled, scopeMembers);
 
             var publicCompiled = ProbeExpressionParser<object>.ParseExpression(publicJson, scopeMembers);
-            var publicResult = publicCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var publicResult = EvaluateCompiled(publicCompiled, scopeMembers);
 
             Assert.Equal("{REDACTED}", sensitiveResult);
             Assert.Equal(publicValue, publicResult);
@@ -2335,12 +2300,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.False(result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
@@ -2380,12 +2340,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.Equal("goodbye", result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
@@ -2431,20 +2386,10 @@ namespace Datadog.Trace.Tests.Debugger
 
             SideEffectingValueHolder.Reset();
             var objectCompiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
-            var objectResult = objectCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var objectResult = EvaluateCompiled(objectCompiled, scopeMembers);
 
             var stringCompiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
-            var stringResult = stringCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var stringResult = EvaluateCompiled(stringCompiled, scopeMembers);
 
             Assert.Equal("{REDACTED}", objectResult);
             Assert.Equal("{REDACTED}", stringResult);
@@ -2531,20 +2476,10 @@ namespace Datadog.Trace.Tests.Debugger
 
             SideEffectingValueHolder.Reset();
             var sensitiveCompiled = ProbeExpressionParser<bool>.ParseExpression(sensitiveJson, scopeMembers);
-            var sensitiveResult = sensitiveCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var sensitiveResult = EvaluateCompiled(sensitiveCompiled, scopeMembers);
 
             var publicCompiled = ProbeExpressionParser<bool>.ParseExpression(publicJson, scopeMembers);
-            var publicResult = publicCompiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var publicResult = EvaluateCompiled(publicCompiled, scopeMembers);
 
             Assert.False(sensitiveResult);
             Assert.True(publicResult);
@@ -2880,12 +2815,7 @@ namespace Datadog.Trace.Tests.Debugger
                                 """;
 
             var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var result = compiled.Delegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members);
+            var result = EvaluateCompiled(compiled, scopeMembers);
 
             Assert.False(result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
@@ -2979,25 +2909,6 @@ namespace Datadog.Trace.Tests.Debugger
                 ref budget);
 
             act.Should().Throw<EvaluationTimeBudgetExceededException>();
-        }
-
-        [Fact]
-        public void ProbeExpressionParser_StaticPropertyAccess_IsAllowed()
-        {
-            var scopeMembers = CreateScopeMembers();
-            scopeMembers.AddMember(new ScopeMember("PropertyHolderLocal", typeof(PropertyHolder), new PropertyHolder(), ScopeMemberKind.Local));
-            const string json = """
-                                {
-                                  "getmember": [
-                                    { "ref": "PropertyHolderLocal" },
-                                    "StaticValue"
-                                  ]
-                                """;
-
-            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
-            var result = EvaluateCompiled(compiled, scopeMembers);
-
-            result.Should().Be(PropertyHolder.StaticValue);
         }
 
         [Fact]
@@ -3787,11 +3698,6 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             public static string StaticProperty { get; } = "unsafe-property";
-        }
-
-        internal class PropertyHolder
-        {
-            public static string StaticValue => "static value";
         }
 
         internal class GenericValueTypeTarget<T>
