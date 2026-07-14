@@ -46,19 +46,12 @@ TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
     std::string agentUrl;
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
-#if _WINDOWS
-    std::string namedPipeName;
-    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
-#endif
-
     std::string agentHost = "localhost";
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
     EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
     std::string host = "localhost";
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
-    EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
-
     std::vector<std::pair<std::string, std::string>> tags;
     EXPECT_CALL(mockConfiguration, GetUserTags()).Times(1).WillOnce(ReturnRef(tags));
 
@@ -163,19 +156,12 @@ TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     std::string agentUrl;
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
-#if _WINDOWS
-    std::string namedPipeName;
-    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
-#endif
-
     std::string agentHost = "localhost";
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
     EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
     std::string host = "localhost";
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
-    EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
-
     std::vector<std::pair<std::string, std::string>> tags;
     EXPECT_CALL(mockConfiguration, GetUserTags()).Times(1).WillOnce(ReturnRef(tags));
 
@@ -273,19 +259,12 @@ TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
     std::string agentUrl;
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
-#if _WINDOWS
-    std::string namedPipeName;
-    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
-#endif
-
     std::string agentHost = "localhost";
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
     EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
     std::string host = "localhost";
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
-    EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
-
     std::vector<std::pair<std::string, std::string>> tags;
     EXPECT_CALL(mockConfiguration, GetUserTags()).Times(1).WillOnce(ReturnRef(tags));
 
@@ -382,7 +361,6 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
 
     // only used in agentless case
-    EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, GetSite()).Times(0);
     EXPECT_CALL(mockConfiguration, GetApiKey()).Times(0);
 
@@ -415,11 +393,6 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
     std::string agentUrl = "";
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
-#if _WINDOWS
-    std::string namedPipeName;
-    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
-#endif
-
     std::string agentHost = "localhost";
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
@@ -429,49 +402,8 @@ TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
 
     // only used in agentless case
-    EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
     EXPECT_CALL(mockConfiguration, GetSite()).Times(0);
     EXPECT_CALL(mockConfiguration, GetApiKey()).Times(0);
-
-    fs::path pprofDir;
-    EXPECT_CALL(mockConfiguration, GetProfilesOutputDirectory()).WillRepeatedly(ReturnRef(pprofDir));
-
-    std::vector<std::pair<std::string, std::string>> tags;
-    EXPECT_CALL(mockConfiguration, GetUserTags()).Times(1).WillOnce(ReturnRef(tags));
-
-    auto applicationStore = MockApplicationStore();
-
-    RuntimeInfoHelper helper(6, 0, false);
-    IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
-    EnabledProfilers enabledProfilers(configuration.get(), false, false);
-    std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
-
-    MetricsRegistry metricsRegistry;
-    IAllocationsRecorder* allocRecorder = nullptr;
-    IMetadataProvider* metadataProvider = nullptr;
-    ISsiManager* ssiManager = nullptr;  // TODO: could be mocked to test SSI heuristics
-    IHeapSnapshotManager* heapSnapshotManager = nullptr;
-    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
-                                    metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
-}
-
-TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
-{
-    auto [configuration, mockConfiguration] = CreateConfiguration();
-
-    EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(true));
-    std::string site = "test_site";
-    EXPECT_CALL(mockConfiguration, GetSite()).Times(1).WillOnce(ReturnRef(site));
-    std::string apiKey = "4224";
-    EXPECT_CALL(mockConfiguration, GetApiKey()).Times(1).WillOnce(ReturnRef(apiKey));
-
-    // not called when agentless
-    EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(0);
-    EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(0);
-    EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(0);
-
-    std::string host = "localhost";
-    EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
 
     fs::path pprofDir;
     EXPECT_CALL(mockConfiguration, GetProfilesOutputDirectory()).WillRepeatedly(ReturnRef(pprofDir));
@@ -499,16 +431,12 @@ TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
-    EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(true));
-    std::string site = "test_site";
-    EXPECT_CALL(mockConfiguration, GetSite()).Times(1).WillOnce(ReturnRef(site));
-    std::string apiKey = "4224";
-    EXPECT_CALL(mockConfiguration, GetApiKey()).Times(1).WillOnce(ReturnRef(apiKey));
-
-    // not called when agentless
-    EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(0);
-    EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(0);
-    EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(0);
+    std::string agentUrl;
+    EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
+    std::string agentHost = "localhost";
+    EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
+    int agentPort = 8126;
+    EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
 
     std::string host = "localhost";
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
@@ -551,19 +479,12 @@ TEST(ProfileExporterTest, MakeSureNoCrashForReallyLongCallstack)
     std::string agentUrl;
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
-#if _WINDOWS
-    std::string namedPipeName;
-    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
-#endif
-
     std::string agentHost = "localhost";
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
     EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
     std::string host = "localhost";
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
-    EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
-
     std::vector<std::pair<std::string, std::string>> tags;
     EXPECT_CALL(mockConfiguration, GetUserTags()).Times(1).WillOnce(ReturnRef(tags));
 
@@ -817,19 +738,12 @@ TEST(ProfileExporterTest, CheckNoCrashWhenProfileCreationFails)
     std::string agentUrl;
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
-#if _WINDOWS
-    std::string namedPipeName;
-    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
-#endif
-
     std::string agentHost = "localhost";
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
     EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
     std::string host = "localhost";
     EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
-    EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
-
     std::vector<std::pair<std::string, std::string>> tags;
     EXPECT_CALL(mockConfiguration, GetUserTags()).Times(1).WillOnce(ReturnRef(tags));
 
