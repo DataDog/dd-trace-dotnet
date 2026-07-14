@@ -275,7 +275,7 @@ internal static class OtlpMapper
                     // see https://opentelemetry.io/docs/specs/semconv/registry/attributes/error/
                     || key == "otel.status_code"
                     || key == "otel.status_description"
-                    || key == "span.kind"
+                    || key == Tags.SpanKind
                     || key == "service.name"
                     || key == "service.version"
                     || key == "service.instance.id"
