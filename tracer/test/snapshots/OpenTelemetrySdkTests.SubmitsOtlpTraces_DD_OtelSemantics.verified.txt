@@ -80,7 +80,11 @@
               "name": "InnerSpanError",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "status": {
+                "message": "Something went wrong",
+                "code": 2
+              }
             },
             {
               "traceId": "normalized-trace-id",
@@ -89,7 +93,10 @@
               "name": "InnerSpanOk",
               "kind": 1,
               "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0"
+              "endTimeUnixNano": "0",
+              "status": {
+                "code": 1
+              }
             },
             {
               "traceId": "normalized-trace-id",
@@ -124,7 +131,11 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "status": {
+                "message": "Example argument exception",
+                "code": 2
+              }
             },
             {
               "traceId": "normalized-trace-id",

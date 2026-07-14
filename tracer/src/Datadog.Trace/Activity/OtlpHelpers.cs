@@ -153,42 +153,60 @@ namespace Datadog.Trace.Activity
                         tags.OtelLibraryVersion = activity5.Source.Version;
                     }
                 }
+            }
 
-                // Set OTEL status code and OTEL status description
-                if (tags.OtelStatusCode is null)
+            // Set OTEL status code
+            // Also handles short-form tag values ("OK"/"ERROR"/"UNSET") originally set by the OTel API
+            // (we don't remap these values when when OTel Semantics are enabled)
+            if (activity6 is not null)
+            {
+                tags.OtelStatusCode = activity6.Status switch
                 {
-                    if (activity6 is not null)
-                    {
-                        tags.OtelStatusCode = activity6.Status switch
-                        {
-                            ActivityStatusCode.Unset => "STATUS_CODE_UNSET",
-                            ActivityStatusCode.Ok => "STATUS_CODE_OK",
-                            ActivityStatusCode.Error => "STATUS_CODE_ERROR",
-                            _ => "STATUS_CODE_UNSET"
-                        };
-                    }
-                    else
-                    {
-                        tags.OtelStatusCode = "STATUS_CODE_UNSET";
-                    }
-                }
+                    ActivityStatusCode.Unset => "STATUS_CODE_UNSET",
+                    ActivityStatusCode.Ok => "STATUS_CODE_OK",
+                    ActivityStatusCode.Error => "STATUS_CODE_ERROR",
+                    _ => "STATUS_CODE_UNSET"
+                };
+            }
+            else
+            {
+                tags.OtelStatusCode = tags.OtelStatusCode switch
+                {
+                    "OK" => "STATUS_CODE_OK",
+                    "ERROR" => "STATUS_CODE_ERROR",
+                    _ => "STATUS_CODE_UNSET",
+                };
+            }
 
-                // Map the OTEL status to error tags
-                // See trace agent func status2Error: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L583
-                if (activity6?.Status == ActivityStatusCode.Error)
+            // Set OTEL status description
+            // Map the OTEL status to error tags
+            // See trace agent func status2Error: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L583
+            if (activity6?.Status == ActivityStatusCode.Error)
+            {
+                if (openTelemetrySemanticsEnabled)
+                {
+                    span.Error = true;
+                    span.SetTag(Tags.ErrorMsg, activity6?.StatusDescription);
+                }
+                else
                 {
                     AgentStatus2ErrorActivity6(activity6, span, tags);
                 }
-                else if (string.Equals(tags.OtelStatusCode, "STATUS_CODE_ERROR", StringComparison.Ordinal))
+            }
+            else if (string.Equals(tags.OtelStatusCode, "STATUS_CODE_ERROR", StringComparison.Ordinal))
+            {
+                if (openTelemetrySemanticsEnabled)
                 {
-                    if (activity5 is not null)
-                    {
-                        AgentStatus2ErrorActivity5(activity5, span);
-                    }
-                    else
-                    {
-                        AgentStatus2ErrorBasic(activity, span);
-                    }
+                    span.Error = true;
+                    span.SetTag(Tags.ErrorMsg, span.GetTag("otel.status_description") as string);
+                }
+                else if (activity5 is not null)
+                {
+                    AgentStatus2ErrorActivity5(activity5, span);
+                }
+                else
+                {
+                    AgentStatus2ErrorBasic(activity, span);
                 }
             }
 
@@ -516,21 +534,6 @@ namespace Datadog.Trace.Activity
                     if (GoStrConvParseBool(value) is bool b)
                     {
                         span.SetMetric(Tags.Analytics, b ? 1 : 0);
-                    }
-
-                    break;
-                case "otel.status_code":
-                    if (setKnownValues)
-                    {
-                        var newStatusCodeString = value switch
-                        {
-                            null => "STATUS_CODE_UNSET",
-                            "ERROR" => "STATUS_CODE_ERROR",
-                            "UNSET" => "STATUS_CODE_UNSET",
-                            "OK" => "STATUS_CODE_OK",
-                            string s => s,
-                        };
-                        span.SetTag(key, newStatusCodeString);
                     }
 
                     break;
