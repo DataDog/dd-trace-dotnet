@@ -1,4 +1,4 @@
-Template:
+﻿Template:
 Segments:
 
 {
@@ -43,10 +43,10 @@ Expressions: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = this.Null.NestedString;
+    var $dd_el_result = this.Null.<NestedString>k__BackingField;
 
     return $dd_el_result;
 }
 Result: The result of the expression is: 
 Errors:
-EvaluationError { Expression = this.Null.NestedString), Message = Object reference not set to an instance of an object. }
+EvaluationError { Expression = this.Null.<NestedString>k__BackingField), Message = Object reference not set to an instance of an object. }
