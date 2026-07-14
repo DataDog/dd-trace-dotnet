@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Datadog.Trace.Activity;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.ExtensionMethods;
@@ -39,11 +40,12 @@ namespace Datadog.Trace
         {
         }
 
-        internal Span(SpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null)
+        internal Span(SpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null, bool openTelemetrySemanticsEnabled = false)
         {
             Tags = tags ?? new TagsList();
             Context = context;
             StartTime = start ?? Context.TraceContext.Clock.UtcNow;
+            OpenTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
 
             if (links is not null)
             {
@@ -78,6 +80,11 @@ namespace Datadog.Trace
         /// Gets or sets a value indicating whether this span represents an error
         /// </summary>
         internal bool Error { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether OpenTelemetry trace semantics are enabled for this span.
+        /// </summary>
+        internal bool OpenTelemetrySemanticsEnabled { get; }
 
         /// <summary>
         /// Gets or sets the service name.
@@ -414,23 +421,23 @@ namespace Datadog.Trace
         /// <param name="exception">The exception.</param>
         internal void SetException(Exception exception)
         {
-            // We do not log BlockExceptions as errors
-            if (exception is not AppSec.BlockException)
-            {
-                Error = true;
-                SetExceptionTags(exception);
-            }
+            SetException(exception, markAsError: true);
         }
 
         /// <summary>
-        /// Add the StackTrace and other exception metadata to the span,
-        /// but does not mark the span as an error.
+        /// Add the StackTrace and other exception metadata to the span.
         /// </summary>
         /// <param name="exception">The exception.</param>
-        internal void SetExceptionTags(Exception exception)
+        /// <param name="markAsError">Whether to mark the span as an error. BlockExceptions are never marked as errors.</param>
+        internal void SetException(Exception exception, bool markAsError)
         {
             if (exception != null && exception is not AppSec.BlockException)
             {
+                if (markAsError)
+                {
+                    Error = true;
+                }
+
                 try
                 {
                     // for AggregateException, use the first inner exception until we can support multiple errors.
@@ -441,9 +448,23 @@ namespace Datadog.Trace
                         exception = aggregateException.InnerExceptions[0];
                     }
 
-                    SetTag(Trace.Tags.ErrorMsg, exception.Message);
-                    SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
-                    SetTag(Trace.Tags.ErrorStack, exception.ToString());
+                    if (OpenTelemetrySemanticsEnabled)
+                    {
+                        AddEvent(new SpanEvent(
+                            OtlpHelpers.OpenTelemetryException,
+                            attributes:
+                            [
+                                new(OtlpHelpers.OpenTelemetryErrorType, exception.GetType().ToString()),
+                                new(OtlpHelpers.OpenTelemetryErrorMsg, exception.Message),
+                                new(OtlpHelpers.OpenTelemetryErrorStack, exception.ToString()),
+                            ]));
+                    }
+                    else
+                    {
+                        SetTag(Trace.Tags.ErrorMsg, exception.Message);
+                        SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
+                        SetTag(Trace.Tags.ErrorStack, exception.ToString());
+                    }
 
                     DebuggerManager.Instance.ExceptionReplay?.Report(this, exception);
                 }

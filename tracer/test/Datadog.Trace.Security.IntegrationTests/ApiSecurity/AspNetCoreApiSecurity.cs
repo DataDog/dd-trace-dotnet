@@ -58,13 +58,7 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
         var dateTime = DateTime.UtcNow;
         await SubmitRequest(url, body, "application/json");
         var spans = await agent.WaitForSpansAsync(2, minDateTime: dateTime);
-#if !NET8_O_OR_GREATER
-        // Simple scrubber for the response content type in .NET 8
-        // .NET 8 doesn't add the content-length header, whereas previous versions do
-        settings.AddSimpleScrubber(
-            """_dd.appsec.s.res.headers: [{"content-length":[8]}],""",
-            string.Empty);
-#endif
+        settings.ScrubbResponseContentLength();
         await VerifySpans(spans, settings);
     }
 

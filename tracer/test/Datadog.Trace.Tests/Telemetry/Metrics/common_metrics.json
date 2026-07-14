@@ -421,6 +421,17 @@
       "send_to_user": false,
       "user_tags": []
     },
+    "stats_collapsed_spans": {
+      "tags": [
+        "collapsed",
+        "oversized"
+      ],
+      "metric_type": "count",
+      "data_type": "instances",
+      "description": "The number of spans whose client-side stats dimensions were collapsed to the \"tracer_blocked_value\" sentinel to enforce a cardinality limit",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "inject.success": {
       "tags": [
         "language",

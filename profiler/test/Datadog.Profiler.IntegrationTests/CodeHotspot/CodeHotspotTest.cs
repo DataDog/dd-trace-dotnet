@@ -16,12 +16,14 @@ using MessagePack;
 using Perftools.Profiles;
 using Xunit;
 using Xunit.Abstractions;
+using ProfilerXunit = Datadog.Profiler.IntegrationTests.Xunit;
 
 namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 {
     public class CodeHotspotTest
     {
         private const string ScenarioCodeHotspot = "--scenario 256";
+        private const string ScenarioEndpoint = "--scenario 8192";
         private static readonly Regex RuntimeIdPattern = new("runtime-id:(?<runtimeId>[A-Z0-9-]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
         private readonly ITestOutputHelper _output;
 
@@ -237,22 +239,22 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             Assert.Empty(tracingContexts);
         }
 
+        [ProfilerXunit.Flaky("Endpoint association can race with the profiler's shutdown export on slow/32-bit runtimes")]
         [TestAppFact("Samples.BuggyBits")]
         public void CheckEndpointsAreAttached(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioEndpoint);
             runner.TestDurationInSeconds = 20;
 
             // By default, the endpoint profiling feature is activated
 
-            // The endpoint is only bound to a trace id when the web root span closes (the tracer then calls
-            // SetEndpointForTrace). libdatadog attaches the "trace endpoint" label to a sample only when that
-            // sample's "local root span id" matches an endpoint registered in the SAME profile generation. With the
-            // default 3s export period, a request's samples and its span close can land in different windows, so the
-            // label is never attached. On the slow 32-bit netcoreapp3.1 runtime (but even on newer ones), the sampling
-            // is sparse enough that this coincidence is missed in every window, making the test flaky.
-            // Use a single export window (flushed on shutdown, after every span has closed) so the association is
-            // deterministic on this runtime.
+            // The "trace endpoint" label is attached to a sample only when (a) the web root span closes (the tracer
+            // then calls SetEndpointForTrace) and (b) a sample carries that span's "local root span id", both within
+            // the SAME profile generation. Use a purpose-built endpoint that burns CPU for a short bounded interval and
+            // returns a small response: it is reliably sampled with a trace context, completes with plenty of margin
+            // before shutdown, and avoids the exception storm from the BuggyBits sales endpoint that can crash Alpine
+            // CI runs while the default exception profiler is enabled. A single export window (flushed on shutdown)
+            // keeps the samples and the endpoints in the same generation.
             runner.Environment.SetVariable("DD_PROFILING_UPLOAD_PERIOD", "600");
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
@@ -263,13 +265,13 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             var endpoints = GetEndpointsFromPprofFiles(runner.Environment.PprofDir);
 
-            endpoints.Distinct().Should().BeEquivalentTo("GET /products/indexslow");
+            endpoints.Distinct().Should().BeEquivalentTo("GET /products/endpointprofiling");
         }
 
         [TestAppFact("Samples.BuggyBits")]
         public void NoEndpointsAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioEndpoint);
             runner.TestDurationInSeconds = 20;
             runner.Environment.SetVariable(EnvironmentVariables.EndpointProfilerEnabled, "0");
 

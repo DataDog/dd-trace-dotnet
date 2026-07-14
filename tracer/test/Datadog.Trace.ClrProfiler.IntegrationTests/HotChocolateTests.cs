@@ -202,11 +202,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private string GetSuffix(string packageVersion)
         {
-            // An empty package version means we're in the sample,
-            // which targets the latest version of the package.
-            if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version("13.1.0"))
+            // An empty package version means we're in the sample, which targets a different
+            // version of HotChocolate depending on the target framework (see Samples.HotChocolate.csproj).
+            if (string.IsNullOrEmpty(packageVersion))
+            {
+#if NETCOREAPP3_1 || NET5_0
+                packageVersion = "12.18.0";
+#elif NET6_0 || NET7_0
+                packageVersion = "14.0.0";
+#else
+                packageVersion = "16.1.3";
+#endif
+            }
+
+            var version = new Version(packageVersion);
+
+            if (version >= new Version("16.0.0"))
             {
                 return string.Empty;
+            }
+
+            if (version >= new Version("13.1.0"))
+            {
+                return ".Pre_16_0_0";
             }
 
             return ".Pre_13_1_0";

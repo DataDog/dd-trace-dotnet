@@ -50,6 +50,7 @@ namespace Honeypot
             NugetPackages.Add("GraphQL", new [] { "GraphQL" });
             NugetPackages.Add("GraphQL.SystemReactive", new [] { "GraphQL.SystemReactive" });
             NugetPackages.Add("HotChocolate.Execution", new[] { "HotChocolate.AspNetCore" });
+            NugetPackages.Add("HotChocolate.Types", new[] { "HotChocolate.AspNetCore" });
             NugetPackages.Add("System.Net.Http", new [] { "System.Net.Http" });
             NugetPackages.Add("System.Net.Http.WinHttpHandler", new [] { "System.Net.Http.WinHttpHandler" });
             NugetPackages.Add("Microsoft.Extensions.Logging.Abstractions", new [] { "Microsoft.Extensions.Logging.Abstractions" });
