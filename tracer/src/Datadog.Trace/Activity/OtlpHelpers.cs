@@ -158,7 +158,7 @@ namespace Datadog.Trace.Activity
             // Set OTEL status code
             // Also handles short-form tag values ("OK"/"ERROR"/"UNSET") originally set by the OTel API
             // (we don't remap these values when when OTel Semantics are enabled)
-            if (activity6 is not null)
+            if (tags.OtelStatusCode is null && activity6 is not null)
             {
                 tags.OtelStatusCode = activity6.Status switch
                 {
