@@ -690,18 +690,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
+                // A CloudEvent's source identifies where the event originated, not the Event Grid topic.
+                // The Functions invocation metadata does not expose the topic, so leave the destination unset.
+                span.ResourceName = "eventgrid";
 
                 var cloudEvents = GetEventGridCloudEvents(context, bindingName);
-                string? source = null;
                 if (cloudEvents.Length == 1)
                 {
                     var cloudEventProps = cloudEvents[0];
-                    if (cloudEventProps!.TryGetValue("source", out var sourceObj) && sourceObj is string s && s.Length > 0)
-                    {
-                        source = s;
-                        tags.MessagingDestinationName = s;
-                    }
-
                     if (cloudEventProps.TryGetValue("id", out var idObj) && idObj is string id && id.Length > 0)
                     {
                         span.SetTag(Tags.MessagingMessageId, id);
@@ -710,14 +706,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 else if (cloudEvents.Length > 1)
                 {
                     tags.MessagingBatchMessageCount = cloudEvents.Length.ToString();
-                    source = GetCommonEventGridSource(cloudEvents);
-                    if (source is not null)
-                    {
-                        tags.MessagingDestinationName = source;
-                    }
                 }
-
-                span.ResourceName = source ?? "eventgrid";
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.AzureEventGrid);
 
@@ -792,26 +781,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
 
             return TryParseJson<Dictionary<string, object>>(inputDataJson, out var cloudEventProps) ? [cloudEventProps] : [];
-        }
-
-        private static string? GetCommonEventGridSource(Dictionary<string, object>[] cloudEvents)
-        {
-            string? commonSource = null;
-            foreach (var cloudEvent in cloudEvents)
-            {
-                if (!cloudEvent.TryGetValue("source", out var sourceObj) || sourceObj is not string source || source.Length == 0)
-                {
-                    return null;
-                }
-
-                commonSource ??= source;
-                if (!commonSource.Equals(source, StringComparison.Ordinal))
-                {
-                    return null;
-                }
-            }
-
-            return commonSource;
         }
 
         private static bool TryParseJson<T>(object? jsonObj, [NotNullWhen(true)] out T? result)

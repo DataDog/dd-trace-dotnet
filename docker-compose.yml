@@ -274,7 +274,7 @@ services:
       - ./docker/eventhubs-emulator-config.json:/Eventhubs_Emulator/ConfigFiles/Config.json:ro
 
   azure-eventgrid-emulator:
-    image: workleap/eventgridemulator:latest
+    image: workleap/eventgridemulator:0.6.37@sha256:a366e9bf0c73979311654d98f4cb91f85e35cddd8333821f5a5029692b6002bb
     profiles: ["group2"]
     ports:
       - "127.0.0.1:6500:6500"
