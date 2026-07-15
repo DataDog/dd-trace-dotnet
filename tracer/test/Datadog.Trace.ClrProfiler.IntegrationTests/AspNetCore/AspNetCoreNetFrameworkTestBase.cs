@@ -35,7 +35,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             _fixture.SetOutput(output);
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.AspNetCoreNetFrameworkEnabled, "true");
             SetEnvironmentVariable(ConfigurationKeys.HeaderTags, "x-legacy-test-header:legacy.request.header");
+            SetEnvironmentVariable(ConfigurationKeys.PropagationStyleExtract, "Datadog,tracecontext,b3multi,baggage");
             SetEnvironmentVariable("ENABLE_MANUAL_TRACING_MIDDLEWARE", "false");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task NoContextCreatesRootRequestAndMakesMongoDbAChild()
+        {
+            await AssertRequestAndMongoSpans(
+                headers: null,
+                expectedTraceId: null,
+                expectedParentId: null,
+                expectedBaggage: null,
+                expectedRequestHeader: null);
         }
 
         [SkippableFact]
@@ -52,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 ["x-legacy-test-header"] = "header-value",
             };
 
-            await AssertRequestAndMongoSpans(headers);
+            await AssertRequestAndMongoSpans(headers, IncomingTraceId, IncomingParentId, "legacy-user", "header-value");
         }
 
         [SkippableFact]
@@ -67,7 +81,59 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 ["x-legacy-test-header"] = "header-value",
             };
 
-            await AssertRequestAndMongoSpans(headers);
+            await AssertRequestAndMongoSpans(headers, IncomingTraceId, IncomingParentId, "legacy-user", "header-value");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task B3ContextMakesMongoDbAChildOfRequest()
+        {
+            var headers = new Dictionary<string, string>
+            {
+                ["x-b3-traceid"] = "00000000075bcd15",
+                ["x-b3-spanid"] = "000000003ade68b1",
+                ["x-b3-sampled"] = "1",
+                ["baggage"] = "user.id=legacy-user",
+                ["x-legacy-test-header"] = "header-value",
+            };
+
+            await AssertRequestAndMongoSpans(headers, IncomingTraceId, IncomingParentId, "legacy-user", "header-value");
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task BaggageIsActiveInApplicationCodeAndTaggedOnRequest()
+        {
+            await _fixture.TryStartApp(this, sendHealthCheck: false);
+
+            var headers = new Dictionary<string, string>
+            {
+                ["x-datadog-trace-id"] = IncomingTraceId.ToString(),
+                ["x-datadog-parent-id"] = IncomingParentId.ToString(),
+                ["x-datadog-sampling-priority"] = "1",
+                ["baggage"] = "user.id=legacy-user",
+            };
+            var startTime = DateTimeOffset.UtcNow;
+
+            using (var client = new HttpClient())
+            using (var request = _fixture.CreateRequest(HttpMethod.Get, "/attribute/baggage/user.id", headers))
+            using (var response = await client.SendAsync(request))
+            {
+                response.StatusCode.Should().Be(HttpStatusCode.OK);
+                (await response.Content.ReadAsStringAsync()).Should().Be("legacy-user");
+            }
+
+            var spans = await _fixture.Agent.WaitForSpansAsync(
+                            count: 1,
+                            timeoutInMilliseconds: 20_000,
+                            minDateTime: startTime,
+                            returnAllOperations: true);
+            var requestSpan = spans.Single(span => span.Name == "aspnet_core.request" && span.TraceId == IncomingTraceId);
+
+            requestSpan.ParentId.Should().Be(IncomingParentId);
+            requestSpan.GetTag("baggage.user.id").Should().Be("legacy-user");
         }
 
         [SkippableFact]
@@ -103,28 +169,40 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             base.Dispose();
         }
 
-        private async Task AssertRequestAndMongoSpans(Dictionary<string, string> headers)
+        private async Task AssertRequestAndMongoSpans(
+            Dictionary<string, string> headers,
+            ulong? expectedTraceId,
+            ulong? expectedParentId,
+            string expectedBaggage,
+            string expectedRequestHeader)
         {
             await _fixture.TryStartApp(this, sendHealthCheck: false);
 
-            var spans = await SendRequestAndWaitForMongoSpan("/baseline/mongo?item=42", headers);
-            var requestSpan = spans.Single(span => span.Name == "aspnet_core.request" && span.TraceId == IncomingTraceId);
-            var mongoSpan = spans.Single(span => IsMongoQuerySpan(span) && span.TraceId == IncomingTraceId);
+            var spans = await SendRequestAndWaitForMongoSpan("/baseline/mongo?item=42", headers, expectedTraceId);
+            var requestSpan = spans.Single(
+                span => span.Name == "aspnet_core.request"
+                     && (!expectedTraceId.HasValue || span.TraceId == expectedTraceId.Value));
+            var mongoSpan = spans.Single(span => IsMongoQuerySpan(span) && span.TraceId == requestSpan.TraceId);
 
             requestSpan.Resource.Should().Be("GET /baseline/mongo");
-            requestSpan.ParentId.Should().Be(IncomingParentId);
+            requestSpan.TraceId.Should().NotBe(0);
+            requestSpan.ParentId.Should().Be(expectedParentId);
             requestSpan.GetTag("span.kind").Should().Be("server");
             requestSpan.GetTag("component").Should().Be("aspnet_core");
             requestSpan.GetTag("http.method").Should().Be("GET");
             requestSpan.GetTag("http.status_code").Should().Be("200");
-            requestSpan.GetTag("baggage.user.id").Should().Be("legacy-user");
-            requestSpan.GetTag("legacy.request.header").Should().Be("header-value");
+            requestSpan.GetTag("baggage.user.id").Should().Be(expectedBaggage);
+            requestSpan.GetTag("legacy.request.header").Should().Be(expectedRequestHeader);
             requestSpan.GetTag("http.url").Should().EndWith("/baseline/mongo?item=42");
 
+            mongoSpan.TraceId.Should().Be(requestSpan.TraceId);
             mongoSpan.ParentId.Should().Be(requestSpan.SpanId);
         }
 
-        private async Task<IImmutableList<MockSpan>> SendRequestAndWaitForMongoSpan(string path, Dictionary<string, string> headers)
+        private async Task<IImmutableList<MockSpan>> SendRequestAndWaitForMongoSpan(
+            string path,
+            Dictionary<string, string> headers,
+            ulong? expectedTraceId)
         {
             var startTime = DateTimeOffset.UtcNow;
             using (var request = _fixture.CreateRequest(HttpMethod.Get, path, headers))
@@ -144,16 +222,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                             returnAllOperations: true,
                             assertExpectedCount: false);
 
-                if (spans.Any(span => IsMongoQuerySpan(span) && span.TraceId == IncomingTraceId)
-                 && spans.Any(span => span.Name == "aspnet_core.request" && span.TraceId == IncomingTraceId))
+                if (spans.Any(
+                        requestSpan => requestSpan.Name == "aspnet_core.request"
+                                    && (!expectedTraceId.HasValue || requestSpan.TraceId == expectedTraceId.Value)
+                                    && spans.Any(
+                                           mongoSpan => IsMongoQuerySpan(mongoSpan)
+                                                     && mongoSpan.TraceId == requestSpan.TraceId
+                                                     && mongoSpan.ParentId == requestSpan.SpanId)))
                 {
                     return spans;
                 }
             }
             while (DateTime.UtcNow < deadline);
 
-            spans.Should().Contain(span => IsMongoQuerySpan(span) && span.TraceId == IncomingTraceId);
-            spans.Should().Contain(span => span.Name == "aspnet_core.request" && span.TraceId == IncomingTraceId);
+            spans.Should().Contain(
+                span => span.Name == "aspnet_core.request"
+                     && (!expectedTraceId.HasValue || span.TraceId == expectedTraceId.Value));
+            var requestSpan = spans.Single(
+                span => span.Name == "aspnet_core.request"
+                     && (!expectedTraceId.HasValue || span.TraceId == expectedTraceId.Value));
+            spans.Should().Contain(
+                span => IsMongoQuerySpan(span)
+                     && span.TraceId == requestSpan.TraceId
+                     && span.ParentId == requestSpan.SpanId);
             return spans;
         }
 
