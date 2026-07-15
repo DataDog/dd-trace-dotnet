@@ -23,11 +23,14 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.DiagnosticListeners
@@ -115,6 +118,33 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             }
 
             HasRequestState(invalidHeadersContext).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task RepeatedIncompatiblePayloadsHaveBoundedDiagnostics()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var logger = new Mock<IDatadogLogger>();
+            var metrics = new Mock<IMetricsTelemetryCollector>();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer, logger.Object, metrics.Object);
+            var invalidPayload = new object();
+
+            for (var i = 0; i < 5; i++)
+            {
+                observer.OnNext(new KeyValuePair<string, object>(StartEvent, invalidPayload));
+                observer.OnNext(new KeyValuePair<string, object>(StopEvent, invalidPayload));
+                observer.OnNext(new KeyValuePair<string, object>(HostingUnhandledExceptionEvent, invalidPayload));
+                observer.OnNext(new KeyValuePair<string, object>(DiagnosticsUnhandledExceptionEvent, invalidPayload));
+            }
+
+            logger.Invocations.Count(invocation => invocation.Method.Name == nameof(IDatadogLogger.Warning)).Should().Be(4);
+            metrics.Verify(
+                collector => collector.RecordCountSharedIntegrationsError(
+                    MetricTags.IntegrationName.AspNetCore,
+                    MetricTags.InstrumentationError.DuckTyping,
+                    1),
+                Times.Exactly(4));
+            tracer.ActiveScope.Should().BeNull();
         }
 
         [Fact]
@@ -282,6 +312,38 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             HasRequestState(context).Should().BeFalse();
             tracer.ActiveScope.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task RepeatedUnsupportedStopResponsesHaveBoundedDiagnosticsAndCloseScopes()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var logger = new Mock<IDatadogLogger>();
+            var metrics = new Mock<IMetricsTelemetryCollector>();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer, logger.Object, metrics.Object);
+
+            for (var i = 0; i < 5; i++)
+            {
+                var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+                var payload = new { HttpContext = context };
+                observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+                var requestScope = GetRequestState(context).RootScope;
+                context.Response = new object();
+
+                observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+
+                requestScope.Span.IsFinished.Should().BeTrue();
+                HasRequestState(context).Should().BeFalse();
+                tracer.ActiveScope.Should().BeNull();
+            }
+
+            logger.Invocations.Count(invocation => invocation.Method.Name == nameof(IDatadogLogger.Warning)).Should().Be(1);
+            metrics.Verify(
+                collector => collector.RecordCountSharedIntegrationsError(
+                    MetricTags.IntegrationName.AspNetCore,
+                    MetricTags.InstrumentationError.DuckTyping,
+                    1),
+                Times.Once);
         }
 
         [Fact]
