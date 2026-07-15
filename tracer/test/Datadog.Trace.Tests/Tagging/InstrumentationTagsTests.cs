@@ -592,6 +592,15 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
+        public void AzureEventGridV1Tags_PeerServiceSource_NotSetWithoutDestination()
+        {
+            var tags = new AzureEventGridV1Tags(SpanKinds.Producer);
+
+            tags.PeerService.Should().BeNull();
+            tags.PeerServiceSource.Should().BeNull();
+        }
+
+        [Fact]
         public void RedisV1Tags_PeerService_PopulatesFromOutHost()
         {
             var host = "localhost";

@@ -74,7 +74,9 @@ namespace Datadog.Trace.Tagging
             {
                 return _peerServiceOverride is not null
                     ? "peer.service"
-                    : Trace.Tags.MessagingDestinationName;
+                    : MessagingDestinationName is not null
+                        ? Trace.Tags.MessagingDestinationName
+                        : null;
             }
         }
     }
