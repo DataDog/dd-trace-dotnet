@@ -26,6 +26,9 @@ namespace Datadog.Trace.FeatureFlags
     {
         internal const string MetadataAllocationKey = "__dd_allocation_key";
 
+        internal const string MetadataSplitSerialId = FeatureFlagMetadataKeys.SplitSerialId;
+        internal const string MetadataDoLog = FeatureFlagMetadataKeys.DoLog;
+
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
 
         private readonly ReportExposureDelegate? _onExposureEvent;
@@ -161,7 +164,7 @@ namespace Datadog.Trace.FeatureFlags
                                            : hadRules ? EvaluationReason.TargetingMatch
                                            : EvaluationReason.Static;
 
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, reason, now, context);
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context);
                             }
                         }
                     }
@@ -626,12 +629,14 @@ namespace Datadog.Trace.FeatureFlags
             ValueType resultType,
             object? defaultValue,
             Flag flag,
-            string variationKey,
+            Split split,
             Allocation allocation,
             EvaluationReason reason,
             DateTime evalTime,
             EvaluationContext? context)
         {
+            var variationKey = split.VariationKey!;
+
             if (StringUtil.IsNullOrEmpty(flag.Key))
             {
                 return ParseError($"Variant not found for: {variationKey}");
@@ -648,10 +653,20 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             var mappedValue = MapValue(resultType, variant.Value);
+            var doLog = allocation.DoLog.HasValue && allocation.DoLog.Value;
             var metadata = new Dictionary<string, string>
             {
-                [MetadataAllocationKey] = allocation.Key
+                [MetadataAllocationKey] = allocation.Key,
+
+                // Always surface do_log so the span-enrichment hook can decide whether to record a subject.
+                [MetadataDoLog] = doLog ? "true" : "false"
             };
+
+            // Surface the split serial id only when present.
+            if (split.SerialId.HasValue)
+            {
+                metadata[MetadataSplitSerialId] = split.SerialId.Value.ToString(CultureInfo.InvariantCulture);
+            }
 
             var evaluation = new Evaluation(
                 flagKey,
@@ -660,7 +675,6 @@ namespace Datadog.Trace.FeatureFlags
                 variant: variant.Key,
                 metadata: metadata);
 
-            var doLog = allocation.DoLog.HasValue && allocation.DoLog.Value;
             if (doLog)
             {
                 DispatchExposure(flagKey, evaluation, evalTime, context);

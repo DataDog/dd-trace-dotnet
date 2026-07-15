@@ -17,11 +17,17 @@ internal static class FeatureFlagsHelpers
     // Helpers to build flags (minimal subset)
     // ---------------------------------------------------------------------
 
+    // Serial ids used for APM span-enrichment parity testing. The flags evaluated by the
+    // span-enrichment integration sample carry these on their resolving split so the root span's
+    // ffe_flags_enc / ffe_subjects_enc tags are deterministic.
+    internal const long SimpleStringSerialId = 100;
+    internal const long ExposureSerialId = 108;
+
     internal static Dictionary<string, Flag> CreateAllFlags()
     {
         var flags = new Dictionary<string, Flag>
         {
-            ["simple-string"] = CreateSimpleFlag("simple-string", ValueType.String, "test-value", "on"),
+            ["simple-string"] = CreateSimpleFlag("simple-string", ValueType.String, "test-value", "on", serialId: SimpleStringSerialId),
             ["rule-based-flag"] = CreateRuleBasedFlag(),
             ["numeric-rule-flag"] = CreateNumericRuleFlag(),
             ["time-based-flag"] = CreateTimeBasedFlag(),
@@ -32,7 +38,7 @@ internal static class FeatureFlagsHelpers
         return flags;
     }
 
-    internal static Flag CreateSimpleFlag(string key, ValueType type, object value, string variantKey)
+    internal static Flag CreateSimpleFlag(string key, ValueType type, object value, string variantKey, long? serialId = null)
     {
         var variants = new Dictionary<string, Variant>
         {
@@ -46,7 +52,7 @@ internal static class FeatureFlagsHelpers
 
         var splits = new List<Split>
         {
-            new Split { Shards = shards, VariationKey = variantKey }
+            new Split { Shards = shards, VariationKey = variantKey, SerialId = serialId }
         };
 
         var allocations = new List<Allocation>
@@ -123,7 +129,7 @@ internal static class FeatureFlagsHelpers
             ["tracked"] = new Variant("tracked", "tracked-value")
         };
 
-        var splits = new List<Split> { new Split { VariationKey = "tracked", Shards = new List<Shard>() } };
+        var splits = new List<Split> { new Split { VariationKey = "tracked", Shards = new List<Shard>(), SerialId = ExposureSerialId } };
         var alloc = new Allocation { Key = "exposure-alloc", Splits = splits, DoLog = true };
 
         return new Flag { Key = "exposure-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };

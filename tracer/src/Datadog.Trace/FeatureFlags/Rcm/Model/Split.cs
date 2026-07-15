@@ -17,4 +17,10 @@ internal sealed class Split
     public string? VariationKey { get; set; }
 
     public Dictionary<string, string>? ExtraLogging { get; set; }
+
+    // Optional: absent in configs produced by older backends. When null, the split simply
+    // contributes no serial id to FFE span enrichment, so old/new tracer + config skew is safe.
+    // Binds from "serialId" via Newtonsoft's default case-insensitive matching (like the other
+    // properties here), so no explicit [JsonProperty] is needed.
+    public long? SerialId { get; set; }
 }

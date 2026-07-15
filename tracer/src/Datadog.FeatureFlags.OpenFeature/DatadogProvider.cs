@@ -29,6 +29,10 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
     private readonly FlagEvalMetricsHook _metricsHook;
 #endif
 
+    // Span-enrichment hook is constructed ONLY when the gate is on; null otherwise so
+    // nothing is allocated/registered when the feature is disabled.
+    private readonly SpanEnrichmentHook? _spanEnrichmentHook;
+
     /// <summary> Initializes a new instance of the <see cref="DatadogProvider"/> class. </summary>
     public DatadogProvider()
     {
@@ -36,6 +40,10 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
 #if NET6_0_OR_GREATER
         _metricsHook = new FlagEvalMetricsHook();
 #endif
+        if (FeatureFlagsSdk.IsSpanEnrichmentEnabled())
+        {
+            _spanEnrichmentHook = new SpanEnrichmentHook();
+        }
     }
 
     /// <summary> Gets a value indicating whether the Datadog's provider is instrumented and available  </summary>
@@ -139,8 +147,18 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
     public override IImmutableList<Hook> GetProviderHooks()
     {
 #if NET6_0_OR_GREATER
+        if (_spanEnrichmentHook is not null)
+        {
+            return ImmutableList.Create<Hook>(_metricsHook, _spanEnrichmentHook);
+        }
+
         return ImmutableList.Create<Hook>(_metricsHook);
 #else
+        if (_spanEnrichmentHook is not null)
+        {
+            return ImmutableList.Create<Hook>(_spanEnrichmentHook);
+        }
+
         return ImmutableList<Hook>.Empty;
 #endif
     }
@@ -151,5 +169,8 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
 #if NET6_0_OR_GREATER
         _metricsHook.Dispose();
 #endif
+        // Per-trace enrichment state lives on the trace context and is released with the trace,
+        // so there is no global state to clear on provider close.
+        _spanEnrichmentHook?.Dispose();
     }
 }

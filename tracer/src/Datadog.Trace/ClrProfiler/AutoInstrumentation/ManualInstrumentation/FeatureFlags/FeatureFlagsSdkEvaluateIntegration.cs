@@ -10,6 +10,7 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.FeatureFlags;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
 
@@ -43,7 +44,12 @@ public sealed class FeatureFlagsSdkEvaluateIntegration
         }
 
         var parameters = (State)state.State!;
-        var res = TracerManager.Instance.FeatureFlags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey ?? string.Empty, parameters.Attributes);
+        var tracer = Datadog.Trace.Tracer.Instance;
+        var manager = tracer.TracerManager;
+        var res = manager.FeatureFlags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey ?? string.Empty, parameters.Attributes);
+        var traceContext = tracer.InternalActiveScope?.Span?.Context.TraceContext;
+        traceContext?.GetOrCreateFeatureFlagEnrichment()?.AccumulateEvaluation(res, parameters.TargetingKey);
+
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
     }
 
