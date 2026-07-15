@@ -64,6 +64,28 @@ namespace Datadog.Trace
             return current + 1;
         }
 
+        // Pure debounce decision for a pipe-only process, split out so it can be unit tested without
+        // touching the filesystem or enumerating processes. Returns whether the process should be
+        // treated as healthy and the updated consecutive-unbound-pipe count:
+        // - a bound pipe is healthy and resets the count;
+        // - an unbound pipe on a process that is no longer running is unhealthy now (no grace);
+        // - an unbound pipe on a still-running process is tolerated until the grace count is reached.
+        internal static (bool IsHealthy, int NextUnboundCount) EvaluateDebouncedHealth(bool pipeBound, bool programRunning, int consecutiveUnboundChecks)
+        {
+            if (pipeBound)
+            {
+                return (true, 0);
+            }
+
+            if (!programRunning)
+            {
+                return (false, consecutiveUnboundChecks);
+            }
+
+            var nextCount = NextUnboundCount(consecutiveUnboundChecks);
+            return (nextCount < ProcessMetadata.UnboundPipeGraceChecks, nextCount);
+        }
+
         /// <summary>
         /// Invoked by the loader
         /// </summary>
@@ -227,13 +249,24 @@ namespace Datadog.Trace
                                         metadata.ProcessState = ProcessState.ReadyToStart;
                                     }
                                 }
-                                else if (metadata.ProcessState == ProcessState.Healthy || metadata.ProcessState == ProcessState.Faulted)
+                                else if (metadata.ProcessState == ProcessState.Healthy || metadata.ProcessState == ProcessState.Faulted || metadata.ProcessState == ProcessState.ReadyToStart)
                                 {
-                                    // This means we have tried to start from this domain before
+                                    // This means we have tried to start from this domain before. ReadyToStart is
+                                    // included so a pipe-only process that outran its start-confirmation budget in a
+                                    // prior iteration but has since bound its pipe is promoted back to Healthy instead
+                                    // of being killed and restarted.
                                     metadata.ProcessState = metadata.IsHealthyDebounced() ? ProcessState.Healthy : ProcessState.ReadyToStart;
                                 }
 
-                                if (metadata.ProcessState == ProcessState.ReadyToStart)
+                                if (metadata.ProcessState == ProcessState.ReadyToStart && metadata.RequirePipeBound && metadata.NamedPipeIsBound())
+                                {
+                                    // The pipe bound between the health re-check above and now, so the tracked
+                                    // instance is healthy after all. Promote it and reset the grace count instead
+                                    // of starting a redundant duplicate that could never bind the already-held pipe.
+                                    metadata.ProcessState = ProcessState.Healthy;
+                                    metadata.ConsecutiveUnboundPipeChecks = 0;
+                                }
+                                else if (metadata.ProcessState == ProcessState.ReadyToStart)
                                 {
                                     // For a pipe-only process the tracked instance may still be alive but broken
                                     // (it failed to bind its pipe). Kill it before restarting so we don't leak
@@ -246,6 +279,10 @@ namespace Datadog.Trace
                                             Log.Information<string, int>("Killing broken {Process} (pid {Pid}) before restart; its named pipe never bound.", path, stale.Id);
                                             stale.Kill();
                                             stale.WaitForExit(2000);
+                                            // Release the handle to the dead instance so we don't leak it across
+                                            // restart cycles; the restart below reassigns metadata.Process.
+                                            stale.Dispose();
+                                            metadata.Process = null;
                                         }
                                         catch (Exception ex)
                                         {
@@ -264,6 +301,13 @@ namespace Datadog.Trace
                                     {
                                         startInfo.Arguments = metadata.ProcessArguments;
                                     }
+
+                                    // Reset the grace count for the fresh instance so it gets a full window to
+                                    // ride out transient unbound-pipe reads before we consider killing it again.
+                                    // A pipe-only instance that stays alive but never binds is intentionally retried
+                                    // indefinitely (no circuit breaker): once the process holding the pipe goes away
+                                    // a restart binds and metrics recover, which a tripped breaker would prevent.
+                                    metadata.ConsecutiveUnboundPipeChecks = 0;
 
                                     metadata.Process = Process.Start(startInfo);
                                     var timeout = 2000;
@@ -388,14 +432,14 @@ namespace Datadog.Trace
                     return ProcessIsHealthy();
                 }
 
-                if (NamedPipeIsBound())
-                {
-                    ConsecutiveUnboundPipeChecks = 0;
-                    return true;
-                }
-
-                ConsecutiveUnboundPipeChecks = NextUnboundCount(ConsecutiveUnboundPipeChecks);
-                return ConsecutiveUnboundPipeChecks < UnboundPipeGraceChecks;
+                // The grace period only rides out transient File.Exists blips while the process is
+                // alive. A pipe-only process that has actually exited is unhealthy now, so restart
+                // immediately instead of waiting out a keep-alive cycle. The decision itself is a pure
+                // helper (see EvaluateDebouncedHealth) so it can be unit tested without the filesystem.
+                var pipeBound = NamedPipeIsBound();
+                var (isHealthy, nextUnboundCount) = EvaluateDebouncedHealth(pipeBound, pipeBound || ProgramIsRunning(), ConsecutiveUnboundPipeChecks);
+                ConsecutiveUnboundPipeChecks = nextUnboundCount;
+                return isHealthy;
             }
 
             private bool ProgramIsRunning()
@@ -436,7 +480,7 @@ namespace Datadog.Trace
                 }
             }
 
-            private bool NamedPipeIsBound()
+            internal bool NamedPipeIsBound()
             {
                 var namedPipe = $"\\\\.\\pipe\\{PipeName}";
                 var namedPipeIsBound = File.Exists(namedPipe);
