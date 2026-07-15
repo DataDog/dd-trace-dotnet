@@ -171,4 +171,5 @@ steps:
     clean: true
     ${{ if eq(parameters.shallowFetch, true) }}:
       fetchDepth: 1
+      fetchFilter: tree:0
       fetchTags: false
