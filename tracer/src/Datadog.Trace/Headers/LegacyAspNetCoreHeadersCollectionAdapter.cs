@@ -14,8 +14,8 @@ namespace Datadog.Trace.Headers
 {
     /// <summary>
     /// Adapts an ASP.NET Core 2.x IHeaderDictionary without referencing Microsoft.Extensions.Primitives.StringValues.
-    /// The indexer value is boxed as object and consumed through the BCL IEnumerable implementation shared by
-    /// StringValues 2.1 and 2.2.
+    /// The duck-typing runtime boxes StringValues and converts it to the BCL IEnumerable implementation shared by
+    /// ASP.NET Core 2.x versions.
     /// </summary>
     internal readonly struct LegacyAspNetCoreHeadersCollectionAdapter : IHeadersCollection
     {
@@ -27,20 +27,7 @@ namespace Datadog.Trace.Headers
         }
 
         public IEnumerable<string> GetValues(string name)
-        {
-            var value = _headers.GetValues(name);
-            if (value is IEnumerable<string> values)
-            {
-                return values;
-            }
-
-            if (value is string singleValue)
-            {
-                return [singleValue];
-            }
-
-            return [];
-        }
+            => _headers[name] ?? [];
 
         public void Set(string name, string value) => throw new NotSupportedException();
 

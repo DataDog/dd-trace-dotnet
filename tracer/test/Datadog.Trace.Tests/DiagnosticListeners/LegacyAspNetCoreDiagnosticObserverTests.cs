@@ -21,6 +21,8 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 using Xunit;
 
 namespace Datadog.Trace.Tests.DiagnosticListeners
@@ -286,6 +288,32 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             AssertHeaderValues(headers);
         }
 
+        [Fact]
+        public void HeaderAdapterReadsPublicHeaderDictionaryIndexer()
+        {
+            IHeaderDictionary headers = new HeaderDictionary
+            {
+                ["x-single"] = "value",
+                ["traceparent"] = new StringValues(["first", "second"]),
+            };
+
+            var proxy = headers.DuckCast<ILegacyAspNetCoreHeaders>();
+            new LegacyAspNetCoreHeadersCollectionAdapter(proxy).GetValues("x-single").Should().Equal("value");
+            AssertHeaderValues(proxy);
+        }
+
+        [Fact]
+        public void HeaderAdapterReadsKestrelStyleExplicitIndexerFromBaseType()
+        {
+            var headers = new ExplicitlyImplementedHeaderDictionary();
+            headers.Set("x-single", "value");
+            headers.Set("traceparent", new StringValues(["first", "second"]));
+
+            var proxy = headers.DuckCast<ILegacyAspNetCoreHeaders>();
+            new LegacyAspNetCoreHeadersCollectionAdapter(proxy).GetValues("x-single").Should().Equal("value");
+            AssertHeaderValues(proxy);
+        }
+
         private static FakeHttpContext CreateContext(FakeLegacyHeaders headers)
         {
             return new FakeHttpContext
@@ -395,13 +423,76 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 _headers = headers;
             }
 
-            public object Instance => this;
+            public IEnumerable<string> this[string name]
+                => _headers.TryGetValue(name, out var values) ? (IEnumerable<string>)values : [];
+        }
 
-            public Type Type => GetType();
+        /// <summary>
+        /// Reproduces the Kestrel 2.x shape where the concrete request-header type inherits the
+        /// explicit IHeaderDictionary implementation from an abstract base class.
+        /// </summary>
+        private sealed class ExplicitlyImplementedHeaderDictionary : KestrelStyleHeaderDictionaryBase
+        {
+        }
 
-            public object GetValues(string name) => _headers.TryGetValue(name, out var values) ? values : null;
+        private abstract class KestrelStyleHeaderDictionaryBase : IHeaderDictionary
+        {
+            private readonly Dictionary<string, StringValues> _store = new(StringComparer.OrdinalIgnoreCase);
 
-            public ref TReturn GetInternalDuckTypedInstance<TReturn>() => throw new NotImplementedException();
+            int ICollection<KeyValuePair<string, StringValues>>.Count => _store.Count;
+
+            bool ICollection<KeyValuePair<string, StringValues>>.IsReadOnly => false;
+
+            ICollection<string> IDictionary<string, StringValues>.Keys => _store.Keys;
+
+            ICollection<StringValues> IDictionary<string, StringValues>.Values => _store.Values;
+
+            long? IHeaderDictionary.ContentLength
+            {
+                get => null;
+                set { }
+            }
+
+            StringValues IHeaderDictionary.this[string key]
+            {
+                get
+                {
+                    _store.TryGetValue(key, out var value);
+                    return value;
+                }
+
+                set => _store[key] = value;
+            }
+
+            StringValues IDictionary<string, StringValues>.this[string key]
+            {
+                get => _store[key];
+                set => _store[key] = value;
+            }
+
+            public void Set(string key, StringValues value) => _store[key] = value;
+
+            void IDictionary<string, StringValues>.Add(string key, StringValues value) => _store.Add(key, value);
+
+            bool IDictionary<string, StringValues>.ContainsKey(string key) => _store.ContainsKey(key);
+
+            bool IDictionary<string, StringValues>.Remove(string key) => _store.Remove(key);
+
+            bool IDictionary<string, StringValues>.TryGetValue(string key, out StringValues value) => _store.TryGetValue(key, out value);
+
+            void ICollection<KeyValuePair<string, StringValues>>.Add(KeyValuePair<string, StringValues> item) => _store.Add(item.Key, item.Value);
+
+            void ICollection<KeyValuePair<string, StringValues>>.Clear() => _store.Clear();
+
+            bool ICollection<KeyValuePair<string, StringValues>>.Contains(KeyValuePair<string, StringValues> item) => _store.ContainsKey(item.Key);
+
+            void ICollection<KeyValuePair<string, StringValues>>.CopyTo(KeyValuePair<string, StringValues>[] array, int arrayIndex) => ((ICollection<KeyValuePair<string, StringValues>>)_store).CopyTo(array, arrayIndex);
+
+            bool ICollection<KeyValuePair<string, StringValues>>.Remove(KeyValuePair<string, StringValues> item) => _store.Remove(item.Key);
+
+            IEnumerator<KeyValuePair<string, StringValues>> IEnumerable<KeyValuePair<string, StringValues>>.GetEnumerator() => _store.GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator() => _store.GetEnumerator();
         }
     }
 }

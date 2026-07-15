@@ -7,14 +7,15 @@
 
 #nullable enable
 
+using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.Headers
 {
-    internal interface ILegacyAspNetCoreHeaders : IDuckType
+    internal interface ILegacyAspNetCoreHeaders
     {
-        [Duck(Name = "get_Item", ExplicitInterfaceTypeName = "Microsoft.AspNetCore.Http.IHeaderDictionary", ParameterTypeNames = new[] { "System.String" })]
-        object? GetValues(string name);
+        [Duck(Name = "Item,Microsoft.AspNetCore.Http.IHeaderDictionary.Item", FallbackToBaseTypes = true)]
+        IEnumerable<string>? this[string name] { get; }
     }
 }
 

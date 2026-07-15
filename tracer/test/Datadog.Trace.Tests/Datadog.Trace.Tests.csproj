@@ -53,6 +53,8 @@
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Net.Http" />
+    <!-- Used as the customer side of the legacy ASP.NET Core header duck-typing tests. -->
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.1.22" />
   </ItemGroup>
 
   <ItemGroup>
