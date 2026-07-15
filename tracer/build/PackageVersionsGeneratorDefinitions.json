@@ -1,5 +1,16 @@
 [
   {
+    "IntegrationName": "MassTransit7",
+    "SampleProjectName": "Samples.MassTransit7",
+    "NugetPackageSearchName": "MassTransit",
+    "MinVersion": "7.0.0",
+    "MaxVersionExclusive": "8.0.0",
+    "SpecificVersions": [
+      "7.3.0",
+      "7.*.*"
+    ]
+  },
+  {
     "IntegrationName": "Hangfire",
     "SampleProjectName": "Samples.Hangfire",
     "NugetPackageSearchName": "Hangfire.Core",
