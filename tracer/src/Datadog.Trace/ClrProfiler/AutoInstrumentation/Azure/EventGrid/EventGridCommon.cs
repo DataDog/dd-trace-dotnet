@@ -164,7 +164,7 @@ internal static class EventGridCommon
         if (evt.TryDuckCast<ICloudEvent>(out var cloudEvent)
             && cloudEvent.ExtensionAttributes is { } attrs)
         {
-            InjectW3CContext(attrs, scope);
+            InjectW3CContext(attrs, scope, Tracer.Instance.Settings.PropagationStyleInject);
         }
     }
 
@@ -177,12 +177,12 @@ internal static class EventGridCommon
     }
 
     /// <summary>
-    /// Injects W3C traceparent, tracestate, and baggage into CloudEvent ExtensionAttributes.
+    /// Injects the configured W3C traceparent, tracestate, and baggage into CloudEvent ExtensionAttributes.
     /// Uses the W3C propagator directly because CloudEvent extension attribute names
     /// only allow lowercase letters and digits — Datadog-format headers (x-datadog-*)
     /// would throw ArgumentException.
     /// </summary>
-    private static void InjectW3CContext(IDictionary<string, object> extensionAttributes, Scope scope)
+    internal static void InjectW3CContext(IDictionary<string, object> extensionAttributes, Scope scope, string[] propagationStyles)
     {
         if (scope.Span.Context is not { } spanContext)
         {
@@ -194,13 +194,16 @@ internal static class EventGridCommon
             var context = new PropagationContext(spanContext, Baggage.Current);
             var carrier = default(Shared.AzureMessagingCommon.DictionaryContextPropagation);
 
-            // The propagator does not clear an existing optional value when the current
-            // context has none, so remove it before injecting a reused CloudEvent.
-            extensionAttributes.Remove(W3CTraceContextPropagator.TraceStateHeaderName);
-            W3CTraceContextPropagator.Instance.Inject(context, extensionAttributes, carrier);
+            if (IsPropagationStyleEnabled(propagationStyles, ContextPropagationHeaderStyle.W3CTraceContext) ||
+                IsPropagationStyleEnabled(propagationStyles, ContextPropagationHeaderStyle.Deprecated.W3CTraceContext))
+            {
+                // The propagator does not clear an existing optional value when the current
+                // context has none, so remove it before injecting a reused CloudEvent.
+                extensionAttributes.Remove(W3CTraceContextPropagator.TraceStateHeaderName);
+                W3CTraceContextPropagator.Instance.Inject(context, extensionAttributes, carrier);
+            }
 
-            var settings = Tracer.Instance.Settings;
-            if (IsPropagationStyleEnabled(settings.PropagationStyleInject, ContextPropagationHeaderStyle.W3CBaggage))
+            if (IsPropagationStyleEnabled(propagationStyles, ContextPropagationHeaderStyle.W3CBaggage))
             {
                 extensionAttributes.Remove(W3CBaggagePropagator.BaggageHeaderName);
                 W3CBaggagePropagator.Instance.Inject(context, extensionAttributes, carrier);
