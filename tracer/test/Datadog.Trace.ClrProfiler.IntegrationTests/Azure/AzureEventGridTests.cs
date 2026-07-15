@@ -32,11 +32,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
-        // Partner channel overloads were introduced in Azure.Messaging.EventGrid 5.0.0.
+        // Partner channel overloads were introduced in Azure.Messaging.EventGrid 4.11.0.
         public static IEnumerable<object[]> GetPartnerChannelEnabledConfig()
             => from packageVersionArray in PackageVersions.AzureEventGrid
                let packageVersion = (string)packageVersionArray[0]
-               where string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version(5, 0, 0)
+               where string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version(4, 11, 0)
                from metadataSchemaVersion in new[] { "v0", "v1" }
                from testMode in new[] { "SendCloudEventToChannel", "SendCloudEventsToChannel", "SendCloudEventToChannelAsync", "SendCloudEventsToChannelAsync" }
                select new[] { packageVersion, metadataSchemaVersion, testMode };
