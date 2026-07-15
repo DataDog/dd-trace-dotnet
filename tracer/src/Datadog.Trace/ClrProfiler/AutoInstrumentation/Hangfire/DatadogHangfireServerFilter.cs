@@ -49,31 +49,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
         public void OnPerformed(object context)
         {
-            if (!context.TryDuckCast<IPerformedContextProxy>(out var performedContext))
+            if (context.TryDuckCast<IPerformedContextProxy>(out var performedContext))
             {
-                return;
-            }
+                var shouldRestoreBaggage = performedContext.Items.TryGetValue(HangfireConstants.DatadogBaggageKey, out var previousBaggage);
 
-            var shouldRestoreBaggage = performedContext.Items.TryGetValue(HangfireConstants.DatadogBaggageKey, out var previousBaggage);
-
-            try
-            {
-                if (performedContext.Items.TryGetValue(HangfireConstants.DatadogScopeKey, out var scope)
-                    && scope is Scope typedScope)
+                try
                 {
-                    if (performedContext.Exception is not null)
+                    if (performedContext.Items.TryGetValue(HangfireConstants.DatadogScopeKey, out var scope))
                     {
-                        HangfireCommon.SetStatusAndRecordException(typedScope, performedContext.Exception);
-                    }
+                        if (scope is not Scope typedScope)
+                        {
+                            return;
+                        }
 
-                    typedScope.Dispose();
+                        if (performedContext.Exception is not null)
+                        {
+                            HangfireCommon.SetStatusAndRecordException(typedScope, performedContext.Exception);
+                        }
+
+                        typedScope.Dispose();
+                    }
                 }
-            }
-            finally
-            {
-                if (shouldRestoreBaggage)
+                finally
                 {
-                    Baggage.Current = previousBaggage is Baggage baggage ? baggage : new Baggage();
+                    if (shouldRestoreBaggage)
+                    {
+                        Baggage.Current = previousBaggage is Baggage baggage ? baggage : new Baggage();
+                    }
                 }
             }
         }
