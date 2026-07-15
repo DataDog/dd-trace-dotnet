@@ -753,4 +753,92 @@ public class MetricsTelemetryCollectorTests
             x.Points.Single().Value == 1);
         await collector.DisposeAsync();
     }
+
+    [Fact]
+    public async Task KnownTestsPaginationMetrics_AreRecordedCorrectly()
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+
+        // Record pagination metrics
+        collector.RecordDistributionCIVisibilityKnownTestsPagesFetched(3);
+        collector.RecordDistributionCIVisibilityKnownTestsTotalFetchMs(1500.5);
+        collector.RecordDistributionCIVisibilityKnownTestsTotalRequestMs(1200.25);
+
+        collector.AggregateMetrics();
+
+        var metrics = collector.GetMetrics();
+
+        using var scope = new AssertionScope();
+
+        metrics.Distributions.Should().Contain(x =>
+            x.Metric == DistributionCIVisibility.KnownTestsPagesFetched.GetName() &&
+            x.Points != null &&
+            x.Points.Single() == 3 &&
+            x.Common == true &&
+            x.Namespace == NS.CIVisibility);
+
+        metrics.Distributions.Should().Contain(x =>
+            x.Metric == DistributionCIVisibility.KnownTestsTotalFetchMs.GetName() &&
+            x.Points != null &&
+            x.Points.Single() == 1500.5 &&
+            x.Common == true &&
+            x.Namespace == NS.CIVisibility);
+
+        metrics.Distributions.Should().Contain(x =>
+            x.Metric == DistributionCIVisibility.KnownTestsTotalRequestMs.GetName() &&
+            x.Points != null &&
+            x.Points.Single() == 1200.25 &&
+            x.Common == true &&
+            x.Namespace == NS.CIVisibility);
+
+        await collector.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task KnownTestsPaginationMetrics_AggregateMultipleValues()
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+
+        // Simulate multiple fetch operations
+        collector.RecordDistributionCIVisibilityKnownTestsPagesFetched(1);
+        collector.RecordDistributionCIVisibilityKnownTestsTotalFetchMs(500.0);
+        collector.RecordDistributionCIVisibilityKnownTestsTotalRequestMs(450.0);
+
+        collector.AggregateMetrics();
+
+        // Second fetch operation
+        collector.RecordDistributionCIVisibilityKnownTestsPagesFetched(5);
+        collector.RecordDistributionCIVisibilityKnownTestsTotalFetchMs(2500.0);
+        collector.RecordDistributionCIVisibilityKnownTestsTotalRequestMs(2300.0);
+
+        collector.AggregateMetrics();
+
+        var metrics = collector.GetMetrics();
+
+        using var scope = new AssertionScope();
+
+        // Should contain both values
+        metrics.Distributions.Should().Contain(x =>
+            x.Metric == DistributionCIVisibility.KnownTestsPagesFetched.GetName() &&
+            x.Points != null &&
+            x.Points.Length == 2 &&
+            x.Points.Contains(1) &&
+            x.Points.Contains(5));
+
+        metrics.Distributions.Should().Contain(x =>
+            x.Metric == DistributionCIVisibility.KnownTestsTotalFetchMs.GetName() &&
+            x.Points != null &&
+            x.Points.Length == 2 &&
+            x.Points.Contains(500.0) &&
+            x.Points.Contains(2500.0));
+
+        metrics.Distributions.Should().Contain(x =>
+            x.Metric == DistributionCIVisibility.KnownTestsTotalRequestMs.GetName() &&
+            x.Points != null &&
+            x.Points.Length == 2 &&
+            x.Points.Contains(450.0) &&
+            x.Points.Contains(2300.0));
+
+        await collector.DisposeAsync();
+    }
 }
