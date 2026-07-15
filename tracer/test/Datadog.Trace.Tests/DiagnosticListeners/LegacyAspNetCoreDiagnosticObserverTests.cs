@@ -10,6 +10,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
@@ -96,10 +98,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
 
-            var requestScope = context.Items[LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey]
-                                      .Should()
-                                      .BeOfType<Scope>()
-                                      .Subject;
+            var requestScope = GetRequestState(context).RootScope;
             requestScope.Should().BeSameAs(tracer.ActiveScope);
             requestScope.Span.TraceId.Should().Be(IncomingTraceId);
             requestScope.Span.Context.ParentId.Should().Be(IncomingParentId);
@@ -112,11 +111,122 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             }
 
             observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+            context.Response = new FakeHttpResponse { StatusCode = 503 };
             observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
 
-            context.Items.Should().NotContainKey(LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey);
+            HasRequestState(context).Should().BeFalse();
             tracer.ActiveScope.Should().BeNull();
             requestScope.Span.GetTag(Tags.HttpStatusCode).Should().Be("200");
+        }
+
+        [Fact]
+        public async Task PrivateRequestStateKeyDoesNotCollideWithApplicationItem()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var payload = new { HttpContext = context };
+            var applicationValue = new object();
+            const string FormerScopeKey = "__Datadog.LegacyAspNetCoreDiagnosticObserver.Scope";
+            context.Items[FormerScopeKey] = applicationValue;
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+
+            var stateEntry = context.Items.Single(item => item.Value is LegacyAspNetCoreRequestState);
+            stateEntry.Key.Should().NotBeOfType<string>();
+            stateEntry.Value.Should().BeOfType<LegacyAspNetCoreRequestState>();
+            context.Items[FormerScopeKey].Should().BeSameAs(applicationValue);
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+
+            HasRequestState(context).Should().BeFalse();
+            context.Items.Should().ContainSingle();
+            context.Items[FormerScopeKey].Should().BeSameAs(applicationValue);
+        }
+
+        [Fact]
+        public async Task DuplicateStartKeepsFirstRequestState()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var payload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+            var firstState = GetRequestState(context);
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+
+            GetRequestState(context).Should().BeSameAs(firstState);
+            tracer.ActiveScope.Should().BeSameAs(firstState.RootScope);
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+
+            firstState.RootScope.Span.IsFinished.Should().BeTrue();
+            HasRequestState(context).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task StopClosesStoredRequestScopeWhileChildIsActive()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var payload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+            var requestScope = GetRequestState(context).RootScope;
+            var childScope = tracer.StartActiveInternal("child");
+
+            try
+            {
+                observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+
+                requestScope.Span.IsFinished.Should().BeTrue();
+                childScope.Span.IsFinished.Should().BeFalse();
+                tracer.ActiveScope.Should().BeSameAs(childScope);
+                HasRequestState(context).Should().BeFalse();
+            }
+            finally
+            {
+                childScope.Dispose();
+                ((IScopeRawAccess)tracer.ScopeManager).Active = null;
+            }
+        }
+
+        [Fact]
+        public async Task ConcurrentRequestsKeepSeparateState()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var firstContext = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var secondContext = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            using var bothStarted = new Barrier(2);
+
+            LegacyAspNetCoreRequestState RunRequest(FakeHttpContext context)
+            {
+                var payload = new { HttpContext = context };
+                observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+                var state = GetRequestState(context);
+
+                bothStarted.SignalAndWait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+                state.RootScope.Should().BeSameAs(tracer.ActiveScope);
+
+                observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+                tracer.ActiveScope.Should().BeNull();
+                return state;
+            }
+
+            var states = await Task.WhenAll(
+                             Task.Run(() => RunRequest(firstContext)),
+                             Task.Run(() => RunRequest(secondContext)));
+
+            states[0].Should().NotBeSameAs(states[1]);
+            states[0].RootScope.Should().NotBeSameAs(states[1].RootScope);
+            states[0].RootScope.Span.TraceId.Should().NotBe(states[1].RootScope.Span.TraceId);
+            states.Should().OnlyContain(state => state.RootScope.Span.IsFinished);
+            HasRequestState(firstContext).Should().BeFalse();
+            HasRequestState(secondContext).Should().BeFalse();
         }
 
         [Fact]
@@ -128,13 +238,13 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var payload = new { HttpContext = context };
 
             observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
-            context.Items.Should().ContainKey(LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey);
+            HasRequestState(context).Should().BeTrue();
             tracer.ActiveScope.Should().NotBeNull();
 
             context.Response = new object();
             observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
 
-            context.Items.Should().NotContainKey(LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey);
+            HasRequestState(context).Should().BeFalse();
             tracer.ActiveScope.Should().BeNull();
         }
 
@@ -150,10 +260,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             observer.OnNext(new KeyValuePair<string, object>(StartEvent, requestPayload));
 
-            var requestScope = context.Items[LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey]
-                                      .Should()
-                                      .BeOfType<Scope>()
-                                      .Subject;
+            var requestScope = GetRequestState(context).RootScope;
             var exception = new InvalidOperationException("Unhandled request failure");
             var exceptionPayload = new { HttpContext = context, Exception = exception };
 
@@ -188,10 +295,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 Baggage.Current = new Baggage();
                 observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
 
-                var requestScope = context.Items[LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey]
-                                          .Should()
-                                          .BeOfType<Scope>()
-                                          .Subject;
+                var requestScope = GetRequestState(context).RootScope;
                 Baggage.Current["user.id"].Should().Be("legacy-user");
                 requestScope.Span.GetTag("baggage.user.id").Should().Be("legacy-user");
 
@@ -199,7 +303,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             }
             finally
             {
-                if (context.Items.ContainsKey(LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey))
+                if (HasRequestState(context))
                 {
                     observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
                 }
@@ -233,10 +337,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
 
-            var requestScope = context.Items[LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey]
-                                      .Should()
-                                      .BeOfType<Scope>()
-                                      .Subject;
+            var requestScope = GetRequestState(context).RootScope;
             requestScope.Span.GetTag("http.url").Should().Be(expectedUrl);
             requestScope.Span.GetTag("legacy.request.header").Should().Be("header-value");
 
@@ -253,10 +354,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
 
-            var requestScope = context.Items[LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey]
-                                      .Should()
-                                      .BeOfType<Scope>()
-                                      .Subject;
+            var requestScope = GetRequestState(context).RootScope;
             requestScope.Span.Error = true;
 
             observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
@@ -331,6 +429,16 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 Response = new FakeHttpResponse { StatusCode = 200 },
             };
         }
+
+        private static LegacyAspNetCoreRequestState GetRequestState(FakeHttpContext context)
+        {
+            var states = context.Items.Values.OfType<LegacyAspNetCoreRequestState>().ToArray();
+            states.Should().ContainSingle();
+            return states[0];
+        }
+
+        private static bool HasRequestState(FakeHttpContext context)
+            => context.Items.Values.OfType<LegacyAspNetCoreRequestState>().Any();
 
         private static void AssertHeaderValues(ILegacyAspNetCoreHeaders headers)
         {

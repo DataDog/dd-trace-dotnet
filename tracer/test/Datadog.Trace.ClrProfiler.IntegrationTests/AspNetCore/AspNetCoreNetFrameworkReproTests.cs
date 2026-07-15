@@ -34,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             _fixture = fixture;
             _fixture.SetOutput(output);
+            SetEnvironmentVariable("ENABLE_MANUAL_TRACING_MIDDLEWARE", "true");
         }
 
         [SkippableFact]

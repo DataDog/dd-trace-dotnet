@@ -35,6 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             _fixture.SetOutput(output);
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.AspNetCoreNetFrameworkEnabled, "true");
             SetEnvironmentVariable(ConfigurationKeys.HeaderTags, "x-legacy-test-header:legacy.request.header");
+            SetEnvironmentVariable("ENABLE_MANUAL_TRACING_MIDDLEWARE", "false");
         }
 
         [SkippableFact]
