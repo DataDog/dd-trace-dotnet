@@ -31,10 +31,11 @@ namespace Datadog.Trace.PlatformHelpers
             _log = log;
         }
 
-        public Scope StartAspNetCorePipelineScope(Tracer tracer, LegacyAspNetCoreDiagnosticObserver.LegacyAspNetCoreHttpRequestStruct request)
+        public Scope StartAspNetCorePipelineScope(
+            Tracer tracer,
+            LegacyAspNetCoreDiagnosticObserver.LegacyAspNetCoreHttpRequestStruct request,
+            LegacyAspNetCoreHeadersCollectionAdapter headersAdapter)
         {
-            var headers = request.Headers.DuckCast<ILegacyAspNetCoreHeaders>();
-            var headersAdapter = new LegacyAspNetCoreHeadersCollectionAdapter(headers);
             var extractedContext = ExtractPropagatedContext(tracer, headersAdapter).MergeBaggageInto(Baggage.Current);
             var tags = new AspNetCoreTags();
 
@@ -56,18 +57,27 @@ namespace Datadog.Trace.PlatformHelpers
 
             tags.SetAnalyticsSampleRate(LegacyAspNetCoreDiagnosticObserver.IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
 
-            var scope = tracer.StartActiveInternal(OperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
-            scope.Span.DecorateWebServerSpan(resourceName, method, host, url, userAgent, tags);
+            Scope? scope = null;
+            try
+            {
+                scope = tracer.StartActiveInternal(OperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
+                scope.Span.DecorateWebServerSpan(resourceName, method, host, url, userAgent, tags);
 #pragma warning disable CS8620 // HeaderTags values are non-null, while AddHeadersToSpanAsTags also accepts nullable values.
-            tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(
-                scope.Span,
-                headersAdapter,
-                tracer.CurrentTraceSettings.Settings.HeaderTags,
-                defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(
+                    scope.Span,
+                    headersAdapter,
+                    tracer.CurrentTraceSettings.Settings.HeaderTags,
+                    defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
 #pragma warning restore CS8620
-            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(LegacyAspNetCoreDiagnosticObserver.IntegrationId);
-            return scope;
+                tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(LegacyAspNetCoreDiagnosticObserver.IntegrationId);
+                return scope;
+            }
+            catch
+            {
+                scope?.Dispose();
+                throw;
+            }
         }
 
         public void StopAspNetCorePipelineScope(Tracer tracer, Scope scope, LegacyAspNetCoreDiagnosticObserver.LegacyAspNetCoreHttpResponseStruct response)
