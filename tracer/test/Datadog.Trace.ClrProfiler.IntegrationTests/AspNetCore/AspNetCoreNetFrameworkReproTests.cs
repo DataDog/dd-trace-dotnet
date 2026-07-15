@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task ManualRequestSpanPropagatesContextToMongoDb()
+        public async Task GateDisabledProducesNoRequestSpanAndPreservesManualReproduction()
         {
             await _fixture.TryStartApp(this, sendHealthCheck: false);
 

@@ -71,6 +71,12 @@ internal static partial class ConfigurationKeys
         public const string TraceId128BitLoggingEnabled = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
 
         /// <summary>
+        /// Feature flag that enables ASP.NET Core request tracing in .NET Framework processes.
+        /// Default value is <c>false</c>. This setting has no effect on modern .NET runtimes.
+        /// </summary>
+        public const string AspNetCoreNetFrameworkEnabled = "DD_TRACE_ASPNETCORE_NETFRAMEWORK_ENABLED";
+
+        /// <summary>
         /// When enabled, the request URL is built without using the cached HttpRequest.Url value to avoid triggering URL caching behavior. This can prevent issues in environments where caching the URL early can affect application behavior
         /// </summary>
         public const string BypassHttpRequestUrlCachingEnabled = "DD_TRACE_BYPASS_HTTP_REQUEST_URL_CACHING_ENABLED";
