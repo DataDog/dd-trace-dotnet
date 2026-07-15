@@ -45,6 +45,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         private const string StopEvent = "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop";
         private const string HostingUnhandledExceptionEvent = "Microsoft.AspNetCore.Hosting.UnhandledException";
         private const string DiagnosticsUnhandledExceptionEvent = "Microsoft.AspNetCore.Diagnostics.UnhandledException";
+        private const string MvcBeforeActionEvent = "Microsoft.AspNetCore.Mvc.BeforeAction";
 
         [Theory]
         [InlineData(false, false, false)]
@@ -84,7 +85,172 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             listener.IsEnabled(StopEvent).Should().BeTrue();
             listener.IsEnabled(HostingUnhandledExceptionEvent).Should().BeTrue();
             listener.IsEnabled(DiagnosticsUnhandledExceptionEvent).Should().BeTrue();
-            listener.IsEnabled("Microsoft.AspNetCore.Mvc.BeforeAction").Should().BeFalse();
+            listener.IsEnabled(MvcBeforeActionEvent).Should().BeTrue();
+            listener.IsEnabled("Microsoft.AspNetCore.Mvc.AfterAction").Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task MvcAttributeRouteHasNamingPrecedenceAndUpdatesRootTags()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            context.Request.Method = "post";
+            var requestPayload = new { HttpContext = context };
+            var actionValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["controller"] = "Orders",
+                ["action"] = "Details",
+                ["area"] = "Admin",
+            };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, requestPayload));
+            var requestScope = GetRequestState(context).RootScope;
+
+            observer.OnNext(
+                new KeyValuePair<string, object>(
+                    MvcBeforeActionEvent,
+                    CreateMvcBeforeActionPayload(context, "api/Orders/{id}", actionValues)));
+
+            requestScope.Span.ResourceName.Should().Be("POST api/Orders/{id}");
+            requestScope.Span.GetTag(Tags.AspNetCoreRoute).Should().Be("api/Orders/{id}");
+            requestScope.Span.GetTag(Tags.HttpRoute).Should().Be("api/Orders/{id}");
+            requestScope.Span.GetTag(Tags.AspNetCoreController).Should().Be("Orders");
+            requestScope.Span.GetTag(Tags.AspNetCoreAction).Should().Be("Details");
+            requestScope.Span.GetTag(Tags.AspNetCoreArea).Should().Be("Admin");
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
+        }
+
+        [Theory]
+        [InlineData(null, "GET Orders/Details")]
+        [InlineData("Admin", "GET Admin/Orders/Details")]
+        public async Task MvcControllerActionRouteUpdatesRootName(string area, string expectedResourceName)
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var requestPayload = new { HttpContext = context };
+            var actionValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["controller"] = "Orders",
+                ["action"] = "Details",
+            };
+            if (area is not null)
+            {
+                actionValues["area"] = area;
+            }
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, requestPayload));
+            var requestScope = GetRequestState(context).RootScope;
+
+            observer.OnNext(
+                new KeyValuePair<string, object>(
+                    MvcBeforeActionEvent,
+                    CreateMvcBeforeActionPayload(context, null, actionValues)));
+
+            requestScope.Span.ResourceName.Should().Be(expectedResourceName);
+            requestScope.Span.GetTag(Tags.AspNetCoreRoute).Should().Be(expectedResourceName.Substring(4));
+            requestScope.Span.GetTag(Tags.AspNetCoreController).Should().Be("Orders");
+            requestScope.Span.GetTag(Tags.AspNetCoreAction).Should().Be("Details");
+            requestScope.Span.GetTag(Tags.AspNetCoreArea).Should().Be(area);
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
+        }
+
+        [Fact]
+        public async Task MvcRouteDataValuesProvideControllerActionFallback()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var requestPayload = new { HttpContext = context };
+            var routeDataValues = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["controller"] = "Catalog",
+                ["action"] = "Index",
+                ["area"] = "Store",
+            };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, requestPayload));
+            var requestScope = GetRequestState(context).RootScope;
+
+            observer.OnNext(
+                new KeyValuePair<string, object>(
+                    MvcBeforeActionEvent,
+                    CreateMvcBeforeActionPayload(
+                        context,
+                        null,
+                        new Dictionary<string, string>(),
+                        routeDataValues)));
+
+            requestScope.Span.ResourceName.Should().Be("GET Store/Catalog/Index");
+            requestScope.Span.GetTag(Tags.AspNetCoreRoute).Should().Be("Store/Catalog/Index");
+            requestScope.Span.GetTag(Tags.AspNetCoreController).Should().Be("Catalog");
+            requestScope.Span.GetTag(Tags.AspNetCoreAction).Should().Be("Index");
+            requestScope.Span.GetTag(Tags.AspNetCoreArea).Should().Be("Store");
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
+        }
+
+        [Fact]
+        public async Task UnsupportedMvcActionDescriptorRetainsStartFallback()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var requestPayload = new { HttpContext = context };
+            var mvcPayload = new
+            {
+                HttpContext = context,
+                ActionDescriptor = new object(),
+                RouteData = new FakeRouteData(),
+            };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, requestPayload));
+            var requestState = GetRequestState(context);
+
+            var action = () => observer.OnNext(new KeyValuePair<string, object>(MvcBeforeActionEvent, mvcPayload));
+
+            action.Should().NotThrow();
+            requestState.RootScope.Span.ResourceName.Should().Be("GET /baseline/mongo");
+            requestState.RootScope.Span.GetTag(Tags.AspNetCoreRoute).Should().BeNull();
+            requestState.RootScope.Span.IsFinished.Should().BeFalse();
+            GetRequestState(context).Should().BeSameAs(requestState);
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
+        }
+
+        [Fact]
+        public async Task DuplicateMvcEventsUpdateOnlyStoredRootScope()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var requestPayload = new { HttpContext = context };
+            var actionValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["controller"] = "Orders",
+                ["action"] = "Details",
+            };
+            var mvcPayload = CreateMvcBeforeActionPayload(context, "api/Orders/{id}", actionValues);
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, requestPayload));
+            var requestState = GetRequestState(context);
+            using (var childScope = tracer.StartActiveInternal("child"))
+            {
+                childScope.Span.ResourceName = "child-resource";
+
+                observer.OnNext(new KeyValuePair<string, object>(MvcBeforeActionEvent, mvcPayload));
+                observer.OnNext(new KeyValuePair<string, object>(MvcBeforeActionEvent, mvcPayload));
+
+                tracer.ActiveScope.Should().BeSameAs(childScope);
+                childScope.Span.ResourceName.Should().Be("child-resource");
+                requestState.RootScope.Span.ResourceName.Should().Be("GET api/Orders/{id}");
+                GetRequestState(context).Should().BeSameAs(requestState);
+            }
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
         }
 
         [Fact]
@@ -593,6 +759,27 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             AssertHeaderValues(proxy);
         }
 
+        private static object CreateMvcBeforeActionPayload(
+            FakeHttpContext context,
+            string routeTemplate,
+            IDictionary<string, string> actionDescriptorValues,
+            IDictionary<string, object> routeDataValues = null)
+        {
+            return new
+            {
+                HttpContext = context,
+                ActionDescriptor = new FakeActionDescriptor
+                {
+                    AttributeRouteInfo = routeTemplate is null ? null : new FakeAttributeRouteInfo { Template = routeTemplate },
+                    RouteValues = actionDescriptorValues,
+                },
+                RouteData = new FakeRouteData
+                {
+                    Values = routeDataValues ?? new Dictionary<string, object>(),
+                },
+            };
+        }
+
         private static FakeHttpContext CreateContext(FakeLegacyHeaders headers)
         {
             return new FakeHttpContext
@@ -711,6 +898,23 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         private sealed class FakeHttpResponse
         {
             public int StatusCode { get; set; }
+        }
+
+        private sealed class FakeActionDescriptor
+        {
+            public object AttributeRouteInfo { get; set; }
+
+            public IDictionary<string, string> RouteValues { get; set; }
+        }
+
+        private sealed class FakeAttributeRouteInfo
+        {
+            public string Template { get; set; }
+        }
+
+        private sealed class FakeRouteData
+        {
+            public IDictionary<string, object> Values { get; set; } = new Dictionary<string, object>();
         }
 
         private sealed class FakeLegacyHeaders : ILegacyAspNetCoreHeaders
