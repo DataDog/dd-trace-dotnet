@@ -23,6 +23,7 @@ namespace Samples.AspNetCoreNetFramework
         {
             var mongoHost = Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
             services.AddSingleton(new MongoClient($"mongodb://{mongoHost}:27017"));
+            services.AddMvc();
         }
 
         public void Configure(IApplicationBuilder app, IApplicationLifetime applicationLifetime, MongoClient mongoClient)
@@ -34,6 +35,17 @@ namespace Samples.AspNetCoreNetFramework
             {
                 app.UseMiddleware<ManualTracingMiddleware>();
             }
+
+            app.UseMvc(
+                routes =>
+                {
+                    routes.MapRoute(
+                        name: "area",
+                        template: "{area:exists}/{controller}/{action}/{id?}");
+                    routes.MapRoute(
+                        name: "default",
+                        template: "{controller}/{action}/{id?}");
+                });
 
             app.Run(async context =>
             {
