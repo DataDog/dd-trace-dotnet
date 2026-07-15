@@ -23,7 +23,6 @@ namespace Datadog.Trace.DiagnosticListeners
     internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
     {
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetCore;
-        internal const string HttpContextScopeKey = "__Datadog.LegacyAspNetCoreDiagnosticObserver.Scope";
 
         private const string DiagnosticListenerName = "Microsoft.AspNetCore";
         private const string HostingHttpRequestInOperation = "Microsoft.AspNetCore.Hosting.HttpRequestIn";
@@ -34,6 +33,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LegacyAspNetCoreDiagnosticObserver>();
         private static readonly LegacyAspNetCoreHttpRequestHandler RequestHandler = new(Log);
+        private static readonly object HttpContextRequestStateKey = new();
 
         private readonly Tracer _tracer;
 
@@ -78,7 +78,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             var httpContext = eventData.HttpContext.DuckCast<LegacyAspNetCoreHttpContextStruct>();
-            if (httpContext.Items.ContainsKey(HttpContextScopeKey))
+            if (httpContext.Items.ContainsKey(HttpContextRequestStateKey))
             {
                 return;
             }
@@ -88,7 +88,7 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 var request = httpContext.Request.DuckCast<LegacyAspNetCoreHttpRequestStruct>();
                 scope = RequestHandler.StartAspNetCorePipelineScope(_tracer, request);
-                httpContext.Items[HttpContextScopeKey] = scope;
+                httpContext.Items[HttpContextRequestStateKey] = new LegacyAspNetCoreRequestState(scope);
             }
             catch
             {
@@ -106,23 +106,28 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             var httpContext = eventData.HttpContext.DuckCast<LegacyAspNetCoreHttpContextStruct>();
-            if (!httpContext.Items.TryGetValue(HttpContextScopeKey, out var value) || value is not Scope scope)
+            if (!httpContext.Items.TryGetValue(HttpContextRequestStateKey, out var value) || value is not LegacyAspNetCoreRequestState state)
             {
                 return;
             }
 
-            // Remove the exact scope before closing it so duplicate stop events cannot finish it twice.
-            httpContext.Items.Remove(HttpContextScopeKey);
+            // Remove the state before enriching or closing its exact scope so duplicate stop events do no work.
+            httpContext.Items.Remove(HttpContextRequestStateKey);
+            if (!state.TryComplete())
+            {
+                return;
+            }
+
             try
             {
                 if (httpContext.Response.TryDuckCast<LegacyAspNetCoreHttpResponseStruct>(out var response))
                 {
-                    RequestHandler.StopAspNetCorePipelineScope(_tracer, scope, response);
+                    RequestHandler.StopAspNetCorePipelineScope(_tracer, state.RootScope, response);
                 }
             }
             finally
             {
-                scope.Dispose();
+                state.RootScope.Dispose();
             }
         }
 
@@ -136,9 +141,9 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             var httpContext = eventData.HttpContext.DuckCast<LegacyAspNetCoreHttpContextStruct>();
-            if (httpContext.Items.TryGetValue(HttpContextScopeKey, out var value) && value is Scope scope)
+            if (httpContext.Items.TryGetValue(HttpContextRequestStateKey, out var value) && value is LegacyAspNetCoreRequestState state)
             {
-                RequestHandler.HandleAspNetCoreException(_tracer, scope, eventData.Exception);
+                RequestHandler.HandleAspNetCoreException(_tracer, state.RootScope, eventData.Exception);
             }
         }
 
