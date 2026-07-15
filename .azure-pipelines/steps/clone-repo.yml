@@ -167,31 +167,131 @@ steps:
     displayName: clean
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
-  # Git 2.25 requires partial-clone metadata before using fetch --filter
   - ${{ if eq(parameters.shallowFetch, true) }}:
-    - bash: |
-        git init "$BUILD_REPOSITORY_LOCALPATH"
-        git -C "$BUILD_REPOSITORY_LOCALPATH" config core.repositoryFormatVersion 1
-        git -C "$BUILD_REPOSITORY_LOCALPATH" config extensions.partialClone origin
-      displayName: initialize partial clone
-      condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
+    - checkout: none
 
-    - powershell: |
-        $localPath=$env:BUILD_REPOSITORY_LOCALPATH
+    - bash: |
+        set -eo pipefail
+
+        localPath="$BUILD_REPOSITORY_LOCALPATH"
+        sparseDirectories=(
+          .azure-pipelines
+          .gitlab
+          .nuke
+          tracer/build/_build
+          tracer/build/smoke_test_snapshots
+          tracer/test/test-applications/regression/AspNetCoreSmokeTest
+        )
+
         git init "$localPath"
         git -C "$localPath" config core.repositoryFormatVersion 1
         git -C "$localPath" config extensions.partialClone origin
-      displayName: initialize partial clone
+        git -C "$localPath" config gc.auto 0
+        git -C "$localPath" config http.version HTTP/1.1
+
+        if git -C "$localPath" remote get-url origin >/dev/null 2>&1; then
+          git -C "$localPath" remote set-url origin "$BUILD_REPOSITORY_URI"
+        else
+          git -C "$localPath" remote add origin "$BUILD_REPOSITORY_URI"
+        fi
+
+        git -C "$localPath" config remote.origin.promisor true
+        git -C "$localPath" config remote.origin.partialCloneFilter tree:0
+
+        git -C "$localPath" sparse-checkout init --cone
+        git -C "$localPath" sparse-checkout set "${sparseDirectories[@]}"
+
+        fetchSucceeded=false
+        for attempt in 1 2 3; do
+          echo "Fetch attempt $attempt/3"
+          if git -C "$localPath" fetch --force --no-tags --depth=1 --filter=tree:0 origin "$BUILD_SOURCEVERSION"; then
+            fetchSucceeded=true
+            break
+          fi
+
+          if [ "$attempt" -lt 3 ]; then
+            sleep $((attempt * 5))
+          fi
+        done
+
+        if [ "$fetchSucceeded" != true ]; then
+          echo "Failed to fetch $BUILD_SOURCEVERSION after 3 attempts"
+          exit 1
+        fi
+
+        git -C "$localPath" checkout --force --detach FETCH_HEAD
+        test "$(git -C "$localPath" rev-parse HEAD)" = "$BUILD_SOURCEVERSION"
+      displayName: sparse checkout
+      condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
+
+    - powershell: |
+        $ErrorActionPreference = "Stop"
+
+        function Invoke-Git {
+          & git @args
+          if ($LASTEXITCODE -ne 0) {
+            throw "git $args failed with exit code $LASTEXITCODE"
+          }
+        }
+
+        $localPath=$env:BUILD_REPOSITORY_LOCALPATH
+        $sparseDirectories = @(
+          ".azure-pipelines",
+          ".gitlab",
+          ".nuke",
+          "tracer/build/_build",
+          "tracer/build/smoke_test_snapshots",
+          "tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+        )
+
+        Invoke-Git init "$localPath"
+        Invoke-Git -C "$localPath" config core.repositoryFormatVersion 1
+        Invoke-Git -C "$localPath" config extensions.partialClone origin
+        Invoke-Git -C "$localPath" config gc.auto 0
+        Invoke-Git -C "$localPath" config http.version HTTP/1.1
+
+        $originUrl = & git -C "$localPath" config --get remote.origin.url
+        if ($LASTEXITCODE -eq 0) {
+          Invoke-Git -C "$localPath" remote set-url origin "$env:BUILD_REPOSITORY_URI"
+        } else {
+          Invoke-Git -C "$localPath" remote add origin "$env:BUILD_REPOSITORY_URI"
+        }
+
+        Invoke-Git -C "$localPath" config remote.origin.promisor true
+        Invoke-Git -C "$localPath" config remote.origin.partialCloneFilter tree:0
+
+        Invoke-Git -C "$localPath" sparse-checkout init --cone
+        & git -C "$localPath" sparse-checkout set @sparseDirectories
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to configure sparse checkout"
+        }
+
+        $fetchSucceeded = $false
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
+          Write-Host "Fetch attempt $attempt/3"
+          & git -C "$localPath" fetch --force --no-tags --depth=1 --filter=tree:0 origin "$env:BUILD_SOURCEVERSION"
+          if ($LASTEXITCODE -eq 0) {
+            $fetchSucceeded = $true
+            break
+          }
+
+          if ($attempt -lt 3) {
+            Start-Sleep -Seconds ($attempt * 5)
+          }
+        }
+
+        if (-not $fetchSucceeded) {
+          throw "Failed to fetch $env:BUILD_SOURCEVERSION after 3 attempts"
+        }
+
+        Invoke-Git -C "$localPath" checkout --force --detach FETCH_HEAD
+        $actualSha = Invoke-Git -C "$localPath" rev-parse HEAD
+        if ($actualSha.Trim() -ne $env:BUILD_SOURCEVERSION) {
+          throw "Checked out $actualSha instead of $env:BUILD_SOURCEVERSION"
+        }
+      displayName: sparse checkout
       condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
-  - checkout: self
-    clean: true
-    ${{ if eq(parameters.shallowFetch, true) }}:
-      fetchDepth: 1
-      fetchFilter: tree:0
-      fetchTags: false
-      # Only materialize the source files used by smoke-test jobs
-      sparseCheckoutDirectories: >-
-        .azure-pipelines .gitlab .nuke
-        tracer/build/_build tracer/build/smoke_test_snapshots
-        tracer/test/test-applications/regression/AspNetCoreSmokeTest
+  - ${{ else }}:
+    - checkout: self
+      clean: true
