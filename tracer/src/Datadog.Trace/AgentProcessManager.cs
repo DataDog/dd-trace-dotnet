@@ -263,8 +263,7 @@ namespace Datadog.Trace
                                     // The pipe bound between the health re-check above and now, so the tracked
                                     // instance is healthy after all. Promote it and reset the grace count instead
                                     // of starting a redundant duplicate that could never bind the already-held pipe.
-                                    metadata.ProcessState = ProcessState.Healthy;
-                                    metadata.ConsecutiveUnboundPipeChecks = 0;
+                                    metadata.MarkHealthy();
                                 }
                                 else if (metadata.ProcessState == ProcessState.ReadyToStart)
                                 {
@@ -277,12 +276,7 @@ namespace Datadog.Trace
                                         try
                                         {
                                             Log.Information<string, int>("Killing broken {Process} (pid {Pid}) before restart; its named pipe never bound.", path, stale.Id);
-                                            stale.Kill();
-                                            stale.WaitForExit(2000);
-                                            // Release the handle to the dead instance so we don't leak it across
-                                            // restart cycles; the restart below reassigns metadata.Process.
-                                            stale.Dispose();
-                                            metadata.Process = null;
+                                            metadata.KillTrackedProcess();
                                         }
                                         catch (Exception ex)
                                         {
@@ -318,8 +312,7 @@ namespace Datadog.Trace
                                         if (metadata.ProcessIsHealthy())
                                         {
                                             metadata.SequentialFailures = 0;
-                                            metadata.ConsecutiveUnboundPipeChecks = 0;
-                                            metadata.ProcessState = ProcessState.Healthy;
+                                            metadata.MarkHealthy();
                                             Log.Information("Successfully started {Process}.", path);
                                             break;
                                         }
@@ -415,6 +408,27 @@ namespace Datadog.Trace
             public string DirectoryPath { get; private set; }
 
             public string ProcessArguments { get; set; }
+
+            public void MarkHealthy()
+            {
+                ProcessState = ProcessState.Healthy;
+                ConsecutiveUnboundPipeChecks = 0;
+            }
+
+            // Tears down the instance this manager started so we don't leak our own broken instances
+            // across restart cycles: kill it, wait briefly for exit, release the handle, and clear the
+            // tracked reference so the next restart reassigns Process. No-op if nothing is tracked or it
+            // has already exited.
+            public void KillTrackedProcess()
+            {
+                if (Process is { HasExited: false } stale)
+                {
+                    stale.Kill();
+                    stale.WaitForExit(2000);
+                    stale.Dispose();
+                    Process = null;
+                }
+            }
 
             public bool ProcessIsHealthy()
             {

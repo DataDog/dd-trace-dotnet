@@ -99,5 +99,31 @@ namespace Datadog.Trace.Tests.Agent
             afterBind.IsHealthy.Should().BeTrue();
             afterBind.NextUnboundCount.Should().Be(0);
         }
+
+        [Fact]
+        public void MarkHealthy_SetsHealthyStateAndResetsUnboundCount()
+        {
+            var metadata = new AgentProcessManager.ProcessMetadata
+            {
+                ProcessState = AgentProcessManager.ProcessState.ReadyToStart,
+                ConsecutiveUnboundPipeChecks = 3,
+            };
+
+            metadata.MarkHealthy();
+
+            metadata.ProcessState.Should().Be(AgentProcessManager.ProcessState.Healthy);
+            metadata.ConsecutiveUnboundPipeChecks.Should().Be(0);
+        }
+
+        [Fact]
+        public void KillTrackedProcess_WithNoTrackedProcess_IsNoOp()
+        {
+            // Nothing has been started yet, so there is no handle to tear down. The kill must be a
+            // safe no-op rather than throwing on a null Process.
+            var metadata = new AgentProcessManager.ProcessMetadata { Process = null };
+
+            metadata.Invoking(m => m.KillTrackedProcess()).Should().NotThrow();
+            metadata.Process.Should().BeNull();
+        }
     }
 }
