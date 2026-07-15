@@ -54,7 +54,7 @@ namespace Samples.AspNetCoreNetFramework
         public IActionResult GetBaggage(string key)
         {
             Baggage.Current.TryGetValue(key, out var value);
-            return Ok(value ?? string.Empty);
+            return Content(value ?? string.Empty);
         }
     }
 }
