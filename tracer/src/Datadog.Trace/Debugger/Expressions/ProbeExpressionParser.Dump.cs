@@ -174,6 +174,7 @@ internal partial class ProbeExpressionParser<T>
             Expression.Equal(moveNextCall, Expression.Constant(true)),
             Expression.Block(
                 new[] { loopItem },
+                BudgetCheck(),
                 Expression.IfThenElse(
                     Expression.LessThan(index, Expression.Constant(3)),
                     Expression.Block(
@@ -256,6 +257,7 @@ internal partial class ProbeExpressionParser<T>
         var loopBodyExpression = Expression.IfThenElse(
            condition,
            Expression.Block(
+               BudgetCheck(),
                dumpObjectCallExpression,
                Expression.PostIncrementAssign(index),
                Expression.IfThen(
@@ -310,7 +312,7 @@ internal partial class ProbeExpressionParser<T>
         }
 
         return Redaction.IsSafeToCallToString(type) ?
-                   $"{name}{value?.ToString() ?? type?.FullName}" :
+                   $"{name}{value?.ToString() ?? type.FullName}" :
                    $"{name}{type?.FullName}";
     }
 

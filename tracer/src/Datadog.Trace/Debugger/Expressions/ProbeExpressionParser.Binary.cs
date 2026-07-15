@@ -104,7 +104,12 @@ internal sealed partial class ProbeExpressionParser<T>
 
             if (left.Type == typeof(string) && right.Type == typeof(string))
             {
-                return RedactDictionaryBinaryOperation(left, right, StringLexicographicComparison(left, right, operand));
+                return RedactDictionaryBinaryOperation(
+                    left,
+                    right,
+                    Expression.Block(
+                        BudgetCheck(),
+                        StringLexicographicComparison(left, right, operand)));
             }
 
             HandleDurationBinaryOperation(ref left, ref right);
