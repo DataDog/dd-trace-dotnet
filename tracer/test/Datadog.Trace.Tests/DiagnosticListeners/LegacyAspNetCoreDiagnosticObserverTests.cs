@@ -623,6 +623,32 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             requestScope.Span.GetTag(Tags.HttpStatusCode).Should().Be("500");
         }
 
+        [Theory]
+        [InlineData(HostingUnhandledExceptionEvent)]
+        [InlineData(DiagnosticsUnhandledExceptionEvent)]
+        public async Task BadHttpRequestExceptionUsesNonPublicCaseInsensitiveStatusAndStopPreservesIt(string eventName)
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var requestPayload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, requestPayload));
+
+            var requestScope = GetRequestState(context).RootScope;
+            var exception = new FakeBadHttpRequestException(statusCode: 413);
+            var exceptionPayload = new { HttpContext = context, Exception = exception };
+
+            observer.OnNext(new KeyValuePair<string, object>(eventName, exceptionPayload));
+
+            requestScope.Span.GetTag(Tags.HttpStatusCode).Should().Be("413");
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
+
+            requestScope.Span.GetTag(Tags.HttpStatusCode).Should().Be("413");
+            requestScope.Span.IsFinished.Should().BeTrue();
+        }
+
         [Fact]
         public async Task MergesAndTagsExtractedBaggage()
         {
@@ -1015,6 +1041,16 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             public int StatusCode { get; set; }
 
             public object Headers { get; set; }
+        }
+
+        private sealed class FakeBadHttpRequestException : Exception
+        {
+            public FakeBadHttpRequestException(int statusCode)
+            {
+                STATUSCODE = statusCode;
+            }
+
+            private int STATUSCODE { get; }
         }
 
         private sealed class FakeActionDescriptor

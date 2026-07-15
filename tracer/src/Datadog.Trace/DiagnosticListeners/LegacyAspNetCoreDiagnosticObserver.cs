@@ -484,6 +484,7 @@ namespace Datadog.Trace.DiagnosticListeners
         [DuckCopy]
         internal struct LegacyBadHttpRequestExceptionStruct
         {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase | BindingFlags.NonPublic)]
             public int StatusCode;
         }
     }
