@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                let packageVersion = (string)packageVersionArray[0]
                where string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version(5, 0, 0)
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               from testMode in new[] { "SendCloudEventToChannelAsync", "SendCloudEventsToChannelAsync" }
+               from testMode in new[] { "SendCloudEventToChannel", "SendCloudEventsToChannel", "SendCloudEventToChannelAsync", "SendCloudEventsToChannelAsync" }
                select new[] { packageVersion, metadataSchemaVersion, testMode };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
@@ -251,7 +251,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         [SkippableTheory]
         [MemberData(nameof(GetPartnerChannelEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task TestSendCloudEventsToPartnerChannelAsync(string packageVersion, string metadataSchemaVersion, string testMode)
+        public async Task TestSendCloudEventsToPartnerChannel(string packageVersion, string metadataSchemaVersion, string testMode)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("EVENTGRID_TEST_MODE", testMode);
