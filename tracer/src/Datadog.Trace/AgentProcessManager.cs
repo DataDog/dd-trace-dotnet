@@ -70,20 +70,20 @@ namespace Datadog.Trace
         // - a bound pipe is healthy and resets the count;
         // - an unbound pipe on a process that is no longer running is unhealthy now (no grace);
         // - an unbound pipe on a still-running process is tolerated until the grace count is reached.
-        internal static (bool IsHealthy, int NextUnboundCount) EvaluateDebouncedHealth(bool pipeBound, bool programRunning, int consecutiveUnboundChecks)
+        internal static DebouncedHealth EvaluateDebouncedHealth(bool pipeBound, bool programRunning, int consecutiveUnboundChecks)
         {
             if (pipeBound)
             {
-                return (true, 0);
+                return new DebouncedHealth(isHealthy: true, nextUnboundCount: 0);
             }
 
             if (!programRunning)
             {
-                return (false, consecutiveUnboundChecks);
+                return new DebouncedHealth(isHealthy: false, nextUnboundCount: consecutiveUnboundChecks);
             }
 
             var nextCount = NextUnboundCount(consecutiveUnboundChecks);
-            return (nextCount < ProcessMetadata.UnboundPipeGraceChecks, nextCount);
+            return new DebouncedHealth(isHealthy: nextCount < ProcessMetadata.UnboundPipeGraceChecks, nextUnboundCount: nextCount);
         }
 
         /// <summary>
@@ -362,6 +362,27 @@ namespace Datadog.Trace
                 });
         }
 
+        // ValueTuple is unavailable on net461, so the debounce result is expressed as an explicit
+        // readonly struct. Deconstruct keeps `var (isHealthy, next) = ...` call sites working.
+        internal readonly struct DebouncedHealth
+        {
+            public DebouncedHealth(bool isHealthy, int nextUnboundCount)
+            {
+                IsHealthy = isHealthy;
+                NextUnboundCount = nextUnboundCount;
+            }
+
+            public bool IsHealthy { get; }
+
+            public int NextUnboundCount { get; }
+
+            public void Deconstruct(out bool isHealthy, out int nextUnboundCount)
+            {
+                isHealthy = IsHealthy;
+                nextUnboundCount = NextUnboundCount;
+            }
+        }
+
         internal sealed class ProcessMetadata
         {
             // Number of consecutive unbound-pipe checks tolerated before a pipe-only process is
@@ -416,18 +437,25 @@ namespace Datadog.Trace
             }
 
             // Tears down the instance this manager started so we don't leak our own broken instances
-            // across restart cycles: kill it, wait briefly for exit, release the handle, and clear the
-            // tracked reference so the next restart reassigns Process. No-op if nothing is tracked or it
-            // has already exited.
+            // across restart cycles: kill it if still running, wait briefly for exit, release the handle,
+            // and clear the tracked reference so the next restart reassigns Process. An already-exited
+            // process still owns an undisposed handle, so it is disposed and cleared too. No-op if nothing
+            // is tracked.
             public void KillTrackedProcess()
             {
-                if (Process is { HasExited: false } stale)
+                if (Process is not { } tracked)
                 {
-                    stale.Kill();
-                    stale.WaitForExit(2000);
-                    stale.Dispose();
-                    Process = null;
+                    return;
                 }
+
+                if (!tracked.HasExited)
+                {
+                    tracked.Kill();
+                    tracked.WaitForExit(2000);
+                }
+
+                tracked.Dispose();
+                Process = null;
             }
 
             public bool ProcessIsHealthy()
