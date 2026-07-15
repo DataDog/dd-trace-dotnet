@@ -14,7 +14,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.DiagnosticListeners;
@@ -66,8 +65,106 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                         { aspNetCoreEnabledKey, aspNetCoreIntegrationEnabled.ToString() },
                     }));
             await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            var listener = new Mock<IDiagnosticListener>();
+            listener.SetupGet(instance => instance.Name).Returns("Microsoft.AspNetCore");
+            listener.Setup(
+                        instance => instance.Subscribe(
+                            It.IsAny<IObserver<KeyValuePair<string, object>>>(),
+                            It.IsAny<Predicate<string>>()))
+                    .Returns(Mock.Of<IDisposable>());
+            var observer = new LegacyAspNetCoreDiagnosticObserver(
+                () => tracer,
+                Mock.Of<IDatadogLogger>(),
+                Mock.Of<IMetricsTelemetryCollector>());
 
-            Instrumentation.ShouldStartLegacyAspNetCoreDiagnosticObserver(tracer).Should().Be(expected);
+            using var subscription = observer.SubscribeIfMatch(listener.Object);
+
+            (subscription is not null).Should().Be(expected);
+            listener.Verify(
+                instance => instance.Subscribe(
+                    It.IsAny<IObserver<KeyValuePair<string, object>>>(),
+                    It.IsAny<Predicate<string>>()),
+                expected ? Times.Once() : Times.Never());
+        }
+
+        [Fact]
+        public void NonMatchingListenerDoesNotResolveTracer()
+        {
+            var factoryCalls = 0;
+            var listener = new Mock<IDiagnosticListener>();
+            listener.SetupGet(instance => instance.Name).Returns("Other.Listener");
+            var observer = new LegacyAspNetCoreDiagnosticObserver(
+                () =>
+                {
+                    factoryCalls++;
+                    throw new InvalidOperationException("The tracer factory should not be called.");
+                },
+                Mock.Of<IDatadogLogger>(),
+                Mock.Of<IMetricsTelemetryCollector>());
+
+            observer.SubscribeIfMatch(listener.Object).Should().BeNull();
+
+            factoryCalls.Should().Be(0);
+            listener.Verify(
+                instance => instance.Subscribe(
+                    It.IsAny<IObserver<KeyValuePair<string, object>>>(),
+                    It.IsAny<Predicate<string>>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task MatchingListenerEvaluatesDisabledActivationOnlyOnce()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var factoryCalls = 0;
+            var listener = new Mock<IDiagnosticListener>();
+            listener.SetupGet(instance => instance.Name).Returns("Microsoft.AspNetCore");
+            var observer = new LegacyAspNetCoreDiagnosticObserver(
+                () =>
+                {
+                    factoryCalls++;
+                    return tracer;
+                },
+                Mock.Of<IDatadogLogger>(),
+                Mock.Of<IMetricsTelemetryCollector>());
+
+            observer.SubscribeIfMatch(listener.Object).Should().BeNull();
+            observer.SubscribeIfMatch(listener.Object).Should().BeNull();
+
+            factoryCalls.Should().Be(1);
+            listener.Verify(
+                instance => instance.Subscribe(
+                    It.IsAny<IObserver<KeyValuePair<string, object>>>(),
+                    It.IsAny<Predicate<string>>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public void ActivationFailureIsCachedAndDoesNotEscape()
+        {
+            var factoryCalls = 0;
+            var logger = new Mock<IDatadogLogger>();
+            var listener = new Mock<IDiagnosticListener>();
+            listener.SetupGet(instance => instance.Name).Returns("Microsoft.AspNetCore");
+            var observer = new LegacyAspNetCoreDiagnosticObserver(
+                () =>
+                {
+                    factoryCalls++;
+                    throw new InvalidOperationException("Test activation failure.");
+                },
+                logger.Object,
+                Mock.Of<IMetricsTelemetryCollector>());
+
+            observer.SubscribeIfMatch(listener.Object).Should().BeNull();
+            observer.SubscribeIfMatch(listener.Object).Should().BeNull();
+
+            factoryCalls.Should().Be(1);
+            logger.Invocations.Count(invocation => invocation.Method.Name == nameof(IDatadogLogger.Error)).Should().Be(1);
+            listener.Verify(
+                instance => instance.Subscribe(
+                    It.IsAny<IObserver<KeyValuePair<string, object>>>(),
+                    It.IsAny<Predicate<string>>()),
+                Times.Never);
         }
 
         [Fact]
