@@ -460,6 +460,7 @@ namespace Datadog.Trace.DiagnosticListeners
         internal struct LegacyAspNetCoreHttpResponseStruct
         {
             public int StatusCode;
+            public object? Headers;
         }
 
         [DuckCopy]

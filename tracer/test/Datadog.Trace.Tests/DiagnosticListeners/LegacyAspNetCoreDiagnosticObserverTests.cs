@@ -710,6 +710,121 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         }
 
         [Fact]
+        public async Task StopAddsConfiguredResponseHeaderTags()
+        {
+            var settings = new TracerSettings(
+                new NameValueConfigurationSource(
+                    new NameValueCollection
+                    {
+                        { ConfigurationKeys.HeaderTags, "x-response-single:response.single,x-response-multi:response.multi,x-response-default,x-response-missing:response.missing" },
+                    }));
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            context.Response = new FakeHttpResponse
+            {
+                StatusCode = 200,
+                Headers = new HeaderDictionary
+                {
+                    ["x-response-single"] = "single-value",
+                    ["x-response-multi"] = new StringValues([string.Empty, "multi-value"]),
+                    ["x-response-default"] = "default-value",
+                },
+            };
+            var payload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+            var requestScope = GetRequestState(context).RootScope;
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+
+            requestScope.Span.GetTag("response.single").Should().Be("single-value");
+            requestScope.Span.GetTag("response.multi").Should().Be("multi-value");
+            requestScope.Span.GetTag("http.response.headers.x-response-default").Should().Be("default-value");
+            requestScope.Span.GetTag("response.missing").Should().BeNull();
+            requestScope.Span.IsFinished.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task StopDoesNotCreateResponseHeaderProxyWithoutHeaderTags()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            context.Response = new FakeHttpResponse { StatusCode = 204, Headers = new object() };
+            var payload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+            var requestScope = GetRequestState(context).RootScope;
+
+            var action = () => observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+
+            action.Should().NotThrow();
+            requestScope.Span.GetTag(Tags.HttpStatusCode).Should().Be("204");
+            requestScope.Span.IsFinished.Should().BeTrue();
+            tracer.ActiveScope.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task UnsupportedResponseHeadersStillRecordStatusAndCloseScope()
+        {
+            var settings = new TracerSettings(
+                new NameValueConfigurationSource(
+                    new NameValueCollection
+                    {
+                        { ConfigurationKeys.HeaderTags, "x-response:test.response" },
+                    }));
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            context.Response = new FakeHttpResponse { StatusCode = 202, Headers = new object() };
+            var payload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+            var requestScope = GetRequestState(context).RootScope;
+
+            var action = () => observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+
+            action.Should().NotThrow();
+            requestScope.Span.GetTag(Tags.HttpStatusCode).Should().Be("202");
+            requestScope.Span.GetTag("test.response").Should().BeNull();
+            requestScope.Span.IsFinished.Should().BeTrue();
+            HasRequestState(context).Should().BeFalse();
+            tracer.ActiveScope.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task StopClosesStoredScopeWhenResponseHeaderTaggingThrows()
+        {
+            var settings = new TracerSettings(
+                new NameValueConfigurationSource(
+                    new NameValueCollection
+                    {
+                        { ConfigurationKeys.HeaderTags, "x-throw-on-response:test.response" },
+                    }));
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            var observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            context.Response = new FakeHttpResponse
+            {
+                StatusCode = 202,
+                Headers = new ThrowingLegacyHeaders("x-throw-on-response"),
+            };
+            var payload = new { HttpContext = context };
+            ((IObserver<KeyValuePair<string, object>>)observer).OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+            var requestScope = GetRequestState(context).RootScope;
+
+            var action = () => ((IObserver<KeyValuePair<string, object>>)observer).OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+
+            action.Should().NotThrow();
+            requestScope.Span.GetTag(Tags.HttpStatusCode).Should().Be("202");
+            requestScope.Span.GetTag("test.response").Should().BeNull();
+            requestScope.Span.IsFinished.Should().BeTrue();
+            HasRequestState(context).Should().BeFalse();
+            tracer.ActiveScope.Should().BeNull();
+        }
+
+        [Fact]
         public void HeaderAdapterReadsAspNetCore21StringValuesShape()
         {
             var headers = new FakeLegacyHeaders(
@@ -898,6 +1013,8 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         private sealed class FakeHttpResponse
         {
             public int StatusCode { get; set; }
+
+            public object Headers { get; set; }
         }
 
         private sealed class FakeActionDescriptor
