@@ -167,9 +167,31 @@ steps:
     displayName: clean
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
+  # Git 2.25 requires partial-clone metadata before using fetch --filter
+  - ${{ if eq(parameters.shallowFetch, true) }}:
+    - bash: |
+        git init "$BUILD_REPOSITORY_LOCALPATH"
+        git -C "$BUILD_REPOSITORY_LOCALPATH" config core.repositoryFormatVersion 1
+        git -C "$BUILD_REPOSITORY_LOCALPATH" config extensions.partialClone origin
+      displayName: initialize partial clone
+      condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
+
+    - powershell: |
+        $localPath=$env:BUILD_REPOSITORY_LOCALPATH
+        git init "$localPath"
+        git -C "$localPath" config core.repositoryFormatVersion 1
+        git -C "$localPath" config extensions.partialClone origin
+      displayName: initialize partial clone
+      condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+
   - checkout: self
     clean: true
     ${{ if eq(parameters.shallowFetch, true) }}:
       fetchDepth: 1
       fetchFilter: tree:0
       fetchTags: false
+      # Only materialize the source files used by smoke-test jobs
+      sparseCheckoutDirectories: >-
+        .azure-pipelines .gitlab .nuke
+        tracer/build/_build tracer/build/smoke_test_snapshots
+        tracer/test/test-applications/regression/AspNetCoreSmokeTest
