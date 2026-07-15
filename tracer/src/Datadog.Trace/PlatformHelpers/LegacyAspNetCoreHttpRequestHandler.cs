@@ -82,9 +82,20 @@ namespace Datadog.Trace.PlatformHelpers
 
         public void StopAspNetCorePipelineScope(Tracer tracer, Scope scope, LegacyAspNetCoreDiagnosticObserver.LegacyAspNetCoreHttpResponseStruct response)
         {
+            var settings = tracer.CurrentTraceSettings.Settings;
             if (scope.Span.GetTag(Tags.HttpStatusCode) is null)
             {
-                scope.Span.SetHttpStatusCode(response.StatusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
+                scope.Span.SetHttpStatusCode(response.StatusCode, isServer: true, settings);
+            }
+
+            if (!settings.HeaderTags.IsNullOrEmpty()
+             && response.Headers is not null
+             && response.Headers.TryDuckCast<ILegacyAspNetCoreHeaders>(out var headers))
+            {
+                scope.Span.SetHeaderTags(
+                    new LegacyAspNetCoreHeadersCollectionAdapter(headers),
+                    settings.HeaderTags,
+                    defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
             }
         }
 
