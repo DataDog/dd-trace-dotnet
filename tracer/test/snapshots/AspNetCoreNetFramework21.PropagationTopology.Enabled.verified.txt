@@ -1,0 +1,67 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: upstream.request,
+    Resource: GET /baseline/mongo,
+    Service: upstream-service,
+    Type: http,
+    Tags: {
+      span.kind: client,
+      test.synthetic: true
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet_core.request,
+    Resource: GET /baseline/mongo,
+    Service: Samples.AspNetCoreNetFramework21,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      component: aspnet_core,
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: http://localhost:00000/baseline/mongo?item=42,
+      http.useragent: testhelper,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: mongodb.query,
+    Resource: find aspnet-core-net-framework-repro,
+    Service: Samples.AspNetCoreNetFramework21-mongodb,
+    Type: mongodb,
+    ParentId: Id_3,
+    Tags: {
+      component: MongoDb,
+      db.name: aspnet-core-net-framework-repro,
+      env: integration_tests,
+      language: dotnet,
+      mongodb.collection: documents,
+      mongodb.query: { "find" : "documents", "filter" : { "_id" : "fixed-missing-id" }, "limit" : 1 },
+      out.host: localhost,
+      out.port: 27017,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.AspNetCoreNetFramework21,
+      _dd.svc_src: mongodb
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  }
+]
