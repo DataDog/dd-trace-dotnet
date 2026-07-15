@@ -1,0 +1,409 @@
+// <copyright file="LegacyAspNetCoreDiagnosticObserverTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#if NETFRAMEWORK
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.DiagnosticListeners;
+using Datadog.Trace.DiagnosticListeners.DuckTypes;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Headers;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
+using FluentAssertions;
+using Xunit;
+
+namespace Datadog.Trace.Tests.DiagnosticListeners
+{
+    [Collection(nameof(TracerInstanceTestCollection))]
+    [TracerRestorer]
+    public class LegacyAspNetCoreDiagnosticObserverTests
+    {
+        private const ulong IncomingTraceId = 123456789;
+        private const ulong IncomingParentId = 987654321;
+        private const string StartEvent = "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start";
+        private const string StopEvent = "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop";
+        private const string HostingUnhandledExceptionEvent = "Microsoft.AspNetCore.Hosting.UnhandledException";
+        private const string DiagnosticsUnhandledExceptionEvent = "Microsoft.AspNetCore.Diagnostics.UnhandledException";
+
+        [Theory]
+        [InlineData(false, false, false)]
+        [InlineData(false, true, false)]
+        [InlineData(true, false, false)]
+        [InlineData(true, true, true)]
+        public async Task ActivationRequiresFrameworkFeatureAndAspNetCoreIntegration(
+            bool frameworkFeatureEnabled,
+            bool aspNetCoreIntegrationEnabled,
+            bool expected)
+        {
+            var aspNetCoreEnabledKey = IntegrationNameToKeys.GetIntegrationEnabledKeys(nameof(IntegrationId.AspNetCore)).Key;
+            var settings = new TracerSettings(
+                new NameValueConfigurationSource(
+                    new NameValueCollection
+                    {
+                        { ConfigurationKeys.FeatureFlags.AspNetCoreNetFrameworkEnabled, frameworkFeatureEnabled.ToString() },
+                        { aspNetCoreEnabledKey, aspNetCoreIntegrationEnabled.ToString() },
+                    }));
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+
+            Instrumentation.ShouldStartLegacyAspNetCoreDiagnosticObserver(tracer).Should().Be(expected);
+        }
+
+        [Fact]
+        public async Task SubscriptionFiltersEventsAtTheDiagnosticSource()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            using var listener = new DiagnosticListener("Microsoft.AspNetCore");
+            using var subscription = observer.SubscribeIfMatch(listener.DuckCast<IDiagnosticListener>());
+
+            observer.IsSubscriberEnabled().Should().BeTrue();
+            subscription.Should().NotBeNull();
+            listener.IsEnabled("Microsoft.AspNetCore.Hosting.HttpRequestIn").Should().BeTrue();
+            listener.IsEnabled(StartEvent).Should().BeTrue();
+            listener.IsEnabled(StopEvent).Should().BeTrue();
+            listener.IsEnabled(HostingUnhandledExceptionEvent).Should().BeTrue();
+            listener.IsEnabled(DiagnosticsUnhandledExceptionEvent).Should().BeTrue();
+            listener.IsEnabled("Microsoft.AspNetCore.Mvc.BeforeAction").Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task StoresExactScopeAndClosesItIdempotently()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(
+                new FakeLegacyHeaders(
+                    new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["x-datadog-trace-id"] = new StringValues22(IncomingTraceId.ToString()),
+                        ["x-datadog-parent-id"] = new StringValues22(IncomingParentId.ToString()),
+                        ["x-datadog-sampling-priority"] = new StringValues22("1"),
+                    }));
+            var payload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+
+            var requestScope = context.Items[LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey]
+                                      .Should()
+                                      .BeOfType<Scope>()
+                                      .Subject;
+            requestScope.Should().BeSameAs(tracer.ActiveScope);
+            requestScope.Span.TraceId.Should().Be(IncomingTraceId);
+            requestScope.Span.Context.ParentId.Should().Be(IncomingParentId);
+
+            await Task.Yield();
+            using (var childScope = tracer.StartActiveInternal("mongodb.query"))
+            {
+                childScope.Span.TraceId.Should().Be(IncomingTraceId);
+                childScope.Span.Context.ParentId.Should().Be(requestScope.Span.SpanId);
+            }
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+
+            context.Items.Should().NotContainKey(LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey);
+            tracer.ActiveScope.Should().BeNull();
+            requestScope.Span.GetTag(Tags.HttpStatusCode).Should().Be("200");
+        }
+
+        [Fact]
+        public async Task StopDisposesStoredScopeWhenResponseShapeIsUnsupported()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var payload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+            context.Items.Should().ContainKey(LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey);
+            tracer.ActiveScope.Should().NotBeNull();
+
+            context.Response = new object();
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+
+            context.Items.Should().NotContainKey(LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey);
+            tracer.ActiveScope.Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(HostingUnhandledExceptionEvent)]
+        [InlineData(DiagnosticsUnhandledExceptionEvent)]
+        public async Task UnhandledExceptionMarksStoredScope(string eventName)
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var requestPayload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, requestPayload));
+
+            var requestScope = context.Items[LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey]
+                                      .Should()
+                                      .BeOfType<Scope>()
+                                      .Subject;
+            var exception = new InvalidOperationException("Unhandled request failure");
+            var exceptionPayload = new { HttpContext = context, Exception = exception };
+
+            observer.OnNext(new KeyValuePair<string, object>(eventName, exceptionPayload));
+
+            requestScope.Span.Error.Should().BeTrue();
+            requestScope.Span.GetTag(Tags.HttpStatusCode).Should().Be("500");
+            requestScope.Span.GetTag(Tags.ErrorMsg).Should().Be(exception.Message);
+            requestScope.Span.GetTag(Tags.ErrorType).Should().Contain(nameof(InvalidOperationException));
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
+
+            requestScope.Span.GetTag(Tags.HttpStatusCode).Should().Be("500");
+        }
+
+        [Fact]
+        public async Task MergesAndTagsExtractedBaggage()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(
+                new FakeLegacyHeaders(
+                    new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["baggage"] = new StringValues22("user.id=legacy-user"),
+                    }));
+            var payload = new { HttpContext = context };
+            var previousBaggage = Baggage.Current;
+
+            try
+            {
+                Baggage.Current = new Baggage();
+                observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+
+                var requestScope = context.Items[LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey]
+                                          .Should()
+                                          .BeOfType<Scope>()
+                                          .Subject;
+                Baggage.Current["user.id"].Should().Be("legacy-user");
+                requestScope.Span.GetTag("baggage.user.id").Should().Be("legacy-user");
+
+                observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+            }
+            finally
+            {
+                if (context.Items.ContainsKey(LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey))
+                {
+                    observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+                }
+
+                Baggage.Current = previousBaggage;
+            }
+        }
+
+        [Theory]
+        [InlineData(true, "http://localhost/baseline/mongo?item=42&<redacted>")]
+        [InlineData(false, "http://localhost/baseline/mongo")]
+        public async Task AppliesConfiguredHttpMetadata(bool reportQueryString, string expectedUrl)
+        {
+            var settings = new TracerSettings(
+                new NameValueConfigurationSource(
+                    new NameValueCollection
+                    {
+                        { ConfigurationKeys.QueryStringReportingEnabled, reportQueryString.ToString() },
+                        { ConfigurationKeys.HeaderTags, "x-legacy-test-header:legacy.request.header" },
+                    }));
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(
+                new FakeLegacyHeaders(
+                    new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["x-legacy-test-header"] = new StringValues22("header-value"),
+                    }));
+            context.Request.QueryString = new FakeQueryString { Value = "?item=42&token=secret" };
+            var payload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+
+            var requestScope = context.Items[LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey]
+                                      .Should()
+                                      .BeOfType<Scope>()
+                                      .Subject;
+            requestScope.Span.GetTag("http.url").Should().Be(expectedUrl);
+            requestScope.Span.GetTag("legacy.request.header").Should().Be("header-value");
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+        }
+
+        [Fact]
+        public async Task ManuallyErroredScopeStillRecordsResponseStatus()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var payload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+
+            var requestScope = context.Items[LegacyAspNetCoreDiagnosticObserver.HttpContextScopeKey]
+                                      .Should()
+                                      .BeOfType<Scope>()
+                                      .Subject;
+            requestScope.Span.Error = true;
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+
+            requestScope.Span.GetTag(Tags.HttpStatusCode).Should().Be("200");
+        }
+
+        [Fact]
+        public void HeaderAdapterReadsAspNetCore21StringValuesShape()
+        {
+            var headers = new FakeLegacyHeaders(
+                new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["traceparent"] = new StringValues21("first", "second"),
+                });
+
+            AssertHeaderValues(headers);
+        }
+
+        [Fact]
+        public void HeaderAdapterReadsAspNetCore22StringValuesShape()
+        {
+            var headers = new FakeLegacyHeaders(
+                new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["traceparent"] = new StringValues22("first", "second"),
+                });
+
+            AssertHeaderValues(headers);
+        }
+
+        private static FakeHttpContext CreateContext(FakeLegacyHeaders headers)
+        {
+            return new FakeHttpContext
+            {
+                Request = new FakeHttpRequest
+                {
+                    Method = "GET",
+                    Scheme = "http",
+                    Host = new FakeHostString { Value = "localhost" },
+                    PathBase = new FakePathString { Value = string.Empty },
+                    Path = new FakePathString { Value = "/baseline/mongo" },
+                    QueryString = new FakeQueryString { Value = string.Empty },
+                    Headers = headers,
+                },
+                Response = new FakeHttpResponse { StatusCode = 200 },
+            };
+        }
+
+        private static void AssertHeaderValues(ILegacyAspNetCoreHeaders headers)
+        {
+            var adapter = new LegacyAspNetCoreHeadersCollectionAdapter(headers);
+
+            adapter.GetValues("traceparent").Should().Equal("first", "second");
+            adapter.GetValues("missing").Should().BeEmpty();
+        }
+
+        private struct FakeHostString
+        {
+            public string Value { get; set; }
+        }
+
+        private struct FakePathString
+        {
+            public string Value { get; set; }
+        }
+
+        private struct FakeQueryString
+        {
+            public string Value { get; set; }
+        }
+
+        private readonly struct StringValues21 : IEnumerable<string>
+        {
+            private readonly string[] _values;
+
+            public StringValues21(params string[] values)
+            {
+                _values = values;
+            }
+
+            public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)(_values ?? [])).GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        private readonly struct StringValues22 : IEnumerable<string>
+        {
+            private readonly string[] _values;
+
+            public StringValues22(params string[] values)
+            {
+                _values = values;
+            }
+
+            public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)(_values ?? [])).GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        private sealed class FakeHttpContext
+        {
+            public FakeHttpRequest Request { get; set; }
+
+            public object Response { get; set; }
+
+            public IDictionary<object, object> Items { get; } = new Dictionary<object, object>();
+        }
+
+        private sealed class FakeHttpRequest
+        {
+            public string Method { get; set; }
+
+            public string Scheme { get; set; }
+
+            public FakeHostString Host { get; set; }
+
+            public FakePathString PathBase { get; set; }
+
+            public FakePathString Path { get; set; }
+
+            public FakeQueryString QueryString { get; set; }
+
+            public object Headers { get; set; }
+        }
+
+        private sealed class FakeHttpResponse
+        {
+            public int StatusCode { get; set; }
+        }
+
+        private sealed class FakeLegacyHeaders : ILegacyAspNetCoreHeaders
+        {
+            private readonly IReadOnlyDictionary<string, object> _headers;
+
+            public FakeLegacyHeaders(IReadOnlyDictionary<string, object> headers)
+            {
+                _headers = headers;
+            }
+
+            public object Instance => this;
+
+            public Type Type => GetType();
+
+            public object GetValues(string name) => _headers.TryGetValue(name, out var values) ? values : null;
+
+            public ref TReturn GetInternalDuckTypedInstance<TReturn>() => throw new NotImplementedException();
+        }
+    }
+}
+
+#endif

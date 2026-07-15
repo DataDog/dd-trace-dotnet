@@ -45,6 +45,12 @@ namespace Samples.AspNetCoreNetFramework
                     return;
                 }
 
+                if (path == "/error")
+                {
+                    await Task.Yield();
+                    throw new InvalidOperationException("Unhandled request failure");
+                }
+
                 if (path == "/shutdown")
                 {
                     await context.Response.WriteAsync("Shutting down");
