@@ -490,10 +490,7 @@ namespace Datadog.Trace.ClrProfiler
 
 #if NETFRAMEWORK
             var tracer = Tracer.Instance;
-            if (ShouldStartLegacyAspNetCoreDiagnosticObserver(tracer))
-            {
-                observers.Add(new LegacyAspNetCoreDiagnosticObserver(tracer));
-            }
+            AddLegacyAspNetCoreDiagnosticObserverIfEnabled(observers, tracer);
 #else
             if (!SkipAspNetCoreDiagnosticObserver())
             {
@@ -509,6 +506,14 @@ namespace Datadog.Trace.ClrProfiler
         }
 
 #if NETFRAMEWORK
+        internal static void AddLegacyAspNetCoreDiagnosticObserverIfEnabled(ICollection<DiagnosticObserver> observers, Tracer tracer)
+        {
+            if (ShouldStartLegacyAspNetCoreDiagnosticObserver(tracer))
+            {
+                observers.Add(new LegacyAspNetCoreDiagnosticObserver(tracer));
+            }
+        }
+
         internal static bool ShouldStartLegacyAspNetCoreDiagnosticObserver(Tracer tracer) =>
             tracer.Settings.AspNetCoreNetFrameworkEnabled
          && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AspNetCore);
