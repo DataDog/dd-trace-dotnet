@@ -27,7 +27,13 @@ namespace Samples.AspNetCoreNetFramework
 
         public void Configure(IApplicationBuilder app, IApplicationLifetime applicationLifetime, MongoClient mongoClient)
         {
-            app.UseMiddleware<ManualTracingMiddleware>();
+            if (string.Equals(
+                    Environment.GetEnvironmentVariable("ENABLE_MANUAL_TRACING_MIDDLEWARE"),
+                    "true",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                app.UseMiddleware<ManualTracingMiddleware>();
+            }
 
             app.Run(async context =>
             {
