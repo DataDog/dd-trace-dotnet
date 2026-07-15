@@ -34,6 +34,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private const string HostingHttpRequestInStopEvent = "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop";
         private const string HostingUnhandledExceptionEvent = "Microsoft.AspNetCore.Hosting.UnhandledException";
         private const string DiagnosticsUnhandledExceptionEvent = "Microsoft.AspNetCore.Diagnostics.UnhandledException";
+        private const string MvcBeforeActionEvent = "Microsoft.AspNetCore.Mvc.BeforeAction";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LegacyAspNetCoreDiagnosticObserver>();
         private static readonly LegacyAspNetCoreHttpRequestHandler RequestHandler = new(Log);
@@ -73,6 +74,11 @@ namespace Datadog.Trace.DiagnosticListeners
             HostingExceptionItemsContext = 1 << 10,
             DiagnosticsExceptionEventPayload = 1 << 11,
             DiagnosticsExceptionItemsContext = 1 << 12,
+            MvcBeforeActionEventPayload = 1 << 13,
+            MvcBeforeActionItemsContext = 1 << 14,
+            MvcBeforeActionActionDescriptor = 1 << 15,
+            MvcBeforeActionAttributeRouteInfo = 1 << 16,
+            MvcBeforeActionRouteData = 1 << 17,
         }
 
         protected override string ListenerName => DiagnosticListenerName;
@@ -83,7 +89,8 @@ namespace Datadog.Trace.DiagnosticListeners
          || eventName == HostingHttpRequestInStartEvent
          || eventName == HostingHttpRequestInStopEvent
          || eventName == HostingUnhandledExceptionEvent
-         || eventName == DiagnosticsUnhandledExceptionEvent;
+         || eventName == DiagnosticsUnhandledExceptionEvent
+         || eventName == MvcBeforeActionEvent;
 
         protected override void OnNext(string eventName, object arg)
         {
@@ -98,6 +105,10 @@ namespace Datadog.Trace.DiagnosticListeners
             else if (eventName == HostingUnhandledExceptionEvent || eventName == DiagnosticsUnhandledExceptionEvent)
             {
                 OnHostingUnhandledException(eventName, arg);
+            }
+            else if (eventName == MvcBeforeActionEvent)
+            {
+                OnMvcBeforeAction(arg);
             }
         }
 
@@ -241,6 +252,109 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
+        private void OnMvcBeforeAction(object arg)
+        {
+            if (!arg.TryDuckCast<LegacyAspNetCoreMvcBeforeActionStruct>(out var eventData)
+             || eventData.HttpContext is null)
+            {
+                ReportIncompatibleShape(IncompatibleShape.MvcBeforeActionEventPayload, MvcBeforeActionEvent, nameof(LegacyAspNetCoreMvcBeforeActionStruct), arg);
+                return;
+            }
+
+            if (!eventData.HttpContext.TryDuckCast<LegacyAspNetCoreHttpContextItemsStruct>(out var itemsContext)
+             || itemsContext.Items is null)
+            {
+                ReportIncompatibleShape(IncompatibleShape.MvcBeforeActionItemsContext, MvcBeforeActionEvent, nameof(LegacyAspNetCoreHttpContextItemsStruct), eventData.HttpContext);
+                return;
+            }
+
+            if (!itemsContext.Items.TryGetValue(HttpContextRequestStateKey, out var value)
+             || value is not LegacyAspNetCoreRequestState state)
+            {
+                return;
+            }
+
+            if (eventData.ActionDescriptor is null
+             || !eventData.ActionDescriptor.TryDuckCast<LegacyAspNetCoreActionDescriptorStruct>(out var actionDescriptor))
+            {
+                ReportIncompatibleShape(IncompatibleShape.MvcBeforeActionActionDescriptor, MvcBeforeActionEvent, nameof(LegacyAspNetCoreActionDescriptorStruct), eventData.ActionDescriptor);
+                return;
+            }
+
+            IDictionary<string, object>? routeDataValues = null;
+            if (eventData.RouteData is not null)
+            {
+                if (eventData.RouteData.TryDuckCast<LegacyAspNetCoreRouteDataStruct>(out var routeData))
+                {
+                    routeDataValues = routeData.Values;
+                }
+                else
+                {
+                    ReportIncompatibleShape(IncompatibleShape.MvcBeforeActionRouteData, MvcBeforeActionEvent, nameof(LegacyAspNetCoreRouteDataStruct), eventData.RouteData);
+                }
+            }
+
+            string? routeTemplate = null;
+            if (actionDescriptor.AttributeRouteInfo is not null)
+            {
+                if (!actionDescriptor.AttributeRouteInfo.TryDuckCast<LegacyAspNetCoreAttributeRouteInfoStruct>(out var attributeRouteInfo))
+                {
+                    ReportIncompatibleShape(IncompatibleShape.MvcBeforeActionAttributeRouteInfo, MvcBeforeActionEvent, nameof(LegacyAspNetCoreAttributeRouteInfoStruct), actionDescriptor.AttributeRouteInfo);
+                    return;
+                }
+
+                routeTemplate = attributeRouteInfo.Template;
+            }
+
+            var controllerName = GetRouteValue("controller", actionDescriptor.RouteValues, routeDataValues);
+            var actionName = GetRouteValue("action", actionDescriptor.RouteValues, routeDataValues);
+            var areaName = GetRouteValue("area", actionDescriptor.RouteValues, routeDataValues);
+
+            var rootSpan = state.RootScope.Span;
+            rootSpan.SetTag(Tags.AspNetCoreController, controllerName);
+            rootSpan.SetTag(Tags.AspNetCoreAction, actionName);
+            rootSpan.SetTag(Tags.AspNetCoreArea, areaName);
+
+            if (routeTemplate is null && controllerName is not null && actionName is not null)
+            {
+                routeTemplate = areaName is null
+                                    ? $"{controllerName}/{actionName}"
+                                    : $"{areaName}/{controllerName}/{actionName}";
+            }
+
+            // If neither MVC naming source is usable, retain the normalized path resource assigned at Start.
+            if (routeTemplate is null)
+            {
+                return;
+            }
+
+            var httpMethod = rootSpan.GetTag(Tags.HttpMethod) ?? "UNKNOWN";
+            rootSpan.ResourceName = $"{httpMethod} {routeTemplate}";
+            rootSpan.SetTag(Tags.AspNetCoreRoute, routeTemplate);
+        }
+
+        private string? GetRouteValue(
+            string name,
+            IDictionary<string, string>? actionDescriptorValues,
+            IDictionary<string, object>? routeDataValues)
+        {
+            if (actionDescriptorValues is not null
+             && actionDescriptorValues.TryGetValue(name, out var actionDescriptorValue)
+             && actionDescriptorValue is not null)
+            {
+                return actionDescriptorValue;
+            }
+
+            if (routeDataValues is not null
+             && routeDataValues.TryGetValue(name, out var routeDataValue)
+             && routeDataValue is string stringValue)
+            {
+                return stringValue;
+            }
+
+            return null;
+        }
+
         private void ReportIncompatibleShape(IncompatibleShape shape, string eventName, string expectedShape, object? value)
         {
             var shapeMask = (int)shape;
@@ -278,6 +392,38 @@ namespace Datadog.Trace.DiagnosticListeners
 
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public Exception? Exception;
+        }
+
+        [DuckCopy]
+        internal struct LegacyAspNetCoreMvcBeforeActionStruct
+        {
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public object? HttpContext;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public object? ActionDescriptor;
+
+            [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+            public object? RouteData;
+        }
+
+        [DuckCopy]
+        internal struct LegacyAspNetCoreActionDescriptorStruct
+        {
+            public object? AttributeRouteInfo;
+            public IDictionary<string, string>? RouteValues;
+        }
+
+        [DuckCopy]
+        internal struct LegacyAspNetCoreAttributeRouteInfoStruct
+        {
+            public string? Template;
+        }
+
+        [DuckCopy]
+        internal struct LegacyAspNetCoreRouteDataStruct
+        {
+            public IDictionary<string, object>? Values;
         }
 
         [DuckCopy]
