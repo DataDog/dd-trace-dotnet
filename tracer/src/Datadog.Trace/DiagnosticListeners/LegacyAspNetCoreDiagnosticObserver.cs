@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DiagnosticListeners.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -40,11 +41,17 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly LegacyAspNetCoreHttpRequestHandler RequestHandler = new(Log);
         private static readonly object HttpContextRequestStateKey = new();
 
-        private readonly Tracer _tracer;
+        private readonly Lazy<bool> _isEnabled;
         private readonly IDatadogLogger _log;
         private readonly IMetricsTelemetryCollector _metrics;
 
+        private Tracer _tracer = null!;
         private int _reportedIncompatibleShapes;
+
+        public LegacyAspNetCoreDiagnosticObserver()
+            : this(() => Tracer.Instance, Log, TelemetryFactory.Metrics)
+        {
+        }
 
         public LegacyAspNetCoreDiagnosticObserver(Tracer tracer)
             : this(tracer, Log, TelemetryFactory.Metrics)
@@ -54,8 +61,16 @@ namespace Datadog.Trace.DiagnosticListeners
         internal LegacyAspNetCoreDiagnosticObserver(Tracer tracer, IDatadogLogger log, IMetricsTelemetryCollector metrics)
         {
             _tracer = tracer;
+            _isEnabled = new Lazy<bool>(() => true);
             _log = log;
             _metrics = metrics;
+        }
+
+        internal LegacyAspNetCoreDiagnosticObserver(Func<Tracer> tracerFactory, IDatadogLogger log, IMetricsTelemetryCollector metrics)
+        {
+            _log = log;
+            _metrics = metrics;
+            _isEnabled = new Lazy<bool>(() => TryEnable(tracerFactory));
         }
 
         [Flags]
@@ -82,6 +97,24 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         protected override string ListenerName => DiagnosticListenerName;
+
+        public override IDisposable? SubscribeIfMatch(IDiagnosticListener diagnosticListener)
+        {
+            try
+            {
+                if (diagnosticListener.Name != ListenerName || !_isEnabled.Value)
+                {
+                    return null;
+                }
+
+                return diagnosticListener.Subscribe(this, IsEventEnabled);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error subscribing to ASP.NET Core diagnostic events on .NET Framework. This listener will not be instrumented.");
+                return null;
+            }
+        }
 
         // ASP.NET Core checks the base operation before starting its Activity, then emits request-lifecycle events.
         protected override bool IsEventEnabled(string eventName) =>
@@ -249,6 +282,27 @@ namespace Datadog.Trace.DiagnosticListeners
             if (itemsContext.Items.TryGetValue(HttpContextRequestStateKey, out var value) && value is LegacyAspNetCoreRequestState state)
             {
                 RequestHandler.HandleAspNetCoreException(_tracer, state.RootScope, eventData.Exception);
+            }
+        }
+
+        private bool TryEnable(Func<Tracer> tracerFactory)
+        {
+            try
+            {
+                var tracer = tracerFactory();
+                if (!tracer.Settings.AspNetCoreNetFrameworkEnabled
+                 || !tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
+                {
+                    return false;
+                }
+
+                _tracer = tracer;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error enabling ASP.NET Core instrumentation on .NET Framework. The integration will remain disabled.");
+                return false;
             }
         }
 

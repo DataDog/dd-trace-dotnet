@@ -45,10 +45,6 @@ namespace Datadog.Trace.ClrProfiler
 
         private static int _firstNonNativePartsInitialization = 1;
 
-#if NETFRAMEWORK
-        private static int _legacyAspNetCoreStartupDiagnosticLogged;
-#endif
-
         /// <summary>
         /// Gets the CLSID for the Datadog .NET profiler
         /// </summary>
@@ -357,25 +353,11 @@ namespace Datadog.Trace.ClrProfiler
                     diagnosticSourceType = LoadDiagnosticSourceType(DiagnosticSourceTypeName, out diagnosticSourceLoadException);
                 }
 
-#if NETFRAMEWORK
-                var currentTracer = Tracer.Instance;
-                LogLegacyAspNetCoreStartupDiagnostic(
-                    currentTracer,
-                    diagnosticSourceEnabled,
-                    diagnosticSourceType is not null,
-                    diagnosticSourceLoadException,
-                    Log);
-#endif
-
                 if (diagnosticSourceEnabled)
                 {
                     if (diagnosticSourceType is null)
                     {
-#if NETFRAMEWORK
-                        LogGenericDiagnosticSourceUnavailable(currentTracer, diagnosticSourceLoadException, Log);
-#else
                         LogGenericDiagnosticSourceUnavailable(diagnosticSourceLoadException, Log);
-#endif
                     }
                     else
                     {
@@ -516,8 +498,7 @@ namespace Datadog.Trace.ClrProfiler
             var observers = new List<DiagnosticObserver>();
 
 #if NETFRAMEWORK
-            var tracer = Tracer.Instance;
-            AddLegacyAspNetCoreDiagnosticObserverIfEnabled(observers, tracer);
+            AddLegacyAspNetCoreDiagnosticObserver(observers);
 #else
             if (!SkipAspNetCoreDiagnosticObserver())
             {
@@ -546,7 +527,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        private static void LogGenericDiagnosticSourceUnavailable(Exception loadException, IDatadogLogger log)
+        internal static void LogGenericDiagnosticSourceUnavailable(Exception loadException, IDatadogLogger log)
         {
             const string Message = "DiagnosticSource type could not be loaded. Skipping diagnostic observers.";
 
@@ -561,75 +542,8 @@ namespace Datadog.Trace.ClrProfiler
         }
 
 #if NETFRAMEWORK
-        internal static void AddLegacyAspNetCoreDiagnosticObserverIfEnabled(ICollection<DiagnosticObserver> observers, Tracer tracer)
-        {
-            if (ShouldStartLegacyAspNetCoreDiagnosticObserver(tracer))
-            {
-                observers.Add(new LegacyAspNetCoreDiagnosticObserver(tracer));
-            }
-        }
-
-        internal static bool ShouldStartLegacyAspNetCoreDiagnosticObserver(Tracer tracer) =>
-            tracer.Settings.AspNetCoreNetFrameworkEnabled
-         && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AspNetCore);
-
-        internal static void LogLegacyAspNetCoreStartupDiagnostic(
-            Tracer tracer,
-            bool diagnosticSourceEnabled,
-            bool diagnosticSourceAvailable,
-            Exception diagnosticSourceLoadException,
-            IDatadogLogger log)
-        {
-            if (!tracer.Settings.AspNetCoreNetFrameworkEnabled)
-            {
-                return;
-            }
-
-            if (diagnosticSourceEnabled
-             && diagnosticSourceAvailable
-             && !ShouldStartLegacyAspNetCoreDiagnosticObserver(tracer))
-            {
-                return;
-            }
-
-            if (Interlocked.Exchange(ref _legacyAspNetCoreStartupDiagnosticLogged, 1) != 0)
-            {
-                return;
-            }
-
-            if (!diagnosticSourceEnabled)
-            {
-                log.Warning("ASP.NET Core instrumentation for .NET Framework was enabled, but DiagnosticSource is disabled by DD_DIAGNOSTIC_SOURCE_ENABLED. No ASP.NET Core spans will be created.");
-            }
-            else if (!diagnosticSourceAvailable)
-            {
-                const string Message = "ASP.NET Core instrumentation for .NET Framework was enabled, but DiagnosticSource could not be loaded. No ASP.NET Core spans will be created.";
-
-                if (diagnosticSourceLoadException is null)
-                {
-                    log.Warning(Message);
-                }
-                else
-                {
-                    log.Warning(diagnosticSourceLoadException, Message);
-                }
-            }
-            else
-            {
-                log.Information("ASP.NET Core instrumentation for .NET Framework is enabled.");
-            }
-        }
-
-        internal static void LogGenericDiagnosticSourceUnavailable(Tracer tracer, Exception loadException, IDatadogLogger log)
-        {
-            if (!tracer.Settings.AspNetCoreNetFrameworkEnabled)
-            {
-                LogGenericDiagnosticSourceUnavailable(loadException, log);
-            }
-        }
-
-        internal static void ResetLegacyAspNetCoreStartupDiagnosticForTests() =>
-            Interlocked.Exchange(ref _legacyAspNetCoreStartupDiagnosticLogged, 0);
+        internal static void AddLegacyAspNetCoreDiagnosticObserver(ICollection<DiagnosticObserver> observers) =>
+            observers.Add(new LegacyAspNetCoreDiagnosticObserver());
 #endif
 
 #if !NETFRAMEWORK
