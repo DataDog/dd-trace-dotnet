@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler;
@@ -20,6 +21,8 @@ using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DiagnosticListeners.DuckTypes;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
@@ -79,6 +82,39 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             listener.IsEnabled(HostingUnhandledExceptionEvent).Should().BeTrue();
             listener.IsEnabled(DiagnosticsUnhandledExceptionEvent).Should().BeTrue();
             listener.IsEnabled("Microsoft.AspNetCore.Mvc.BeforeAction").Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task UnsupportedStartPayloadShapesDoNotCreateScope()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var invalidHeadersContext = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            invalidHeadersContext.Request.Headers = new object();
+            object[] payloads =
+            [
+                new object(),
+                new { HttpContext = new object() },
+                new
+                {
+                    HttpContext = new
+                    {
+                        Items = new Dictionary<object, object>(),
+                        Request = new object(),
+                    },
+                },
+                new { HttpContext = invalidHeadersContext },
+            ];
+
+            foreach (var payload in payloads)
+            {
+                var action = () => observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+
+                action.Should().NotThrow();
+                tracer.ActiveScope.Should().BeNull();
+            }
+
+            HasRequestState(invalidHeadersContext).Should().BeFalse();
         }
 
         [Fact]
@@ -245,6 +281,89 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
 
             HasRequestState(context).Should().BeFalse();
+            tracer.ActiveScope.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task StopDisposesStoredScopeWhenResponseMemberIsMissing()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var startPayload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, startPayload));
+            var requestScope = GetRequestState(context).RootScope;
+            var stopPayload = new { HttpContext = new ItemsOnlyHttpContext(context.Items) };
+
+            var action = () => observer.OnNext(new KeyValuePair<string, object>(StopEvent, stopPayload));
+
+            action.Should().NotThrow();
+            requestScope.Span.IsFinished.Should().BeTrue();
+            HasRequestState(context).Should().BeFalse();
+            tracer.ActiveScope.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task UnsupportedExceptionContextDoesNotAffectStoredScope()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var requestPayload = new { HttpContext = context };
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, requestPayload));
+            var requestScope = GetRequestState(context).RootScope;
+            var exceptionPayload = new { HttpContext = new object(), Exception = new InvalidOperationException("ignored") };
+
+            var action = () => observer.OnNext(new KeyValuePair<string, object>(HostingUnhandledExceptionEvent, exceptionPayload));
+
+            action.Should().NotThrow();
+            requestScope.Span.Error.Should().BeFalse();
+            requestScope.Span.IsFinished.Should().BeFalse();
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
+        }
+
+        [Fact]
+        public async Task StartDisposesCreatedScopeWhenStateStorageThrows()
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var items = new ThrowingSetItemsDictionary();
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            context.Items = items;
+            var payload = new { HttpContext = context };
+            var startMethod = typeof(LegacyAspNetCoreDiagnosticObserver)
+                             .GetMethod("OnHostingHttpRequestInStart", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            var action = () => startMethod.Invoke(observer, [payload]);
+
+            action.Should().Throw<TargetInvocationException>()
+                  .WithInnerException<InvalidOperationException>();
+            var attemptedState = items.AttemptedValue.Should().BeOfType<LegacyAspNetCoreRequestState>().Subject;
+            attemptedState.RootScope.Span.IsFinished.Should().BeTrue();
+            tracer.ActiveScope.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task HandlerDisposesCreatedScopeWhenRequestEnrichmentThrows()
+        {
+            var settings = new TracerSettings(
+                new NameValueConfigurationSource(
+                    new NameValueCollection
+                    {
+                        { ConfigurationKeys.HeaderTags, "x-throw-after-scope:test.throw" },
+                    }));
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+            var headers = new ThrowingLegacyHeaders("x-throw-after-scope");
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            var request = context.Request.DuckCast<LegacyAspNetCoreDiagnosticObserver.LegacyAspNetCoreHttpRequestStruct>();
+            var headersAdapter = new LegacyAspNetCoreHeadersCollectionAdapter(headers);
+            var handler = new LegacyAspNetCoreHttpRequestHandler(DatadogLogging.GetLoggerFor<LegacyAspNetCoreDiagnosticObserverTests>());
+
+            var action = () => handler.StartAspNetCorePipelineScope(tracer, request, headersAdapter);
+
+            action.Should().Throw<InvalidOperationException>();
             tracer.ActiveScope.Should().BeNull();
         }
 
@@ -497,7 +616,17 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             public object Response { get; set; }
 
-            public IDictionary<object, object> Items { get; } = new Dictionary<object, object>();
+            public IDictionary<object, object> Items { get; set; } = new Dictionary<object, object>();
+        }
+
+        private sealed class ItemsOnlyHttpContext
+        {
+            public ItemsOnlyHttpContext(IDictionary<object, object> items)
+            {
+                Items = items;
+            }
+
+            public IDictionary<object, object> Items { get; }
         }
 
         private sealed class FakeHttpRequest
@@ -533,6 +662,70 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             public IEnumerable<string> this[string name]
                 => _headers.TryGetValue(name, out var values) ? (IEnumerable<string>)values : [];
+        }
+
+        private sealed class ThrowingLegacyHeaders : ILegacyAspNetCoreHeaders
+        {
+            private readonly string _throwingHeader;
+
+            public ThrowingLegacyHeaders(string throwingHeader)
+            {
+                _throwingHeader = throwingHeader;
+            }
+
+            public IEnumerable<string> this[string name]
+                => string.Equals(name, _throwingHeader, StringComparison.OrdinalIgnoreCase)
+                       ? throw new InvalidOperationException("Header access failed after scope creation.")
+                       : [];
+        }
+
+        private sealed class ThrowingSetItemsDictionary : IDictionary<object, object>
+        {
+            public object AttemptedValue { get; private set; }
+
+            public ICollection<object> Keys => throw new NotSupportedException();
+
+            public ICollection<object> Values => throw new NotSupportedException();
+
+            public int Count => 0;
+
+            public bool IsReadOnly => false;
+
+            public object this[object key]
+            {
+                get => throw new NotSupportedException();
+                set
+                {
+                    AttemptedValue = value;
+                    throw new InvalidOperationException("State storage failed.");
+                }
+            }
+
+            public void Add(object key, object value) => throw new NotSupportedException();
+
+            public void Add(KeyValuePair<object, object> item) => throw new NotSupportedException();
+
+            public void Clear() => throw new NotSupportedException();
+
+            public bool Contains(KeyValuePair<object, object> item) => false;
+
+            public bool ContainsKey(object key) => false;
+
+            public void CopyTo(KeyValuePair<object, object>[] array, int arrayIndex) => throw new NotSupportedException();
+
+            public IEnumerator<KeyValuePair<object, object>> GetEnumerator() => throw new NotSupportedException();
+
+            public bool Remove(object key) => false;
+
+            public bool Remove(KeyValuePair<object, object> item) => false;
+
+            public bool TryGetValue(object key, out object value)
+            {
+                value = null;
+                return false;
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
         /// <summary>

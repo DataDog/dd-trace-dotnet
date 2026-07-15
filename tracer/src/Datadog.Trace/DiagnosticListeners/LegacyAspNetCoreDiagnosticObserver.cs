@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 
@@ -72,13 +73,19 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId)
              || !arg.TryDuckCast<LegacyAspNetCoreHttpRequestInEventStruct>(out var eventData)
-             || eventData.HttpContext is null)
+             || eventData.HttpContext is null
+             || !eventData.HttpContext.TryDuckCast<LegacyAspNetCoreHttpContextItemsStruct>(out var itemsContext)
+             || itemsContext.Items is null
+             || !eventData.HttpContext.TryDuckCast<LegacyAspNetCoreHttpContextRequestStruct>(out var requestContext)
+             || requestContext.Request is null
+             || !requestContext.Request.TryDuckCast<LegacyAspNetCoreHttpRequestStruct>(out var request)
+             || request.Headers is null
+             || !request.Headers.TryDuckCast<ILegacyAspNetCoreHeaders>(out var headers))
             {
                 return;
             }
 
-            var httpContext = eventData.HttpContext.DuckCast<LegacyAspNetCoreHttpContextStruct>();
-            if (httpContext.Items.ContainsKey(HttpContextRequestStateKey))
+            if (itemsContext.Items.ContainsKey(HttpContextRequestStateKey))
             {
                 return;
             }
@@ -86,9 +93,10 @@ namespace Datadog.Trace.DiagnosticListeners
             Scope? scope = null;
             try
             {
-                var request = httpContext.Request.DuckCast<LegacyAspNetCoreHttpRequestStruct>();
-                scope = RequestHandler.StartAspNetCorePipelineScope(_tracer, request);
-                httpContext.Items[HttpContextRequestStateKey] = new LegacyAspNetCoreRequestState(scope);
+                var headersAdapter = new LegacyAspNetCoreHeadersCollectionAdapter(headers);
+                scope = RequestHandler.StartAspNetCorePipelineScope(_tracer, request, headersAdapter);
+                itemsContext.Items[HttpContextRequestStateKey] = new LegacyAspNetCoreRequestState(scope);
+                scope = null;
             }
             catch
             {
@@ -100,19 +108,18 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnHostingHttpRequestInStop(object arg)
         {
             if (!arg.TryDuckCast<LegacyAspNetCoreHttpRequestInEventStruct>(out var eventData)
-             || eventData.HttpContext is null)
+             || eventData.HttpContext is null
+             || !eventData.HttpContext.TryDuckCast<LegacyAspNetCoreHttpContextItemsStruct>(out var itemsContext)
+             || itemsContext.Items is null)
             {
                 return;
             }
 
-            var httpContext = eventData.HttpContext.DuckCast<LegacyAspNetCoreHttpContextStruct>();
-            if (!httpContext.Items.TryGetValue(HttpContextRequestStateKey, out var value) || value is not LegacyAspNetCoreRequestState state)
+            if (!itemsContext.Items.TryGetValue(HttpContextRequestStateKey, out var value) || value is not LegacyAspNetCoreRequestState state)
             {
                 return;
             }
 
-            // Remove the state before enriching or closing its exact scope so duplicate stop events do no work.
-            httpContext.Items.Remove(HttpContextRequestStateKey);
             if (!state.TryComplete())
             {
                 return;
@@ -120,7 +127,11 @@ namespace Datadog.Trace.DiagnosticListeners
 
             try
             {
-                if (httpContext.Response.TryDuckCast<LegacyAspNetCoreHttpResponseStruct>(out var response))
+                // Remove the state before response access so duplicate stop events do no work.
+                itemsContext.Items.Remove(HttpContextRequestStateKey);
+                if (eventData.HttpContext.TryDuckCast<LegacyAspNetCoreHttpContextResponseStruct>(out var responseContext)
+                 && responseContext.Response is not null
+                 && responseContext.Response.TryDuckCast<LegacyAspNetCoreHttpResponseStruct>(out var response))
                 {
                     RequestHandler.StopAspNetCorePipelineScope(_tracer, state.RootScope, response);
                 }
@@ -135,13 +146,14 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             if (!arg.TryDuckCast<LegacyAspNetCoreUnhandledExceptionStruct>(out var eventData)
              || eventData.HttpContext is null
-             || eventData.Exception is null)
+             || eventData.Exception is null
+             || !eventData.HttpContext.TryDuckCast<LegacyAspNetCoreHttpContextItemsStruct>(out var itemsContext)
+             || itemsContext.Items is null)
             {
                 return;
             }
 
-            var httpContext = eventData.HttpContext.DuckCast<LegacyAspNetCoreHttpContextStruct>();
-            if (httpContext.Items.TryGetValue(HttpContextRequestStateKey, out var value) && value is LegacyAspNetCoreRequestState state)
+            if (itemsContext.Items.TryGetValue(HttpContextRequestStateKey, out var value) && value is LegacyAspNetCoreRequestState state)
             {
                 RequestHandler.HandleAspNetCoreException(_tracer, state.RootScope, eventData.Exception);
             }
@@ -165,11 +177,21 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         [DuckCopy]
-        internal struct LegacyAspNetCoreHttpContextStruct
+        internal struct LegacyAspNetCoreHttpContextItemsStruct
         {
-            public object Request;
-            public object Response;
-            public IDictionary<object, object> Items;
+            public IDictionary<object, object>? Items;
+        }
+
+        [DuckCopy]
+        internal struct LegacyAspNetCoreHttpContextRequestStruct
+        {
+            public object? Request;
+        }
+
+        [DuckCopy]
+        internal struct LegacyAspNetCoreHttpContextResponseStruct
+        {
+            public object? Response;
         }
 
         [DuckCopy]
@@ -181,7 +203,7 @@ namespace Datadog.Trace.DiagnosticListeners
             public LegacyAspNetCorePathStringStruct PathBase;
             public LegacyAspNetCorePathStringStruct Path;
             public LegacyAspNetCoreQueryStringStruct QueryString;
-            public object Headers;
+            public object? Headers;
         }
 
         [DuckCopy]
