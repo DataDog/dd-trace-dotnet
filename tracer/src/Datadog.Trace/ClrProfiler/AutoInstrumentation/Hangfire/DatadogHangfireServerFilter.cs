@@ -29,10 +29,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                 return;
             }
 
+            // Hangfire workers reuse one ExecutionContext across sequential jobs, so save/restore
+            // baggage around each job instead of leaking it into the next one (see OnPerformed).
+            performingContext.Items[HangfireConstants.DatadogBaggageKey] = Baggage.Current;
+
             var spanContextData = performingContext.GetJobParameter<Dictionary<string, string?>?>(HangfireConstants.DatadogContextKey);
             var propagationContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(spanContextData);
-
-            // Hangfire workers reuse one ExecutionContext across sequential jobs
             Baggage.Current = propagationContext.Baggage ?? new Baggage();
 
             var parentContext = propagationContext.SpanContext;
@@ -47,24 +49,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         [DuckReverseMethod(ParameterTypeNames = new[] { "Hangfire.Server.IServerFilter, Hangfire.Core" })]
         public void OnPerformed(object context)
         {
-            // Clear because the worker's ExecutionContext is persistent across jobs.
-            Baggage.Current = new Baggage();
-
-            if (context.TryDuckCast<IPerformedContextProxy>(out var performedContext))
+            if (!context.TryDuckCast<IPerformedContextProxy>(out var performedContext))
             {
-                if (performedContext.Items.TryGetValue(HangfireConstants.DatadogScopeKey, out var scope))
-                {
-                    if (scope is not Scope typedScope)
-                    {
-                        return;
-                    }
+                return;
+            }
 
+            var shouldRestoreBaggage = performedContext.Items.TryGetValue(HangfireConstants.DatadogBaggageKey, out var previousBaggage);
+
+            try
+            {
+                if (performedContext.Items.TryGetValue(HangfireConstants.DatadogScopeKey, out var scope)
+                    && scope is Scope typedScope)
+                {
                     if (performedContext.Exception is not null)
                     {
                         HangfireCommon.SetStatusAndRecordException(typedScope, performedContext.Exception);
                     }
 
                     typedScope.Dispose();
+                }
+            }
+            finally
+            {
+                if (shouldRestoreBaggage)
+                {
+                    Baggage.Current = previousBaggage is Baggage baggage ? baggage : new Baggage();
                 }
             }
         }
