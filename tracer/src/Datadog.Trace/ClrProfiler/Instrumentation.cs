@@ -36,12 +36,18 @@ namespace Datadog.Trace.ClrProfiler
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class Instrumentation
     {
+        private const string DiagnosticSourceTypeName = "System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource";
+
         /// <summary>
         /// Indicates whether we're initializing Instrumentation for the first time
         /// </summary>
         private static int _firstInitialization = 1;
 
         private static int _firstNonNativePartsInitialization = 1;
+
+#if NETFRAMEWORK
+        private static int _legacyAspNetCoreStartupDiagnosticLogged;
+#endif
 
         /// <summary>
         /// Gets the CLSID for the Datadog .NET profiler
@@ -341,14 +347,35 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                if (GlobalSettings.Instance.DiagnosticSourceEnabled)
+                var diagnosticSourceEnabled = GlobalSettings.Instance.DiagnosticSourceEnabled;
+                Type diagnosticSourceType = null;
+                Exception diagnosticSourceLoadException = null;
+
+                if (diagnosticSourceEnabled)
                 {
                     // check if DiagnosticSource is available before trying to use it
-                    var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
+                    diagnosticSourceType = LoadDiagnosticSourceType(DiagnosticSourceTypeName, out diagnosticSourceLoadException);
+                }
 
-                    if (type == null)
+#if NETFRAMEWORK
+                var currentTracer = Tracer.Instance;
+                LogLegacyAspNetCoreStartupDiagnostic(
+                    currentTracer,
+                    diagnosticSourceEnabled,
+                    diagnosticSourceType is not null,
+                    diagnosticSourceLoadException,
+                    Log);
+#endif
+
+                if (diagnosticSourceEnabled)
+                {
+                    if (diagnosticSourceType is null)
                     {
-                        Log.Warning("DiagnosticSource type could not be loaded. Skipping diagnostic observers.");
+#if NETFRAMEWORK
+                        LogGenericDiagnosticSourceUnavailable(currentTracer, diagnosticSourceLoadException, Log);
+#else
+                        LogGenericDiagnosticSourceUnavailable(diagnosticSourceLoadException, Log);
+#endif
                     }
                     else
                     {
@@ -505,6 +532,34 @@ namespace Datadog.Trace.ClrProfiler
             DiagnosticManager.Instance = diagnosticManager;
         }
 
+        internal static Type LoadDiagnosticSourceType(string assemblyQualifiedTypeName, out Exception loadException)
+        {
+            try
+            {
+                loadException = null;
+                return Type.GetType(assemblyQualifiedTypeName, throwOnError: false);
+            }
+            catch (Exception ex)
+            {
+                loadException = ex;
+                return null;
+            }
+        }
+
+        private static void LogGenericDiagnosticSourceUnavailable(Exception loadException, IDatadogLogger log)
+        {
+            const string Message = "DiagnosticSource type could not be loaded. Skipping diagnostic observers.";
+
+            if (loadException is null)
+            {
+                log.Warning(Message);
+            }
+            else
+            {
+                log.Warning(loadException, Message);
+            }
+        }
+
 #if NETFRAMEWORK
         internal static void AddLegacyAspNetCoreDiagnosticObserverIfEnabled(ICollection<DiagnosticObserver> observers, Tracer tracer)
         {
@@ -517,6 +572,64 @@ namespace Datadog.Trace.ClrProfiler
         internal static bool ShouldStartLegacyAspNetCoreDiagnosticObserver(Tracer tracer) =>
             tracer.Settings.AspNetCoreNetFrameworkEnabled
          && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AspNetCore);
+
+        internal static void LogLegacyAspNetCoreStartupDiagnostic(
+            Tracer tracer,
+            bool diagnosticSourceEnabled,
+            bool diagnosticSourceAvailable,
+            Exception diagnosticSourceLoadException,
+            IDatadogLogger log)
+        {
+            if (!tracer.Settings.AspNetCoreNetFrameworkEnabled)
+            {
+                return;
+            }
+
+            if (diagnosticSourceEnabled
+             && diagnosticSourceAvailable
+             && !ShouldStartLegacyAspNetCoreDiagnosticObserver(tracer))
+            {
+                return;
+            }
+
+            if (Interlocked.Exchange(ref _legacyAspNetCoreStartupDiagnosticLogged, 1) != 0)
+            {
+                return;
+            }
+
+            if (!diagnosticSourceEnabled)
+            {
+                log.Warning("ASP.NET Core instrumentation for .NET Framework was enabled, but DiagnosticSource is disabled by DD_DIAGNOSTIC_SOURCE_ENABLED. No ASP.NET Core spans will be created.");
+            }
+            else if (!diagnosticSourceAvailable)
+            {
+                const string Message = "ASP.NET Core instrumentation for .NET Framework was enabled, but DiagnosticSource could not be loaded. No ASP.NET Core spans will be created.";
+
+                if (diagnosticSourceLoadException is null)
+                {
+                    log.Warning(Message);
+                }
+                else
+                {
+                    log.Warning(diagnosticSourceLoadException, Message);
+                }
+            }
+            else
+            {
+                log.Information("ASP.NET Core instrumentation for .NET Framework is enabled.");
+            }
+        }
+
+        internal static void LogGenericDiagnosticSourceUnavailable(Tracer tracer, Exception loadException, IDatadogLogger log)
+        {
+            if (!tracer.Settings.AspNetCoreNetFrameworkEnabled)
+            {
+                LogGenericDiagnosticSourceUnavailable(loadException, log);
+            }
+        }
+
+        internal static void ResetLegacyAspNetCoreStartupDiagnosticForTests() =>
+            Interlocked.Exchange(ref _legacyAspNetCoreStartupDiagnosticLogged, 0);
 #endif
 
 #if !NETFRAMEWORK
