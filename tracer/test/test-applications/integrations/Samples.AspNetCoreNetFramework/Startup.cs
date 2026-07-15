@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -60,6 +61,19 @@ namespace Samples.AspNetCoreNetFramework
                 {
                     await QueryMongo(mongoClient);
                     await context.Response.WriteAsync("OK");
+                    return;
+                }
+
+                if (path == "/diagnostics/assembly-bindings")
+                {
+                    var bindings = AppDomain.CurrentDomain.GetAssemblies()
+                                            .Select(assembly => assembly.GetName())
+                                            .Where(
+                                                 assemblyName => assemblyName.Name == "System.Diagnostics.DiagnosticSource"
+                                                              || assemblyName.Name.StartsWith("Microsoft.AspNetCore", StringComparison.Ordinal))
+                                            .OrderBy(assemblyName => assemblyName.Name, StringComparer.Ordinal)
+                                            .Select(assemblyName => $"{assemblyName.Name}={assemblyName.Version}");
+                    await context.Response.WriteAsync(string.Join("\n", bindings));
                     return;
                 }
 

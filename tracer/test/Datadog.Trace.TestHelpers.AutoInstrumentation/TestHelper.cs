@@ -256,15 +256,13 @@ namespace Datadog.Trace.TestHelpers
                             .Replace("[POOL]", appPool)
                             .Replace("[VIRTUAL_APPLICATION]", virtualAppSection);
 
-            var isAspNetCore = appType == IisAppType.AspNetCoreInProcess || appType == IisAppType.AspNetCoreOutOfProcess;
-            if (isAspNetCore)
-            {
-                var hostingModel = appType == IisAppType.AspNetCoreInProcess ? "inprocess" : "outofprocess";
-                configTemplate = configTemplate
-                                .Replace("[DOTNET]", EnvironmentHelper.GetDotnetExe())
-                                .Replace("[RELATIVE_SAMPLE_PATH]", $".\\{EnvironmentHelper.GetSampleApplicationFileName()}")
-                                .Replace("[HOSTING_MODEL]", hostingModel);
-            }
+            configTemplate = ExpandIisConfigurationTemplate(
+                configTemplate,
+                appType,
+                EnvironmentHelper.GetDotnetExe(),
+                EnvironmentHelper.GetSampleApplicationFileName(),
+                EnvironmentHelper.IsCoreClr(),
+                out var aspNetCoreProcessToProfile);
 
             if (usePartialTrust || useLegacyCasModel)
             {
@@ -298,7 +296,7 @@ namespace Datadog.Trace.TestHelpers
                 agent,
                 arguments: string.Join(" ", args),
                 redirectStandardInput: true,
-                processToProfile: appType == IisAppType.AspNetCoreOutOfProcess ? "dotnet.exe" : iisExpress);
+                processToProfile: appType == IisAppType.AspNetCoreOutOfProcess ? aspNetCoreProcessToProfile : iisExpress);
 
             var semaphore = new SemaphoreSlim(0, 1);
 
@@ -385,6 +383,49 @@ namespace Datadog.Trace.TestHelpers
                     SetEnvironmentVariable(variable.Key, variable.Value);
                 }
             }
+        }
+
+        internal static string ExpandIisConfigurationTemplate(
+            string configTemplate,
+            IisAppType appType,
+            string dotnetExecutable,
+            string sampleApplicationFileName,
+            bool isCoreClr,
+            out string aspNetCoreProcessToProfile)
+        {
+            var isAspNetCore = appType == IisAppType.AspNetCoreInProcess || appType == IisAppType.AspNetCoreOutOfProcess;
+            var launchFrameworkExecutable = appType == IisAppType.AspNetCoreOutOfProcess && !isCoreClr;
+            var processPath = dotnetExecutable;
+            var relativeSamplePath = string.Empty;
+            var argumentsAttribute = string.Empty;
+            var hostingModel = "outofprocess";
+            var aspNetCoreHandler = string.Empty;
+            aspNetCoreProcessToProfile = Path.GetFileName(dotnetExecutable);
+
+            if (isAspNetCore)
+            {
+                hostingModel = appType == IisAppType.AspNetCoreInProcess ? "inprocess" : "outofprocess";
+
+                if (launchFrameworkExecutable)
+                {
+                    processPath = $".\\{sampleApplicationFileName}";
+                    aspNetCoreProcessToProfile = sampleApplicationFileName;
+                    aspNetCoreHandler = "<add name=\"aspNetCore\" path=\"*\" verb=\"*\" modules=\"AspNetCoreModuleV2\" resourceType=\"Unspecified\" />";
+                }
+                else
+                {
+                    relativeSamplePath = $".\\{sampleApplicationFileName}";
+                    argumentsAttribute = $" arguments=\"{relativeSamplePath}\"";
+                }
+            }
+
+            return configTemplate
+                  .Replace("[DOTNET]", processPath)
+                  .Replace("[RELATIVE_SAMPLE_PATH]", relativeSamplePath)
+                  .Replace("[PROCESS_PATH]", processPath)
+                  .Replace("[ARGUMENTS_ATTRIBUTE]", argumentsAttribute)
+                  .Replace("[HOSTING_MODEL]", hostingModel)
+                  .Replace("[ASPNETCORE_HANDLER]", aspNetCoreHandler);
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
