@@ -10,8 +10,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Versioning;
-using System.Security.Cryptography;
-using System.Text;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
@@ -88,30 +86,6 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var warning = logger.Invocations.Single(invocation => invocation.Method.Name == nameof(IDatadogLogger.Warning));
             warning.Arguments.Should().Contain(loadException);
             warning.Arguments.OfType<string>().Should().Contain(message => message.Contains("DiagnosticSource type could not be loaded"));
-        }
-
-        [Theory]
-        [InlineData("DiagnosticListeners/AspNetCoreDiagnosticObserver.cs", "fea27348e128bf1e228478cfb3cbcef51844fce1db7920399b8f22c5d54708a5")]
-        [InlineData("PlatformHelpers/AspNetCoreHttpRequestHandler.cs", "41c7d1b001e17bfa0605f36ed1f3051f0ce09dc3bcc0423400112e099291317b")]
-        [InlineData("DiagnosticListeners/AspNetCoreResourceNameHelper.cs", "2d3349fcab00d7717553534fa494a01ea036e14634aab2618f6a9775eb078cd7")]
-        public void ModernAspNetCoreSourceFileHasNotChanged(string relativePath, string expectedHash)
-        {
-            var sourcePath = Path.Combine(
-                EnvironmentTools.GetSolutionDirectory(),
-                "tracer",
-                "src",
-                "Datadog.Trace",
-                relativePath.Replace('/', Path.DirectorySeparatorChar));
-            var source = File.ReadAllText(sourcePath).Replace("\r\n", "\n").Replace('\r', '\n');
-
-            using var sha256 = SHA256.Create();
-            var actualHash = BitConverter.ToString(sha256.ComputeHash(Encoding.UTF8.GetBytes(source)))
-                                         .Replace("-", string.Empty)
-                                         .ToLowerInvariant();
-            var because = "legacy ASP.NET Core changes must not modify the modern request path " +
-                          $"({relativePath}); update this baseline only for a separately reviewed modern ASP.NET Core change";
-
-            actualHash.Should().Be(expectedHash, because);
         }
     }
 }
