@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 {
                     // Add the exception tags without setting the Error property
                     // SetHttpStatusCode will mark the span with an error if the StatusCode is within the configured range
-                    state.Scope.Span.SetExceptionTags(exception);
+                    state.Scope.Span.SetException(exception, markAsError: false);
 
                     state.Scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
                     state.Scope.Dispose();

@@ -429,5 +429,60 @@ namespace Datadog.Trace.Tests
 
             span.SpanEvents.Should().BeNullOrEmpty();
         }
-  }
+
+        [Theory]
+        [CombinatorialData]
+        public void SetException_DefaultSemantics_SetsErrorTags(bool markAsError)
+        {
+            var span = CreateSpan();
+            var exception = new InvalidOperationException("test message");
+
+            span.SetException(exception, markAsError);
+
+            span.Error.Should().Be(markAsError);
+            span.GetTag(Tags.ErrorMsg).Should().Be(exception.Message);
+            span.GetTag(Tags.ErrorType).Should().Be(exception.GetType().ToString());
+            span.GetTag(Tags.ErrorStack).Should().Be(exception.ToString());
+            span.SpanEvents.Should().BeNullOrEmpty();
+        }
+
+        [Theory]
+        [CombinatorialData]
+        public void SetException_OtelSemantics_CreatesSpanEventInsteadOfTags(bool markAsError)
+        {
+            var span = CreateSpan(openTelemetrySemanticsEnabled: true);
+            var exception = new InvalidOperationException("test message");
+
+            span.SetException(exception, markAsError);
+
+            span.Error.Should().Be(markAsError);
+            span.GetTag(Tags.ErrorMsg).Should().BeNull();
+            span.GetTag(Tags.ErrorType).Should().BeNull();
+            span.GetTag(Tags.ErrorStack).Should().BeNull();
+            span.SpanEvents.Should().ContainSingle();
+        }
+
+        [Fact]
+        public void SetException_OtelSemantics_SpanEventHasCorrectNameAndAttributes()
+        {
+            var span = CreateSpan(openTelemetrySemanticsEnabled: true);
+            var exception = new InvalidOperationException("test message");
+
+            span.SetException(exception, markAsError: true);
+
+            var ev = span.SpanEvents.Should().ContainSingle().Subject;
+            ev.Name.Should().Be("exception");
+            ev.Attributes.Should().Contain(a => a.Key == "exception.type" && (string)a.Value == exception.GetType().ToString());
+            ev.Attributes.Should().Contain(a => a.Key == "exception.message" && (string)a.Value == exception.Message);
+            ev.Attributes.Should().Contain(a => a.Key == "exception.stacktrace" && (string)a.Value == exception.ToString());
+        }
+
+        private static Span CreateSpan(bool openTelemetrySemanticsEnabled = false)
+        {
+            var trace = new TraceContext(new StubDatadogTracer());
+            var propagatedContext = new SpanContext(new TraceId(0, 1), spanId: 1, samplingPriority: null, serviceName: null, origin: null);
+            var context = new SpanContext(propagatedContext, trace, serviceName: null);
+            return new Span(context, start: null, tags: null, links: null, openTelemetrySemanticsEnabled);
+        }
+    }
 }

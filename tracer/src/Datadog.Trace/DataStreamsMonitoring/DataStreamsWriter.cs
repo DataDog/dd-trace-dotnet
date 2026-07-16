@@ -76,6 +76,13 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
     public event EventHandler<EventArgs>? FlushComplete;
 
     /// <summary>
+    /// Raised when a flush is requested, before the asynchronous flush runs. For testing only:
+    /// lets tests observe that the transaction byte-threshold requested an early flush on the
+    /// dedicated processing thread, independently of the thread pool that performs the send.
+    /// </summary>
+    internal event Action? FlushRequested;
+
+    /// <summary>
     /// Gets the number of points dropped due to a full buffer or disabled DSM.
     /// Public for testing only
     /// </summary>
@@ -241,6 +248,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
     private void RequestFlush()
     {
         _forceFlush.TrySetResult(true);
+        FlushRequested?.Invoke();
     }
 
     private async Task FlushTaskLoopAsync()
