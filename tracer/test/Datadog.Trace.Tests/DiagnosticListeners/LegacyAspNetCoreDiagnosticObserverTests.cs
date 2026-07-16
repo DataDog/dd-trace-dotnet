@@ -113,7 +113,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         }
 
         [Fact]
-        public async Task MatchingListenerEvaluatesDisabledActivationOnlyOnce()
+        public async Task DisabledFrameworkFeatureDecisionIsCached()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             var factoryCalls = 0;
@@ -824,8 +824,43 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         }
 
         [Theory]
+        [InlineData(true, null, null, null)]
+        [InlineData(true, "single", null, "single")]
+        [InlineData(true, "first", "second", "first,second")]
+        [InlineData(false, null, null, null)]
+        [InlineData(false, "single", null, "single")]
+        [InlineData(false, "first", "second", "first,second")]
+        public async Task JoinsUserAgentValues(
+            bool useAspNetCore21Shape,
+            string first,
+            string second,
+            string expectedUserAgent)
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            var headerValues = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+            if (first is not null)
+            {
+                string[] values = second is null ? [first] : [first, second];
+                headerValues[HttpHeaderNames.UserAgent] = useAspNetCore21Shape
+                                                              ? (object)new StringValues21(values)
+                                                              : new StringValues22(values);
+            }
+
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(headerValues));
+            var payload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+
+            var requestScope = GetRequestState(context).RootScope;
+            requestScope.Span.GetTag(Tags.HttpUserAgent).Should().Be(expectedUserAgent);
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+        }
+
+        [Theory]
         [MemberData(nameof(AspNetCoreHttpUrlTestData.EscapedPaths), MemberType = typeof(AspNetCoreHttpUrlTestData))]
-        public async Task EscapesDecodedPathValuesInHttpUrl(string pathBase, string path, string expectedUrl)
+        public async Task EscapesDecodedPathValuesInHttpUrlAndResource(string pathBase, string path, string expectedUrl, string expectedResourceName)
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
             IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
@@ -838,6 +873,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             var requestScope = GetRequestState(context).RootScope;
             requestScope.Span.GetTag("http.url").Should().Be(expectedUrl);
+            requestScope.Span.ResourceName.Should().Be(expectedResourceName);
 
             observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
         }

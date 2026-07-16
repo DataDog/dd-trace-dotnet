@@ -5,6 +5,7 @@
 
 #if !NETFRAMEWORK
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util.Http;
 using FluentAssertions;
@@ -20,10 +21,11 @@ namespace Datadog.Trace.Tests.PlatformHelpers
 
         [Theory]
         [MemberData(nameof(AspNetCoreHttpUrlTestData.EscapedPaths), MemberType = typeof(AspNetCoreHttpUrlTestData))]
-        public void EscapesDecodedPathValuesInHttpUrl(string pathBase, string path, string expectedUrl)
+        public void EscapesDecodedPathValuesInHttpUrlAndResource(string pathBase, string path, string expectedUrl, string expectedResourceName)
         {
             var request = new DefaultHttpRequest(new DefaultHttpContext())
             {
+                Method = "GET",
                 Scheme = "http",
                 Host = new HostString("localhost"),
                 PathBase = new PathString(pathBase),
@@ -36,6 +38,11 @@ namespace Datadog.Trace.Tests.PlatformHelpers
                 pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
 
             request.GetUrlForSpan(queryStringManager).Should().Be(expectedUrl);
+            var handler = new AspNetCoreHttpRequestHandler(
+                DatadogLogging.GetLoggerFor<AspNetCoreHttpRequestHandlerTests>(),
+                requestInOperationName: "aspnet_core.request",
+                integrationInfo: IntegrationId.AspNetCore);
+            handler.GetDefaultResourceName(request).Should().Be(expectedResourceName);
         }
 
         [Theory]

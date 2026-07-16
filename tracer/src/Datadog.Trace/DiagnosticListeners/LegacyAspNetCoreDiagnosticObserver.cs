@@ -290,6 +290,9 @@ namespace Datadog.Trace.DiagnosticListeners
             try
             {
                 var tracer = tracerFactory();
+                // This is a one-time activation gate because _isEnabled caches the result. Avoid subscribing when disabled,
+                // as the subscription itself enables ASP.NET Core request Activities and diagnostic events.
+                // TODO: Investigate dynamically subscribing and unsubscribing when this integration is enabled or disabled at runtime.
                 if (!tracer.Settings.AspNetCoreNetFrameworkEnabled
                  || !tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
                 {

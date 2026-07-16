@@ -73,6 +73,8 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Feature flag that enables ASP.NET Core request tracing in .NET Framework processes.
         /// Default value is <c>false</c>. This setting has no effect on modern .NET runtimes.
+        /// ASP.NET Core on .NET Framework is not supported in Azure Functions. Do not enable this
+        /// setting in Azure Functions applications.
         /// </summary>
         public const string AspNetCoreNetFrameworkEnabled = "DD_TRACE_ASPNETCORE_NETFRAMEWORK_ENABLED";
 
