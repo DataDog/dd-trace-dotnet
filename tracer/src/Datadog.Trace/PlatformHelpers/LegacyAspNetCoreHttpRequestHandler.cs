@@ -8,6 +8,7 @@
 #nullable enable
 
 using System;
+using System.Text;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
@@ -31,6 +32,70 @@ namespace Datadog.Trace.PlatformHelpers
             _log = log;
         }
 
+        // Mirrors PathString.ToUriComponent() without adding an ASP.NET Core reference to the net461 tracer.
+        private static string ToUriComponent(string path)
+        {
+            StringBuilder? builder = null;
+            var segmentStart = 0;
+            var index = 0;
+
+            while (index < path.Length)
+            {
+                if (IsValidPathCharacter(path[index]))
+                {
+                    index++;
+                    continue;
+                }
+
+                if (IsPercentEncodedCharacter(path, index))
+                {
+                    index += 3;
+                    continue;
+                }
+
+                builder ??= new StringBuilder(path.Length * 3);
+                builder.Append(path, segmentStart, index - segmentStart);
+
+                var escapeStart = index++;
+                while (index < path.Length
+                    && !IsValidPathCharacter(path[index])
+                    && !IsPercentEncodedCharacter(path, index))
+                {
+                    index++;
+                }
+
+                builder.Append(Uri.EscapeDataString(path.Substring(escapeStart, index - escapeStart)));
+                segmentStart = index;
+            }
+
+            if (builder is null)
+            {
+                return path;
+            }
+
+            builder.Append(path, segmentStart, path.Length - segmentStart);
+            return builder.ToString();
+        }
+
+        private static bool IsValidPathCharacter(char value)
+            => value is >= 'a' and <= 'z'
+            || value is >= 'A' and <= 'Z'
+            || value is >= '0' and <= '9'
+            || value is '-' or '.' or '_' or '~'
+            || value is '!' or '$' or '&' or '\'' or '(' or ')' or '*' or '+' or ',' or ';' or '='
+            || value is ':' or '@' or '/';
+
+        private static bool IsPercentEncodedCharacter(string value, int index)
+            => index + 2 < value.Length
+            && value[index] == '%'
+            && IsHexadecimalCharacter(value[index + 1])
+            && IsHexadecimalCharacter(value[index + 2]);
+
+        private static bool IsHexadecimalCharacter(char value)
+            => value is >= '0' and <= '9'
+            || value is >= 'A' and <= 'F'
+            || value is >= 'a' and <= 'f';
+
         public Scope StartAspNetCorePipelineScope(
             Tracer tracer,
             LegacyAspNetCoreDiagnosticObserver.LegacyAspNetCoreHttpRequestStruct request,
@@ -45,12 +110,14 @@ namespace Datadog.Trace.PlatformHelpers
             var requestPath = request.Path.Value ?? string.Empty;
             var path = pathBase + requestPath;
             var resourceName = method + " " + UriHelpers.GetCleanUriPath(path).ToLowerInvariant();
+            var escapedPathBase = ToUriComponent(pathBase);
+            var escapedRequestPath = ToUriComponent(requestPath);
             var url = HttpRequestUtils.GetUrl(
                 request.Scheme ?? string.Empty,
                 host,
                 port: null,
-                pathBase,
-                requestPath,
+                escapedPathBase,
+                escapedRequestPath,
                 request.QueryString.Value ?? string.Empty,
                 tracer.TracerManager.QueryStringManager);
             var userAgent = GetFirstHeaderValue(headersAdapter, HttpHeaderNames.UserAgent);
