@@ -37,10 +37,7 @@ internal static class EventGridCommon
         IRequestUriBuilder? uriBuilder = null;
         if ((object?)instance is { } target)
         {
-            uriBuilder = target.GetType()
-                               .GetField("_uriBuilder", BindingFlags.Instance | BindingFlags.NonPublic)?
-                               .GetValue(target)?
-                               .DuckCast<IRequestUriBuilder>();
+            uriBuilder = UriBuilderFieldCache<TTarget>.Field?.GetValue(target)?.DuckCast<IRequestUriBuilder>();
         }
 
         var host = uriBuilder?.Host;
@@ -241,6 +238,11 @@ internal static class EventGridCommon
 
         var dotIndex = host.IndexOf('.');
         return dotIndex > 0 ? host.Substring(0, dotIndex) : host;
+    }
+
+    private static class UriBuilderFieldCache<TTarget>
+    {
+        public static readonly FieldInfo? Field = typeof(TTarget).GetField("_uriBuilder", BindingFlags.Instance | BindingFlags.NonPublic);
     }
 
     private sealed class EventGridEnumerableObserver : EventGridObservingEnumerable.IObserver
