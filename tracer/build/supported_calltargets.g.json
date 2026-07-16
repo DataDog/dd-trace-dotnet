@@ -3604,7 +3604,7 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsAsyncIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -3630,7 +3630,7 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsToChannelAsyncIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendCloudEventsToChannelIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -3655,7 +3655,7 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendEventsAsyncIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridPublisherClientSendEventsIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
@@ -3717,31 +3717,6 @@
     "TargetMethodName": "SendAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Core.Response]",
     "TargetParameterTypes": [
-      "Azure.Messaging.CloudEvent",
-      "System.Threading.CancellationToken"
-    ],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 0,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 1,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendAsyncIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "AzureEventGrid",
-    "AssemblyName": "Azure.Messaging.EventGrid.Namespaces",
-    "TargetTypeName": "Azure.Messaging.EventGrid.Namespaces.EventGridSenderClient",
-    "TargetMethodName": "SendAsync",
-    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Core.Response]",
-    "TargetParameterTypes": [
       "System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]",
       "System.Threading.CancellationToken"
     ],
@@ -3755,7 +3730,32 @@
       "Item2": 65535,
       "Item3": 65535
     },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendEventsAsyncIntegration",
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendEventsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureEventGrid",
+    "AssemblyName": "Azure.Messaging.EventGrid.Namespaces",
+    "TargetTypeName": "Azure.Messaging.EventGrid.Namespaces.EventGridSenderClient",
+    "TargetMethodName": "SendAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Azure.Core.Response]",
+    "TargetParameterTypes": [
+      "Azure.Messaging.CloudEvent",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid.EventGridSenderClientSendIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

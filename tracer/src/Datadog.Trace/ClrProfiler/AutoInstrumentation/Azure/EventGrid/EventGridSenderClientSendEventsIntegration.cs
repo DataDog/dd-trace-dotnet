@@ -10,12 +10,11 @@ using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid;
 
 /// <summary>
-/// Azure.Messaging.EventGrid.Namespaces.EventGridSenderClient.Send calltarget instrumentation for IEnumerable&lt;CloudEvent&gt;
+/// Azure.Messaging.EventGrid.Namespaces.EventGridSenderClient.Send/SendAsync calltarget instrumentation for IEnumerable&lt;CloudEvent&gt;
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Azure.Messaging.EventGrid.Namespaces",
@@ -26,12 +25,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid;
     MinimumVersion = "1.0.0",
     MaximumVersion = "1.*.*",
     IntegrationName = nameof(IntegrationId.AzureEventGrid))]
+[InstrumentMethod(
+    AssemblyName = "Azure.Messaging.EventGrid.Namespaces",
+    TypeName = "Azure.Messaging.EventGrid.Namespaces.EventGridSenderClient",
+    MethodName = "SendAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Azure.Core.Response]",
+    ParameterTypeNames = ["System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]", ClrNames.CancellationToken],
+    MinimumVersion = "1.0.0",
+    MaximumVersion = "1.*.*",
+    IntegrationName = nameof(IntegrationId.AzureEventGrid))]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class EventGridSenderClientSendEventsIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TCloudEvents>(TTarget instance, ref TCloudEvents cloudEvents, CancellationToken cancellationToken)
-        where TTarget : IEventGridSenderClient, IDuckType
+        where TTarget : IEventGridSenderClient
     {
         return EventGridCommon.CreateNamespaceProducerSpanForEvents(instance, ref cloudEvents);
     }
@@ -40,5 +48,11 @@ public sealed class EventGridSenderClientSendEventsIntegration
     {
         state.Scope?.DisposeWithException(exception);
         return new(returnValue);
+    }
+
+    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
+    {
+        state.Scope?.DisposeWithException(exception);
+        return returnValue;
     }
 }

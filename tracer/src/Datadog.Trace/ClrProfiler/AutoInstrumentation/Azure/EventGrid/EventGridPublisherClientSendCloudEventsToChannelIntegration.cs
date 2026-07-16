@@ -14,13 +14,22 @@ using Datadog.Trace.Configuration;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid;
 
 /// <summary>
-/// Azure.Messaging.EventGrid.EventGridPublisherClient.SendEvents calltarget instrumentation for partner channel CloudEvents
+/// Azure.Messaging.EventGrid.EventGridPublisherClient.SendEvents/SendEventsAsync calltarget instrumentation for partner channel CloudEvents
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Azure.Messaging.EventGrid",
     TypeName = "Azure.Messaging.EventGrid.EventGridPublisherClient",
     MethodName = "SendEvents",
     ReturnTypeName = "Azure.Core.Response",
+    ParameterTypeNames = ["System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]", ClrNames.String, ClrNames.CancellationToken],
+    MinimumVersion = "4.11.0",
+    MaximumVersion = "5.*.*",
+    IntegrationName = nameof(IntegrationId.AzureEventGrid))]
+[InstrumentMethod(
+    AssemblyName = "Azure.Messaging.EventGrid",
+    TypeName = "Azure.Messaging.EventGrid.EventGridPublisherClient",
+    MethodName = "SendEventsAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Azure.Core.Response]",
     ParameterTypeNames = ["System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]", ClrNames.String, ClrNames.CancellationToken],
     MinimumVersion = "4.11.0",
     MaximumVersion = "5.*.*",
@@ -38,5 +47,11 @@ public sealed class EventGridPublisherClientSendCloudEventsToChannelIntegration
     {
         state.Scope?.DisposeWithException(exception);
         return new(returnValue);
+    }
+
+    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
+    {
+        state.Scope?.DisposeWithException(exception);
+        return returnValue;
     }
 }

@@ -46,7 +46,7 @@ internal static class EventGridCommon
     }
 
     internal static CallTargetState CreateNamespaceProducerSpanForEvent<TTarget>(TTarget instance, object? cloudEvent)
-        where TTarget : IEventGridSenderClient, IDuckType
+        where TTarget : IEventGridSenderClient
     {
         var tracer = Tracer.Instance;
         if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid))
@@ -59,7 +59,7 @@ internal static class EventGridCommon
     }
 
     internal static CallTargetState CreateNamespaceProducerSpanForEvents<TTarget, TEvents>(TTarget instance, ref TEvents cloudEvents)
-        where TTarget : IEventGridSenderClient, IDuckType
+        where TTarget : IEventGridSenderClient
     {
         var tracer = Tracer.Instance;
         if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid))
