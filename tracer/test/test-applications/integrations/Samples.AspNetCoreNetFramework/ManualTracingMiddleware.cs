@@ -15,7 +15,7 @@ namespace Samples.AspNetCoreNetFramework
 {
     public class ManualTracingMiddleware
     {
-        private const string ManualPath = "/manual/mongo";
+        private const string ManualPath = "/manual/sql";
         private static readonly SpanContextExtractor ContextExtractor = new SpanContextExtractor();
 
         private readonly RequestDelegate _next;

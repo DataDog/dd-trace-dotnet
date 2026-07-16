@@ -22,12 +22,10 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [Collection("IisTests")]
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "2")]
     public class AspNetCoreNetFrameworkIisTests : TestHelper, IClassFixture<IisFixture>, IAsyncLifetime
     {
         private const string SampleName = "AspNetCoreNetFramework";
-        private const string MongoResource = "find aspnet-core-net-framework-repro";
+        private const string SqlResource = "SELECT 1";
 
         private readonly IisFixture _fixture;
 
@@ -73,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             var w3cStart = DateTimeOffset.UtcNow;
             await SendRequest(
-                "/baseline/mongo?item=42",
+                "/baseline/sql?item=42",
                 new Dictionary<string, string>
                 {
                     ["traceparent"] = "00-000000000000000000000000075bcd15-000000003ade68b1-01",
@@ -87,12 +85,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var requestSpan = w3cSpans.Single(
                                   span => span.Name == "aspnet_core.request"
                                        && span.TraceId == AspNetCoreNetFrameworkTopology.IncomingTraceId);
-            var mongoSpan = w3cSpans.Single(span => span.Name == "mongodb.query" && span.Resource == MongoResource);
+            var sqlSpan = w3cSpans.Single(span => span.Name == "sql-server.query" && span.Resource == SqlResource);
 
             requestSpan.ParentId.Should().Be(AspNetCoreNetFrameworkTopology.IncomingParentId);
-            requestSpan.Resource.Should().Be("GET /baseline/mongo");
-            mongoSpan.TraceId.Should().Be(requestSpan.TraceId);
-            mongoSpan.ParentId.Should().Be(requestSpan.SpanId);
+            requestSpan.Resource.Should().Be("GET /baseline/sql");
+            sqlSpan.TraceId.Should().Be(requestSpan.TraceId);
+            sqlSpan.ParentId.Should().Be(requestSpan.SpanId);
             GetApplicationProcessId(requestSpan).Should().Be(applicationProcessId);
         }
 

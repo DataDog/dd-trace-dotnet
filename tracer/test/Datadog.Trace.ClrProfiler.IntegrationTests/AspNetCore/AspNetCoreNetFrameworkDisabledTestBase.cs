@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     public abstract class AspNetCoreNetFrameworkDisabledTestBase : TestHelper
     {
-        private const string MongoResource = "find aspnet-core-net-framework-repro";
+        private const string SqlResource = "SELECT 1";
 
         private readonly string _snapshotPrefix;
 
@@ -39,42 +39,42 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task DisabledSwitchesProduceNoRequestSpanAndLeaveMongoDbAsRoot()
+        public async Task DisabledSwitchesProduceNoRequestSpanAndLeaveSqlQueryAsRoot()
         {
             var featureDisabledRootSpans = await GetSpansWithDisabledSwitch(featureEnabled: false, integrationEnabled: true, headers: null);
-            AssertOnlyRootMongoSpan(featureDisabledRootSpans);
+            AssertOnlyRootSqlSpan(featureDisabledRootSpans);
 
             var featureDisabledPropagationSpans = await GetSpansWithDisabledSwitch(
                                                       featureEnabled: false,
                                                       integrationEnabled: true,
                                                       headers: AspNetCoreNetFrameworkTopology.CreateIncomingHeaders());
-            AssertOnlyRootMongoSpan(featureDisabledPropagationSpans);
+            AssertOnlyRootSqlSpan(featureDisabledPropagationSpans);
 
             var integrationDisabledSpans = await GetSpansWithDisabledSwitch(
                                                featureEnabled: true,
                                                integrationEnabled: false,
                                                headers: AspNetCoreNetFrameworkTopology.CreateIncomingHeaders());
-            AssertOnlyRootMongoSpan(integrationDisabledSpans);
+            AssertOnlyRootSqlSpan(integrationDisabledSpans);
 
-            var settings = VerifyHelper.GetSpanVerifierSettings();
+            var settings = AspNetCoreNetFrameworkTopology.GetSpanVerifierSettings();
             await VerifyHelper.VerifySpans(
                                   AspNetCoreNetFrameworkTopology.IncludeUpstreamSpan(featureDisabledPropagationSpans),
                                   settings,
                                   AspNetCoreNetFrameworkTopology.OrderSpans)
                               .UseFileName($"{_snapshotPrefix}.PropagationTopology.Disabled");
 
-            await VerifyHelper.VerifySpans(featureDisabledRootSpans, VerifyHelper.GetSpanVerifierSettings())
+            await VerifyHelper.VerifySpans(featureDisabledRootSpans, AspNetCoreNetFrameworkTopology.GetSpanVerifierSettings())
                               .UseFileName($"{_snapshotPrefix}.Topology.Disabled");
         }
 
-        private void AssertOnlyRootMongoSpan(IImmutableList<MockSpan> spans)
+        private void AssertOnlyRootSqlSpan(IImmutableList<MockSpan> spans)
         {
             spans.Should().ContainSingle();
-            var mongoSpan = spans.Single();
-            mongoSpan.Name.Should().Be("mongodb.query");
-            mongoSpan.Resource.Should().Be(MongoResource);
-            mongoSpan.TraceId.Should().NotBe(AspNetCoreNetFrameworkTopology.IncomingTraceId);
-            mongoSpan.ParentId.Should().BeNull();
+            var sqlSpan = spans.Single();
+            sqlSpan.Name.Should().Be("sql-server.query");
+            sqlSpan.Resource.Should().Be(SqlResource);
+            sqlSpan.TraceId.Should().NotBe(AspNetCoreNetFrameworkTopology.IncomingTraceId);
+            sqlSpan.ParentId.Should().BeNull();
         }
 
         private async Task<IImmutableList<MockSpan>> GetSpansWithDisabledSwitch(
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 await fixture.TryStartApp(this, sendHealthCheck: false);
 
                 var startTime = DateTimeOffset.UtcNow;
-                using (var request = fixture.CreateRequest(HttpMethod.Get, "/baseline/mongo?item=42", headers))
+                using (var request = fixture.CreateRequest(HttpMethod.Get, "/baseline/sql?item=42", headers))
                 {
                     var statusCode = await fixture.SendHttpRequest(request);
                     statusCode.Should().Be(HttpStatusCode.OK);

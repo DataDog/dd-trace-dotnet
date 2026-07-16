@@ -8,7 +8,9 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
+using VerifyTests;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
@@ -18,6 +20,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public const ulong IncomingParentId = 987654321;
         public const string HeaderTags = "x-legacy-test-header:legacy.request.header,x-legacy-response-header:legacy.response.header,x-legacy-correlation-id";
         public const string PropagationStyleExtract = "Datadog,tracecontext,b3multi,baggage";
+
+        private static readonly Regex SqlDatabaseRegex = new(@"(?<=db\.name: ).+(?=,\r?$)", RegexOptions.Compiled | RegexOptions.Multiline);
+        private static readonly Regex SqlHostRegex = new(@"(?<=out\.host: ).+(?=,\r?$)", RegexOptions.Compiled | RegexOptions.Multiline);
+        private static readonly Regex SqlPeerServiceRegex = new(@"(?<=peer\.service: ).+(?=,\r?$)", RegexOptions.Compiled | RegexOptions.Multiline);
+        private static readonly Regex SqlUserRegex = new(@"^[ \t]+db\.user: [^\r\n]+,\r?\n", RegexOptions.Compiled | RegexOptions.Multiline);
 
         public static Dictionary<string, string> CreateIncomingHeaders() =>
             new Dictionary<string, string>
@@ -34,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                                   TraceId = IncomingTraceId,
                                   SpanId = IncomingParentId,
                                   Name = "upstream.request",
-                                  Resource = "GET /baseline/mongo",
+                                  Resource = "GET /baseline/sql",
                                   Service = "upstream-service",
                                   Type = "http",
                                   Tags = new Dictionary<string, string>
@@ -53,6 +60,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                             : span.Name == "aspnet_core.request"
                                 ? 1
                                 : 2);
+
+        public static VerifySettings GetSpanVerifierSettings()
+        {
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(SqlDatabaseRegex, "sql-database");
+            settings.AddRegexScrubber(SqlHostRegex, "sqlserver");
+            settings.AddRegexScrubber(SqlPeerServiceRegex, "sqlserver");
+            settings.AddRegexScrubber(SqlUserRegex, string.Empty);
+            return settings;
+        }
     }
 }
 

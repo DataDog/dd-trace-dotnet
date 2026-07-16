@@ -14,8 +14,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "2")]
     [UsesVerify]
     public class AspNetCoreNetFramework21Tests : AspNetCoreNetFrameworkTestBase, IClassFixture<AspNetCoreTestFixture>
     {
@@ -25,8 +23,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "2")]
     [UsesVerify]
     public class AspNetCoreNetFramework21DisabledTests : AspNetCoreNetFrameworkDisabledTestBase
     {
