@@ -43,10 +43,12 @@ internal sealed class SpanEnrichmentHook : Hook, IDisposable
             var targetingKey = context.EvaluationContext?.TargetingKey;
             var hasVariant = !string.IsNullOrEmpty(details.Variant);
 
-            object? runtimeValue = details.Value;
-            if (context.DefaultValue is Value defaultValue)
+            // The value is only recorded as a runtime default (no serial id and no variant); skip the
+            // ToPlainObject conversion + boxing in every other case, where it would be ignored.
+            object? runtimeValue = null;
+            if (serialId is null && !hasVariant)
             {
-                runtimeValue = ToPlainObject(defaultValue);
+                runtimeValue = context.DefaultValue is Value defaultValue ? ToPlainObject(defaultValue) : details.Value;
             }
 
             FeatureFlagsSdk.AccumulateSpanEnrichment(serialId, doLog, targetingKey, hasVariant, context.FlagKey, runtimeValue);

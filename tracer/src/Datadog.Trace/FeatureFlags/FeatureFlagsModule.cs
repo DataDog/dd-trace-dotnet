@@ -26,6 +26,7 @@ namespace Datadog.Trace.FeatureFlags
         private readonly ISubscription _rcmSubscription;
         private readonly FfeProduct _ffeProduct;
         private readonly ExposureApi _exposureApi;
+        private readonly bool _spanEnrichmentEnabled;
 
         private Action? _onNewConfigEventHander;
         private FeatureFlagsEvaluator? _evaluator;
@@ -33,6 +34,7 @@ namespace Datadog.Trace.FeatureFlags
         internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
         {
             Log.Debug("FeatureFlagsModule ENABLED");
+            _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
             _rcmSubscriptionManager = rcmSubscriptionManager;
             _exposureApi = new ExposureApi(settings);
             _ffeProduct = new FfeProduct(UpdateRemoteConfig);
@@ -83,7 +85,7 @@ namespace Datadog.Trace.FeatureFlags
                 if (list.Count > 0)
                 {
                     var selectedConfig = MergeConfigs(list);
-                    Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, selectedConfig));
+                    Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, selectedConfig, _spanEnrichmentEnabled));
                 }
                 else
                 {

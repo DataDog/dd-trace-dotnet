@@ -15,8 +15,8 @@ namespace Datadog.Trace.FeatureFlags
     /// Ported verbatim from the frozen Node reference (dd-trace-js#8343): dedupe → sort
     /// ascending → delta-from-previous → unsigned LEB128 (7 bits/byte, MSB = continuation)
     /// → base64. The empty set encodes to the empty string (the tag is then omitted).
-    /// Allocation-conscious: no LINQ in the encode loop; a stackalloc scratch buffer is
-    /// used for the per-id varint bytes. Runs on the root-span-finish hot path.
+    /// Allocation-conscious: no LINQ, varint bytes are written straight into the payload buffer.
+    /// Runs on the root-span-finish hot path.
     /// </summary>
     internal static class ULeb128Encoder
     {
@@ -37,67 +37,52 @@ namespace Datadog.Trace.FeatureFlags
                 return string.Empty;
             }
 
-            // Dedupe + sort ascending (structural, matching the Node Set semantics).
-            var sorted = new SortedSet<long>(serialIds);
-            return EncodeDeltaVarint(sorted);
-        }
-
-        /// <summary>
-        /// Encodes an already-sorted, already-deduped set of serial ids into a bare base64
-        /// ULEB128 delta-varint string. Used by the accumulator, which maintains a
-        /// <see cref="SortedSet{T}"/> directly to avoid re-sorting on the hot path.
-        /// </summary>
-        /// <param name="sortedSerialIds">The sorted, deduped serial ids.</param>
-        /// <returns>The base64-encoded string, or <see cref="string.Empty"/> when the set is empty.</returns>
-        public static string EncodeDeltaVarint(SortedSet<long> sortedSerialIds)
-        {
-            if (sortedSerialIds is null || sortedSerialIds.Count == 0)
+            // Dedupe + sort ascending (structural, matching the Node Set semantics): copy into an
+            // array and sort in place, then skip adjacent duplicates while encoding. This avoids
+            // allocating a SortedSet just to order the ids.
+            var ids = new long[serialIds.Count];
+            var index = 0;
+            foreach (var id in serialIds)
             {
-                return string.Empty;
+                ids[index++] = id;
             }
 
-            // Worst case is MaxVarintBytes per id; this single buffer holds the whole payload.
-            var buffer = new byte[sortedSerialIds.Count * MaxVarintBytes];
+            Array.Sort(ids);
+
+            // Worst case is MaxVarintBytes per id; this single buffer holds the whole payload and
+            // is written into directly (no per-id scratch buffer).
+            var buffer = new byte[ids.Length * MaxVarintBytes];
             var written = 0;
             long prev = 0;
 
-#if NETCOREAPP
-            Span<byte> scratch = stackalloc byte[MaxVarintBytes];
-#else
-            var scratch = new byte[MaxVarintBytes];
-#endif
-
-            foreach (var id in sortedSerialIds)
+            for (var i = 0; i < ids.Length; i++)
             {
-                var delta = id - prev;
-                prev = id;
-
-                var n = EncodeVarint((ulong)delta, scratch);
-                for (var i = 0; i < n; i++)
+                if (i > 0 && ids[i] == ids[i - 1])
                 {
-                    buffer[written++] = scratch[i];
+                    continue; // dedupe: adjacent equal ids collapse to nothing
                 }
+
+                var delta = ids[i] - prev;
+                prev = ids[i];
+                written += EncodeVarint((ulong)delta, buffer, written);
             }
 
             return Convert.ToBase64String(buffer, 0, written);
         }
 
-        // ULEB128: emit 7 low bits per byte, set the MSB while more bits remain.
-#if NETCOREAPP
-        private static int EncodeVarint(ulong value, Span<byte> destination)
-#else
-        private static int EncodeVarint(ulong value, byte[] destination)
-#endif
+        // ULEB128: emit 7 low bits per byte, set the MSB while more bits remain. Writes into
+        // destination starting at offset and returns the number of bytes written.
+        private static int EncodeVarint(ulong value, byte[] destination, int offset)
         {
-            var i = 0;
+            var start = offset;
             while (value > 0x7F)
             {
-                destination[i++] = (byte)((value & 0x7F) | 0x80);
+                destination[offset++] = (byte)((value & 0x7F) | 0x80);
                 value >>= 7;
             }
 
-            destination[i++] = (byte)(value & 0x7F);
-            return i;
+            destination[offset++] = (byte)(value & 0x7F);
+            return offset - start;
         }
     }
 }

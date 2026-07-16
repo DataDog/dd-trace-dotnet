@@ -33,11 +33,13 @@ namespace Datadog.Trace.FeatureFlags
 
         private readonly ReportExposureDelegate? _onExposureEvent;
         private readonly ServerConfiguration? _config;
+        private readonly bool _spanEnrichmentEnabled;
 
-        public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config)
+        public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config, bool spanEnrichmentEnabled = false)
         {
             _onExposureEvent = onExposureEvent;
             _config = config;
+            _spanEnrichmentEnabled = spanEnrichmentEnabled;
             if (_config is null)
             {
                 Log.Debug("Creating Evaluator without config");
@@ -657,15 +659,19 @@ namespace Datadog.Trace.FeatureFlags
             var metadata = new Dictionary<string, string>
             {
                 [MetadataAllocationKey] = allocation.Key,
-
-                // Always surface do_log so the span-enrichment hook can decide whether to record a subject.
-                [MetadataDoLog] = doLog ? "true" : "false"
             };
 
-            // Surface the split serial id only when present.
-            if (split.SerialId.HasValue)
+            // do_log and the split serial id are only consumed by APM span enrichment, so emit them
+            // (and the serial-id ToString) only when that feature is enabled. doLog itself is still
+            // needed below to drive exposure dispatch.
+            if (_spanEnrichmentEnabled)
             {
-                metadata[MetadataSplitSerialId] = split.SerialId.Value.ToString(CultureInfo.InvariantCulture);
+                metadata[MetadataDoLog] = doLog ? "true" : "false";
+
+                if (split.SerialId.HasValue)
+                {
+                    metadata[MetadataSplitSerialId] = split.SerialId.Value.ToString(CultureInfo.InvariantCulture);
+                }
             }
 
             var evaluation = new Evaluation(
