@@ -166,7 +166,6 @@
       <type fullname="System.Collections.Generic.SortedDictionary`2" />
       <type fullname="System.Collections.Generic.SortedList`2" />
       <type fullname="System.Collections.Generic.SortedSet`1" />
-      <type fullname="System.Collections.Generic.SortedSet`1/Enumerator" />
       <type fullname="System.Collections.Generic.Stack`1" />
       <type fullname="System.Collections.Generic.Stack`1/Enumerator" />
    </assembly>
