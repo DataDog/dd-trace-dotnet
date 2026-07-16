@@ -4,30 +4,26 @@
 // </copyright>
 
 using System;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Bson;
-using MongoDB.Driver;
 
 namespace Samples.AspNetCoreNetFramework
 {
     public class Startup
     {
-        private const string DatabaseName = "aspnet-core-net-framework-repro";
-        private const string CollectionName = "documents";
+        private const string DefaultSqlConnectionString = @"Server=(localdb)\MSSQLLocalDB;Database=master;Integrated Security=true;Connection Timeout=30";
 
         public void ConfigureServices(IServiceCollection services)
         {
-            var mongoHost = Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
-            services.AddSingleton(new MongoClient($"mongodb://{mongoHost}:27017"));
             services.AddMvc();
         }
 
-        public void Configure(IApplicationBuilder app, IApplicationLifetime applicationLifetime, MongoClient mongoClient)
+        public void Configure(IApplicationBuilder app, IApplicationLifetime applicationLifetime)
         {
             if (string.Equals(
                     Environment.GetEnvironmentVariable("ENABLE_MANUAL_TRACING_MIDDLEWARE"),
@@ -57,9 +53,9 @@ namespace Samples.AspNetCoreNetFramework
                     return;
                 }
 
-                if (path == "/baseline/mongo" || path == "/manual/mongo")
+                if (path == "/baseline/sql" || path == "/manual/sql")
                 {
-                    await QueryMongo(mongoClient);
+                    await QuerySql();
                     await context.Response.WriteAsync("OK");
                     return;
                 }
@@ -94,11 +90,16 @@ namespace Samples.AspNetCoreNetFramework
             });
         }
 
-        private static async Task QueryMongo(MongoClient mongoClient)
+        private static async Task QuerySql()
         {
-            var collection = mongoClient.GetDatabase(DatabaseName).GetCollection<BsonDocument>(CollectionName);
-            var filter = new BsonDocument("_id", "fixed-missing-id");
-            await collection.Find(filter).FirstOrDefaultAsync();
+            var connectionString = Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING") ?? DefaultSqlConnectionString;
+            using (var connection = new SqlConnection(connectionString))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "SELECT 1";
+                await connection.OpenAsync();
+                await command.ExecuteScalarAsync();
+            }
         }
     }
 }
