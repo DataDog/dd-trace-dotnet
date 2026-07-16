@@ -322,11 +322,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             // function span directly under the producer, create a dedicated
                             // azure_eventgrid.receive consumer span (in a new trace) that links to the
                             // producer, and parent the function span under that receive span.
-                            var producerContexts = ExtractPropagatedContextsFromEventGrid(functionContext, entry.Key as string);
+                            var cloudEvents = GetEventGridCloudEvents(functionContext, entry.Key as string);
+                            var producerContexts = ExtractPropagatedContextsFromEventGrid(cloudEvents);
                             // As with Service Bus and Event Hubs batches, use the first extracted
                             // producer context as the source of ambient baggage.
                             var baggage = MergeBaggageFromFirstContext(producerContexts, Baggage.Current);
-                            extractedContext = CreateEventGridReceiveSpan(tracer, functionContext, entry.Key as string, producerContexts, baggage);
+                            extractedContext = CreateEventGridReceiveSpan(tracer, cloudEvents, producerContexts, baggage);
                             break;
                         }
                     }
@@ -595,14 +596,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        internal static List<PropagationContext> ExtractPropagatedContextsFromEventGrid<T>(T context, string? bindingName)
-            where T : IFunctionContext
+        internal static List<PropagationContext> ExtractPropagatedContextsFromEventGrid(Dictionary<string, object>[] cloudEvents)
         {
             var extractedContexts = new List<PropagationContext>();
 
             try
             {
-                var cloudEvents = GetEventGridCloudEvents(context, bindingName);
                 if (cloudEvents.Length == 0)
                 {
                     return extractedContexts;
@@ -614,29 +613,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 {
                     // Extract W3C trace context and baggage from CloudEvent extension attributes.
                     // These were injected by EventGridCommon.InjectW3CContext() on the publisher side.
-                    var traceProperties = new Dictionary<string, object>();
-
-                    if (cloudEventProps.TryGetValue(W3CTraceContextPropagator.TraceParentHeaderName, out var traceparent) && traceparent is string)
-                    {
-                        traceProperties[W3CTraceContextPropagator.TraceParentHeaderName] = traceparent;
-                    }
-
-                    if (cloudEventProps.TryGetValue(W3CTraceContextPropagator.TraceStateHeaderName, out var tracestate) && tracestate is string)
-                    {
-                        traceProperties[W3CTraceContextPropagator.TraceStateHeaderName] = tracestate;
-                    }
-
-                    if (cloudEventProps.TryGetValue(W3CBaggagePropagator.BaggageHeaderName, out var baggage) && baggage is string)
-                    {
-                        traceProperties[W3CBaggagePropagator.BaggageHeaderName] = baggage;
-                    }
-
-                    if (traceProperties.Count == 0)
-                    {
-                        continue;
-                    }
-
-                    var extractedContext = Shared.AzureMessagingCommon.ExtractContext(traceProperties);
+                    var extractedContext = Shared.AzureMessagingCommon.ExtractContext(cloudEventProps);
                     if (extractedContext.SpanContext is { } spanContext && uniqueSpanContexts.Add(spanContext))
                     {
                         extractedContexts.Add(extractedContext);
@@ -665,8 +642,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         /// function-invoke span is parented under it. This mirrors the Event Hubs / Service Bus
         /// receive-span topology (new trace, span-linked to the producer).
         /// </summary>
-        private static PropagationContext CreateEventGridReceiveSpan<T>(Tracer tracer, T context, string? bindingName, List<PropagationContext> producerContexts, Baggage? baggage)
-            where T : IFunctionContext
+        private static PropagationContext CreateEventGridReceiveSpan(Tracer tracer, Dictionary<string, object>[] cloudEvents, List<PropagationContext> producerContexts, Baggage? baggage)
         {
             try
             {
@@ -694,7 +670,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // The Functions invocation metadata does not expose the topic, so leave the destination unset.
                 span.ResourceName = "eventgrid";
 
-                var cloudEvents = GetEventGridCloudEvents(context, bindingName);
                 if (cloudEvents.Length == 1)
                 {
                     var cloudEventProps = cloudEvents[0];
@@ -743,7 +718,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         /// The full CloudEvent JSON (including extension attributes) lives in InputData, not
         /// TriggerMetadata (which only contains <c>{"data": ...}</c> for Event Grid).
         /// </summary>
-        private static Dictionary<string, object>[] GetEventGridCloudEvents<T>(T context, string? bindingName)
+        internal static Dictionary<string, object>[] GetEventGridCloudEvents<T>(T context, string? bindingName)
             where T : IFunctionContext
         {
             if (StringUtil.IsNullOrEmpty(bindingName))

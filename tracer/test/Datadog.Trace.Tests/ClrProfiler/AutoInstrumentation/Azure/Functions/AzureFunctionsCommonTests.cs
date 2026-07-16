@@ -105,7 +105,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             };
             var context = CreateMockFunctionContextWithInputData("myEvent", JsonConvert.SerializeObject(cloudEvent));
 
-            var extractedContexts = AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(context, "myEvent");
+            var extractedContexts = ExtractPropagatedContextsFromEventGrid(context, "myEvent");
 
             extractedContexts.Should().ContainSingle();
             extractedContexts[0].SpanContext.Should().NotBeNull();
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             };
             var context = CreateMockFunctionContextWithInputData("myEvent", JsonConvert.SerializeObject(cloudEvent));
 
-            var extractedContexts = AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(context, "myEvent");
+            var extractedContexts = ExtractPropagatedContextsFromEventGrid(context, "myEvent");
 
             extractedContexts.Should().ContainSingle();
             extractedContexts[0].SpanContext.Should().NotBeNull();
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             };
             var context = CreateMockFunctionContextWithInputData("myEvent", JsonConvert.SerializeObject(cloudEvent));
 
-            var extractedContexts = AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(context, "myEvent");
+            var extractedContexts = ExtractPropagatedContextsFromEventGrid(context, "myEvent");
 
             extractedContexts.Should().BeEmpty();
         }
@@ -175,7 +175,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             };
             var context = CreateMockFunctionContextWithInputData("myEvents", JsonConvert.SerializeObject(batch));
 
-            var extractedContexts = AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(context, "myEvents");
+            var extractedContexts = ExtractPropagatedContextsFromEventGrid(context, "myEvents");
             var spanLinks = AzureFunctionsCommon.CreateEventGridSpanLinks(extractedContexts);
             var destinationBaggage = new Baggage { ["existing"] = "value" };
             var selectedBaggage = AzureFunctionsCommon.MergeBaggageFromFirstContext(extractedContexts, destinationBaggage);
@@ -214,7 +214,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             };
             var context = CreateMockFunctionContextWithInputData("myEvents", JsonConvert.SerializeObject(batch));
 
-            var extractedContexts = AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(context, "myEvents");
+            var extractedContexts = ExtractPropagatedContextsFromEventGrid(context, "myEvents");
 
             extractedContexts.Should().ContainSingle();
             extractedContexts[0].SpanContext!.SpanId.Should().Be(1);
@@ -225,9 +225,15 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var context = CreateMockFunctionContextWithInputData("myEvent", "{}");
 
-            var extractedContexts = AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(context, null);
+            var extractedContexts = ExtractPropagatedContextsFromEventGrid(context, null);
 
             extractedContexts.Should().BeEmpty();
+        }
+
+        private static List<PropagationContext> ExtractPropagatedContextsFromEventGrid(MockFunctionContext context, string? bindingName)
+        {
+            var cloudEvents = AzureFunctionsCommon.GetEventGridCloudEvents(context, bindingName);
+            return AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(cloudEvents);
         }
 
         private static MockFunctionContext CreateMockFunctionContext(string propertyKey, Dictionary<string, object>? headerProperties)
