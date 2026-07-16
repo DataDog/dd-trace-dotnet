@@ -19,13 +19,11 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "2")]
     public class AspNetCoreNetFrameworkReproTests : TestHelper, IClassFixture<AspNetCoreTestFixture>
     {
         private const ulong IncomingTraceId = 123456789;
         private const ulong IncomingParentId = 987654321;
-        private const string MongoResource = "find aspnet-core-net-framework-repro";
+        private const string SqlResource = "SELECT 1";
 
         private readonly AspNetCoreTestFixture _fixture;
 
@@ -51,18 +49,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 ["x-datadog-sampling-priority"] = "1",
             };
 
-            var baselineSpans = await SendRequestAndWaitForMongoSpan("/baseline/mongo", headers, expectedTraceId: null);
-            var baselineMongoSpan = baselineSpans.Single(IsMongoQuerySpan);
+            var baselineSpans = await SendRequestAndWaitForSqlSpan("/baseline/sql", headers, expectedTraceId: null);
+            var baselineSqlSpan = baselineSpans.Single(IsSqlQuerySpan);
 
             baselineSpans.Should().NotContain(span => span.Name == "aspnet_core.request");
-            baselineMongoSpan.TraceId.Should().NotBe(IncomingTraceId);
-            baselineMongoSpan.ParentId.Should().BeNull();
+            baselineSqlSpan.TraceId.Should().NotBe(IncomingTraceId);
+            baselineSqlSpan.ParentId.Should().BeNull();
 
-            var manualSpans = await SendRequestAndWaitForMongoSpan("/manual/mongo", headers, IncomingTraceId);
+            var manualSpans = await SendRequestAndWaitForSqlSpan("/manual/sql", headers, IncomingTraceId);
             var requestSpan = manualSpans.Single(span => span.Name == "aspnet_core.request");
-            var manualMongoSpan = manualSpans.Single(span => IsMongoQuerySpan(span) && span.TraceId == IncomingTraceId);
+            var manualSqlSpan = manualSpans.Single(span => IsSqlQuerySpan(span) && span.TraceId == IncomingTraceId);
 
-            requestSpan.Resource.Should().Be("GET /manual/mongo");
+            requestSpan.Resource.Should().Be("GET /manual/sql");
             requestSpan.TraceId.Should().Be(IncomingTraceId);
             requestSpan.ParentId.Should().Be(IncomingParentId);
             requestSpan.GetTag("span.kind").Should().Be("server");
@@ -70,8 +68,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             requestSpan.GetTag("http.method").Should().Be("GET");
             requestSpan.GetTag("http.status_code").Should().Be("200");
 
-            manualMongoSpan.TraceId.Should().Be(requestSpan.TraceId);
-            manualMongoSpan.ParentId.Should().Be(requestSpan.SpanId);
+            manualSqlSpan.TraceId.Should().Be(requestSpan.TraceId);
+            manualSqlSpan.ParentId.Should().Be(requestSpan.SpanId);
         }
 
         public override void Dispose()
@@ -80,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             base.Dispose();
         }
 
-        private async Task<IImmutableList<MockSpan>> SendRequestAndWaitForMongoSpan(string path, Dictionary<string, string> headers, ulong? expectedTraceId)
+        private async Task<IImmutableList<MockSpan>> SendRequestAndWaitForSqlSpan(string path, Dictionary<string, string> headers, ulong? expectedTraceId)
         {
             var startTime = DateTimeOffset.UtcNow;
             using (var request = _fixture.CreateRequest(HttpMethod.Get, path, headers))
@@ -100,7 +98,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                             returnAllOperations: true,
                             assertExpectedCount: false);
 
-                if (spans.Any(span => IsMongoQuerySpan(span) && (!expectedTraceId.HasValue || span.TraceId == expectedTraceId.Value)))
+                if (spans.Any(span => IsSqlQuerySpan(span) && (!expectedTraceId.HasValue || span.TraceId == expectedTraceId.Value)))
                 {
                     return spans;
                 }
@@ -108,12 +106,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             while (DateTime.UtcNow < deadline);
 
             spans.Should().Contain(
-                span => IsMongoQuerySpan(span) && (!expectedTraceId.HasValue || span.TraceId == expectedTraceId.Value),
-                $"because {path} should generate a MongoDB query span");
+                span => IsSqlQuerySpan(span) && (!expectedTraceId.HasValue || span.TraceId == expectedTraceId.Value),
+                $"because {path} should generate a SQL query span");
             return spans;
         }
 
-        private bool IsMongoQuerySpan(MockSpan span) => span.Name == "mongodb.query" && span.Resource == MongoResource;
+        private bool IsSqlQuerySpan(MockSpan span) => span.Name == "sql-server.query" && span.Resource == SqlResource;
     }
 }
 

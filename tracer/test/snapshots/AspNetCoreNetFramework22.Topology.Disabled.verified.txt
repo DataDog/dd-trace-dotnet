@@ -2,23 +2,21 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: mongodb.query,
-    Resource: find aspnet-core-net-framework-repro,
-    Service: Samples.AspNetCoreNetFramework-mongodb,
-    Type: mongodb,
+    Name: sql-server.query,
+    Resource: SELECT 1,
+    Service: Samples.AspNetCoreNetFramework-sql-server,
+    Type: sql,
     Tags: {
-      component: MongoDb,
-      db.name: aspnet-core-net-framework-repro,
+      component: SqlClient,
+      db.name: sql-database,
+      db.type: sql-server,
       env: integration_tests,
       language: dotnet,
-      mongodb.collection: documents,
-      mongodb.query: { "find" : "documents", "filter" : { "_id" : "fixed-missing-id" }, "limit" : 1 },
-      out.host: localhost,
-      out.port: 27017,
+      out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.AspNetCoreNetFramework,
-      _dd.svc_src: mongodb
+      _dd.svc_src: sql-server
     },
     Metrics: {
       process_id: 0,

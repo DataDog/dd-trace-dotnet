@@ -3,14 +3,16 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net48</TargetFramework>
-    <RequiresDockerDependency>All</RequiresDockerDependency>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Data" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
-    <PackageReference Include="MongoDB.Driver" Version="2.23.1" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.5.0" />
   </ItemGroup>
 
