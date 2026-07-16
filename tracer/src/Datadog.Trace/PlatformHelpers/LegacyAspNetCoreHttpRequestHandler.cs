@@ -108,10 +108,9 @@ namespace Datadog.Trace.PlatformHelpers
             var host = request.Host.Value ?? string.Empty;
             var pathBase = request.PathBase.Value ?? string.Empty;
             var requestPath = request.Path.Value ?? string.Empty;
-            var path = pathBase + requestPath;
-            var resourceName = method + " " + UriHelpers.GetCleanUriPath(path).ToLowerInvariant();
             var escapedPathBase = ToUriComponent(pathBase);
             var escapedRequestPath = ToUriComponent(requestPath);
+            var resourceName = method + " " + UriHelpers.GetCleanUriPath(escapedPathBase + escapedRequestPath).ToLowerInvariant();
             var url = HttpRequestUtils.GetUrl(
                 request.Scheme ?? string.Empty,
                 host,
@@ -120,7 +119,7 @@ namespace Datadog.Trace.PlatformHelpers
                 escapedRequestPath,
                 request.QueryString.Value ?? string.Empty,
                 tracer.TracerManager.QueryStringManager);
-            var userAgent = GetFirstHeaderValue(headersAdapter, HttpHeaderNames.UserAgent);
+            var userAgent = GetHeaderValue(headersAdapter, HttpHeaderNames.UserAgent);
 
             tags.SetAnalyticsSampleRate(LegacyAspNetCoreDiagnosticObserver.IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
 
@@ -150,7 +149,7 @@ namespace Datadog.Trace.PlatformHelpers
         public void StopAspNetCorePipelineScope(Tracer tracer, Scope scope, LegacyAspNetCoreDiagnosticObserver.LegacyAspNetCoreHttpResponseStruct response)
         {
             var settings = tracer.CurrentTraceSettings.Settings;
-            if (scope.Span.GetTag(Tags.HttpStatusCode) is null)
+            if (!scope.Span.HasHttpStatusCode())
             {
                 scope.Span.SetHttpStatusCode(response.StatusCode, isServer: true, settings);
             }
@@ -189,14 +188,30 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        private string? GetFirstHeaderValue(LegacyAspNetCoreHeadersCollectionAdapter headers, string name)
+        private string? GetHeaderValue(LegacyAspNetCoreHeadersCollectionAdapter headers, string name)
         {
-            foreach (var value in headers.GetValues(name))
+            using var enumerator = headers.GetValues(name).GetEnumerator();
+            if (!enumerator.MoveNext())
             {
-                return value;
+                return null;
             }
 
-            return null;
+            var first = enumerator.Current;
+            if (!enumerator.MoveNext())
+            {
+                return first;
+            }
+
+            var builder = StringBuilderCache.Acquire();
+            builder.Append(first);
+            do
+            {
+                builder.Append(',');
+                builder.Append(enumerator.Current);
+            }
+            while (enumerator.MoveNext());
+
+            return StringBuilderCache.GetStringAndRelease(builder);
         }
     }
 }
