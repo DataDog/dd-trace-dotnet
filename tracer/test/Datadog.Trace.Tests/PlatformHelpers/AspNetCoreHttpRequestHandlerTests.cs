@@ -4,7 +4,9 @@
 // </copyright>
 
 #if !NETFRAMEWORK
+using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Util.Http;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
@@ -15,6 +17,26 @@ namespace Datadog.Trace.Tests.PlatformHelpers
     public class AspNetCoreHttpRequestHandlerTests
     {
         public const string OriginalPath = "/somepath/Home/Index";
+
+        [Theory]
+        [MemberData(nameof(AspNetCoreHttpUrlTestData.EscapedPaths), MemberType = typeof(AspNetCoreHttpUrlTestData))]
+        public void EscapesDecodedPathValuesInHttpUrl(string pathBase, string path, string expectedUrl)
+        {
+            var request = new DefaultHttpRequest(new DefaultHttpContext())
+            {
+                Scheme = "http",
+                Host = new HostString("localhost"),
+                PathBase = new PathString(pathBase),
+                Path = new PathString(path),
+            };
+            var queryStringManager = new QueryStringManager(
+                reportQueryString: false,
+                timeout: 0,
+                maxSizeBeforeObfuscation: 0,
+                pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+
+            request.GetUrlForSpan(queryStringManager).Should().Be(expectedUrl);
+        }
 
         [Theory]
         [InlineData(null, "/somepath/Home/Index")]

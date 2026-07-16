@@ -25,6 +25,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
+using Datadog.Trace.Tests.PlatformHelpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
@@ -318,7 +319,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var action = () => observer.OnNext(new KeyValuePair<string, object>(MvcBeforeActionEvent, mvcPayload));
 
             action.Should().NotThrow();
-            requestState.RootScope.Span.ResourceName.Should().Be("GET /baseline/mongo");
+            requestState.RootScope.Span.ResourceName.Should().Be("GET /baseline/sql");
             requestState.RootScope.Span.GetTag(Tags.AspNetCoreRoute).Should().BeNull();
             requestState.RootScope.Span.IsFinished.Should().BeFalse();
             GetRequestState(context).Should().BeSameAs(requestState);
@@ -791,8 +792,8 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         }
 
         [Theory]
-        [InlineData(true, "http://localhost/baseline/mongo?item=42&<redacted>")]
-        [InlineData(false, "http://localhost/baseline/mongo")]
+        [InlineData(true, "http://localhost/baseline/sql?item=42&<redacted>")]
+        [InlineData(false, "http://localhost/baseline/sql")]
         public async Task AppliesConfiguredHttpMetadata(bool reportQueryString, string expectedUrl)
         {
             var settings = new TracerSettings(
@@ -818,6 +819,25 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             var requestScope = GetRequestState(context).RootScope;
             requestScope.Span.GetTag("http.url").Should().Be(expectedUrl);
             requestScope.Span.GetTag("legacy.request.header").Should().Be("header-value");
+
+            observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
+        }
+
+        [Theory]
+        [MemberData(nameof(AspNetCoreHttpUrlTestData.EscapedPaths), MemberType = typeof(AspNetCoreHttpUrlTestData))]
+        public async Task EscapesDecodedPathValuesInHttpUrl(string pathBase, string path, string expectedUrl)
+        {
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+            IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+            var context = CreateContext(new FakeLegacyHeaders(new Dictionary<string, object>()));
+            context.Request.PathBase = new FakePathString { Value = pathBase };
+            context.Request.Path = new FakePathString { Value = path };
+            var payload = new { HttpContext = context };
+
+            observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+
+            var requestScope = GetRequestState(context).RootScope;
+            requestScope.Span.GetTag("http.url").Should().Be(expectedUrl);
 
             observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
         }
@@ -1036,7 +1056,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                     Scheme = "http",
                     Host = new FakeHostString { Value = "localhost" },
                     PathBase = new FakePathString { Value = string.Empty },
-                    Path = new FakePathString { Value = "/baseline/mongo" },
+                    Path = new FakePathString { Value = "/baseline/sql" },
                     QueryString = new FakeQueryString { Value = string.Empty },
                     Headers = headers,
                 },
