@@ -256,13 +256,24 @@ namespace Datadog.Trace.TestHelpers
                             .Replace("[POOL]", appPool)
                             .Replace("[VIRTUAL_APPLICATION]", virtualAppSection);
 
+            var sampleApplicationFileName = EnvironmentHelper.GetSampleApplicationFileName();
             configTemplate = ExpandIisConfigurationTemplate(
                 configTemplate,
                 appType,
                 EnvironmentHelper.GetDotnetExe(),
-                EnvironmentHelper.GetSampleApplicationFileName(),
+                sampleApplicationFileName,
                 EnvironmentHelper.IsCoreClr(),
                 out var aspNetCoreProcessToProfile);
+
+            if (EnvironmentTools.IsWindows()
+             && appType == IisAppType.AspNetCoreOutOfProcess
+             && !EnvironmentHelper.IsCoreClr()
+             && !EnvironmentTools.IsTestTarget64BitProcess())
+            {
+                // StartProcessWithProfiler normally applies this to the executable it launches. In this case it
+                // launches IIS Express, so apply it explicitly to the .NET Framework application launched by ANCM.
+                ProfilerHelper.SetCorFlags(Path.Combine(appPath, sampleApplicationFileName), Output, require32Bit: true);
+            }
 
             if (usePartialTrust || useLegacyCasModel)
             {
