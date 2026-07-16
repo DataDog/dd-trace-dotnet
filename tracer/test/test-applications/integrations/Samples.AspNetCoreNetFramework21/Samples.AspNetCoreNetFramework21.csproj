@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFrameworks>net48</TargetFrameworks>
     <AssemblyName>Samples.AspNetCoreNetFramework21</AssemblyName>
     <RootNamespace>Samples.AspNetCoreNetFramework</RootNamespace>
   </PropertyGroup>
