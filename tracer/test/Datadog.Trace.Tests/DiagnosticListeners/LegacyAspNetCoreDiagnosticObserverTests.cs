@@ -87,6 +87,38 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
                 expected ? Times.Once() : Times.Never());
         }
 
+        [Theory]
+        [InlineData("GET", true)]
+        [InlineData("123-_", true)]
+        [InlineData("get", false)]
+        [InlineData("GeT", false)]
+        [InlineData("café", false)]
+        public void ToUpperInvariantIfNeededMatchesFrameworkCasing(string input, bool reusesInput)
+        {
+            var value = new string(input.ToCharArray());
+
+            var result = LegacyAspNetCoreHttpRequestHandler.ToUpperInvariantIfNeeded(value);
+
+            result.Should().Be(value.ToUpperInvariant());
+            ReferenceEquals(result, value).Should().Be(reusesInput);
+        }
+
+        [Theory]
+        [InlineData("/home/index", true)]
+        [InlineData("123-_", true)]
+        [InlineData("/Home/Index", false)]
+        [InlineData("CAFÉ", false)]
+        [InlineData("/café", false)]
+        public void ToLowerInvariantIfNeededMatchesFrameworkCasing(string input, bool reusesInput)
+        {
+            var value = new string(input.ToCharArray());
+
+            var result = LegacyAspNetCoreHttpRequestHandler.ToLowerInvariantIfNeeded(value);
+
+            result.Should().Be(value.ToLowerInvariant());
+            ReferenceEquals(result, value).Should().Be(reusesInput);
+        }
+
         [Fact]
         public void NonMatchingListenerDoesNotResolveTracer()
         {
