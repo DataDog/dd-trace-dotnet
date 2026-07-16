@@ -52,7 +52,7 @@ internal sealed class OtlpExporter : IOtlpExporter
             }
         });
 
-        _httpClient = CreateHttpClient();
+        _httpClient = CreateHttpClient(_timeoutMs, _headers);
 
         if (_protocol == OtlpProtocol.Grpc)
         {
@@ -148,7 +148,7 @@ internal sealed class OtlpExporter : IOtlpExporter
         }
     }
 
-    private HttpClient CreateHttpClient()
+    internal static HttpClient CreateHttpClient(int timeoutMs, IReadOnlyDictionary<string, string> headers)
     {
 #if NET6_0_OR_GREATER
         var tcpHandler = new SocketsHttpHandler
@@ -158,19 +158,21 @@ internal sealed class OtlpExporter : IOtlpExporter
 
         var httpClient = new HttpClient(tcpHandler)
         {
-            Timeout = TimeSpan.FromMilliseconds(_timeoutMs),
+            Timeout = TimeSpan.FromMilliseconds(timeoutMs),
         };
 #else
         var httpClient = new HttpClient
         {
-            Timeout = TimeSpan.FromMilliseconds(_timeoutMs),
+            Timeout = TimeSpan.FromMilliseconds(timeoutMs),
         };
 #endif
 
-        foreach (var header in _headers)
+        foreach (var header in headers)
         {
             httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
         }
+
+        httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
 
         return httpClient;
     }
