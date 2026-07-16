@@ -9,7 +9,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -171,19 +170,28 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         public async Task SubscriptionFiltersEventsAtTheDiagnosticSource()
         {
             await using var tracer = TracerHelper.CreateWithFakeAgent();
+            Predicate<string> eventFilter = null;
+            var listener = new Mock<IDiagnosticListener>();
+            listener.SetupGet(instance => instance.Name).Returns("Microsoft.AspNetCore");
+            listener.Setup(
+                        instance => instance.Subscribe(
+                            It.IsAny<IObserver<KeyValuePair<string, object>>>(),
+                            It.IsAny<Predicate<string>>()))
+                    .Callback<IObserver<KeyValuePair<string, object>>, Predicate<string>>((_, predicate) => eventFilter = predicate)
+                    .Returns(Mock.Of<IDisposable>());
             var observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
-            using var listener = new DiagnosticListener("Microsoft.AspNetCore");
-            using var subscription = observer.SubscribeIfMatch(listener.DuckCast<IDiagnosticListener>());
+            using var subscription = observer.SubscribeIfMatch(listener.Object);
 
             observer.IsSubscriberEnabled().Should().BeTrue();
             subscription.Should().NotBeNull();
-            listener.IsEnabled("Microsoft.AspNetCore.Hosting.HttpRequestIn").Should().BeTrue();
-            listener.IsEnabled(StartEvent).Should().BeTrue();
-            listener.IsEnabled(StopEvent).Should().BeTrue();
-            listener.IsEnabled(HostingUnhandledExceptionEvent).Should().BeTrue();
-            listener.IsEnabled(DiagnosticsUnhandledExceptionEvent).Should().BeTrue();
-            listener.IsEnabled(MvcBeforeActionEvent).Should().BeTrue();
-            listener.IsEnabled("Microsoft.AspNetCore.Mvc.AfterAction").Should().BeFalse();
+            eventFilter.Should().NotBeNull();
+            eventFilter("Microsoft.AspNetCore.Hosting.HttpRequestIn").Should().BeTrue();
+            eventFilter(StartEvent).Should().BeTrue();
+            eventFilter(StopEvent).Should().BeTrue();
+            eventFilter(HostingUnhandledExceptionEvent).Should().BeTrue();
+            eventFilter(DiagnosticsUnhandledExceptionEvent).Should().BeTrue();
+            eventFilter(MvcBeforeActionEvent).Should().BeTrue();
+            eventFilter("Microsoft.AspNetCore.Mvc.AfterAction").Should().BeFalse();
         }
 
         [Fact]
