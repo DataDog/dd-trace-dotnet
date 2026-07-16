@@ -85,8 +85,8 @@ internal static class EventGridCommon
 
         try
         {
-            var observer = new EventGridMemoizingEnumerableObserver(scope, enumerable is ICollection collection ? collection.Count : null, injectContext);
-            EventGridMemoizingEnumerable.TryWrap(ref events, observer);
+            var observer = new EventGridEnumerableObserver(scope, enumerable is ICollection collection ? collection.Count : null, injectContext);
+            EventGridObservingEnumerable.TryWrap(ref events, observer);
         }
         catch (Exception ex)
         {
@@ -243,14 +243,13 @@ internal static class EventGridCommon
         return dotIndex > 0 ? host.Substring(0, dotIndex) : host;
     }
 
-    private sealed class EventGridMemoizingEnumerableObserver : IEventGridMemoizingEnumerableObserver
+    private sealed class EventGridEnumerableObserver : EventGridObservingEnumerable.IObserver
     {
         private readonly Scope _scope;
         private readonly int? _knownCount;
         private readonly bool _injectContext;
-        private object? _firstItem;
 
-        public EventGridMemoizingEnumerableObserver(Scope scope, int? knownCount, bool injectContext)
+        public EventGridEnumerableObserver(Scope scope, int? knownCount, bool injectContext)
         {
             _scope = scope;
             _knownCount = knownCount;
@@ -261,7 +260,6 @@ internal static class EventGridCommon
         {
             try
             {
-                _firstItem ??= item;
                 if (item is not null)
                 {
                     if (_knownCount == 1)
@@ -281,7 +279,7 @@ internal static class EventGridCommon
             }
         }
 
-        public void OnCompleted(int count)
+        public void OnCompleted(int count, object? firstItem)
         {
             try
             {
@@ -290,9 +288,9 @@ internal static class EventGridCommon
                     _scope.Span.SetTag(Tags.MessagingBatchMessageCount, count.ToString());
                 }
 
-                if (!_knownCount.HasValue && count == 1 && _firstItem is not null)
+                if (!_knownCount.HasValue && count == 1 && firstItem is not null)
                 {
-                    SetMessageId(_firstItem, _scope.Span);
+                    SetMessageId(firstItem, _scope.Span);
                 }
             }
             catch (Exception ex)
