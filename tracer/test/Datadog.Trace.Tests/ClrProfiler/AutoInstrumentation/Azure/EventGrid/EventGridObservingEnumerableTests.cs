@@ -25,7 +25,7 @@ public class EventGridObservingEnumerableTests
         IEnumerable<TestEvent> events = CreateEvents();
         var originalEvents = events;
 
-        EventGridObservingEnumerable.TryWrap(ref events, observer).Should().BeTrue();
+        events = EventGridObservingEnumerable.Wrap(events, observer);
 
         events.Should().NotBeSameAs(originalEvents);
         enumerationCount.Should().Be(0);
@@ -54,7 +54,7 @@ public class EventGridObservingEnumerableTests
     {
         var observer = new RecordingObserver();
         IEnumerable<int> events = new OneShotEnumerable<int>([1, 2, 3]);
-        EventGridObservingEnumerable.TryWrap(ref events, observer).Should().BeTrue();
+        events = EventGridObservingEnumerable.Wrap(events, observer);
 
         events.Should().Equal(1, 2, 3);
         Action secondEnumeration = () => events.ToArray();
@@ -70,7 +70,7 @@ public class EventGridObservingEnumerableTests
         var disposeCount = 0;
         var observer = new RecordingObserver();
         IEnumerable<int> events = CreateEvents();
-        EventGridObservingEnumerable.TryWrap(ref events, observer).Should().BeTrue();
+        events = EventGridObservingEnumerable.Wrap(events, observer);
 
         using (var enumerator = events.GetEnumerator())
         {
@@ -108,7 +108,7 @@ public class EventGridObservingEnumerableTests
         var expectedException = new InvalidOperationException("Expected test exception");
         var observer = new RecordingObserver();
         IEnumerable<int> events = CreateEvents();
-        EventGridObservingEnumerable.TryWrap(ref events, observer).Should().BeTrue();
+        events = EventGridObservingEnumerable.Wrap(events, observer);
 
         Action firstPass = () => events.ToArray();
         Action secondPass = () => events.ToArray();
@@ -132,7 +132,7 @@ public class EventGridObservingEnumerableTests
     {
         IEnumerable<int> events = new[] { 1, 2, 3 };
 
-        EventGridObservingEnumerable.TryWrap(ref events, new ThrowingObserver()).Should().BeTrue();
+        events = EventGridObservingEnumerable.Wrap(events, new ThrowingObserver());
 
         events.Should().Equal(1, 2, 3);
         events.Should().Equal(1, 2, 3);

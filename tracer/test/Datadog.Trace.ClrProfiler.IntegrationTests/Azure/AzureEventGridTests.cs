@@ -30,7 +30,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         public static IEnumerable<object[]> GetEnabledConfig()
             => from packageVersionArray in PackageVersions.AzureEventGrid
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
+               from testMode in new[] { "SendEventGridEvent", "SendEventGridEventAsync", "SendEventGridEvents", "SendEventGridEventsAsync", "SendCloudEvent", "SendCloudEventAsync", "SendCloudEvents", "SendCloudEventsAsync" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion, testMode };
 
         // Partner channel overloads were introduced in Azure.Messaging.EventGrid 4.11.0.
         public static IEnumerable<object[]> GetPartnerChannelEnabledConfig()
@@ -50,208 +51,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task TestSendEventGridEvent(string packageVersion, string metadataSchemaVersion)
-        {
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("EVENTGRID_TEST_MODE", "SendEventGridEvent");
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-            {
-                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 5000, operationName: ExpectedOperationName, assertExpectedCount: false);
-
-                using var s = new AssertionScope();
-
-                spans.Should().HaveCountGreaterOrEqualTo(1, "Expected at least 1 producer span for azure_eventgrid.send (SendEvent with EventGridEvent)");
-
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Span validation failed: {result}");
-                }
-            }
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task TestSendEventGridEventAsync(string packageVersion, string metadataSchemaVersion)
-        {
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("EVENTGRID_TEST_MODE", "SendEventGridEventAsync");
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-            {
-                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 5000, operationName: ExpectedOperationName, assertExpectedCount: false);
-
-                using var s = new AssertionScope();
-
-                spans.Should().HaveCountGreaterOrEqualTo(1, "Expected at least 1 producer span for azure_eventgrid.send (SendEventAsync with EventGridEvent)");
-
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Span validation failed: {result}");
-                }
-            }
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task TestSendEventGridEvents(string packageVersion, string metadataSchemaVersion)
-        {
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("EVENTGRID_TEST_MODE", "SendEventGridEvents");
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-            {
-                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 5000, operationName: ExpectedOperationName, assertExpectedCount: false);
-
-                using var s = new AssertionScope();
-
-                spans.Should().HaveCountGreaterOrEqualTo(1, "Expected at least 1 producer span for azure_eventgrid.send (SendEvents with IEnumerable<EventGridEvent>)");
-
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Span validation failed: {result}");
-                }
-            }
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task TestSendEventGridEventsAsync(string packageVersion, string metadataSchemaVersion)
-        {
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("EVENTGRID_TEST_MODE", "SendEventGridEventsAsync");
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-            {
-                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 5000, operationName: ExpectedOperationName, assertExpectedCount: false);
-
-                using var s = new AssertionScope();
-
-                spans.Should().HaveCountGreaterOrEqualTo(1, "Expected at least 1 producer span for azure_eventgrid.send (SendEventsAsync with IEnumerable<EventGridEvent>)");
-
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Span validation failed: {result}");
-                }
-            }
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task TestSendCloudEvent(string packageVersion, string metadataSchemaVersion)
-        {
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("EVENTGRID_TEST_MODE", "SendCloudEvent");
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-            {
-                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 5000, operationName: ExpectedOperationName, assertExpectedCount: false);
-
-                using var s = new AssertionScope();
-
-                spans.Should().HaveCountGreaterOrEqualTo(1, "Expected at least 1 producer span for azure_eventgrid.send (SendEvent with CloudEvent)");
-
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Span validation failed: {result}");
-                }
-            }
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task TestSendCloudEventAsync(string packageVersion, string metadataSchemaVersion)
-        {
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("EVENTGRID_TEST_MODE", "SendCloudEventAsync");
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-            {
-                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 5000, operationName: ExpectedOperationName, assertExpectedCount: false);
-
-                using var s = new AssertionScope();
-
-                spans.Should().HaveCountGreaterOrEqualTo(1, "Expected at least 1 producer span for azure_eventgrid.send (SendEventAsync with CloudEvent)");
-
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Span validation failed: {result}");
-                }
-            }
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task TestSendCloudEvents(string packageVersion, string metadataSchemaVersion)
-        {
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("EVENTGRID_TEST_MODE", "SendCloudEvents");
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-            {
-                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 5000, operationName: ExpectedOperationName, assertExpectedCount: false);
-
-                using var s = new AssertionScope();
-
-                spans.Should().HaveCountGreaterOrEqualTo(1, "Expected at least 1 producer span for azure_eventgrid.send (SendEvents with IEnumerable<CloudEvent>)");
-
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Span validation failed: {result}");
-                }
-            }
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task TestSendCloudEventsAsync(string packageVersion, string metadataSchemaVersion)
-        {
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("EVENTGRID_TEST_MODE", "SendCloudEventsAsync");
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-            {
-                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 5000, operationName: ExpectedOperationName, assertExpectedCount: false);
-
-                using var s = new AssertionScope();
-
-                spans.Should().HaveCountGreaterOrEqualTo(1, "Expected at least 1 producer span for azure_eventgrid.send (SendEventsAsync with IEnumerable<CloudEvent>)");
-
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Span validation failed: {result}");
-                }
-            }
-        }
-
-        [SkippableTheory]
         [MemberData(nameof(GetPartnerChannelEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task TestSendCloudEventsToPartnerChannel(string packageVersion, string metadataSchemaVersion, string testMode)
+        public async Task SubmitEvents(string packageVersion, string metadataSchemaVersion, string testMode)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("EVENTGRID_TEST_MODE", testMode);
@@ -259,17 +61,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 5000, operationName: ExpectedOperationName, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 5_000, operationName: ExpectedOperationName, assertExpectedCount: false);
 
                 using var s = new AssertionScope();
-
-                spans.Should().HaveCountGreaterOrEqualTo(1, $"Expected at least 1 producer span for azure_eventgrid.send ({testMode})");
-
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
-                    result.Success.Should().BeTrue($"Span validation failed: {result}");
-                }
+                var span = spans.Should().ContainSingle($"Expected one producer span for azure_eventgrid.send ({testMode})").Which;
+                var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
+                result.Success.Should().BeTrue($"Span validation failed: {result}");
             }
         }
     }

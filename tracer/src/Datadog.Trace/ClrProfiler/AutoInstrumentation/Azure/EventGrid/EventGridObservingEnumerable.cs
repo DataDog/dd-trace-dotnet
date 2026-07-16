@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid;
@@ -35,15 +34,14 @@ internal static class EventGridObservingEnumerable
         object Create(object events, IObserver observer);
     }
 
-    internal static bool TryWrap<TEvents>(ref TEvents events, IObserver observer)
+    internal static TEvents Wrap<TEvents>(TEvents events, IObserver observer)
     {
         if ((object?)events is null || FactoryCache<TEvents>.Factory is not { } factory)
         {
-            return false;
+            return events;
         }
 
-        events = (TEvents)factory.Create(events, observer);
-        return true;
+        return (TEvents)factory.Create(events, observer);
     }
 
     private static Type? GetEnumerableType(Type type)
@@ -77,8 +75,7 @@ internal static class EventGridObservingEnumerable
             }
 
             var eventType = enumerableType.GetGenericArguments()[0];
-            var wrapperType = typeof(ObservingEnumerable<>).MakeGenericType(eventType);
-            if (!eventsType.IsAssignableFrom(wrapperType))
+            if (!eventsType.IsAssignableFrom(enumerableType))
             {
                 return null;
             }
@@ -91,30 +88,14 @@ internal static class EventGridObservingEnumerable
     private sealed class Factory<TEvent> : IFactory
     {
         public object Create(object events, IObserver observer)
-            => new ObservingEnumerable<TEvent>((IEnumerable<TEvent>)events, observer);
-    }
+            => Observe((IEnumerable<TEvent>)events, observer);
 
-    private sealed class ObservingEnumerable<TEvent> : IEnumerable<TEvent>
-    {
-        private readonly IEnumerable<TEvent> _source;
-        private readonly IObserver _observer;
-
-        public ObservingEnumerable(IEnumerable<TEvent> source, IObserver observer)
-        {
-            _source = source;
-            _observer = observer;
-        }
-
-        public IEnumerator<TEvent> GetEnumerator() => Observe().GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        private IEnumerable<TEvent> Observe()
+        private static IEnumerable<TEvent> Observe(IEnumerable<TEvent> events, IObserver observer)
         {
             object? firstItem = null;
             var count = 0;
 
-            foreach (var item in _source)
+            foreach (var item in events)
             {
                 if (count == 0)
                 {
@@ -122,30 +103,21 @@ internal static class EventGridObservingEnumerable
                 }
 
                 count++;
-                NotifyItem(item);
+                try
+                {
+                    observer.OnItem(item);
+                }
+                catch
+                {
+                    // Instrumentation must not affect customer enumeration.
+                }
+
                 yield return item;
             }
 
-            NotifyCompleted(count, firstItem);
-        }
-
-        private void NotifyItem(TEvent item)
-        {
             try
             {
-                _observer.OnItem(item);
-            }
-            catch
-            {
-                // Instrumentation must not affect customer enumeration.
-            }
-        }
-
-        private void NotifyCompleted(int count, object? firstItem)
-        {
-            try
-            {
-                _observer.OnCompleted(count, firstItem);
+                observer.OnCompleted(count, firstItem);
             }
             catch
             {

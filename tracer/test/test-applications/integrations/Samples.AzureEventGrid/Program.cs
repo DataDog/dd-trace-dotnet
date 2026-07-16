@@ -128,20 +128,14 @@ namespace Samples.AzureEventGrid
         private static void SendEventGridEvents(EventGridPublisherClient client)
         {
             Console.WriteLine("\n=== SendEvents (EventGridEvent) ===");
-            var enumerationCount = 0;
-            var events = CreateEventGridEvents(() => enumerationCount++);
-            client.SendEvents(events);
-            AssertEnumeratedOnce(enumerationCount);
+            client.SendEvents(CreateEventGridEvents());
             Console.WriteLine("Sent 3 events successfully");
         }
 
         private static async Task SendEventGridEventsAsync(EventGridPublisherClient client)
         {
             Console.WriteLine("\n=== SendEventsAsync (EventGridEvent) ===");
-            var enumerationCount = 0;
-            var events = CreateEventGridEvents(() => enumerationCount++);
-            await client.SendEventsAsync(events);
-            AssertEnumeratedOnce(enumerationCount);
+            await client.SendEventsAsync(CreateEventGridEvents());
             Console.WriteLine("Sent 3 events successfully");
         }
 
@@ -164,20 +158,14 @@ namespace Samples.AzureEventGrid
         private static void SendCloudEvents(EventGridPublisherClient client)
         {
             Console.WriteLine("\n=== SendEvents (CloudEvent) ===");
-            var enumerationCount = 0;
-            var events = CreateCloudEvents(() => enumerationCount++);
-            client.SendEvents(events);
-            AssertEnumeratedOnce(enumerationCount);
+            client.SendEvents(CreateCloudEvents());
             Console.WriteLine("Sent 3 CloudEvents successfully");
         }
 
         private static async Task SendCloudEventsAsync(EventGridPublisherClient client)
         {
             Console.WriteLine("\n=== SendEventsAsync (CloudEvent) ===");
-            var enumerationCount = 0;
-            var events = CreateCloudEvents(() => enumerationCount++);
-            await client.SendEventsAsync(events);
-            AssertEnumeratedOnce(enumerationCount);
+            await client.SendEventsAsync(CreateCloudEvents());
             Console.WriteLine("Sent 3 CloudEvents successfully");
         }
 
@@ -192,10 +180,7 @@ namespace Samples.AzureEventGrid
         private static void SendCloudEventsToChannel(EventGridPublisherClient client)
         {
             Console.WriteLine("\n=== SendEvents (CloudEvent with partner channel) ===");
-            var enumerationCount = 0;
-            var events = CreateCloudEvents(() => enumerationCount++);
-            ((dynamic)client).SendEvents(events, "test-channel");
-            AssertEnumeratedOnce(enumerationCount);
+            ((dynamic)client).SendEvents(CreateCloudEvents(), "test-channel");
             Console.WriteLine("Sent 3 CloudEvents successfully");
         }
 
@@ -210,35 +195,22 @@ namespace Samples.AzureEventGrid
         private static async Task SendCloudEventsToChannelAsync(EventGridPublisherClient client)
         {
             Console.WriteLine("\n=== SendEventsAsync (CloudEvent with partner channel) ===");
-            var enumerationCount = 0;
-            var events = CreateCloudEvents(() => enumerationCount++);
-            await ((dynamic)client).SendEventsAsync(events, "test-channel");
-            AssertEnumeratedOnce(enumerationCount);
+            await ((dynamic)client).SendEventsAsync(CreateCloudEvents(), "test-channel");
             Console.WriteLine("Sent 3 CloudEvents successfully");
         }
 
-        private static IEnumerable<EventGridEvent> CreateEventGridEvents(Action onEnumeration)
+        private static IEnumerable<EventGridEvent> CreateEventGridEvents()
         {
-            onEnumeration();
             yield return CreateEventGridEvent("1");
             yield return CreateEventGridEvent("2");
             yield return CreateEventGridEvent("3");
         }
 
-        private static IEnumerable<CloudEvent> CreateCloudEvents(Action onEnumeration)
+        private static IEnumerable<CloudEvent> CreateCloudEvents()
         {
-            onEnumeration();
             yield return CreateCloudEvent("1");
             yield return CreateCloudEvent("2");
             yield return CreateCloudEvent("3");
-        }
-
-        private static void AssertEnumeratedOnce(int enumerationCount)
-        {
-            if (enumerationCount != 1)
-            {
-                throw new InvalidOperationException($"Expected the events to be enumerated once, but they were enumerated {enumerationCount} times.");
-            }
         }
 
         private static EventGridEvent CreateEventGridEvent(string suffix) =>

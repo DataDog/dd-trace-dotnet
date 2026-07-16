@@ -83,7 +83,7 @@ internal static class EventGridCommon
         try
         {
             var observer = new EventGridEnumerableObserver(scope, enumerable is ICollection collection ? collection.Count : null, injectContext);
-            EventGridObservingEnumerable.TryWrap(ref events, observer);
+            events = EventGridObservingEnumerable.Wrap(events, observer);
         }
         catch (Exception ex)
         {
