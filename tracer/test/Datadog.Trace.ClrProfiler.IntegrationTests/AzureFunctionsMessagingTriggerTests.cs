@@ -152,13 +152,15 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         }
     }
 
-    [SkippableFact]
-    public async Task EventGridTrigger_SubmitsTrace()
+    [SkippableTheory]
+    [InlineData("EventGrid", "seed/eventgrid", "EventGridTrigger_SubmitsTrace")]
+    [InlineData("EventGridOutputBinding", "output/eventgrid", "EventGridOutputBinding_SubmitsTrace")]
+    public async Task EventGrid_SubmitsTrace(string mode, string route, string snapshotName)
     {
         Skip.If(EnvironmentHelper.IsAlpine(), "Azure Functions Core Tools are not installed in the Alpine integration test image.");
 
         var testId = CreateTestId();
-        SetEnvironmentVariable(TestModeEnvironmentVariable, "EventGrid");
+        SetEnvironmentVariable(TestModeEnvironmentVariable, mode);
         SetEnvironmentVariable(TestIdEnvironmentVariable, testId);
         SetEnvironmentVariable("AzureFunctionsWebHost__hostid", CreateHostId(testId));
         SetEnvironmentVariable("AzureWebJobs.ServiceBusTrigger.Disabled", "true");
@@ -168,48 +170,13 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
         using (await RunAzureFunctionAndWaitForExit(
                    agent,
-                   seedAsync: () => SeedViaHttpAsync("seed/eventgrid"),
+                   seedAsync: () => SeedViaHttpAsync(route),
                    expectedExitCode: ExpectedFuncKillExitCode))
         {
-            // Wait for at least 7 spans (1 health-check ping + 6 meaningful).
+            // Wait for the producer trace and the trace created when the emulator delivers the event.
             var allSpans = await agent.WaitForSpansAsync(7, timeoutInMilliseconds: 30000, returnAllOperations: true);
-            // Keep only the two relevant traces: the seeder trace (with the producer send) and the
-            // trigger trace (azure_eventgrid.receive → invoke → manual). Selecting by the manual span
-            // keeps the assertion deterministic if the emulator redelivers the event.
-            var filteredSpans = allSpans.Where(s => s.Resource != "GET /admin/host/ping").ToImmutableList();
-            var manualSpan = filteredSpans.FirstOrDefault(s => s.Name == "Manual inside EventGridTrigger");
-            var sendSpan = filteredSpans.FirstOrDefault(s => s.Name == "azure_eventgrid.send");
-            var spans = filteredSpans
-                        .Where(s => s.TraceId == manualSpan?.TraceId || s.TraceId == sendSpan?.TraceId)
-                        .ToImmutableList();
-            var settings = GetMessagingTriggerSettings();
-            await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName($"{nameof(AzureFunctionsMessagingTriggerTests)}.{nameof(EventGridTrigger_SubmitsTrace)}")
-                              .DisableRequireUniquePrefix();
-        }
-    }
-
-    [SkippableFact]
-    public async Task EventGridOutputBinding_SubmitsTrace()
-    {
-        Skip.If(EnvironmentHelper.IsAlpine(), "Azure Functions Core Tools are not installed in the Alpine integration test image.");
-
-        var testId = CreateTestId();
-        SetEnvironmentVariable(TestModeEnvironmentVariable, "EventGridOutputBinding");
-        SetEnvironmentVariable(TestIdEnvironmentVariable, testId);
-        SetEnvironmentVariable("AzureFunctionsWebHost__hostid", CreateHostId(testId));
-        SetEnvironmentVariable("AzureWebJobs.ServiceBusTrigger.Disabled", "true");
-        SetEnvironmentVariable("AzureWebJobs.EventHubTrigger.Disabled", "true");
-        SetEnvironmentVariable("AzureWebJobs.EventGridTrigger.Disabled", "false");
-
-        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
-        using (await RunAzureFunctionAndWaitForExit(
-                   agent,
-                   seedAsync: () => SeedViaHttpAsync("output/eventgrid"),
-                   expectedExitCode: ExpectedFuncKillExitCode))
-        {
-            // Wait for the output-binding trace and the trace created when the emulator delivers the event.
-            var allSpans = await agent.WaitForSpansAsync(7, timeoutInMilliseconds: 30000, returnAllOperations: true);
+            // Keep only those two relevant traces. Selecting the trigger trace by its manual span keeps
+            // the assertion deterministic if the emulator redelivers the event.
             var filteredSpans = allSpans.Where(s => s.Resource != "GET /admin/host/ping").ToImmutableList();
             var manualSpan = filteredSpans.FirstOrDefault(s => s.Name == "Manual inside EventGridTrigger");
             var sendSpan = filteredSpans.FirstOrDefault(s => s.Name == "azure_eventgrid.send");
@@ -218,7 +185,7 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
                        .ToImmutableList();
             var settings = GetMessagingTriggerSettings();
             await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName($"{nameof(AzureFunctionsMessagingTriggerTests)}.{nameof(EventGridOutputBinding_SubmitsTrace)}")
+                              .UseFileName($"{nameof(AzureFunctionsMessagingTriggerTests)}.{snapshotName}")
                               .DisableRequireUniquePrefix();
         }
     }

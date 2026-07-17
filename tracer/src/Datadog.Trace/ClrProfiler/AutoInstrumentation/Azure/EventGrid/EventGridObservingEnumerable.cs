@@ -11,7 +11,7 @@ using System.Collections.Generic;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid;
 
 /// <summary>
-/// Replaces an arbitrary <see cref="IEnumerable{T}"/> argument with a transparent observing wrapper without
+/// Replaces a declared <see cref="IEnumerable{T}"/> argument with a transparent observing wrapper without
 /// taking a compile-time dependency on the enumerable's item type.
 /// </summary>
 /// <remarks>
@@ -44,24 +44,6 @@ internal static class EventGridObservingEnumerable
         return (TEvents)factory.Create(events, observer);
     }
 
-    private static Type? GetEnumerableType(Type type)
-    {
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-        {
-            return type;
-        }
-
-        foreach (var interfaceType in type.GetInterfaces())
-        {
-            if (interfaceType.IsGenericType && interfaceType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-            {
-                return interfaceType;
-            }
-        }
-
-        return null;
-    }
-
     private static class FactoryCache<TEvents>
     {
         public static readonly IFactory? Factory = CreateFactory();
@@ -69,17 +51,12 @@ internal static class EventGridObservingEnumerable
         private static IFactory? CreateFactory()
         {
             var eventsType = typeof(TEvents);
-            if (GetEnumerableType(eventsType) is not { } enumerableType)
+            if (!eventsType.IsGenericType || eventsType.GetGenericTypeDefinition() != typeof(IEnumerable<>))
             {
                 return null;
             }
 
-            var eventType = enumerableType.GetGenericArguments()[0];
-            if (!eventsType.IsAssignableFrom(enumerableType))
-            {
-                return null;
-            }
-
+            var eventType = eventsType.GetGenericArguments()[0];
             var factoryType = typeof(Factory<>).MakeGenericType(eventType);
             return Activator.CreateInstance(factoryType, nonPublic: true) as IFactory;
         }

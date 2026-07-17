@@ -17,11 +17,11 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.EventGrid;
 public class EventGridCommonTests
 {
     [Theory]
-    [InlineData("Datadog", false)]
-    [InlineData("baggage", false)]
-    [InlineData("tracecontext", true)]
-    [InlineData("W3C", true)]
-    public async Task InjectW3CContextHonorsConfiguredPropagationStyles(string propagationStyle, bool shouldInjectTraceContext)
+    [InlineData("Datadog", false, false)]
+    [InlineData("baggage", false, true)]
+    [InlineData("tracecontext", true, false)]
+    [InlineData("W3C", true, false)]
+    public async Task InjectW3CContextHonorsConfiguredPropagationStyles(string propagationStyle, bool shouldInjectTraceContext, bool shouldInjectBaggage)
     {
         await using var tracer = TracerHelper.Create();
         using var scope = tracer.StartActiveInternal("event-grid-test");
@@ -29,19 +29,32 @@ public class EventGridCommonTests
         {
             ["traceparent"] = "existing-traceparent",
             ["tracestate"] = "existing-tracestate",
+            ["baggage"] = "existing-baggage",
         };
 
-        EventGridCommon.InjectW3CContext(extensionAttributes, scope, [propagationStyle]);
+        var originalBaggage = Baggage.Current;
+        Baggage.Current = new Baggage { ["test-key"] = "test-value" };
 
-        if (shouldInjectTraceContext)
+        try
         {
-            extensionAttributes["traceparent"].Should().NotBe("existing-traceparent");
-            extensionAttributes["tracestate"].Should().NotBe("existing-tracestate");
+            EventGridCommon.InjectW3CContext(extensionAttributes, scope, [propagationStyle]);
+
+            if (shouldInjectTraceContext)
+            {
+                extensionAttributes["traceparent"].Should().NotBe("existing-traceparent");
+                extensionAttributes["tracestate"].Should().NotBe("existing-tracestate");
+            }
+            else
+            {
+                extensionAttributes["traceparent"].Should().Be("existing-traceparent");
+                extensionAttributes["tracestate"].Should().Be("existing-tracestate");
+            }
+
+            extensionAttributes["baggage"].Should().Be(shouldInjectBaggage ? "test-key=test-value" : "existing-baggage");
         }
-        else
+        finally
         {
-            extensionAttributes["traceparent"].Should().Be("existing-traceparent");
-            extensionAttributes["tracestate"].Should().Be("existing-tracestate");
+            Baggage.Current = originalBaggage;
         }
     }
 }

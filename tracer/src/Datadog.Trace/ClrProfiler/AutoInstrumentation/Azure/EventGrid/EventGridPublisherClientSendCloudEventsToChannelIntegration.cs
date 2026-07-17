@@ -40,7 +40,7 @@ public sealed class EventGridPublisherClientSendCloudEventsToChannelIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TEvents>(TTarget instance, ref TEvents events, string channelName, CancellationToken cancellationToken)
     {
-        return EventGridCommon.CreateProducerSpan(instance, ref events, injectContext: true);
+        return EventGridCommon.CreateProducerSpan(instance, ref events, injectContext: true, destinationNameOverride: channelName);
     }
 
     internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)

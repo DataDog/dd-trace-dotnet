@@ -23,7 +23,7 @@ internal static class EventGridCommon
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EventGridCommon));
 
-    internal static CallTargetState CreateProducerSpan<TTarget, TEvents>(TTarget instance, ref TEvents events, bool injectContext)
+    internal static CallTargetState CreateProducerSpan<TTarget, TEvents>(TTarget instance, ref TEvents events, bool injectContext, string? destinationNameOverride = null)
     {
         var tracer = Tracer.Instance;
         if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid))
@@ -42,7 +42,8 @@ internal static class EventGridCommon
 
         var host = uriBuilder?.Host;
         var port = uriBuilder?.Port ?? -1;
-        return CreateProducerSpan(tracer, GetTopicFromHost(host), host, port, ref events, injectContext);
+        var destinationName = destinationNameOverride ?? GetTopicFromHost(host);
+        return CreateProducerSpan(tracer, destinationName, host, port, ref events, injectContext);
     }
 
     internal static CallTargetState CreateNamespaceProducerSpanForEvent<TTarget>(TTarget instance, object? cloudEvent)
@@ -71,10 +72,10 @@ internal static class EventGridCommon
         return CreateProducerSpan(tracer, instance.TopicName, endpoint?.Host, endpoint?.Port ?? -1, ref cloudEvents, injectContext: true);
     }
 
-    private static CallTargetState CreateProducerSpan<TEvents>(Tracer tracer, string? topic, string? host, int port, ref TEvents events, bool injectContext)
+    private static CallTargetState CreateProducerSpan<TEvents>(Tracer tracer, string? destinationName, string? host, int port, ref TEvents events, bool injectContext)
     {
         var enumerable = events as IEnumerable;
-        var state = CreateProducerSpan(tracer, topic, host, port, enumerable, singleEvent: null);
+        var state = CreateProducerSpan(tracer, destinationName, host, port, enumerable, singleEvent: null);
         if (state.Scope is not { } scope || enumerable is null)
         {
             return state;
@@ -93,7 +94,7 @@ internal static class EventGridCommon
         return state;
     }
 
-    private static CallTargetState CreateProducerSpan(Tracer tracer, string? topic, string? host, int port, IEnumerable? events, object? singleEvent)
+    private static CallTargetState CreateProducerSpan(Tracer tracer, string? destinationName, string? host, int port, IEnumerable? events, object? singleEvent)
     {
         Scope? scope = null;
 
@@ -102,7 +103,7 @@ internal static class EventGridCommon
             var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAzureEventGridTags(SpanKinds.Producer);
             tags.MessagingOperation = "send";
 
-            tags.MessagingDestinationName = topic;
+            tags.MessagingDestinationName = destinationName;
             tags.NetworkDestinationName = host;
 
             if (port is not -1)
@@ -121,7 +122,7 @@ internal static class EventGridCommon
             var span = scope.Span;
 
             span.Type = SpanTypes.Queue;
-            span.ResourceName = topic;
+            span.ResourceName = destinationName;
 
             if (singleEvent is not null)
             {

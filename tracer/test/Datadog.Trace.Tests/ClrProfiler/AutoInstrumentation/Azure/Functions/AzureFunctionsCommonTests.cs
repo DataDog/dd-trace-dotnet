@@ -15,20 +15,8 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 
-#pragma warning disable SA1649 // File name should match first type name
-namespace Microsoft.Azure.Functions.Worker.Context.Features
-{
-    internal interface IFunctionBindingsFeature
-    {
-    }
-}
-#pragma warning restore SA1649
-
-#pragma warning disable SA1403 // File may only contain a single namespace
 namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
-#pragma warning restore SA1403
-
     public class AzureFunctionsCommonTests
     {
         [Fact]
@@ -90,152 +78,6 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             Baggage.Current.Count.Should().Be(2);
         }
 
-        [Fact]
-        public void ExtractPropagatedContextsFromEventGrid_SingleCloudEvent_ExtractsContext()
-        {
-            var cloudEvent = new Dictionary<string, object>
-            {
-                ["specversion"] = "1.0",
-                ["type"] = "test.type",
-                ["source"] = "/test/source",
-                ["id"] = "test-id",
-                ["traceparent"] = $"00-{1:x32}-{1:x16}-01",
-                ["tracestate"] = "dd=s:1",
-                ["baggage"] = "user.id=123",
-            };
-            var context = CreateMockFunctionContextWithInputData("myEvent", JsonConvert.SerializeObject(cloudEvent));
-
-            var extractedContexts = ExtractPropagatedContextsFromEventGrid(context, "myEvent");
-
-            extractedContexts.Should().ContainSingle();
-            extractedContexts[0].SpanContext.Should().NotBeNull();
-            extractedContexts[0].Baggage.Should().NotBeNull();
-            extractedContexts[0].Baggage!["user.id"].Should().Be("123");
-        }
-
-        [Fact]
-        public void ExtractPropagatedContextsFromEventGrid_SingleCloudEvent_TraceparentOnly()
-        {
-            var cloudEvent = new Dictionary<string, object>
-            {
-                ["specversion"] = "1.0",
-                ["type"] = "test.type",
-                ["source"] = "/test/source",
-                ["id"] = "test-id",
-                ["traceparent"] = $"00-{1:x32}-{1:x16}-01",
-            };
-            var context = CreateMockFunctionContextWithInputData("myEvent", JsonConvert.SerializeObject(cloudEvent));
-
-            var extractedContexts = ExtractPropagatedContextsFromEventGrid(context, "myEvent");
-
-            extractedContexts.Should().ContainSingle();
-            extractedContexts[0].SpanContext.Should().NotBeNull();
-        }
-
-        [Fact]
-        public void ExtractPropagatedContextsFromEventGrid_NoTraceContext_ReturnsEmpty()
-        {
-            var cloudEvent = new Dictionary<string, object>
-            {
-                ["specversion"] = "1.0",
-                ["type"] = "test.type",
-                ["source"] = "/test/source",
-                ["id"] = "test-id",
-            };
-            var context = CreateMockFunctionContextWithInputData("myEvent", JsonConvert.SerializeObject(cloudEvent));
-
-            var extractedContexts = ExtractPropagatedContextsFromEventGrid(context, "myEvent");
-
-            extractedContexts.Should().BeEmpty();
-        }
-
-        [Fact]
-        public void ExtractPropagatedContextsFromEventGrid_BatchCloudEvents_ExtractsAllContextsAndMergesFirstBaggage()
-        {
-            var batch = new[]
-            {
-                new Dictionary<string, object>
-                {
-                    ["specversion"] = "1.0",
-                    ["type"] = "test.type",
-                    ["source"] = "/test/source",
-                    ["id"] = "test-id-1",
-                    ["traceparent"] = $"00-{1:x32}-{1:x16}-01",
-                    ["baggage"] = "tenant=first,first.only=true",
-                },
-                new Dictionary<string, object>
-                {
-                    ["specversion"] = "1.0",
-                    ["type"] = "test.type",
-                    ["source"] = "/test/source",
-                    ["id"] = "test-id-2",
-                    ["traceparent"] = $"00-{2:x32}-{2:x16}-01",
-                    ["baggage"] = "tenant=second,second.only=true",
-                },
-            };
-            var context = CreateMockFunctionContextWithInputData("myEvents", JsonConvert.SerializeObject(batch));
-
-            var extractedContexts = ExtractPropagatedContextsFromEventGrid(context, "myEvents");
-            var spanLinks = AzureFunctionsCommon.CreateEventGridSpanLinks(extractedContexts);
-            var destinationBaggage = new Baggage { ["existing"] = "value" };
-            var selectedBaggage = AzureFunctionsCommon.MergeBaggageFromFirstContext(extractedContexts, destinationBaggage);
-
-            extractedContexts.Should().HaveCount(2);
-            extractedContexts[0].SpanContext!.SpanId.Should().Be(1);
-            extractedContexts[1].SpanContext!.SpanId.Should().Be(2);
-            selectedBaggage.Should().NotBeNull();
-            selectedBaggage!["tenant"].Should().Be("first");
-            destinationBaggage["existing"].Should().Be("value");
-            destinationBaggage["tenant"].Should().Be("first");
-            destinationBaggage["first.only"].Should().Be("true");
-            destinationBaggage.TryGetValue("second.only", out _).Should().BeFalse();
-            spanLinks.Should().HaveCount(2);
-            spanLinks![0].Context.SpanId.Should().Be(1);
-            spanLinks[1].Context.SpanId.Should().Be(2);
-        }
-
-        [Fact]
-        public void ExtractPropagatedContextsFromEventGrid_BatchCloudEvents_DeduplicatesContextsAndSkipsMissingContexts()
-        {
-            var batch = new[]
-            {
-                new Dictionary<string, object>
-                {
-                    ["traceparent"] = $"00-{1:x32}-{1:x16}-01",
-                },
-                new Dictionary<string, object>
-                {
-                    ["traceparent"] = $"00-{1:x32}-{1:x16}-01",
-                },
-                new Dictionary<string, object>
-                {
-                    ["specversion"] = "1.0",
-                },
-            };
-            var context = CreateMockFunctionContextWithInputData("myEvents", JsonConvert.SerializeObject(batch));
-
-            var extractedContexts = ExtractPropagatedContextsFromEventGrid(context, "myEvents");
-
-            extractedContexts.Should().ContainSingle();
-            extractedContexts[0].SpanContext!.SpanId.Should().Be(1);
-        }
-
-        [Fact]
-        public void ExtractPropagatedContextsFromEventGrid_NullBindingName_ReturnsEmpty()
-        {
-            var context = CreateMockFunctionContextWithInputData("myEvent", "{}");
-
-            var extractedContexts = ExtractPropagatedContextsFromEventGrid(context, null);
-
-            extractedContexts.Should().BeEmpty();
-        }
-
-        private static List<PropagationContext> ExtractPropagatedContextsFromEventGrid(MockFunctionContext context, string? bindingName)
-        {
-            var cloudEvents = AzureFunctionsCommon.GetEventGridCloudEvents(context, bindingName);
-            return AzureFunctionsCommon.ExtractPropagatedContextsFromEventGrid(cloudEvents);
-        }
-
         private static MockFunctionContext CreateMockFunctionContext(string propertyKey, Dictionary<string, object>? headerProperties)
         {
             var triggerMetadata = new Dictionary<string, object?>();
@@ -260,47 +102,6 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             {
                 Features = features
             };
-        }
-
-        private static MockFunctionContext CreateMockFunctionContextWithInputData(string bindingName, string inputDataJson)
-        {
-            var inputData = new Dictionary<string, object?>
-            {
-                [bindingName] = inputDataJson
-            };
-
-            var bindingsFeature = new MockBindingsFeature
-            {
-                InputData = inputData
-            };
-
-            var features = new List<KeyValuePair<Type, object?>>
-            {
-                new(typeof(Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature), bindingsFeature)
-            };
-
-            return new MockFunctionContext
-            {
-                Features = features
-            };
-        }
-
-        // This duck types with tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/Isolated/IFunctionContext.cs
-        private class MockFunctionContext : IFunctionContext
-        {
-            public FunctionDefinitionStruct FunctionDefinition { get; set; }
-
-            public IEnumerable<KeyValuePair<Type, object?>>? Features { get; set; }
-
-            public IDictionary<object, object?>? Items { get; }
-        }
-
-        // This duck types with tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/Isolated/GrpcBindingsFeatureStruct.cs
-        private class MockBindingsFeature
-        {
-            public IDictionary<string, object?>? TriggerMetadata { get; set; }
-
-            public IDictionary<string, object?>? InputData { get; set; }
         }
     }
 }

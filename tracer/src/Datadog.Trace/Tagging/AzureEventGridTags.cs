@@ -63,7 +63,15 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.PeerService)]
         public string? PeerService
         {
-            get => _peerServiceOverride ?? MessagingDestinationName;
+            get
+            {
+                if (SpanKind == SpanKinds.Consumer)
+                {
+                    return null;
+                }
+
+                return _peerServiceOverride ?? MessagingDestinationName;
+            }
             private set => _peerServiceOverride = value;
         }
 
@@ -72,6 +80,11 @@ namespace Datadog.Trace.Tagging
         {
             get
             {
+                if (SpanKind == SpanKinds.Consumer)
+                {
+                    return null;
+                }
+
                 return _peerServiceOverride is not null
                     ? "peer.service"
                     : MessagingDestinationName is not null
