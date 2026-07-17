@@ -1,0 +1,12 @@
+issuer: https://token.actions.githubusercontent.com
+
+subject_pattern: "repo:DataDog/dd-trace-dotnet:ref:refs/tags/.+"
+
+claim_pattern:
+  event_name: release
+  repository: DataDog/dd-trace-dotnet
+  job_workflow_ref: DataDog/dd-trace-dotnet/\.github/workflows/auto_create_version_bump_pr\.yml@refs/tags/.+
+
+permissions:
+  contents: read
+  issues: write
