@@ -1,8 +1,6 @@
 {
   "Topics": {
     "samples-eventgrid-topic": [],
-    "samples-azure-functions-eventgrid-topic": [
-      "http://host.docker.internal:7071/runtime/webhooks/eventgrid?functionName=EventGridTrigger"
-    ]
+    "samples-azure-functions-eventgrid-topic": []
   }
 }

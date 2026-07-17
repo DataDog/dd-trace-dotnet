@@ -49,154 +49,53 @@ namespace Samples.AzureEventGrid
                 throw new ArgumentException($"Invalid or missing EVENTGRID_TEST_MODE. Expected one of: {string.Join(", ", Enum.GetNames(typeof(TestMode)))}. Got: '{testModeString ?? "null"}'");
             }
 
-            try
+            var client = new EventGridPublisherClient(
+                new Uri(TopicEndpoint),
+                new AzureKeyCredential(TopicKey));
+
+            switch (testMode)
             {
-                var client = new EventGridPublisherClient(
-                    new Uri(TopicEndpoint),
-                    new AzureKeyCredential(TopicKey));
+                case TestMode.SendEventGridEvent:
+                    client.SendEvent(CreateEventGridEvent("1"));
+                    break;
+                case TestMode.SendEventGridEventAsync:
+                    await client.SendEventAsync(CreateEventGridEvent("1"));
+                    break;
+                case TestMode.SendEventGridEvents:
+                    client.SendEvents(CreateEventGridEvents());
+                    break;
+                case TestMode.SendEventGridEventsAsync:
+                    await client.SendEventsAsync(CreateEventGridEvents());
+                    break;
+                case TestMode.SendCloudEvent:
+                    client.SendEvent(CreateCloudEvent("1"));
+                    break;
+                case TestMode.SendCloudEventAsync:
+                    await client.SendEventAsync(CreateCloudEvent("1"));
+                    break;
+                case TestMode.SendCloudEvents:
+                    client.SendEvents(CreateCloudEvents());
+                    break;
+                case TestMode.SendCloudEventsAsync:
+                    await client.SendEventsAsync(CreateCloudEvents());
+                    break;
 
-                Console.WriteLine("EventGridPublisherClient created successfully");
-
-                switch (testMode)
-                {
-                    case TestMode.SendEventGridEvent:
-                        SendEventGridEvent(client);
-                        break;
-                    case TestMode.SendEventGridEventAsync:
-                        await SendEventGridEventAsync(client);
-                        break;
-                    case TestMode.SendEventGridEvents:
-                        SendEventGridEvents(client);
-                        break;
-                    case TestMode.SendEventGridEventsAsync:
-                        await SendEventGridEventsAsync(client);
-                        break;
-                    case TestMode.SendCloudEvent:
-                        SendCloudEvent(client);
-                        break;
-                    case TestMode.SendCloudEventAsync:
-                        await SendCloudEventAsync(client);
-                        break;
-                    case TestMode.SendCloudEvents:
-                        SendCloudEvents(client);
-                        break;
-                    case TestMode.SendCloudEventsAsync:
-                        await SendCloudEventsAsync(client);
-                        break;
-                    case TestMode.SendCloudEventToChannel:
-                        SendCloudEventToChannel(client);
-                        break;
-                    case TestMode.SendCloudEventsToChannel:
-                        SendCloudEventsToChannel(client);
-                        break;
-                    case TestMode.SendCloudEventToChannelAsync:
-                        await SendCloudEventToChannelAsync(client);
-                        break;
-                    case TestMode.SendCloudEventsToChannelAsync:
-                        await SendCloudEventsToChannelAsync(client);
-                        break;
-                    default:
-                        throw new ArgumentException($"Unhandled test mode: {testMode}");
-                }
+                // The dynamic calls preserve compilation against pre-4.11 packages, which do not define the partner-channel overloads.
+                case TestMode.SendCloudEventToChannel:
+                    ((dynamic)client).SendEvent(CreateCloudEvent("1"), "test-channel");
+                    break;
+                case TestMode.SendCloudEventsToChannel:
+                    ((dynamic)client).SendEvents(CreateCloudEvents(), "test-channel");
+                    break;
+                case TestMode.SendCloudEventToChannelAsync:
+                    await ((dynamic)client).SendEventAsync(CreateCloudEvent("1"), "test-channel");
+                    break;
+                case TestMode.SendCloudEventsToChannelAsync:
+                    await ((dynamic)client).SendEventsAsync(CreateCloudEvents(), "test-channel");
+                    break;
+                default:
+                    throw new ArgumentException($"Unhandled test mode: {testMode}");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error occurred: {ex.GetType().Name}: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                throw;
-            }
-
-            Console.WriteLine("Azure Event Grid Test Sample completed successfully");
-        }
-
-        private static void SendEventGridEvent(EventGridPublisherClient client)
-        {
-            Console.WriteLine("\n=== SendEvent (EventGridEvent) ===");
-            var ev = CreateEventGridEvent("1");
-            client.SendEvent(ev);
-            Console.WriteLine("Event sent successfully");
-        }
-
-        private static async Task SendEventGridEventAsync(EventGridPublisherClient client)
-        {
-            Console.WriteLine("\n=== SendEventAsync (EventGridEvent) ===");
-            var ev = CreateEventGridEvent("1");
-            await client.SendEventAsync(ev);
-            Console.WriteLine("Event sent successfully");
-        }
-
-        private static void SendEventGridEvents(EventGridPublisherClient client)
-        {
-            Console.WriteLine("\n=== SendEvents (EventGridEvent) ===");
-            client.SendEvents(CreateEventGridEvents());
-            Console.WriteLine("Sent 3 events successfully");
-        }
-
-        private static async Task SendEventGridEventsAsync(EventGridPublisherClient client)
-        {
-            Console.WriteLine("\n=== SendEventsAsync (EventGridEvent) ===");
-            await client.SendEventsAsync(CreateEventGridEvents());
-            Console.WriteLine("Sent 3 events successfully");
-        }
-
-        private static void SendCloudEvent(EventGridPublisherClient client)
-        {
-            Console.WriteLine("\n=== SendEvent (CloudEvent) ===");
-            var ev = CreateCloudEvent("1");
-            client.SendEvent(ev);
-            Console.WriteLine("CloudEvent sent successfully");
-        }
-
-        private static async Task SendCloudEventAsync(EventGridPublisherClient client)
-        {
-            Console.WriteLine("\n=== SendEventAsync (CloudEvent) ===");
-            var ev = CreateCloudEvent("1");
-            await client.SendEventAsync(ev);
-            Console.WriteLine("CloudEvent sent successfully");
-        }
-
-        private static void SendCloudEvents(EventGridPublisherClient client)
-        {
-            Console.WriteLine("\n=== SendEvents (CloudEvent) ===");
-            client.SendEvents(CreateCloudEvents());
-            Console.WriteLine("Sent 3 CloudEvents successfully");
-        }
-
-        private static async Task SendCloudEventsAsync(EventGridPublisherClient client)
-        {
-            Console.WriteLine("\n=== SendEventsAsync (CloudEvent) ===");
-            await client.SendEventsAsync(CreateCloudEvents());
-            Console.WriteLine("Sent 3 CloudEvents successfully");
-        }
-
-        private static void SendCloudEventToChannel(EventGridPublisherClient client)
-        {
-            Console.WriteLine("\n=== SendEvent (CloudEvent with partner channel) ===");
-            var ev = CreateCloudEvent("1");
-            ((dynamic)client).SendEvent(ev, "test-channel");
-            Console.WriteLine("CloudEvent sent successfully");
-        }
-
-        private static void SendCloudEventsToChannel(EventGridPublisherClient client)
-        {
-            Console.WriteLine("\n=== SendEvents (CloudEvent with partner channel) ===");
-            ((dynamic)client).SendEvents(CreateCloudEvents(), "test-channel");
-            Console.WriteLine("Sent 3 CloudEvents successfully");
-        }
-
-        private static async Task SendCloudEventToChannelAsync(EventGridPublisherClient client)
-        {
-            Console.WriteLine("\n=== SendEventAsync (CloudEvent with partner channel) ===");
-            var ev = CreateCloudEvent("1");
-            await ((dynamic)client).SendEventAsync(ev, "test-channel");
-            Console.WriteLine("CloudEvent sent successfully");
-        }
-
-        private static async Task SendCloudEventsToChannelAsync(EventGridPublisherClient client)
-        {
-            Console.WriteLine("\n=== SendEventsAsync (CloudEvent with partner channel) ===");
-            await ((dynamic)client).SendEventsAsync(CreateCloudEvents(), "test-channel");
-            Console.WriteLine("Sent 3 CloudEvents successfully");
         }
 
         private static IEnumerable<EventGridEvent> CreateEventGridEvents()
