@@ -156,8 +156,6 @@ private:
     std::vector<ModuleCodeRange> GetModuleCodeRanges(ModuleID moduleId);
     void InsertCodeRangeIntoPage(PagesMap::iterator pageIt, const CodeRange& range);
 
-    // Helper: Ensure a page exists in the map
-    void EnsurePageExists(uint64_t page);
     std::optional<bool> IsManagedImpl(std::uintptr_t ip) const noexcept;
 
     // Map from page number -> page entry (with its own lock)

@@ -454,27 +454,6 @@ void ManagedCodeCache::AddModuleRangesToCache(std::vector<ModuleCodeRange> modul
     }
 }
 
-void ManagedCodeCache::EnsurePageExists(uint64_t page)
-{
-    // Check if page exists (with shared lock first - fast path)
-    {
-        std::shared_lock<std::shared_timed_mutex> mapLock(_pagesMutex);
-        if (_pagesMap.find(page) != _pagesMap.end())
-        {
-            return;  // Already exists
-        }
-    }
-    
-    // Page doesn't exist, create it (with exclusive lock)
-    std::unique_lock<std::shared_timed_mutex> mapLock(_pagesMutex);
-    
-    // Double-check after acquiring exclusive lock (another thread might have created it)
-    if (_pagesMap.find(page) == _pagesMap.end())
-    {
-        _pagesMap[page] = PageEntry();
-    }
-}
-
 std::vector<ModuleCodeRange> ManagedCodeCache::GetModuleCodeRanges(ModuleID moduleId)
 {
     std::vector<ModuleCodeRange> result;
