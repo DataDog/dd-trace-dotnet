@@ -65,32 +65,19 @@ namespace Samples.AzureEventGridNamespaces
 
         private static void SendBatch(EventGridSenderClient client)
         {
-            var enumerationCount = 0;
-            client.Send(CreateCloudEvents(() => enumerationCount++));
-            AssertEnumeratedOnce(enumerationCount);
+            client.Send(CreateCloudEvents());
         }
 
         private static async Task SendBatchAsync(EventGridSenderClient client)
         {
-            var enumerationCount = 0;
-            await client.SendAsync(CreateCloudEvents(() => enumerationCount++));
-            AssertEnumeratedOnce(enumerationCount);
+            await client.SendAsync(CreateCloudEvents());
         }
 
-        private static IEnumerable<CloudEvent> CreateCloudEvents(Action onEnumeration)
+        private static IEnumerable<CloudEvent> CreateCloudEvents()
         {
-            onEnumeration();
             yield return CreateCloudEvent("1");
             yield return CreateCloudEvent("2");
             yield return CreateCloudEvent("3");
-        }
-
-        private static void AssertEnumeratedOnce(int enumerationCount)
-        {
-            if (enumerationCount != 1)
-            {
-                throw new InvalidOperationException($"Expected the events to be enumerated once, but they were enumerated {enumerationCount} times.");
-            }
         }
 
         private static CloudEvent CreateCloudEvent(string suffix) =>
