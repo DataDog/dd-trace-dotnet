@@ -1093,6 +1093,19 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             AssertHeaderValues(proxy);
         }
 
+        [Fact]
+        public void GetHeaderValueDoesNotEnumerateLists()
+        {
+            var headers = new FakeLegacyHeaders(
+                new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["user-agent"] = new ThrowingEnumerableList("first", "second"),
+                });
+            var adapter = new LegacyAspNetCoreHeadersCollectionAdapter(headers);
+
+            LegacyAspNetCoreHttpRequestHandler.GetHeaderValue(adapter, "user-agent").Should().Be("first,second");
+        }
+
         private static object CreateMvcBeforeActionPayload(
             FakeHttpContext context,
             string routeTemplate,
@@ -1189,6 +1202,46 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
             }
 
             public IEnumerator<string> GetEnumerator() => ((IEnumerable<string>)(_values ?? [])).GetEnumerator();
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        private sealed class ThrowingEnumerableList : IList<string>
+        {
+            private readonly string[] _values;
+
+            public ThrowingEnumerableList(params string[] values)
+            {
+                _values = values;
+            }
+
+            public int Count => _values.Length;
+
+            public bool IsReadOnly => true;
+
+            public string this[int index]
+            {
+                get => _values[index];
+                set => throw new NotSupportedException();
+            }
+
+            public int IndexOf(string item) => throw new NotSupportedException();
+
+            public bool Contains(string item) => throw new NotSupportedException();
+
+            public void CopyTo(string[] array, int arrayIndex) => throw new NotSupportedException();
+
+            public void Add(string item) => throw new NotSupportedException();
+
+            public void Insert(int index, string item) => throw new NotSupportedException();
+
+            public bool Remove(string item) => throw new NotSupportedException();
+
+            public void RemoveAt(int index) => throw new NotSupportedException();
+
+            public void Clear() => throw new NotSupportedException();
+
+            public IEnumerator<string> GetEnumerator() => throw new InvalidOperationException("The IList fast path should not enumerate values.");
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }

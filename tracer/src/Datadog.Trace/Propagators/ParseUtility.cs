@@ -37,6 +37,21 @@ namespace Datadog.Trace.Propagators
                     hasValue = true;
                 }
             }
+            else if (headerValues is IList<string?> listValues)
+            {
+                // Checking IList allows value-type collections exposed as IEnumerable, such as StringValues,
+                // to be read without allocating an interface enumerator.
+                var count = listValues.Count;
+                for (var i = 0; i < count; i++)
+                {
+                    if (ulong.TryParse(listValues[i], NumberStyles.Integer, CultureInfo.InvariantCulture, out var result))
+                    {
+                        return result;
+                    }
+
+                    hasValue = true;
+                }
+            }
             else if (TryParse(headerValues, ref hasValue, out var result))
             {
                 return result;
@@ -99,6 +114,24 @@ namespace Datadog.Trace.Propagators
                 foreach (string? headerValue in stringValues)
                 {
                     if (int.TryParse(headerValue, out var result))
+                    {
+                        // note this int value may not be defined in the enum,
+                        // but we should pass it along without validation
+                        // for forward compatibility
+                        return result;
+                    }
+
+                    hasValue = true;
+                }
+            }
+            else if (headerValues is IList<string?> listValues)
+            {
+                // Checking IList allows value-type collections exposed as IEnumerable, such as StringValues,
+                // to be read without allocating an interface enumerator.
+                var count = listValues.Count;
+                for (var i = 0; i < count; i++)
+                {
+                    if (int.TryParse(listValues[i], out var result))
                     {
                         // note this int value may not be defined in the enum,
                         // but we should pass it along without validation
@@ -181,6 +214,23 @@ namespace Datadog.Trace.Propagators
                 return null;
             }
 
+            if (headerValues is IList<string?> listValues)
+            {
+                // Checking IList allows value-type collections exposed as IEnumerable, such as StringValues,
+                // to be read without allocating an interface enumerator.
+                var count = listValues.Count;
+                for (var i = 0; i < count; i++)
+                {
+                    var headerValue = listValues[i];
+                    if (!string.IsNullOrEmpty(headerValue))
+                    {
+                        return headerValue;
+                    }
+                }
+
+                return null;
+            }
+
             return ParseStringIEnumerable(headerValues);
 
             // IEnumerable version (different method to avoid try/finally in the caller)
@@ -213,6 +263,23 @@ namespace Datadog.Trace.Propagators
                 // Checking string[] allows to avoid the enumerator allocation.
                 foreach (string? headerValue in stringValues)
                 {
+                    if (!string.IsNullOrEmpty(headerValue))
+                    {
+                        return headerValue;
+                    }
+                }
+
+                return null;
+            }
+
+            if (headerValues is IList<string?> listValues)
+            {
+                // Checking IList allows value-type collections exposed as IEnumerable, such as StringValues,
+                // to be read without allocating an interface enumerator.
+                var count = listValues.Count;
+                for (var i = 0; i < count; i++)
+                {
+                    var headerValue = listValues[i];
                     if (!string.IsNullOrEmpty(headerValue))
                     {
                         return headerValue;
