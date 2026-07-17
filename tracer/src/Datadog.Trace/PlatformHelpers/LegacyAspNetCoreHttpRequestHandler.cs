@@ -8,6 +8,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
@@ -219,30 +220,61 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        private string? GetHeaderValue(LegacyAspNetCoreHeadersCollectionAdapter headers, string name)
+        internal static string? GetHeaderValue(LegacyAspNetCoreHeadersCollectionAdapter headers, string name)
         {
-            using var enumerator = headers.GetValues(name).GetEnumerator();
-            if (!enumerator.MoveNext())
+            var values = headers.GetValues(name);
+            if (values is IList<string> list)
             {
-                return null;
+                var count = list.Count;
+                if (count == 0)
+                {
+                    return null;
+                }
+
+                if (count == 1)
+                {
+                    return list[0];
+                }
+
+                var builder = StringBuilderCache.Acquire();
+                builder.Append(list[0]);
+                for (var i = 1; i < count; i++)
+                {
+                    builder.Append(',');
+                    builder.Append(list[i]);
+                }
+
+                return StringBuilderCache.GetStringAndRelease(builder);
             }
 
-            var first = enumerator.Current;
-            if (!enumerator.MoveNext())
-            {
-                return first;
-            }
+            return GetHeaderValueEnumerable(values);
 
-            var builder = StringBuilderCache.Acquire();
-            builder.Append(first);
-            do
+            // IEnumerable version (different method to avoid try/finally in the caller)
+            static string? GetHeaderValueEnumerable(IEnumerable<string> values)
             {
-                builder.Append(',');
-                builder.Append(enumerator.Current);
-            }
-            while (enumerator.MoveNext());
+                using var enumerator = values.GetEnumerator();
+                if (!enumerator.MoveNext())
+                {
+                    return null;
+                }
 
-            return StringBuilderCache.GetStringAndRelease(builder);
+                var first = enumerator.Current;
+                if (!enumerator.MoveNext())
+                {
+                    return first;
+                }
+
+                var builder = StringBuilderCache.Acquire();
+                builder.Append(first);
+                do
+                {
+                    builder.Append(',');
+                    builder.Append(enumerator.Current);
+                }
+                while (enumerator.MoveNext());
+
+                return StringBuilderCache.GetStringAndRelease(builder);
+            }
         }
     }
 }
