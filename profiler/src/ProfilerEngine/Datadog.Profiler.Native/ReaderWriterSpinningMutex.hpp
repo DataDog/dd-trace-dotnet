@@ -6,7 +6,9 @@
 #include <atomic>
 #include <cassert>
 #include <chrono>
-#include <thread>
+
+#include <errno.h>
+#include <time.h>
 
 #ifdef DD_SANITIZE_THREAD
 #include <sanitizer/tsan_interface.h>
@@ -54,12 +56,13 @@
 //
 // Safety note
 // -----------
-// This primitive only makes the *lock itself* signal-safe (bounded, no
-// blocking syscalls beyond an optional short sleep in the slow path, mirrors
-// the existing SpinningMutex.hpp). It does NOT by itself prevent the classic
-// same-thread reentrancy deadlock (writer holds the lock, gets interrupted by
-// a signal targeted at the very same thread, and the handler tries to take
-// the lock too). Bounded try_lock_for/try_lock_shared_for calls turn that
+// This primitive only makes the *lock itself* signal-safe (bounded; the
+// slow path's backoff sleep goes straight to ::clock_nanosleep() rather than
+// std::this_thread::sleep_for(), see BoundedSleep() below for why). It does
+// NOT by itself prevent the classic same-thread reentrancy deadlock (writer
+// holds the lock, gets interrupted by a signal targeted at the very same
+// thread, and the handler tries to take the lock too). Bounded
+// try_lock_for/try_lock_shared_for calls turn that
 // scenario into "handler gives up after the timeout" rather than "hang
 // forever", which is the same trade-off already made by ManagedCodeCache
 // today. If true reentrancy-proof behavior is required, combine this with
@@ -234,6 +237,42 @@ private:
         std::atomic<int32_t>& _counter;
     };
 
+    // Sleeps for at most `duration` without going through
+    // std::this_thread::sleep_for(): this primitive can be exercised from a
+    // POSIX signal handler (that is its whole purpose), and sleep_for() is
+    // not documented as async-signal-safe - on this toolchain it is a thin
+    // wrapper around ::nanosleep(), which POSIX explicitly does NOT put on
+    // the async-signal-safe list (see signal-safety(7); only bare sleep(3)
+    // is listed, not nanosleep(2)/clock_nanosleep(2)). Calling
+    // ::clock_nanosleep() directly is not a POSIX-certified guarantee either
+    // (no bounded-sleep primitive is), but it avoids any indirection through
+    // libstdc++'s <thread> internals (chrono conversions, its own possible
+    // lazy-init) and, unlike ::nanosleep(), reports errors via its return
+    // value rather than errno, so this call touches no thread-global state
+    // at all beyond the syscall itself.
+    static void BoundedSleep(std::chrono::steady_clock::duration duration) noexcept
+    {
+        if (duration <= std::chrono::steady_clock::duration::zero())
+        {
+            return;
+        }
+
+        auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
+        auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration - seconds);
+
+        struct timespec ts;
+        ts.tv_sec = static_cast<time_t>(seconds.count());
+        ts.tv_nsec = static_cast<long>(nanoseconds.count());
+
+        // On EINTR, clock_nanosleep() refreshes ts in place with the
+        // remaining relative time, so re-issuing the call with the same ts
+        // resumes waiting for what is left rather than restarting the full
+        // duration.
+        while (::clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts) == EINTR)
+        {
+        }
+    }
+
     bool try_lock_shared_once() noexcept
     {
         int32_t expected = _state.load(std::memory_order_relaxed);
@@ -288,7 +327,7 @@ private:
                 // signal handler's bounded try_lock_for) overshoot by nearly
                 // kYieldSleep, since the next deadline check only happens
                 // after waking up.
-                std::this_thread::sleep_for(std::min<std::chrono::steady_clock::duration>(kYieldSleep, timeoutTime - now));
+                BoundedSleep(std::min<std::chrono::steady_clock::duration>(kYieldSleep, timeoutTime - now));
             }
         }
     }
@@ -305,7 +344,12 @@ private:
             // See try_lock_shared() above for why relaxed is sufficient here.
             if (_waitingWriters.load(std::memory_order_relaxed) == 0 && try_lock_shared_once())
             {
-                TSAN_MUTEX_POST_LOCK(this, __tsan_mutex_read_lock, 0);
+                // Must echo __tsan_mutex_try_lock here too (not just
+                // read_lock): pre_lock announced this as a try-lock attempt,
+                // and TSAN requires that flag to match on the post_lock call
+                // that reports its outcome - see try_lock_shared() above,
+                // which does the same on its success path.
+                TSAN_MUTEX_POST_LOCK(this, __tsan_mutex_try_lock | __tsan_mutex_read_lock, 0);
                 return true;
             }
             TSAN_MUTEX_POST_LOCK(this, __tsan_mutex_try_lock_failed | __tsan_mutex_read_lock, 0);
@@ -328,7 +372,7 @@ private:
                 }
                 // See try_lock_exclusive_until_slow() above for why this is
                 // clamped rather than an unconditional sleep_for(kYieldSleep).
-                std::this_thread::sleep_for(std::min<std::chrono::steady_clock::duration>(kYieldSleep, timeoutTime - now));
+                BoundedSleep(std::min<std::chrono::steady_clock::duration>(kYieldSleep, timeoutTime - now));
             }
         }
     }
