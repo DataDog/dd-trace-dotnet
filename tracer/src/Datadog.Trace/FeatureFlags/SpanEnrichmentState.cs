@@ -55,6 +55,36 @@ namespace Datadog.Trace.FeatureFlags
         internal static string HashTargetingKey(string targetingKey) => Sha256Helper.ComputeHashAsHexString(targetingKey);
 
         /// <summary>
+        /// Returns whether an evaluation would record anything: a serial id, or a runtime default
+        /// (no variant). A variant with no serial id records nothing, so callers can use this to
+        /// skip creating per-trace state for evaluations that would be dropped anyway.
+        /// </summary>
+        internal static bool IsRecordable(long? serialId, bool hasVariant) => serialId is not null || !hasVariant;
+
+        /// <summary>
+        /// Returns whether a native evaluation would record anything, without allocating state.
+        /// </summary>
+        internal static bool IsRecordable(IEvaluation? evaluation)
+        {
+            if (evaluation is null)
+            {
+                return false;
+            }
+
+            // A runtime default (no variant) always records; a variant only records when it carries
+            // a serial id.
+            if (StringUtil.IsNullOrEmpty(evaluation.Variant))
+            {
+                return true;
+            }
+
+            var metadata = evaluation.FlagMetadata;
+            return metadata is not null
+                && metadata.TryGetValue(FeatureFlagMetadataKeys.SplitSerialId, out var serialId)
+                && !StringUtil.IsNullOrEmpty(serialId);
+        }
+
+        /// <summary>
         /// Accumulates a single flag evaluation into this trace's state. Never throws.
         /// </summary>
         /// <param name="serialId">The split serial id, or null when absent.</param>
@@ -66,7 +96,7 @@ namespace Datadog.Trace.FeatureFlags
         internal void Accumulate(long? serialId, bool doLog, string? targetingKey, bool hasVariant, string flagKey, object? value)
         {
             // A variant without a serial id is a plain evaluation with nothing to record.
-            if (serialId is null && hasVariant)
+            if (!IsRecordable(serialId, hasVariant))
             {
                 return;
             }

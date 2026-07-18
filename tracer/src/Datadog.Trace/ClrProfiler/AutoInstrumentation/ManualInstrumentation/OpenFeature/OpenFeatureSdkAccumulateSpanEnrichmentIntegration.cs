@@ -8,6 +8,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature;
 
@@ -31,8 +32,13 @@ public sealed class OpenFeatureSdkAccumulateSpanEnrichmentIntegration
     {
         var tracer = Datadog.Trace.Tracer.Instance;
         var traceContext = tracer.InternalActiveScope?.Span?.Context.TraceContext;
-        traceContext?.GetOrCreateFeatureFlagEnrichment()
-                    ?.Accumulate(serialId, doLog, targetingKey, hasVariant, flagKey, value);
+
+        // Skip creating per-trace state for evaluations that would record nothing.
+        if (traceContext is not null && SpanEnrichmentState.IsRecordable(serialId, hasVariant))
+        {
+            traceContext.GetOrCreateFeatureFlagEnrichment()
+                        ?.Accumulate(serialId, doLog, targetingKey, hasVariant, flagKey, value);
+        }
 
         return CallTargetState.GetDefault();
     }
