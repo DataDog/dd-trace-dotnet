@@ -14,5 +14,11 @@ public class StatusController : Controller
 
         return Content("Hello, World!\\n");
     }
+
+    [HttpGet("{status}/body")]
+    public IActionResult IndexFormWithBody(int status)
+    {
+        return StatusCode(status, new { message = "waf_sentinel_response_body" });
+    }
 }
 
