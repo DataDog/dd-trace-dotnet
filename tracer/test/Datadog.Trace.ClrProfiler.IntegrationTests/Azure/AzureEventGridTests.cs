@@ -20,18 +20,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
     [Trait("Category", "ArmUnsupported")]
     public class AzureEventGridTests : TracingIntegrationTest
     {
+        private const string DefaultTopicEndpoint = "http://localhost:6500/samples-eventgrid-topic/api/events";
         private const string ExpectedOperationName = "azure_eventgrid.send";
+
+        private static readonly string PublisherDestination =
+            new Uri(Environment.GetEnvironmentVariable("EVENTGRID_TOPIC_ENDPOINT") ?? DefaultTopicEndpoint).Host;
 
         private static readonly object[][] PublisherTestCases =
         [
-            ["SendEventGridEvent", null, "localhost", true],
-            ["SendEventGridEventAsync", null, "localhost", true],
-            ["SendEventGridEvents", 3, "localhost", false],
-            ["SendEventGridEventsAsync", 3, "localhost", false],
-            ["SendCloudEvent", null, "localhost", true],
-            ["SendCloudEventAsync", null, "localhost", true],
-            ["SendCloudEvents", 3, "localhost", false],
-            ["SendCloudEventsAsync", 3, "localhost", false],
+            ["SendEventGridEvent", null, PublisherDestination, true],
+            ["SendEventGridEventAsync", null, PublisherDestination, true],
+            ["SendEventGridEvents", 3, PublisherDestination, false],
+            ["SendEventGridEventsAsync", 3, PublisherDestination, false],
+            ["SendCloudEvent", null, PublisherDestination, true],
+            ["SendCloudEventAsync", null, PublisherDestination, true],
+            ["SendCloudEvents", 3, PublisherDestination, false],
+            ["SendCloudEventsAsync", 3, PublisherDestination, false],
         ];
 
         private static readonly object[][] PartnerChannelTestCases =
