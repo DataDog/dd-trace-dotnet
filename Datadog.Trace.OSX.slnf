@@ -87,6 +87,8 @@
       "tracer\\test\\test-applications\\integrations\\Samples.AWS.S3\\Samples.AWS.S3.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AWS.SimpleNotificationService\\Samples.AWS.SimpleNotificationService.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AWS.SQS\\Samples.AWS.SQS.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.AzureEventGrid\\Samples.AzureEventGrid.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.AzureEventGridNamespaces\\Samples.AzureEventGridNamespaces.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.AzureServiceBus\\Samples.AzureServiceBus.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.CIVisibilityIpc\\Samples.CIVisibilityIpc.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.Console\\Samples.Console.csproj",
