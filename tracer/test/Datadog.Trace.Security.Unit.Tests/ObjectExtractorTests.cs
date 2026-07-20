@@ -684,6 +684,125 @@ namespace Datadog.Trace.Security.Unit.Tests
             items.Should().Contain(10).And.Contain(20);
         }
 
+        [Fact]
+        public void TestNestedDataContractGraphWithChildCollection()
+        {
+            // Realistic accounts-site response DTO written directly to Response.OutputStream via
+            // DataContractJsonSerializer: a [DataContract] graph with a nested [DataContract] object and a
+            // collection of child [DataContract] DTOs, using snake_case [DataMember] names, an enum, and an
+            // omitted EmitDefaultValue=false member. Verifies the DataContract extractor is threaded through
+            // the recursion so nested objects and collection items also honour [DataMember] names.
+            var target = new TestAccountResponsePoco
+            {
+                AccountId = 42,
+                DisplayName = "Ada Lovelace",
+                Status = TestStatusEnum.Active, // = 2
+                MiddleName = null,              // EmitDefaultValue=false -> omitted
+                PrimaryAddress = new TestAddressPoco { City = "London", Zip = "EC1" },
+                Roles = new List<TestRolePoco>
+                {
+                    new() { RoleId = 1, RoleName = "admin" },
+                    new() { RoleId = 2, RoleName = "user" },
+                },
+            };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result!["account_id"].Should().Be(42);
+            result["display_name"].Should().Be("Ada Lovelace");
+            result["status"].Should().Be(2L);             // enum -> numeric value, not name
+            result.Should().NotContainKey("middle_name"); // null + EmitDefaultValue=false -> omitted
+            result.Should().NotContainKey(nameof(TestAccountResponsePoco.MiddleName));
+
+            var address = result["primary_address"] as Dictionary<string, object>;
+            address.Should().NotBeNull();
+            address!["city"].Should().Be("London");
+            address["zip"].Should().Be("EC1");
+            // nested object must use the child type's [DataMember] names, not the CLR property names
+            address.Should().NotContainKey(nameof(TestAddressPoco.City));
+
+            var roles = result["roles"] as List<object>;
+            roles.Should().NotBeNull();
+            roles.Should().HaveCount(2);
+            var firstRole = roles![0] as Dictionary<string, object>;
+            firstRole.Should().NotBeNull();
+            firstRole!["role_id"].Should().Be(1);
+            firstRole["role_name"].Should().Be("admin");
+            var secondRole = roles[1] as Dictionary<string, object>;
+            secondRole!["role_id"].Should().Be(2);
+            secondRole["role_name"].Should().Be("user");
+        }
+
+        [Fact]
+        public void TestSortedDictionaryExtractedAsKeyValuePairs()
+        {
+            // SortedDictionary<K,V> is not Dictionary<,> but DataContractJsonSerializer still serializes it
+            // as a dictionary ([{Key,Value}] with UseSimpleDictionaryFormat=false), not a plain list.
+            var target = new TestSortedDictionaryMemberPoco
+            {
+                Data = new SortedDictionary<string, string> { { "a", "1" }, { "b", "2" } }
+            };
+
+            var result = ObjectExtractor.ExtractDataContract(target, useSimpleDictionaryFormat: false) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            var data = result!["data"] as List<object>;
+            data.Should().NotBeNull();
+            data.Should().HaveCount(2);
+            var first = data![0] as Dictionary<string, object>;
+            first.Should().ContainKey("Key");
+            first.Should().ContainKey("Value");
+        }
+
+        [Fact]
+        public void TestSortedDictionaryExtractedAsMapWhenSimpleFormat()
+        {
+            var target = new TestSortedDictionaryMemberPoco
+            {
+                Data = new SortedDictionary<string, string> { { "a", "1" } }
+            };
+
+            var result = ObjectExtractor.ExtractDataContract(target, useSimpleDictionaryFormat: true) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            var data = result!["data"] as Dictionary<string, object>;
+            data.Should().NotBeNull();
+            data!["a"].Should().Be("1");
+        }
+
+        [Fact]
+        public void TestManuallyImplementedPropertyIncludedForNonDataContractType()
+        {
+            // DataContractJsonSerializer serializes public read-write properties even when manually
+            // implemented; relying on compiler-generated __BackingFields would miss them.
+            var target = new TestManualPropertyPoco { Value = "hello" };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result!.Should().ContainKey(nameof(TestManualPropertyPoco.Value));
+            result[nameof(TestManualPropertyPoco.Value)].Should().Be("hello");
+            // read-only property has no public setter -> not serialized by DataContractJsonSerializer
+            result.Should().NotContainKey(nameof(TestManualPropertyPoco.Computed));
+        }
+
+        [Fact]
+        public void TestDataMemberNameIgnoredOnNonDataContractType()
+        {
+            // On a non-[DataContract] type, DataContractJsonSerializer ignores [DataMember(Name=...)] and
+            // uses the CLR member name, while still honoring [IgnoreDataMember].
+            var target = new TestNonDataContractRenamedPoco { Value = 7, Hidden = 9 };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result!.Should().ContainKey(nameof(TestNonDataContractRenamedPoco.Value)); // CLR name, not "renamed"
+            result.Should().NotContainKey("renamed");
+            result[nameof(TestNonDataContractRenamedPoco.Value)].Should().Be(7);
+            result.Should().NotContainKey(nameof(TestNonDataContractRenamedPoco.Hidden)); // [IgnoreDataMember]
+        }
+
         private static void PopulateNestedTarget(TestNestedPropertiesPoco target, int count)
         {
             var current = target;
@@ -952,6 +1071,78 @@ namespace Datadog.Trace.Security.Unit.Tests
     {
         [DataMember(Name = "items")]
         public HashSet<int> Items { get; set; }
+    }
+
+    [DataContract]
+    public class TestAccountResponsePoco
+    {
+        [DataMember(Name = "account_id")]
+        public int AccountId { get; set; }
+
+        [DataMember(Name = "display_name")]
+        public string DisplayName { get; set; }
+
+        [DataMember(Name = "status")]
+        public TestStatusEnum Status { get; set; }
+
+        [DataMember(Name = "middle_name", EmitDefaultValue = false)]
+        public string MiddleName { get; set; }
+
+        [DataMember(Name = "primary_address")]
+        public TestAddressPoco PrimaryAddress { get; set; }
+
+        [DataMember(Name = "roles")]
+        public List<TestRolePoco> Roles { get; set; }
+    }
+
+    [DataContract]
+    public class TestAddressPoco
+    {
+        [DataMember(Name = "city")]
+        public string City { get; set; }
+
+        [DataMember(Name = "zip")]
+        public string Zip { get; set; }
+    }
+
+    [DataContract]
+    public class TestRolePoco
+    {
+        [DataMember(Name = "role_id")]
+        public int RoleId { get; set; }
+
+        [DataMember(Name = "role_name")]
+        public string RoleName { get; set; }
+    }
+
+    [DataContract]
+    public class TestSortedDictionaryMemberPoco
+    {
+        [DataMember(Name = "data")]
+        public SortedDictionary<string, string> Data { get; set; }
+    }
+
+    public class TestManualPropertyPoco
+    {
+        private string _value;
+
+        public string Value
+        {
+            get => _value;
+            set => _value = value;
+        }
+
+        // Read-only (no setter): DataContractJsonSerializer does not serialize this on a POCO.
+        public string Computed => "computed";
+    }
+
+    public class TestNonDataContractRenamedPoco
+    {
+        [DataMember(Name = "renamed")]
+        public int Value { get; set; }
+
+        [IgnoreDataMember]
+        public int Hidden { get; set; }
     }
 
     public enum TestStatusEnum
