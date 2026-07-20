@@ -145,6 +145,7 @@
    </assembly>
    <assembly fullname="System.Collections">
       <type fullname="System.Collections.BitArray" />
+      <type fullname="System.Collections.Generic.CollectionExtensions" />
       <type fullname="System.Collections.Generic.Comparer`1" />
       <type fullname="System.Collections.Generic.Dictionary`2" />
       <type fullname="System.Collections.Generic.Dictionary`2/Enumerator" />

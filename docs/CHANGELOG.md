@@ -51,6 +51,77 @@
 
 
 
+
+## [Release 3.49.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.49.0)
+
+## Summary
+
+* [OTLP] Add trace metrics via OTLP span metrics export (#8826)
+* Implement span-derived primary tags (AKA Additional tags) on Client-Side-Stats computation (#8766)
+* Implement support for `DD_TAGS` in Client-Side stats (#8823)
+* Add EventBridge DSM producer injection (#8639)
+
+## Changes
+
+### Tracer
+* Refactor GraphQL error response building and add pre-emptive truncation (#8647)
+* Implement span-derived primary tags (AKA Additional tags) on Client-Side-Stats computation (#8766)
+* Minor and performance updates for client-side-stats (#8822)
+* Implement support for `DD_TAGS` in Client-Side stats (#8823)
+* Apply cardinality limits to Client-Side stats implementation (#8824)
+* [OTLP] Add trace metrics via OTLP span metrics export (#8826)
+* Optimise OTEL metrics collection to reduce allocations (#8834)
+* Update `TruncateUTF8` to never split a code point and improve perf (#8836)
+* [Debugger] Log over-length identifier redaction at Warning instead of Error (#8853)
+* Attempt to prevent crash on module unload (#8854)
+
+### ASM
+* [AAP] Add response headers even if no appsec event is present (#8784)
+* [Appsec] Add comments and refs to help out codex reviews when libddwaf is involved (#8831)
+* [BUG] Fix query obfuscation culture invariant (#8850)
+
+### Continuous Profiler
+* [Profiler] Fix live objects age (#8842)
+* Avoid excessive BuggyBits exceptions in endpoint tests (#8881)
+
+### Debugger
+* [Debugger] Define debugger safety guidance (#8817)
+* [Debugger] Prevent expression member access from invoking getters (#8878)
+
+### Fixes
+* Remove config_norm_rules.json tests (#8844)
+
+### Miscellaneous
+*  Add dd-autoinstrumentation CLI with LLM-native structured output (#8313)
+* [Tests] Add Azure Functions Trigger tests for messaging SDKs (#8698)
+* Bump libdatadog to 2.0.0 (~v36.0.0) (#8827)
+* Add bounded cardinality limits for OTEL metrics collection (#8846)
+* update AAS setup guide (#8848)
+
+### Data Streams Monitoring
+* Add EventBridge DSM producer injection (#8639)
+
+### Build / Test
+* [Test] Handle dotnet/runtime#127957 BadImageFormatException fingerprint (#8729)
+* [CI] Add commit-only fallback when resolving serverless/single-step Azure build artifacts (#8782)
+* Flag new major versions of NuGets we don't support (#8800)
+* [Test Package Versions Bump] Updating package versions (#8837)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#8838)
+* Remove legacy create_draft_release workflow (#8839)
+* Bump the gh-actions-packages group across 2 directories with 6 updates (#8851)
+* Update CI VMs to use latest images (#8852)
+* Remove unused kafka services from docker-compose.ym (#8855)
+* [Test Package Versions Bump] Updating package versions (#8857)
+* Move webhook url to protected environment (#8863)
+* [Test Package Versions Bump] Updating package versions (#8864)
+* Update `CODEOWNERS` to remove IDM from DSM and expand DSM ownership (#8870)
+* Fix ADO.NET dropped trace test flakes (#8871)
+* Make transaction early-flush writer test deterministic (#8872)
+* [Tests] Handle UTF-16 output from ProcDump v12.01 (#8890)
+
+
+[Changes since 3.48.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.48.0...v3.49.0)
+
 ## [Release 3.48.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.48.0)
 
 ## Summary

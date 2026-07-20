@@ -12,12 +12,14 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.TraceSamplers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
@@ -26,8 +28,41 @@ namespace Datadog.Trace.Agent
     {
         private const int BufferCount = 2;
 
+        private const int AdditionalTagMaxValueLength = 200;
+        internal const string BlockedByTracerSentinel = "tracer_blocked_value";
+
+        // Default matches the Go agent's MaxResourceLen; when the
+        // agent advertises the "big_resource" feature flag it can store larger resource names.
+        private const int DefaultMaxResourceLengthBytes = 5000;
+        private const int BigResourceMaxResourceLengthBytes = 15000;
+        private const string BigResourceFeatureFlag = "big_resource";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsAggregator>();
-        private static readonly List<byte[]> EmptyPeerTags = [];
+        private static readonly List<byte[]> EmptyTags = [];
+        private static readonly List<byte[]> BlockedByTracerSentinelList = ["tracer_blocked_value"u8.ToArray()];
+
+        private static readonly StatsAggregationKey OverflowKey = new(
+            resource: BlockedByTracerSentinel,
+            service: BlockedByTracerSentinel,
+            operationName: BlockedByTracerSentinel,
+            type: BlockedByTracerSentinel,
+            httpStatusCode: 0,
+            isSyntheticsRequest: false,
+            spanKind: BlockedByTracerSentinel,
+            isError: false,
+            isTopLevel: false,
+            isTraceRoot: null,
+            httpMethod: BlockedByTracerSentinel,
+            httpEndpoint: BlockedByTracerSentinel,
+            grpcStatusCode: string.Empty,
+            serviceSource: BlockedByTracerSentinel,
+            peerTagsHash: 0,
+            additionalMetricTagsHash: 0,
+            truncatedFields: StatsCardinalityTruncatedFields.None)
+        {
+            CardinalityLimitedFields = StatsCardinalityLimitedFields.All,
+        };
+
         private static readonly byte[] PeerTagSeparator = [0];
         private static readonly byte[] BaseServiceUtf8Prefix = EncodingHelpers.Utf8NoBom.GetBytes(Tags.BaseService + ":");
 
@@ -45,12 +80,15 @@ namespace Datadog.Trace.Agent
         private readonly Task _flushTask;
 
         private readonly IDiscoveryService _discoveryService;
+        private readonly IStatsdManager _statsd;
 
         private readonly PrioritySampler _prioritySampler;
         private readonly ErrorSampler _errorSampler;
         private readonly RareSampler _rareSampler;
         private readonly AnalyticsEventsSampler _analyticsEventSampler;
         private readonly IDisposable _settingSubscription;
+        private readonly AdditionalTagKey[] _additionalTagKeys;
+        private readonly int _bucketsCardinalityLimit;
 
         private int _currentBuffer;
 
@@ -59,10 +97,15 @@ namespace Datadog.Trace.Agent
         private List<PeerTagKey> _peerTagKeys = [];
         private int _computeStatsState;
 
-        internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
+        private int _maxResourceLengthBytes = DefaultMaxResourceLengthBytes;
+
+        private bool _traceMetricsEnabled;
+
+        internal StatsAggregator(IApi api, TracerSettings settings, IDiscoveryService discoveryService, IStatsdManager statsd, bool isOtlp)
         {
             _api = api;
             _isOtlp = isOtlp;
+            _statsd = statsd;
             _processExit = new TaskCompletionSource<bool>();
             _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
             _buffers = new StatsBuffer[BufferCount];
@@ -73,6 +116,23 @@ namespace Datadog.Trace.Agent
             _errorSampler = new ErrorSampler();
             _rareSampler = new RareSampler(settings, this);
             _analyticsEventSampler = new AnalyticsEventsSampler();
+            _bucketsCardinalityLimit = settings.StatsComputationBucketsCardinalityLimit;
+
+            // StatsAdditionalTags is already deduplicated, sorted, and capped.
+            // Pre-encode the UTF-8 key prefixes so BuildKey can hash without per-call string encoding.
+            var additionalTagCount = settings.StatsAdditionalTags.Length;
+            if (additionalTagCount == 0)
+            {
+                _additionalTagKeys = [];
+            }
+            else
+            {
+                _additionalTagKeys = new AdditionalTagKey[additionalTagCount];
+                for (var i = 0; i < additionalTagCount; i++)
+                {
+                    _additionalTagKeys[i] = new AdditionalTagKey(settings.StatsAdditionalTags[i]);
+                }
+            }
 
             // Create with the initial mutable settings, but be aware that this could change later
             var header = new ClientStatsPayload(settings.Manager.InitialMutableSettings)
@@ -80,17 +140,26 @@ namespace Datadog.Trace.Agent
                 HostName = HostMetadata.Instance.Hostname,
             };
 
+            _traceMetricsEnabled = settings.Manager.InitialMutableSettings.TracerMetricsEnabled;
+            _statsd.SetRequired(StatsdConsumer.StatsAggregator, _traceMetricsEnabled);
+
             _settingSubscription = settings.Manager.SubscribeToChanges(changes =>
             {
                 if (changes.UpdatedMutable is { } mutable)
                 {
                     header.UpdateDetails(mutable);
+
+                    if (mutable.TracerMetricsEnabled != changes.PreviousMutable.TracerMetricsEnabled)
+                    {
+                        Volatile.Write(ref _traceMetricsEnabled, mutable.TracerMetricsEnabled);
+                        _statsd.SetRequired(StatsdConsumer.StatsAggregator, mutable.TracerMetricsEnabled);
+                    }
                 }
             });
 
             for (int i = 0; i < _buffers.Length; i++)
             {
-                _buffers[i] = new(header);
+                _buffers[i] = new(header, new(settings), new(TelemetryFactory.Metrics));
             }
 
             _flushTask = Task.Run(Flush);
@@ -107,6 +176,8 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        private static ReadOnlySpan<byte> BlockedByTracerSentinelUtf8 => "tracer_blocked_value"u8;
+
         /// <summary>
         /// Gets the current buffer.
         /// StatsBuffer is not thread-safe, this property is not intended to be used outside of the class,
@@ -122,14 +193,15 @@ namespace Datadog.Trace.Agent
             private set => Volatile.Write(ref _computeStatsState, value switch { true => 1, false => -1, _ => 0, });
         }
 
-        public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService, bool isOtlp)
+        public static IStatsAggregator Create(IApi api, TracerSettings settings, IDiscoveryService discoveryService, IStatsdManager statsd, bool isOtlp)
         {
-            return isOtlp || settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService, isOtlp) : new NullStatsAggregator();
+            return isOtlp || settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService, statsd, isOtlp) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()
         {
             _discoveryService?.RemoveSubscription(HandleConfigUpdate);
+            _statsd.SetRequired(StatsdConsumer.StatsAggregator, false);
             _processExit.TrySetResult(true);
             _settingSubscription.Dispose();
             return _flushTask;
@@ -166,12 +238,31 @@ namespace Datadog.Trace.Agent
             }
 
             spans = ObfuscateTrace(in spans);
+
+            if (Volatile.Read(ref _tracerObfuscationVersion) == 1)
+            {
+                TruncateResources(in spans);
+            }
+
             if (!ShouldKeepTrace(in spans))
             {
                 return TraceKeepState.AggregateOnly;
             }
 
             return TraceKeepState.AggregateAndExport; // keep
+        }
+
+        private void TruncateResources(in SpanCollection spans)
+        {
+            var limit = Volatile.Read(ref _maxResourceLengthBytes);
+            foreach (var span in spans)
+            {
+                var resource = span.ResourceName;
+                if (TraceUtil.TruncateUTF8(ref resource, limit))
+                {
+                    span.ResourceName = resource;
+                }
+            }
         }
 
         [TestingAndPrivateOnly]
@@ -258,15 +349,17 @@ namespace Datadog.Trace.Agent
         }
 
         public StatsAggregationKey BuildKey(Span span)
-            => BuildKey(span, Volatile.Read(ref _peerTagKeys), out _);
+            => BuildKey(span, Volatile.Read(ref _peerTagKeys), out _, out _);
 
         /// <summary>
-        /// Computes a <see cref="StatsAggregationKey"/> for the given span, including the peer tags hash.
+        /// Computes a <see cref="StatsAggregationKey"/> for the given span, including the peer tags hash
+        /// and the span-derived additional-tags hash.
         /// The <paramref name="peerTagResults"/> carries context to <see cref="GetEncodedPeerTags"/>
         /// so the cold path can skip re-deriving spanKind/baseService and pre-allocate the result list.
+        /// The <paramref name="additionalTagResults"/> carries context to <see cref="GetEncodedAdditionalTags"/>.
         /// </summary>
         [TestingAndPrivateOnly]
-        internal StatsAggregationKey BuildKey(Span span, List<PeerTagKey> peerTagKeys, out PeerTagResults peerTagResults)
+        internal StatsAggregationKey BuildKey(Span span, List<PeerTagKey> peerTagKeys, out PeerTagResults peerTagResults, out AdditionalTagResults additionalTagResults)
         {
             var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
 
@@ -345,6 +438,18 @@ namespace Datadog.Trace.Agent
                 peerTagResults = default;
             }
 
+            // Span-derived additional tags: hash the configured tag values present on the span.
+            ulong additionalTagsHash;
+            if (_additionalTagKeys.Length == 0)
+            {
+                additionalTagsHash = 0;
+                additionalTagResults = default;
+            }
+            else
+            {
+                additionalTagsHash = ComputeSpanDerivedAdditionalTagsHash(span, out additionalTagResults);
+            }
+
             // When submitting trace metrics over OTLP, we must create inidividual timeseries
             // timeseries for each unique set of attributes, including the Error and IsTopLevel attributes.
             // As a result, we must create distinct Aggregation keys (and consequently, unique stats) by these attributes.
@@ -364,7 +469,9 @@ namespace Datadog.Trace.Agent
                 httpEndpoint,
                 grpcStatusCode,
                 serviceSource,
-                peerTagsHash);
+                peerTagsHash,
+                additionalTagsHash,
+                truncatedFields: additionalTagResults.FirstBlockedTagName is null ? StatsCardinalityTruncatedFields.None : StatsCardinalityTruncatedFields.AdditionalMetricTags);
         }
 
         /// <summary>
@@ -421,7 +528,7 @@ namespace Datadog.Trace.Agent
         /// <summary>
         /// Encodes the peer tags for a span into a <see cref="List{T}"/> of UTF-8 byte arrays.
         /// Called only on the cold path (new bucket creation).
-        /// Uses <paramref name="results"/> from <see cref="BuildKey(Span, List{PeerTagKey}, out PeerTagResults)"/>
+        /// Uses <paramref name="results"/> from <see cref="BuildKey(Span, List{PeerTagKey}, out PeerTagResults, out AdditionalTagResults)"/>
         /// to skip re-deriving spanKind/baseService and to pre-allocate the result list.
         /// </summary>
         internal static List<byte[]> GetEncodedPeerTags(Span span, List<PeerTagKey> peerTagKeys, in PeerTagResults results)
@@ -433,7 +540,7 @@ namespace Datadog.Trace.Agent
 
             if (results.PeerTagCount == 0)
             {
-                return EmptyPeerTags;
+                return EmptyTags;
             }
 
             var result = new List<byte[]>(results.PeerTagCount);
@@ -469,6 +576,86 @@ namespace Datadog.Trace.Agent
             return encoded;
         }
 
+        /// <summary>
+        /// Computes the FNV-64 hash of the span-derived additional tags present on the span, in the
+        /// configured (pre-sorted) order. Values exceeding <see cref="AdditionalTagMaxValueLength"/>
+        /// are substituted with <see cref="BlockedByTracerSentinel"/> so the hash matches the encoded value.
+        /// Tags that are missing or empty on the span are skipped (not part of the dimension set).
+        /// </summary>
+        private ulong ComputeSpanDerivedAdditionalTagsHash(Span span, out AdditionalTagResults results)
+        {
+            // Hash should be generated as TAGNAME:TAGVALUE, in sorted order (_additionalTagKeys is pre-sorted).
+            ulong? previousHash = null;
+            var presentTagCount = 0;
+            string firstBlockedTagName = null;
+            foreach (var tagKey in _additionalTagKeys)
+            {
+                var tagValue = span.GetTag(tagKey.Name);
+                if (string.IsNullOrEmpty(tagValue))
+                {
+                    continue;
+                }
+
+                if (tagValue.Length > AdditionalTagMaxValueLength)
+                {
+                    tagValue = BlockedByTracerSentinel;
+                    firstBlockedTagName ??= tagKey.Name;
+                }
+
+                if (previousHash.HasValue)
+                {
+                    // add the separator between tags
+                    previousHash = FnvHash64.GenerateHash(PeerTagSeparator, FnvHash64.Version.V1A, previousHash.Value);
+                }
+
+                previousHash = HashTag(tagKey.Utf8Prefix, tagValue, FnvHash64.Version.V1A, previousHash);
+                presentTagCount++;
+            }
+
+            results = new AdditionalTagResults
+            {
+                TagCount = presentTagCount,
+                FirstBlockedTagName = firstBlockedTagName,
+            };
+            return previousHash ?? 0;
+        }
+
+        /// <summary>
+        /// Encodes the span-derived additional tags for a span into a <see cref="List{T}"/> of UTF-8
+        /// "key:value" byte arrays, in configured (pre-sorted) order. Called only on the cold path
+        /// (new bucket creation). Values exceeding <see cref="AdditionalTagMaxValueLength"/> are
+        /// substituted with <see cref="BlockedByTracerSentinel"/>, matching the hash computation.
+        /// </summary>
+        private List<byte[]> GetEncodedAdditionalTags(Span span, in AdditionalTagResults results)
+        {
+            if (results.TagCount == 0)
+            {
+                return EmptyTags;
+            }
+
+            var result = new List<byte[]>(results.TagCount);
+            foreach (var tagKey in _additionalTagKeys)
+            {
+                var tagValue = span.GetTag(tagKey.Name);
+                if (string.IsNullOrEmpty(tagValue))
+                {
+                    continue;
+                }
+
+                if (tagValue.Length > AdditionalTagMaxValueLength)
+                {
+                    // Sentinel is a constant; copy its pre-encoded bytes rather than re-encoding the string.
+                    result.Add([..tagKey.Utf8Prefix, ..BlockedByTracerSentinelUtf8]);
+                }
+                else
+                {
+                    result.Add(EncodeKeyValue(tagKey.Utf8Prefix, tagValue));
+                }
+            }
+
+            return result;
+        }
+
         internal async Task Flush()
         {
             // Use a do/while loop to still flush once if _processExit is already completed (this makes testing easier)
@@ -491,6 +678,14 @@ namespace Datadog.Trace.Agent
                 }
 
                 TelemetryFactory.Metrics.RecordGaugeStatsBuckets(buffer.Buckets.Count);
+                if (Volatile.Read(ref _traceMetricsEnabled))
+                {
+                    using var lease = _statsd.TryGetClientLease();
+                    if (lease.Client is { } statsd)
+                    {
+                        buffer.CardinalityReporter.EmitCollapsedHealthCheckMetrics(statsd);
+                    }
+                }
 
                 if (buffer.HasHits() && CanComputeStats == true)
                 {
@@ -542,13 +737,55 @@ namespace Datadog.Trace.Agent
 
             var buffer = CurrentBuffer;
             var peerTagKeys = Volatile.Read(ref _peerTagKeys);
-            var key = BuildKey(span, peerTagKeys, out var peerTagResults);
+            var key = BuildKey(span, peerTagKeys, out var peerTagResults, out var additionalTagResults);
+
+            // Per-field admission-stop (RFC): once a field's distinct-value cap is reached for the flush
+            // window, new values are folded to the sentinel so the field stops growing cardinality, while
+            // the span's other dimensions and its hits/duration are still recorded. The seen-sets live on
+            // the buffer and reset each flush.
+            var perFieldLimitsApplied = buffer.CardinalityLimiter.ApplyCardinalityLimits(ref key);
+            var wholeKeyOverflow = false;
 
             if (!buffer.Buckets.TryGetValue(key, out var bucket))
             {
-                // Cold path: encode the peer tags for storage in the new bucket
-                bucket = new StatsBucket(key, GetEncodedPeerTags(span, peerTagKeys, in peerTagResults));
-                buffer.Buckets.Add(key, bucket);
+                // Whole-key backstop: a hard ceiling on the number of distinct buckets, guarding against
+                // cardinality blow-up in the dimensions that have no per-field cap (e.g. service x name).
+                // Gated on ActiveBucketCount (buckets hit this window) rather than Buckets.Count, so zero-hit
+                // buckets retained across resets for sketch reuse don't consume the cap in a fresh window.
+                if (buffer.ActiveBucketCount >= _bucketsCardinalityLimit)
+                {
+                    key = OverflowKey;
+                    wholeKeyOverflow = true;
+                    buffer.Buckets.TryGetValue(key, out bucket);
+                }
+
+                if (bucket is null)
+                {
+                    // Cold path: encode the peer tags and span-derived primary tags for storage in the new bucket.
+                    // The overflow row carries no peer/additional tags; folded fields encode empty/masked.
+                    var encodedPeerTags = (key.CardinalityLimitedFields & StatsCardinalityLimitedFields.PeerTags) == StatsCardinalityLimitedFields.PeerTags
+                                              ? BlockedByTracerSentinelList
+                                              : GetEncodedPeerTags(span, peerTagKeys, in peerTagResults);
+
+                    var encodedAdditionalTags = (key.CardinalityLimitedFields & StatsCardinalityLimitedFields.AdditionalMetricTags) == StatsCardinalityLimitedFields.AdditionalMetricTags
+                                                    ? BlockedByTracerSentinelList
+                                                    : GetEncodedAdditionalTags(span, in additionalTagResults);
+
+                    bucket = new StatsBucket(key, encodedPeerTags, encodedAdditionalTags);
+                    buffer.Buckets.Add(key, bucket);
+                }
+            }
+
+            if (wholeKeyOverflow || perFieldLimitsApplied || key.TruncatedFields != StatsCardinalityTruncatedFields.None)
+            {
+                buffer.CardinalityReporter.RecordCardinalityOverflow(key.CardinalityLimitedFields, key.TruncatedFields);
+            }
+
+            // Count buckets that become active this window (first hit) for the whole-key cap. Covers both
+            // newly created buckets and retained zero-hit buckets being reactivated after a reset.
+            if (bucket.Hits == 0)
+            {
+                buffer.IncrementActiveBucketCount();
             }
 
             bucket.Hits++;
@@ -561,6 +798,16 @@ namespace Datadog.Trace.Agent
             var duration = span.Duration.ToNanoseconds();
 
             bucket.Duration += duration;
+
+            if (duration < bucket.MinDuration)
+            {
+                bucket.MinDuration = duration;
+            }
+
+            if (duration > bucket.MaxDuration)
+            {
+                bucket.MaxDuration = duration;
+            }
 
             // If we are using OTLP, the errors are tracked as a separate aggregation entirely (different AggregationKey)
             // As a result, if using OTLP we always add to the OkSummary sketch.
@@ -615,6 +862,11 @@ namespace Datadog.Trace.Agent
                 ref _traceFilter,
                 config.TraceFilterConfig.HasFilters ? new TraceFilter(config.TraceFilterConfig) : null);
 
+            // The agent advertises "big_resource" when it can
+            // store larger resource names, otherwise fall back to the default cap.
+            var bigResourceEnabled = config.FeatureFlags?.Contains(BigResourceFeatureFlag) == true;
+            Volatile.Write(ref _maxResourceLengthBytes, bigResourceEnabled ? BigResourceMaxResourceLengthBytes : DefaultMaxResourceLengthBytes);
+
             // Tracer obfuscation version is 1. If the agent's version is > 0 and <= ours, the tracer obfuscates.
             const int tracerObfuscationVersion = 1;
             var agentVersion = config.ObfuscationVersion;
@@ -635,6 +887,20 @@ namespace Datadog.Trace.Agent
             public int PeerTagCount { get; init; }
 
             public string BaseService { get; init; }
+        }
+
+        internal readonly struct AdditionalTagKey(string name)
+        {
+            public readonly string Name = name;
+            public readonly byte[] Utf8Prefix = EncodingHelpers.Utf8NoBom.GetBytes(name + ":");
+        }
+
+        internal readonly struct AdditionalTagResults
+        {
+            public int TagCount { get; init; }
+
+            // First configured tag whose value was masked by the per-value length cap; null if none.
+            public string FirstBlockedTagName { get; init; }
         }
     }
 }

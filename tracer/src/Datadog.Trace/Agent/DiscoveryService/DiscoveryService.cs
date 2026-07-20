@@ -354,6 +354,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var spanMetaStructs = jObject["span_meta_structs"]?.Value<bool>() ?? false;
             var spanEvents = jObject["span_events"]?.Value<bool>() ?? false;
             var peerTags = (jObject["peer_tags"] as JArray)?.Values<string>().ToList();
+            var featureFlags = (jObject["feature_flags"] as JArray)?.Values<string>().ToList();
             var obfuscationVersion = jObject["obfuscation_version"]?.Value<int>() ?? 0;
 
             // Parse trace filter configuration
@@ -461,7 +462,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 spanEvents: spanEvents,
                 peerTags: peerTags!,
                 obfuscationVersion: obfuscationVersion,
-                traceFilterConfig: traceFilterConfig);
+                traceFilterConfig: traceFilterConfig,
+                featureFlags: featureFlags!);
 
             // Save the hash, whether the details we care about changed or not
             _configurationHash = HexString.ToHexString(sha256.Hash);

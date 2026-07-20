@@ -2104,6 +2104,18 @@ supportedConfigurations:
     product: FeatureFlags
     const_name: OpenTelemetryMeterNames
     documentation: List of meters to add to the metrics exporter for the experimental OpenTelemetry Metrics API support.
+  DD_METRICS_OTEL_CARDINALITY_LIMIT:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '2000'
+    product: FeatureFlags
+    const_name: OpenTelemetryMetricsCardinalityLimit
+    documentation: |-
+      The maximum number of distinct attribute sets (metric points) tracked per metric stream for the
+      experimental OpenTelemetry Metrics API support. When this limit is exceeded, additional measurements
+      are aggregated into a single overflow metric point carrying the attribute 'otel.metric.overflow=true',
+      to avoid unbounded cardinality and memory growth.
   DD_ACTION_EXECUTION_ID:
   - implementation: A
     scope: managed
@@ -3229,6 +3241,16 @@ supportedConfigurations:
     - DD_TRACE_ACTIVITY_LISTENER_ENABLED
     const_name: OpenTelemetryEnabled
     documentation: Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
+  DD_TRACE_OTEL_SEMANTICS_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'false'
+    product: OpenTelemetry
+    const_name: OtelSemanticsEnabled
+    documentation: |-
+      When enabled, suppresses all Datadog-specific data-point attributes from the traces and OTLP span metrics data points,
+      emitting only OpenTelemetry semantic-convention attributes.
   DD_TRACE_PARTIAL_FLUSH_ENABLED:
   - implementation: A
     scope: managed
@@ -3462,6 +3484,67 @@ supportedConfigurations:
     documentation: |-
       Configuration key for enabling or disabling the diagnostic log at startup
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.StartupDiagnosticLogEnabled"/>
+  DD_TRACE_STATS_ADDITIONAL_TAGS:
+  - implementation: A
+    scope: managed
+    type: array
+    default: null
+    const_name: StatsAdditionalTags
+    documentation: |-
+      Configuration key for a comma-separated list of span-tag keys to extract and
+      include as additional aggregation dimensions for client-side stats.
+      Requires <see cref="ConfigurationKeys.ExperimentalFeaturesEnabled"/> to include
+      "DD_TRACE_STATS_ADDITIONAL_TAGS". A maximum of 4 keys are allowed; any excess keys are dropped.
+  DD_TRACE_STATS_ADDITIONAL_TAGS_CARDINALITY_LIMIT:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '100'
+    const_name: StatsAdditionalTagsCardinalityLimit
+    documentation: |-
+      Configuration key for the maximum number of distinct stat entries with additional
+      tags allowed per flush interval. New entries beyond the cap have their additional
+      tag values replaced with "tracer_blocked_value".
+  DD_TRACE_STATS_RESOURCE_CARDINALITY_LIMIT:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '1024'
+    const_name: StatsResourceCardinalityLimit
+    documentation: |-
+      Configuration key for the maximum number of distinct resource values admitted into
+      client-side stats per flush interval. Values beyond the cap are collapsed to
+      "tracer_blocked_value".
+  DD_TRACE_STATS_HTTP_ENDPOINT_CARDINALITY_LIMIT:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '512'
+    const_name: StatsHttpEndpointCardinalityLimit
+    documentation: |-
+      Configuration key for the maximum number of distinct http.endpoint values admitted into
+      client-side stats per flush interval. Values beyond the cap are collapsed to
+      "tracer_blocked_value".
+  DD_TRACE_STATS_PEER_TAGS_CARDINALITY_LIMIT:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '512'
+    const_name: StatsPeerTagsCardinalityLimit
+    documentation: |-
+      Configuration key for the maximum number of distinct peer-tag combinations admitted into
+      client-side stats per flush interval. Combinations beyond the cap are collapsed to
+      "tracer_blocked_value".
+  DD_TRACE_STATS_CARDINALITY_LIMIT:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '2048'
+    const_name: StatsComputationBucketsCardinalityLimit
+    documentation: |-
+      Configuration key for the hard upper bound on the number of distinct client-side stats
+      buckets per flush interval. New buckets beyond the cap are collapsed into a single
+      "tracer_blocked_value" overflow bucket.
   DD_TRACE_STATS_COMPUTATION_ENABLED:
   - implementation: A
     scope: managed
@@ -3847,7 +3930,7 @@ supportedConfigurations:
       Configuration key to set the exporter for traces.
       We only recognize the values 'otlp' and 'none'. The value 'otlp' enables
       the experimental export of traces using OTLP. The value 'none' disables
-      the export of traces entirely, which is the equivalent of setting 
+      the export of traces entirely, which is the equivalent of setting
       <see cref="ConfigurationKeys.TraceEnabled"/> to false.
   OTEL_TRACES_SAMPLER:
   - implementation: C
@@ -3870,6 +3953,18 @@ supportedConfigurations:
       Configuration key to set an additional argument for the
       traces sampler.
       to false.
+  OTEL_TRACES_SPAN_METRICS_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: null
+    product: OpenTelemetry
+    const_name: TracesSpanMetricsEnabled
+    documentation: |-
+      Tri-state gate for OTLP span metrics export (traces.span.sdk.metrics.duration).
+      When unset, auto-enables iff OTEL_TRACES_EXPORTER=otlp and DD_METRICS_OTEL_ENABLED=true.
+      When true, always enables span metrics export regardless of other settings.
+      When false, always disables span metrics export.
   _DD_EXTENSION_ENDPOINT:
   - implementation: A
     scope: managed

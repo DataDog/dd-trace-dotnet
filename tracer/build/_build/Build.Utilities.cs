@@ -135,6 +135,188 @@ partial class Build
            ProcessTasks.StartProcess(dotnetRunSettings);
        });
 
+    [Parameter("Path to the assembly to generate instrumentation for")]
+    readonly string AssemblyPath;
+
+    [Parameter("Fully qualified type name for instrumentation generation")]
+    readonly string TypeName;
+
+    [Parameter("Method name for instrumentation generation")]
+    readonly string MethodName;
+
+    [Parameter("Output path for the generated integration file")]
+    readonly string OutputPath;
+
+    [Parameter("0-based overload index for method disambiguation")]
+    readonly int? OverloadIndex;
+
+    [Parameter("Parameter type full names for method disambiguation (space-separated)")]
+    readonly string ParameterTypes;
+
+    [Parameter("Additional arguments to pass to the instrumentation generator CLI (space-separated string, e.g., '--set createDucktypeInstance=true --json')")]
+    readonly string GeneratorArgs;
+
+    Target RunInstrumentationGeneratorCli => _ => _
+       .Description("Generates CallTarget auto-instrumentation code for a method. Usage: --assembly-path <dll> --type-name <type> --method-name <method> [--output-path <file>] [--overload-index <n>] [--generator-args <args>]")
+       .Requires(() => AssemblyPath)
+       .Requires(() => TypeName)
+       .Requires(() => MethodName)
+       .Executes(() =>
+       {
+           var autoInstGenCliProj =
+               SourceDirectory / "Datadog.AutoInstrumentation.Generator.Cli" / "Datadog.AutoInstrumentation.Generator.Cli.csproj";
+
+           DotNetRestore(s => s
+                             .SetDotnetPath(TargetPlatform)
+                             .SetProjectFile(autoInstGenCliProj)
+                             .SetNoWarnDotNetCore3());
+
+           DotNetBuild(s => s
+                           .SetDotnetPath(TargetPlatform)
+                           .SetFramework(TargetFramework.NET10_0)
+                           .SetProjectFile(autoInstGenCliProj)
+                           .SetConfiguration(Configuration.Release)
+                           .SetNoWarnDotNetCore3());
+
+           var appArgs = new List<string>
+           {
+               "generate", AssemblyPath!,
+               "--type", TypeName!,
+               "--method", MethodName!,
+           };
+
+           if (!string.IsNullOrEmpty(OutputPath))
+           {
+               appArgs.Add("--output");
+               appArgs.Add(OutputPath);
+           }
+
+           if (OverloadIndex.HasValue)
+           {
+               appArgs.Add("--overload-index");
+               appArgs.Add(OverloadIndex.Value.ToString());
+           }
+
+           if (!string.IsNullOrEmpty(ParameterTypes))
+           {
+               appArgs.Add("--parameter-types");
+               appArgs.AddRange(ParameterTypes.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+           }
+
+           if (!string.IsNullOrEmpty(GeneratorArgs))
+           {
+               appArgs.AddRange(TokenizeShellArgs(GeneratorArgs));
+           }
+
+           var applicationArguments = string.Join(" ", appArgs.Select(EscapeArgForCommandLine));
+
+           var dotnetRunSettings = new DotNetRunSettings()
+                                  .SetDotnetPath(TargetPlatform)
+                                  .SetNoBuild(true)
+                                  .SetFramework(TargetFramework.NET10_0)
+                                  .EnableNoLaunchProfile()
+                                  .SetProjectFile(autoInstGenCliProj)
+                                  .SetConfiguration(Configuration.Release)
+                                  .SetApplicationArguments(applicationArguments);
+           var process = ProcessTasks.StartProcess(dotnetRunSettings);
+           process.AssertZeroExitCode();
+       });
+
+    /// <summary>
+    /// Escapes a single argument so the receiving process recovers the original value via
+    /// CommandLineToArgvW rules. Naive double-quote wrapping mishandles embedded quotes and
+    /// trailing backslashes, which corrupts inline JSON for --config and paths that end in
+    /// "\". Algorithm follows the standard PasteArguments approach used in .NET's
+    /// ProcessStartInfo.ArgumentList.
+    /// </summary>
+    private static string EscapeArgForCommandLine(string arg)
+    {
+        if (arg.Length > 0
+            && arg.IndexOf(' ') < 0
+            && arg.IndexOf('\t') < 0
+            && arg.IndexOf('"') < 0
+            && arg.IndexOf('\\') < 0)
+        {
+            return arg;
+        }
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append('"');
+
+        var backslashes = 0;
+        foreach (var c in arg)
+        {
+            if (c == '\\')
+            {
+                backslashes++;
+            }
+            else if (c == '"')
+            {
+                sb.Append('\\', (backslashes * 2) + 1);
+                sb.Append('"');
+                backslashes = 0;
+            }
+            else
+            {
+                sb.Append('\\', backslashes);
+                sb.Append(c);
+                backslashes = 0;
+            }
+        }
+
+        sb.Append('\\', backslashes * 2);
+        sb.Append('"');
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Splits a command-line string into tokens, respecting single and double quotes.
+    /// A naive Split(' ') corrupts values like inline JSON for --config or paths with
+    /// spaces (e.g. under "Program Files"); this honors the surrounding quotes so the
+    /// value reaches the generator intact.
+    /// </summary>
+    private static IEnumerable<string> TokenizeShellArgs(string input)
+    {
+        var current = new System.Text.StringBuilder();
+        char? quote = null;
+
+        foreach (var c in input)
+        {
+            if (quote.HasValue)
+            {
+                if (c == quote.Value)
+                {
+                    quote = null;
+                }
+                else
+                {
+                    current.Append(c);
+                }
+            }
+            else if (c == '"' || c == '\'')
+            {
+                quote = c;
+            }
+            else if (char.IsWhiteSpace(c))
+            {
+                if (current.Length > 0)
+                {
+                    yield return current.ToString();
+                    current.Clear();
+                }
+            }
+            else
+            {
+                current.Append(c);
+            }
+        }
+
+        if (current.Length > 0)
+        {
+            yield return current.ToString();
+        }
+    }
+
     Target BuildIisSampleApp => _ => _
         .Description("Rebuilds an IIS sample app")
         .Requires(() => SampleName)
@@ -344,18 +526,29 @@ partial class Build
                foreach (var entry in versionGenerator.BumpReport.CooldownEntries)
                {
                    Logger.Warning(
-                       "  {Package} {Version} overridden (published {Date})",
+                       "  {Package} {IgnoredVersion} ignored, keeping {KeptVersion} (published {Date})",
                        entry.PackageName,
-                       entry.OverriddenVersion,
+                       entry.IgnoredVersion,
+                       entry.KeptVersion ?? "(none)",
                        entry.PublishedDate?.UtcDateTime.ToString("yyyy-MM-dd") ?? "unknown");
                }
            }
 
-           if (versionGenerator.BumpReport.HasEntries)
+           if (versionGenerator.BumpReport.MajorAvailableEntries.Count > 0)
            {
-               var reportPath = TemporaryDirectory / "bump_report.md";
-               await versionGenerator.BumpReport.SaveToFile(reportPath);
-               Logger.Information("Bump report saved to {Path}", reportPath);
+               Logger.Information(
+                   "{Count} package(s) have a new major version available outside the supported range:",
+                   versionGenerator.BumpReport.MajorAvailableEntries.Count);
+
+               foreach (var entry in versionGenerator.BumpReport.MajorAvailableEntries)
+               {
+                   Logger.Information(
+                       "  {Package} ({Integration}): cap {Cap} -> latest available {Latest}",
+                       entry.PackageName,
+                       entry.IntegrationName,
+                       entry.CurrentCap,
+                       entry.LatestAvailable);
+               }
            }
 
            var assemblies = MonitoringHomeDirectory
@@ -370,6 +563,46 @@ partial class Build
            // so they accurately reflect what we're testing.
            var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(
                integrations, testedVersions, shouldUpdatePackage, previousSupportedVersions);
+
+           // Packages tracked in supported_versions.json but absent from PackageVersionsGeneratorDefinitions.json
+           // (e.g. IBMMQDotnetClient, which has no test samples) are never added to QueriedVersions, so
+           // ReportNewMajorVersionsAvailable misses them. Scan distinctIntegrations to fill the gap.
+           // This must run before saving bump_report.md so both sources are included.
+           // Skip packages already handled by the version generator (whether or not they were flagged):
+           // QueriedVersions uses MaxVersionExclusive from the definitions, which is the authoritative cap.
+           // Using MajorAvailableEntries instead would cause false positives for packages whose definitions
+           // cover a newer major than the [InstrumentMethod] attribute (e.g. a bumped-but-not-yet-committed integration).
+           var handledByGenerator = new HashSet<string>(
+               versionGenerator.QueriedVersions.Keys,
+               StringComparer.OrdinalIgnoreCase);
+
+           foreach (var integration in distinctIntegrations)
+           {
+               foreach (var pkg in integration.Packages)
+               {
+                   if (handledByGenerator.Contains(pkg.NugetName))
+                   {
+                       continue;
+                   }
+
+                   if (pkg.LatestVersion.Major > pkg.LatestSupportedVersion.Major)
+                   {
+                       var currentCap = (pkg.LatestTestedVersion ?? pkg.LatestSupportedVersion).ToString();
+                       versionGenerator.BumpReport.AddMajorAvailable(new PackageBumpReport.MajorAvailableEntry(
+                           pkg.NugetName,
+                           integration.IntegrationId,
+                           currentCap,
+                           pkg.LatestVersion.ToString()));
+                   }
+               }
+           }
+
+           if (versionGenerator.BumpReport.HasEntries)
+           {
+               var reportPath = TemporaryDirectory / "bump_report.md";
+               await versionGenerator.BumpReport.SaveToFile(reportPath);
+               Logger.Information("Bump report saved to {Path}", reportPath);
+           }
 
            var outputPath = TracerDirectory / "build" / "supported_versions.json";
            await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);

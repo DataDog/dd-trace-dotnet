@@ -60,6 +60,8 @@ public class MetricTests
         { "rasp.rule.eval", ["rule_variant"] },
         { "rasp.rule.match", ["rule_variant"] },
         { "rasp.timeout", ["rule_variant"] },
+        // Both dimensions are independently optional: a span can be cardinality-collapsed, oversized-truncated, or both.
+        { "stats_collapsed_spans", ["collapsed", "oversized"] },
     };
 
     private static readonly Dictionary<string, List<string>> OneOfTagsByMetricName = new()

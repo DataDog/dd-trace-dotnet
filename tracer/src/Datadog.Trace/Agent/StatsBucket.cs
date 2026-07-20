@@ -12,12 +12,13 @@ namespace Datadog.Trace.Agent
 {
     internal sealed class StatsBucket
     {
-        public StatsBucket(StatsAggregationKey key, List<byte[]> peerTags)
+        public StatsBucket(StatsAggregationKey key, List<byte[]> peerTags, List<byte[]> additionalMetricTags)
         {
             Key = key;
             OkSummary = CreateSketch();
             ErrorSummary = CreateSketch();
             PeerTags = peerTags;
+            AdditionalMetricTags = additionalMetricTags;
         }
 
         public StatsAggregationKey Key { get; }
@@ -34,7 +35,16 @@ namespace Datadog.Trace.Agent
 
         public long TopLevelHits { get; set; }
 
+        // Tracked for OTLP histogram data points.
+        // MinDuration sentinel long.MaxValue means "not yet observed".
+        // MaxDuration sentinel long.MinValue means "not yet observed".
+        public long MinDuration { get; set; } = long.MaxValue;
+
+        public long MaxDuration { get; set; } = long.MinValue;
+
         public List<byte[]> PeerTags { get; }
+
+        public List<byte[]> AdditionalMetricTags { get; }
 
         public void Clear()
         {
@@ -42,6 +52,8 @@ namespace Datadog.Trace.Agent
             Errors = 0;
             Duration = 0;
             TopLevelHits = 0;
+            MinDuration = long.MaxValue;
+            MaxDuration = long.MinValue;
             OkSummary.Clear();
             ErrorSummary.Clear();
         }
