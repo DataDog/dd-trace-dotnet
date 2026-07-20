@@ -206,6 +206,11 @@ namespace BuggyBits
                 {
                     urls.Add($"{rootUrl}/CompanyInformation?ShortLived=true");
                 }
+
+                if ((_scenario & Scenario.EndpointProfiling) == Scenario.EndpointProfiling)
+                {
+                    urls.Add($"{rootUrl}/Products/EndpointProfiling");
+                }
             }
 
             return urls;

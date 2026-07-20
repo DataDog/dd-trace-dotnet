@@ -799,6 +799,16 @@ namespace Datadog.Trace.Agent
 
             bucket.Duration += duration;
 
+            if (duration < bucket.MinDuration)
+            {
+                bucket.MinDuration = duration;
+            }
+
+            if (duration > bucket.MaxDuration)
+            {
+                bucket.MaxDuration = duration;
+            }
+
             // If we are using OTLP, the errors are tracked as a separate aggregation entirely (different AggregationKey)
             // As a result, if using OTLP we always add to the OkSummary sketch.
             if (span.Error && !_isOtlp)
