@@ -100,7 +100,8 @@ tracer/                                   @DataDog/tracing-dotnet
 /tracer/samples/AzureFunctionsWithAgentLessLogging/                             @DataDog/apm-serverless
 /docs/development/**/AzureFunctions*.md                                         @DataDog/apm-serverless
 /tracer/tools/Build-AzureFunctionsNuget.ps1                                     @DataDog/apm-serverless
-/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/      @DataDog/apm-serverless
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/                 @DataDog/apm-serverless
+/tracer/src/Datadog.Trace/Tagging/Azure*Tags.cs                                  @DataDog/apm-serverless
 /.claude/skills/azure-functions/                                                @DataDog/apm-serverless
 
 ## Serverless (GCP)
