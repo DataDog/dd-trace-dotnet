@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared
         /// <summary>
         /// Context propagation helper for IDictionary string,object
         /// </summary>
-        private readonly struct DictionaryContextPropagation : ICarrierGetter<IDictionary<string, object>>, ICarrierSetter<IDictionary<string, object>>
+        internal readonly struct DictionaryContextPropagation : ICarrierGetter<IDictionary<string, object>>, ICarrierSetter<IDictionary<string, object>>
         {
             public IEnumerable<string> Get(IDictionary<string, object> carrier, string key)
             {
