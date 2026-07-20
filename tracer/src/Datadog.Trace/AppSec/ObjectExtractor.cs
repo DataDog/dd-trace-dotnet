@@ -253,34 +253,33 @@ namespace Datadog.Trace.AppSec
 
         private static MemberExtractor?[] CreateDataContractDefaultExtractors(Type bodyType)
         {
-            var fields = bodyType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
-            if (!bodyType.GetTypeInfo().IsAnonymous())
+            // Anonymous types only expose get-only auto-properties, so fall back to the backing-field
+            // strategy for them (DataContractJsonSerializer isn't used with anonymous types in practice,
+            // but recursion can still encounter them via the default Extract path).
+            if (bodyType.GetTypeInfo().IsAnonymous())
             {
-                fields = fields.Where(x => x.IsPrivate && x.Name.EndsWith("__BackingField")).ToArray();
+                return CreateDefaultExtractors(bodyType);
             }
 
-            var extractors = new List<MemberExtractor?>(fields.Length);
-            for (var i = 0; i < fields.Length; i++)
+            var extractors = new List<MemberExtractor?>();
+
+            // For non-[DataContract] types, DataContractJsonSerializer serializes public read-write
+            // properties (public getter AND public setter). Relying on compiler-generated __BackingFields
+            // misses manually implemented properties (e.g. get => _value; set => _value = value;) and
+            // wrongly includes read-only auto-properties, so enumerate the serializer-visible members directly.
+            foreach (var property in bodyType.GetProperties(BindingFlags.Instance | BindingFlags.Public))
             {
-                var field = fields[i];
-                var propertyName = GetPropertyName(field.Name);
-                if (StringUtil.IsNullOrEmpty(propertyName))
+                if (property.GetIndexParameters().Length > 0
+                    || property.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
+                    || property.GetGetMethod() is not { } getter
+                    || property.GetSetMethod() is null)
                 {
-                    Log.Warning("ExtractProperties - couldn't extract property name from: {FieldName}", field.Name);
-                    extractors.Add(null);
                     continue;
                 }
 
-                var property = bodyType.GetProperty(propertyName!, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                if (property?.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null)
-                {
-                    extractors.Add(null);
-                    continue;
-                }
-
-                var dataMemberName = property?.GetCustomAttribute<DataMemberAttribute>()?.Name;
-                var name = StringUtil.IsNullOrEmpty(dataMemberName) ? propertyName : dataMemberName;
-                extractors.Add(new MemberExtractor(name!, field.FieldType, CreateFieldAccessor(bodyType, field)));
+                // On non-[DataContract] types the serializer ignores [DataMember(Name = ...)] and uses the
+                // CLR member name (verified against DataContractJsonSerializer), so do NOT rename here.
+                extractors.Add(new MemberExtractor(property.Name, property.PropertyType, CreatePropertyAccessor(bodyType, getter, property.PropertyType)));
             }
 
             // DataContractJsonSerializer also serializes public fields on non-[DataContract] types.
@@ -291,9 +290,7 @@ namespace Datadog.Trace.AppSec
                     continue;
                 }
 
-                var dataMemberName = field.GetCustomAttribute<DataMemberAttribute>()?.Name;
-                var name = StringUtil.IsNullOrEmpty(dataMemberName) ? field.Name : dataMemberName;
-                extractors.Add(new MemberExtractor(name!, field.FieldType, CreateFieldAccessor(bodyType, field)));
+                extractors.Add(new MemberExtractor(field.Name, field.FieldType, CreateFieldAccessor(bodyType, field)));
             }
 
             return extractors.ToArray();
@@ -370,6 +367,24 @@ namespace Datadog.Trace.AppSec
             return null;
         }
 
+        private static Type? GetGenericDictionaryInterface(Type type)
+        {
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IDictionary<,>))
+            {
+                return type;
+            }
+
+            foreach (var @interface in type.GetInterfaces())
+            {
+                if (@interface.IsGenericType && @interface.GetGenericTypeDefinition() == typeof(IDictionary<,>))
+                {
+                    return @interface;
+                }
+            }
+
+            return null;
+        }
+
         private static object? ExtractType(
             Type itemType,
             object value,
@@ -389,20 +404,31 @@ namespace Datadog.Trace.AppSec
                 return ExtractListOrArray(value, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
             }
 
-            if (itemType.IsGenericType && itemType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            // Any generic dictionary (Dictionary<,>, SortedDictionary<,>, ConcurrentDictionary<,>,
+            // ImmutableDictionary<,>, ...) must be treated as a dictionary, not a plain IEnumerable.
+            // DataContractJsonSerializer with UseSimpleDictionaryFormat=false (the default) writes
+            // dictionaries as [{Key:k, Value:v}] arrays; with UseSimpleDictionaryFormat=true it writes
+            // {k:v} objects. Fast-path the common concrete Dictionary<,> to avoid the GetInterfaces() scan.
+            if (itemType.IsGenericType)
             {
-                // DataContractJsonSerializer with UseSimpleDictionaryFormat=false (the default) writes
-                // dictionaries as [{Key:k, Value:v}] arrays rather than {k:v} objects.
-                return useSimpleDictionaryFormat
-                    ? ExtractDictionary(value, itemType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat)
-                    : ExtractDictionaryAsKeyValuePairs(value, itemType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
+                var dictionaryType = itemType.GetGenericTypeDefinition() == typeof(Dictionary<,>)
+                    ? itemType
+                    : GetGenericDictionaryInterface(itemType);
+                if (dictionaryType is not null)
+                {
+                    return useSimpleDictionaryFormat
+                        ? ExtractDictionary(value, dictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat)
+                        : ExtractDictionaryAsKeyValuePairs(value, dictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
+                }
             }
 
-            // case of System.Web.Routing.RouteValueDictionary and types inheriting IDictionary
+            // Non-generic types implementing IDictionary<string, object> (e.g. System.Web.Routing.RouteValueDictionary)
             var iDictionaryType = typeof(IDictionary<string, object>);
             if (iDictionaryType.IsAssignableFrom(itemType))
             {
-                return ExtractDictionary(value, iDictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
+                return useSimpleDictionaryFormat
+                    ? ExtractDictionary(value, iDictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat)
+                    : ExtractDictionaryAsKeyValuePairs(value, iDictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
             }
 
             // DataContractJsonSerializer and other JSON serializers emit Collection<T>, ObservableCollection<T>,

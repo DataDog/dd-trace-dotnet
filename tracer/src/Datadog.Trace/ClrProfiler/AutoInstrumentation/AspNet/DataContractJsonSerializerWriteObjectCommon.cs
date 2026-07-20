@@ -45,7 +45,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         internal static CallTargetReturn OnMethodEnd(Exception? exception, in CallTargetState state)
         {
-            if (exception is null && state.State is DataContractJsonSerializerState serializerState && state.Scope is { } scope)
+            if (state.State is not DataContractJsonSerializerState serializerState)
+            {
+                return CallTargetReturn.GetDefault();
+            }
+
+            if (exception is not null)
+            {
+                // Serialization failed, so no response body was captured. Clear the marker set in
+                // OnMethodBegin so a subsequent (e.g. fallback) response on the same request can still
+                // be captured instead of being permanently suppressed.
+                serializerState.HttpContext.Items.Remove(ResponseBodyCapturedKey);
+                return CallTargetReturn.GetDefault();
+            }
+
+            if (state.Scope is { } scope)
             {
                 try
                 {
