@@ -153,7 +153,7 @@ cases:
       confirm it from this repository?
     expected_criteria:
       - Identifies that auto-instrumentation targets each library individually (CallTarget) so an unsupported/under-instrumented provider yields no spans.
-      - Checks whether the specific library/method has an [InstrumentMethod] definition under ClrProfiler/AutoInstrumentation and appears in the supported-integrations list.
+      - Checks whether the specific library/method has an [InstrumentMethod] definition under ClrProfiler/AutoInstrumentation and whether its version range covers the customer's provider version.
       - Looks in the native log for "Method enqueued for ReJIT" for the relevant method to confirm the instrumentation (ReJIT) was actually applied.
       - Suggests reproducing with a targeted integration test rather than a broad run.
     bad_signals:
