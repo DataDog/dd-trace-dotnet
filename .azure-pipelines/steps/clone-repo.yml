@@ -167,32 +167,8 @@ steps:
     displayName: clean
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
-  - ${{ if eq(parameters.shallowFetch, true) }}:
-    - bash: |
-        set -eo pipefail
-
-        ref="$BUILD_SOURCEBRANCH"
-        ref="${ref#refs/heads/}"
-        ref="${ref#refs/tags/}"
-
-        git clone --depth=1 --filter=tree:0 --sparse --no-tags --branch "$ref" "$BUILD_REPOSITORY_URI" "$BUILD_REPOSITORY_LOCALPATH"
-        git -C "$BUILD_REPOSITORY_LOCALPATH" sparse-checkout set .azure-pipelines .gitlab .nuke tracer/build/_build tracer/build/smoke_test_snapshots tracer/test/test-applications/regression/AspNetCoreSmokeTest
-
-        test "$(git -C "$BUILD_REPOSITORY_LOCALPATH" rev-parse HEAD)" = "$BUILD_SOURCEVERSION"
-      displayName: sparse checkout
-      condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
-
-    - checkout: self
-      clean: true
+  - checkout: self
+    clean: true
+    ${{ if eq(parameters.shallowFetch, true) }}:
       fetchDepth: 1
-      fetchFilter: tree:0
       fetchTags: false
-      sparseCheckoutDirectories: >-
-        .azure-pipelines .gitlab .nuke
-        tracer/build/_build tracer/build/smoke_test_snapshots
-        tracer/test/test-applications/regression/AspNetCoreSmokeTest
-      condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
-
-  - ${{ else }}:
-    - checkout: self
-      clean: true
