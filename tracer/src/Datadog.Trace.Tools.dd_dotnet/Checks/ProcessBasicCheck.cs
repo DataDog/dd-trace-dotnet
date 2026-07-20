@@ -629,7 +629,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 or "1";
         }
 
-        private static bool TracingWithBundle(string?[] profilerPathValues, ProcessInfo process)
+        internal static bool TracingWithBundle(string?[] profilerPathValues, ProcessInfo process)
         {
             // Get the file path of the main module (the .exe file)
             string? filePath = process.MainModule;
