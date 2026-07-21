@@ -83,7 +83,17 @@ steps:
     condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
 
   - script: |
-      for /f "delims=" %%A in ('dir /a /b "%BUILD_REPOSITORY_LOCALPATH%" 2^>nul') do if /i not "%%A"==".git" (rd /s /q "%BUILD_REPOSITORY_LOCALPATH%\%%A" 2>nul || del /f /q "%BUILD_REPOSITORY_LOCALPATH%\%%A")
+      if exist "%BUILD_REPOSITORY_LOCALPATH%\" (
+        for /f "delims=" %%A in ('dir /a /b "%BUILD_REPOSITORY_LOCALPATH%"') do (
+          if /i not "%%A"==".git" (
+            if exist "%BUILD_REPOSITORY_LOCALPATH%\%%A\" (
+              rd /s /q "%BUILD_REPOSITORY_LOCALPATH%\%%A"
+            ) else (
+              del /f /q "%BUILD_REPOSITORY_LOCALPATH%\%%A"
+            )
+          )
+        )
+      )
     displayName: Clean source directory
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
@@ -161,7 +171,17 @@ steps:
     condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
 
   - script: |
-      for /f "delims=" %%A in ('dir /a /b "%BUILD_REPOSITORY_LOCALPATH%" 2^>nul') do if /i not "%%A"==".git" (rd /s /q "%BUILD_REPOSITORY_LOCALPATH%\%%A" 2>nul || del /f /q "%BUILD_REPOSITORY_LOCALPATH%\%%A")
+      if exist "%BUILD_REPOSITORY_LOCALPATH%\" (
+        for /f "delims=" %%A in ('dir /a /b "%BUILD_REPOSITORY_LOCALPATH%"') do (
+          if /i not "%%A"==".git" (
+            if exist "%BUILD_REPOSITORY_LOCALPATH%\%%A\" (
+              rd /s /q "%BUILD_REPOSITORY_LOCALPATH%\%%A"
+            ) else (
+              del /f /q "%BUILD_REPOSITORY_LOCALPATH%\%%A"
+            )
+          )
+        )
+      )
     displayName: Clean source directory
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
