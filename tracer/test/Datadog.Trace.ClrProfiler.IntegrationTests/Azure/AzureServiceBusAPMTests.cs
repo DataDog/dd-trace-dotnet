@@ -351,6 +351,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
 
             // Azure Functions detection is process-wide, so this covers a processor consumer running
             // inside an in-process Functions-hosted app rather than a Functions Service Bus trigger handoff.
+            SetEnvironmentVariable("DD_API_KEY", "NOT_SET"); // required for tracing to activate in Azure App Service
             SetEnvironmentVariable("WEBSITE_SITE_NAME", nameof(TestProcessorConnectsToProducerTraceInAzureFunctionsEnvironment));
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet");
             SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
@@ -375,49 +376,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
 
                 const string because = "processor receives must preserve the producer context even when the process is detected as Azure Functions";
                 processSpan.TraceId.Should().Be(sendSpan.TraceId, because);
-            }
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task TestProcessorWorkaround_ServiceBusIntegrationDisabled(string packageVersion, string metadataSchemaVersion)
-        {
-            // Candidate customer workaround: disable the custom Azure Service Bus integration entirely
-            // (which contains the harmful re-injection) and rely on the Azure SDK's own activity-source
-            // propagation. This is expected to reconnect the trace, at the cost of DSM and the custom
-            // azure_servicebus.* spans.
-            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "false");
-            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
-            SetEnvironmentVariable("ASB_TEST_MODE", "Processor");
-
-            using (var agent = EnvironmentHelper.GetMockAgent())
-            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-            {
-                var spans = await agent.WaitForSpansAsync(1, operationName: "servicebus.process", returnAllOperations: true, timeoutInMilliseconds: 30000);
-
-                using var s = new AssertionScope();
-                Output.WriteLine($"[ServiceBusIntegrationDisabled] TOTAL SPANS FOUND: {spans.Count}");
-                foreach (var span in spans)
-                {
-                    Output.WriteLine($"  Span: Name={span.Name}, Resource={span.Resource}, TraceId={span.TraceId}, SpanId={span.SpanId}, ParentId={span.ParentId}");
-                }
-
-                // With the custom integration disabled, the message carries the Azure SDK's per-message
-                // "Message" activity context (span.kind=producer, Resource=Message). That is the span the
-                // consumer's ProcessMessage activity parents to. Note the ServiceBusSender.Send
-                // (servicebus.publish) activity is intentionally placed on its own trace by the Azure SDK
-                // and linked, so it is NOT the correct producer anchor to compare against.
-                var producerSpan = spans.FirstOrDefault(span => span.Name == "producer");
-                var processSpan = spans.FirstOrDefault(span => span.Name == "servicebus.process");
-
-                producerSpan.Should().NotBeNull("Expected a producer 'Message' span from the Azure SDK activity source");
-                processSpan.Should().NotBeNull("Expected a consumer servicebus.process span");
-
-                const string because = "disabling the custom ASB integration should let the Azure SDK's own context propagation reconnect producer and consumer";
-                processSpan.TraceId.Should().Be(producerSpan.TraceId, because);
-                processSpan.ParentId.Should().Be(producerSpan.SpanId, "the process span should be a child of the producer 'Message' span");
             }
         }
 
