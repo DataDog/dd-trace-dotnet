@@ -36,8 +36,6 @@ namespace Datadog.Trace.ClrProfiler
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class Instrumentation
     {
-        private const string DiagnosticSourceTypeName = "System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource";
-
         /// <summary>
         /// Indicates whether we're initializing Instrumentation for the first time
         /// </summary>
@@ -343,21 +341,14 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                var diagnosticSourceEnabled = GlobalSettings.Instance.DiagnosticSourceEnabled;
-                Type diagnosticSourceType = null;
-                Exception diagnosticSourceLoadException = null;
-
-                if (diagnosticSourceEnabled)
+                if (GlobalSettings.Instance.DiagnosticSourceEnabled)
                 {
                     // check if DiagnosticSource is available before trying to use it
-                    diagnosticSourceType = LoadDiagnosticSourceType(DiagnosticSourceTypeName, out diagnosticSourceLoadException);
-                }
+                    var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
 
-                if (diagnosticSourceEnabled)
-                {
-                    if (diagnosticSourceType is null)
+                    if (type == null)
                     {
-                        LogGenericDiagnosticSourceUnavailable(diagnosticSourceLoadException, Log);
+                        Log.Warning("DiagnosticSource type could not be loaded. Skipping diagnostic observers.");
                     }
                     else
                     {
@@ -497,14 +488,10 @@ namespace Datadog.Trace.ClrProfiler
         {
             var observers = new List<DiagnosticObserver>();
 
-#if NETFRAMEWORK
-            AddLegacyAspNetCoreDiagnosticObserver(observers);
-#else
             if (!SkipAspNetCoreDiagnosticObserver())
             {
                 observers.Add(GetAspNetCoreDiagnosticObserver());
             }
-#endif
 
             observers.Add(new QuartzDiagnosticObserver());
 
@@ -513,40 +500,9 @@ namespace Datadog.Trace.ClrProfiler
             DiagnosticManager.Instance = diagnosticManager;
         }
 
-        internal static Type LoadDiagnosticSourceType(string assemblyQualifiedTypeName, out Exception loadException)
-        {
-            try
-            {
-                loadException = null;
-                return Type.GetType(assemblyQualifiedTypeName, throwOnError: false);
-            }
-            catch (Exception ex)
-            {
-                loadException = ex;
-                return null;
-            }
-        }
-
-        internal static void LogGenericDiagnosticSourceUnavailable(Exception loadException, IDatadogLogger log)
-        {
-            const string Message = "DiagnosticSource type could not be loaded. Skipping diagnostic observers.";
-
-            if (loadException is null)
-            {
-                log.Warning(Message);
-            }
-            else
-            {
-                log.Warning(loadException, Message);
-            }
-        }
-
 #if NETFRAMEWORK
-        internal static void AddLegacyAspNetCoreDiagnosticObserver(ICollection<DiagnosticObserver> observers) =>
-            observers.Add(new LegacyAspNetCoreDiagnosticObserver());
-#endif
-
-#if !NETFRAMEWORK
+        private static LegacyAspNetCoreDiagnosticObserver GetAspNetCoreDiagnosticObserver() => new();
+#else
 #if NET6_0_OR_GREATER
         private static DiagnosticObserver GetAspNetCoreDiagnosticObserver()
 #else
@@ -565,6 +521,7 @@ namespace Datadog.Trace.ClrProfiler
 
             return new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null);
         }
+#endif // #if !NETFRAMEWORK
 
         [Pure]
         private static bool SkipAspNetCoreDiagnosticObserver()
@@ -615,7 +572,6 @@ namespace Datadog.Trace.ClrProfiler
             // do not skip when running in an isolated Azure Functions worker process with extension v4
             return false;
         }
-#endif // #if !NETFRAMEWORK
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {
