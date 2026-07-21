@@ -161,6 +161,17 @@ supportedConfigurations:
     documentation: |-
       Configuration key for deactivating reading the application monitoring config file through libdatadog (hands off config).
       True by default
+  DD_APPSEC_AGENTIC_ONBOARDING:
+  - implementation: A
+    scope: managed
+    type: string
+    default: ''
+    product: AppSec
+    const_name: AgenticOnboarding
+    documentation: |-
+      RFC-1113 marker set by the App &amp; API Protection agentic onboarding solution.
+      Reported verbatim in configuration telemetry (empty string with origin=default when unset);
+      there is no derived boolean and no code reading AppSec's runtime state.
   DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING:
   - implementation: D
     scope: managed

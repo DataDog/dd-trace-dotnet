@@ -53,6 +53,13 @@ internal static partial class ConfigurationKeys
         public const string ApiSecuritySampleDelay = "DD_API_SECURITY_SAMPLE_DELAY";
 
         /// <summary>
+        /// RFC-1113 marker set by the App &amp; API Protection agentic onboarding solution.
+        /// Reported verbatim in configuration telemetry (empty string with origin=default when unset);
+        /// there is no derived boolean and no code reading AppSec's runtime state.
+        /// </summary>
+        public const string AgenticOnboarding = "DD_APPSEC_AGENTIC_ONBOARDING";
+
+        /// <summary>
         /// Automatic instrumentation of user event mode. Values can be ident, disabled, anon.
         /// </summary>
         public const string UserEventsAutoInstrumentationMode = "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE";
