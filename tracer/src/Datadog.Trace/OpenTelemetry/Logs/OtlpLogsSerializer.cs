@@ -27,16 +27,44 @@ internal static class OtlpLogsSerializer
     private const int SpanIdSize = 8;
 
     /// <summary>
-    /// Serializes logs to OTLP LogsData binary format using vendored protobuf serializer
+    /// Serializes logs to OTLP LogsData binary format into a caller-provided buffer.
     /// </summary>
-    public static byte[] SerializeLogs(IReadOnlyList<LogPoint> logs, ResourceTags settings, int startPosition = 0)
+    /// <remarks>
+    /// The caller owns <paramref name="buffer"/> (typically rented from an <see cref="System.Buffers.ArrayPool{T}"/>).
+    /// If the batch doesn't fit, this returns <c>false</c> without throwing; the caller should retry
+    /// with a larger buffer. It never resizes the buffer itself.
+    /// </remarks>
+    /// <param name="logs">The batch of logs to serialize.</param>
+    /// <param name="buffer">The destination buffer to serialize into.</param>
+    /// <param name="settings">Resource-level tags applied to the payload.</param>
+    /// <param name="bytesWritten">The number of bytes written (the payload length), or 0 if the batch didn't fit.</param>
+    /// <param name="startPosition">Offset at which to start writing (e.g. a reserved gRPC frame header).</param>
+    /// <returns><c>true</c> if the batch was serialized into <paramref name="buffer"/>; <c>false</c> if it didn't fit.</returns>
+    public static bool TrySerializeLogs(IReadOnlyList<LogPoint> logs, byte[] buffer, ResourceTags settings, out int bytesWritten, int startPosition = 0)
     {
+        bytesWritten = 0;
+
         if (logs.Count == 0)
         {
-            return Array.Empty<byte>();
+            return true;
         }
 
-        var buffer = new byte[64 * 1024];
+        try
+        {
+            bytesWritten = SerializeLogs(buffer, logs, settings, startPosition);
+            return true;
+        }
+        catch (Exception ex) when (ex is ArgumentException or IndexOutOfRangeException)
+        {
+            // A span/array write ran past the end of the buffer: it was too small for this batch.
+            // Signal the caller to retry with a larger buffer rather than surfacing the exception.
+            bytesWritten = 0;
+            return false;
+        }
+    }
+
+    private static int SerializeLogs(byte[] buffer, IReadOnlyList<LogPoint> logs, ResourceTags settings, int startPosition)
+    {
         int writePosition = startPosition;
 
         writePosition = ProtobufSerializer.WriteTag(buffer, writePosition, LogsData_Resource_Logs, ProtobufWireType.LEN);
@@ -47,9 +75,7 @@ internal static class OtlpLogsSerializer
 
         ProtobufSerializer.WriteReservedLength(buffer, resourceLogsLengthPosition, writePosition - (resourceLogsLengthPosition + ReserveSizeForLength));
 
-        var result = new byte[writePosition];
-        Array.Copy(buffer, 0, result, 0, writePosition);
-        return result;
+        return writePosition;
     }
 
     private static int WriteResourceLogs(byte[] buffer, int writePosition, IReadOnlyList<LogPoint> logs, ResourceTags settings)
