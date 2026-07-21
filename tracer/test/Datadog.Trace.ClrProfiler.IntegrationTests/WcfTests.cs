@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -97,8 +98,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings(metadataSchemaVersion, binding, enableNewWcfInstrumentation, enableWcfObfuscation, useOtelClientInstrumentation);
+                IReadOnlyCollection<MockSpan> spansToVerify = spans;
 
-                await VerifyHelper.VerifySpans(spans, settings)
+                if (!enableNewWcfInstrumentation)
+                {
+                    // The legacy instrumentation keeps the WCF scope active until HandleRequest returns.
+                    // Depending on timing, InvokeEnd can run before or after that happens, so these custom
+                    // spans may be children of the WCF span or root spans. Their existence is deterministic,
+                    // but their parentage is not.
+                    spans.Where(s => s.Name == "EndServerAsyncAdd").Should().HaveCount(5);
+                    spansToVerify = spans.Where(s => s.Name != "EndServerAsyncAdd").ToList();
+                }
+
+                await VerifyHelper.VerifySpans(spansToVerify, settings)
                                   .UseMethodName("_");
 
                 // The custom binding doesn't trigger the integration
