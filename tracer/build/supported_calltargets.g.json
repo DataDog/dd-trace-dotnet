@@ -16614,6 +16614,30 @@
   {
     "IntegrationName": "Serilog",
     "AssemblyName": "Serilog",
+    "TargetTypeName": "Serilog.Core.Logger",
+    "TargetMethodName": "PostLevelCheckEmit",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "Serilog.Events.LogEvent"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 4,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "Serilog",
+    "AssemblyName": "Serilog",
     "TargetTypeName": "Serilog.Core.Pipeline.Logger",
     "TargetMethodName": "Dispatch",
     "TargetReturnType": "System.Void",
