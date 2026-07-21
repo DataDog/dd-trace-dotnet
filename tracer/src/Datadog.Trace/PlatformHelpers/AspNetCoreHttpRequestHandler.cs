@@ -12,6 +12,7 @@ using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Helpers;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -49,9 +50,15 @@ namespace Datadog.Trace.PlatformHelpers
             _requestInOperationName = requestInOperationName;
         }
 
-        public string GetDefaultResourceName(HttpRequest request)
+        public string GetDefaultResourceName(HttpRequest request, bool otelSemanticsEnabled = false)
         {
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+
+            if (otelSemanticsEnabled)
+            {
+                // OTel spec: no http.route → span name is just the method (or "HTTP" for unknown methods)
+                return HttpOtelHelper.GetResourceNameMethod(httpMethod);
+            }
 
             string absolutePath = request.PathBase.HasValue
                                       ? request.PathBase.ToUriComponent() + request.Path.ToUriComponent()
@@ -104,7 +111,7 @@ namespace Datadog.Trace.PlatformHelpers
         public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
         {
             var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
-            var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
+            var tags = (routeTemplateResourceNames || tracer.Settings.OtelSemanticsEnabled) ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
             return StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, tags, useSingleSpanRequestTracking: false);
         }
 
@@ -121,7 +128,7 @@ namespace Datadog.Trace.PlatformHelpers
             string url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
 
-            resourceName ??= GetDefaultResourceName(request);
+            resourceName ??= GetDefaultResourceName(request, tracer.Settings.OtelSemanticsEnabled);
             var extractedContext = ExtractPropagatedContext(tracer, request).MergeBaggageInto(Baggage.Current);
             InferredProxyScopePropagationContext? proxyContext = null;
 
@@ -135,7 +142,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
-            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
+            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags, otelSemanticsEnabled: tracer.Settings.OtelSemanticsEnabled);
 
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
             if (dataStreamsManager.IsTransactionTrackingEnabled)
@@ -203,6 +210,21 @@ namespace Datadog.Trace.PlatformHelpers
                 var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
                 string GetRequestHeaderFromKey(string key) => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;
                 Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, GetRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
+
+                if (tracer.Settings.OtelSemanticsEnabled)
+                {
+                    if (tags.NetworkClientIp is not null)
+                    {
+                        HttpOtelHelper.SetNetworkPeerAddress(scope.Span, tags.NetworkClientIp);
+                        tags.NetworkClientIp = null;
+                    }
+
+                    if (tags.HttpClientIp is not null)
+                    {
+                        HttpOtelHelper.SetClientAddress(scope.Span, tags.HttpClientIp);
+                        tags.HttpClientIp = null;
+                    }
+                }
             }
 
             if (iast.Settings.Enabled && iast.OverheadController.AcquireRequest())
@@ -241,12 +263,12 @@ namespace Datadog.Trace.PlatformHelpers
                 {
                     if (string.IsNullOrEmpty(span.ResourceName))
                     {
-                        span.ResourceName = GetDefaultResourceName(httpContext.Request);
+                        span.ResourceName = GetDefaultResourceName(httpContext.Request, tracer.Settings.OtelSemanticsEnabled);
                     }
 
                     if (isMissingHttpStatusCode)
                     {
-                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, settings);
+                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, settings, tracer.Settings.OtelSemanticsEnabled);
                     }
                 }
 
@@ -254,7 +276,7 @@ namespace Datadog.Trace.PlatformHelpers
 
                 if (proxyScope?.Span != null)
                 {
-                    proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, settings);
+                    proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, settings, tracer.Settings.OtelSemanticsEnabled);
                     proxyScope.Span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
                 }
 
@@ -290,11 +312,11 @@ namespace Datadog.Trace.PlatformHelpers
                 }
 
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
-                rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
+                rootSpan.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.CurrentTraceSettings.Settings, tracer.Settings.OtelSemanticsEnabled);
 
                 if (proxyScope?.Span != null)
                 {
-                    proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, tracer.CurrentTraceSettings.Settings);
+                    proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, tracer.CurrentTraceSettings.Settings, tracer.Settings.OtelSemanticsEnabled);
                 }
 
                 if (BlockException.GetBlockException(exception) is null)

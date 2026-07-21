@@ -12,6 +12,7 @@ namespace Datadog.Trace.Tagging;
 internal sealed partial class AspNetCoreSingleSpanTags : WebTags
 {
     private const string ComponentName = "aspnet_core";
+    private string? _httpRoute;
 
     // Read/write instead of readonly as AzureFunctions updates the component name
     [Tag(Trace.Tags.InstrumentationName)]
@@ -24,7 +25,11 @@ internal sealed partial class AspNetCoreSingleSpanTags : WebTags
     public string? AspNetCoreEndpoint { get; set; }
 
     [Tag(Tags.HttpRoute)]
-    public string? HttpRoute => AspNetCoreRoute;
+    public string? HttpRoute
+    {
+        get => _httpRoute ?? AspNetCoreRoute;
+        set => _httpRoute = value;
+    }
 
     [Tag(Tags.CodeOriginType)]
     public string? CodeOriginType { get; set; }
