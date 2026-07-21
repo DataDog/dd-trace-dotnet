@@ -351,6 +351,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
 
             // Azure Functions detection is process-wide, so this covers a processor consumer running
             // inside an in-process Functions-hosted app rather than a Functions Service Bus trigger handoff.
+            // Disable Continuous Profiler activation because this console sample only starts the tracer.
+            SetEnvironmentVariable("DD_PROFILING_ENABLED", "0");
+            SetEnvironmentVariable("DD_PROFILING_MANAGED_ACTIVATION_ENABLED", "0");
             SetEnvironmentVariable("DD_API_KEY", "NOT_SET"); // required for tracing to activate in Azure App Service
             SetEnvironmentVariable("WEBSITE_SITE_NAME", nameof(TestProcessorConnectsToProducerTraceInAzureFunctionsEnvironment));
             SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet");
