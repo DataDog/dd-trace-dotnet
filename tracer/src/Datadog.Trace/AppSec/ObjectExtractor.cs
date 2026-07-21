@@ -666,8 +666,10 @@ namespace Datadog.Trace.AppSec
                 }
 
                 var map = new Dictionary<string, object?>(capacity);
-                foreach (DictionaryEntry entry in source)
+                var mapEnumerator = source.GetEnumerator();
+                while (mapEnumerator.MoveNext())
                 {
+                    var entry = mapEnumerator.Entry;
                     var key = entry.Key?.ToString();
                     if (key is null)
                     {
@@ -690,8 +692,10 @@ namespace Datadog.Trace.AppSec
             }
 
             var items = new List<object?>(capacity);
-            foreach (DictionaryEntry entry in source)
+            var enumerator = source.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                var entry = enumerator.Entry;
                 items.Add(new Dictionary<string, object?>(2)
                 {
                     ["Key"] = entry.Key is null ? null : ExtractType(entry.Key.GetType(), entry.Key, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
