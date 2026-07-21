@@ -8,7 +8,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
@@ -20,9 +19,6 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
@@ -314,6 +310,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         case "EventHub" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs):
                             extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
                             break;
+
+                        case "EventGrid" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid):
+                        {
+                            extractedContext = EventGridFunctionsCommon.CreateReceiveSpanContext(tracer, functionContext, entry.Key as string, Baggage.Current);
+                            break;
+                        }
                     }
 
                     break;
@@ -476,30 +478,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             // directly from the grpc call instead. This is... interesting. It
             // is effectively doing the equivalent of context.GetHttpRequestDataAsync() which is
             // the suggested approach in the docs.
-            if (functionContext.Features is null || string.IsNullOrEmpty(bindingName))
+            if (string.IsNullOrEmpty(bindingName))
             {
                 return default;
             }
 
             try
             {
-                object? feature = null;
-                foreach (var keyValuePair in functionContext.Features)
-                {
-                    if (keyValuePair.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
-                    {
-                        feature = keyValuePair.Value;
-                        break;
-                    }
-                }
-
-                if (feature is null || !feature.TryDuckCast<FunctionBindingsFeatureStruct>(out var bindingFeature))
+                var bindingsFeature = FunctionBindingsCommon.GetBindingsFeature(functionContext);
+                if (bindingsFeature is null)
                 {
                     return default;
                 }
 
-                if (bindingFeature.InputData is null
-                 || !bindingFeature.InputData.TryGetValue(bindingName!, out var requestDataObject)
+                if (bindingsFeature.Value.InputData is null
+                 || !bindingsFeature.Value.InputData.TryGetValue(bindingName!, out var requestDataObject)
                  || requestDataObject is null)
                 {
                     return default;
@@ -524,8 +517,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             try
             {
-                var bindingsFeature = GetFeatureFromContext<T, FunctionBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
-                if (bindingsFeature == null)
+                var bindingsFeature = FunctionBindingsCommon.GetBindingsFeature(context);
+                if (bindingsFeature is null)
                 {
                     return default;
                 }
@@ -535,7 +528,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 // Extract from single message properties
                 if (triggerMetadata?.TryGetValue(singlePropertyKey, out var singlePropsObj) == true &&
-                    TryParseJson<Dictionary<string, object>>(singlePropsObj, out var singleProps) && singleProps != null)
+                    FunctionBindingsCommon.TryParseJson<Dictionary<string, object>>(singlePropsObj, out var singleProps))
                 {
                     var singleContext = Shared.AzureMessagingCommon.ExtractContext(singleProps);
                     if (singleContext.SpanContext != null)
@@ -546,7 +539,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
                 // Extract from batch properties array
                 if (triggerMetadata?.TryGetValue(batchPropertyKey, out var arrayPropsObj) == true &&
-                    TryParseJson<Dictionary<string, object>[]>(arrayPropsObj, out var propsArray) && propsArray != null)
+                    FunctionBindingsCommon.TryParseJson<Dictionary<string, object>[]>(arrayPropsObj, out var propsArray))
                 {
                     foreach (var props in propsArray)
                     {
@@ -580,27 +573,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             }
         }
 
-        private static bool TryParseJson<T>(object? jsonObj, [NotNullWhen(true)] out T? result)
-            where T : class
-        {
-            result = null;
-            if (jsonObj is not string jsonString)
-            {
-                return false;
-            }
-
-            try
-            {
-                result = JsonHelper.DeserializeObject<T>(jsonString);
-                return result != null;
-            }
-            catch (Exception ex)
-            {
-                Log.Debug(ex, "Failed to parse JSON: {Json}", jsonString);
-                return false;
-            }
-        }
-
         // Checks if all SpanContexts are identical (ignores baggage)
         private static bool AreAllSpanContextsIdentical(List<PropagationContext> contexts)
         {
@@ -614,26 +586,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 ctx.SpanContext != null &&
                 ctx.SpanContext.TraceId128 == first!.TraceId128 &&
                 ctx.SpanContext.SpanId == first.SpanId);
-        }
-
-        private static TFeature? GetFeatureFromContext<T, TFeature>(T context, string featureTypeName)
-            where T : IFunctionContext
-            where TFeature : struct
-        {
-            if (context.Features == null)
-            {
-                return null;
-            }
-
-            foreach (var kvp in context.Features)
-            {
-                if (kvp.Key.FullName == featureTypeName)
-                {
-                    return kvp.Value?.TryDuckCast<TFeature>(out var feature) == true ? feature : null;
-                }
-            }
-
-            return null;
         }
     }
 }

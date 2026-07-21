@@ -15,20 +15,8 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 
-#pragma warning disable SA1649 // File name should match first type name
-namespace Microsoft.Azure.Functions.Worker.Context.Features
-{
-    internal interface IFunctionBindingsFeature
-    {
-    }
-}
-#pragma warning restore SA1649
-
-#pragma warning disable SA1403 // File may only contain a single namespace
 namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
-#pragma warning restore SA1403
-
     public class AzureFunctionsCommonTests
     {
         [Fact]
@@ -114,24 +102,6 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             {
                 Features = features
             };
-        }
-
-        // This duck types with tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/Isolated/IFunctionContext.cs
-        private class MockFunctionContext : IFunctionContext
-        {
-            public FunctionDefinitionStruct FunctionDefinition { get; set; }
-
-            public IEnumerable<KeyValuePair<Type, object?>>? Features { get; set; }
-
-            public IDictionary<object, object?>? Items { get; }
-        }
-
-        // This duck types with tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/Isolated/GrpcBindingsFeatureStruct.cs
-        private class MockBindingsFeature
-        {
-            public IDictionary<string, object?>? TriggerMetadata { get; set; }
-
-            public IDictionary<string, object?>? InputData { get; set; }
         }
     }
 }
