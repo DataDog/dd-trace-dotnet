@@ -22,6 +22,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
@@ -184,11 +185,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 Uri? requestHeadersTo = requestHeaders?.To;
 
                 resourceName ??= GetResourceName(requestHeaders);
+                var httpUrl = BuildHttpUrl(requestHeadersTo, tracer.TracerManager.QueryStringManager);
                 span.DecorateWebServerSpan(
                     resourceName: resourceName,
                     httpMethod,
                     host,
-                    httpUrl: requestHeadersTo?.AbsoluteUri,
+                    httpUrl: httpUrl,
                     userAgent,
                     tags);
 
@@ -209,6 +211,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
             // always returns the scope, even if it's null
             return scope;
+        }
+
+        internal static string? BuildHttpUrl(Uri? uri, QueryStringManager? queryStringManager)
+        {
+            if (uri is null)
+            {
+                return null;
+            }
+
+            // HttpRequestUtils.GetUrl assumes a hierarchical scheme://host/path[?query] form.
+            // Only http/https can carry a query string that needs obfuscation; for other WCF
+            // transports (net.tcp, net.pipe, net.msmq, opaque msmq.formatname:..., etc.)
+            // preserve the original AbsoluteUri so we never inject "://" into a scheme-specific URI.
+            if (uri.IsAbsoluteUri && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+            {
+                return HttpRequestUtils.GetUrl(uri, queryStringManager);
+            }
+
+            return uri.AbsoluteUri;
         }
 
         private static string? GetResourceName(IMessageHeaders? requestHeaders)
