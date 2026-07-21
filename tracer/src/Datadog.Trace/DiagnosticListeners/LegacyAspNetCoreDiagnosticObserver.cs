@@ -41,36 +41,22 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly LegacyAspNetCoreHttpRequestHandler RequestHandler = new(Log);
         private static readonly object HttpContextRequestStateKey = new();
 
-        private readonly Lazy<bool> _isEnabled;
         private readonly IDatadogLogger _log;
         private readonly IMetricsTelemetryCollector _metrics;
 
-        private Tracer _tracer = null!;
+        private readonly Tracer _tracer;
         private int _reportedIncompatibleShapes;
 
-        public LegacyAspNetCoreDiagnosticObserver()
-            : this(() => Tracer.Instance, Log, TelemetryFactory.Metrics)
+        public LegacyAspNetCoreDiagnosticObserver(Tracer tracer, IMetricsTelemetryCollector metrics)
+            : this(tracer, metrics, Log)
         {
         }
 
-        public LegacyAspNetCoreDiagnosticObserver(Tracer tracer)
-            : this(tracer, Log, TelemetryFactory.Metrics)
-        {
-        }
-
-        internal LegacyAspNetCoreDiagnosticObserver(Tracer tracer, IDatadogLogger log, IMetricsTelemetryCollector metrics)
+        internal LegacyAspNetCoreDiagnosticObserver(Tracer tracer, IMetricsTelemetryCollector metrics, IDatadogLogger log)
         {
             _tracer = tracer;
-            _isEnabled = new Lazy<bool>(() => true);
             _log = log;
             _metrics = metrics;
-        }
-
-        internal LegacyAspNetCoreDiagnosticObserver(Func<Tracer> tracerFactory, IDatadogLogger log, IMetricsTelemetryCollector metrics)
-        {
-            _log = log;
-            _metrics = metrics;
-            _isEnabled = new Lazy<bool>(() => TryEnable(tracerFactory));
         }
 
         [Flags]
@@ -97,24 +83,6 @@ namespace Datadog.Trace.DiagnosticListeners
         }
 
         protected override string ListenerName => DiagnosticListenerName;
-
-        public override IDisposable? SubscribeIfMatch(IDiagnosticListener diagnosticListener)
-        {
-            try
-            {
-                if (diagnosticListener.Name != ListenerName || !_isEnabled.Value)
-                {
-                    return null;
-                }
-
-                return diagnosticListener.Subscribe(this, IsEventEnabled);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error subscribing to ASP.NET Core diagnostic events on .NET Framework. This listener will not be instrumented.");
-                return null;
-            }
-        }
 
         // ASP.NET Core checks the base operation before starting its Activity, then emits request-lifecycle events.
         protected override bool IsEventEnabled(string eventName) =>
@@ -282,30 +250,6 @@ namespace Datadog.Trace.DiagnosticListeners
             if (itemsContext.Items.TryGetValue(HttpContextRequestStateKey, out var value) && value is LegacyAspNetCoreRequestState state)
             {
                 RequestHandler.HandleAspNetCoreException(_tracer, state.RootScope, eventData.Exception);
-            }
-        }
-
-        private bool TryEnable(Func<Tracer> tracerFactory)
-        {
-            try
-            {
-                var tracer = tracerFactory();
-                // This is a one-time activation gate because _isEnabled caches the result. Avoid subscribing when disabled,
-                // as the subscription itself enables ASP.NET Core request Activities and diagnostic events.
-                // TODO: Investigate dynamically subscribing and unsubscribing when this integration is enabled or disabled at runtime.
-                if (!tracer.Settings.AspNetCoreNetFrameworkEnabled
-                 || !tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
-                {
-                    return false;
-                }
-
-                _tracer = tracer;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error enabling ASP.NET Core instrumentation on .NET Framework. The integration will remain disabled.");
-                return false;
             }
         }
 

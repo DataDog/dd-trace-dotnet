@@ -490,7 +490,15 @@ namespace Datadog.Trace.ClrProfiler
 
             if (!SkipAspNetCoreDiagnosticObserver())
             {
+#if NETFRAMEWORK
+                var tracer = Tracer.Instance;
+                if (tracer.Settings.AspNetCoreNetFrameworkEnabled)
+                {
+                    observers.Add(new LegacyAspNetCoreDiagnosticObserver(tracer, TelemetryFactory.Metrics));
+                }
+#else
                 observers.Add(GetAspNetCoreDiagnosticObserver());
+#endif
             }
 
             observers.Add(new QuartzDiagnosticObserver());
@@ -500,9 +508,7 @@ namespace Datadog.Trace.ClrProfiler
             DiagnosticManager.Instance = diagnosticManager;
         }
 
-#if NETFRAMEWORK
-        private static LegacyAspNetCoreDiagnosticObserver GetAspNetCoreDiagnosticObserver() => new();
-#else
+#if !NETFRAMEWORK
 #if NET6_0_OR_GREATER
         private static DiagnosticObserver GetAspNetCoreDiagnosticObserver()
 #else
