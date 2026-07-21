@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -28,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 /// </summary>
 public abstract class AzureFunctionsTests : TestHelper
 {
+    private const string ReadinessPingResource = "GET /admin/host/ping";
+
     protected AzureFunctionsTests(string sampleAppName, ITestOutputHelper output)
         : base(sampleAppName, samplePathOverrides: Path.Combine("test", "test-applications", "azure-functions"), output)
     {
@@ -46,6 +49,10 @@ public abstract class AzureFunctionsTests : TestHelper
         // as they are already covered by the existing excludes
         SetEnvironmentVariable("DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS", ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions + ", devstoreaccount1/azure-webjobs-hosts");
     }
+
+    // Readiness probes create host spans that must not affect test counts or snapshots.
+    protected static void SuppressReadinessPingSpans(MockTracerAgent agent)
+        => agent.SpanFilters.Add(s => s.Resource != ReadinessPingResource);
 
     protected static IList<MockSpan> FilterOutSocketsHttpHandler(IImmutableList<MockSpan> spans)
     {
@@ -70,7 +77,98 @@ public abstract class AzureFunctionsTests : TestHelper
 
     protected async Task<ProcessResult> RunAzureFunctionAndWaitForExit(MockTracerAgent agent, Func<Task> seedAsync = null, string framework = null, int expectedExitCode = 0)
     {
-        // run the azure function
+        using var helper = await StartAzureFunction(agent, framework);
+
+        if (seedAsync is not null)
+        {
+            await WaitForFunctionHostHttpEndpointAsync();
+            await seedAsync();
+        }
+
+        return WaitForProcessResult(helper, expectedExitCode);
+    }
+
+    protected async Task RunIsolatedAzureFunctionAsync(MockTracerAgent agent, Func<Task> testAsync, string framework = null)
+    {
+        // Timer listeners use blob singleton leases. Give every run a unique host ID so a lease
+        // left by an earlier test cannot delay this host's timer trigger for up to a minute.
+        SetEnvironmentVariable("AzureFunctionsWebHost__hostid", "aftrace" + Guid.NewGuid().ToString("N").Substring(0, 25));
+
+        using var helper = await StartAzureFunction(agent, framework);
+        try
+        {
+            await WaitForFunctionHostHttpEndpointAsync();
+
+            // Keep func.exe and its isolated worker alive until the test has received and asserted all
+            // expected data. Shutting down first can discard the host process's final trace batch.
+            await testAsync();
+
+            if (helper.Process.HasExited)
+            {
+                throw new InvalidOperationException("The Azure Functions host exited before the test requested shutdown.");
+            }
+        }
+        finally
+        {
+            await StopIsolatedAzureFunctionAsync(helper);
+        }
+    }
+
+    protected async Task<IImmutableList<MockLogsIntake.Log>> WaitForLogsAsync(
+        MockLogsIntake logsIntake,
+        Func<IImmutableList<MockLogsIntake.Log>, bool> predicate,
+        int timeoutInMilliseconds = 20_000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+        while (DateTime.UtcNow < deadline)
+        {
+            var logs = logsIntake.Logs;
+            if (predicate(logs))
+            {
+                return logs;
+            }
+
+            await Task.Delay(250);
+        }
+
+        return logsIntake.Logs;
+    }
+
+    protected async Task<IImmutableList<MockLogsIntake.Log>> WaitForLogsToStabilizeAsync(
+        MockLogsIntake logsIntake,
+        int minimumCount,
+        int quietPeriodInMilliseconds = 2_000,
+        int timeoutInMilliseconds = 20_000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+        var quietPeriod = TimeSpan.FromMilliseconds(quietPeriodInMilliseconds);
+        var previousCount = logsIntake.Logs.Count;
+
+        while (DateTime.UtcNow < deadline)
+        {
+            var remaining = deadline - DateTime.UtcNow;
+            if (remaining < quietPeriod)
+            {
+                await Task.Delay(remaining);
+                break;
+            }
+
+            await Task.Delay(quietPeriod);
+            var logs = logsIntake.Logs;
+            if (logs.Count >= minimumCount && logs.Count == previousCount)
+            {
+                return logs;
+            }
+
+            previousCount = logs.Count;
+        }
+
+        throw new TimeoutException(
+            $"Logs did not stabilize at or above {minimumCount} entries within {timeoutInMilliseconds}ms. Last count: {logsIntake.Logs.Count}.");
+    }
+
+    protected async Task<ProcessHelper> StartAzureFunction(MockTracerAgent agent, string framework)
+    {
         var binFolder = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion: string.Empty, framework);
         Output.WriteLine("Using binFolder: " + binFolder);
         var process = await ProfilerHelper.StartProcessWithProfiler(
@@ -82,15 +180,94 @@ public abstract class AzureFunctionsTests : TestHelper
             processToProfile: null,
             workingDirectory: binFolder); // points to the sample project
 
-        using var helper = new ProcessHelper(process);
+        return new ProcessHelper(process);
+    }
 
-        if (seedAsync is not null)
+    protected async Task StopIsolatedAzureFunctionAsync(ProcessHelper helper)
+    {
+        var process = helper.Process;
+        var childProcessIds = new List<int>();
+
+        if (!process.HasExited)
         {
-            await WaitForFunctionAppReadyAsync();
-            await seedAsync();
+            childProcessIds.AddRange(ProcessHelper.GetChildrenIds(process.Id));
+
+            try
+            {
+                using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+                using var response = await http.PostAsync("http://127.0.0.1:7071/api/shutdown", content: null);
+                response.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                Output.WriteLine($"Unable to request Azure Functions worker shutdown: {ex.Message}");
+            }
+
+            // Give the worker time to flush and stop before terminating this test's Core Tools process tree.
+            _ = await Task.WhenAny(helper.Task, Task.Delay(TimeSpan.FromSeconds(2)));
         }
 
-        return WaitForProcessResult(helper, expectedExitCode);
+        if (!process.HasExited)
+        {
+            foreach (var childProcessId in ProcessHelper.GetChildrenIds(process.Id))
+            {
+                if (!childProcessIds.Contains(childProcessId))
+                {
+                    childProcessIds.Add(childProcessId);
+                }
+            }
+
+            try
+            {
+                process.Kill();
+            }
+            catch (Exception ex)
+            {
+                Output.WriteLine($"Unable to stop Azure Functions host process {process.Id}: {ex.Message}");
+            }
+        }
+
+        for (var i = childProcessIds.Count - 1; i >= 0; i--)
+        {
+            try
+            {
+                using var childProcess = Process.GetProcessById(childProcessIds[i]);
+                if (!childProcess.HasExited)
+                {
+                    childProcess.Kill();
+                }
+            }
+            catch (ArgumentException)
+            {
+                // The child process has already exited.
+            }
+            catch (Exception ex)
+            {
+                Output.WriteLine($"Unable to stop Azure Functions child process {childProcessIds[i]}: {ex.Message}");
+            }
+        }
+
+        if (!process.HasExited)
+        {
+            process.WaitForExit((int)TimeSpan.FromSeconds(10).TotalMilliseconds);
+        }
+
+        helper.Drain((int)TimeSpan.FromSeconds(5).TotalMilliseconds);
+        if (!string.IsNullOrWhiteSpace(helper.StandardOutput))
+        {
+            Output.WriteLine($"StandardOutput:{Environment.NewLine}{helper.StandardOutput}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(helper.ErrorOutput))
+        {
+            Output.WriteLine($"StandardError:{Environment.NewLine}{helper.ErrorOutput}");
+        }
+
+        Output.WriteLine("ProcessId: " + process.Id);
+        if (process.HasExited)
+        {
+            Output.WriteLine("Exit Code: " + process.ExitCode);
+        }
     }
 
     protected async Task AssertInProcessSpans(IImmutableList<MockSpan> spans)
@@ -136,11 +313,11 @@ public abstract class AzureFunctionsTests : TestHelper
                           .DisableRequireUniquePrefix();
     }
 
-    private static async Task WaitForFunctionAppReadyAsync(int port = 7071, int timeoutSeconds = 60)
+    private static async Task WaitForFunctionHostHttpEndpointAsync(int port = 7071, int timeoutSeconds = 60)
     {
-        // Poll the host ping endpoint; it returns 200 only when the host is fully initialized and
-        // all function routes are registered.
-        using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+        // This only waits for the Functions host HTTP endpoint to accept requests. The ping action itself
+        // does not report whether the script host and its trigger listeners have finished initializing.
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
         var pingUrl = $"http://127.0.0.1:{port}/admin/host/ping";
         var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
         while (DateTime.UtcNow < deadline)
@@ -155,7 +332,7 @@ public abstract class AzureFunctionsTests : TestHelper
             }
             catch
             {
-                // Host not yet listening
+                // Connection failures are expected while the host starts.
             }
 
             await Task.Delay(500);
@@ -253,16 +430,19 @@ public abstract class AzureFunctionsTests : TestHelper
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
-            {
-                const int expectedSpanCount = 21;
-                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
-                var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+            SuppressReadinessPingSpans(agent);
 
-                using var s = new AssertionScope();
-                filteredSpans.Should().HaveCount(expectedSpanCount);
-                await AssertIsolatedSpans(filteredSpans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.Sdk1");
-            }
+            await RunIsolatedAzureFunctionAsync(
+                agent,
+                async () =>
+                {
+                    const int expectedSpanCount = 21;
+                    var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+
+                    using var s = new AssertionScope();
+                    spans.Should().HaveCount(expectedSpanCount);
+                    await AssertIsolatedSpans(spans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.Sdk1");
+                });
         }
     }
 
@@ -284,17 +464,21 @@ public abstract class AzureFunctionsTests : TestHelper
         public async Task SubmitsTraces()
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
-            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
-            {
-                const int expectedSpanCount = 31;
-                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+            SuppressReadinessPingSpans(agent);
 
-                var filteredSpans = FilterOutSocketsHttpHandler(spans);
+            await RunIsolatedAzureFunctionAsync(
+                agent,
+                async () =>
+                {
+                    const int expectedSpanCount = 31;
+                    var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
-                using var s = new AssertionScope();
-                spans.Should().HaveCount(expectedSpanCount);
-                await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore1");
-            }
+                    var filteredSpans = FilterOutSocketsHttpHandler(spans);
+
+                    using var s = new AssertionScope();
+                    spans.Should().HaveCount(expectedSpanCount);
+                    await AssertIsolatedSpans(filteredSpans.ToImmutableList(), $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore1");
+                });
         }
     }
 #endif
@@ -329,21 +513,23 @@ public abstract class AzureFunctionsTests : TestHelper
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
-            {
-                const int expectedSpanCount = 21;
-                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
-                var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+            SuppressReadinessPingSpans(agent);
 
-                using var s = new AssertionScope();
-                filteredSpans.Should().HaveCount(expectedSpanCount);
-                await AssertIsolatedSpans(filteredSpans);
+            await RunIsolatedAzureFunctionAsync(
+                agent,
+                async () =>
+                {
+                    const int expectedSpanCount = 21;
+                    var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
-                // ~327 (ish) logs but we kill func.exe so some logs are lost
-                // and since sometimes the batch of logs can be 100+ it can be a LOT of logs that we lose
-                // so just check that we have much more than when we have host logs disabled
-                logsIntake.Logs.Should().HaveCountGreaterThanOrEqualTo(200);
-            }
+                    using var s = new AssertionScope();
+                    spans.Should().HaveCount(expectedSpanCount);
+                    await AssertIsolatedSpans(spans);
+                });
+
+            // The direct log submission sink can remain buffered until the worker shuts down.
+            var logs = await WaitForLogsAsync(logsIntake, static logs => logs.Count >= 200);
+            logs.Should().HaveCountGreaterThanOrEqualTo(200);
         }
     }
 
@@ -377,23 +563,24 @@ public abstract class AzureFunctionsTests : TestHelper
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
-            {
-                const int expectedSpanCount = 21;
-                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
-                var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+            SuppressReadinessPingSpans(agent);
 
-                using var s = new AssertionScope();
-                filteredSpans.Should().HaveCount(expectedSpanCount);
-                await AssertIsolatedSpans(filteredSpans, filename: $"{nameof(AzureFunctionsTests)}.Isolated.V4.HostLogsDisabled");
+            await RunIsolatedAzureFunctionAsync(
+                agent,
+                async () =>
+                {
+                    const int expectedSpanCount = 21;
+                    var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
-                // we expect some logs still from the worker process
-                // this just seems flaky I THINK because of killing the func.exe process (even though we aren't using the host logs)
-                // commonly see 13, 14, 15, 16 logs, but IF we were logging the host logs we'd see 300+
-                var logs = logsIntake.Logs;
-                logs.Should().HaveCountGreaterThan(10);
-                logs.Should().HaveCountLessThanOrEqualTo(20);
-            }
+                    using var s = new AssertionScope();
+                    spans.Should().HaveCount(expectedSpanCount);
+                    await AssertIsolatedSpans(spans, filename: $"{nameof(AzureFunctionsTests)}.Isolated.V4.HostLogsDisabled");
+                });
+
+            // Wait for shutdown logs to settle so a late host batch cannot evade the upper-bound assertion.
+            var logs = await WaitForLogsToStabilizeAsync(logsIntake, minimumCount: 11);
+            logs.Should().HaveCountGreaterThan(10);
+            logs.Should().HaveCountLessThanOrEqualTo(20);
         }
     }
 
@@ -416,25 +603,27 @@ public abstract class AzureFunctionsTests : TestHelper
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
-            {
-                const int expectedSpanCount = 31;
-                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+            SuppressReadinessPingSpans(agent);
 
-                // There are _additional_ spans created for these compared to the non-AspNetCore version
-                // These are http-client-handler-type: System.Net.Http.SocketsHttpHandler that come in around
-                // the same time as some of the `azure_functions.invoke` spans
-                // because of this they cause a lot of flake in the snapshots where they shift places
-                // opting to just scrub them from the snapshots - we also don't think that the spans provide much
-                // value so they may be removed from being traced.
-                var filteredSpans = FilterOutSocketsHttpHandler(spans)
-                                   .Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase))
-                                   .ToImmutableList();
+            await RunIsolatedAzureFunctionAsync(
+                agent,
+                async () =>
+                {
+                    const int expectedSpanCount = 31;
+                    var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
-                using var s = new AssertionScope();
-                spans.Should().HaveCount(expectedSpanCount);
-                await AssertIsolatedSpans(filteredSpans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore");
-            }
+                    // There are _additional_ spans created for these compared to the non-AspNetCore version
+                    // These are http-client-handler-type: System.Net.Http.SocketsHttpHandler that come in around
+                    // the same time as some of the `azure_functions.invoke` spans
+                    // because of this they cause a lot of flake in the snapshots where they shift places
+                    // opting to just scrub them from the snapshots - we also don't think that the spans provide much
+                    // value so they may be removed from being traced.
+                    var filteredSpans = FilterOutSocketsHttpHandler(spans).ToImmutableList();
+
+                    using var s = new AssertionScope();
+                    spans.Should().HaveCount(expectedSpanCount);
+                    await AssertIsolatedSpans(filteredSpans, $"{nameof(AzureFunctionsTests)}.Isolated.V4.AspNetCore");
+                });
         }
     }
 
@@ -460,41 +649,44 @@ public abstract class AzureFunctionsTests : TestHelper
             SetEnvironmentVariable("DD_TEST_APIM_ENABLED", "1");
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
-            using (await RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
-            {
-                // 6 spans: Timer TriggerAllTimer, http.request, azure.apim, host span (GET /api/simple),
-                // worker span (Http SimpleHttpTrigger), Manual inside Simple.
-                const int expectedSpanCount = 6;
-                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
-                var filteredSpans = spans.Where(s => !s.Resource.Equals("Timer ExitApp", StringComparison.OrdinalIgnoreCase)).ToImmutableList();
+            SuppressReadinessPingSpans(agent);
 
-                using var assertionScope = new AssertionScope();
+            await RunIsolatedAzureFunctionAsync(
+                agent,
+                async () =>
+                {
+                    // 6 spans: Timer TriggerAllTimer, http.request, azure.apim, host span (GET /api/simple),
+                    // worker span (Http SimpleHttpTrigger), Manual inside Simple.
+                    const int expectedSpanCount = 6;
+                    var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
-                filteredSpans.Count.Should().Be(expectedSpanCount);
+                    using var assertionScope = new AssertionScope();
 
-                filteredSpans.Should().ContainSingle(s => s.Name == "azure.apim");
+                    spans.Count.Should().Be(expectedSpanCount);
 
-                // Verify we have azure_functions.invoke spans: host (GET /api/simple), worker (Http SimpleHttpTrigger), Timer TriggerAllTimer
-                var functionSpans = filteredSpans.Where(s => s.Name == "azure_functions.invoke").ToList();
-                functionSpans.Should().HaveCount(3);
-                functionSpans.Should().Contain(s => s.Resource.Contains("TriggerAllTimer"));
-                functionSpans.Should().Contain(s => s.Resource.Contains("SimpleHttpTrigger"));
-                functionSpans.Should().Contain(s => s.Resource.Contains("GET /api/simple"));
+                    spans.Should().ContainSingle(s => s.Name == "azure.apim");
 
-                // Verify the http.request span
-                var httpSpan = filteredSpans.Should().ContainSingle(s => s.Name == "http.request").Subject;
-                httpSpan.Tags.Should().ContainKey("http.url");
+                    // Verify we have azure_functions.invoke spans: host (GET /api/simple), worker (Http SimpleHttpTrigger), Timer TriggerAllTimer
+                    var functionSpans = spans.Where(s => s.Name == "azure_functions.invoke").ToList();
+                    functionSpans.Should().HaveCount(3);
+                    functionSpans.Should().Contain(s => s.Resource.Contains("TriggerAllTimer"));
+                    functionSpans.Should().Contain(s => s.Resource.Contains("SimpleHttpTrigger"));
+                    functionSpans.Should().Contain(s => s.Resource.Contains("GET /api/simple"));
 
-                var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.AddSimpleScrubber("aas.environment.runtime: .NET Core", "aas.environment.runtime: .NET");
-                settings.AddRegexScrubber(
-                    new(@"Microsoft.Azure.WebJobs.Extensions, Version=\d.\d.\d.\d"),
-                    @"Microsoft.Azure.WebJobs.Extensions, Version=0.0.0.0");
-                settings.AddRegexScrubber(new(@" in .+\.cs:line \d+"), string.Empty);
-                await VerifyHelper.VerifySpans(filteredSpans, settings)
-                                    .UseFileName($"{nameof(AzureFunctionsTests)}.Isolated.V4.AzureApim")
-                                    .DisableRequireUniquePrefix();
-            }
+                    // Verify the http.request span
+                    var httpSpan = spans.Should().ContainSingle(s => s.Name == "http.request").Subject;
+                    httpSpan.Tags.Should().ContainKey("http.url");
+
+                    var settings = VerifyHelper.GetSpanVerifierSettings();
+                    settings.AddSimpleScrubber("aas.environment.runtime: .NET Core", "aas.environment.runtime: .NET");
+                    settings.AddRegexScrubber(
+                        new(@"Microsoft.Azure.WebJobs.Extensions, Version=\d.\d.\d.\d"),
+                        @"Microsoft.Azure.WebJobs.Extensions, Version=0.0.0.0");
+                    settings.AddRegexScrubber(new(@" in .+\.cs:line \d+"), string.Empty);
+                    await VerifyHelper.VerifySpans(spans, settings)
+                                      .UseFileName($"{nameof(AzureFunctionsTests)}.Isolated.V4.AzureApim")
+                                      .DisableRequireUniquePrefix();
+                });
         }
     }
 #endif
