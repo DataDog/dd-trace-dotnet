@@ -8,10 +8,8 @@
 #nullable enable
 
 using System;
-using System.Text;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -32,142 +30,99 @@ namespace Datadog.Trace.PlatformHelpers
             _log = log;
         }
 
-        // Mirrors PathString.ToUriComponent() without adding an ASP.NET Core reference to the net461 tracer.
-        private static string ToUriComponent(string path)
-        {
-            StringBuilder? builder = null;
-            var segmentStart = 0;
-            var index = 0;
-
-            while (index < path.Length)
-            {
-                if (IsValidPathCharacter(path[index]))
-                {
-                    index++;
-                    continue;
-                }
-
-                if (IsPercentEncodedCharacter(path, index))
-                {
-                    index += 3;
-                    continue;
-                }
-
-                builder ??= new StringBuilder(path.Length * 3);
-                builder.Append(path, segmentStart, index - segmentStart);
-
-                var escapeStart = index++;
-                while (index < path.Length
-                    && !IsValidPathCharacter(path[index])
-                    && !IsPercentEncodedCharacter(path, index))
-                {
-                    index++;
-                }
-
-                builder.Append(Uri.EscapeDataString(path.Substring(escapeStart, index - escapeStart)));
-                segmentStart = index;
-            }
-
-            if (builder is null)
-            {
-                return path;
-            }
-
-            builder.Append(path, segmentStart, path.Length - segmentStart);
-            return builder.ToString();
-        }
-
-        private static bool IsValidPathCharacter(char value)
-            => value is >= 'a' and <= 'z'
-            || value is >= 'A' and <= 'Z'
-            || value is >= '0' and <= '9'
-            || value is '-' or '.' or '_' or '~'
-            || value is '!' or '$' or '&' or '\'' or '(' or ')' or '*' or '+' or ',' or ';' or '='
-            || value is ':' or '@' or '/';
-
-        private static bool IsPercentEncodedCharacter(string value, int index)
-            => index + 2 < value.Length
-            && value[index] == '%'
-            && IsHexadecimalCharacter(value[index + 1])
-            && IsHexadecimalCharacter(value[index + 2]);
-
-        private static bool IsHexadecimalCharacter(char value)
-            => value is >= '0' and <= '9'
-            || value is >= 'A' and <= 'F'
-            || value is >= 'a' and <= 'f';
-
         public Scope StartAspNetCorePipelineScope(
             Tracer tracer,
-            LegacyAspNetCoreDiagnosticObserver.LegacyAspNetCoreHttpRequestStruct request,
-            LegacyAspNetCoreHeadersCollectionAdapter headersAdapter)
+            LegacyAspNetCoreDiagnosticObserver.HttpRequestStruct request)
         {
-            var extractedContext = ExtractPropagatedContext(tracer, headersAdapter).MergeBaggageInto(Baggage.Current);
+            // See also AspNetCoreHttpRequestHandler for the .NET Core implementation
             var tags = new AspNetCoreTags();
 
-            var method = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
             var host = request.Host.Value ?? string.Empty;
-            var pathBase = request.PathBase.Value ?? string.Empty;
-            var requestPath = request.Path.Value ?? string.Empty;
-            var escapedPathBase = ToUriComponent(pathBase);
-            var escapedRequestPath = ToUriComponent(requestPath);
-            var resourceName = method + " " + UriHelpers.GetCleanUriPath(escapedPathBase + escapedRequestPath).ToLowerInvariant();
+            var httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+            var pathBase = request.PathBase.ToUriComponent();
+            var requestPath = request.Path.ToUriComponent();
             var url = HttpRequestUtils.GetUrl(
                 request.Scheme ?? string.Empty,
                 host,
-                port: null,
-                escapedPathBase,
-                escapedRequestPath,
+                port: null, // The request.Host includes the port
+                pathBase,
+                requestPath,
                 request.QueryString.Value ?? string.Empty,
                 tracer.TracerManager.QueryStringManager);
-            var userAgent = GetHeaderValue(headersAdapter, HttpHeaderNames.UserAgent);
+            var userAgent = request.Headers is { Instance: not null } headers && headers[HttpHeaderNames.UserAgent] is { } ua
+                                ? string.Join(",", ua)
+                                : null;
+            userAgent = string.IsNullOrEmpty(userAgent) ? null : userAgent;
 
-            tags.SetAnalyticsSampleRate(LegacyAspNetCoreDiagnosticObserver.IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
+            // TODO: we should only create this resource name string if we actually need it, due to head sampling etc
+            var absolutePath = string.IsNullOrEmpty(pathBase) ? requestPath : pathBase + requestPath;
+            var resourceUrl = UriHelpers.GetCleanUriPath(absolutePath).ToLowerInvariant();
+            var resource = $"{httpMethod} {resourceUrl}";
 
-            Scope? scope = null;
-            try
-            {
-                scope = tracer.StartActiveInternal(OperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
-                scope.Span.DecorateWebServerSpan(resourceName, method, host, url, userAgent, tags);
+            var extractedContext = ExtractPropagatedContext(tracer, request.Headers).MergeBaggageInto(Baggage.Current);
+
+            var scope = tracer.StartActiveInternal(OperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
+            var span = scope.Span;
+            span.DecorateWebServerSpan(resource, httpMethod, host, url, userAgent, tags);
 #pragma warning disable CS8620 // HeaderTags values are non-null, while AddHeadersToSpanAsTags also accepts nullable values.
-                tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(
-                    scope.Span,
-                    headersAdapter,
-                    tracer.CurrentTraceSettings.Settings.HeaderTags,
-                    defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
-#pragma warning restore CS8620
-                tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(LegacyAspNetCoreDiagnosticObserver.IntegrationId);
-                return scope;
-            }
-            catch
+
+            var headerTagsInternal = tracer.CurrentTraceSettings.Settings.HeaderTags;
+            if (headerTagsInternal.Count != 0)
             {
-                scope?.Dispose();
-                throw;
+                try
+                {
+                    // extract propagation details from http headers
+                    if (request.Headers is { Instance: not null } requestHeaders)
+                    {
+                        tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(
+                            span,
+                            new LegacyAspNetCoreHeadersCollectionAdapter(requestHeaders),
+                            headerTagsInternal,
+                            defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error extracting propagated HTTP headers.");
+                }
             }
+
+            tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
+
+            // TODO: Collect IP header (requires more duck typing)
+            tags.SetAnalyticsSampleRate(LegacyAspNetCoreDiagnosticObserver.IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(LegacyAspNetCoreDiagnosticObserver.IntegrationId);
+            return scope;
         }
 
-        public void StopAspNetCorePipelineScope(Tracer tracer, Scope scope, LegacyAspNetCoreDiagnosticObserver.LegacyAspNetCoreHttpResponseStruct response)
+        public void StopAspNetCorePipelineScope(Tracer tracer, Scope scope, LegacyAspNetCoreDiagnosticObserver.HttpResponseStruct response)
         {
-            var settings = tracer.CurrentTraceSettings.Settings;
-            if (!scope.Span.HasHttpStatusCode())
+            try
             {
-                scope.Span.SetHttpStatusCode(response.StatusCode, isServer: true, settings);
-            }
+                var settings = tracer.CurrentTraceSettings.Settings;
+                // TODO: Update resource name if required, once we delay setting it
+                if (!scope.Span.HasHttpStatusCode())
+                {
+                    scope.Span.SetHttpStatusCode(response.StatusCode, isServer: true, settings);
+                }
 
-            if (!settings.HeaderTags.IsNullOrEmpty()
-             && response.Headers is not null
-             && response.Headers.TryDuckCast<ILegacyAspNetCoreHeaders>(out var headers))
+                if (settings.HeaderTags.Count != 0 && response.Headers is { Instance: not null } headers)
+                {
+                    scope.Span.SetHeaderTags(
+                        new LegacyAspNetCoreHeadersCollectionAdapter(headers),
+                        settings.HeaderTags,
+                        defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                }
+            }
+            finally
             {
-                scope.Span.SetHeaderTags(
-                    new LegacyAspNetCoreHeadersCollectionAdapter(headers),
-                    settings.HeaderTags,
-                    defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                scope.Dispose();
             }
         }
 
         public void HandleAspNetCoreException(Tracer tracer, Scope scope, Exception exception)
         {
-            var statusCode = exception.TryDuckCast<LegacyAspNetCoreDiagnosticObserver.LegacyBadHttpRequestExceptionStruct>(out var badRequestException)
+            var statusCode = exception.TryDuckCast<LegacyAspNetCoreDiagnosticObserver.BadHttpRequestExceptionStruct>(out var badRequestException)
                                  ? badRequestException.StatusCode
                                  : 500;
 
@@ -175,43 +130,22 @@ namespace Datadog.Trace.PlatformHelpers
             scope.Span.SetException(exception);
         }
 
-        private PropagationContext ExtractPropagatedContext(Tracer tracer, LegacyAspNetCoreHeadersCollectionAdapter headers)
+        private PropagationContext ExtractPropagatedContext<T>(Tracer tracer, T? headers)
+            where T : ILegacyAspNetCoreHeaders
         {
             try
             {
-                return tracer.TracerManager.SpanContextPropagator.Extract(headers);
+                if (headers?.Instance is not null)
+                {
+                    return tracer.TracerManager.SpanContextPropagator.Extract(new LegacyAspNetCoreHeadersCollectionAdapter(headers));
+                }
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error extracting propagated HTTP headers.");
-                return default;
-            }
-        }
-
-        private string? GetHeaderValue(LegacyAspNetCoreHeadersCollectionAdapter headers, string name)
-        {
-            using var enumerator = headers.GetValues(name).GetEnumerator();
-            if (!enumerator.MoveNext())
-            {
-                return null;
             }
 
-            var first = enumerator.Current;
-            if (!enumerator.MoveNext())
-            {
-                return first;
-            }
-
-            var builder = StringBuilderCache.Acquire();
-            builder.Append(first);
-            do
-            {
-                builder.Append(',');
-                builder.Append(enumerator.Current);
-            }
-            while (enumerator.MoveNext());
-
-            return StringBuilderCache.GetStringAndRelease(builder);
+            return default;
         }
     }
 }
