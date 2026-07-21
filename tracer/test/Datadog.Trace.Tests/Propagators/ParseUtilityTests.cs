@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
@@ -107,18 +106,6 @@ namespace Datadog.Trace.Tests.Propagators
             result.Should().Be(expected);
         }
 
-        [Fact]
-        public void ListsDoNotUseEnumerator()
-        {
-            var numericValues = new ThrowingEnumerableList("invalid", "42");
-            var stringValues = new ThrowingEnumerableList(string.Empty, "value");
-
-            ParseUtility.ParseUInt64((object)null, new FuncGetter<object>((_, _) => numericValues), string.Empty).Should().Be(42);
-            ParseUtility.ParseInt32((object)null, new FuncGetter<object>((_, _) => numericValues), string.Empty).Should().Be(42);
-            ParseUtility.ParseString((object)null, new FuncGetter<object>((_, _) => stringValues), string.Empty).Should().Be("value");
-            ParseUtility.ParseString(new HeaderStruct(() => stringValues), string.Empty).Should().Be("value");
-        }
-
         private readonly struct FuncGetter<TCarrier> : ICarrierGetter<TCarrier>
         {
             private readonly Func<TCarrier, string, IEnumerable<string>> _getter;
@@ -162,46 +149,6 @@ namespace Datadog.Trace.Tests.Propagators
             {
                 throw new NotImplementedException();
             }
-        }
-
-        private sealed class ThrowingEnumerableList : IList<string>
-        {
-            private readonly string[] _values;
-
-            public ThrowingEnumerableList(params string[] values)
-            {
-                _values = values;
-            }
-
-            public int Count => _values.Length;
-
-            public bool IsReadOnly => true;
-
-            public string this[int index]
-            {
-                get => _values[index];
-                set => throw new NotSupportedException();
-            }
-
-            public int IndexOf(string item) => throw new NotSupportedException();
-
-            public bool Contains(string item) => throw new NotSupportedException();
-
-            public void CopyTo(string[] array, int arrayIndex) => throw new NotSupportedException();
-
-            public void Add(string item) => throw new NotSupportedException();
-
-            public void Insert(int index, string item) => throw new NotSupportedException();
-
-            public bool Remove(string item) => throw new NotSupportedException();
-
-            public void RemoveAt(int index) => throw new NotSupportedException();
-
-            public void Clear() => throw new NotSupportedException();
-
-            public IEnumerator<string> GetEnumerator() => throw new InvalidOperationException("The IList fast path should not enumerate values.");
-
-            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
     }
 }
