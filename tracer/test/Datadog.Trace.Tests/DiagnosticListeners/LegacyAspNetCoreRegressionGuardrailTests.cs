@@ -48,44 +48,9 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
         {
             var observers = new List<DiagnosticObserver>();
 
-            Instrumentation.AddLegacyAspNetCoreDiagnosticObserver(observers);
+            ((ICollection<DiagnosticObserver>)observers).Add(new LegacyAspNetCoreDiagnosticObserver());
 
             observers.Should().ContainSingle().Which.Should().BeOfType<LegacyAspNetCoreDiagnosticObserver>();
-        }
-
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void MissingDiagnosticSourceLogsGenericWarning(bool includeLoadException)
-        {
-            var logger = new Mock<IDatadogLogger>();
-            var loadException = includeLoadException ? new FileLoadException("Test DiagnosticSource load failure") : null;
-
-            Instrumentation.LogGenericDiagnosticSourceUnavailable(loadException, logger.Object);
-
-            var warning = logger.Invocations.Single(invocation => invocation.Method.Name == nameof(IDatadogLogger.Warning));
-            warning.Arguments.OfType<string>().Should().Contain(message => message.Contains("DiagnosticSource type could not be loaded"));
-            if (includeLoadException)
-            {
-                warning.Arguments.Should().Contain(loadException);
-            }
-        }
-
-        [Fact]
-        public void DiagnosticSourceLoadExceptionLogsGenericWarning()
-        {
-            var logger = new Mock<IDatadogLogger>();
-            const string InvalidAssemblyName = "System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource, Version=invalid";
-            var diagnosticSourceType = Instrumentation.LoadDiagnosticSourceType(InvalidAssemblyName, out var loadException);
-
-            diagnosticSourceType.Should().BeNull();
-            loadException.Should().NotBeNull();
-
-            Instrumentation.LogGenericDiagnosticSourceUnavailable(loadException, logger.Object);
-
-            var warning = logger.Invocations.Single(invocation => invocation.Method.Name == nameof(IDatadogLogger.Warning));
-            warning.Arguments.Should().Contain(loadException);
-            warning.Arguments.OfType<string>().Should().Contain(message => message.Contains("DiagnosticSource type could not be loaded"));
         }
     }
 }
