@@ -307,7 +307,7 @@ namespace Datadog.Trace.TestHelpers
                 agent,
                 arguments: string.Join(" ", args),
                 redirectStandardInput: true,
-                processToProfile: appType == IisAppType.AspNetCoreOutOfProcess ? aspNetCoreProcessToProfile : iisExpress);
+                processToProfile: aspNetCoreProcessToProfile ?? iisExpress);
 
             var semaphore = new SemaphoreSlim(0, 1);
 
@@ -405,37 +405,38 @@ namespace Datadog.Trace.TestHelpers
             out string aspNetCoreProcessToProfile)
         {
             var isAspNetCore = appType == IisAppType.AspNetCoreInProcess || appType == IisAppType.AspNetCoreOutOfProcess;
-            var launchFrameworkExecutable = appType == IisAppType.AspNetCoreOutOfProcess && !isCoreClr;
-            var processPath = dotnetExecutable;
-            var relativeSamplePath = string.Empty;
-            var argumentsAttribute = string.Empty;
-            var hostingModel = "outofprocess";
-            var aspNetCoreHandler = string.Empty;
-            aspNetCoreProcessToProfile = Path.GetFileName(dotnetExecutable);
-
-            if (isAspNetCore)
+            if (!isAspNetCore)
             {
-                hostingModel = appType == IisAppType.AspNetCoreInProcess ? "inprocess" : "outofprocess";
+                aspNetCoreProcessToProfile = null;
+                return configTemplate;
+            }
 
-                if (launchFrameworkExecutable)
-                {
-                    processPath = $".\\{sampleApplicationFileName}";
-                    aspNetCoreProcessToProfile = sampleApplicationFileName;
-                    aspNetCoreHandler = "<add name=\"aspNetCore\" path=\"*\" verb=\"*\" modules=\"AspNetCoreModuleV2\" resourceType=\"Unspecified\" />";
-                }
-                else
-                {
-                    relativeSamplePath = $".\\{sampleApplicationFileName}";
-                    argumentsAttribute = $" arguments=\"{relativeSamplePath}\"";
-                }
+            string processPath;
+            string argumentsAttribute;
+            string aspNetCoreHandler;
+
+            var launchFrameworkExecutable = appType == IisAppType.AspNetCoreOutOfProcess && !isCoreClr;
+            if (launchFrameworkExecutable)
+            {
+                processPath = $".\\{sampleApplicationFileName}";
+                aspNetCoreProcessToProfile = sampleApplicationFileName;
+                argumentsAttribute = string.Empty;
+                aspNetCoreHandler = "<add name=\"aspNetCore\" path=\"*\" verb=\"*\" modules=\"AspNetCoreModuleV2\" resourceType=\"Unspecified\" />";
+            }
+            else
+            {
+                processPath = dotnetExecutable;
+                aspNetCoreProcessToProfile = "dotnet.exe";
+                argumentsAttribute = $"""
+                                       arguments=".\{sampleApplicationFileName}"
+                                      """;
+                aspNetCoreHandler = string.Empty;
             }
 
             return configTemplate
-                  .Replace("[DOTNET]", processPath)
-                  .Replace("[RELATIVE_SAMPLE_PATH]", relativeSamplePath)
                   .Replace("[PROCESS_PATH]", processPath)
                   .Replace("[ARGUMENTS_ATTRIBUTE]", argumentsAttribute)
-                  .Replace("[HOSTING_MODEL]", hostingModel)
+                  .Replace("[HOSTING_MODEL]", appType == IisAppType.AspNetCoreInProcess ? "inprocess" : "outofprocess")
                   .Replace("[ASPNETCORE_HANDLER]", aspNetCoreHandler);
         }
 
