@@ -911,7 +911,6 @@ partial class Build
          .DependsOn(CreateRequiredDirectories)
          .Requires(() => AzureDevopsToken)
          .Requires(() => GitHubRepositoryName)
-         .Requires(() => GitHubToken)
          .Executes(async () =>
          {
              var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
@@ -944,14 +943,13 @@ partial class Build
 
              Logger.Information("Markdown build complete, writing report");
 
-             // save the report so we can upload it as an atefact for prosperity
+             // save the report so we can upload it as an artifact for prosperity
              await File.WriteAllTextAsync(executionDir / "execution_time_report.md", markdown);
 
-             if(isPr)
-             {
-                 Logger.Information("Updating PR comment on GitHub");
-                 await ReplaceCommentInPullRequest(prNumber, "## Execution-Time Benchmarks Report", markdown);
-             }
+             // save a concise summary for the PR comment (posted by the next step, after the artifact is published)
+             var summaryMarkdown = CompareExecutionTime.GetCommentSummary(sources);
+             Logger.Information("Summary build complete, writing comment summary");
+             await File.WriteAllTextAsync(executionDir / "execution_time_summary.md", summaryMarkdown);
 
              async Task<Microsoft.TeamFoundation.Build.WebApi.Build> GetExecutionBenchmarkArtifacts(BuildHttpClient httpClient, string branch, AbsolutePath directory)
              {
@@ -979,6 +977,84 @@ partial class Build
                  return build;
              }
          });
+
+    /// <summary>
+    /// Posts the execution-time benchmark comparison as a PR comment, with a direct link to the
+    /// full report artifact. Must run <i>after</i> the <c>execution_time_report</c> artifact has
+    /// been published so that the single-file download URL can be resolved.
+    /// </summary>
+    Target PostExecutionTimeBenchmarkResultsComment => _ => _
+        .Unlisted()
+        .Requires(() => AzureDevopsToken)
+        .Requires(() => GitHubToken)
+        .Requires(() => AzureDevopsBuildId)
+        .Executes(async () =>
+        {
+            var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
+            if (!isPr)
+            {
+                Logger.Information("Not a PR build, skipping comment posting");
+                return;
+            }
+
+            var executionDir = BuildDataDirectory / "execution_benchmarks";
+            var summaryPath = executionDir / "execution_time_summary.md";
+
+            if (!File.Exists(summaryPath))
+            {
+                throw new Exception($"No execution time summary found at {summaryPath}, skipping comment");
+            }
+
+            var summaryMarkdown = await File.ReadAllTextAsync(summaryPath);
+
+            // Resolve the single-file download URL for the execution_time_report artifact.
+            // This requires the artifact to already be published (guaranteed by pipeline step ordering).
+            string reportUrl = null;
+            var connection = new VssConnection(
+                new Uri(AzureDevopsOrganisation),
+                new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+            using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+
+            // Retry a few times: artifact registration can lag the publish step by a moment.
+            for (var attempt = 0; attempt < 5 && reportUrl is null; attempt++)
+            {
+                if (attempt > 0)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5 * attempt));
+                    Logger.Information("Retrying artifact lookup (attempt {Attempt}/5)", attempt + 1);
+                }
+
+                try
+                {
+                    var artifact = await buildHttpClient.GetArtifactAsync(
+                        project: AzureDevopsProjectId,
+                        buildId: AzureDevopsBuildId.Value,
+                        artifactName: "execution_time_report");
+
+                    // Convert the zip downloadUrl to a single-file download URL.
+                    reportUrl = artifact.Resource.DownloadUrl
+                        .Replace("?format=zip", "?format=file&subPath=/execution_time_report.md");
+
+                    Logger.Information("Resolved report URL: {Url}", reportUrl);
+                }
+                catch (ArtifactNotFoundException)
+                {
+                    Logger.Information("Artifact not yet available (attempt {Attempt}/5)", attempt + 1);
+                }
+            }
+
+            if (reportUrl is null)
+            {
+                throw new Exception("Could not resolve single-file report URL");
+            }
+
+            var viewerUrl = $"https://andrewlock.github.io/merview/?zen=1&url={Uri.EscapeDataString(reportUrl)}";
+            var fullMarkdown = summaryMarkdown + $"\n\n📄 **[View the full report (charts + all metrics) →]({viewerUrl})**";
+
+            Logger.Information("Updating PR comment on GitHub");
+            await ReplaceCommentInPullRequest(prNumber, "## Execution-Time Benchmarks Report", fullMarkdown);
+        });
 
     Target VerifyReleaseReadiness => _ => _
             .Unlisted()
