@@ -25,6 +25,7 @@ jobs:
     parameters:
       targetShaId: $(targetShaId)
       targetBranch: $(targetBranch)
+      shallowFetch: true
 
   # Download required artifacts to the output directory
   - ${{ each artifact in parameters.artifacts }}:
