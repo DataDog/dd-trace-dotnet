@@ -89,7 +89,7 @@ static std::vector<WSTRING> _assemblyExcludeFilters = {
     WStr("AWSSDK.Core"),
     WStr("MailKit"),
     WStr("MimeKit"),
-    WStr("FSharp*"),
+    WStr("FSharp.*"),
 };
 static std::vector<WSTRING> _methodIncludeFilters = {
     WStr("System.Web.Mvc.ControllerActionInvoker::InvokeAction*"),
