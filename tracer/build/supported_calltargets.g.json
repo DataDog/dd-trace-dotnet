@@ -16603,8 +16603,8 @@
     },
     "MaximumVersion": {
       "Item1": 4,
-      "Item2": 4,
-      "Item3": 0
+      "Item2": 3,
+      "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation",
     "IntegrationKind": 0,
