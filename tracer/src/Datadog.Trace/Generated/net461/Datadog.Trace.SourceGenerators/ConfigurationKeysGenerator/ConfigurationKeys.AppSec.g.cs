@@ -53,9 +53,8 @@ internal static partial class ConfigurationKeys
         public const string ApiSecuritySampleDelay = "DD_API_SECURITY_SAMPLE_DELAY";
 
         /// <summary>
-        /// RFC-1113 marker set by the App &amp; API Protection agentic onboarding solution.
-        /// Reported verbatim in configuration telemetry (empty string with origin=default when unset);
-        /// there is no derived boolean and no code reading AppSec's runtime state.
+        /// A legitimate Datadog environment variable set automatically by Datadog's agentic onboarding solution when it configures App &amp; API Protection for your service.
+        /// It lets Datadog record — via instrumentation telemetry — that the service was onboarded through the agentic flow.
         /// </summary>
         public const string AgenticOnboarding = "DD_APPSEC_AGENTIC_ONBOARDING";
 
