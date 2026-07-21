@@ -294,13 +294,6 @@ namespace Datadog.Trace
 
             var api = new ManagedApi(settings.Manager, statsd, updateSampleRates, updateConfigHash, settings.PartialFlushEnabled);
 
-            if (settings.OtelTracesSpanMetricsEnabled)
-            {
-                var otlpMetricsApi = new ManagedApiOtlp(settings);
-                var otlpSpanMetricsAggregator = StatsAggregator.Create(otlpMetricsApi, settings, discoveryService, statsd, isOtlp: true);
-                return new AgentWriter(api, otlpSpanMetricsAggregator, statsd, settings);
-            }
-
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService, statsd, isOtlp: false);
 
             return new AgentWriter(api, statsAggregator, statsd, settings);
