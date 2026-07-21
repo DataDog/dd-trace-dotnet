@@ -83,12 +83,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             string packageVersion = PackageVersions.MySqlConnector.First()[0] as string;
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
+            try
+            {
+                using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+                var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
 
-            Assert.NotEmpty(spans);
-            spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
-            await telemetry.AssertIntegrationDisabledAsync(IntegrationId.MySql);
+                Assert.NotEmpty(spans);
+                spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
+                await telemetry.AssertIntegrationDisabledAsync(IntegrationId.MySql);
+            }
+            catch (ExitCodeException ex) when (ex.Message.Contains("Connection timed out"))
+            {
+                throw new SkipException("The MySQL test dependency timed out.");
+            }
         }
 
         private static int GetSpanCount(string packageVersionString)
