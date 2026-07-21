@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -27,18 +28,13 @@ public class OracleTests : TracingIntegrationTest
         SetServiceVersion("1.0.0");
     }
 
-    public static IEnumerable<object[]> GetEnabledConfig()
-    {
-        return from metadataSchemaVersion in new[] { "v0", "v1" }
-               from propagation in new[] { string.Empty, "service", "full" }
-               select new[] { metadataSchemaVersion, propagation };
-    }
-
     [SkippableTheory]
-    [MemberData(nameof(GetEnabledConfig))]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")] // the docker image used doesn't work on arm64. It can still be tested on Mac using colima, see https://github.com/abiosoft/colima
-    public async Task SubmitsTraces(string metadataSchemaVersion, string dbmPropagation)
+    public async Task SubmitsTraces(
+        [MetadataSchemaVersionData] string metadataSchemaVersion,
+        [CombinatorialValues("", "service", "full")] string dbmPropagation)
     {
         SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
         SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);

@@ -3,15 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
-using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -32,35 +28,36 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> TestData
-            => from behaviour in (AgentBehaviour[])Enum.GetValues(typeof(AgentBehaviour))
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new object[] { behaviour, metadataSchemaVersion };
-
         [SkippableTheory]
-        [MemberData(nameof(TestData))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Flaky("Named pipes is flaky", maxRetries: 3)]
-        public Task NamedPipes_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion)
+        public Task NamedPipes_SubmitsTraces(
+            AgentBehaviour behaviour,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
             return SubmitsTraces(behaviour, TestTransports.WindowsNamedPipe, metadataSchemaVersion);
         }
 
         [SkippableTheory]
-        [MemberData(nameof(TestData))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public Task Tcp_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion)
+        public Task Tcp_SubmitsTraces(
+            AgentBehaviour behaviour,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
             => SubmitsTraces(behaviour, TestTransports.Tcp, metadataSchemaVersion);
 
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableTheory]
-        [MemberData(nameof(TestData))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public Task Uds_SubmitsTraces(AgentBehaviour behaviour, string metadataSchemaVersion)
+        public Task Uds_SubmitsTraces(
+            AgentBehaviour behaviour,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
             => SubmitsTraces(behaviour, TestTransports.Uds, metadataSchemaVersion);
 #endif
 

@@ -32,11 +32,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         {
         }
 
-        public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.AzureServiceBusAPM
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
             SpanKinds.Consumer => span.IsAzureServiceBusInboundAPM(metadataSchemaVersion),
@@ -46,9 +41,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         };
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestSendMessagesAsyncIntegration(string packageVersion, string metadataSchemaVersion)
+        public async Task TestSendMessagesAsyncIntegration(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
@@ -84,9 +81,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestReceiveMessagesAsyncIntegration(string packageVersion, string metadataSchemaVersion)
+        public async Task TestReceiveMessagesAsyncIntegration(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
@@ -117,9 +116,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestReceiveMessagesAsyncIntegrationMultiple(string packageVersion, string metadataSchemaVersion)
+        public async Task TestReceiveMessagesAsyncIntegrationMultiple(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
@@ -150,9 +151,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestServiceBusMessageBatchIntegration(string packageVersion, string metadataSchemaVersion)
+        public async Task TestServiceBusMessageBatchIntegration(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
@@ -209,9 +212,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestServiceBusMessageBatchIntegrationWithoutBatchLinks(string packageVersion, string metadataSchemaVersion)
+        public async Task TestServiceBusMessageBatchIntegrationWithoutBatchLinks(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
@@ -257,9 +262,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestScheduleMessagesAsyncIntegration(string packageVersion, string metadataSchemaVersion)
+        public async Task TestScheduleMessagesAsyncIntegration(
+            [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
