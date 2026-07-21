@@ -494,7 +494,7 @@ namespace Datadog.Trace.ClrProfiler
                 var tracer = Tracer.Instance;
                 if (tracer.Settings.AspNetCoreNetFrameworkEnabled)
                 {
-                    observers.Add(new LegacyAspNetCoreDiagnosticObserver(tracer, TelemetryFactory.Metrics));
+                    observers.Add(new LegacyAspNetCoreDiagnosticObserver(tracer));
                 }
 #else
                 observers.Add(GetAspNetCoreDiagnosticObserver());
