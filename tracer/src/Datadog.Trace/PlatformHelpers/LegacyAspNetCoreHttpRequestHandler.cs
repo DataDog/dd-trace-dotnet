@@ -96,36 +96,6 @@ namespace Datadog.Trace.PlatformHelpers
             || value is >= 'A' and <= 'F'
             || value is >= 'a' and <= 'f';
 
-        // Unlike .NET Core 3+, .NET Framework always allocates for non-empty strings, even when the casing is unchanged.
-        // Scan the common ASCII case first, and use the runtime implementation for changes and non-ASCII casing rules.
-        internal static string ToUpperInvariantIfNeeded(string value)
-        {
-            for (var i = 0; i < value.Length; i++)
-            {
-                var character = value[i];
-                if (character > 0x7f || (uint)(character - 'a') <= (uint)('z' - 'a'))
-                {
-                    return value.ToUpperInvariant();
-                }
-            }
-
-            return value;
-        }
-
-        internal static string ToLowerInvariantIfNeeded(string value)
-        {
-            for (var i = 0; i < value.Length; i++)
-            {
-                var character = value[i];
-                if (character > 0x7f || (uint)(character - 'A') <= (uint)('Z' - 'A'))
-                {
-                    return value.ToLowerInvariant();
-                }
-            }
-
-            return value;
-        }
-
         public Scope StartAspNetCorePipelineScope(
             Tracer tracer,
             LegacyAspNetCoreDiagnosticObserver.LegacyAspNetCoreHttpRequestStruct request,
@@ -134,14 +104,13 @@ namespace Datadog.Trace.PlatformHelpers
             var extractedContext = ExtractPropagatedContext(tracer, headersAdapter).MergeBaggageInto(Baggage.Current);
             var tags = new AspNetCoreTags();
 
-            var method = request.Method is { } requestMethod ? ToUpperInvariantIfNeeded(requestMethod) : "UNKNOWN";
+            var method = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
             var host = request.Host.Value ?? string.Empty;
             var pathBase = request.PathBase.Value ?? string.Empty;
             var requestPath = request.Path.Value ?? string.Empty;
             var escapedPathBase = ToUriComponent(pathBase);
             var escapedRequestPath = ToUriComponent(requestPath);
-            var cleanPath = UriHelpers.GetCleanUriPath(escapedPathBase + escapedRequestPath);
-            var resourceName = method + " " + ToLowerInvariantIfNeeded(cleanPath);
+            var resourceName = method + " " + UriHelpers.GetCleanUriPath(escapedPathBase + escapedRequestPath).ToLowerInvariant();
             var url = HttpRequestUtils.GetUrl(
                 request.Scheme ?? string.Empty,
                 host,
