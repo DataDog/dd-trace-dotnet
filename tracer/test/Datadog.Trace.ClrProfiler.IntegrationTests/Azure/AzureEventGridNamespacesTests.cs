@@ -23,7 +23,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         public AzureEventGridNamespacesTests(ITestOutputHelper output)
             : base("AzureEventGridNamespaces", output)
         {
-            SetEnvironmentVariable("DD_TRACE_AZUREEVENTGRID_ENABLED", "true");
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()

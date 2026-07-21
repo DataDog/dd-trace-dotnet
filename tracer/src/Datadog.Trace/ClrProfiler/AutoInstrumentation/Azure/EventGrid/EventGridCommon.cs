@@ -63,7 +63,7 @@ internal static class EventGridCommon
     }
 
     private static bool IsIntegrationEnabled(Tracer tracer) =>
-        tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid, defaultValue: false);
+        tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid);
 
     private static CallTargetState CreateProducerSpan<TEvents>(Tracer tracer, string? host, int port, ref TEvents events, bool injectContext)
     {
