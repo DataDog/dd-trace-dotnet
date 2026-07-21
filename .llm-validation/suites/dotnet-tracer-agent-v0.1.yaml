@@ -173,7 +173,7 @@ cases:
       - Names the native-log proof line for the relevant method ("Method enqueued for ReJIT").
     bad_signals:
       - Claims the managed log shows the JIT/ReJIT instrumentation replacement.
-      - Invents a configuration file that lists instrumented methods.
+      - Points the user to a hand-authored/editable config file listing instrumented methods (no such file exists — the only enumeration is the *generated* instrumentation definitions, which the criteria expect).
 
   - id: dotnet-tracer-debug-logging-in-prod-012
     files: [AGENTS.md]
