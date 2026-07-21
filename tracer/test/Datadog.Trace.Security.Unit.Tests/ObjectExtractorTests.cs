@@ -803,6 +803,125 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.Should().NotContainKey(nameof(TestNonDataContractRenamedPoco.Hidden)); // [IgnoreDataMember]
         }
 
+        [Fact]
+        public void TestUriExtractedAsScalarString()
+        {
+            // DataContractJsonSerializer writes Uri as a JSON string, not an object.
+            var target = new TestUriPoco { Link = new Uri("https://example.test/path") };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result!["link"].Should().Be("https://example.test/path");
+        }
+
+        [Fact]
+        public void TestReadonlyFieldsOmitted()
+        {
+            // DCJS does not emit public readonly (IsInitOnly) fields on a POCO; read-write fields/props are kept.
+            var target = new TestReadonlyFieldPoco { Num = 7 };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result.Should().NotContainKey(nameof(TestReadonlyFieldPoco.ReadOnlyField));
+            result.Should().ContainKey(nameof(TestReadonlyFieldPoco.ReadWriteField));
+            result!["Num"].Should().Be(7);
+        }
+
+        [Fact]
+        public void TestGetOnlyCollectionPropertyIncluded()
+        {
+            // DCJS serializes get-only *collection* properties (populated via Add) but not get-only scalars.
+            var target = new TestGetOnlyCollectionPoco { Num = 5 };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            var items = result![nameof(TestGetOnlyCollectionPoco.Items)] as List<object>;
+            items.Should().NotBeNull();
+            items.Should().ContainInOrder(1, 2, 3);
+            result.Should().NotContainKey(nameof(TestGetOnlyCollectionPoco.Computed)); // get-only scalar
+            result["Num"].Should().Be(5);
+        }
+
+        [Fact]
+        public void TestSerializableTypeUsesFieldContract()
+        {
+            // [Serializable] non-[DataContract] types serialize by fields (private + backing fields with raw
+            // mangled names), honoring [NonSerialized].
+            var target = new TestSerializablePoco { Pub = 3 };
+            target.SetPriv(5);
+            target.Skip = 9;
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            result.Should().ContainKey("_priv");
+            result!["_priv"].Should().Be(5);
+            result.Should().ContainKey("<Pub>k__BackingField");
+            result["<Pub>k__BackingField"].Should().Be(3);
+            result.Should().NotContainKey("Skip"); // [NonSerialized]
+        }
+
+        [Fact]
+        public void TestNonGenericDictionaryAsKeyValuePairs()
+        {
+            // Hashtable (non-generic IDictionary) with UseSimpleDictionaryFormat=false -> [{Key,Value}] array.
+            var target = new TestHashtableMemberPoco { Map = new System.Collections.Hashtable { { "a", "1" } } };
+
+            var result = ObjectExtractor.ExtractDataContract(target, useSimpleDictionaryFormat: false) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            var map = result!["map"] as List<object>;
+            map.Should().NotBeNull();
+            map.Should().HaveCount(1);
+            var first = map![0] as Dictionary<string, object>;
+            first.Should().ContainKey("Key");
+            first.Should().ContainKey("Value");
+        }
+
+        [Fact]
+        public void TestNonGenericDictionaryAsMapWhenSimpleFormat()
+        {
+            // Hashtable with UseSimpleDictionaryFormat=true -> {k:v} object.
+            var target = new TestHashtableMemberPoco { Map = new System.Collections.Hashtable { { "a", "1" } } };
+
+            var result = ObjectExtractor.ExtractDataContract(target, useSimpleDictionaryFormat: true) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            var map = result!["map"] as Dictionary<string, object>;
+            map.Should().NotBeNull();
+            map!["a"].Should().Be("1");
+        }
+
+        [Fact]
+        public void TestSelfReferentialCollectionDoesNotStackOverflow()
+        {
+            // A collection that contains itself must terminate via the visited set, not recurse to death.
+            var list = new List<object>();
+            list.Add(list);
+
+            Action act = () => ObjectExtractor.Extract(list);
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void TestDateTimeOffsetExtractedAsObject_DataContractPath()
+        {
+            // DataContractJsonSerializer writes DateTimeOffset as {"DateTime":..,"OffsetMinutes":N}.
+            var target = new TestDateTimeOffsetPoco { Ts = new DateTimeOffset(2020, 1, 2, 3, 4, 5, TimeSpan.FromHours(2)) };
+
+            var result = ObjectExtractor.ExtractDataContract(target) as Dictionary<string, object>;
+
+            result.Should().NotBeNull();
+            var ts = result!["ts"] as Dictionary<string, object>;
+            ts.Should().NotBeNull();
+            ts.Should().ContainKey("DateTime");
+            ts!["OffsetMinutes"].Should().Be(120L);
+        }
+
         private static void PopulateNestedTarget(TestNestedPropertiesPoco target, int count)
         {
             var current = target;
@@ -1143,6 +1262,66 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         [IgnoreDataMember]
         public int Hidden { get; set; }
+    }
+
+    [DataContract]
+    public class TestUriPoco
+    {
+        [DataMember(Name = "link")]
+        public Uri Link { get; set; }
+    }
+
+#pragma warning disable SA1401 // Fields should be private — public fields are the subject under test
+    public class TestReadonlyFieldPoco
+    {
+        public readonly string ReadOnlyField = "ro";
+
+        public string ReadWriteField = "rw";
+
+        public int Num { get; set; }
+    }
+#pragma warning restore SA1401
+
+    public class TestGetOnlyCollectionPoco
+    {
+        private readonly List<int> _items = new List<int> { 1, 2, 3 };
+
+        public List<int> Items => _items;
+
+        public string Computed => "computed";
+
+        public int Num { get; set; }
+    }
+
+#pragma warning disable SA1401 // Fields should be private — subject under test
+    [Serializable]
+    public class TestSerializablePoco
+    {
+        [NonSerialized]
+        public int Skip;
+
+#pragma warning disable CS0414 // assigned but never read in source — read via reflection by the extractor
+        private int _priv;
+#pragma warning restore CS0414
+
+        public int Pub { get; set; }
+
+        public void SetPriv(int v) => _priv = v;
+    }
+#pragma warning restore SA1401
+
+    [DataContract]
+    public class TestHashtableMemberPoco
+    {
+        [DataMember(Name = "map")]
+        public System.Collections.Hashtable Map { get; set; }
+    }
+
+    [DataContract]
+    public class TestDateTimeOffsetPoco
+    {
+        [DataMember(Name = "ts")]
+        public DateTimeOffset Ts { get; set; }
     }
 
     public enum TestStatusEnum
