@@ -72,9 +72,9 @@ variables:
   nativeBuildDotnetSdkVersion: 7.0.306
   # These are the Managed DevOps pool names we use
   linuxTasksPool: azure-managed-linux-tasks
-  linuxX64SmokePool: azure-managed-linux-smoke
-  linuxX64Pool: azure-managed-linux-x64-1
-  linuxArm64Pool: azure-managed-linux-arm64-1
+  linuxX64SmokePool: azure-managed-linux-smoke-2
+  linuxX64Pool: azure-managed-linux-x64-2
+  linuxArm64Pool: azure-managed-linux-arm64-2
   windowsX64Pool: azure-managed-windows-x64-2
 
   relativeArtifacts: /artifacts/output
@@ -154,7 +154,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.46.0
+  ToolVersion: 3.50.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -2403,10 +2403,6 @@ stages:
         retryCountForRunCommand: 3
 
     - script: |
-        docker pull ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
-      displayName: docker pull latest ddapm-test-agent image (we rely on a newer version than the one in the base image)
-
-    - script: |
         docker-compose -p $(DockerComposeProjectName)-g$(dockerGroup) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
         docker-compose -p $(DockerComposeProjectName)-g$(dockerGroup) run --rm StartDependencies.Group$(dockerGroup)
       env:
@@ -2490,16 +2486,19 @@ stages:
       matrix:
         net6:
           publishTargetFramework: "net6.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6@sha256:c48000be860898f1a1c5bbffc1801673927942fd516f14fee458167ebe1dfa02"
         net7:
           publishTargetFramework: "net7.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7@sha256:5434516a138eb44786c9c3a4dc557fc2ad1cd87dc31c4c1043e0df456fa89fbe"
         net8:
           publishTargetFramework: "net8.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:8"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:8@sha256:e3a1b5ed15641105f82d90123047e96f58d16ae90c6700efafb08e7c9e95234c"
         net9:
           publishTargetFramework: "net9.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9@sha256:353e19a79580031dc1b2faf8e421af08f57b5f8d4eea7faae256c5a751e09cc0"
+        net10:
+          publishTargetFramework: "net10.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:10@sha256:ca784b95a4d6d09cd7c3f447833f80527ee7d7b644a955b26a59c2cfe2354296"
     pool:
       name: $(linuxX64Pool)
 
@@ -2895,10 +2894,19 @@ stages:
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
+          run --rm StartDependencies.Profiler
+      displayName: docker-compose run StartDependencies.Profiler
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage)
+      retryCountOnTaskFailure: 5
+
+    - script: |
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
           run --rm \
           -e baseImage=$(baseImage) \
           ProfilerIntegrationTests
-      displayName: docker-compose run --no-deps ProfilerIntegrationTests
+      displayName: docker-compose run ProfilerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
@@ -2995,10 +3003,19 @@ stages:
 
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
+          run --rm StartDependencies.Profiler
+      displayName: docker-compose run StartDependencies.Profiler
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        baseImage: $(baseImage)
+      retryCountOnTaskFailure: 5
+
+    - script: |
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
           run --rm \
           -e baseImage=$(baseImage) \
           ProfilerIntegrationTests
-      displayName: docker-compose run --no-deps ProfilerIntegrationTests
+      displayName: docker-compose run ProfilerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
@@ -3429,10 +3446,6 @@ stages:
             command: "BuildIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
             apiKey: $(DD_LOGGER_DD_API_KEY)
             retryCountForRunCommand: 3
-
-        - script: |
-            docker pull ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
-          displayName: docker pull latest ddapm-test-agent image (we rely on a newer version than the one in the base image)
 
         - script: |
             docker-compose -p $(DockerComposeProjectName) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg CodeCoverageEnabled=$(CodeCoverageEnabled) IntegrationTests.ARM64

@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.Stats;
 using FluentAssertions;
 using MessagePack;
@@ -18,7 +19,7 @@ namespace Datadog.Trace.Tests.Agent
 {
     public class StatsBufferTests
     {
-        private static readonly List<byte[]> EmptyPeerTags = [];
+        private static readonly List<byte[]> EmptyTags = [];
 
         [Fact]
         public void KeyEquality()
@@ -56,15 +57,15 @@ namespace Datadog.Trace.Tests.Agent
                 HostName = "Hostname",
             };
 
-            var buffer = new StatsBuffer(payload);
+            var buffer = CreateBuffer(payload);
 
             var key1 = CreateKey("resource1", "service1", "operation1", "type1", 1, true);
             var key2 = CreateKey("resource2", "service2", "operation2", "type2", 2, false);
             var key3 = CreateKey("resource3", "service3", "operation3", "type3", 2, true);
 
-            var statsBucket1 = new StatsBucket(key1, EmptyPeerTags) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
-            var statsBucket2 = new StatsBucket(key2, EmptyPeerTags) { Duration = 2, Errors = 22, Hits = 222, TopLevelHits = 20 };
-            var statsBucket3 = new StatsBucket(key3, EmptyPeerTags) { Duration = 3, Errors = 0, Hits = 0, TopLevelHits = 0 };
+            var statsBucket1 = new StatsBucket(key1, EmptyTags, EmptyTags) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
+            var statsBucket2 = new StatsBucket(key2, EmptyTags, EmptyTags) { Duration = 2, Errors = 22, Hits = 222, TopLevelHits = 20 };
+            var statsBucket3 = new StatsBucket(key3, EmptyTags, EmptyTags) { Duration = 3, Errors = 0, Hits = 0, TopLevelHits = 0 };
 
             buffer.Buckets.Add(key1, statsBucket1);
             buffer.Buckets.Add(key2, statsBucket2);
@@ -109,13 +110,13 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void Reset()
         {
-            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
             var key1 = CreateKey("resource1", "service1", "operation1", "type1", 1, false);
             var key2 = CreateKey("resource2", "service2", "operation2", "type2", 2, false);
 
-            var statsBucket1 = new StatsBucket(key1, EmptyPeerTags) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
-            var statsBucket2 = new StatsBucket(key2, EmptyPeerTags) { Duration = 2, Errors = 0, Hits = 0, TopLevelHits = 0 };
+            var statsBucket1 = new StatsBucket(key1, EmptyTags, EmptyTags) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
+            var statsBucket2 = new StatsBucket(key2, EmptyTags, EmptyTags) { Duration = 2, Errors = 0, Hits = 0, TopLevelHits = 0 };
 
             buffer.Buckets.Add(key1, statsBucket1);
             buffer.Buckets.Add(key2, statsBucket2);
@@ -143,12 +144,30 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void Reset_ResetsActiveBucketCount()
+        {
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+
+            buffer.ActiveBucketCount.Should().Be(0);
+
+            buffer.IncrementActiveBucketCount();
+            buffer.IncrementActiveBucketCount();
+            buffer.ActiveBucketCount.Should().Be(2);
+
+            // The whole-key cap counts buckets hit this window; Reset must restart it at zero so retained
+            // (zero-hit) buckets don't consume the cap in the next flush window.
+            buffer.Reset();
+
+            buffer.ActiveBucketCount.Should().Be(0);
+        }
+
+        [Fact]
         public void IncrementSequence()
         {
-            var buffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
 
             var key = CreateKey("resource1", "service1", "operation1", "type1", 1, false);
-            var statsBucket = new StatsBucket(key, EmptyPeerTags) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
+            var statsBucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Errors = 11, Hits = 111, TopLevelHits = 10 };
 
             buffer.Buckets.Add(key, statsBucket);
 
@@ -163,6 +182,96 @@ namespace Datadog.Trace.Tests.Agent
             result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
 
             result.Sequence.Should().Be(2);
+        }
+
+        [Fact]
+        public void Serialization_EmitsEmptyAdditionalMetricTagsWhenEmpty()
+        {
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var key = CreateKey("resource", "service", "operation", "type", 200, false);
+            var bucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Hits = 1, TopLevelHits = 1 };
+            buffer.Buckets.Add(key, bucket);
+
+            var stream = new MemoryStream();
+            buffer.Serialize(stream, 1);
+            var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
+
+            result.Stats[0].Stats.Single().AdditionalMetricTags.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Serialization_PopulatesAdditionalMetricTags()
+        {
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var key = CreateKey("resource", "service", "operation", "type", 200, false, additionalMetricTagsHash: 12345);
+            var additionalTags = new List<byte[]>
+            {
+                System.Text.Encoding.UTF8.GetBytes("region:us-east-1"),
+                System.Text.Encoding.UTF8.GetBytes("tenant:acme"),
+            };
+            var bucket = new StatsBucket(key, EmptyTags, additionalTags) { Duration = 1, Hits = 1, TopLevelHits = 1 };
+            buffer.Buckets.Add(key, bucket);
+
+            var stream = new MemoryStream();
+            buffer.Serialize(stream, 1);
+            var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
+
+            result.Stats[0].Stats.Single().AdditionalMetricTags.Should().Equal("region:us-east-1", "tenant:acme");
+        }
+
+        [Fact]
+        public void Serialization_PopulatesTracerDdTagsFromGlobalTags()
+        {
+            var settings = MutableSettings.CreateForTesting(
+                new(),
+                new()
+                {
+                    { ConfigurationKeys.GlobalTags, "datacenter:us-east-1,tenant_id:acme-corp" },
+                });
+
+            var buffer = CreateBuffer(new ClientStatsPayload(settings));
+            var key = CreateKey("resource", "service", "operation", "type", 200, false);
+            var bucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Hits = 1, TopLevelHits = 1 };
+            buffer.Buckets.Add(key, bucket);
+
+            var stream = new MemoryStream();
+            buffer.Serialize(stream, 1);
+            var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
+
+            result.TracerDdTags.Should().BeEquivalentTo("datacenter:us-east-1", "tenant_id:acme-corp");
+        }
+
+        [Fact]
+        public void Serialization_EmitsEmptyTracerDdTagsWhenNoGlobalTags()
+        {
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var key = CreateKey("resource", "service", "operation", "type", 200, false);
+            var bucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Hits = 1, TopLevelHits = 1 };
+            buffer.Buckets.Add(key, bucket);
+
+            var stream = new MemoryStream();
+            buffer.Serialize(stream, 1);
+            var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
+
+            result.TracerDdTags.Should().NotBeNull().And.BeEmpty();
+        }
+
+        [Theory]
+        [InlineData(null, 0)]  // NOT_SET (e.g. the whole-key overflow row)
+        [InlineData(true, 1)]  // TRUE
+        [InlineData(false, 2)] // FALSE
+        public void Serialization_EncodesIsTraceRootTrilean(bool? isTraceRoot, int expectedWireValue)
+        {
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var key = CreateKey("resource", "service", "operation", "type", 200, false, isTraceRoot: isTraceRoot);
+            var bucket = new StatsBucket(key, EmptyTags, EmptyTags) { Duration = 1, Hits = 1, TopLevelHits = 1 };
+            buffer.Buckets.Add(key, bucket);
+
+            var stream = new MemoryStream();
+            buffer.Serialize(stream, 1);
+            var result = MessagePackSerializer.Deserialize<MockClientStatsPayload>(stream.ToArray());
+
+            result.Stats[0].Stats.Single().IsTraceRoot.Should().Be(expectedWireValue);
         }
 
         [Fact]
@@ -204,6 +313,9 @@ namespace Datadog.Trace.Tests.Agent
             key13.Should().NotBe(key14);
         }
 
+        private static StatsBuffer CreateBuffer(ClientStatsPayload payload)
+            => new(payload, new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance));
+
         private static StatsAggregationKey CreateKey(
             string resource,
             string service,
@@ -212,12 +324,13 @@ namespace Datadog.Trace.Tests.Agent
             int httpStatusCode,
             bool isSyntheticsRequest,
             string spanKind = null,
-            bool isTraceRoot = false,
+            bool? isTraceRoot = false,
             string httpMethod = null,
             string httpEndpoint = null,
             string grpcStatusCode = "",
             string serviceSource = null,
-            ulong peerTagsHash = 0)
+            ulong peerTagsHash = 0,
+            ulong additionalMetricTagsHash = 0)
         {
             return new StatsAggregationKey(
                 resource,
@@ -234,7 +347,9 @@ namespace Datadog.Trace.Tests.Agent
                 httpEndpoint ?? string.Empty,
                 grpcStatusCode,
                 serviceSource ?? string.Empty,
-                peerTagsHash);
+                peerTagsHash,
+                additionalMetricTagsHash,
+                truncatedFields: StatsCardinalityTruncatedFields.None);
         }
 
         private static void AssertStatsGroup(MockClientGroupedStats group, StatsAggregationKey expectedKey, StatsBucket expectedBucket)
@@ -254,7 +369,7 @@ namespace Datadog.Trace.Tests.Agent
             group.TopLevelHits.Should().Be((long)expectedBucket.TopLevelHits);
             group.SpanKind.Should().Be(expectedKey.SpanKind);
             // Trilean: NOT_SET=0, TRUE=1, FALSE=2
-            group.IsTraceRoot.Should().Be(expectedKey.IsTraceRoot ? 1 : 2);
+            group.IsTraceRoot.Should().Be(expectedKey.IsTraceRoot switch { true => 1, false => 2, _ => 0 });
             group.HttpMethod.Should().Be(expectedKey.HttpMethod);
             group.HttpEndpoint.Should().Be(expectedKey.HttpEndpoint);
             group.GrpcStatusCode.Should().Be(expectedKey.GrpcStatusCode);

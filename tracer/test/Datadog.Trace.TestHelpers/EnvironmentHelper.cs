@@ -105,8 +105,7 @@ namespace Datadog.Trace.TestHelpers
                 // default
                 monitoringHome = Path.Combine(
                     EnvironmentTools.GetSolutionDirectory(),
-                    "shared",
-                    "bin",
+                    "artifacts",
                     "monitoring-home");
             }
 
@@ -356,6 +355,19 @@ namespace Datadog.Trace.TestHelpers
             {
                 environmentVariables[envVar.Key] = envVar.Value;
             }
+
+            // URL can take precedence over HOSTNAME+PORT, so we remove it to ensure what we configured above gets actually used.
+            environmentVariables.Remove("DD_TRACE_AGENT_URL");
+            // Remove OTEL exporter env vars that could redirect traces away from the mock agent
+            environmentVariables.Remove("OTEL_TRACES_EXPORTER");
+            environmentVariables.Remove("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT");
+            environmentVariables.Remove("OTEL_EXPORTER_OTLP_ENDPOINT");
+            environmentVariables.Remove("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT");
+            environmentVariables.Remove("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT");
+            environmentVariables.Remove("OTEL_METRICS_EXPORTER");
+            environmentVariables.Remove("OTEL_LOGS_EXPORTER");
+            environmentVariables.Remove("OTEL_EXPORTER_OTLP_PROTOCOL");
+            environmentVariables.Remove("OTEL_RESOURCE_ATTRIBUTES");
         }
 
         public string GetSampleApplicationPath(string packageVersion = "", string framework = "", bool usePublishWithRID = false)

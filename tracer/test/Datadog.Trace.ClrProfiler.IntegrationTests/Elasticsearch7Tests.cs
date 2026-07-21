@@ -58,6 +58,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         "Bulk",
                         "Create",
+                        "Create",
+                        "Count",
                         "Search",
                         "DeleteByQuery",
 

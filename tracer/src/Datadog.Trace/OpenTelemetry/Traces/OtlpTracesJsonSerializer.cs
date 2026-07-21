@@ -33,236 +33,17 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
     internal const int AttributePerEventCountLimit = 128;
     internal const int AttributePerLinkCountLimit = 128;
 
+    private readonly bool _openTelemetrySemanticsEnabled;
+
+    public OtlpTracesJsonSerializer(bool openTelemetrySemanticsEnabled)
+    {
+        _openTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
+    }
+
     // Cache several strings required for encoding OTLP JSON
     private static ReadOnlySpan<byte> ClosingTracesBytes => "]}]}]}"u8;
 
     public int HeaderSize => 0;
-
-    internal static void ExportTraceServiceRequest(JsonTextWriter writer, in TraceChunkModel traceChunk)
-    {
-        writer.WriteStartObject();
-
-        writer.WritePropertyName("resourceSpans");
-        writer.WriteStartArray();
-
-        writer.WriteStartObject();
-        writer.WritePropertyName("resource");
-        WriteResource(writer, in traceChunk);
-
-        // if (!string.IsNullOrEmpty(resourceSpans.SchemaUrl))
-        // {
-        //     writer.WritePropertyName("schema_url");
-        //     writer.WriteValue(resourceSpans.SchemaUrl);
-        // }
-
-        // Note: Since the Datadog tracer only allows one Instrumentation Scope, we collapse them all for now
-        // TODO: Allow individual scopes by name/version
-        writer.WritePropertyName("scopeSpans");
-        writer.WriteStartArray();
-
-        WriteScopeSpans(writer, in traceChunk);
-
-        // Unclosed repeated ScopeSpans spans field
-        // Unclosed ResourceSpans message
-        // Unclosed repeated ResourceSpans field
-        // Unclosed ExportTraceServiceRequest message
-    }
-
-    internal static void WriteScopeSpans(JsonTextWriter writer, in TraceChunkModel traceChunk)
-    {
-        writer.WriteStartObject();
-
-        // if (scopeSpans.Scope.HasValue)
-        // {
-        //     writer.WritePropertyName("scope");
-        //     WriteInstrumentationScope(writer, scopeSpans.Scope.Value);
-        // }
-
-        // if (!string.IsNullOrEmpty(scopeSpans.SchemaUrl))
-        // {
-        //     writer.WritePropertyName("schema_url");
-        //     writer.WriteValue(scopeSpans.SchemaUrl);
-        // }
-
-        writer.WritePropertyName("spans");
-        writer.WriteStartArray();
-
-        // Unclosed repeated Span spans field
-        // Unclosed ScopeSpans message
-    }
-
-    internal static void WriteSpans(JsonTextWriter writer, in TraceChunkModel traceChunk, bool emitStartingComma)
-    {
-        for (var i = 0; i < traceChunk.SpanCount; i++)
-        {
-            // If we are emitting a starting comma, then our JSON writer is re-entrant and the state is not
-            // synchronized to the fact that we're in the `spans` array
-            if (emitStartingComma)
-            {
-                writer.WriteRaw(",");
-            }
-
-            // when serializing each span, we need additional information that is not
-            // available in the span object itself, like its position in the trace chunk
-            // or if its parent can also be found in the same chunk, so we use SpanModel
-            // to pass that information to the serializer
-            var spanModel = traceChunk.GetSpanModel(i);
-            WriteSpan(writer, spanModel);
-        }
-    }
-
-    internal static void WriteSpan(JsonTextWriter writer, SpanModel spanModel)
-    {
-        static Action<KeyValue> WriteKeyValue(JsonTextWriter writer)
-            => keyValue => OtlpTracesJsonSerializer.WriteKeyValue(writer, keyValue);
-
-        writer.WriteStartObject();
-
-        // traceId (required) - encoded as hex string in JSON
-        writer.WritePropertyName("traceId");
-        writer.WriteValue(spanModel.Span.Context.RawTraceId);
-
-        // spanId (required) - encoded as hex string in JSON
-        writer.WritePropertyName("spanId");
-        writer.WriteValue(spanModel.Span.Context.RawSpanId);
-
-        // traceState (optional)
-        // if (!string.IsNullOrEmpty(spanModel.Span.TraceState))
-        // {
-        //     writer.WritePropertyName("traceState");
-        //     writer.WriteValue(spanModel.Span.TraceState);
-        // }
-
-        // parentSpanId (optional) - encoded as hex string in JSON
-        if (spanModel.Span.Context.ParentId is ulong parentId && parentId > 0)
-        {
-            writer.WritePropertyName("parentSpanId");
-            writer.WriteValue(HexString.ToHexString(parentId));
-        }
-
-        // flags (optional)
-        if (spanModel.Span.Context.SamplingPriority is int samplingPriority)
-        {
-            writer.WritePropertyName("flags");
-            writer.WriteValue(SamplingPriorityValues.IsKeep(samplingPriority) ? 1 : 0);
-        }
-
-        // name (required)
-        writer.WritePropertyName("name");
-        writer.WriteValue(spanModel.Span.ResourceName);
-
-        // kind (optional, default should be SPAN_KIND_UNSPECIFIED but we use SPAN_KIND_INTERNAL instead)
-        var spanKind = spanModel.Span.GetTag(Tags.SpanKind) switch
-        {
-            SpanKinds.Server => SpanKind.Server,
-            SpanKinds.Client => SpanKind.Client,
-            SpanKinds.Producer => SpanKind.Producer,
-            SpanKinds.Consumer => SpanKind.Consumer,
-            _ => SpanKind.Internal,
-        };
-        writer.WritePropertyName("kind");
-        writer.WriteValue((int)spanKind);
-
-        // startTimeUnixNano (required) - string representation of uint64
-        writer.WritePropertyName("startTimeUnixNano");
-        writer.WriteValue(spanModel.Span.StartTime.ToUnixTimeNanoseconds().ToString());
-
-        // endTimeUnixNano (required) - string representation of uint64
-        writer.WritePropertyName("endTimeUnixNano");
-        writer.WriteValue((spanModel.Span.StartTime + spanModel.Span.Duration).ToUnixTimeNanoseconds().ToString());
-
-        // attributes (optional)
-        // TODO: Actually implement
-        int droppedAttributesCount = 0;
-        writer.WritePropertyName("attributes");
-        writer.WriteStartArray();
-        droppedAttributesCount = OtlpMapper.EmitAttributesFromSpan(WriteKeyValue(writer), in spanModel, SpanAttributeCountLimit);
-        writer.WriteEndArray();
-
-        // droppedAttributesCount (optional)
-        if (droppedAttributesCount > 0)
-        {
-            writer.WritePropertyName("droppedAttributesCount");
-            writer.WriteValue(droppedAttributesCount);
-        }
-
-        // events (optional)
-        int eventCount = 0;
-        int droppedEventCount = 0;
-        if (spanModel.Span.SpanEvents != null && spanModel.Span.SpanEvents.Count > 0)
-        {
-            writer.WritePropertyName("events");
-            writer.WriteStartArray();
-
-            foreach (var evt in spanModel.Span.SpanEvents)
-            {
-                if (eventCount < EventCountLimit)
-                {
-                    WriteSpanEvent(writer, evt);
-                    eventCount++;
-                }
-                else
-                {
-                    droppedEventCount++;
-                }
-            }
-
-            writer.WriteEndArray();
-        }
-
-        // droppedEventsCount (optional)
-        if (droppedEventCount > 0)
-        {
-            writer.WritePropertyName("droppedEventsCount");
-            writer.WriteValue(droppedEventCount);
-        }
-
-        // links (optional)
-        int linkCount = 0;
-        int droppedLinkCount = 0;
-        if (spanModel.Span.SpanLinks != null && spanModel.Span.SpanLinks.Count > 0)
-        {
-            writer.WritePropertyName("links");
-            writer.WriteStartArray();
-
-            foreach (var link in spanModel.Span.SpanLinks)
-            {
-                if (linkCount < LinkCountLimit)
-                {
-                    WriteSpanLink(writer, link);
-                    linkCount++;
-                }
-                else
-                {
-                    droppedLinkCount++;
-                }
-            }
-
-            writer.WriteEndArray();
-        }
-
-        // droppedLinksCount (optional)
-        if (droppedLinkCount > 0)
-        {
-            writer.WritePropertyName("droppedLinksCount");
-            writer.WriteValue(droppedLinkCount);
-        }
-
-        // status (optional)
-        StatusCode? statusCode = spanModel.Span.GetTag("otel.status_code") switch
-        {
-            "STATUS_CODE_OK" => StatusCode.Ok,
-            "STATUS_CODE_ERROR" => StatusCode.Error,
-            _ => null,
-        };
-        if (statusCode is not null)
-        {
-            writer.WritePropertyName("status");
-            WriteSpanStatus(writer, statusCode.Value, spanModel.Span.GetTag(Tags.ErrorMsg));
-        }
-
-        writer.WriteEndObject();
-    }
 
     internal static void WriteSpanEvent(JsonTextWriter writer, Datadog.Trace.SpanEvent evt)
     {
@@ -604,6 +385,232 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
             StatusCode.Error => "STATUS_CODE_ERROR",
             _ => "STATUS_CODE_UNSET"
         };
+    }
+
+    internal void ExportTraceServiceRequest(JsonTextWriter writer, in TraceChunkModel traceChunk)
+    {
+        writer.WriteStartObject();
+
+        writer.WritePropertyName("resourceSpans");
+        writer.WriteStartArray();
+
+        writer.WriteStartObject();
+        writer.WritePropertyName("resource");
+        WriteResource(writer, in traceChunk);
+
+        // if (!string.IsNullOrEmpty(resourceSpans.SchemaUrl))
+        // {
+        //     writer.WritePropertyName("schema_url");
+        //     writer.WriteValue(resourceSpans.SchemaUrl);
+        // }
+
+        // Note: Since the Datadog tracer only allows one Instrumentation Scope, we collapse them all for now
+        // TODO: Allow individual scopes by name/version
+        writer.WritePropertyName("scopeSpans");
+        writer.WriteStartArray();
+
+        WriteScopeSpans(writer, in traceChunk);
+
+        // Unclosed repeated ScopeSpans spans field
+        // Unclosed ResourceSpans message
+        // Unclosed repeated ResourceSpans field
+        // Unclosed ExportTraceServiceRequest message
+    }
+
+    internal void WriteScopeSpans(JsonTextWriter writer, in TraceChunkModel traceChunk)
+    {
+        writer.WriteStartObject();
+
+        // if (scopeSpans.Scope.HasValue)
+        // {
+        //     writer.WritePropertyName("scope");
+        //     WriteInstrumentationScope(writer, scopeSpans.Scope.Value);
+        // }
+
+        // if (!string.IsNullOrEmpty(scopeSpans.SchemaUrl))
+        // {
+        //     writer.WritePropertyName("schema_url");
+        //     writer.WriteValue(scopeSpans.SchemaUrl);
+        // }
+
+        writer.WritePropertyName("spans");
+        writer.WriteStartArray();
+
+        // Unclosed repeated Span spans field
+        // Unclosed ScopeSpans message
+    }
+
+    internal void WriteSpans(JsonTextWriter writer, in TraceChunkModel traceChunk, bool emitStartingComma)
+    {
+        for (var i = 0; i < traceChunk.SpanCount; i++)
+        {
+            // If we are emitting a starting comma, then our JSON writer is re-entrant and the state is not
+            // synchronized to the fact that we're in the `spans` array
+            if (emitStartingComma)
+            {
+                writer.WriteRaw(",");
+            }
+
+            // when serializing each span, we need additional information that is not
+            // available in the span object itself, like its position in the trace chunk
+            // or if its parent can also be found in the same chunk, so we use SpanModel
+            // to pass that information to the serializer
+            var spanModel = traceChunk.GetSpanModel(i);
+            WriteSpan(writer, spanModel);
+        }
+    }
+
+    internal void WriteSpan(JsonTextWriter writer, SpanModel spanModel)
+    {
+        static Action<KeyValue> WriteKeyValue(JsonTextWriter writer)
+            => keyValue => OtlpTracesJsonSerializer.WriteKeyValue(writer, keyValue);
+
+        writer.WriteStartObject();
+
+        // traceId (required) - encoded as hex string in JSON
+        writer.WritePropertyName("traceId");
+        writer.WriteValue(spanModel.Span.Context.RawTraceId);
+
+        // spanId (required) - encoded as hex string in JSON
+        writer.WritePropertyName("spanId");
+        writer.WriteValue(spanModel.Span.Context.RawSpanId);
+
+        // traceState (optional)
+        // if (!string.IsNullOrEmpty(spanModel.Span.TraceState))
+        // {
+        //     writer.WritePropertyName("traceState");
+        //     writer.WriteValue(spanModel.Span.TraceState);
+        // }
+
+        // parentSpanId (optional) - encoded as hex string in JSON
+        if (spanModel.Span.Context.ParentId is ulong parentId && parentId > 0)
+        {
+            writer.WritePropertyName("parentSpanId");
+            writer.WriteValue(HexString.ToHexString(parentId));
+        }
+
+        // flags (optional)
+        if (spanModel.Span.Context.SamplingPriority is int samplingPriority)
+        {
+            writer.WritePropertyName("flags");
+            writer.WriteValue(SamplingPriorityValues.IsKeep(samplingPriority) ? 1 : 0);
+        }
+
+        // name (required)
+        writer.WritePropertyName("name");
+        writer.WriteValue(spanModel.Span.ResourceName);
+
+        // kind (optional, default should be SPAN_KIND_UNSPECIFIED but we use SPAN_KIND_INTERNAL instead)
+        var spanKind = spanModel.Span.GetTag(Tags.SpanKind) switch
+        {
+            SpanKinds.Server => SpanKind.Server,
+            SpanKinds.Client => SpanKind.Client,
+            SpanKinds.Producer => SpanKind.Producer,
+            SpanKinds.Consumer => SpanKind.Consumer,
+            _ => SpanKind.Internal,
+        };
+        writer.WritePropertyName("kind");
+        writer.WriteValue((int)spanKind);
+
+        // startTimeUnixNano (required) - string representation of uint64
+        writer.WritePropertyName("startTimeUnixNano");
+        writer.WriteValue(spanModel.Span.StartTime.ToUnixTimeNanoseconds().ToString());
+
+        // endTimeUnixNano (required) - string representation of uint64
+        writer.WritePropertyName("endTimeUnixNano");
+        writer.WriteValue((spanModel.Span.StartTime + spanModel.Span.Duration).ToUnixTimeNanoseconds().ToString());
+
+        // attributes (optional)
+        // TODO: Actually implement
+        int droppedAttributesCount = 0;
+        writer.WritePropertyName("attributes");
+        writer.WriteStartArray();
+        droppedAttributesCount = OtlpMapper.EmitAttributesFromSpan(WriteKeyValue(writer), in spanModel, SpanAttributeCountLimit, _openTelemetrySemanticsEnabled);
+        writer.WriteEndArray();
+
+        // droppedAttributesCount (optional)
+        if (droppedAttributesCount > 0)
+        {
+            writer.WritePropertyName("droppedAttributesCount");
+            writer.WriteValue(droppedAttributesCount);
+        }
+
+        // events (optional)
+        int eventCount = 0;
+        int droppedEventCount = 0;
+        if (spanModel.Span.SpanEvents != null && spanModel.Span.SpanEvents.Count > 0)
+        {
+            writer.WritePropertyName("events");
+            writer.WriteStartArray();
+
+            foreach (var evt in spanModel.Span.SpanEvents)
+            {
+                if (eventCount < EventCountLimit)
+                {
+                    WriteSpanEvent(writer, evt);
+                    eventCount++;
+                }
+                else
+                {
+                    droppedEventCount++;
+                }
+            }
+
+            writer.WriteEndArray();
+        }
+
+        // droppedEventsCount (optional)
+        if (droppedEventCount > 0)
+        {
+            writer.WritePropertyName("droppedEventsCount");
+            writer.WriteValue(droppedEventCount);
+        }
+
+        // links (optional)
+        int linkCount = 0;
+        int droppedLinkCount = 0;
+        if (spanModel.Span.SpanLinks != null && spanModel.Span.SpanLinks.Count > 0)
+        {
+            writer.WritePropertyName("links");
+            writer.WriteStartArray();
+
+            foreach (var link in spanModel.Span.SpanLinks)
+            {
+                if (linkCount < LinkCountLimit)
+                {
+                    WriteSpanLink(writer, link);
+                    linkCount++;
+                }
+                else
+                {
+                    droppedLinkCount++;
+                }
+            }
+
+            writer.WriteEndArray();
+        }
+
+        // droppedLinksCount (optional)
+        if (droppedLinkCount > 0)
+        {
+            writer.WritePropertyName("droppedLinksCount");
+            writer.WriteValue(droppedLinkCount);
+        }
+
+        // status (optional)
+        StatusCode? statusCode = spanModel.Span.GetTag("otel.status_code") switch
+        {
+            "STATUS_CODE_OK" => StatusCode.Ok,
+            "STATUS_CODE_ERROR" => StatusCode.Error,
+            _ => null,
+        };
+        if (statusCode is not null)
+        {
+            writer.WritePropertyName("status");
+            WriteSpanStatus(writer, statusCode.Value, spanModel.Span.GetTag(Tags.ErrorMsg));
+        }
+
+        writer.WriteEndObject();
     }
 
     public int SerializeSpans(ref byte[] bytes, int temporaryBufferOffset, TraceChunkModel traceChunk, int spanBufferOffset, int maxSize)

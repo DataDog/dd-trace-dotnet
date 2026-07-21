@@ -165,26 +165,15 @@ namespace Datadog.Trace.Debugger.Helpers
 
             foreach (MethodInfo candidateMethod in methods)
             {
-                var attributes = candidateMethod.GetCustomAttributes<StateMachineAttribute>(inherit: false);
-
-                bool foundAttribute = false, foundIteratorAttribute = false;
-                foreach (var attr in attributes)
-                {
-                    if (attr.StateMachineType == declaringType)
-                    {
-                        foundAttribute = true;
-                        foundIteratorAttribute |= attr is IteratorStateMachineAttribute || attr.GetType().Name == "AsyncIteratorStateMachineAttribute";
-                    }
-                }
-
-                if (foundAttribute)
+                if (StateMachineAttributeHelper.TryGetStateMachineType(candidateMethod, out var stateMachineType, out var isIterator) &&
+                    stateMachineType == declaringType)
                 {
                     // If this is an iterator (sync or async), mark the iterator as changed, so it gets the + annotation
                     // of the original method. Non-iterator async state machines resolve directly to their builder methods
                     // so aren't marked as changed.
                     method = candidateMethod;
                     declaringType = candidateMethod.DeclaringType;
-                    return foundIteratorAttribute;
+                    return isIterator;
                 }
             }
 

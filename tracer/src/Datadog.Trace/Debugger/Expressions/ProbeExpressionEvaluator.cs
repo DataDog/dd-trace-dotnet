@@ -259,7 +259,6 @@ internal sealed class ProbeExpressionEvaluator
         }
 
         CompiledExpression<bool> compiledExpression = default;
-
         try
         {
             if (!cached.HasValue)
@@ -630,7 +629,7 @@ internal sealed class ProbeExpressionEvaluator
             var expression = CaptureExpressions[i].Expression;
             if (expression?.Json != null && IsExpression(expression) == true)
             {
-                compiledExpressions[i] = ProbeExpressionParser<object>.ParseExpression(expression.Value.Json, scopeMembers);
+                compiledExpressions[i] = ProbeExpressionParser<object>.ParseCaptureExpression(expression.Value.Json, scopeMembers, CaptureExpressions[i].CaptureLimitInfo);
             }
         }
 
@@ -644,7 +643,7 @@ internal sealed class ProbeExpressionEvaluator
             return null;
         }
 
-        return string.IsNullOrEmpty(expression.Value.Json);
+        return StringUtil.IsNullOrEmpty(expression.Value.Json);
     }
 
     private bool IsLiteral<T>(CompiledExpression<T> expression)
@@ -659,7 +658,7 @@ internal sealed class ProbeExpressionEvaluator
             return null;
         }
 
-        return !string.IsNullOrEmpty(expression.Value.Json) && string.IsNullOrEmpty(expression.Value.Str);
+        return !StringUtil.IsNullOrEmpty(expression.Value.Json) && StringUtil.IsNullOrEmpty(expression.Value.Str);
     }
 
     private bool IsExpression<T>(CompiledExpression<T> expression)
@@ -717,9 +716,9 @@ internal sealed class ProbeExpressionEvaluator
     internal CompiledProbeExpressions CompileAll(MethodScopeMembers scopeMembers)
     {
         return new CompiledProbeExpressions(
-            templates: Templates == null ? null : CompileTemplates(scopeMembers),
-            condition: Condition == null ? null : CompileCondition(scopeMembers),
-            metric: Metric == null ? null : CompileMetric(scopeMembers),
-            decorations: SpanDecorations == null ? null : CompileDecorations(scopeMembers));
+            CompileTemplates(scopeMembers),
+            CompileCondition(scopeMembers),
+            CompileMetric(scopeMembers),
+            CompileDecorations(scopeMembers));
     }
 }

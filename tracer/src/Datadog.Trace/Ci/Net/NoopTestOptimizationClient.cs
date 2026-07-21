@@ -31,7 +31,7 @@ internal sealed class NoopTestOptimizationClient : ITestOptimizationClient
         return Task.FromResult<TestOptimizationClient.SearchCommitResponse>(default);
     }
 
-    public Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync()
+    public Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync(SkippableTestsRequestScope scope = default)
     {
         Log.Debug("NoopTestOptimizationClient: Getting skippable tests...");
         return Task.FromResult<TestOptimizationClient.SkippableTestsResponse>(default);

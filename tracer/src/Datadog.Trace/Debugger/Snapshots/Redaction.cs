@@ -1,4 +1,4 @@
-﻿// <copyright file="Redaction.cs" company="Datadog">
+// <copyright file="Redaction.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -39,8 +39,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(List<>),
             typeof(ArrayList),
             typeof(LinkedList<>),
-            typeof(SortedList),
-            typeof(SortedList<,>),
             typeof(Stack),
             typeof(Stack<>),
             typeof(ConcurrentStack<>),
@@ -50,13 +48,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(HashSet<>),
             typeof(SortedSet<>),
             typeof(ConcurrentBag<>),
-            typeof(BlockingCollection<>),
-            typeof(ConditionalWeakTable<,>)
+            typeof(BlockingCollection<>)
         ];
 
         private static readonly Type[] AllowedDictionaryTypes =
         [
             typeof(Dictionary<,>),
+            typeof(SortedList),
+            typeof(SortedList<,>),
             typeof(SortedDictionary<,>),
             typeof(ConcurrentDictionary<,>),
             typeof(Hashtable)
@@ -201,7 +200,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             var effectiveType = Nullable.GetUnderlyingType(type) ?? type;
 
             return TypeExtensions.IsSimple(effectiveType) ||
-                   AllowedTypesSafeToCallToString.Contains(effectiveType);
+                   IsAllowedTypeSafeToCallToString(effectiveType);
         }
 
         internal static bool IsSupportedDictionary(object? o)
@@ -211,8 +210,17 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return false;
             }
 
-            var type = o.GetType();
-            return AllowedDictionaryTypes.Any(whiteType => whiteType == type || (type.IsGenericType && whiteType == type.GetGenericTypeDefinition()));
+            return IsSupportedDictionary(o.GetType());
+        }
+
+        internal static bool IsSupportedDictionary(Type? type)
+        {
+            if (type == null)
+            {
+                return false;
+            }
+
+            return IsSupportedType(type, AllowedDictionaryTypes);
         }
 
         internal static bool IsSupportedCollection(object? o)
@@ -237,8 +245,54 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return true;
             }
 
-            return AllowedCollectionTypes.Any(whiteType => whiteType == type || (type.IsGenericType && whiteType == type.GetGenericTypeDefinition())) ||
-                   AllowedSpecialCasedCollectionTypeNames.Any(white => white.Equals(type.Name, StringComparison.OrdinalIgnoreCase));
+            if (IsSupportedType(type, AllowedCollectionTypes))
+            {
+                return true;
+            }
+
+            for (var i = 0; i < AllowedSpecialCasedCollectionTypeNames.Length; i++)
+            {
+                if (AllowedSpecialCasedCollectionTypeNames[i].Equals(type.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsSupportedType(Type type, Type[] allowedTypes)
+        {
+            Type? genericDefinition = null;
+            if (type.IsGenericType)
+            {
+                genericDefinition = type.GetGenericTypeDefinition();
+            }
+
+            for (var i = 0; i < allowedTypes.Length; i++)
+            {
+                var allowedType = allowedTypes[i];
+                if (allowedType == type ||
+                    (genericDefinition != null && allowedType == genericDefinition))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsAllowedTypeSafeToCallToString(Type type)
+        {
+            for (var i = 0; i < AllowedTypesSafeToCallToString.Length; i++)
+            {
+                if (AllowedTypesSafeToCallToString[i] == type)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         internal bool IsRedactedType(Type? type)
@@ -339,7 +393,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             if (identifier.Length > MaxStackAlloc)
             {
-                Log.Error("Identifier length {Length} exceeds maximum allowed length of {MaxSize}, hence we are going to redact this identifier", identifier.Length, property1: MaxStackAlloc);
+                Log.Warning("Identifier length {Length} exceeds maximum allowed length of {MaxSize}, so it cannot be normalized and will be skipped for redaction matching", identifier.Length, property1: MaxStackAlloc);
                 return false;
             }
 

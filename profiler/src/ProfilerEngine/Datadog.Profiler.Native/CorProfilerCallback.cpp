@@ -182,8 +182,7 @@ void CorProfilerCallback::InitializeServices()
     // Like the SystemCallsShield, this service must be started before any profiler.
     // For now we asked for a memory resource that will have maximum 100 blocks of 1KiB per block.
     // (before it uses the default memory resource a.k.a new/delete for allocation)
-    // TODO add metrics to measure if it's ok or not
-    RegisterService<LibrariesInfoCache>(_memoryResourceManager.GetSynchronizedPool(100, 1024));
+    RegisterService<LibrariesInfoCache>(_pConfiguration.get(), _memoryResourceManager.GetSynchronizedPool(100, 1024), _metricsRegistry);
 #endif
 
     _pFrameStore = std::make_unique<FrameStore>(
@@ -402,7 +401,8 @@ void CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _metricsRegistry,
-                _pNativeThreadList
+                _pNativeThreadList,
+                _pRuntimeInfo.get()
                 );
 
             if (_pConfiguration->IsMemoryFootprintEnabled())
@@ -463,6 +463,8 @@ void CorProfilerCallback::InitializeServices()
             }
         }
 
+        IGCDumpListener* pGCDumpListener = _pHeapSnapshotManager;
+
         // TODO: add new CLR events-based providers to the event parser
         _pEventPipeEventsManager = std::make_unique<EventPipeEventsManager>(
             _pCorProfilerInfoEvents,
@@ -470,7 +472,8 @@ void CorProfilerCallback::InitializeServices()
             _pContentionProvider,
             _pStopTheWorldProvider,
             _pNetworkProvider,
-            _pHeapSnapshotManager
+            _pConfiguration.get(),
+            pGCDumpListener
         );
 
         if (_pGarbageCollectionProvider != nullptr)
@@ -1818,7 +1821,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
     _pStackSamplerLoopManager->Stop();
 
-    
+
 #ifdef LINUX
 if (_pCpuProfiler != nullptr)
 {

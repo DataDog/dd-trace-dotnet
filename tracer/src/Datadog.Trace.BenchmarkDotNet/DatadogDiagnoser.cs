@@ -148,8 +148,7 @@ public class DatadogDiagnoser : IDiagnoser
             "..",
             "..",
             "..",
-            "shared",
-            "bin",
+            "artifacts",
             "monitoring-home");
 #endif
     }

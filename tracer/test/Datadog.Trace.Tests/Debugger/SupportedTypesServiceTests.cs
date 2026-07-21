@@ -52,5 +52,30 @@ namespace Datadog.Trace.Tests.Debugger
         {
             Redaction.IsSafeToCallToString(type).Should().BeFalse($"Type {type} should use structural handling instead of ToString()");
         }
+
+        [Theory]
+        [InlineData(typeof(List<int>), true)]
+        [InlineData(typeof(HashSet<int>), true)]
+        [InlineData(typeof(SortedList), false)]
+        [InlineData(typeof(SortedList<string, int>), false)]
+        [InlineData(typeof(Dictionary<string, int>), false)]
+        [InlineData(typeof(ConditionalWeakTable<object, object>), false)]
+        public void SupportedCollectionTypes(Type type, bool expected)
+        {
+            Redaction.IsSupportedCollection(type).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(typeof(Dictionary<string, int>), true)]
+        [InlineData(typeof(SortedDictionary<string, int>), true)]
+        [InlineData(typeof(SortedList), true)]
+        [InlineData(typeof(SortedList<string, int>), true)]
+        [InlineData(typeof(Hashtable), true)]
+        [InlineData(typeof(List<int>), false)]
+        [InlineData(typeof(HashSet<int>), false)]
+        public void SupportedDictionaryTypes(Type type, bool expected)
+        {
+            Redaction.IsSupportedDictionary(type).Should().Be(expected);
+        }
     }
 }

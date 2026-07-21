@@ -39,6 +39,7 @@ public:
         static const std::string HeapSnapshotInterval;
         static const std::string HeapSnapshotCheckInterval;
         static const std::string HeapSnapshotMemoryPressureThreshold;
+        static const std::string HeapSnapshotSkipTraversal;
         static const std::string ForceHttpSampling;
 
     static const std::string SectionOverrides;

@@ -127,6 +127,11 @@ internal enum Count
     [TelemetryMetric<MetricTags.ApiError>("stats_api.errors")] StatsApiErrors,
 
     /// <summary>
+    /// The number of spans whose client-side stats dimensions were collapsed to the "tracer_blocked_value" sentinel to enforce a cardinality limit.
+    /// </summary>
+    [TelemetryMetric<MetricTags.CollapsedStatsFields, MetricTags.OversizedStatsFields>("stats_collapsed_spans")] StatsCollapsedSpans,
+
+    /// <summary>
     /// The number of times a Datadog configuration is set while a corresponding OpenTelemetry configuration is set.
     /// </summary>
     [TelemetryMetric<MetricTags.DatadogConfiguration, MetricTags.OpenTelemetryConfiguration>("otel.env.hiding", isCommon: true, NS.Tracer)] OpenTelemetryConfigHiddenByDatadogConfig,
