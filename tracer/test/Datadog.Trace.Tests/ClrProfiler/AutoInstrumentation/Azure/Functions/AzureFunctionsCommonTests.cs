@@ -117,7 +117,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
         }
 
         // This duck types with tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/Isolated/IFunctionContext.cs
-        private class MockFunctionContext : IFunctionContext
+        internal class MockFunctionContext : IFunctionContext
         {
             public FunctionDefinitionStruct FunctionDefinition { get; set; }
 
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
         }
 
         // This duck types with tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/Isolated/GrpcBindingsFeatureStruct.cs
-        private class MockBindingsFeature
+        internal class MockBindingsFeature
         {
             public IDictionary<string, object?>? TriggerMetadata { get; set; }
 
