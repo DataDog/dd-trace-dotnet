@@ -26,7 +26,7 @@ internal static class EventGridCommon
     internal static CallTargetState CreateProducerSpan<TTarget, TEvents>(TTarget instance, ref TEvents events, bool injectContext)
     {
         var tracer = Tracer.Instance;
-        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid, defaultValue: false))
+        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid))
         {
             return CallTargetState.GetDefault();
         }
@@ -50,7 +50,7 @@ internal static class EventGridCommon
         where TTarget : IEventGridSenderClient
     {
         var tracer = Tracer.Instance;
-        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid, defaultValue: false))
+        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid))
         {
             return CallTargetState.GetDefault();
         }
@@ -63,7 +63,7 @@ internal static class EventGridCommon
         where TTarget : IEventGridSenderClient
     {
         var tracer = Tracer.Instance;
-        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid, defaultValue: false))
+        if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid))
         {
             return CallTargetState.GetDefault();
         }
