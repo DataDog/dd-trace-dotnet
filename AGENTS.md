@@ -255,6 +255,14 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - Commits: imperative mood, optional `[Area]` prefix (e.g. `[Debugger]`, `[SymDB]`). Keep messages concise — avoid full diffs or extensive explanation.
 - PRs: follow [`.github/pull_request_template.md`](.github/pull_request_template.md). Keep descriptions concise — focus on "what" and "why", brief "how" only when complex.
 
+## Agent skills
+
+Shared agent skills are maintained under `.claude/skills`.
+
+`.agents/skills` is a symbolic link to that directory so that Codex and
+Claude Code use the same skill definitions. Do not edit or duplicate skills
+under `.agents/skills`; update the canonical files under `.claude/skills`.
+
 ## Documentation References
 
 **Core docs:**
