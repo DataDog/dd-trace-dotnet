@@ -176,7 +176,19 @@ namespace Datadog.Trace.TestHelpers
                 "DD_VERSION",
                 "DD_TAGS",
                 "DD_APPSEC_ENABLED",
-                "DD_WRITE_INSTRUMENTATION_TO_DISK"
+                "DD_WRITE_INSTRUMENTATION_TO_DISK",
+                "DD_TRACE_AGENT_URL",
+
+                // OpenTelemetry
+                "OTEL_TRACES_EXPORTER",
+                "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+                "OTEL_EXPORTER_OTLP_ENDPOINT",
+                "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
+                "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
+                "OTEL_METRICS_EXPORTER",
+                "OTEL_LOGS_EXPORTER",
+                "OTEL_EXPORTER_OTLP_PROTOCOL",
+                "OTEL_RESOURCE_ATTRIBUTES"
             };
 
             foreach (string variable in environmentVariables)
@@ -355,19 +367,6 @@ namespace Datadog.Trace.TestHelpers
             {
                 environmentVariables[envVar.Key] = envVar.Value;
             }
-
-            // URL can take precedence over HOSTNAME+PORT, so we remove it to ensure what we configured above gets actually used.
-            environmentVariables.Remove("DD_TRACE_AGENT_URL");
-            // Remove OTEL exporter env vars that could redirect traces away from the mock agent
-            environmentVariables.Remove("OTEL_TRACES_EXPORTER");
-            environmentVariables.Remove("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT");
-            environmentVariables.Remove("OTEL_EXPORTER_OTLP_ENDPOINT");
-            environmentVariables.Remove("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT");
-            environmentVariables.Remove("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT");
-            environmentVariables.Remove("OTEL_METRICS_EXPORTER");
-            environmentVariables.Remove("OTEL_LOGS_EXPORTER");
-            environmentVariables.Remove("OTEL_EXPORTER_OTLP_PROTOCOL");
-            environmentVariables.Remove("OTEL_RESOURCE_ATTRIBUTES");
         }
 
         public string GetSampleApplicationPath(string packageVersion = "", string framework = "", bool usePublishWithRID = false)
