@@ -459,7 +459,7 @@ namespace Datadog.Trace.Tests.Agent
 
             // Make the buffer size big enough for a single trace
             var api = new MockApi();
-            var agent = new AgentWriter(api, statsAggregator: null, statsd: TestStatsdManager.NoOp, calculator, automaticFlush: false, (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1, batchInterval: 100, apmTracingEnabled: true, initialTracerMetricsEnabled: false);
+            var agent = new AgentWriter(api, statsAggregator: null, statsd: TestStatsdManager.NoOp, calculator, automaticFlush: false, (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1, batchInterval: 100, apmTracingEnabled: true, initialTracerMetricsEnabled: false, openTelemetrySemanticsEnabled: false);
 
             // Fill both buffers
             agent.WriteTrace(spans);

@@ -1475,24 +1475,30 @@ namespace Datadog.Trace.Tests.Debugger
             var secondAssembly = CreateDynamicAssembly(
                 "InstanceOfLazyAssembly",
                 "LazyLoaded.TypeForInstanceOf");
+            var includeSecondAssembly = false;
             var calls = 0;
 
             try
             {
+                // Gate the second assembly on an explicit flag rather than the call count: an unrelated
+                // assembly load can bump the generation and make ResolveType retry, so the provider may be
+                // invoked more than once per lookup.
                 InstanceOfHelper.SetAssemblyProviderForTests(() =>
                 {
                     calls++;
-                    return calls == 1 ? [firstAssembly] : [firstAssembly, secondAssembly];
+                    return includeSecondAssembly ? [firstAssembly, secondAssembly] : [firstAssembly];
                 });
 
                 var instance = Activator.CreateInstance(secondAssembly.GetType("LazyLoaded.TypeForInstanceOf"));
 
                 Action firstLookup = () => InstanceOfHelper.ResolveType("LazyLoaded.TypeForInstanceOf");
                 firstLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+                var callsAfterFirstLookup = calls;
 
+                includeSecondAssembly = true;
                 InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
                 InstanceOfHelper.IsInstanceOf(instance, "LazyLoaded.TypeForInstanceOf").Should().BeTrue();
-                calls.Should().Be(2);
+                calls.Should().BeGreaterThan(callsAfterFirstLookup);
             }
             finally
             {
@@ -1570,24 +1576,34 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var firstAssembly = typeof(string).Assembly;
             var secondAssembly = typeof(TestStruct.NestedObject).Assembly;
+            var includeSecondAssembly = false;
             var calls = 0;
 
             try
             {
+                // Gate the second assembly on an explicit flag rather than the call count: an unrelated
+                // assembly load can bump the generation and make ResolveType retry, so the provider may be
+                // invoked more than once per lookup.
                 InstanceOfHelper.SetAssemblyProviderForTests(() =>
                 {
                     calls++;
-                    return calls == 1 ? [firstAssembly] : [firstAssembly, secondAssembly];
+                    return includeSecondAssembly ? [firstAssembly, secondAssembly] : [firstAssembly];
                 });
 
                 Action firstLookup = () => InstanceOfHelper.ResolveType("Missing.TypeForInstanceOf");
                 firstLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+                var callsAfterFirstLookup = calls;
 
+                includeSecondAssembly = true;
                 InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
                 Action secondLookup = () => InstanceOfHelper.ResolveType("Missing.TypeForInstanceOf");
                 secondLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
 
-                calls.Should().Be(2);
+                // Assert the delta rather than an absolute count: the second lookup must rescan
+                // (re-invoke the provider) after the new assembly appears rather than serve the cached
+                // miss. Both lookups throw *unknown type*, so an unrelated retry inflating the first
+                // lookup's count must not be able to satisfy this on its own.
+                calls.Should().BeGreaterThan(callsAfterFirstLookup);
             }
             finally
             {
@@ -1609,23 +1625,29 @@ namespace Datadog.Trace.Tests.Debugger
             var resolvedAssembly = CreateDynamicAssembly(
                 "InstanceOfLargeMissCacheResolvedAssembly",
                 "LargeMissCache.ResolvedType");
+            var includeResolvedAssembly = false;
             var calls = 0;
 
             try
             {
+                // Gate the resolved assembly on an explicit flag rather than the call count: an unrelated
+                // assembly load can bump the generation and make ResolveType retry, so the provider may be
+                // invoked more than once per lookup.
                 InstanceOfHelper.SetAssemblyProviderForTests(() =>
                 {
                     calls++;
-                    return calls == 1 ? initialAssemblies : [.. initialAssemblies, resolvedAssembly];
+                    return includeResolvedAssembly ? [.. initialAssemblies, resolvedAssembly] : initialAssemblies;
                 });
 
                 Action firstLookup = () => InstanceOfHelper.ResolveType("LargeMissCache.ResolvedType");
                 firstLookup.Should().Throw<Exception>().WithMessage("*unknown type*");
+                var callsAfterFirstLookup = calls;
 
+                includeResolvedAssembly = true;
                 InstanceOfHelper.IncrementAssemblyLoadGenerationForTests();
                 InstanceOfHelper.ResolveType("LargeMissCache.ResolvedType").Should().Be(resolvedAssembly.GetType("LargeMissCache.ResolvedType"));
 
-                calls.Should().Be(2);
+                calls.Should().BeGreaterThan(callsAfterFirstLookup);
             }
             finally
             {
@@ -2153,6 +2175,515 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.Equal(publicValue, publicResult);
         }
 
+        [Fact]
+        public void ProbeExpressionParser_PrivateAutoPropertyBackingFieldExpression_CompilesAndExecutes()
+        {
+            var target = new AutoPropertyTarget { Value = "hello" };
+            var backingField = typeof(AutoPropertyTarget).GetField("<Value>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+            backingField.Should().NotBeNull();
+
+            var source = System.Linq.Expressions.Expression.Parameter(typeof(AutoPropertyTarget), "source");
+            var field = System.Linq.Expressions.Expression.Field(source, backingField);
+            var compiled = System.Linq.Expressions.Expression.Lambda<Func<AutoPropertyTarget, string>>(field, source).Compile();
+
+            compiled(target).Should().Be("hello");
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_GetMember_AutoPropertyReadsBackingField()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("TargetLocal", typeof(AutoPropertyTarget), new AutoPropertyTarget { Value = "hello" }, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "getmember": [
+                                    {
+                                      "ref": "TargetLocal"
+                                    },
+                                    "Value"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal("hello", result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_GetMember_InheritedAutoPropertyReadsBaseBackingField()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("TargetLocal", typeof(DerivedAutoPropertyTarget), new DerivedAutoPropertyTarget { BaseValue = "base-value" }, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "getmember": [
+                                    {
+                                      "ref": "TargetLocal"
+                                    },
+                                    "BaseValue"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal("base-value", result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_GetMember_DoesNotInvokeSideEffectingPropertyGetter()
+        {
+            SideEffectingPropertyTarget.Reset();
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("TargetLocal", typeof(SideEffectingPropertyTarget), new SideEffectingPropertyTarget(), ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "getmember": [
+                                    {
+                                      "ref": "TargetLocal"
+                                    },
+                                    "UnsafeValue"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Same(UndefinedValue.Instance, result);
+            Assert.Equal(0, SideEffectingPropertyTarget.GetterCalls);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Contains("cannot be safely read", error.Message);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_GetReference_DoesNotInvokeThisPropertyGetter()
+        {
+            SideEffectingPropertyTarget.Reset();
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.InvocationTarget = new ScopeMember("this", typeof(SideEffectingPropertyTarget), new SideEffectingPropertyTarget(), ScopeMemberKind.This);
+
+            const string json = """
+                                {
+                                  "ref": "UnsafeValue"
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Same(UndefinedValue.Instance, result);
+            Assert.Equal(0, SideEffectingPropertyTarget.GetterCalls);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Contains("cannot be safely read", error.Message);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_GetMember_StaticAutoPropertyDoesNotInvokeGetterOnTypeWithCctor()
+        {
+            _staticExpressionInitializedCount = 0;
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.InvocationTarget = new ScopeMember("this", typeof(StaticExpressionWithCctor), null, ScopeMemberKind.This);
+
+            const string json = """
+                                {
+                                  "getmember": [
+                                    {
+                                      "ref": "this"
+                                    },
+                                    "StaticProperty"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Same(UndefinedValue.Instance, result);
+            Assert.Equal(0, _staticExpressionInitializedCount);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Contains("could trigger the declaring type initializer", error.Message);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorValueMember_UsesSafeResolverAndPreservesRedaction()
+        {
+            var scopeMembers = CreateScopeMembers();
+            const string secret = "TOP_SECRET_VALUE";
+            const string publicValue = "hello";
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Dictionary<string, SideEffectingValueHolder>),
+                new Dictionary<string, SideEffectingValueHolder>
+                {
+                    { "password", new SideEffectingValueHolder(secret) },
+                    { "public", new SideEffectingValueHolder(publicValue) },
+                },
+                ScopeMemberKind.Local));
+
+            const string sensitiveJson = """
+                                {
+                                  "getmember": [
+                                    {
+                                      "getmember": [
+                                        {
+                                          "index": [
+                                            {
+                                              "filter": [
+                                                { "ref": "SafeDictionaryLocal" },
+                                                { "eq": [ { "ref": "@key" }, "password" ] }
+                                              ]
+                                            },
+                                            0
+                                          ]
+                                        },
+                                        "Value"
+                                      ]
+                                    },
+                                    "Data"
+                                  ]
+                                }
+                                """;
+
+            const string publicJson = """
+                                      {
+                                        "getmember": [
+                                          {
+                                            "getmember": [
+                                              {
+                                                "index": [
+                                                  {
+                                                    "filter": [
+                                                      { "ref": "SafeDictionaryLocal" },
+                                                      { "eq": [ { "ref": "@key" }, "public" ] }
+                                                    ]
+                                                  },
+                                                  0
+                                                ]
+                                              },
+                                              "Value"
+                                            ]
+                                          },
+                                          "Data"
+                                        ]
+                                      }
+                                      """;
+
+            SideEffectingValueHolder.Reset();
+            var sensitiveCompiled = ProbeExpressionParser<object>.ParseExpression(sensitiveJson, scopeMembers);
+            var sensitiveResult = sensitiveCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            var publicCompiled = ProbeExpressionParser<object>.ParseExpression(publicJson, scopeMembers);
+            var publicResult = publicCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal("{REDACTED}", sensitiveResult);
+            Assert.Equal(publicValue, publicResult);
+            Assert.Equal(0, SideEffectingValueHolder.GetterCalls);
+            Assert.True(sensitiveCompiled.Errors == null || sensitiveCompiled.Errors.Length == 0);
+            Assert.True(publicCompiled.Errors == null || publicCompiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorEntry_CanUseExplicitKeyMemberInPredicate()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Dictionary<string, string>),
+                new Dictionary<string, string>
+                {
+                    { "hello", "world" },
+                    { "goodbye", "moon" },
+                },
+                ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "any": [
+                                    {
+                                      "ref": "SafeDictionaryLocal"
+                                    },
+                                    {
+                                      "eq": [
+                                        {
+                                          "getmember": [
+                                            {
+                                              "ref": "@it"
+                                            },
+                                            "Key"
+                                          ]
+                                        },
+                                        "missing"
+                                      ]
+                                    }
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.False(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorEntry_CanUseExplicitKeyMemberAfterIndex()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Dictionary<string, string>),
+                new Dictionary<string, string>
+                {
+                    { "hello", "world" },
+                    { "goodbye", "moon" },
+                },
+                ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "getmember": [
+                                    {
+                                      "index": [
+                                        {
+                                          "filter": [
+                                            { "ref": "SafeDictionaryLocal" },
+                                            { "eq": [ { "ref": "@key" }, "goodbye" ] }
+                                          ]
+                                        },
+                                        0
+                                      ]
+                                    },
+                                    "Key"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal("goodbye", result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorValueMember_RedactsUnsafeMemberAccess()
+        {
+            var scopeMembers = CreateScopeMembers();
+            const string secret = "TOP_SECRET_VALUE";
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Dictionary<string, SideEffectingValueHolder>),
+                new Dictionary<string, SideEffectingValueHolder>
+                {
+                    { "password", new SideEffectingValueHolder(secret) },
+                },
+                ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "getmember": [
+                                    {
+                                      "getmember": [
+                                        {
+                                          "index": [
+                                            {
+                                              "filter": [
+                                                { "ref": "SafeDictionaryLocal" },
+                                                { "eq": [ { "ref": "@key" }, "password" ] }
+                                              ]
+                                            },
+                                            0
+                                          ]
+                                        },
+                                        "Value"
+                                      ]
+                                    },
+                                    "UnsafeData"
+                                  ]
+                                }
+                                """;
+
+            SideEffectingValueHolder.Reset();
+            var objectCompiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var objectResult = objectCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            var stringCompiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var stringResult = stringCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.Equal("{REDACTED}", objectResult);
+            Assert.Equal("{REDACTED}", stringResult);
+            Assert.Equal(0, SideEffectingValueHolder.GetterCalls);
+            var objectError = Assert.Single(objectCompiled.Errors);
+            Assert.Contains("cannot be safely read", objectError.Message);
+            var stringError = Assert.Single(stringCompiled.Errors);
+            Assert.Contains("cannot be safely read", stringError.Message);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_DictionaryIteratorValueMember_SuppressesUnsafeMemberConditionForSensitiveKey()
+        {
+            var scopeMembers = CreateScopeMembers();
+            const string secret = "TOP_SECRET_VALUE";
+            const string publicValue = "hello";
+            scopeMembers.AddMember(new ScopeMember(
+                "SafeDictionaryLocal",
+                typeof(Dictionary<string, SideEffectingValueHolder>),
+                new Dictionary<string, SideEffectingValueHolder>
+                {
+                    { "password", new SideEffectingValueHolder(secret) },
+                    { "public", new SideEffectingValueHolder(publicValue) },
+                },
+                ScopeMemberKind.Local));
+
+            const string sensitiveJson = """
+                                         {
+                                           "eq": [
+                                             {
+                                               "getmember": [
+                                                 {
+                                                   "getmember": [
+                                                     {
+                                                       "index": [
+                                                         {
+                                                           "filter": [
+                                                             { "ref": "SafeDictionaryLocal" },
+                                                             { "eq": [ { "ref": "@key" }, "password" ] }
+                                                           ]
+                                                         },
+                                                         0
+                                                       ]
+                                                     },
+                                                     "Value"
+                                                   ]
+                                                 },
+                                                 "UnsafeData"
+                                               ]
+                                             },
+                                             "TOP_SECRET_VALUE"
+                                           ]
+                                         }
+                                         """;
+
+            const string publicJson = """
+                                      {
+                                        "eq": [
+                                          {
+                                            "getmember": [
+                                              {
+                                                "getmember": [
+                                                  {
+                                                    "index": [
+                                                      {
+                                                        "filter": [
+                                                          { "ref": "SafeDictionaryLocal" },
+                                                          { "eq": [ { "ref": "@key" }, "public" ] }
+                                                        ]
+                                                      },
+                                                      0
+                                                    ]
+                                                  },
+                                                  "Value"
+                                                ]
+                                              },
+                                              "UnsafeData"
+                                            ]
+                                          },
+                                          "hello"
+                                        ]
+                                      }
+                                      """;
+
+            SideEffectingValueHolder.Reset();
+            var sensitiveCompiled = ProbeExpressionParser<bool>.ParseExpression(sensitiveJson, scopeMembers);
+            var sensitiveResult = sensitiveCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            var publicCompiled = ProbeExpressionParser<bool>.ParseExpression(publicJson, scopeMembers);
+            var publicResult = publicCompiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.False(sensitiveResult);
+            Assert.True(publicResult);
+            Assert.Equal(0, SideEffectingValueHolder.GetterCalls);
+            var sensitiveError = Assert.Single(sensitiveCompiled.Errors);
+            Assert.Contains("cannot be safely read", sensitiveError.Message);
+            var publicError = Assert.Single(publicCompiled.Errors);
+            Assert.Contains("cannot be safely read", publicError.Message);
+        }
+
         [Theory]
         [MemberData(nameof(SensitiveDictionaryValueOperations))]
         public void ProbeExpressionParser_DictionaryIteratorValue_RedactsSensitiveKeysBeforeDerivedOperations(string operationJson)
@@ -2493,6 +3024,53 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_NonGenericDictionaryPredicates_CanUseExplicitKeyMember()
+        {
+            var hashtable = new Hashtable
+            {
+                { "hello", "world" },
+                { "goodbye", "moon" },
+            };
+
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("HashtableLocal", typeof(Hashtable), hashtable, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "any": [
+                                    {
+                                      "ref": "HashtableLocal"
+                                    },
+                                    {
+                                      "eq": [
+                                        {
+                                          "getmember": [
+                                            {
+                                              "ref": "@it"
+                                            },
+                                            "Key"
+                                          ]
+                                        },
+                                        "missing"
+                                      ]
+                                    }
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var result = compiled.Delegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members);
+
+            Assert.False(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
         public void ProbeExpressionParser_NonGenericDictionaryDump_AllowsNullValues()
         {
             var scopeMembers = CreateScopeMembers();
@@ -2518,7 +3096,7 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
-        public void ProbeExpressionParser_StaticMemberOnCctorFreeType_StillEvaluates()
+        public void ProbeExpressionParser_StaticPropertyOnCctorFreeType_IsUndefinedWithoutInvokingGetter()
         {
             var scopeMembers = CreateScopeMembers();
             scopeMembers.InvocationTarget = new ScopeMember("this", typeof(StaticExpressionWithoutCctor), new StaticExpressionWithoutCctor(), ScopeMemberKind.This);
@@ -2542,8 +3120,138 @@ namespace Datadog.Trace.Tests.Debugger
                 scopeMembers.Exception,
                 scopeMembers.Members);
 
-            Assert.Equal("safe-property", result);
-            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+            Assert.Equal(nameof(UndefinedValue), result);
+            var error = Assert.Single(compiled.Errors);
+            Assert.Contains("cannot be safely read", error.Message);
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_RedactsSensitiveObjectFields()
+        {
+            const string passwordSecret = "DD_PASSWORD_SECRET";
+            const string apiKeySecret = "DD_API_KEY_SECRET";
+            const string publicValue = "DD_PUBLIC_VALUE";
+            var scopeMembers = CreateScopeMembers();
+            var holder = new DumpRedactionObjectHolder(passwordSecret, apiKeySecret, publicValue);
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpRedactionObjectHolder), holder, ScopeMemberKind.Local));
+
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().NotContain(passwordSecret);
+            result.Template.Should().NotContain(apiKeySecret);
+            result.Template.Should().Contain("{REDACTED}");
+            result.Template.Should().Contain(publicValue);
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_RedactsSensitiveRootTypeBeforeDispatch()
+        {
+            var scopeMembers = CreateScopeMembers();
+            using var credential = new System.Security.SecureString();
+            scopeMembers.AddMember(new ScopeMember("CredentialLocal", typeof(System.Security.SecureString), credential, ScopeMemberKind.Local));
+
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""CredentialLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Be("{REDACTED}");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_RedactsSensitiveCollectionFieldBeforeDispatch()
+        {
+            const string authorizationSecret = "Bearer DD_AUTHORIZATION_SECRET";
+            const string authorizationPublicValue = "DD_AUTHORIZATION_PUBLIC_VALUE";
+            var scopeMembers = CreateScopeMembers();
+            var holder = new DumpRedactionCollectionFieldHolder(authorizationSecret, authorizationPublicValue);
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpRedactionCollectionFieldHolder), holder, ScopeMemberKind.Local));
+
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Contain("Authorization={REDACTED}");
+            result.Template.Should().NotContain(authorizationSecret);
+            result.Template.Should().NotContain(authorizationPublicValue);
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TemplateDump_RedactsSensitiveDictionaryValues()
+        {
+            const string authorizationSecret = "Bearer DD_AUTHORIZATION_SECRET";
+            const string publicValue = "DD_PUBLIC_VALUE";
+            var scopeMembers = CreateScopeMembers();
+            var holder = new DumpRedactionDictionaryHolder(authorizationSecret, publicValue);
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpRedactionDictionaryHolder), holder, ScopeMemberKind.Local));
+
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+
+            result.Template.Should().Contain("Authorization");
+            result.Template.Should().Contain("{REDACTED}");
+            result.Template.Should().NotContain(authorizationSecret);
+            result.Template.Should().Contain(publicValue);
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_SpanDecorationDump_RedactsSensitiveObjectFields()
+        {
+            const string passwordSecret = "DD_PASSWORD_SECRET";
+            const string apiKeySecret = "DD_API_KEY_SECRET";
+            const string publicValue = "DD_PUBLIC_VALUE";
+            var scopeMembers = CreateScopeMembers();
+            var holder = new DumpRedactionObjectHolder(passwordSecret, apiKeySecret, publicValue);
+            scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpRedactionObjectHolder), holder, ScopeMemberKind.Local));
+
+            var evaluator = new ProbeExpressionEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations:
+                [
+                    new KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>(
+                        null,
+                        [new KeyValuePair<string, DebuggerExpression?[]>("tag", [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)])])
+                ],
+                captureExpressions: null);
+
+            var result = evaluator.Evaluate(scopeMembers);
+            var decoration = result.Decorations.Should().ContainSingle().Subject;
+
+            decoration.TagName.Should().Be("tag");
+            decoration.Value.Should().NotContain(passwordSecret);
+            decoration.Value.Should().NotContain(apiKeySecret);
+            decoration.Value.Should().Contain("{REDACTED}");
+            decoration.Value.Should().Contain(publicValue);
+            decoration.Errors.Should().BeNullOrEmpty();
+            result.Errors.Should().BeNullOrEmpty();
         }
 
         [Fact]
@@ -3166,6 +3874,52 @@ namespace Datadog.Trace.Tests.Debugger
             };
         }
 
+        private class DumpRedactionObjectHolder
+        {
+            private readonly string _password;
+
+            private readonly string publicData;
+
+            public DumpRedactionObjectHolder(string password, string apiKey, string publicData)
+            {
+                _password = password;
+                ApiKey = apiKey;
+                this.publicData = publicData;
+            }
+
+            private string ApiKey { get; }
+        }
+
+        private class DumpRedactionCollectionFieldHolder
+        {
+#pragma warning disable SA1306
+            private readonly Hashtable Authorization;
+#pragma warning restore SA1306
+
+            public DumpRedactionCollectionFieldHolder(string authorizationSecret, string authorizationPublicValue)
+            {
+                Authorization = new Hashtable
+                {
+                    { "public", authorizationPublicValue },
+                    { "header", authorizationSecret },
+                };
+            }
+        }
+
+        private class DumpRedactionDictionaryHolder
+        {
+            private readonly Hashtable headers;
+
+            public DumpRedactionDictionaryHolder(string authorizationSecret, string publicValue)
+            {
+                headers = new Hashtable
+                {
+                    { "Authorization", authorizationSecret },
+                    { "public", publicValue },
+                };
+            }
+        }
+
         private sealed class ThrowingGetTypeAssembly : Assembly
         {
             private readonly string _fullName;
@@ -3207,6 +3961,69 @@ namespace Datadog.Trace.Tests.Debugger
         private class SensitiveValueHolder
         {
             public string Data { get; set; }
+        }
+
+        private class AutoPropertyTarget
+        {
+            public string Value { get; set; }
+        }
+
+        private class BaseAutoPropertyTarget
+        {
+            public string BaseValue { get; set; }
+        }
+
+        private class DerivedAutoPropertyTarget : BaseAutoPropertyTarget
+        {
+        }
+
+        private class SideEffectingPropertyTarget
+        {
+            private static int _getterCalls;
+
+            public static int GetterCalls => _getterCalls;
+
+            public string UnsafeValue
+            {
+                get
+                {
+                    _getterCalls++;
+                    return "unsafe";
+                }
+            }
+
+            public static void Reset()
+            {
+                _getterCalls = 0;
+            }
+        }
+
+        private class SideEffectingValueHolder
+        {
+            private static int _getterCalls;
+
+            public SideEffectingValueHolder(string data)
+            {
+                Data = data;
+            }
+
+            public static int GetterCalls => _getterCalls;
+
+            public string Data { get; }
+
+            public string UnsafeData
+            {
+                get
+                {
+                    _getterCalls++;
+                    return Data;
+                }
+            }
+
+            public static void Reset()
+            {
+                _getterCalls = 0;
+            }
         }
     }
 }
