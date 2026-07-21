@@ -18,6 +18,16 @@ internal static partial class ConfigurationKeys
     internal static class FeatureFlags
     {
         /// <summary>
+        /// Experimental feature flag that enables ASP.NET Core request tracing in .NET Framework processes.
+        /// Default value is <c>false</c>. This setting has no effect on modern .NET runtimes. This feature is considered a
+        /// temporary compatibility layer, and will be removed <a href="https://devblogs.microsoft.com/dotnet/aspnet-core-2-3-end-of-support/">
+        /// when the feature is no longer supported by Microsoft</a>. It supports tracing only, and does not support additional
+        /// products such as ASM, Code Origins, IAST, or DSM. ASP.NET Core on .NET Framework is not supported in Azure Functions.
+        /// Do not enable this setting in Azure Functions applications.
+        /// </summary>
+        public const string AspNetCoreNetFrameworkEnabled = "DD_EXPERIMENTAL_ASPNETCORE_NETFRAMEWORK_ENABLED";
+
+        /// <summary>
         /// Enables Feature Flags Provider (Experimental).
         /// Default value is <c>false</c> (disabled).
         /// </summary>
@@ -69,14 +79,6 @@ internal static partial class ConfigurationKeys
         /// services may contain 128-bit trace ids.
         /// </summary>
         public const string TraceId128BitLoggingEnabled = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
-
-        /// <summary>
-        /// Feature flag that enables ASP.NET Core request tracing in .NET Framework processes.
-        /// Default value is <c>false</c>. This setting has no effect on modern .NET runtimes.
-        /// ASP.NET Core on .NET Framework is not supported in Azure Functions. Do not enable this
-        /// setting in Azure Functions applications.
-        /// </summary>
-        public const string AspNetCoreNetFrameworkEnabled = "DD_TRACE_ASPNETCORE_NETFRAMEWORK_ENABLED";
 
         /// <summary>
         /// When enabled, the request URL is built without using the cached HttpRequest.Url value to avoid triggering URL caching behavior. This can prevent issues in environments where caching the URL early can affect application behavior
