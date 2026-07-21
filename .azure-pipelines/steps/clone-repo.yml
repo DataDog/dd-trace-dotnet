@@ -82,11 +82,12 @@ steps:
     displayName: merge
     condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
 
-  - powershell: |
-      echo "Cleaning up source directories ..."
-      $localPath=$env:BUILD_REPOSITORY_LOCALPATH
-      rm $localPath/* -r -fo -Exclude ".git"
+  - script: |
+      for /f "delims=" %%A in ('dir /a /b "%BUILD_REPOSITORY_LOCALPATH%" 2^>nul') do if /i not "%%A"==".git" (rd /s /q "%BUILD_REPOSITORY_LOCALPATH%\%%A" 2>nul || del /f /q "%BUILD_REPOSITORY_LOCALPATH%\%%A")
+    displayName: Clean source directory
+    condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
+  - powershell: |
       # As this is a pull request, we need to do a fake merge
       # uses similar process to existing checkout task
       $prBranch=$env:SYSTEM_PULLREQUEST_SOURCEBRANCH
@@ -159,8 +160,9 @@ steps:
     displayName: clean
     condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
 
-  - powershell: rm "$env:BUILD_REPOSITORY_LOCALPATH/*" -r -fo -Exclude ".git"
-    displayName: clean
+  - script: |
+      for /f "delims=" %%A in ('dir /a /b "%BUILD_REPOSITORY_LOCALPATH%" 2^>nul') do if /i not "%%A"==".git" (rd /s /q "%BUILD_REPOSITORY_LOCALPATH%\%%A" 2>nul || del /f /q "%BUILD_REPOSITORY_LOCALPATH%\%%A")
+    displayName: Clean source directory
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
   - checkout: self
