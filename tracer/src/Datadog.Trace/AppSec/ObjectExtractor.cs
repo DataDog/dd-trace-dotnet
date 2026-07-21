@@ -27,6 +27,11 @@ namespace Datadog.Trace.AppSec
         private static readonly ConcurrentDictionary<Type, MemberExtractor?[]> TypeToExtractorMap = new();
         private static readonly ConcurrentDictionary<Type, MemberExtractor?[]> DataContractTypeToExtractorMap = new();
 
+        // Cached factory delegates so the DataContract path can be identified by reference downstream
+        // (e.g. to apply DataContractJsonSerializer-specific scalar shapes like DateTimeOffset-as-object).
+        private static readonly Func<Type, MemberExtractor?[]> DefaultExtractorFactory = CreateDefaultExtractors;
+        private static readonly Func<Type, MemberExtractor?[]> DataContractExtractorFactory = CreateDataContractAwareExtractors;
+
         private static readonly HashSet<Type> WafProcessableTypes =
         [
             typeof(float),
@@ -43,10 +48,10 @@ namespace Datadog.Trace.AppSec
         ];
 
         internal static object? Extract(object? body)
-            => Extract(body, TypeToExtractorMap, CreateDefaultExtractors, useSimpleDictionaryFormat: true);
+            => Extract(body, TypeToExtractorMap, DefaultExtractorFactory, useSimpleDictionaryFormat: true);
 
         internal static object? ExtractDataContract(object? body, bool useSimpleDictionaryFormat = false)
-            => Extract(body, DataContractTypeToExtractorMap, CreateDataContractAwareExtractors, useSimpleDictionaryFormat);
+            => Extract(body, DataContractTypeToExtractorMap, DataContractExtractorFactory, useSimpleDictionaryFormat);
 
         private static object? Extract(
             object? body,
@@ -261,18 +266,26 @@ namespace Datadog.Trace.AppSec
                 return CreateDefaultExtractors(bodyType);
             }
 
+            // [Serializable] (non-[DataContract]) types use the serialization contract: DataContractJsonSerializer
+            // emits ALL instance fields (public + private, including auto-property backing fields with their raw
+            // mangled names), honoring [NonSerialized] — not the public POCO contract below.
+            if (bodyType.IsSerializable)
+            {
+                return CreateSerializableContractExtractors(bodyType);
+            }
+
             var extractors = new List<MemberExtractor?>();
 
-            // For non-[DataContract] types, DataContractJsonSerializer serializes public read-write
-            // properties (public getter AND public setter). Relying on compiler-generated __BackingFields
-            // misses manually implemented properties (e.g. get => _value; set => _value = value;) and
-            // wrongly includes read-only auto-properties, so enumerate the serializer-visible members directly.
+            // For non-[DataContract] types, DataContractJsonSerializer serializes public read-write properties,
+            // plus get-only *collection* properties (populated via Add) — but not get-only scalar properties.
+            // Relying on compiler-generated __BackingFields would miss manually implemented properties, so
+            // enumerate the serializer-visible members directly.
             foreach (var property in bodyType.GetProperties(BindingFlags.Instance | BindingFlags.Public))
             {
                 if (property.GetIndexParameters().Length > 0
                     || property.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null
                     || property.GetGetMethod() is not { } getter
-                    || property.GetSetMethod() is null)
+                    || (property.GetSetMethod() is null && !IsCollectionType(property.PropertyType)))
                 {
                     continue;
                 }
@@ -282,10 +295,11 @@ namespace Datadog.Trace.AppSec
                 extractors.Add(new MemberExtractor(property.Name, property.PropertyType, CreatePropertyAccessor(bodyType, getter, property.PropertyType)));
             }
 
-            // DataContractJsonSerializer also serializes public fields on non-[DataContract] types.
+            // DataContractJsonSerializer also serializes public read-write fields on non-[DataContract] types,
+            // but NOT public readonly (IsInitOnly) fields.
             foreach (var field in bodyType.GetFields(BindingFlags.Instance | BindingFlags.Public))
             {
-                if (field.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null)
+                if (field.IsInitOnly || field.GetCustomAttribute<IgnoreDataMemberAttribute>() is not null)
                 {
                     continue;
                 }
@@ -295,6 +309,33 @@ namespace Datadog.Trace.AppSec
 
             return extractors.ToArray();
         }
+
+        // [Serializable] contract: every instance field (public + private, including base types), keeping the
+        // raw field name (e.g. "<Prop>k__BackingField"), honoring [NonSerialized]. Matches what
+        // DataContractJsonSerializer writes for a [Serializable] type without [DataContract].
+        private static MemberExtractor?[] CreateSerializableContractExtractors(Type bodyType)
+        {
+            var extractors = new List<MemberExtractor?>();
+            for (var type = bodyType; type is not null && type != typeof(object); type = type.BaseType)
+            {
+                foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+                {
+                    if (field.IsNotSerialized)
+                    {
+                        continue;
+                    }
+
+                    extractors.Add(new MemberExtractor(field.Name, field.FieldType, CreateFieldAccessor(bodyType, field)));
+                }
+            }
+
+            return extractors.ToArray();
+        }
+
+        // A collection (as far as DataContractJsonSerializer serialization is concerned): anything enumerable
+        // except string (which is scalar). Used to decide whether a get-only property is serialized.
+        private static bool IsCollectionType(Type type)
+            => type != typeof(string) && typeof(IEnumerable).IsAssignableFrom(type);
 
         private static Func<object, object?> CreateFieldAccessor(Type bodyType, FieldInfo field)
         {
@@ -431,6 +472,14 @@ namespace Datadog.Trace.AppSec
                     : ExtractDictionaryAsKeyValuePairs(value, iDictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
             }
 
+            // Old-style non-generic dictionaries (e.g. Hashtable): DataContractJsonSerializer writes them as
+            // {k:v} objects with UseSimpleDictionaryFormat=true, and [{Key,Value}] arrays otherwise. Must come
+            // before the IEnumerable fallback (IDictionary is also IEnumerable).
+            if (value is IDictionary nonGenericDict)
+            {
+                return ExtractNonGenericDictionary(nonGenericDict, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
+            }
+
             // DataContractJsonSerializer and other JSON serializers emit Collection<T>, ObservableCollection<T>,
             // HashSet<T>, ISet<T>, IList<T>, and similar collection types as JSON arrays. Strings are handled
             // above; dictionaries are handled above (and they also implement IEnumerable, so this check MUST
@@ -457,7 +506,21 @@ namespace Datadog.Trace.AppSec
                     : (object)Convert.ToInt64(value);
             }
 
-            var unhandledType = itemType == typeof(Guid) || itemType == typeof(DateTime) || itemType == typeof(DateTimeOffset) || itemType == typeof(TimeSpan) || itemType.IsPrimitive;
+            // DataContractJsonSerializer writes DateTimeOffset as an object {"DateTime": "...", "OffsetMinutes": N},
+            // not a scalar string. Mirror that shape on the DataContract path so the API Security schema matches.
+            if (itemType == typeof(DateTimeOffset) && ReferenceEquals(createExtractors, DataContractExtractorFactory))
+            {
+                var dto = (DateTimeOffset)value;
+                return new Dictionary<string, object?>(2)
+                {
+                    ["DateTime"] = dto.UtcDateTime.ToString("o"),
+                    ["OffsetMinutes"] = (long)dto.Offset.TotalMinutes,
+                };
+            }
+
+            // Uri is emitted as a JSON string by DataContractJsonSerializer (Uri.ToString() is the URI text),
+            // so treat it as a scalar rather than recursing into its properties (which would yield an object).
+            var unhandledType = itemType == typeof(Guid) || itemType == typeof(Uri) || itemType == typeof(DateTime) || itemType == typeof(DateTimeOffset) || itemType == typeof(TimeSpan) || itemType.IsPrimitive;
 #if NET6_0_OR_GREATER
             unhandledType = unhandledType || itemType == typeof(DateOnly) || itemType == typeof(TimeOnly);
 #endif
@@ -583,6 +646,66 @@ namespace Datadog.Trace.AppSec
             return items;
         }
 
+        // Non-generic IDictionary (e.g. Hashtable): map form ({k:v}) when useSimpleDictionaryFormat is true,
+        // key/value entry arrays ([{Key,Value}]) otherwise — mirroring DataContractJsonSerializer.
+        private static object ExtractNonGenericDictionary(
+            IDictionary source,
+            int depth,
+            HashSet<object> visited,
+            ConcurrentDictionary<Type, MemberExtractor?[]> extractorCache,
+            Func<Type, MemberExtractor?[]> createExtractors,
+            bool useSimpleDictionaryFormat)
+        {
+            var capacity = Math.Min(WafConstants.MaxContainerSize, source.Count);
+
+            if (useSimpleDictionaryFormat)
+            {
+                if (!visited.Add(source))
+                {
+                    return EmptyDictionary;
+                }
+
+                var map = new Dictionary<string, object?>(capacity);
+                foreach (DictionaryEntry entry in source)
+                {
+                    var key = entry.Key?.ToString();
+                    if (key is null)
+                    {
+                        continue;
+                    }
+
+                    map[key] = entry.Value is null ? null : ExtractType(entry.Value.GetType(), entry.Value, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
+                    if (map.Count >= WafConstants.MaxContainerSize)
+                    {
+                        break;
+                    }
+                }
+
+                return map;
+            }
+
+            if (!visited.Add(source))
+            {
+                return new List<object?>();
+            }
+
+            var items = new List<object?>(capacity);
+            foreach (DictionaryEntry entry in source)
+            {
+                items.Add(new Dictionary<string, object?>(2)
+                {
+                    ["Key"] = entry.Key is null ? null : ExtractType(entry.Key.GetType(), entry.Key, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
+                    ["Value"] = entry.Value is null ? null : ExtractType(entry.Value.GetType(), entry.Value, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
+                });
+                if (items.Count >= WafConstants.MaxContainerSize)
+                {
+                    break;
+                }
+            }
+
+            return items;
+        }
+
         private static List<object?> ExtractListOrArray(
             object value,
             int depth,
@@ -591,12 +714,14 @@ namespace Datadog.Trace.AppSec
             Func<Type, MemberExtractor?[]> createExtractors,
             bool useSimpleDictionaryFormat)
         {
-            if (visited.Contains(value))
+            if (value is not IEnumerable source)
             {
                 return [];
             }
 
-            if (value is not IEnumerable source)
+            // Track the collection instance so self-referential collections terminate with an empty
+            // cycle marker instead of recursing until a stack overflow (matches object/dictionary paths).
+            if (!visited.Add(value))
             {
                 return [];
             }
