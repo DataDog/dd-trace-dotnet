@@ -191,7 +191,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey64, out var corProfilerPathValue64);
 
             string?[] valuesToCheck = { corProfilerPathValue, corProfilerPathValue32, corProfilerPathValue64 };
-            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process);
+            var isTracingUsingBundle = TracingWithBundle(valuesToCheck);
 
             if (!ok && isTracingUsingBundle)
             {
@@ -629,12 +629,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 or "1";
         }
 
-        internal static bool TracingWithBundle(string?[] profilerPathValues, ProcessInfo process)
+        internal static bool TracingWithBundle(string?[] profilerPathValues)
         {
-            // Get the file path of the main module (the .exe file)
-            string? filePath = process.MainModule;
-            string? directoryPath = Path.GetDirectoryName(filePath);
-
+            // Matched by suffix only, not against process.MainModule's directory: for a
+            // `dotnet <dll>` launch, MainModule is the dotnet host, not the app directory.
             string[] expectedEndingsForBundleSetup =
             {
                 "/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so",
@@ -649,7 +647,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             {
                 foreach (var profilerPath in profilerPathValues)
                 {
-                    if (profilerPath is not null && profilerPath.Equals(directoryPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
+                    if (profilerPath is not null && profilerPath.EndsWith(bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
                     {
                         return true;
                     }
