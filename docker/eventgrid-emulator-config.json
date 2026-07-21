@@ -1,5 +1,6 @@
 {
   "Topics": {
-    "samples-eventgrid-topic": []
+    "samples-eventgrid-topic": [],
+    "samples-azure-functions-eventgrid-topic": []
   }
 }

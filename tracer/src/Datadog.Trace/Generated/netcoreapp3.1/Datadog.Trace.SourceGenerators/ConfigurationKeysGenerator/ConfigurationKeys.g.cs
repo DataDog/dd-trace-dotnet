@@ -348,6 +348,13 @@ internal static partial class ConfigurationKeys
     public const string SpanPointersEnabled = "DD_TRACE_AWS_ADD_SPAN_POINTERS";
 
     /// <summary>
+    /// Configuration key for enabling or disabling span links creation for Azure Event Grid batch operations.
+    /// Default value is <c>true</c> (enabled).
+    /// </summary>
+    /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.AzureEventGridBatchLinksEnabled"/>
+    public const string AzureEventGridBatchLinksEnabled = "DD_TRACE_AZURE_EVENTGRID_BATCH_LINKS_ENABLED";
+
+    /// <summary>
     /// Configuration key for enabling or disabling span links creation for Azure EventHubs batch operations.
     /// When enabled, TryAdd spans are created and linked to the send span.
     /// When disabled, TryAdd spans are not created, and therefore they are never linked to the send span.
