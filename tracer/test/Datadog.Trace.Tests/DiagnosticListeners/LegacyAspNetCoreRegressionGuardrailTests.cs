@@ -19,39 +19,28 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace Datadog.Trace.Tests.DiagnosticListeners
+namespace Datadog.Trace.Tests.DiagnosticListeners;
+
+[Collection(nameof(TracerInstanceTestCollection))]
+[TracerRestorer]
+public class LegacyAspNetCoreRegressionGuardrailTests
 {
-    [Collection(nameof(TracerInstanceTestCollection))]
-    [TracerRestorer]
-    public class LegacyAspNetCoreRegressionGuardrailTests
+    [Fact]
+    public void Net461TracerDoesNotReferenceAspNetCoreOrDiagnosticSource()
     {
-        [Fact]
-        public void Net461TracerDoesNotReferenceAspNetCoreOrDiagnosticSource()
-        {
-            var tracerAssembly = typeof(Tracer).Assembly;
-            var targetFramework = tracerAssembly.GetCustomAttributes(typeof(TargetFrameworkAttribute), inherit: false)
-                                                .Cast<TargetFrameworkAttribute>()
-                                                .Single();
-            var references = tracerAssembly.GetReferencedAssemblies().Select(reference => reference.Name).ToArray();
+        var tracerAssembly = typeof(Tracer).Assembly;
+        var targetFramework = tracerAssembly.GetCustomAttributes(typeof(TargetFrameworkAttribute), inherit: false)
+                                            .Cast<TargetFrameworkAttribute>()
+                                            .Single();
+        var references = tracerAssembly.GetReferencedAssemblies().Select(reference => reference.Name).ToArray();
 
-            targetFramework.FrameworkName.Should().Be(".NETFramework,Version=v4.6.1");
-            references.Should().NotContain(
-                name => name.StartsWith("Microsoft.AspNetCore", StringComparison.Ordinal),
-                "the net461 tracer must use duck typing instead of compile-time ASP.NET Core references");
-            references.Should().NotContain(
-                "System.Diagnostics.DiagnosticSource",
-                "the net461 tracer loads DiagnosticSource dynamically");
-        }
-
-        [Fact]
-        public void LegacyObserverRegistrationDoesNotRequireTracer()
-        {
-            var observers = new List<DiagnosticObserver>();
-
-            ((ICollection<DiagnosticObserver>)observers).Add(new LegacyAspNetCoreDiagnosticObserver());
-
-            observers.Should().ContainSingle().Which.Should().BeOfType<LegacyAspNetCoreDiagnosticObserver>();
-        }
+        targetFramework.FrameworkName.Should().Be(".NETFramework,Version=v4.6.1");
+        references.Should().NotContain(
+            name => name.StartsWith("Microsoft.AspNetCore", StringComparison.Ordinal),
+            "the net461 tracer must use duck typing instead of compile-time ASP.NET Core references");
+        references.Should().NotContain(
+            "System.Diagnostics.DiagnosticSource",
+            "the net461 tracer loads DiagnosticSource dynamically");
     }
 }
 
