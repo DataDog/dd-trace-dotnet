@@ -2767,6 +2767,16 @@ supportedConfigurations:
     documentation: |-
       Configuration key for toggling span pointers on AWS requests.
       Default value is true
+  DD_TRACE_AZURE_EVENTGRID_BATCH_LINKS_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'true'
+    const_name: AzureEventGridBatchLinksEnabled
+    documentation: |-
+      Configuration key for enabling or disabling span links creation for Azure Event Grid batch operations.
+      Default value is <c>true</c> (enabled).
+      <seealso cref="Datadog.Trace.Configuration.TracerSettings.AzureEventGridBatchLinksEnabled"/>
   DD_TRACE_AZURE_EVENTHUBS_BATCH_LINKS_ENABLED:
   - implementation: A
     scope: managed
