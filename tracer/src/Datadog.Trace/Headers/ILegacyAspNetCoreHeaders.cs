@@ -10,13 +10,15 @@
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.Headers
+namespace Datadog.Trace.Headers;
+
+/// <summary>
+/// Duck type for IHeaderDictionary
+/// </summary>
+internal interface ILegacyAspNetCoreHeaders : IDuckType
 {
-    internal interface ILegacyAspNetCoreHeaders
-    {
-        [Duck(Name = "Item,Microsoft.AspNetCore.Http.IHeaderDictionary.Item", FallbackToBaseTypes = true)]
-        IEnumerable<string>? this[string name] { get; }
-    }
+    [Duck(Name = "Item,Microsoft.AspNetCore.Http.IHeaderDictionary.Item", FallbackToBaseTypes = true)]
+    IEnumerable<string>? this[string name] { get; }
 }
 
 #endif
