@@ -129,8 +129,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Generated", "Generated", "{
 		tracer\build\supported_calltargets.g.json = tracer\build\supported_calltargets.g.json
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetCoreNetFramework21", "tracer\test\test-applications\integrations\Samples.AspNetCoreNetFramework21\Samples.AspNetCoreNetFramework21.csproj", "{9173EE76-596A-4CCD-942E-FD12E339ABD3}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.SqlServer", "tracer\test\test-applications\integrations\Samples.SqlServer\Samples.SqlServer.csproj", "{086FF8A0-9CEE-470A-9751-78B0F1340649}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Elasticsearch", "tracer\test\test-applications\integrations\Samples.Elasticsearch\Samples.Elasticsearch.csproj", "{C98950B1-DC4B-43DA-974F-EF2CF325EC2B}"
@@ -457,7 +455,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.LifetimeManager.Ter
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Ocelot.DistributedTracing", "tracer\test\test-applications\integrations\Samples.Ocelot.DistributedTracing\Samples.Ocelot.DistributedTracing.csproj", "{08C6510D-42DC-C8B4-CC79-26349F2D6DBB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetCoreNetFramework", "tracer\test\test-applications\integrations\Samples.AspNetCoreNetFramework\Samples.AspNetCoreNetFramework.csproj", "{52A1FCF0-9F04-4C5C-9955-939F2EF8FBDE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetCoreMvc22", "tracer\test\test-applications\integrations\Samples.AspNetCoreMvc22\Samples.AspNetCoreMvc22.csproj", "{52A1FCF0-9F04-4C5C-9955-939F2EF8FBDE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -465,10 +463,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{9173EE76-596A-4CCD-942E-FD12E339ABD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9173EE76-596A-4CCD-942E-FD12E339ABD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9173EE76-596A-4CCD-942E-FD12E339ABD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9173EE76-596A-4CCD-942E-FD12E339ABD3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{086FF8A0-9CEE-470A-9751-78B0F1340649}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{086FF8A0-9CEE-470A-9751-78B0F1340649}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{086FF8A0-9CEE-470A-9751-78B0F1340649}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1137,7 +1131,6 @@ Global
 		{16427BFB-B4C6-46A9-A290-8EA51FF73FEA} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{0884B566-D22E-498C-BAA9-26D50ABCAE3A} = {16427BFB-B4C6-46A9-A290-8EA51FF73FEA}
 		{E1B0F72C-991A-409D-9266-DE5ED1BD940E} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}
-		{9173EE76-596A-4CCD-942E-FD12E339ABD3} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{086FF8A0-9CEE-470A-9751-78B0F1340649} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{C98950B1-DC4B-43DA-974F-EF2CF325EC2B} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{3493346B-44F6-4F50-8FB4-51D0090DF544} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}

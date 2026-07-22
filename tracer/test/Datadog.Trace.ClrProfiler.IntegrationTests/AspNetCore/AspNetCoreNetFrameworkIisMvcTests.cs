@@ -1,4 +1,4 @@
-// <copyright file="AspNetCoreNetFrameworkIisMvc21Tests.cs" company="Datadog">
+// <copyright file="AspNetCoreNetFrameworkIisMvcTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,15 +19,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [Collection("IisTests")]
     public class AspNetCoreIisNetFrameworkMvc21Tests(IisFixture fixture, ITestOutputHelper output)
-        : AspNetCoreIisNetFrameworkMvc21TestsBase(fixture, output, nameof(AspNetCoreIisNetFrameworkMvc21Tests));
+        : AspNetCoreIisNetFrameworkMvcTestsBase("AspNetCoreMvc21", fixture, output, nameof(AspNetCoreIisNetFrameworkMvc21Tests));
 
-    public abstract class AspNetCoreIisNetFrameworkMvc21TestsBase : AspNetCoreNetFrameworkIisMvcTestsBase, IAsyncLifetime
+    [Collection("IisTests")]
+    public class AspNetCoreIisNetFrameworkMvc22Tests(IisFixture fixture, ITestOutputHelper output)
+        : AspNetCoreIisNetFrameworkMvcTestsBase("AspNetCoreMvc22", fixture, output, nameof(AspNetCoreIisNetFrameworkMvc22Tests));
+
+    public abstract class AspNetCoreIisNetFrameworkMvcTestsBase : AspNetCoreNetFrameworkIisMvcTestsBase, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        protected AspNetCoreIisNetFrameworkMvc21TestsBase(IisFixture fixture, ITestOutputHelper output, string testName)
-            : base("AspNetCoreMvc21", fixture, output)
+        protected AspNetCoreIisNetFrameworkMvcTestsBase(string sampleName, IisFixture fixture, ITestOutputHelper output, string testName)
+            : base(sampleName, fixture, output)
         {
             _testName = testName;
             _iisFixture = fixture;
