@@ -169,8 +169,7 @@ supportedConfigurations:
     product: AppSec
     const_name: AgenticOnboarding
     documentation: |-
-      A legitimate Datadog environment variable set automatically by Datadog's agentic onboarding solution when it configures App &amp; API Protection for your service.
-      It lets Datadog record — via instrumentation telemetry — that the service was onboarded through the agentic flow.
+      A flag set by Datadog's agentic onboarding solution when it configures App &amp; API Protection. 
   DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING:
   - implementation: D
     scope: managed
