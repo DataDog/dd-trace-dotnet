@@ -49,6 +49,6 @@ public static class CoverageReporter
 
         return settings.TestsSkippingEnabled == true && StringUtil.IsNullOrWhiteSpace(settings.CodeCoveragePath)
                    ? new DefaultCoverageEventHandler()
-                   : new DefaultWithGlobalCoverageEventHandler();
+                   : new DefaultWithGlobalCoverageEventHandler(configuredOutputDirectory: settings.CodeCoveragePath);
     }
 }

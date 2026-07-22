@@ -22,16 +22,19 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
 {
     protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultCoverageEventHandler));
 
+    internal DefaultCoverageEventHandler(CoverageModuleValueStrategy? moduleValueStrategy = null)
+        : base(moduleValueStrategy)
+    {
+    }
+
     protected override void OnSessionStart(CoverageContextContainer context)
     {
     }
 
-    protected override unsafe object? OnSessionFinished(CoverageContextContainer context)
+    protected override unsafe object? OnSessionFinished(CoverageContextContainer context, IReadOnlyList<ModuleValue> modules)
     {
         try
         {
-            var modules = context.CloseContext();
-
             Dictionary<string, FileCoverage>? fileDictionary = null;
             var fileBitmapBuffer = stackalloc byte[512];
             foreach (var moduleValue in modules)
@@ -129,10 +132,5 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
             Log.Error(ex, "Error processing the coverage data.");
             throw;
         }
-    }
-
-    protected override void OnClearContext(CoverageContextContainer context)
-    {
-        context.Clear();
     }
 }

@@ -7,21 +7,42 @@
 
 using System;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
 
 namespace Datadog.Trace.Ci.Coverage;
 
 internal sealed class ModuleValue : IDisposable
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public unsafe ModuleValue(ModuleCoverageMetadata metadata, Module module, int fileLinesMemorySize)
+    private readonly CoverageModuleValueStrategy _strategy;
+    private readonly CoverageModuleValueOrigin _origin;
+    private IntPtr _filesLines;
+    private int _allocatedByteLength;
+
+    public ModuleValue(ModuleCoverageMetadata metadata, Module module, int fileLinesMemorySize, CoverageModuleValueStrategy strategy, CoverageModuleValueOrigin origin)
     {
         Metadata = metadata;
         Module = module;
-        FilesLines = Marshal.AllocHGlobal(fileLinesMemorySize);
-        Unsafe.InitBlockUnaligned((byte*)FilesLines, 0, (uint)fileLinesMemorySize);
+        _strategy = strategy;
+        _origin = origin;
+
+        var pointer = IntPtr.Zero;
+        try
+        {
+            pointer = strategy.Allocate(fileLinesMemorySize, origin);
+            strategy.Initialize(pointer, fileLinesMemorySize, origin);
+            strategy.Diagnostics.OnAllocated(origin, fileLinesMemorySize);
+            _allocatedByteLength = fileLinesMemorySize;
+            _filesLines = pointer;
+            pointer = IntPtr.Zero;
+        }
+        finally
+        {
+            if (pointer != IntPtr.Zero)
+            {
+                strategy.Free(pointer, origin);
+            }
+        }
     }
 
     ~ModuleValue()
@@ -33,15 +54,19 @@ internal sealed class ModuleValue : IDisposable
 
     public Module Module { get; }
 
-    public IntPtr FilesLines { get; private set; }
+    public IntPtr FilesLines => Interlocked.CompareExchange(ref _filesLines, IntPtr.Zero, IntPtr.Zero);
+
+    internal int AllocatedByteLength => Volatile.Read(ref _allocatedByteLength);
 
     public void Dispose()
     {
-        var filesLines = FilesLines;
+        var filesLines = Interlocked.Exchange(ref _filesLines, IntPtr.Zero);
         if (filesLines != IntPtr.Zero)
         {
-            FilesLines = IntPtr.Zero;
-            Marshal.FreeHGlobal(filesLines);
+            var byteLength = Volatile.Read(ref _allocatedByteLength);
+            _strategy.Free(filesLines, _origin);
+            Volatile.Write(ref _allocatedByteLength, 0);
+            _strategy.Diagnostics.OnFreed(_origin, byteLength);
         }
 
         GC.SuppressFinalize(this);

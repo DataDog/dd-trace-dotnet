@@ -7379,6 +7379,30 @@
   {
     "IntegrationName": "DotnetTest",
     "AssemblyName": "dotnet",
+    "TargetTypeName": "Microsoft.DotNet.Cli.Commands.Test.TestCommand",
+    "TargetMethodName": "Run",
+    "TargetReturnType": "System.Int32",
+    "TargetParameterTypes": [
+      "System.CommandLine.ParseResult"
+    ],
+    "MinimumVersion": {
+      "Item1": 10,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestCommandRunIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DotnetTest",
+    "AssemblyName": "dotnet",
     "TargetTypeName": "Microsoft.DotNet.Tools.Test.TestCommand",
     "TargetMethodName": ".ctor",
     "TargetReturnType": "System.Void",

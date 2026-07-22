@@ -581,7 +581,15 @@ internal readonly unsafe ref struct FileBitmap
     /// <param name="numOfLines">The number of lines.</param>
     /// <returns>The required storage size in bytes.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetSize(int numOfLines) => (numOfLines + 7) / 8;
+    public static int GetSize(int numOfLines)
+    {
+        if (numOfLines < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(numOfLines));
+        }
+
+        return checked((int)(((long)numOfLines + 7) / 8));
+    }
 
 #if !NETCOREAPP3_1_OR_GREATER
     /// <summary>

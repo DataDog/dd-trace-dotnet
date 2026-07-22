@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using System.Reflection;
+using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Util;
 
@@ -26,24 +27,21 @@ public static class CoverageReporter<TMeta>
     private static readonly TMeta Metadata;
     private static readonly Module Module;
     private static readonly int ModuleMemorySize;
-    private static ModuleValue _globalModuleValue;
+    private static ModuleValue? _globalModuleValue;
 
     static CoverageReporter()
     {
-        Metadata = new TMeta();
-        Module = typeof(TMeta).Module;
-        ModuleMemorySize = Metadata.CoverageMode == 0 ? Metadata.TotalLines * sizeof(byte) : Metadata.TotalLines * sizeof(int);
-
-        // Caching the module from the global shared container in case an async container is null
-        var globalCoverageContextContainer = CoverageReporter.GlobalContainer;
-        var globalModuleValue = globalCoverageContextContainer.GetModuleValue(Module);
-        if (globalModuleValue is null)
+        try
         {
-            globalModuleValue = new ModuleValue(Metadata, Module, ModuleMemorySize);
-            globalCoverageContextContainer.Add(globalModuleValue);
+            Metadata = new TMeta();
+            Module = typeof(TMeta).Module;
+            ModuleMemorySize = CoverageMetadataValidator.ValidateAndGetRawByteLength(Metadata);
         }
-
-        _globalModuleValue = globalModuleValue;
+        catch
+        {
+            CoverageReporter.Handler.MarkProbeDataIncomplete(GlobalCoverageFailureReason.ProbeDataIncomplete);
+            throw;
+        }
     }
 
     /// <summary>
@@ -53,27 +51,32 @@ public static class CoverageReporter<TMeta>
     /// <returns>Counters for the file</returns>
     public static unsafe void* GetFileCounter(int fileIndex)
     {
-        ModuleValue? module;
-
-        // Try to get the async context container
-        if (CoverageReporter.Container is { } container)
+        var handler = CoverageReporter.Handler;
+        ModuleValue? module = null;
+        try
         {
-            // Get the module form the container
-            module = container.GetModuleValue(Module);
-            if (module is null)
+            if (handler.Container is { } container &&
+                container.TryGetOrAddModuleValue(
+                    Metadata,
+                    Module,
+                    ModuleMemorySize,
+                    handler.ModuleValueStrategy,
+                    CoverageModuleValueOrigin.TestContext,
+                    out module))
             {
-                // If the module is not found, we create a new one for this container
-                module = new ModuleValue(Metadata, Module, ModuleMemorySize);
-                container.Add(module);
+            }
+            else
+            {
+                module = GetOrCreateGlobalModuleValue(handler);
             }
         }
-        else
+        catch
         {
-            // If there's no async context container then we use the module from the global shared container.
-            module = _globalModuleValue;
+            handler.MarkProbeDataIncomplete(GlobalCoverageFailureReason.ProbeDataIncomplete);
+            throw;
         }
 
-        if (module.FilesLines == IntPtr.Zero)
+        if (module is null || module.FilesLines == IntPtr.Zero)
         {
             ThrowHelper.ThrowNullReferenceException("Counter memory was disposed.");
         }
@@ -85,5 +88,27 @@ public static class CoverageReporter<TMeta>
         }
 
         return ((int*)module.FilesLines) + Metadata.GetOffset(fileIndex);
+    }
+
+    private static ModuleValue GetOrCreateGlobalModuleValue(CoverageEventHandler handler)
+    {
+        if (Volatile.Read(ref _globalModuleValue) is { } cached)
+        {
+            return cached;
+        }
+
+        if (!handler.GlobalContainer.TryGetOrAddModuleValue(
+                Metadata,
+                Module,
+                ModuleMemorySize,
+                handler.ModuleValueStrategy,
+                CoverageModuleValueOrigin.GlobalFallback,
+                out var module) || module is null)
+        {
+            throw new InvalidOperationException("The global coverage context is unexpectedly closed.");
+        }
+
+        Interlocked.CompareExchange(ref _globalModuleValue, module, null);
+        return Volatile.Read(ref _globalModuleValue)!;
     }
 }
