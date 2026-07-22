@@ -54,6 +54,33 @@ public class GlobalCoverageOutputProtocolTests
     }
 
     [Fact]
+    public void FinalizeAndSealPublishesFinalSnapshotWithoutCollectorAndIsIdempotent()
+    {
+        var directory = CreateDirectory();
+        var previousHandler = CoverageReporter.Handler;
+        try
+        {
+            var handler = CreateHandler(directory);
+            CoverageReporter.Handler = handler;
+            var handle = handler.StartSession("xunit");
+            handler.EndSession(handle);
+
+            CoverageReporter.FinalizeGlobalCoverage().Should().BeTrue();
+            CoverageReporter.FinalizeGlobalCoverage().Should().BeTrue();
+
+            handler.SealedComplete.Should().BeTrue();
+            Directory.GetFiles(directory, "coverage-*.json").Should().ContainSingle();
+            Directory.GetFiles(directory, ".dd-coverage-process-ready-*").Should().ContainSingle();
+            Directory.GetFiles(directory, ".dd-coverage-process-incomplete-*").Should().ContainSingle();
+        }
+        finally
+        {
+            CoverageReporter.Handler = previousHandler;
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
     public void MissingRequiredOutputLeavesPendingUnmatchedAndSealIncomplete()
     {
         var directory = CreateDirectory();

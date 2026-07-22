@@ -86,25 +86,6 @@ public class InProcCoverageCollector : InProcDataCollection
     /// <param name="testSessionEndArgs">Test session end arguments</param>
     public void TestSessionEnd(TestSessionEndArgs testSessionEndArgs)
     {
-        if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
-        {
-            try
-            {
-                var snapshotResult = coverageHandler.AcquireGlobalCoverageSnapshot();
-                if (snapshotResult.Status != GlobalCoverageSnapshotStatus.Success || snapshotResult.Snapshot is not { } snapshot)
-                {
-                    return;
-                }
-
-                using (snapshot)
-                {
-                    coverageHandler.TryPublishRequiredFiles(snapshot);
-                }
-            }
-            finally
-            {
-                coverageHandler.RequestSeal();
-            }
-        }
+        CoverageReporter.FinalizeGlobalCoverage();
     }
 }

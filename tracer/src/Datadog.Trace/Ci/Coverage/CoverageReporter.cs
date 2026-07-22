@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Util;
 
@@ -19,7 +20,7 @@ namespace Datadog.Trace.Ci.Coverage;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class CoverageReporter
 {
-    private static CoverageEventHandler _handler = CreateDefaultHandler(TestOptimization.Instance.Settings);
+    private static CoverageEventHandler? _handler;
 
     /// <summary>
     /// Gets or sets coverage handler
@@ -28,14 +29,24 @@ public static class CoverageReporter
     internal static CoverageEventHandler Handler
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handler;
+        get => LazyInitializer.EnsureInitialized(ref _handler, static () => CreateDefaultHandler(TestOptimization.Instance.Settings))!;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set => _handler = value ?? throw new ArgumentNullException(nameof(value));
+        set => Volatile.Write(ref _handler, value ?? throw new ArgumentNullException(nameof(value)));
     }
 
-    internal static CoverageContextContainer? Container => _handler.Container;
+    internal static CoverageContextContainer? Container => Handler.Container;
 
-    internal static CoverageContextContainer GlobalContainer => _handler.GlobalContainer;
+    internal static CoverageContextContainer GlobalContainer => Handler.GlobalContainer;
+
+    /// <summary>
+    /// Publishes the final global coverage snapshot and seals the process output, if coverage was used by this process.
+    /// </summary>
+    /// <returns>True when global coverage is not active or the process output was sealed completely.</returns>
+    internal static bool FinalizeGlobalCoverage()
+    {
+        var handler = Volatile.Read(ref _handler);
+        return handler is not DefaultWithGlobalCoverageEventHandler globalHandler || globalHandler.FinalizeAndSeal();
+    }
 
     /// <summary>
     /// Creates the default coverage event handler for the current CI Visibility coverage mode.
