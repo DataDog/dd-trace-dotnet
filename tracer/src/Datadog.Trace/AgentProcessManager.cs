@@ -58,12 +58,6 @@ namespace Datadog.Trace
             return requirePipeBound ? pipeBound : (pipeBound || programRunning);
         }
 
-        // Split out so the debounce arithmetic can be unit tested without touching the filesystem.
-        internal static int NextUnboundCount(int current)
-        {
-            return current + 1;
-        }
-
         // Pure debounce decision for a pipe-only process, split out so it can be unit tested without
         // touching the filesystem or enumerating processes. Returns whether the process should be
         // treated as healthy and the updated consecutive-unbound-pipe count:
@@ -82,7 +76,7 @@ namespace Datadog.Trace
                 return new DebouncedHealth(isHealthy: false, nextUnboundCount: consecutiveUnboundChecks);
             }
 
-            var nextCount = NextUnboundCount(consecutiveUnboundChecks);
+            var nextCount = consecutiveUnboundChecks + 1;
             return new DebouncedHealth(isHealthy: nextCount < ProcessMetadata.UnboundPipeGraceChecks, nextUnboundCount: nextCount);
         }
 
@@ -479,7 +473,7 @@ namespace Datadog.Trace
                 // immediately instead of waiting out a keep-alive cycle. The decision itself is a pure
                 // helper (see EvaluateDebouncedHealth) so it can be unit tested without the filesystem.
                 var pipeBound = NamedPipeIsBound();
-                var (isHealthy, nextUnboundCount) = EvaluateDebouncedHealth(pipeBound, pipeBound || ProgramIsRunning(), ConsecutiveUnboundPipeChecks);
+                var (isHealthy, nextUnboundCount) = EvaluateDebouncedHealth(pipeBound, ProgramIsRunning(), ConsecutiveUnboundPipeChecks);
                 ConsecutiveUnboundPipeChecks = nextUnboundCount;
                 return isHealthy;
             }

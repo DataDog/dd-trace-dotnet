@@ -27,27 +27,6 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Theory]
-        [InlineData(0, 1)]
-        [InlineData(1, 2)]
-        [InlineData(4, 5)]
-        public void NextUnboundCount_Increments(int current, int expected)
-        {
-            AgentProcessManager.NextUnboundCount(current).Should().Be(expected);
-        }
-
-        [Fact]
-        public void UnboundPipeGraceChecks_ToleratesOneTransientMiss()
-        {
-            // With a grace of 2, the first unbound read (count 1) is still tolerated and the
-            // second (count 2) declares the process unhealthy. Guards against a single File.Exists blip.
-            var afterFirstMiss = AgentProcessManager.NextUnboundCount(0);
-            var afterSecondMiss = AgentProcessManager.NextUnboundCount(afterFirstMiss);
-
-            (afterFirstMiss < AgentProcessManager.ProcessMetadata.UnboundPipeGraceChecks).Should().BeTrue();
-            (afterSecondMiss < AgentProcessManager.ProcessMetadata.UnboundPipeGraceChecks).Should().BeFalse();
-        }
-
-        [Theory]
         // A bound pipe is healthy regardless of the process signal and resets the unbound count.
         [InlineData(true, true, 0)]
         [InlineData(true, false, 5)]
