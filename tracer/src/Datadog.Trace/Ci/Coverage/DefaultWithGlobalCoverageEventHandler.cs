@@ -235,6 +235,28 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         return registered;
     }
 
+    internal bool FinalizeAndSeal()
+    {
+        var sealedComplete = false;
+        try
+        {
+            var snapshotResult = AcquireGlobalCoverageSnapshot();
+            if (snapshotResult.Status == GlobalCoverageSnapshotStatus.Success && snapshotResult.Snapshot is { } snapshot)
+            {
+                using (snapshot)
+                {
+                    TryPublishRequiredFiles(snapshot);
+                }
+            }
+        }
+        finally
+        {
+            sealedComplete = RequestSeal();
+        }
+
+        return sealedComplete;
+    }
+
     internal bool RequestSeal()
     {
         var audit = false;
