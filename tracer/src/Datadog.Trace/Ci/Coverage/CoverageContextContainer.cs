@@ -2,114 +2,201 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
+using System.Threading;
+using Datadog.Trace.Ci.Coverage.Metadata;
 
 namespace Datadog.Trace.Ci.Coverage;
 
-/// <summary>
-/// Coverage context container instance
-/// </summary>
-internal sealed class CoverageContextContainer
+internal sealed class CoverageContextContainer : IDisposable
 {
-    private readonly List<ModuleValue> _container = new();
+    private readonly object _gate = new();
+    private readonly List<ModuleValue> _modules = new();
     private ModuleValue? _currentModuleValue;
+    private int _closed;
+    private int _disposed;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CoverageContextContainer"/> class.
-    /// </summary>
-    /// <param name="state">State instance</param>
     public CoverageContextContainer(object? state = null)
     {
         State = state;
     }
 
-    /// <summary>
-    /// Gets or sets the context container state
-    /// </summary>
     public object? State { get; set; }
 
-    /// <summary>
-    /// Gets the current module value
-    /// </summary>
-    /// <param name="module">Module instance</param>
-    /// <returns>Current module instance</returns>
+    internal bool IsClosed => Volatile.Read(ref _closed) != 0;
+
     internal ModuleValue? GetModuleValue(Module module)
     {
-        if (_currentModuleValue is { } moduleValue && moduleValue.Module == module)
+        if (IsClosed)
         {
-            return moduleValue;
+            return null;
         }
 
-        return GetModuleValueSlow(module);
+        if (Volatile.Read(ref _currentModuleValue) is { } current && current.Module == module)
+        {
+            return current;
+        }
+
+        lock (_gate)
+        {
+            if (_closed != 0)
+            {
+                return null;
+            }
+
+            return FindModuleValue(module);
+        }
     }
 
-    private ModuleValue? GetModuleValueSlow(Module module)
+    internal bool TryGetOrAddModuleValue(
+        ModuleCoverageMetadata metadata,
+        Module module,
+        int rawByteLength,
+        CoverageModuleValueStrategy strategy,
+        CoverageModuleValueOrigin origin,
+        out ModuleValue? moduleValue)
     {
-        var container = _container;
-        lock (container)
+        moduleValue = GetModuleValue(module);
+        if (moduleValue is not null)
         {
-            for (var i = 0; i < container.Count; i++)
+            return true;
+        }
+
+        lock (_gate)
+        {
+            if (_closed != 0)
             {
-                if (container[i] is { } moduleValueItem && moduleValueItem.Module == module)
+                moduleValue = null;
+                return false;
+            }
+
+            moduleValue = FindModuleValue(module);
+            if (moduleValue is not null)
+            {
+                return true;
+            }
+
+            var requiredCount = checked(_modules.Count + 1);
+            if (_modules.Capacity < requiredCount)
+            {
+                strategy.BeforeCapacityGrowth(origin);
+                var newCapacity = _modules.Capacity == 0 ? 4 : _modules.Capacity;
+                while (newCapacity < requiredCount)
                 {
-                    _currentModuleValue = moduleValueItem;
-                    return moduleValueItem;
+                    newCapacity = checked(newCapacity * 2);
                 }
+
+                _modules.Capacity = newCapacity;
+            }
+
+            ModuleValue? provisional = null;
+            var insertionIndex = _modules.Count;
+            try
+            {
+                provisional = new ModuleValue(metadata, module, rawByteLength, strategy, origin);
+                strategy.BeforePublication(origin);
+                _modules.Add(provisional);
+                strategy.AfterPublication(origin);
+                _currentModuleValue = provisional;
+                moduleValue = provisional;
+                return true;
+            }
+            finally
+            {
+                if (provisional is not null &&
+                    !(insertionIndex < _modules.Count && ReferenceEquals(_modules[insertionIndex], provisional)))
+                {
+                    provisional.Dispose();
+                }
+            }
+        }
+    }
+
+    internal bool TryCloseAndGetModules(out IReadOnlyList<ModuleValue> modules)
+    {
+        lock (_gate)
+        {
+            if (_closed != 0)
+            {
+                modules = Array.Empty<ModuleValue>();
+                return false;
+            }
+
+            _closed = 1;
+            _currentModuleValue = null;
+            modules = _modules;
+            return true;
+        }
+    }
+
+    internal ModuleValue[] SnapshotModules(int maximumModules = int.MaxValue)
+    {
+        lock (_gate)
+        {
+            if (_modules.Count > maximumModules)
+            {
+                throw new InvalidOperationException("The global coverage fallback contains too many modules.");
+            }
+
+            return _modules.Count == 0 ? Array.Empty<ModuleValue>() : _modules.ToArray();
+        }
+    }
+
+    internal void Clear() => Dispose();
+
+    public void Dispose()
+    {
+        ExceptionDispatchInfo? firstException = null;
+        lock (_gate)
+        {
+            if (_disposed != 0)
+            {
+                return;
+            }
+
+            _disposed = 1;
+            _closed = 1;
+            _currentModuleValue = null;
+            try
+            {
+                foreach (var moduleValue in _modules)
+                {
+                    try
+                    {
+                        moduleValue.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        firstException ??= ExceptionDispatchInfo.Capture(ex);
+                    }
+                }
+            }
+            finally
+            {
+                _modules.Clear();
+            }
+        }
+
+        firstException?.Throw();
+    }
+
+    private ModuleValue? FindModuleValue(Module module)
+    {
+        for (var i = 0; i < _modules.Count; i++)
+        {
+            if (_modules[i] is { } item && item.Module == module)
+            {
+                _currentModuleValue = item;
+                return item;
             }
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// Stores module data into the context
-    /// </summary>
-    /// <param name="module">Module instance</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void Add(ModuleValue module)
-    {
-        var container = _container;
-        lock (container)
-        {
-            container.Add(module);
-            _currentModuleValue = module;
-        }
-    }
-
-    /// <summary>
-    /// Clear context data
-    /// </summary>
-    internal void Clear()
-    {
-        var container = _container;
-        lock (container)
-        {
-            foreach (var moduleValue in container)
-            {
-                moduleValue.Dispose();
-            }
-
-            container.Clear();
-            _currentModuleValue = null;
-        }
-    }
-
-    /// <summary>
-    /// Gets modules data from the context
-    /// </summary>
-    /// <returns>Instruction array from the context</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ModuleValue[] CloseContext()
-    {
-        var container = _container;
-        lock (container)
-        {
-            _currentModuleValue = null;
-            return container.Count == 0 ? [] : container.ToArray();
-        }
     }
 }

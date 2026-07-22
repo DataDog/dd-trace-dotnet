@@ -1,0 +1,114 @@
+// <copyright file="GlobalCoverageReconciliationLease.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+
+namespace Datadog.Trace.Ci.Coverage;
+
+internal sealed class GlobalCoverageReconciliationLease : IDisposable
+{
+    private readonly Dictionary<string, GlobalCoverageCertifiedInput> _selectedByPath;
+    private FileStream? _lockStream;
+    private GlobalCoverageReconciliationAuthority? _authority;
+    private int _completed;
+
+    internal GlobalCoverageReconciliationLease(
+        FileStream lockStream,
+        GlobalCoverageReconciliationAuthority authority,
+        string runToken,
+        IReadOnlyList<GlobalCoverageCertifiedInput> selectedInputs,
+        IReadOnlyList<GlobalCoverageCertifiedInput> allRawInputs,
+        IReadOnlyList<string> readyMarkers,
+        IReadOnlyList<string> pendingMarkers,
+        IReadOnlyList<string> directories)
+    {
+        _lockStream = lockStream;
+        _authority = authority;
+        RunToken = runToken;
+        SelectedInputs = selectedInputs;
+        AllRawInputs = allRawInputs;
+        _selectedByPath = new Dictionary<string, GlobalCoverageCertifiedInput>(FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+        foreach (var input in selectedInputs)
+        {
+            _selectedByPath.Add(input.Path, input);
+        }
+
+        ReadyMarkers = readyMarkers;
+        PendingMarkers = pendingMarkers;
+        Directories = directories;
+    }
+
+    internal string RunToken { get; }
+
+    internal IReadOnlyList<GlobalCoverageCertifiedInput> SelectedInputs { get; }
+
+    internal IReadOnlyList<GlobalCoverageCertifiedInput> AllRawInputs { get; }
+
+    internal IReadOnlyList<string> ReadyMarkers { get; }
+
+    internal IReadOnlyList<string> PendingMarkers { get; }
+
+    internal IReadOnlyList<string> Directories { get; }
+
+    internal GlobalCoverageCertifiedInput? GetCertifiedInput(string path)
+        => _selectedByPath.TryGetValue(path, out var input) ? input : null;
+
+    internal void Complete()
+    {
+        if (Interlocked.Exchange(ref _completed, 1) != 0)
+        {
+            return;
+        }
+
+        var publicationId = Guid.NewGuid().ToString("N");
+        var archives = new Dictionary<string, string>(FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+        foreach (var directory in Directories)
+        {
+            var archive = Path.Combine(directory, ".dd-coverage-completed", $"{RunToken}-{publicationId}");
+            Directory.CreateDirectory(archive);
+            archives[directory] = archive;
+        }
+
+        foreach (var input in AllRawInputs)
+        {
+            if (!input.Matches(input.Path))
+            {
+                throw new InvalidDataException("A certified global coverage artifact changed before archival.");
+            }
+
+            var rawFile = input.Path;
+            var directory = Path.GetDirectoryName(rawFile) ?? throw new InvalidOperationException("A certified coverage artifact has no parent directory.");
+            var destination = Path.Combine(archives[directory], Path.GetFileName(rawFile));
+            File.Move(rawFile, destination);
+            if (!input.Matches(destination))
+            {
+                throw new InvalidDataException("An archived global coverage artifact does not match its certified contents.");
+            }
+        }
+
+        foreach (var marker in ReadyMarkers)
+        {
+            File.Delete(marker);
+        }
+
+        foreach (var marker in PendingMarkers)
+        {
+            File.Delete(marker);
+        }
+
+        Interlocked.Exchange(ref _authority, null)?.Complete();
+    }
+
+    public void Dispose()
+    {
+        Interlocked.Exchange(ref _authority, null)?.Dispose();
+        Interlocked.Exchange(ref _lockStream, null)?.Dispose();
+    }
+}

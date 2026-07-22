@@ -6,7 +6,6 @@
 using System;
 using System.IO;
 using Datadog.Trace.Ci.Coverage;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollector.InProcDataCollector;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.InProcDataCollector;
@@ -58,6 +57,11 @@ public class InProcCoverageCollector : InProcDataCollection
         {
             _outputPathValue = outputPath;
         }
+
+        if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
+        {
+            coverageHandler.RegisterCollectorOutputDirectory(_outputPathValue ?? Environment.CurrentDirectory);
+        }
     }
 
     /// <summary>
@@ -84,18 +88,23 @@ public class InProcCoverageCollector : InProcDataCollection
     {
         if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
         {
-            var globalCoverage = coverageHandler.GetCodeCoveragePercentage();
-            var outputPath = $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json";
-            if (!string.IsNullOrEmpty(_outputPathValue))
+            try
             {
-                outputPath = Path.Combine(_outputPathValue, outputPath);
-            }
+                var snapshotResult = coverageHandler.AcquireGlobalCoverageSnapshot();
+                if (snapshotResult.Status != GlobalCoverageSnapshotStatus.Success || snapshotResult.Snapshot is not { } snapshot)
+                {
+                    return;
+                }
 
-            using var fileStream = File.OpenWrite(outputPath);
-            using var streamWriter = new StreamWriter(fileStream);
-            using var jsonWriter = new JsonTextWriter(streamWriter) { CloseOutput = true };
-            var jsonSerializer = new JsonSerializer();
-            jsonSerializer.Serialize(jsonWriter, globalCoverage);
+                using (snapshot)
+                {
+                    coverageHandler.TryPublishRequiredFiles(snapshot);
+                }
+            }
+            finally
+            {
+                coverageHandler.RequestSeal();
+            }
         }
     }
 }

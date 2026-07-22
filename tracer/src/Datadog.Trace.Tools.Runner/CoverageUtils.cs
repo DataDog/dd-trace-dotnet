@@ -4,17 +4,19 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Linq;
+using Datadog.Trace;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Models.Global;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner;
 
 internal static class CoverageUtils
 {
+    private const int MaximumInputFiles = 65_536;
+
     public static bool TryCombineAndGetTotalCoverage(string inputFolder, string outputFile, bool useStdOut)
     {
         return TryCombineAndGetTotalCoverage(inputFolder, outputFile, out _, useStdOut);
@@ -33,25 +35,38 @@ internal static class CoverageUtils
             return false;
         }
 
-        if (!TryCombineAndGetTotalCoverage(inputFolder, out globalCoverageInfo, useStdOut))
+        GlobalCoverageReconciliationLease reconciliationLease = null;
+        try
         {
-            return false;
-        }
+            if (!TryLoadAndCombine(inputFolder, outputFile, out globalCoverageInfo, out reconciliationLease, useStdOut))
+            {
+                return false;
+            }
 
-        using var fStream = File.OpenWrite(outputFile);
-        using var sWriter = new StreamWriter(fStream, Encoding.UTF8, 4096, false);
-        if (useStdOut)
+            if (useStdOut)
+            {
+                Utils.WriteSuccess($"Writing {outputFile}");
+            }
+
+            new GlobalCoverageArtifactWriter().WriteAtomicReplace(outputFile, globalCoverageInfo);
+            reconciliationLease?.Complete();
+            return true;
+        }
+        finally
         {
-            Utils.WriteSuccess($"Writing {outputFile}");
+            reconciliationLease?.Dispose();
         }
-
-        new JsonSerializer().Serialize(sWriter, globalCoverageInfo);
-        return true;
     }
 
-    private static bool TryCombineAndGetTotalCoverage(string inputFolder, out GlobalCoverageInfo globalCoverageInfo, bool useStdOut = true)
+    private static bool TryLoadAndCombine(
+        string inputFolder,
+        string outputFile,
+        out GlobalCoverageInfo globalCoverageInfo,
+        out GlobalCoverageReconciliationLease reconciliationLease,
+        bool useStdOut = true)
     {
         globalCoverageInfo = default;
+        reconciliationLease = null;
 
         if (string.IsNullOrEmpty(inputFolder))
         {
@@ -76,9 +91,16 @@ internal static class CoverageUtils
         var jsonFiles = Array.Empty<string>();
         try
         {
-            jsonFiles = Directory.GetFiles(inputFolder, "*.json", SearchOption.TopDirectoryOnly);
+            if (!GlobalCoverageReconciliation.TryAcquire(inputFolder, authority: null, out reconciliationLease, out _) ||
+                (reconciliationLease is null && HasProtocolMarkers(inputFolder)))
+            {
+                return false;
+            }
+
+            jsonFiles = reconciliationLease?.SelectedInputs.Select(static input => input.Path).ToArray() ?? GetInputFilesBounded(inputFolder);
             if (jsonFiles.Length == 0)
             {
+                reconciliationLease?.Complete();
                 if (useStdOut)
                 {
                     Utils.WriteError($"'{inputFolder}' doesn't contain any json file.");
@@ -93,34 +115,67 @@ internal static class CoverageUtils
             AnsiConsole.WriteException(ex);
         }
 
-        List<GlobalCoverageInfo> globalCoverages = new();
+        var inputReader = new GlobalCoverageInputReader();
+        var accumulator = new GlobalCoverageCombinerAccumulator();
+        var processedFiles = 0;
+        var outputFullPath = string.IsNullOrWhiteSpace(outputFile) ? null : Path.GetFullPath(outputFile);
         foreach (var file in jsonFiles)
         {
-            var fileContent = File.ReadAllText(file);
-            try
+            if (Path.GetFileName(file).StartsWith("session-coverage-", StringComparison.OrdinalIgnoreCase) ||
+                (outputFullPath is not null && PathsEqual(Path.GetFullPath(file), outputFullPath)))
             {
-                if (JsonConvert.DeserializeObject<GlobalCoverageInfo>(fileContent) is { } gCoverageInfo)
-                {
-                    if (useStdOut)
-                    {
-                        Utils.WriteSuccess($"Processing: {file}");
-                    }
+                continue;
+            }
 
-                    globalCoverages.Add(gCoverageInfo);
-                }
-                else if (useStdOut)
-                {
-                    Utils.WriteSuccess($"Ignored: {file}");
-                }
-            }
-            catch (Exception ex)
+            if (!inputReader.TryRead(file, reconciliationLease?.GetCertifiedInput(file), out var globalCoverage) || globalCoverage is null)
             {
-                Utils.WriteError($"Error processing {file}");
-                AnsiConsole.WriteException(ex);
+                if (useStdOut)
+                {
+                    Utils.WriteError($"Error processing {file}");
+                }
+
+                return false;
             }
+
+            if (useStdOut)
+            {
+                Utils.WriteSuccess($"Processing: {file}");
+            }
+
+            accumulator.Add(globalCoverage);
+            processedFiles++;
         }
 
-        globalCoverageInfo = GlobalCoverageInfo.Combine(globalCoverages.ToArray());
+        if (processedFiles == 0)
+        {
+            return false;
+        }
+
+        globalCoverageInfo = accumulator.Materialize();
         return true;
     }
+
+    private static bool HasProtocolMarkers(string inputFolder)
+        => Directory.EnumerateFiles(inputFolder, ".dd-coverage-process-incomplete-*", SearchOption.TopDirectoryOnly).Any() ||
+           Directory.EnumerateFiles(inputFolder, ".dd-coverage-process-ready-*", SearchOption.TopDirectoryOnly).Any() ||
+           Directory.EnumerateFiles(inputFolder, ".dd-coverage-command-owner-*.claim", SearchOption.TopDirectoryOnly).Any();
+
+    private static string[] GetInputFilesBounded(string inputFolder)
+    {
+        var files = Directory.EnumerateFiles(inputFolder, "*.json", SearchOption.TopDirectoryOnly)
+                             .Take(MaximumInputFiles + 1)
+                             .ToArray();
+        if (files.Length > MaximumInputFiles)
+        {
+            throw new InvalidDataException("The global coverage input-file limit was exceeded.");
+        }
+
+        return files;
+    }
+
+    private static bool PathsEqual(string first, string second)
+        => string.Equals(
+            first,
+            second,
+            FrameworkDescription.Instance.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 }
