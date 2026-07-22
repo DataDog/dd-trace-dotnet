@@ -191,10 +191,15 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey64, out var corProfilerPathValue64);
 
             string?[] valuesToCheck = { corProfilerPathValue, corProfilerPathValue32, corProfilerPathValue64 };
-            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process);
+            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process, out var usedMainModuleMismatchFallback);
 
             if (!ok && isTracingUsingBundle)
             {
+                if (usedMainModuleMismatchFallback)
+                {
+                    Utils.WriteInfo(TracingWithBundleMainModuleMismatch);
+                }
+
                 AnsiConsole.WriteLine(TracerCheck());
                 Utils.WriteWarning(TracingWithBundleProfilerPath);
             }
@@ -629,8 +634,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 or "1";
         }
 
-        internal static bool TracingWithBundle(string?[] profilerPathValues, ProcessInfo process)
+        internal static bool TracingWithBundle(string?[] profilerPathValues, ProcessInfo process, out bool usedMainModuleMismatchFallback)
         {
+            usedMainModuleMismatchFallback = false;
+
             // Get the file path of the main module (the .exe file)
             string? filePath = process.MainModule;
             string? directoryPath = Path.GetDirectoryName(filePath);
@@ -664,7 +671,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 {
                     if (profilerPath is not null && profilerPath.EndsWith(bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
                     {
-                        Utils.WriteInfo(TracingWithBundleMainModuleMismatch);
+                        usedMainModuleMismatchFallback = true;
                         return true;
                     }
                 }

@@ -23,9 +23,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests
         {
             var process = CreateProcessInfo(mainModuleDirectory: "/app");
 
-            var result = ProcessBasicCheck.TracingWithBundle(new[] { profilerPath }, process);
+            var result = ProcessBasicCheck.TracingWithBundle(new[] { profilerPath }, process, out var usedFallback);
 
             result.Should().BeTrue();
+            usedFallback.Should().BeFalse();
         }
 
         [SkippableTheory]
@@ -38,9 +39,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests
 
             var process = CreateProcessInfo(mainModuleDirectory: @"C:\app");
 
-            var result = ProcessBasicCheck.TracingWithBundle(new[] { profilerPath }, process);
+            var result = ProcessBasicCheck.TracingWithBundle(new[] { profilerPath }, process, out var usedFallback);
 
             result.Should().BeTrue();
+            usedFallback.Should().BeFalse();
         }
 
         [Fact]
@@ -51,9 +53,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests
             var process = CreateProcessInfo(mainModuleDirectory: "/usr/share/dotnet");
             var profilerPath = "/app/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so";
 
-            var result = ProcessBasicCheck.TracingWithBundle(new[] { profilerPath }, process);
+            var result = ProcessBasicCheck.TracingWithBundle(new[] { profilerPath }, process, out var usedFallback);
 
             result.Should().BeTrue();
+            usedFallback.Should().BeTrue();
         }
 
         [Theory]
@@ -64,9 +67,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests
         {
             var process = CreateProcessInfo(mainModuleDirectory: "/app");
 
-            var result = ProcessBasicCheck.TracingWithBundle(new[] { profilerPath }, process);
+            var result = ProcessBasicCheck.TracingWithBundle(new[] { profilerPath }, process, out var usedFallback);
 
             result.Should().BeFalse();
+            usedFallback.Should().BeFalse();
         }
 
         [Fact]
@@ -80,9 +84,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests
                 "/app/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
             };
 
-            var result = ProcessBasicCheck.TracingWithBundle(profilerPathValues, process);
+            var result = ProcessBasicCheck.TracingWithBundle(profilerPathValues, process, out var usedFallback);
 
             result.Should().BeTrue();
+            usedFallback.Should().BeFalse();
         }
 
         private static ProcessInfo CreateProcessInfo(string mainModuleDirectory)
