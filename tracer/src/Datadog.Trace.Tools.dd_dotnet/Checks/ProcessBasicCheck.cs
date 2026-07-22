@@ -191,7 +191,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey64, out var corProfilerPathValue64);
 
             string?[] valuesToCheck = { corProfilerPathValue, corProfilerPathValue32, corProfilerPathValue64 };
-            var isTracingUsingBundle = TracingWithBundle(valuesToCheck);
+            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process);
 
             if (!ok && isTracingUsingBundle)
             {
@@ -629,10 +629,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 or "1";
         }
 
-        internal static bool TracingWithBundle(string?[] profilerPathValues)
+        internal static bool TracingWithBundle(string?[] profilerPathValues, ProcessInfo process)
         {
-            // Matched by suffix only, not against process.MainModule's directory: for a
-            // `dotnet <dll>` launch, MainModule is the dotnet host, not the app directory.
+            // Get the file path of the main module (the .exe file)
+            string? directoryPath = Path.GetDirectoryName(process.MainModule);
+
             string[] expectedEndingsForBundleSetup =
             {
                 "/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so",
@@ -643,12 +644,28 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 "\\datadog\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll"
             };
 
+            // Try an exact match against the app directory reported by MainModule first.
+            foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
+            {
+                foreach (var profilerPath in profilerPathValues)
+                {
+                    if (profilerPath is not null && profilerPath.Equals(directoryPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            // MainModule doesn't reflect the app directory - e.g. the app was launched as
+            // `dotnet <app>.dll` (Azure App Service Linux does this) - so fall back to
+            // matching by suffix alone and call out that we took the less precise path.
             foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
             {
                 foreach (var profilerPath in profilerPathValues)
                 {
                     if (profilerPath is not null && profilerPath.EndsWith(bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
                     {
+                        Utils.WriteInfo(TracingWithBundleMainModuleMismatch);
                         return true;
                     }
                 }
