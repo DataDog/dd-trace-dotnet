@@ -8,6 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
@@ -17,23 +18,18 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [Collection("IisTests")]
-    public class AspNetCoreNetFrameworkIisMvc21Tests : AspNetCoreIisMvc21Tests
-    {
-        public AspNetCoreNetFrameworkIisMvc21Tests(IisFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, inProcess: false, enableRouteTemplateResourceNames: false)
-        {
-        }
-    }
+    public class AspNetCoreIisNetFrameworkMvc21Tests(IisFixture fixture, ITestOutputHelper output)
+        : AspNetCoreIisNetFrameworkMvc21TestsBase(fixture, output, nameof(AspNetCoreIisNetFrameworkMvc21Tests));
 
-    public abstract class AspNetCoreIisMvc21Tests : AspNetCoreNetFrameworkIisMvcTestsBase, IAsyncLifetime
+    public abstract class AspNetCoreIisNetFrameworkMvc21TestsBase : AspNetCoreNetFrameworkIisMvcTestsBase, IAsyncLifetime
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        protected AspNetCoreIisMvc21Tests(IisFixture fixture, ITestOutputHelper output, bool inProcess, bool enableRouteTemplateResourceNames)
+        protected AspNetCoreIisNetFrameworkMvc21TestsBase(IisFixture fixture, ITestOutputHelper output, string testName)
             : base("AspNetCoreMvc21", fixture, output)
         {
-            _testName = nameof(AspNetCoreIisMvc21Tests);
+            _testName = testName;
             _iisFixture = fixture;
         }
 
@@ -45,24 +41,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public async Task MeetsAllAspNetCoreMvcExpectations(string path, int statusCode)
         {
             var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, (HttpStatusCode)statusCode, expectedSpanCount: 1);
-            foreach (var span in spans)
-            {
-                var result = ValidateIntegrationSpan(span, metadataSchemaVersion: "v0");
-                Assert.True(result.Success, result.ToString());
-            }
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
-
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file
-            // Ensures that we get nice file nesting in Solution Explorer
             await Verifier.Verify(spans, settings)
                           .UseMethodName("_")
                           .UseTypeName(_testName);
         }
 
-        public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [SkippableTheory]
+        [InlineData("/")]
+        [InlineData("/delay/0")]
+        public async Task MeetsAllAspNetCoreMvcExpectationsWithIncorrectMethod(string path)
+        {
+            var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, HttpStatusCode.NotFound, expectedSpanCount: 1, httpMethod: HttpMethod.Post);
+
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath);
+
+            // Overriding the type name here as we have multiple test classes in the file
+            await Verifier.Verify(spans, settings)
+                          .UseMethodName("WrongMethod")
+                          .UseTypeName(_testName);
+        }
+
+        public Task InitializeAsync() => _iisFixture.TryStartIis(this, IisAppType.AspNetCoreOutOfProcess);
 
         public Task DisposeAsync() => Task.CompletedTask;
     }
