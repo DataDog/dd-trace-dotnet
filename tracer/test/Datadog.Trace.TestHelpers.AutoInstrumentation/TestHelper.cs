@@ -583,7 +583,8 @@ namespace Datadog.Trace.TestHelpers
             HttpStatusCode expectedHttpStatusCode,
             int expectedSpanCount = 2,
             bool filterServerSpans = true,
-            HttpMethod httpMethod = null)
+            HttpMethod httpMethod = null,
+            Dictionary<string, string> headers = null)
         {
             using var httpClient = new HttpClient();
 
@@ -592,6 +593,14 @@ namespace Datadog.Trace.TestHelpers
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
             var testStart = DateTimeOffset.UtcNow;
             using var request = CreateHttpRequestMessage(httpMethod ?? HttpMethod.Get, $"http://localhost:{httpPort}{path}", testStart);
+            if (headers != null)
+            {
+                foreach (var header in headers)
+                {
+                    request.Headers.Add(header.Key, header.Value);
+                }
+            }
+
             using var response = await httpClient.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
             Output.WriteLine($"[http] {response.StatusCode} {content}");

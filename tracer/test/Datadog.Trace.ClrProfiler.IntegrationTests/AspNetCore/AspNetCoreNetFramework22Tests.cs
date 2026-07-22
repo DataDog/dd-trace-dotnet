@@ -31,14 +31,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
         }
     }
-
-    public class AspNetCoreNetFramework22ColdStartTests : AspNetCoreNetFrameworkColdStartTestBase, IClassFixture<AspNetCoreTestFixture>
-    {
-        public AspNetCoreNetFramework22ColdStartTests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base("AspNetCoreNetFramework", fixture, output)
-        {
-        }
-    }
 }
 
 #endif
