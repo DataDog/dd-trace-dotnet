@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
@@ -15,6 +16,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     [UsesVerify]
     public abstract class AspNetCoreNetFrameworkIisMvcTestsBase : TracingIntegrationTest, IClassFixture<IisFixture>
     {
+        private static readonly HashSet<string> ExcludeTags =
+        [
+            "datadog-header-tag",
+            "http.request.headers.sample_correlation_identifier",
+            "http.response.headers.sample_correlation_identifier",
+            "http.response.headers.server",
+            "baggage.user.id",
+            "baggage.session.id",
+            "baggage.account.id"
+        ];
+
         protected AspNetCoreNetFrameworkIisMvcTestsBase(string sampleName, IisFixture fixture, ITestOutputHelper output)
             : base(sampleName, output)
         {
@@ -49,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Name switch
             {
-                "aspnet_core.request" => span.IsAspNetCore(metadataSchemaVersion),
+                "aspnet_core.request" => span.IsAspNetCore(metadataSchemaVersion, ExcludeTags),
                 _ => Result.DefaultSuccess,
             };
     }
