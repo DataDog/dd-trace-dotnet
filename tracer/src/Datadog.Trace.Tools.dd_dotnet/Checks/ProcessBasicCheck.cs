@@ -644,7 +644,6 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 "\\datadog\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll"
             };
 
-            // Try an exact match against the app directory reported by MainModule first.
             foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
             {
                 foreach (var profilerPath in profilerPathValues)
@@ -656,9 +655,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 }
             }
 
-            // MainModule doesn't reflect the app directory - e.g. the app was launched as
-            // `dotnet <app>.dll` (Azure App Service Linux does this) - so fall back to
-            // matching by suffix alone and call out that we took the less precise path.
+            // MainModule is the dotnet host rather than the app directory when launched as
+            // `dotnet <app>.dll` (e.g. Azure App Service Linux), so the exact match above misses.
             foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
             {
                 foreach (var profilerPath in profilerPathValues)

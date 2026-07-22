@@ -47,8 +47,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests
         public void DetectsBundleWhenLaunchedAsDotnetDll()
         {
             // GH-7214: `dotnet app.dll` launches (e.g. Azure App Service Linux) report the
-            // dotnet host as MainModule, not the app's own directory, so the exact-match
-            // fast path misses and we must fall back to matching by suffix alone.
+            // dotnet host as MainModule, not the app's own directory.
             var process = CreateProcessInfo(mainModuleDirectory: "/usr/share/dotnet");
             var profilerPath = "/app/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so";
 
