@@ -632,7 +632,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         internal static bool TracingWithBundle(string?[] profilerPathValues, ProcessInfo process)
         {
             // Get the file path of the main module (the .exe file)
-            string? directoryPath = Path.GetDirectoryName(process.MainModule);
+            string? filePath = process.MainModule;
+            string? directoryPath = Path.GetDirectoryName(filePath);
 
             string[] expectedEndingsForBundleSetup =
             {
