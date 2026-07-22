@@ -108,12 +108,12 @@ build:
         exit 1
       }
     - |
-      # Enable MSVC /MP, but cap it at two compiler processes to limit peak memory usage.
+      # Enable MSVC /MP, but cap it at three compiler processes to limit peak memory usage.
       docker run --rm -m 10240M `
         -v "$(Get-Location):c:\mnt" `
         -e CI_JOB_ID=${CI_JOB_ID} `
         -e ENABLE_MULTIPROCESSOR_COMPILATION=true `
-        -e CL_MPCount=2 `
+        -e CL_MPCount=3 `
         -e WINDOWS_BUILDER=true `
         -e AWS_NETWORKING=true `
         -e SIGN_WINDOWS=true `
