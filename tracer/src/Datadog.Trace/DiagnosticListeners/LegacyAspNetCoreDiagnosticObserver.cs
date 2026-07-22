@@ -15,6 +15,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.DiagnosticListeners;
 
@@ -140,23 +141,40 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
             return;
         }
 
-        if (!items.TryGetValue(HttpContextRequestStateKey, out var value) || value is not LegacyAspNetCoreRequestState state)
+        if (!items.TryGetValue(HttpContextRequestStateKey, out var value)
+         || value is not LegacyAspNetCoreRequestState state
+            || state.RootScope.Span is not { Tags: AspNetCoreTags tags } rootSpan)
         {
             return;
         }
 
-        var routeDataValues = eventData.RouteData?.Values;
         var routeTemplate = action?.AttributeRouteInfo?.Template;
+        // TODO: use duck typing to create the parser and create the simplified names
+        // RouteTemplateStruct? routeTemplate = null;
+        // if (action?.AttributeRouteInfo?.Template is { } rawRouteTemplate)
+        // {
+        //     try
+        //     {
+        //         routeTemplate = TemplateParser.Parse(rawRouteTemplate);
+        //     }
+        //     catch { }
+        // }
+
+        var routeDataValues = eventData.RouteData?.Values;
         var routeValues = action?.RouteValues;
 
-        var controllerName = GetRouteValue("controller", routeValues, routeDataValues);
-        var actionName = GetRouteValue("action", routeValues, routeDataValues);
-        var areaName = GetRouteValue("area", routeValues, routeDataValues);
-
-        var rootSpan = state.RootScope.Span;
-        rootSpan.SetTag(Tags.AspNetCoreController, controllerName);
-        rootSpan.SetTag(Tags.AspNetCoreAction, actionName);
-        rootSpan.SetTag(Tags.AspNetCoreArea, areaName);
+        string? controllerName = routeValues?.TryGetValue("controller", out controllerName) == true
+                                    ? controllerName?.ToLowerInvariant()
+                                    : null;
+        string? actionName = routeValues?.TryGetValue("action", out actionName) == true
+                                ? actionName?.ToLowerInvariant()
+                                : null;
+        string? areaName = routeValues?.TryGetValue("area", out areaName) == true
+                              ? areaName?.ToLowerInvariant()
+                              : null;
+        string? pagePath = routeValues?.TryGetValue("page", out pagePath) == true
+                              ? pagePath?.ToLowerInvariant()
+                              : null;
 
         if (routeTemplate is null && controllerName is not null && actionName is not null)
         {
@@ -173,29 +191,7 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
 
         var httpMethod = httpContext.Request.Method?.ToUpperInvariant() ?? "UNKNOWN";
         rootSpan.ResourceName = $"{httpMethod} {routeTemplate}";
-        rootSpan.SetTag(Tags.AspNetCoreRoute, routeTemplate);
-    }
-
-    private string? GetRouteValue(
-        string name,
-        IDictionary<string, string>? actionDescriptorValues,
-        IDictionary<string, object>? routeDataValues)
-    {
-        if (actionDescriptorValues is not null
-         && actionDescriptorValues.TryGetValue(name, out var actionDescriptorValue)
-         && actionDescriptorValue is not null)
-        {
-            return actionDescriptorValue;
-        }
-
-        if (routeDataValues is not null
-         && routeDataValues.TryGetValue(name, out var routeDataValue)
-         && routeDataValue is string stringValue)
-        {
-            return stringValue;
-        }
-
-        return null;
+        tags.AspNetCoreRoute = routeTemplate;
     }
 
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
@@ -300,6 +296,17 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
         [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase | BindingFlags.NonPublic)]
         public int StatusCode;
     }
+
+    // [DuckCopy]
+    // internal struct RouteTemplateStruct
+    // {
+    //
+    // }
+
+    // internal interface TemplateParserStruct
+    // {
+    //     RouteTemplateStruct Parse(string rawRouteTemplate);
+    // }
 }
 
 #endif
