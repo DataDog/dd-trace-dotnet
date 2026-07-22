@@ -99,9 +99,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         {
             object? bodyExtracted = null;
 
-            if (security.AppsecEnabled)
+            if (security.AppsecEnabled || iast.Settings.Enabled)
             {
-                bodyExtracted = security.CheckBody(context.HttpContext, span, context.Result.Model, false);
+                bodyExtracted = ObjectExtractor.Extract(context.Result.Model);
+            }
+
+            if (security.AppsecEnabled && bodyExtracted is not null)
+            {
+                var appSecRequestContext = span.Context?.TraceContext?.AppSecRequestContext;
+                if (appSecRequestContext is { RequestScanCompleted: true })
+                {
+                    // The request-phase scan already ran at the routing event, which means this endpoint
+                    // is not an MVC controller action (e.g. a Razor Page). Razor Pages don't go through
+                    // ActionResponseFilter (an IActionFilter), so nothing would ever consume a stashed body.
+                    // Scan the freshly model-bound body now instead.
+                    security.RunRequestScan(context.HttpContext, span, pathParams: null, requestBody: bodyExtracted);
+                }
+                else
+                {
+                    // MVC controller: the routing event deferred the request-phase scan to
+                    // ActionResponseFilter.OnActionExecuting. Stash the body for it to include.
+                    appSecRequestContext?.SetPendingRequestBody(bodyExtracted);
+                }
             }
 
             if (iast.Settings.Enabled)
