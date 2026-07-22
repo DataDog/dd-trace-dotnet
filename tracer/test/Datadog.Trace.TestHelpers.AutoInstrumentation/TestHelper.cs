@@ -413,7 +413,6 @@ namespace Datadog.Trace.TestHelpers
 
             string processPath;
             string argumentsAttribute;
-            string aspNetCoreHandler;
 
             var launchFrameworkExecutable = appType == IisAppType.AspNetCoreOutOfProcess && !isCoreClr;
             if (launchFrameworkExecutable)
@@ -421,7 +420,6 @@ namespace Datadog.Trace.TestHelpers
                 processPath = $".\\{sampleApplicationFileName}";
                 aspNetCoreProcessToProfile = sampleApplicationFileName;
                 argumentsAttribute = string.Empty;
-                aspNetCoreHandler = "<add name=\"aspNetCore\" path=\"*\" verb=\"*\" modules=\"AspNetCoreModuleV2\" resourceType=\"Unspecified\" />";
             }
             else
             {
@@ -430,14 +428,12 @@ namespace Datadog.Trace.TestHelpers
                 argumentsAttribute = $"""
                                        arguments=".\{sampleApplicationFileName}"
                                       """;
-                aspNetCoreHandler = string.Empty;
             }
 
             return configTemplate
                   .Replace("[PROCESS_PATH]", processPath)
                   .Replace("[ARGUMENTS_ATTRIBUTE]", argumentsAttribute)
-                  .Replace("[HOSTING_MODEL]", appType == IisAppType.AspNetCoreInProcess ? "inprocess" : "outofprocess")
-                  .Replace("[ASPNETCORE_HANDLER]", aspNetCoreHandler);
+                  .Replace("[HOSTING_MODEL]", appType == IisAppType.AspNetCoreInProcess ? "inprocess" : "outofprocess");
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
@@ -586,7 +582,8 @@ namespace Datadog.Trace.TestHelpers
             int httpPort,
             HttpStatusCode expectedHttpStatusCode,
             int expectedSpanCount = 2,
-            bool filterServerSpans = true)
+            bool filterServerSpans = true,
+            HttpMethod httpMethod = null)
         {
             using var httpClient = new HttpClient();
 
@@ -594,7 +591,7 @@ namespace Datadog.Trace.TestHelpers
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
             var testStart = DateTimeOffset.UtcNow;
-            using var request = CreateHttpRequestMessage(HttpMethod.Get, $"http://localhost:{httpPort}{path}", testStart);
+            using var request = CreateHttpRequestMessage(httpMethod ?? HttpMethod.Get, $"http://localhost:{httpPort}{path}", testStart);
             using var response = await httpClient.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
             Output.WriteLine($"[http] {response.StatusCode} {content}");

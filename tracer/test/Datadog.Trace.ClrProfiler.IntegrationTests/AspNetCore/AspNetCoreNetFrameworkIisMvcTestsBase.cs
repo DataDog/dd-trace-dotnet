@@ -50,7 +50,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             span.Name switch
             {
                 "aspnet_core.request" => span.IsAspNetCore(metadataSchemaVersion),
-                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(metadataSchemaVersion),
                 _ => Result.DefaultSuccess,
             };
     }
