@@ -48,8 +48,11 @@ namespace Datadog.Trace.AppSec
             CanBeToggled = !enabledEnvVar.ConfigurationResult.IsValid;
             AppsecEnabled = enabledEnvVar.WithDefault(false);
 
-            // RFC-1113: read only to report the value verbatim in configuration telemetry (empty with origin=default when unset)
-            config.WithKeys(ConfigurationKeys.AppSec.AgenticOnboarding).AsString(string.Empty);
+            // RFC-1113: report the value verbatim in config telemetry. AsStringResult().WithDefault emits a single
+            // entry (env_var value or default); AsString(default) would also emit a spurious origin=default entry.
+            config.WithKeys(ConfigurationKeys.AppSec.AgenticOnboarding)
+                  .AsStringResult()
+                  .WithDefault(new DefaultResult<string>(string.Empty, string.Empty));
 
             ApmTracingEnabled = config.WithKeys(ConfigurationKeys.ApmTracingEnabled).AsBool(true);
 

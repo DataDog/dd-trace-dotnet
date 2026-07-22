@@ -3,8 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Specialized;
+using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -220,5 +224,39 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             settings.MaxStackTraces.Should().Be(expected);
         }
+
+        // RFC-1113: the marker must be reported verbatim as exactly one config-telemetry entry.
+        [Fact]
+        public void AgenticOnboarding_ReportedVerbatim_WhenSet()
+        {
+            var telemetry = new ConfigurationTelemetry();
+            var source = new NameValueConfigurationSource(
+                new NameValueCollection { { ConfigurationKeys.AppSec.AgenticOnboarding, "MiXeD-Value_42" } },
+                ConfigurationOrigins.EnvVars);
+
+            _ = new SecuritySettings(source, telemetry);
+
+            var entries = GetAgenticOnboardingEntries(telemetry);
+            entries.Should().ContainSingle();
+            entries[0].Value.Should().Be("MiXeD-Value_42");
+            entries[0].Origin.Should().Be("env_var");
+        }
+
+        [Fact]
+        public void AgenticOnboarding_ReportedAsEmptyDefault_WhenUnset()
+        {
+            var telemetry = new ConfigurationTelemetry();
+            var source = new NameValueConfigurationSource(new NameValueCollection(), ConfigurationOrigins.EnvVars);
+
+            _ = new SecuritySettings(source, telemetry);
+
+            var entries = GetAgenticOnboardingEntries(telemetry);
+            entries.Should().ContainSingle();
+            entries[0].Value.Should().Be(string.Empty);
+            entries[0].Origin.Should().Be("default");
+        }
+
+        private static Datadog.Trace.Telemetry.ConfigurationKeyValue[] GetAgenticOnboardingEntries(ConfigurationTelemetry telemetry)
+            => telemetry.GetFullData().Where(x => x.Name == ConfigurationKeys.AppSec.AgenticOnboarding).ToArray();
     }
 }
