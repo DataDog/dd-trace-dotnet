@@ -769,6 +769,7 @@
       <type fullname="System.IO.FileInfo" />
       <type fullname="System.IO.FileMode" />
       <type fullname="System.IO.FileNotFoundException" />
+      <type fullname="System.IO.FileOptions" />
       <type fullname="System.IO.FileShare" />
       <type fullname="System.IO.FileStream" />
       <type fullname="System.IO.FileSystemInfo" />
@@ -944,6 +945,7 @@
       <type fullname="System.RuntimeMethodHandle" />
       <type fullname="System.RuntimeTypeHandle" />
       <type fullname="System.SByte" />
+      <type fullname="System.Security.Cryptography.CryptographicException" />
       <type fullname="System.Security.Principal.TokenImpersonationLevel" />
       <type fullname="System.Security.SecurityCriticalAttribute" />
       <type fullname="System.Security.SecurityException" />

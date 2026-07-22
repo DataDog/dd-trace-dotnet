@@ -12,6 +12,7 @@ using System.Text;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 using FluentAssertions;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Ci;
@@ -101,8 +102,9 @@ public class GlobalCoverageOutputProtocolTests
             Directory.GetFiles(collectorDirectory, "coverage-*.json").Should().ContainSingle();
             var configuredReady = File.ReadAllText(Directory.GetFiles(configuredDirectory, ".dd-coverage-process-ready-*").Single());
             var collectorReady = File.ReadAllText(Directory.GetFiles(collectorDirectory, ".dd-coverage-process-ready-*").Single());
-            configuredReady.Should().Contain(Path.GetFullPath(configuredDirectory)).And.Contain(Path.GetFullPath(collectorDirectory));
-            collectorReady.Should().Contain(Path.GetFullPath(configuredDirectory)).And.Contain(Path.GetFullPath(collectorDirectory));
+            var expectedDirectories = new[] { Path.GetFullPath(configuredDirectory), Path.GetFullPath(collectorDirectory) };
+            JObject.Parse(configuredReady)["directories"]!.Values<string>().Should().BeEquivalentTo(expectedDirectories);
+            JObject.Parse(collectorReady)["directories"]!.Values<string>().Should().BeEquivalentTo(expectedDirectories);
         }
         finally
         {
