@@ -57,12 +57,11 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         // on Linux/macOS - see DetectsBundleWhenMainModuleDirectoryMatchesAppDirectoryOnWindows.
         SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
-        var process = CreateProcessInfo(mainModuleDirectory: "/app");
+        const string mainModule = "/app/app";
 
-        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], process, out var usedFallback);
+        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: false);
 
         result.Should().BeTrue();
-        usedFallback.Should().BeFalse();
     }
 
     [SkippableTheory]
@@ -73,26 +72,35 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
-        var process = CreateProcessInfo(mainModuleDirectory: @"C:\app");
+        const string mainModule = @"C:\app\app";
 
-        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], process, out var usedFallback);
+        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: false);
 
         result.Should().BeTrue();
-        usedFallback.Should().BeFalse();
     }
 
     [Fact]
-    public void DetectsBundleWhenLaunchedAsDotnetDll()
+    public void DetectsBundleWhenRunningOnAzureAppService()
     {
         // `dotnet app.dll` launches (e.g. Azure App Service Linux) report the
         // dotnet host as MainModule, not the app's own directory.
-        var process = CreateProcessInfo(mainModuleDirectory: "/usr/share/dotnet");
-        const string profilerPath = "/app/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so";
+        const string mainModule = "/usr/share/dotnet/dotnet";
+        var profilerPath = $"{ProcessBasicCheck.AzureAppServiceRootPath}/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so";
 
-        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], process, out var usedFallback);
+        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: true);
 
         result.Should().BeTrue();
-        usedFallback.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DoesNotDetectBundleWhenLaunchedAsDotnetDllOutsideAzureAppService()
+    {
+        const string mainModule = "/usr/share/dotnet/dotnet";
+        var profilerPath = $"{ProcessBasicCheck.AzureAppServiceRootPath}/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so";
+
+        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: false);
+
+        result.Should().BeFalse();
     }
 
     [Theory]
@@ -101,12 +109,11 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     [InlineData("/app/datadog/linux-x64/Datadog.Tracer.Native.so")]
     public void DoesNotDetectBundleForNonBundlePaths(string? profilerPath)
     {
-        var process = CreateProcessInfo(mainModuleDirectory: "/app");
+        const string mainModule = "/app/app";
 
-        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], process, out var usedFallback);
+        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: false);
 
         result.Should().BeFalse();
-        usedFallback.Should().BeFalse();
     }
 
     [SkippableFact]
@@ -114,7 +121,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     {
         SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
-        var process = CreateProcessInfo(mainModuleDirectory: "/app");
+        const string mainModule = "/app/app";
         string?[] profilerPathValues =
         [
             null,
@@ -122,10 +129,9 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             "/app/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
         ];
 
-        var result = ProcessBasicCheck.TracingWithBundle(profilerPathValues, process, out var usedFallback);
+        var result = ProcessBasicCheck.TracingWithBundle(profilerPathValues, mainModule, isAzureAppService: false);
 
         result.Should().BeTrue();
-        usedFallback.Should().BeFalse();
     }
 
     [SkippableFact]
@@ -665,15 +671,5 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             .Returns(profilerKeyValue);
 
         return registryService.Object;
-    }
-
-    private static ProcessInfo CreateProcessInfo(string mainModuleDirectory)
-    {
-        return new ProcessInfo(
-            "app",
-            1,
-            new Dictionary<string, string>(),
-            mainModule: $"{mainModuleDirectory}/app",
-            modules: []);
     }
 }

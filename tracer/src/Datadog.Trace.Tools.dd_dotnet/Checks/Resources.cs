@@ -36,7 +36,6 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string IisFullTrust = "IIS site is running in a full trust environment, without code access security (CAS).";
 
         public const string TracingWithBundleProfilerPath = "Check failing with Datadog.Trace.Bundle Nuget, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
-        public const string TracingWithBundleMainModuleMismatch = "Found a Datadog.Trace.Bundle Nuget install. This is expected when the app is started as `dotnet <app>.dll` (e.g. Azure App Service Linux), and doesn't indicate a problem.";
         public const string TracingWithInstallerWindowsNetFramework = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
         public const string TracingWithInstallerWindowsNetCore = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=windows#install-the-tracer";
         public const string TracingWithInstallerLinux = "Installer related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core?tab=linux#install-the-tracer";
