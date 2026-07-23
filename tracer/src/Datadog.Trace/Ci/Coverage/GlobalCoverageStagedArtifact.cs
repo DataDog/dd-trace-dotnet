@@ -10,6 +10,8 @@ using System.IO;
 
 namespace Datadog.Trace.Ci.Coverage;
 
+// Ready markers share this staging primitive with coverage payloads so they use the same
+// no-replace commit branch and best-effort temporary-file cleanup semantics.
 internal sealed class GlobalCoverageStagedArtifact : IDisposable
 {
     private readonly string _destinationPath;

@@ -8,7 +8,6 @@
 using System;
 using System.Globalization;
 using System.IO;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Ci;
@@ -85,13 +84,15 @@ internal sealed class DotnetTestRunState : IDisposable
                 throw new DirectoryNotFoundException("The global coverage output directory does not exist.");
             }
 
-            var runToken = GetRunToken(runId);
+            var runToken = GlobalCoverageProtocol.GetRunToken(runId);
             activityStream = new FileStream(
-                Path.Combine(canonicalDirectory, ".dd-coverage-process-reconcile.lock"),
+                Path.Combine(canonicalDirectory, GlobalCoverageProtocol.ReconciliationLockFileName),
                 FileMode.OpenOrCreate,
                 FileAccess.Read,
                 FileShare.Read);
-            claimPath = Path.Combine(canonicalDirectory, $".dd-coverage-command-owner-{runToken}.claim");
+            claimPath = Path.Combine(
+                canonicalDirectory,
+                GlobalCoverageProtocol.GetCommandOwnerClaimFileName(runToken));
 
             try
             {
@@ -172,27 +173,6 @@ internal sealed class DotnetTestRunState : IDisposable
     {
         ReleaseActivity();
         Interlocked.Exchange(ref _claimStream, null)?.Dispose();
-    }
-
-    private static string GetRunToken(string runId)
-    {
-        var bytes = Utf8WithoutBom.GetBytes(runId);
-#if NET6_0_OR_GREATER
-        var hash = SHA256.HashData(bytes);
-#else
-        byte[] hash;
-        using (var sha256 = SHA256.Create())
-        {
-            hash = sha256.ComputeHash(bytes);
-        }
-#endif
-        var builder = new StringBuilder(hash.Length * 2);
-        foreach (var value in hash)
-        {
-            builder.Append(value.ToString("x2", CultureInfo.InvariantCulture));
-        }
-
-        return builder.ToString();
     }
 
     private static void TryDelete(string path)

@@ -283,11 +283,6 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         }
     }
 
-    protected override void OnSessionStart(CoverageContextContainer context)
-    {
-        base.OnSessionStart(context);
-    }
-
     protected virtual void InitializeSnapshotOutput(GlobalCoverageSnapshot snapshot)
         => snapshot.InitializeOutput(_outputManager.FrozenMask, OnSnapshotDisposed);
 

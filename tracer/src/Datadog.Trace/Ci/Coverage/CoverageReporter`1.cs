@@ -55,17 +55,14 @@ public static class CoverageReporter<TMeta>
         ModuleValue? module = null;
         try
         {
-            if (handler.Container is { } container &&
-                container.TryGetOrAddModuleValue(
+            if (handler.Container is not { } container ||
+                !container.TryGetOrAddModuleValue(
                     Metadata,
                     Module,
                     ModuleMemorySize,
                     handler.ModuleValueStrategy,
                     CoverageModuleValueOrigin.TestContext,
                     out module))
-            {
-            }
-            else
             {
                 module = GetOrCreateGlobalModuleValue(handler);
             }
