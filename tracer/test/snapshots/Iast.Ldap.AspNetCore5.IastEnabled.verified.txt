@@ -33,7 +33,7 @@
       "hash": 9515978
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController+"
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController+"
         "method": "<Ldap>g__PerformLdapQuery|0"
       },
       "evidence": {

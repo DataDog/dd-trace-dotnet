@@ -18,7 +18,7 @@ public class LocationTests
         var method = "GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable";
         var typeName = "Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests";
         var location = new Location(typeName, method, 23, 4);
-        location.Path.Should().Be(typeName);
+        location.Class.Should().Be(typeName);
         location.Method.Should().Be(method);
     }
 
@@ -27,7 +27,7 @@ public class LocationTests
     {
         var method = "GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable";
         var location = new Location(null, method, null, 4);
-        location.Path.Should().BeNull();
+        location.Class.Should().BeNull();
         location.Method.Should().Be("GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable");
     }
 
@@ -36,7 +36,7 @@ public class LocationTests
     {
         var method = "Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests.GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable";
         var location = new Location(null, method, 23, 4);
-        location.Path.Should().BeNull();
+        location.Class.Should().BeNull();
         location.Method.Should().Be("Samples.InstrumentedTests.Iast.Vulnerabilities.CommandInjectionTests.GivenAProcess_WhenStartTaintedProcess_ThenIsVulnerable");
     }
 
@@ -44,17 +44,18 @@ public class LocationTests
     public void GivenALocation_WhenCreatedFromNull_NothingIsStored()
     {
         var location = new Location(null, null, 23, 4);
-        location.Path.Should().BeNull();
+        location.Class.Should().BeNull();
         location.Method.Should().BeNull();
     }
 
     [Fact]
     public void GivenALocation_WhenCreatedFromStackFrame_ValueIsExpected()
     {
-        var stack = new StackTrace();
+        var stack = new StackTrace(fNeedFileInfo: true);
         var frame = stack.GetFrame(0);
         var location = new Location(frame, stack, null, null);
-        location.Path.Should().Be("Datadog.Trace.Security.Unit.Tests.IAST.LocationTests");
+        location.Class.Should().Be("Datadog.Trace.Security.Unit.Tests.IAST.LocationTests");
         location.Method.Should().Be("GivenALocation_WhenCreatedFromStackFrame_ValueIsExpected");
+        location.Path.Should().Be("LocationTests.cs");
     }
 }
