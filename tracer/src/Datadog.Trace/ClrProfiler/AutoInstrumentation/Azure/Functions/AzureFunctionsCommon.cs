@@ -42,6 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
         public const string OperationName = AzureFunctionsConstants.AzureFunctionName;
         public const string AzureApim = AzureFunctionsConstants.AzureApimName;
+        public const string AzureFrontDoor = AzureFunctionsConstants.AzureFrontDoorName;
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
@@ -129,8 +130,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
+                var opName = tracer.InternalActiveScope?.Root.Span.OperationName;
                 // Check if there's an inferred proxy span (e.g., azure.apim) that we shouldn't overwrite
-                var isProxySpan = tracer.InternalActiveScope?.Root.Span.OperationName == AzureApim;
+                var isProxySpan = opName == AzureApim || opName == AzureFrontDoor;
                 // Ignoring null because guaranteed running in AAS
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is { } activeScope)
@@ -330,6 +332,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 // if available, otherwise fall back to the existing local active scope.
                 var activeScope = tracer.InternalActiveScope;
 
+                // Check if there's an inferred proxy span (e.g., azure.frontdoor, azure.apim) that we shouldn't overwrite
+                var rootOpName = activeScope?.Root.Span.OperationName;
+                var isProxySpan = rootOpName == AzureFrontDoor || rootOpName == AzureApim;
+
                 // Check if the ASP.NET Core scope is already active
                 if (aspNetCoreScope != null && activeScope == aspNetCoreScope)
                 {
@@ -337,17 +343,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // just update the existing root span's tags to make it a "serverless" span.
                     // Don't assign to `scope`: the ASP.NET Core middleware owns this scope's
                     // lifetime, and returning it here would cause OnAsyncMethodEnd to dispose it.
-                    var rootSpan = activeScope.Root.Span;
+                    if (!isProxySpan)
+                    {
+                        var rootSpan = activeScope.Root.Span;
 
-                    AzureFunctionsTags.SetRootSpanTags(
-                        rootSpan.Tags,
-                        shortName: tags.ShortName,
-                        fullName: tags.FullName,
-                        bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                        triggerType: tags.TriggerType);
+                        AzureFunctionsTags.SetRootSpanTags(
+                            rootSpan.Tags,
+                            shortName: tags.ShortName,
+                            fullName: tags.FullName,
+                            bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
+                            triggerType: tags.TriggerType);
 
-                    rootSpan.Type = SpanType; // "serverless"
-                    rootSpan.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
+                        rootSpan.Type = SpanType; // "serverless"
+                        rootSpan.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
+                    }
                 }
                 else
                 {
