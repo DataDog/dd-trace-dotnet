@@ -551,9 +551,18 @@ namespace Datadog.Trace.Agent
                 // One buffer is full, request an eager flush
                 RequestFlush();
 
-                if (buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority) == SpanBuffer.WriteStatus.Success)
+                writeStatus = buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority);
+
+                if (writeStatus == SpanBuffer.WriteStatus.Success)
                 {
                     // Serialization to the secondary buffer succeeded
+                    return;
+                }
+
+                if (writeStatus == SpanBuffer.WriteStatus.Overflow)
+                {
+                    // The trace is too big for the buffer
+                    DropTrace(chunk.Count, ref _droppedTracesTooLarge);
                     return;
                 }
             }
