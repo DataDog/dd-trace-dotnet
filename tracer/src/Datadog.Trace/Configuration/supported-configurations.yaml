@@ -161,6 +161,15 @@ supportedConfigurations:
     documentation: |-
       Configuration key for deactivating reading the application monitoring config file through libdatadog (hands off config).
       True by default
+  DD_APPSEC_AGENTIC_ONBOARDING:
+  - implementation: A
+    scope: managed
+    type: string
+    default: ''
+    product: AppSec
+    const_name: AgenticOnboarding
+    documentation: |-
+      A flag set by Datadog's agentic onboarding solution when it configures App &amp; API Protection. 
   DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING:
   - implementation: D
     scope: managed

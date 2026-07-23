@@ -70,7 +70,7 @@ check-azure-pipeline:
 build-dd-trace-dotnet-macrobenchmarks-ami:
   stage: build-win
   tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:newest
   allow_failure: true
   when: manual
   timeout: 3h
@@ -542,7 +542,7 @@ profiler_cpu_timer_create-arm64:
   stage: benchmarks-win
   needs: ["check-azure-pipeline"]
   tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:newest
   id_tokens:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
