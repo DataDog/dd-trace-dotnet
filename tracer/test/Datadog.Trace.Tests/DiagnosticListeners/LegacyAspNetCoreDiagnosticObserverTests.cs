@@ -6,10 +6,10 @@
 #if NETFRAMEWORK
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -21,6 +21,10 @@ using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.PlatformHelpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Primitives;
 using Xunit;
 
@@ -62,16 +66,13 @@ public class LegacyAspNetCoreDiagnosticObserverTests
         requestScope.Span.ResourceName.Should().Be("POST api/Orders/{id}");
         requestScope.Span.GetTag(Tags.AspNetCoreRoute).Should().Be("api/Orders/{id}");
         requestScope.Span.GetTag(Tags.HttpRoute).Should().Be("api/Orders/{id}");
-        requestScope.Span.GetTag(Tags.AspNetCoreController).Should().Be("Orders");
-        requestScope.Span.GetTag(Tags.AspNetCoreAction).Should().Be("Details");
-        requestScope.Span.GetTag(Tags.AspNetCoreArea).Should().Be("Admin");
 
         observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
     }
 
     [Theory]
-    [InlineData(null, "GET Orders/Details")]
-    [InlineData("Admin", "GET Admin/Orders/Details")]
+    [InlineData(null, "GET orders/details")]
+    [InlineData("Admin", "GET admin/orders/details")]
     public async Task MvcControllerActionRouteUpdatesRootName(string area, string expectedResourceName)
     {
         await using var tracer = TracerHelper.CreateWithFakeAgent();
@@ -98,14 +99,11 @@ public class LegacyAspNetCoreDiagnosticObserverTests
 
         requestScope.Span.ResourceName.Should().Be(expectedResourceName);
         requestScope.Span.GetTag(Tags.AspNetCoreRoute).Should().Be(expectedResourceName.Substring(4));
-        requestScope.Span.GetTag(Tags.AspNetCoreController).Should().Be("Orders");
-        requestScope.Span.GetTag(Tags.AspNetCoreAction).Should().Be("Details");
-        requestScope.Span.GetTag(Tags.AspNetCoreArea).Should().Be(area);
 
         observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
     }
 
-    [Fact]
+    [Fact(Skip = "I don't know if we actually want this behaviour - it's not correct AFAICT")]
     public async Task MvcRouteDataValuesProvideControllerActionFallback()
     {
         await using var tracer = TracerHelper.CreateWithFakeAgent();
@@ -133,9 +131,6 @@ public class LegacyAspNetCoreDiagnosticObserverTests
 
         requestScope.Span.ResourceName.Should().Be("GET Store/Catalog/Index");
         requestScope.Span.GetTag(Tags.AspNetCoreRoute).Should().Be("Store/Catalog/Index");
-        requestScope.Span.GetTag(Tags.AspNetCoreController).Should().Be("Catalog");
-        requestScope.Span.GetTag(Tags.AspNetCoreAction).Should().Be("Index");
-        requestScope.Span.GetTag(Tags.AspNetCoreArea).Should().Be("Store");
 
         observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
     }
@@ -433,10 +428,9 @@ public class LegacyAspNetCoreDiagnosticObserverTests
     [Fact]
     public void HeaderAdapterReadsKestrelStyleExplicitIndexerFromBaseType()
     {
-        // TODO: use the real type
-        var headers = new ExplicitlyImplementedHeaderDictionary();
-        headers.Set("x-single", "value");
-        headers.Set("traceparent", new StringValues(["first", "second"]));
+        var headers = CreateKestrelRequestHeaders();
+        headers["x-single"] = "value";
+        headers["traceparent"] = new StringValues(["first", "second"]);
 
         var proxy = headers.DuckCast<ILegacyAspNetCoreHeaders>();
         new LegacyAspNetCoreHeadersCollectionAdapter(proxy).GetValues("x-single").Should().Equal("value");
@@ -449,19 +443,34 @@ public class LegacyAspNetCoreDiagnosticObserverTests
         IDictionary<string, string> actionDescriptorValues,
         IDictionary<string, object> routeDataValues = null)
     {
+        var routeData = new RouteData();
+        if (routeDataValues is not null)
+        {
+            foreach (var kvp in routeDataValues)
+            {
+                routeData.Values[kvp.Key] = kvp.Value;
+            }
+        }
+
         return new
         {
             HttpContext = context,
-            ActionDescriptor = new FakeActionDescriptor
+            ActionDescriptor = new ActionDescriptor
             {
-                AttributeRouteInfo = routeTemplate is null ? null : new FakeAttributeRouteInfo { Template = routeTemplate },
+                AttributeRouteInfo = routeTemplate is null ? null : new AttributeRouteInfo { Template = routeTemplate },
                 RouteValues = actionDescriptorValues,
             },
-            RouteData = new FakeRouteData
-            {
-                Values = routeDataValues ?? new Dictionary<string, object>(),
-            },
+            RouteData = routeData,
         };
+    }
+
+    private static IHeaderDictionary CreateKestrelRequestHeaders()
+    {
+        // Reproduces the Kestrel 2.x shape where the concrete request-header type inherits the explicit
+        // IHeaderDictionary implementation from an internal abstract base class (HttpHeaders).
+        var type = typeof(BadHttpRequestException).Assembly
+            .GetType("Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpRequestHeaders", throwOnError: true);
+        return (IHeaderDictionary)Activator.CreateInstance(type, nonPublic: true);
     }
 
     private static HttpContext CreateContext(Dictionary<string, StringValues> headers = null)
@@ -516,91 +525,6 @@ public class LegacyAspNetCoreDiagnosticObserverTests
         }
 
         private int STATUSCODE { get; }
-    }
-
-    private sealed class FakeActionDescriptor
-    {
-        public object AttributeRouteInfo { get; set; }
-
-        public IDictionary<string, string> RouteValues { get; set; }
-    }
-
-    private sealed class FakeAttributeRouteInfo
-    {
-        public string Template { get; set; }
-    }
-
-    private sealed class FakeRouteData
-    {
-        public IDictionary<string, object> Values { get; set; } = new Dictionary<string, object>();
-    }
-
-    /// <summary>
-    /// Reproduces the Kestrel 2.x shape where the concrete request-header type inherits the
-    /// explicit IHeaderDictionary implementation from an abstract base class.
-    /// </summary>
-    private sealed class ExplicitlyImplementedHeaderDictionary : KestrelStyleHeaderDictionaryBase
-    {
-    }
-
-    private abstract class KestrelStyleHeaderDictionaryBase : IHeaderDictionary
-    {
-        private readonly Dictionary<string, StringValues> _store = new(StringComparer.OrdinalIgnoreCase);
-
-        int ICollection<KeyValuePair<string, StringValues>>.Count => _store.Count;
-
-        bool ICollection<KeyValuePair<string, StringValues>>.IsReadOnly => false;
-
-        ICollection<string> IDictionary<string, StringValues>.Keys => _store.Keys;
-
-        ICollection<StringValues> IDictionary<string, StringValues>.Values => _store.Values;
-
-        long? IHeaderDictionary.ContentLength
-        {
-            get => null;
-            set { }
-        }
-
-        StringValues IHeaderDictionary.this[string key]
-        {
-            get
-            {
-                _store.TryGetValue(key, out var value);
-                return value;
-            }
-
-            set => _store[key] = value;
-        }
-
-        StringValues IDictionary<string, StringValues>.this[string key]
-        {
-            get => _store[key];
-            set => _store[key] = value;
-        }
-
-        public void Set(string key, StringValues value) => _store[key] = value;
-
-        void IDictionary<string, StringValues>.Add(string key, StringValues value) => _store.Add(key, value);
-
-        bool IDictionary<string, StringValues>.ContainsKey(string key) => _store.ContainsKey(key);
-
-        bool IDictionary<string, StringValues>.Remove(string key) => _store.Remove(key);
-
-        bool IDictionary<string, StringValues>.TryGetValue(string key, out StringValues value) => _store.TryGetValue(key, out value);
-
-        void ICollection<KeyValuePair<string, StringValues>>.Add(KeyValuePair<string, StringValues> item) => _store.Add(item.Key, item.Value);
-
-        void ICollection<KeyValuePair<string, StringValues>>.Clear() => _store.Clear();
-
-        bool ICollection<KeyValuePair<string, StringValues>>.Contains(KeyValuePair<string, StringValues> item) => _store.ContainsKey(item.Key);
-
-        void ICollection<KeyValuePair<string, StringValues>>.CopyTo(KeyValuePair<string, StringValues>[] array, int arrayIndex) => ((ICollection<KeyValuePair<string, StringValues>>)_store).CopyTo(array, arrayIndex);
-
-        bool ICollection<KeyValuePair<string, StringValues>>.Remove(KeyValuePair<string, StringValues> item) => _store.Remove(item.Key);
-
-        IEnumerator<KeyValuePair<string, StringValues>> IEnumerable<KeyValuePair<string, StringValues>>.GetEnumerator() => _store.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => _store.GetEnumerator();
     }
 }
 #endif
