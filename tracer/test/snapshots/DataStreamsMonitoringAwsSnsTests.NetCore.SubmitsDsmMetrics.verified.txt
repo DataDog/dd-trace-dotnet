@@ -11,10 +11,10 @@
         {
           EdgeTags: [
             direction:out,
-            topic:MyTopic,
+            topic:arn:aws:sns:us-east-1:000000000000:MyTopic,
             type:sns
           ],
-          Hash: 2371434532713766699,
+          Hash: 5224683988148621372,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
@@ -29,10 +29,10 @@
         {
           EdgeTags: [
             direction:out,
-            topic:MyTopic,
+            topic:arn:aws:sns:us-east-1:000000000000:MyTopic,
             type:sns
           ],
-          Hash: 2371434532713766699,
+          Hash: 5224683988148621372,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
