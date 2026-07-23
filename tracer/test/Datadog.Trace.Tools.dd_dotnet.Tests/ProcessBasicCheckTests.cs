@@ -14,13 +14,18 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests
 {
     public class ProcessBasicCheckTests
     {
-        [Theory]
+        [SkippableTheory]
         [InlineData("/app/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so")]
         [InlineData("/app/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so")]
         [InlineData("/app/datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so")]
         [InlineData("/app/datadog/linux-musl-arm64/Datadog.Trace.ClrProfiler.Native.so")]
         public void DetectsBundleWhenMainModuleDirectoryMatchesAppDirectory(string profilerPath)
         {
+            // Path.GetDirectoryName normalizes the root separator of a forward-slash path
+            // differently on real Windows, so this Unix-style exact-match scenario only holds
+            // on Linux/macOS - see DetectsBundleWhenMainModuleDirectoryMatchesAppDirectoryOnWindows.
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
             var process = CreateProcessInfo(mainModuleDirectory: "/app");
 
             var result = ProcessBasicCheck.TracingWithBundle(new[] { profilerPath }, process, out var usedFallback);
@@ -73,9 +78,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.Tests
             usedFallback.Should().BeFalse();
         }
 
-        [Fact]
+        [SkippableFact]
         public void DetectsBundleWhenAnyProfilerPathValueMatches()
         {
+            SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
             var process = CreateProcessInfo(mainModuleDirectory: "/app");
             string[] profilerPathValues =
             {
