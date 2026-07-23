@@ -555,6 +555,15 @@ namespace Datadog.Trace
                     writer.WritePropertyName("activity_listener_enabled");
                     writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
 
+                    writer.WritePropertyName("otlp_traces_export_enabled");
+                    writer.WriteValue(exporterSettings.TracesEncoding is TracesEncoding.OtlpProtobuf or TracesEncoding.OtlpJson);
+
+                    writer.WritePropertyName("otlp_metrics_export_enabled");
+                    writer.WriteValue(instanceSettings.OtlpRuntimeMetricsEnabled);
+
+                    writer.WritePropertyName("otlp_logs_export_enabled");
+                    writer.WriteValue(instanceSettings.OpenTelemetryLogsEnabled && instanceSettings.OtelLogsExporterEnabled);
+
                     writer.WritePropertyName("profiler_enabled");
                     writer.WriteValue(Profiler.Instance.Status.IsProfilerReady);
 
