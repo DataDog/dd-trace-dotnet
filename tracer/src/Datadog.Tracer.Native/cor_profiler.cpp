@@ -2309,8 +2309,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
     {
         if (assembly_name.rfind(skip_assembly_pattern, 0) == 0)
         {
-            DBG("GetAssemblyReferences skipping module by pattern: Name=", assembly_name, " Path=", wszAssemblyPath);
-            return S_OK;
+            bool is_included = false;
+            for (auto&& include_assembly : include_assemblies)
+            {
+                if (assembly_name == include_assembly)
+                {
+                    is_included = true;
+                    break;
+                }
+            }
+            if (!is_included)
+            {
+                DBG("GetAssemblyReferences skipping module by pattern: Name=", assembly_name, " Path=", wszAssemblyPath);
+                return S_OK;
+            }
+            break;
         }
     }
 
