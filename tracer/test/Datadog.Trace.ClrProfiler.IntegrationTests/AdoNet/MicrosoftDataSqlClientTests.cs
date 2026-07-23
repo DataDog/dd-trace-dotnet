@@ -54,10 +54,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", propagation);
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            // The sample creates two large traces. Flush them in smaller chunks so a trace that is too
-            // large for the writer's active buffer is not dropped before the sample can force a flush.
-            SetEnvironmentVariable("DD_TRACE_PARTIAL_FLUSH_ENABLED", "true");
-            SetEnvironmentVariable("DD_TRACE_PARTIAL_FLUSH_MIN_SPANS", "20");
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-{dbType}" : EnvironmentHelper.FullSampleName;
 
