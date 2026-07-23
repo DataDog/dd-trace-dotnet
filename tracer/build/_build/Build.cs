@@ -443,8 +443,10 @@ partial class Build : NukeBuild
             // So we publish to a different folder than copy only the executable
             var publishFolder = ArtifactsDirectory / "dd-dotnet" / rid;
 
+            // Look up the tool project via FullSolution: it lives outside Build.g.sln so the upstream
+            // solution-wide Restore doesn't pull in its runtime packs; this target restores on demand.
             DotNetPublish(x => x
-                .SetProject(Solution.GetProject(Projects.DdDotnet))
+                .SetProject(FullSolution.GetProject(Projects.DdDotnet))
                 .SetFramework(framework)
                 .SetNoWarnDotNetCore3()
                 .SetRuntime(rid)
@@ -461,10 +463,11 @@ partial class Build : NukeBuild
         .After(CreateBundleHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {
+            // Look up the tool project via FullSolution: it lives outside Build.g.sln so the upstream
+            // solution-wide Restore doesn't pull in its (large multi-TFM) dependencies. This target
+            // therefore allows restore + ProjectReference resolution to run here.
             DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.DdTrace))
-                .EnableNoRestore()
-                .EnableNoDependencies()
+                .SetProjectFile(FullSolution.GetProject(Projects.DdTrace))
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
@@ -479,7 +482,7 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetPack(x => x
-                .SetProject(Solution.GetProject(Projects.DdTrace))
+                .SetProject(FullSolution.GetProject(Projects.DdTrace))
                 .SetConfiguration(BuildConfiguration)
                 .EnableNoDependencies()
                 .EnableNoBuild()
@@ -514,7 +517,7 @@ partial class Build : NukeBuild
             runtimes.ForEach(runtime => DeleteFile(runtime.archive));
 
             DotNetPublish(x => x
-                .SetProject(Solution.GetProject(Projects.DdTrace))
+                .SetProject(FullSolution.GetProject(Projects.DdTrace))
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
                 .EnableNoDependencies()
