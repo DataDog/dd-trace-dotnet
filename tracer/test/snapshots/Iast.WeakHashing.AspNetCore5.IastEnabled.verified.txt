@@ -33,7 +33,7 @@
       "hash": 414128505,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "WeakHashing"
       },
       "evidence": {
@@ -45,7 +45,7 @@
       "hash": 414128505,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "WeakHashing"
       },
       "evidence": {

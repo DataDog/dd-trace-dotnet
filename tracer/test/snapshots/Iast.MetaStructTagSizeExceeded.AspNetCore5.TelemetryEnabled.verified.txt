@@ -33,7 +33,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -45,7 +45,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -57,7 +57,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -69,7 +69,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -81,7 +81,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -93,7 +93,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -105,7 +105,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -117,7 +117,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -129,7 +129,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -141,7 +141,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -153,7 +153,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -165,7 +165,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -177,7 +177,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -189,7 +189,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -201,7 +201,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -213,7 +213,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -225,7 +225,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -237,7 +237,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -249,7 +249,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -261,7 +261,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -273,7 +273,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -285,7 +285,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -297,7 +297,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -309,7 +309,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -321,7 +321,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -333,7 +333,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -345,7 +345,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -357,7 +357,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -369,7 +369,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -381,7 +381,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -393,7 +393,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -405,7 +405,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -417,7 +417,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -429,7 +429,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
@@ -441,7 +441,7 @@
       "hash": -430498668,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "ExecuteCommandInternal"
       },
       "evidence": {
