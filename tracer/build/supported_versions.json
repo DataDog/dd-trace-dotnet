@@ -995,8 +995,8 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "1.1.11",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "4.2.3",
-        "maxVersionAvailableInclusive": "4.2.3",
+        "maxVersionSupportedInclusive": "4.3.2",
+        "maxVersionAvailableInclusive": "4.3.2",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -1012,8 +1012,8 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "1.1.11",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "4.2.3",
-        "maxVersionAvailableInclusive": "4.2.3",
+        "maxVersionSupportedInclusive": "4.3.2",
+        "maxVersionAvailableInclusive": "4.3.2",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -1057,7 +1057,17 @@
     "assemblyName": "MSTestAdapter.PlatformServices",
     "minAssemblyVersionInclusive": "4.0.0",
     "maxAssemblyVersionInclusive": "4.65535.65535",
-    "packages": []
+    "packages": [
+      {
+        "name": "MSTest.TestAdapter",
+        "minVersionAvailableInclusive": "1.1.11",
+        "minVersionSupportedInclusive": "4.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "4.3.2",
+        "maxVersionAvailableInclusive": "4.3.2",
+        "maxVersionTestedInclusive": null
+      }
+    ]
   },
   {
     "integrationName": "MySql",
