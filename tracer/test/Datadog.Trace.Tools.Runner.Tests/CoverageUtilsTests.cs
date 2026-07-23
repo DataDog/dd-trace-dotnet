@@ -138,7 +138,7 @@ public class CoverageUtilsTests
         File.WriteAllText(bPath, JsonConvert.SerializeObject(b));
 
         var outputFile = Path.GetTempFileName();
-        global::CoverageUtils.TryCombineAndGetTotalCoverage(tmpFolder, outputFile, out var actualGlobalCoverageInfo).Should().BeTrue();
+        CoverageUtils.TryCombineAndGetTotalCoverage(tmpFolder, outputFile, out var actualGlobalCoverageInfo, useStdOut: false).Should().BeTrue();
         actualGlobalCoverageInfo.Should().BeEquivalentTo(expected);
 
         var outputContent = File.ReadAllText(outputFile);

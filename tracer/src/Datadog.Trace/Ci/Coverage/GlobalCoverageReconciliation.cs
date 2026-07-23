@@ -19,10 +19,6 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal static class GlobalCoverageReconciliation
 {
-    private const int MarkerMaximumBytes = 128 * 1024;
-    private const string PendingPrefix = ".dd-coverage-process-incomplete-";
-    private const string ReadyPrefix = ".dd-coverage-process-ready-";
-    private const string ClaimPrefix = ".dd-coverage-command-owner-";
     private const int ClaimMaximumBytes = 1_024;
     private const long MaximumProtocolMetadataBytes = 16L * 1024 * 1024;
     private const int MaximumParticipants = 4_096;
@@ -45,9 +41,9 @@ internal static class GlobalCoverageReconciliation
         try
         {
             var canonicalInput = CanonicalizeDirectory(inputDirectory);
-            var pendingInInput = GetFilesBounded(canonicalInput, PendingPrefix + "*");
-            var readyInInput = GetFilesBounded(canonicalInput, ReadyPrefix + "*");
-            var claimsInInput = GetFilesBounded(canonicalInput, ClaimPrefix + "*.claim");
+            var pendingInInput = GetFilesBounded(canonicalInput, GlobalCoverageProtocol.PendingMarkerPattern);
+            var readyInInput = GetFilesBounded(canonicalInput, GlobalCoverageProtocol.ReadyMarkerPattern);
+            var claimsInInput = GetFilesBounded(canonicalInput, GlobalCoverageProtocol.CommandOwnerClaimPattern);
             protocolPresent = pendingInInput.Length > 0 || readyInInput.Length > 0 || claimsInInput.Length > 0;
             if (!protocolPresent)
             {
@@ -62,14 +58,16 @@ internal static class GlobalCoverageReconciliation
             }
 
             lockStream = new FileStream(
-                Path.Combine(canonicalInput, ".dd-coverage-process-reconcile.lock"),
+                Path.Combine(canonicalInput, GlobalCoverageProtocol.ReconciliationLockFileName),
                 FileMode.OpenOrCreate,
                 FileAccess.ReadWrite,
                 FileShare.None);
 
             var claimPath = claimsInInput[0];
             var claimFileName = Path.GetFileName(claimPath);
-            var claimRunToken = claimFileName.Substring(ClaimPrefix.Length, claimFileName.Length - ClaimPrefix.Length - ".claim".Length);
+            var claimRunToken = claimFileName.Substring(
+                GlobalCoverageProtocol.CommandOwnerClaimPrefix.Length,
+                claimFileName.Length - GlobalCoverageProtocol.CommandOwnerClaimPrefix.Length - GlobalCoverageProtocol.ClaimExtension.Length);
             if (!IsLowerHex(claimRunToken, 64))
             {
                 return false;
@@ -92,7 +90,7 @@ internal static class GlobalCoverageReconciliation
 
             if (pendingInInput.Length == 0)
             {
-                if (GetFilesBounded(canonicalInput, "coverage-*.json").Length != 0)
+                if (GetFilesBounded(canonicalInput, GlobalCoverageProtocol.CoverageFilePattern).Length != 0)
                 {
                     return false;
                 }
@@ -114,8 +112,8 @@ internal static class GlobalCoverageReconciliation
             var participants = new List<Participant>(pendingInInput.Length);
             foreach (var pendingPath in pendingInInput)
             {
-                var suffix = Path.GetFileName(pendingPath).Substring(PendingPrefix.Length);
-                var readyPath = Path.Combine(canonicalInput, ReadyPrefix + suffix);
+                var suffix = Path.GetFileName(pendingPath).Substring(GlobalCoverageProtocol.PendingMarkerPrefix.Length);
+                var readyPath = Path.Combine(canonicalInput, GlobalCoverageProtocol.GetReadyMarkerFileName(suffix));
                 if (!File.Exists(readyPath))
                 {
                     return false;
@@ -154,13 +152,13 @@ internal static class GlobalCoverageReconciliation
                     var directory = ready.Directory!;
                     allDirectories.Add(directory);
                     var identity = GetIdentitySuffix(ready);
-                    var pendingPath = Path.Combine(directory, PendingPrefix + identity);
-                    var readyPath = Path.Combine(directory, ReadyPrefix + identity);
+                    var pendingPath = Path.Combine(directory, GlobalCoverageProtocol.GetPendingMarkerFileName(identity));
+                    var readyPath = Path.Combine(directory, GlobalCoverageProtocol.GetReadyMarkerFileName(identity));
                     allPending.Add(pendingPath);
                     allReady.Add(readyPath);
 
-                    var prefix = $"coverage-{identity}-";
-                    var rawFiles = GetFilesBounded(directory, prefix + "*.json");
+                    var prefix = GlobalCoverageProtocol.GetCoverageGenerationPrefix(identity);
+                    var rawFiles = GetFilesBounded(directory, prefix + "*" + GlobalCoverageProtocol.JsonExtension);
                     if (rawFiles.Length != ready.CommittedGenerations)
                     {
                         return false;
@@ -232,10 +230,10 @@ internal static class GlobalCoverageReconciliation
 
             foreach (var directory in allDirectories)
             {
-                var claims = GetFilesBounded(directory, ClaimPrefix + "*.claim");
+                var claims = GetFilesBounded(directory, GlobalCoverageProtocol.CommandOwnerClaimPattern);
                 if (PathComparer.Equals(directory, canonicalInput))
                 {
-                    var expectedClaim = Path.Combine(directory, $"{ClaimPrefix}{claimRunToken}.claim");
+                    var expectedClaim = Path.Combine(directory, GlobalCoverageProtocol.GetCommandOwnerClaimFileName(claimRunToken));
                     if (claims.Length != 1 || claims.Any(claim => !PathComparer.Equals(claim, expectedClaim)))
                     {
                         return false;
@@ -246,7 +244,7 @@ internal static class GlobalCoverageReconciliation
                     return false;
                 }
 
-                foreach (var pendingMarker in GetFilesBounded(directory, PendingPrefix + "*"))
+                foreach (var pendingMarker in GetFilesBounded(directory, GlobalCoverageProtocol.PendingMarkerPattern))
                 {
                     if (!allPending.Contains(pendingMarker))
                     {
@@ -254,7 +252,7 @@ internal static class GlobalCoverageReconciliation
                     }
                 }
 
-                foreach (var readyMarker in GetFilesBounded(directory, ReadyPrefix + "*"))
+                foreach (var readyMarker in GetFilesBounded(directory, GlobalCoverageProtocol.ReadyMarkerPattern))
                 {
                     if (!allReady.Contains(readyMarker))
                     {
@@ -262,7 +260,7 @@ internal static class GlobalCoverageReconciliation
                     }
                 }
 
-                foreach (var coverageFile in GetFilesBounded(directory, "coverage-*.json"))
+                foreach (var coverageFile in GetFilesBounded(directory, GlobalCoverageProtocol.CoverageFilePattern))
                 {
                     if (!allRawFiles.Contains(coverageFile))
                     {
@@ -378,7 +376,7 @@ internal static class GlobalCoverageReconciliation
     private static GlobalCoverageMarkerRecord ReadMarker(string path, bool expectReady)
     {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        if (stream.Length <= 0 || stream.Length > MarkerMaximumBytes)
+        if (stream.Length <= 0 || stream.Length > GlobalCoverageProtocol.MarkerMaximumBytes)
         {
             throw new InvalidDataException("A global coverage marker has an invalid size.");
         }
@@ -566,8 +564,8 @@ internal static class GlobalCoverageReconciliation
         foreach (var directory in inputReady.Directories)
         {
             var canonicalDirectory = CanonicalizeDirectory(directory);
-            var pendingPath = Path.Combine(canonicalDirectory, PendingPrefix + suffix);
-            var readyPath = Path.Combine(canonicalDirectory, ReadyPrefix + suffix);
+            var pendingPath = Path.Combine(canonicalDirectory, GlobalCoverageProtocol.GetPendingMarkerFileName(suffix));
+            var readyPath = Path.Combine(canonicalDirectory, GlobalCoverageProtocol.GetReadyMarkerFileName(suffix));
             metadataBudget.AddFile(pendingPath);
             metadataBudget.AddFile(readyPath);
             var pending = ReadMarker(pendingPath, expectReady: false);
@@ -623,12 +621,12 @@ internal static class GlobalCoverageReconciliation
     }
 
     private static string GetIdentitySuffix(GlobalCoverageMarkerRecord record)
-        => $"{record.RunToken}-{record.ProcessId.ToString(CultureInfo.InvariantCulture)}-{record.Nonce}";
+        => GlobalCoverageProtocol.GetProcessIdentity(record.RunToken!, record.ProcessId, record.Nonce!);
 
     private static bool TryParseGeneration(string path, string prefix, out long generation)
     {
         var fileName = Path.GetFileName(path);
-        var suffix = fileName.Substring(prefix.Length, fileName.Length - prefix.Length - ".json".Length);
+        var suffix = fileName.Substring(prefix.Length, fileName.Length - prefix.Length - GlobalCoverageProtocol.JsonExtension.Length);
         return long.TryParse(suffix, NumberStyles.None, CultureInfo.InvariantCulture, out generation) && generation > 0;
     }
 
