@@ -203,6 +203,8 @@ public class GlobalCoverageOutputProtocolTests
             Directory.GetFiles(directory, ".dd-coverage-process-incomplete-*").Should().BeEmpty();
             File.Exists(Path.Combine(directory, ".dd-coverage-process-reconcile.lock")).Should().BeTrue();
             Directory.GetFiles(Path.Combine(directory, ".dd-coverage-completed"), "coverage-*.json", SearchOption.AllDirectories).Should().ContainSingle();
+            Directory.GetFiles(Path.Combine(directory, ".dd-coverage-completed"), ".dd-coverage-process-ready-*", SearchOption.AllDirectories).Should().ContainSingle();
+            Directory.GetFiles(Path.Combine(directory, ".dd-coverage-completed"), ".dd-coverage-process-incomplete-*", SearchOption.AllDirectories).Should().ContainSingle();
         }
         finally
         {
@@ -468,6 +470,47 @@ public class GlobalCoverageOutputProtocolTests
         finally
         {
             Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
+    public void ArchivalPreflightPreservesEveryArtifactWhenLaterInputChanges()
+    {
+        var coordinatorDirectory = CreateDirectory();
+        var secondaryDirectory = CreateDirectory();
+        try
+        {
+            ProduceCompleteRun(coordinatorDirectory, secondaryDirectory);
+            GlobalCoverageReconciliation.TryAcquire(coordinatorDirectory, authority: null, out var lease, out var protocolPresent).Should().BeTrue();
+            protocolPresent.Should().BeTrue();
+            var inputs = lease!.AllRawInputs.Should().HaveCount(2).And.Subject.ToArray();
+            var changedInput = inputs[1];
+            var originalContents = File.ReadAllBytes(changedInput.Path);
+            using (lease)
+            {
+                File.AppendAllText(changedInput.Path, " ");
+
+                var complete = lease.Complete;
+                complete.Should().Throw<InvalidDataException>();
+                inputs.Should().OnlyContain(input => File.Exists(input.Path));
+
+                File.WriteAllBytes(changedInput.Path, originalContents);
+            }
+
+            GlobalCoverageReconciliation.TryAcquire(coordinatorDirectory, authority: null, out var retryLease, out protocolPresent).Should().BeTrue();
+            protocolPresent.Should().BeTrue();
+            using (retryLease)
+            {
+                retryLease!.Complete();
+            }
+
+            Directory.GetFiles(coordinatorDirectory, "coverage-*.json").Should().BeEmpty();
+            Directory.GetFiles(secondaryDirectory, "coverage-*.json").Should().BeEmpty();
+        }
+        finally
+        {
+            Directory.Delete(coordinatorDirectory, true);
+            Directory.Delete(secondaryDirectory, true);
         }
     }
 

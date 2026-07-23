@@ -83,6 +83,24 @@ public class GlobalCoverageConsumerTests
         }
     }
 
+    [Theory]
+    [InlineData("{\"components\":[null]}")]
+    [InlineData("{\"components\":[{\"name\":\"component\",\"files\":[null]}]}")]
+    public void InputReaderRejectsNullCoverageEntries(string json)
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, json, new UTF8Encoding(false));
+
+            new GlobalCoverageInputReader().TryRead(path, out _).Should().BeFalse();
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     [Fact]
     public void CombinerUnionsInputsIncrementallyWithoutRetainingInputModels()
     {
