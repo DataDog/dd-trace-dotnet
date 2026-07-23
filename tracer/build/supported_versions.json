@@ -1046,9 +1046,9 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "4.0.0",
         "minVersionTestedInclusive": "2.0.0",
-        "maxVersionSupportedInclusive": "4.2.3",
-        "maxVersionAvailableInclusive": "4.2.3",
-        "maxVersionTestedInclusive": "4.2.3"
+        "maxVersionSupportedInclusive": "4.3.2",
+        "maxVersionAvailableInclusive": "4.3.2",
+        "maxVersionTestedInclusive": "4.3.2"
       }
     ]
   },
