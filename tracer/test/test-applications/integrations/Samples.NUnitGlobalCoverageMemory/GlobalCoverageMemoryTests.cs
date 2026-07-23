@@ -36,6 +36,20 @@ public class GlobalCoverageMemoryTests
     public void ExecutesSparseInstrumentedLine(int value)
     {
         Assert.That(CoveredMethod(value), Is.EqualTo(value + 1));
+        if (value == 0)
+        {
+            Assert.That(FirstCoverageSentinel(), Is.EqualTo(101));
+        }
+
+        if (value == DefaultCaseCount / 2)
+        {
+            Assert.That(MiddleCoverageSentinel(), Is.EqualTo(102));
+        }
+
+        if (value == DefaultCaseCount - 1)
+        {
+            Assert.That(LastCoverageSentinel(), Is.EqualTo(103));
+        }
 
         var completed = Interlocked.Increment(ref _completed);
         if (completed % 100 == 0 || completed == 1)
@@ -48,6 +62,27 @@ public class GlobalCoverageMemoryTests
     {
 #line 131072
         return value + 1;
+#line default
+    }
+
+    private static int FirstCoverageSentinel()
+    {
+#line 131073
+        return 101;
+#line default
+    }
+
+    private static int MiddleCoverageSentinel()
+    {
+#line 131074
+        return 102;
+#line default
+    }
+
+    private static int LastCoverageSentinel()
+    {
+#line 131075
+        return 103;
 #line default
     }
 

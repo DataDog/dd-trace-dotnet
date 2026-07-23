@@ -141,13 +141,19 @@ public class CoverageEventHandlerTests
     }
 
     [Fact]
-    public unsafe void TenThousandClosedContextsKeepOnlyOneCompactBitmap()
+    public unsafe void TenThousandClosedContextsKeepTheExactUnionInOneCompactBitmap()
     {
         const int contextCount = 10_000;
         const int rawByteLength = 128 * 1024;
+        const int executableLineCount = 1_024;
 
         var handler = new DefaultWithGlobalCoverageEventHandler();
-        var metadata = CreateMetadata(totalLines: rawByteLength, coverageMode: 0, lastExecutableLine: 1);
+        var expectedExecutableBitmap = Enumerable.Repeat((byte)0xff, executableLineCount / 8).ToArray();
+        var expectedExecutedBitmap = Enumerable.Repeat((byte)0xaa, executableLineCount / 8).ToArray();
+        var metadata = new TestMetadata(
+            rawByteLength,
+            0,
+            [new FileCoverageMetadata("/src/stress.cs", 0, executableLineCount, expectedExecutableBitmap)]);
 
         for (var i = 0; i < contextCount; i++)
         {
@@ -159,7 +165,8 @@ public class CoverageEventHandlerTests
                                    out var module)
                                .Should()
                                .BeTrue();
-            *(byte*)module!.FilesLines = 1;
+            var counters = (byte*)module!.FilesLines;
+            counters[(i % (executableLineCount / 2)) * 2] = 1;
             handler.EndSession(handle);
         }
 
@@ -169,11 +176,18 @@ public class CoverageEventHandlerTests
         contextDiagnostics.Disposed.Should().Be(contextCount);
 
         var accumulator = handler.AccumulatorDiagnostics;
-        accumulator.RetainedBitmapBytes.Should().Be(1);
+        accumulator.RetainedBitmapBytes.Should().Be(expectedExecutedBitmap.Length);
         accumulator.ModuleCount.Should().Be(1);
         accumulator.FileSlotCount.Should().Be(1);
         accumulator.AcceptedContextCount.Should().Be(contextCount);
         accumulator.IsValid.Should().BeTrue();
+
+        using var snapshot = handler.AcquireGlobalCoverageSnapshot().Snapshot!;
+        snapshot.MergedContextCount.Should().Be(contextCount);
+        var file = snapshot.Model.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject;
+        file.ExecutableBitmap.Should().Equal(expectedExecutableBitmap);
+        file.ExecutedBitmap.Should().Equal(expectedExecutedBitmap);
+        file.Data.Should().Equal(50, executableLineCount, executableLineCount / 2);
     }
 
     private static CoverageSessionHandle StartAndAllocate(DefaultWithGlobalCoverageEventHandler handler, ModuleCoverageMetadata metadata)
