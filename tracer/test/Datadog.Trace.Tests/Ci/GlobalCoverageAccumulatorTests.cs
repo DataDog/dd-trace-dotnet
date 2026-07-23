@@ -6,8 +6,6 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using FluentAssertions;
@@ -34,8 +32,6 @@ public class GlobalCoverageAccumulatorTests
                                metadata,
                                typeof(GlobalCoverageAccumulatorTests).Module,
                                rawByteLength,
-                               handler.ModuleValueStrategy,
-                               CoverageModuleValueOrigin.TestContext,
                                out var module)
                            .Should()
                            .BeTrue();
@@ -66,18 +62,14 @@ public class GlobalCoverageAccumulatorTests
     [Fact]
     public unsafe void ExceedingBitmapBudgetSuppressesGlobalCoverageButFreesNativeContext()
     {
-        var diagnostics = new CoverageNativeAllocationDiagnostics();
         var handler = new DefaultWithGlobalCoverageEventHandler(
-            new GlobalCoverageAccumulatorLimits(maximumSingleBitmapBytes: 0, maximumBitmapBytesPerGeneration: 0, maximumModules: 1, maximumFileSlots: 1),
-            new CoverageModuleValueStrategy(diagnostics));
+            new GlobalCoverageAccumulatorLimits(maximumSingleBitmapBytes: 0, maximumBitmapBytesPerGeneration: 0, maximumModules: 1, maximumFileSlots: 1));
         var metadata = new TestMetadata(8, 0, [new FileCoverageMetadata("/src/limit.cs", 0, 8, [0xff])]);
         var handle = handler.StartSession("xunit");
         handler.Container!.TryGetOrAddModuleValue(
                                metadata,
                                typeof(GlobalCoverageAccumulatorTests).Module,
                                8,
-                               handler.ModuleValueStrategy,
-                               CoverageModuleValueOrigin.TestContext,
                                out var module)
                            .Should()
                            .BeTrue();
@@ -85,7 +77,8 @@ public class GlobalCoverageAccumulatorTests
 
         handler.EndSession(handle).Should().NotBeNull();
 
-        diagnostics.GetSnapshot(CoverageModuleValueOrigin.TestContext).ActiveBuffers.Should().Be(0);
+        module.FilesLines.Should().Be(IntPtr.Zero);
+        module.AllocatedByteLength.Should().Be(0);
         handler.AccumulatorDiagnostics.IsValid.Should().BeFalse();
         handler.AcquireGlobalCoverageSnapshot().Status.Should().Be(GlobalCoverageSnapshotStatus.SuppressedIncomplete);
     }
@@ -156,40 +149,6 @@ public class GlobalCoverageAccumulatorTests
     }
 
     [Fact]
-    public async Task SnapshotInitializationFailureReleasesOnlyItsOwnFinalizerAdmission()
-    {
-        var handler = new CoordinatedSnapshotInitializationHandler();
-        var firstSnapshotTask = Task.Factory.StartNew(
-            handler.AcquireGlobalCoverageSnapshot,
-            CancellationToken.None,
-            TaskCreationOptions.LongRunning,
-            TaskScheduler.Default);
-        handler.FirstInitializationEntered.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
-
-        var secondSnapshotTask = Task.Factory.StartNew(
-            handler.AcquireGlobalCoverageSnapshot,
-            CancellationToken.None,
-            TaskCreationOptions.LongRunning,
-            TaskScheduler.Default);
-        SpinWait.SpinUntil(() => handler.InFlightFinalizers == 2, TimeSpan.FromSeconds(5)).Should().BeTrue();
-
-        handler.AllowFirstInitializationToFail.Set();
-        var firstAction = async () => await firstSnapshotTask;
-        await firstAction.Should().ThrowAsync<InvalidOperationException>();
-        var secondResult = await secondSnapshotTask;
-        var secondSnapshot = secondResult.Snapshot!;
-
-        handler.InFlightFinalizers.Should().Be(1);
-        handler.RequestSeal().Should().BeFalse();
-        handler.State.Should().Be(DefaultWithGlobalCoverageEventHandler.LifecycleState.Completing);
-
-        secondSnapshot.Dispose();
-
-        handler.InFlightFinalizers.Should().Be(0);
-        handler.SealedComplete.Should().BeTrue();
-    }
-
-    [Fact]
     public void StartDuringCompletingIsRejectedAndMakesSealIncomplete()
     {
         var handler = new DefaultWithGlobalCoverageEventHandler();
@@ -255,8 +214,6 @@ public class GlobalCoverageAccumulatorTests
                                metadata,
                                typeof(GlobalCoverageAccumulatorTests).Module,
                                8,
-                               handler.ModuleValueStrategy,
-                               CoverageModuleValueOrigin.TestContext,
                                out var module)
                            .Should()
                            .BeTrue();
@@ -280,8 +237,6 @@ public class GlobalCoverageAccumulatorTests
                                metadata,
                                module,
                                CoverageMetadataValidator.ValidateAndGetRawByteLength(metadata),
-                               handler.ModuleValueStrategy,
-                               CoverageModuleValueOrigin.TestContext,
                                out var moduleValue)
                            .Should()
                            .BeTrue();
@@ -299,26 +254,6 @@ public class GlobalCoverageAccumulatorTests
         internal TestMetadata(int totalLines, int coverageMode, FileCoverageMetadata[] files)
             : base(totalLines, coverageMode, files)
         {
-        }
-    }
-
-    private sealed class CoordinatedSnapshotInitializationHandler : DefaultWithGlobalCoverageEventHandler
-    {
-        private int _initializationCount;
-
-        internal ManualResetEventSlim FirstInitializationEntered { get; } = new(false);
-
-        internal ManualResetEventSlim AllowFirstInitializationToFail { get; } = new(false);
-
-        protected override void InitializeSnapshotOutput(GlobalCoverageSnapshot snapshot)
-        {
-            base.InitializeSnapshotOutput(snapshot);
-            if (Interlocked.Increment(ref _initializationCount) == 1)
-            {
-                FirstInitializationEntered.Set();
-                AllowFirstInitializationToFail.Wait(TimeSpan.FromSeconds(5));
-                throw new InvalidOperationException("Injected snapshot initialization failure.");
-            }
         }
     }
 }

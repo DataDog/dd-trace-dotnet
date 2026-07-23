@@ -60,8 +60,6 @@ public static class CoverageReporter<TMeta>
                     Metadata,
                     Module,
                     ModuleMemorySize,
-                    handler.ModuleValueStrategy,
-                    CoverageModuleValueOrigin.TestContext,
                     out module))
             {
                 module = GetOrCreateGlobalModuleValue(handler);
@@ -98,8 +96,6 @@ public static class CoverageReporter<TMeta>
                 Metadata,
                 Module,
                 ModuleMemorySize,
-                handler.ModuleValueStrategy,
-                CoverageModuleValueOrigin.GlobalFallback,
                 out var module) || module is null)
         {
             throw new InvalidOperationException("The global coverage context is unexpectedly closed.");

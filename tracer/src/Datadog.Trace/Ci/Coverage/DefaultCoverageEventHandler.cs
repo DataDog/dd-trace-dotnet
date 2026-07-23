@@ -22,11 +22,6 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
 {
     protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultCoverageEventHandler));
 
-    internal DefaultCoverageEventHandler(CoverageModuleValueStrategy? moduleValueStrategy = null)
-        : base(moduleValueStrategy)
-    {
-    }
-
     protected override void OnSessionStart(CoverageContextContainer context)
     {
     }

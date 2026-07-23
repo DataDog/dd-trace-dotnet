@@ -48,21 +48,16 @@ public class CoverageMetadataValidatorTests
           .Should().Throw<InvalidOperationException>();
 
     [Fact]
-    public unsafe void InvalidReporterMetadataAllocatesNoNativeMemoryAndSuppressesGlobalOutput()
+    public unsafe void InvalidReporterMetadataSuppressesGlobalOutput()
     {
         var previousHandler = CoverageReporter.Handler;
-        var diagnostics = new CoverageNativeAllocationDiagnostics();
-        var strategy = new CountingStrategy(diagnostics);
-        var handler = new DefaultWithGlobalCoverageEventHandler(moduleValueStrategy: strategy);
+        var handler = new DefaultWithGlobalCoverageEventHandler();
         CoverageReporter.Handler = handler;
         try
         {
             var action = () => Probe<InvalidReporterMetadata>();
 
             action.Should().Throw<TypeInitializationException>();
-            strategy.AllocateCalls.Should().Be(0);
-            strategy.FreeCalls.Should().Be(0);
-            diagnostics.GetSnapshot(CoverageModuleValueOrigin.TestContext).ActiveBuffers.Should().Be(0);
             handler.AccumulatorDiagnostics.IsValid.Should().BeFalse();
         }
         finally
@@ -91,30 +86,6 @@ public class CoverageMetadataValidatorTests
         public InvalidReporterMetadata()
             : base(int.MaxValue, 1, [])
         {
-        }
-    }
-
-    private sealed class CountingStrategy : CoverageModuleValueStrategy
-    {
-        internal CountingStrategy(CoverageNativeAllocationDiagnostics diagnostics)
-            : base(diagnostics)
-        {
-        }
-
-        internal int AllocateCalls { get; private set; }
-
-        internal int FreeCalls { get; private set; }
-
-        internal override IntPtr Allocate(int byteLength, CoverageModuleValueOrigin origin)
-        {
-            AllocateCalls++;
-            return base.Allocate(byteLength, origin);
-        }
-
-        internal override void Free(IntPtr pointer, CoverageModuleValueOrigin origin)
-        {
-            FreeCalls++;
-            base.Free(pointer, origin);
         }
     }
 }

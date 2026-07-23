@@ -18,19 +18,12 @@ namespace Datadog.Trace.Ci.Coverage;
 internal abstract class CoverageEventHandler
 {
     private readonly AsyncLocal<CoverageContextContainer?> _asyncContext = new();
-    private readonly CoverageContextContainer _globalContainer = new();
+    private readonly CoverageContextContainer _globalContainer = new(bufferKind: ModuleValue.BufferKind.GlobalFallback);
     private readonly CoverageContextDiagnostics _contextDiagnostics = new();
-
-    protected CoverageEventHandler(CoverageModuleValueStrategy? moduleValueStrategy = null)
-    {
-        ModuleValueStrategy = moduleValueStrategy ?? CoverageModuleValueStrategy.Production;
-    }
 
     internal CoverageContextContainer? Container => _asyncContext.Value;
 
     internal CoverageContextContainer GlobalContainer => _globalContainer;
-
-    internal CoverageModuleValueStrategy ModuleValueStrategy { get; }
 
     internal CoverageContextDiagnosticSnapshot ContextDiagnostics => _contextDiagnostics.GetSnapshot();
 

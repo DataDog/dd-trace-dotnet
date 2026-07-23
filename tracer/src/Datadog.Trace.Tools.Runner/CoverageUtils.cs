@@ -44,7 +44,8 @@ internal static class CoverageUtils
                 Utils.WriteSuccess($"Writing {outputFile}");
             }
 
-            new GlobalCoverageArtifactWriter().WriteAtomicReplace(outputFile, globalCoverageInfo);
+            var writer = new GlobalCoverageArtifactWriter();
+            writer.WriteAtomicReplace(outputFile, globalCoverageInfo);
             reconciliationLease?.Complete();
             return true;
         }

@@ -18,13 +18,15 @@ internal sealed class CoverageContextContainer : IDisposable
 {
     private readonly object _gate = new();
     private readonly List<ModuleValue> _modules = new();
+    private readonly ModuleValue.BufferKind _bufferKind;
     private ModuleValue? _currentModuleValue;
     private int _closed;
     private int _disposed;
 
-    public CoverageContextContainer(object? state = null)
+    public CoverageContextContainer(object? state = null, ModuleValue.BufferKind bufferKind = ModuleValue.BufferKind.Context)
     {
         State = state;
+        _bufferKind = bufferKind;
     }
 
     public object? State { get; set; }
@@ -58,8 +60,6 @@ internal sealed class CoverageContextContainer : IDisposable
         ModuleCoverageMetadata metadata,
         Module module,
         int rawByteLength,
-        CoverageModuleValueStrategy strategy,
-        CoverageModuleValueOrigin origin,
         out ModuleValue? moduleValue)
     {
         moduleValue = GetModuleValue(module);
@@ -82,39 +82,21 @@ internal sealed class CoverageContextContainer : IDisposable
                 return true;
             }
 
-            var requiredCount = checked(_modules.Count + 1);
-            if (_modules.Capacity < requiredCount)
-            {
-                strategy.BeforeCapacityGrowth(origin);
-                var newCapacity = _modules.Capacity == 0 ? 4 : _modules.Capacity;
-                while (newCapacity < requiredCount)
-                {
-                    newCapacity = checked(newCapacity * 2);
-                }
-
-                _modules.Capacity = newCapacity;
-            }
-
-            ModuleValue? provisional = null;
-            var insertionIndex = _modules.Count;
+            var provisional = new ModuleValue(metadata, module, rawByteLength, _bufferKind);
             try
             {
-                provisional = new ModuleValue(metadata, module, rawByteLength, strategy, origin);
-                strategy.BeforePublication(origin);
                 _modules.Add(provisional);
-                strategy.AfterPublication(origin);
-                _currentModuleValue = provisional;
-                moduleValue = provisional;
-                return true;
             }
-            finally
+            catch
             {
-                if (provisional is not null &&
-                    !(insertionIndex < _modules.Count && ReferenceEquals(_modules[insertionIndex], provisional)))
-                {
-                    provisional.Dispose();
-                }
+                // List growth can fail after the native buffer was allocated, so the unpublished value must release it here.
+                provisional.Dispose();
+                throw;
             }
+
+            _currentModuleValue = provisional;
+            moduleValue = provisional;
+            return true;
         }
     }
 
