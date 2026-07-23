@@ -72,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
                 }
                 finally
                 {
-                    if (shouldRestoreBaggage)
+                    if (performedContext.Items.TryGetValue(HangfireConstants.DatadogBaggageKey, out var previousBaggage))
                     {
                         Baggage.Current = previousBaggage is Baggage baggage ? baggage : new Baggage();
                     }
