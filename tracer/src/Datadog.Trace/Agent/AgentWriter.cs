@@ -62,7 +62,8 @@ namespace Datadog.Trace.Agent
         private long _droppedP0Traces;
         private long _droppedP0Spans;
 
-        private long _droppedTraces;
+        private long _droppedTracesBufferFull;
+        private long _droppedTracesTooLarge;
 
         private bool _traceMetricsEnabled;
 
@@ -130,6 +131,12 @@ namespace Datadog.Trace.Agent
         internal SpanBuffer FrontBuffer => _frontBuffer;
 
         internal SpanBuffer BackBuffer => _backBuffer;
+
+        // For tests only
+        internal long DroppedTracesBufferFull => Volatile.Read(ref _droppedTracesBufferFull);
+
+        // For tests only
+        internal long DroppedTracesTooLarge => Volatile.Read(ref _droppedTracesTooLarge);
 
         public bool CanComputeStats => _apmTracingEnabled && _statsAggregator.CanComputeStats == true;
 
@@ -345,11 +352,23 @@ namespace Datadog.Trace.Agent
                         }
                     }
 
-                    var droppedTraces = Interlocked.Exchange(ref _droppedTraces, 0);
+                    var droppedTracesTooLarge = Interlocked.Exchange(ref _droppedTracesTooLarge, 0);
 
-                    if (droppedTraces > 0)
+                    if (droppedTracesTooLarge > 0)
                     {
-                        Log.Warning("{Count} traces were dropped since the last flush operation.", droppedTraces);
+                        Log.Warning<long, int>(
+                            "{Count} traces were dropped because their serialized size exceeded the trace buffer limit of {MaxBufferSize} bytes since the last flush operation.",
+                            droppedTracesTooLarge,
+                            _frontBuffer.MaxBufferSize);
+                    }
+
+                    var droppedTracesBufferFull = Interlocked.Exchange(ref _droppedTracesBufferFull, 0);
+
+                    if (droppedTracesBufferFull > 0)
+                    {
+                        Log.Warning<long>(
+                            "{Count} traces were dropped because both trace buffers were full or unavailable since the last flush operation.",
+                            droppedTracesBufferFull);
                     }
 
                     if (buffer.TraceCount > 0)
@@ -520,7 +539,7 @@ namespace Datadog.Trace.Agent
             if (writeStatus == SpanBuffer.WriteStatus.Overflow)
             {
                 // The trace is too big for the buffer, no point in trying again
-                DropTrace(chunk.Count);
+                DropTrace(chunk.Count, ref _droppedTracesTooLarge);
                 return;
             }
 
@@ -540,12 +559,12 @@ namespace Datadog.Trace.Agent
             }
 
             // All the buffers are full :( drop the trace
-            DropTrace(chunk.Count);
+            DropTrace(chunk.Count, ref _droppedTracesBufferFull);
         }
 
-        private void DropTrace(int count)
+        private void DropTrace(int count, ref long droppedTraces)
         {
-            Interlocked.Increment(ref _droppedTraces);
+            Interlocked.Increment(ref droppedTraces);
             _traceKeepRateCalculator.IncrementDrops(1);
             TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.OverfullBuffer, count);
             TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.OverfullBuffer);

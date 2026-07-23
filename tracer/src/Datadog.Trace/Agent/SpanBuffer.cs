@@ -64,6 +64,8 @@ namespace Datadog.Trace.Agent
 
         public bool IsFull { get; private set; }
 
+        internal int MaxBufferSize => _maxBufferSize;
+
         // For tests only
         internal bool IsLocked => _locked;
 

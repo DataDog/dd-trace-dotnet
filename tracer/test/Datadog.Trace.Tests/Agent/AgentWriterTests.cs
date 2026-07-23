@@ -407,12 +407,46 @@ namespace Datadog.Trace.Tests.Agent
             agent.BackBuffer.TraceCount.Should().Be(1);
             agent.BackBuffer.SpanCount.Should().Be(1);
 
+            agent.DroppedTracesBufferFull.Should().Be(1);
+            agent.DroppedTracesTooLarge.Should().Be(0);
+
             // Dropped trace should have been reported to statsd
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.EnqueuedTraces, 1, 1, null), Times.Once);
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.EnqueuedSpans, 2, 1, null), Times.Once);
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.DroppedTraces, 1, 1, null), Times.Once);
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.DroppedSpans, 2, 1, null), Times.Once);
             statsd.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task DropTraceThatExceedsBufferSize()
+        {
+            var statsd = new Mock<IDogStatsd>();
+            var agent = new AgentWriter(
+                Mock.Of<IApi>(),
+                statsAggregator: null,
+                new TestStatsdManager(statsd.Object),
+                automaticFlush: false,
+                maxBufferSize: SpanBufferMessagePackSerializer.HeaderSizeConst,
+                initialTracerMetricsEnabled: true);
+
+            agent.WriteTrace(CreateTraceChunk(2));
+
+            agent.FrontBuffer.IsEmpty.Should().BeTrue();
+            agent.BackBuffer.IsEmpty.Should().BeTrue();
+            agent.DroppedTracesBufferFull.Should().Be(0);
+            agent.DroppedTracesTooLarge.Should().Be(1);
+
+            statsd.Verify(s => s.Increment(TracerMetricNames.Queue.EnqueuedTraces, 1, 1, null), Times.Once);
+            statsd.Verify(s => s.Increment(TracerMetricNames.Queue.EnqueuedSpans, 2, 1, null), Times.Once);
+            statsd.Verify(s => s.Increment(TracerMetricNames.Queue.DroppedTraces, 1, 1, null), Times.Once);
+            statsd.Verify(s => s.Increment(TracerMetricNames.Queue.DroppedSpans, 2, 1, null), Times.Once);
+            statsd.VerifyNoOtherCalls();
+
+            await agent.FlushTracesAsync();
+
+            agent.DroppedTracesBufferFull.Should().Be(0);
+            agent.DroppedTracesTooLarge.Should().Be(0);
         }
 
         [Fact]
