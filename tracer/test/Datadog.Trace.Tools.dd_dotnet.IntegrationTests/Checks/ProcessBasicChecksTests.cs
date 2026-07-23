@@ -84,7 +84,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     [Fact]
     public void DetectsBundleWhenLaunchedAsDotnetDll()
     {
-        // GH-7214: `dotnet app.dll` launches (e.g. Azure App Service Linux) report the
+        // `dotnet app.dll` launches (e.g. Azure App Service Linux) report the
         // dotnet host as MainModule, not the app's own directory.
         var process = CreateProcessInfo(mainModuleDirectory: "/usr/share/dotnet");
         const string profilerPath = "/app/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so";
