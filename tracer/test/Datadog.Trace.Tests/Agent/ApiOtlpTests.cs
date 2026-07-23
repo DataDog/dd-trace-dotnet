@@ -34,12 +34,15 @@ public class ApiOtlpTests
         mockTracesFactory.Setup(f => f.GetEndpoint(null)).Returns(new Uri("http://localhost:4317"));
 
         var mockMetricsRequest = new Mock<IApiRequest>();
+        mockMetricsRequest
+            .Setup(r => r.PostAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<string>()))
+            .Throws(new InvalidOperationException("PostAsync should not be called when span metrics are disabled."));
         var mockMetricsFactory = new Mock<IApiRequestFactory>();
         mockMetricsFactory.Setup(f => f.Create(It.IsAny<Uri>())).Returns(mockMetricsRequest.Object);
 
         var api = new ApiOtlp(mockTracesFactory.Object, mockMetricsFactory.Object, settings, exporterSettings);
 
-        var result = await api.SendStatsAsync(stats: null, bucketDuration: 0, tracerObfuscationVersion: 0);
+        var result = await api.SendStatsAsync(CreateBufferWithOneHit(), bucketDuration: 10_000_000_000L, tracerObfuscationVersion: 0);
         result.Should().BeTrue();
         mockMetricsRequest.Verify(r => r.PostAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<string>()), Times.Never);
     }
