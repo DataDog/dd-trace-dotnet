@@ -82,14 +82,31 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     [Fact]
     public void DetectsBundleWhenRunningOnAzureAppService()
     {
-        // `dotnet app.dll` launches (e.g. Azure App Service Linux) report the
-        // dotnet host as MainModule, not the app's own directory.
-        const string mainModule = "/usr/share/dotnet/dotnet";
         var profilerPath = $"{ProcessBasicCheck.AzureAppServiceRootPath}/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so";
+        var environmentVariables = new Dictionary<string, string>
+        {
+            ["WEBSITE_SITE_NAME"] = "app",
+            ["CORECLR_PROFILER"] = Utils.Profilerid,
+            ["CORECLR_ENABLE_PROFILING"] = "1",
+            ["CORECLR_PROFILER_PATH"] = profilerPath
+        };
+        var coreClrModule = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "coreclr.dll" : "libcoreclr.so";
+        var process = new ProcessInfo("dotnet", 1, environmentVariables, "/usr/share/dotnet/dotnet", [coreClrModule]);
 
-        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: true);
+        using var console = ConsoleHelper.Redirect();
 
-        result.Should().BeTrue();
+        ProcessBasicCheck.Run(process, MockRegistryService([], ProfilerPath));
+
+        console.Output.Should().Contain(TracingWithBundleProfilerPath);
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            console.Output.Should().NotContain(TracingWithInstallerWindowsNetCore);
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            console.Output.Should().NotContain(TracingWithInstallerLinux);
+        }
     }
 
     [Fact]
