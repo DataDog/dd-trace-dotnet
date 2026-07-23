@@ -25,13 +25,17 @@ internal sealed class AzureFrontDoorSpanFactory : IInferredSpanFactory
     {
         try
         {
-            var resourceUrl = data.Path is null ? string.Empty : UriHelpers.GetCleanUriPath($"/{data.Path}").ToLowerInvariant();
+            // Azure Front Door currently sends the path relative, without a leading slash (e.g. "api/foo").
+            // Trim any leading slash defensively before prepending our own, so the route/url stay
+            // single-slashed ("/api/foo") even if Front Door starts sending an absolute path later.
+            var normalizedPath = data.Path?.TrimStart('/');
+            var resourceUrl = normalizedPath is null ? string.Empty : UriHelpers.GetCleanUriPath($"/{normalizedPath}").ToLowerInvariant();
 
             var tags = new InferredProxyTags
             {
                 HttpMethod = data.HttpMethod,
                 InstrumentationName = data.ProxyName,
-                HttpUrl = $"{data.DomainName}/{data.Path}",
+                HttpUrl = $"{data.DomainName}/{normalizedPath}",
                 HttpRoute = resourceUrl,
                 InferredSpan = 1,
                 Region = data.Region,
