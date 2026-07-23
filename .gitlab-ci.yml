@@ -318,6 +318,12 @@ macrobenchmarks:
   needs: []
   trigger:
     include: .gitlab/benchmarks/macrobenchmarks.yml
+  variables:
+    # Forward BP_EXTERNAL_S3_URL so an external orchestrator can override the S3 destination.
+    # This avoids 'forward: pipeline_variables: true', which forwards every parent variable and may be unsafe.
+    # When the orchestrator leaves it unset, GitLab forwards the literal '$BP_EXTERNAL_S3_URL' (not empty),
+    # so downstream code must treat that literal as unset.
+    BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL
   allow_failure: true
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^hotfix/)'
@@ -332,6 +338,12 @@ microbenchmarks:
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
     strategy: depend
+  variables:
+    # Forward BP_EXTERNAL_S3_URL so an external orchestrator can override the S3 destination.
+    # This avoids 'forward: pipeline_variables: true', which forwards every parent variable and may be unsafe.
+    # When the orchestrator leaves it unset, GitLab forwards the literal '$BP_EXTERNAL_S3_URL' (not empty),
+    # so downstream code must treat that literal as unset.
+    BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL
   allow_failure: true
   rules:
     - if: $CI_COMMIT_TAG
@@ -342,6 +354,12 @@ dsm_throughput:
   stage: benchmarks
   trigger:
     include: .gitlab/benchmarks/dsm-throughput.yml
+  variables:
+    # Forward BP_EXTERNAL_S3_URL so an external orchestrator can override the S3 destination.
+    # This avoids 'forward: pipeline_variables: true', which forwards every parent variable and may be unsafe.
+    # When the orchestrator leaves it unset, GitLab forwards the literal '$BP_EXTERNAL_S3_URL' (not empty),
+    # so downstream code must treat that literal as unset.
+    BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL
   allow_failure: true
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'

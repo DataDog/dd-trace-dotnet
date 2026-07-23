@@ -107,12 +107,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             string packageVersion = PackageVersions.Npgsql.First()[0] as string;
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
+            try
+            {
+                using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+                var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
 
-            Assert.NotEmpty(spans);
-            spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
-            await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Npgsql);
+                Assert.NotEmpty(spans);
+                spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
+                await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Npgsql);
+            }
+            catch (ExitCodeException ex) when (ex.Message.Contains("Connection timed out"))
+            {
+                throw new SkipException("The PostgreSQL test dependency timed out.");
+            }
         }
     }
 }

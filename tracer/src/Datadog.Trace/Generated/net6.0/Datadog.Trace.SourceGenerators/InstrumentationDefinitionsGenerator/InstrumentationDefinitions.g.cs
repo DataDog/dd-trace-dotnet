@@ -632,6 +632,7 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.Selenium,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInjection.LoggerDispatchInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission.LoggerConfigurationInstrumentation"
                     => Datadog.Trace.Configuration.IntegrationId.Serilog,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Serverless.CompatibilityLayer_CalculateDogStatsDPipeName_Integration"

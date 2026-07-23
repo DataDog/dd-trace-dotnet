@@ -53,6 +53,11 @@ internal static partial class ConfigurationKeys
         public const string ApiSecuritySampleDelay = "DD_API_SECURITY_SAMPLE_DELAY";
 
         /// <summary>
+        /// A flag set by Datadog's agentic onboarding solution when it configures App &amp; API Protection.
+        /// </summary>
+        public const string AgenticOnboarding = "DD_APPSEC_AGENTIC_ONBOARDING";
+
+        /// <summary>
         /// Automatic instrumentation of user event mode. Values can be ident, disabled, anon.
         /// </summary>
         public const string UserEventsAutoInstrumentationMode = "DD_APPSEC_AUTO_USER_INSTRUMENTATION_MODE";

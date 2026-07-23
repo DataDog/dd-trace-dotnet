@@ -20,6 +20,8 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal partial class ProbeExpressionParser<T>
 {
     private const string UndefinedValueDump = nameof(Expressions.UndefinedValue);
+    private const string RedactedValueDump = "{REDACTED}";
+    private const string BackingFieldSuffix = ">k__BackingField";
 
     private static FieldInfo[] GetSafeFieldsForDump(FieldInfo[] fields)
     {
@@ -48,8 +50,42 @@ internal partial class ProbeExpressionParser<T>
         return field.IsLiteral ? StaticMemberSafety.GetRawConstantValue(field) : field.GetValue(field.IsStatic ? null : source);
     }
 
+    private static bool ShouldRedactDumpValue(string name, Type type)
+    {
+        if (Redaction.Instance.ShouldRedact(name, type, out _))
+        {
+            return true;
+        }
+
+        var autoPropertyName = GetAutoPropertyOrFieldName(name);
+        return !ReferenceEquals(name, autoPropertyName) &&
+               Redaction.Instance.IsRedactedKeyword(autoPropertyName);
+    }
+
+    private static string GetAutoPropertyOrFieldName(string fieldName)
+    {
+        if (StringUtil.IsNullOrEmpty(fieldName) || fieldName[0] != '<')
+        {
+            return fieldName;
+        }
+
+        var propertyNameLength = fieldName.Length - BackingFieldSuffix.Length - 1;
+        if (propertyNameLength <= 0 ||
+            !fieldName.EndsWith(BackingFieldSuffix, StringComparison.Ordinal))
+        {
+            return fieldName;
+        }
+
+        return fieldName.Substring(1, propertyNameLength);
+    }
+
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
+        if (ShouldRedactDumpValue(null, expression.Type))
+        {
+            return Expression.Constant(RedactedValueDump);
+        }
+
         if (expression.Type == ProbeExpressionParserHelper.UndefinedValueType)
         {
             return Expression.Constant(UndefinedValueDump);
@@ -239,13 +275,24 @@ internal partial class ProbeExpressionParser<T>
 
     private string DumpObject(object value, Type type, string name, int depth = 0)
     {
+        var hasName = !StringUtil.IsNullOrEmpty(name);
+        if (ShouldRedactDumpValue(name, type))
+        {
+            return hasName ? $"{name}={RedactedValueDump}" : RedactedValueDump;
+        }
+
+        if (type == null)
+        {
+            return hasName ? $"{name}=" : string.Empty;
+        }
+
         // only one level depth of collection
         if (depth == 0 && IsTypeSupportIndex(type, out var assignableFrom))
         {
             return DumpCollection(value, assignableFrom);
         }
 
-        if (!string.IsNullOrEmpty(name))
+        if (hasName)
         {
             name += "=";
         }
@@ -284,7 +331,7 @@ internal partial class ProbeExpressionParser<T>
                 sb.Append('[');
                 foreach (var item in (value as IList))
                 {
-                    sb.Append($"{DumpObject(item, item.GetType(), null, 1)}");
+                    sb.Append(DumpObject(item, item?.GetType(), null, 1));
                     if (++count == 3)
                     {
                         sb.Append(", ...");
@@ -302,7 +349,7 @@ internal partial class ProbeExpressionParser<T>
                 sb.Append('[');
                 foreach (var item in (value as IEnumerable))
                 {
-                    sb.Append($"{DumpObject(item, item.GetType(), null, 1)}");
+                    sb.Append(DumpObject(item, item?.GetType(), null, 1));
                     if (++count == 3)
                     {
                         sb.Append(", ...");
@@ -320,7 +367,11 @@ internal partial class ProbeExpressionParser<T>
                 sb.Append('{');
                 foreach (DictionaryEntry entry in (value as IDictionary))
                 {
-                    sb.Append($"[{DumpObject(entry.Key, entry.Key?.GetType(), null, 1)}, {DumpObject(entry.Value, entry.Value?.GetType(), null, 1)}]");
+                    sb.Append('[');
+                    sb.Append(DumpObject(entry.Key, entry.Key?.GetType(), null, 1));
+                    sb.Append(", ");
+                    sb.Append(ShouldRedactDictionaryKey(entry.Key) ? RedactedValueDump : DumpObject(entry.Value, entry.Value?.GetType(), null, 1));
+                    sb.Append(']');
                     if (++count == 3)
                     {
                         sb.Append(", ...");
