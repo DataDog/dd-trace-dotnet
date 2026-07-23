@@ -23,15 +23,13 @@ internal static class CoverageMetadataValidator
             throw new InvalidOperationException("Coverage metadata contains a negative total line count.");
         }
 
-        int rawByteLength;
-        try
+        var bytesPerLine = metadata.CoverageMode == 0 ? sizeof(byte) : sizeof(int);
+        if (metadata.TotalLines > int.MaxValue / bytesPerLine)
         {
-            rawByteLength = checked((int)((long)metadata.TotalLines * (metadata.CoverageMode == 0 ? sizeof(byte) : sizeof(int))));
+            throw new InvalidOperationException("Coverage metadata requires a raw counter buffer larger than the supported size.");
         }
-        catch (OverflowException ex)
-        {
-            throw new InvalidOperationException("Coverage metadata requires a raw counter buffer larger than the supported size.", ex);
-        }
+
+        var rawByteLength = metadata.TotalLines * bytesPerLine;
 
         foreach (var file in metadata.Files)
         {
@@ -40,16 +38,10 @@ internal static class CoverageMetadataValidator
                 throw new InvalidOperationException("Coverage metadata contains a negative file offset or line count.");
             }
 
-            int end;
-            int expectedBitmapLength;
-            try
+            var end = (long)file.Offset + file.LastExecutableLine;
+            if (end > int.MaxValue)
             {
-                end = checked(file.Offset + file.LastExecutableLine);
-                expectedBitmapLength = checked((int)(((long)file.LastExecutableLine + 7) / 8));
-            }
-            catch (OverflowException ex)
-            {
-                throw new InvalidOperationException("Coverage metadata contains an overflowing file range.", ex);
+                throw new InvalidOperationException("Coverage metadata contains an overflowing file range.");
             }
 
             if (end > metadata.TotalLines)
@@ -57,6 +49,7 @@ internal static class CoverageMetadataValidator
                 throw new InvalidOperationException("Coverage metadata contains a file range outside the module counter buffer.");
             }
 
+            var expectedBitmapLength = ((long)file.LastExecutableLine + 7) / 8;
             if (file.Bitmap is null || file.Bitmap.Length != expectedBitmapLength)
             {
                 throw new InvalidOperationException("Coverage metadata contains an executable bitmap with an invalid length.");
