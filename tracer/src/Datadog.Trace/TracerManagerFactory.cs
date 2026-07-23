@@ -285,7 +285,7 @@ namespace Datadog.Trace
 
         protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
-            if (settings.Manager.InitialExporterSettings.TracesEncoding is TracesEncoding.OtlpProtobuf or TracesEncoding.OtlpJson)
+            if (settings.Manager.InitialExporterSettings.IsOtlpTraceExport)
             {
                 var otlpApi = new ManagedApiOtlp(settings);
                 var otlpStatsAggregator = StatsAggregator.Create(otlpApi, settings, discoveryService, statsd, isOtlp: true);
