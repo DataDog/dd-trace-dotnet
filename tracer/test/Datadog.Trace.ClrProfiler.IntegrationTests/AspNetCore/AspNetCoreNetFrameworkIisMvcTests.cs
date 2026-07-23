@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -164,6 +165,36 @@ public abstract class AspNetCoreIisNetFrameworkMvcTests : AspNetCoreNetFramework
 
         // Overriding the type name here as we have multiple test classes in the file
         await Verifier.Verify(spans, settings)
+                      .DisableRequireUniquePrefix()
+                      .UseMethodName("_")
+                      .UseTypeName(_testName);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "LinuxUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task ExtractsContext()
+    {
+        ulong traceId = 123456789;
+        var parentId = 987654321;
+        var path = "/ping";
+        var headers = new Dictionary<string, string>
+        {
+            ["x-datadog-trace-id"] = traceId.ToString(),
+            ["x-datadog-parent-id"] = parentId.ToString(),
+            ["x-datadog-sampling-priority"] = "1",
+        };
+        var statusCode = HttpStatusCode.OK;
+        var spans = await GetWebServerSpans(path, Fixture.Agent, Fixture.HttpPort, statusCode, expectedSpanCount: 1, headers: headers);
+        spans.Should().AllSatisfy(x => x.TraceId.Should().Be(traceId));
+        ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: _testName, isExternalSpan: false);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+
+        // Overriding the type name here as we have multiple test classes in the file
+        await Verifier.Verify(spans, settings)
+                      .DisableRequireUniquePrefix()
                       .UseMethodName("_")
                       .UseTypeName(_testName);
     }
@@ -184,6 +215,7 @@ public abstract class AspNetCoreIisNetFrameworkMvcTests : AspNetCoreNetFramework
 
         // Overriding the type name here as we have multiple test classes in the file
         await Verifier.Verify(spans, settings)
+                      .DisableRequireUniquePrefix()
                       .UseMethodName("WrongMethod")
                       .UseTypeName(_testName);
     }
@@ -210,6 +242,7 @@ public abstract class AspNetCoreIisNetFrameworkMvcTests : AspNetCoreNetFramework
         // Overriding the type name here as we have multiple test classes in the file
         // Ensures that we get nice file nesting in Solution Explorer
         await Verifier.Verify(spans, settings)
+                      .DisableRequireUniquePrefix()
                       .UseMethodName("WithBaggage")
                       .UseTypeName(_testName);
     }
@@ -254,6 +287,7 @@ public abstract class AspNetCoreIisNetFrameworkMvcTests : AspNetCoreNetFramework
         // Overriding the type name here as we have multiple test classes in the file
         // Ensures that we get nice file nesting in Solution Explorer
         await Verifier.Verify(spans, settings)
+                      .DisableRequireUniquePrefix()
                       .UseMethodName("OTelBaggageApi")
                       .UseTypeName(_testName);
     }
