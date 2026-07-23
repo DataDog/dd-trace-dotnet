@@ -6,6 +6,7 @@
 using System.IO;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using Datadog.Profiler.SmokeTests;
 using FluentAssertions;
 using Xunit;
@@ -28,6 +29,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
         //       to connect to the Agent using namedpipe. Since the Agent does not exist in CI,
         //       the ETW support is disabled in the tests for .NET Framework.
 
+        [Flaky("Named pipes seem to be flaky in CI")]
         [TestAppFact("Samples.Computer01")]
         public void CheckProfilesSentThroughNamedPipe(string appName, string framework, string appAssembly)
         {
