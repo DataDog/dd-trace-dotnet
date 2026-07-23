@@ -30,6 +30,11 @@ public sealed class CiRunGlobalCoverageMemoryTests
     private const long MaximumStressPrivateBytesGrowth = 384L * 1024 * 1024;
     private const string SampleName = "NUnitGlobalCoverageMemory";
     private const string SampleProjectRelativePath = "tracer/test/test-applications/integrations/Samples.NUnitGlobalCoverageMemory/Samples.NUnitGlobalCoverageMemory.csproj";
+    private const string SampleSourceFileName = "GlobalCoverageMemoryTests.cs";
+    private const int CommonCoverageLine = 131_072;
+    private const int FirstCoverageSentinelLine = 131_073;
+    private const int MiddleCoverageSentinelLine = 131_074;
+    private const int LastCoverageSentinelLine = 131_075;
     private readonly ITestOutputHelper _output;
 
     public CiRunGlobalCoverageMemoryTests(ITestOutputHelper output)
@@ -145,7 +150,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
 
                 AssertLaunch(launchedArguments, launchedEnvironment, useDotnetTest, useTestingPlatformCoverage, coverageDirectory);
                 var testhostProcessId = AssertProgress(progressPath, expectedCaseCount);
-                var publishedCoverage = AssertPublishedCoverage(coverageDirectory);
+                var publishedCoverage = AssertPublishedCoverage(coverageDirectory, expectedCaseCount);
                 File.Move(publishedCoverage, Path.Combine(root.RootPath, $"session-coverage-{runIndex}.json"));
                 AssertCoverageDiagnostics(logDirectory, testhostProcessId, expectedCaseCount);
                 if (useDotnetTest)
@@ -338,13 +343,25 @@ public sealed class CiRunGlobalCoverageMemoryTests
         return records[0]!.Pid;
     }
 
-    private string AssertPublishedCoverage(string coverageDirectory)
+    private string AssertPublishedCoverage(string coverageDirectory, int expectedCaseCount)
     {
         var sessionCoverage = Directory.GetFiles(coverageDirectory, "session-coverage-*.json", SearchOption.TopDirectoryOnly);
         sessionCoverage.Should().ContainSingle();
         new GlobalCoverageInputReader().TryRead(sessionCoverage[0], out var coverage).Should().BeTrue();
         coverage.Should().NotBeNull();
         coverage!.GetTotalPercentage().Should().BeGreaterThan(0);
+        var sampleFile = coverage.Components.SelectMany(static component => component.Files)
+                                 .Should()
+                                 .ContainSingle(file => string.Equals(Path.GetFileName(file.Path), SampleSourceFileName, StringComparison.OrdinalIgnoreCase))
+                                 .Subject;
+        AssertLine(sampleFile.ExecutableBitmap, CommonCoverageLine, expected: true);
+        AssertLine(sampleFile.ExecutedBitmap, CommonCoverageLine, expected: true);
+        AssertLine(sampleFile.ExecutableBitmap, FirstCoverageSentinelLine, expected: true);
+        AssertLine(sampleFile.ExecutedBitmap, FirstCoverageSentinelLine, expected: true);
+        AssertLine(sampleFile.ExecutableBitmap, MiddleCoverageSentinelLine, expected: true);
+        AssertLine(sampleFile.ExecutedBitmap, MiddleCoverageSentinelLine, expected: expectedCaseCount > 1);
+        AssertLine(sampleFile.ExecutableBitmap, LastCoverageSentinelLine, expected: true);
+        AssertLine(sampleFile.ExecutedBitmap, LastCoverageSentinelLine, expected: expectedCaseCount > 1);
 
         Directory.GetFiles(coverageDirectory, "coverage-*.json", SearchOption.TopDirectoryOnly).Should().BeEmpty();
         Directory.GetFiles(coverageDirectory, ".dd-coverage-process-incomplete-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
@@ -355,6 +372,16 @@ public sealed class CiRunGlobalCoverageMemoryTests
         Directory.GetFiles(completedDirectory, "coverage-*.json", SearchOption.AllDirectories).Should().NotBeEmpty();
 
         return sessionCoverage[0];
+    }
+
+    private void AssertLine(byte[]? bitmap, int line, bool expected)
+    {
+        bitmap.Should().NotBeNull();
+        var zeroBasedLine = line - 1;
+        var byteIndex = zeroBasedLine >> 3;
+        bitmap!.Length.Should().BeGreaterThan(byteIndex);
+        var mask = (byte)(128 >> (zeroBasedLine & 7));
+        ((bitmap[byteIndex] & mask) != 0).Should().Be(expected, $"line {line} should have the expected coverage state");
     }
 
     private void AssertOuterCommandReconciliation(string logDirectory)

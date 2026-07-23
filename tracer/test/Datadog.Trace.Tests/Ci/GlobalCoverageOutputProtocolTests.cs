@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
@@ -182,6 +183,59 @@ public class GlobalCoverageOutputProtocolTests
         {
             Directory.Delete(configuredDirectory, true);
             Directory.Delete(lateDirectory, true);
+        }
+    }
+
+    [Fact]
+    public unsafe void ReconciliationUnionsEveryPublishedGenerationExactly()
+    {
+        var directory = CreateDirectory();
+        try
+        {
+            var handler = CreateHandler(directory);
+            var metadata = new ProtocolTestMetadata(
+                8,
+                0,
+                [new FileCoverageMetadata("/src/generations.cs", 0, 8, [0xff])]);
+
+            using (var command = DotnetTestRunState.TryCreate(DotnetTestCommandKind.DotnetTestCommand, null, directory, "run-id"))
+            {
+                PublishGeneration(executedOffset: 0);
+                PublishGeneration(executedOffset: 7);
+                handler.RequestSeal().Should().BeTrue();
+                command.ReleaseActivity();
+            }
+
+            var outputPath = Path.Combine(directory, "session-coverage-result.json");
+            global::CoverageUtils.TryCombineAndGetTotalCoverage(directory, outputPath, out var combined).Should().BeTrue();
+
+            var file = combined!.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject;
+            file.ExecutableBitmap.Should().Equal(0xff);
+            file.ExecutedBitmap.Should().Equal(0x81);
+            file.Data.Should().Equal(25, 8, 2);
+            Directory.GetFiles(Path.Combine(directory, ".dd-coverage-completed"), "coverage-*.json", SearchOption.AllDirectories).Should().HaveCount(2);
+
+            void PublishGeneration(int executedOffset)
+            {
+                var handle = handler.StartSession("xunit");
+                handler.Container!.TryGetOrAddModuleValue(
+                                       metadata,
+                                       typeof(GlobalCoverageOutputProtocolTests).Module,
+                                       CoverageMetadataValidator.ValidateAndGetRawByteLength(metadata),
+                                       out var module)
+                                   .Should()
+                                   .BeTrue();
+                var counters = (byte*)module!.FilesLines;
+                counters[executedOffset] = 1;
+                handler.EndSession(handle);
+
+                using var snapshot = handler.AcquireGlobalCoverageSnapshot().Snapshot!;
+                handler.TryPublishRequiredFiles(snapshot).Should().BeTrue();
+            }
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
         }
     }
 
@@ -572,5 +626,13 @@ public class GlobalCoverageOutputProtocolTests
 
         handler.RequestSeal().Should().BeTrue();
         command.ReleaseActivity();
+    }
+
+    private sealed class ProtocolTestMetadata : ModuleCoverageMetadata
+    {
+        public ProtocolTestMetadata(int totalLines, int coverageMode, FileCoverageMetadata[] files)
+            : base(totalLines, coverageMode, files)
+        {
+        }
     }
 }
