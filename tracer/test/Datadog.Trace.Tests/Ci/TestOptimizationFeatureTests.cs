@@ -44,7 +44,7 @@ using XUnitV3TestMethod = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.
 
 namespace Datadog.Trace.Tests.Ci;
 
-[Collection(nameof(EnvironmentVariablesTestCollection))]
+[Collection(nameof(TracerInstanceTestCollection))]
 [EnvironmentVariablesCleaner(
     ConfigurationKeys.GlobalTags,
     ConfigurationKeys.CIVisibility.TestSessionCommand,
