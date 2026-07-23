@@ -67,6 +67,32 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
             return;
         }
 
+        // Certify the complete set before moving anything. Otherwise a changed later input could
+        // strand already-moved generations while their protocol markers still describe the full set.
+        foreach (var input in AllRawInputs)
+        {
+            if (!input.Matches(input.Path))
+            {
+                throw new InvalidDataException("A certified global coverage artifact changed before archival.");
+            }
+        }
+
+        foreach (var marker in ReadyMarkers)
+        {
+            if (!File.Exists(marker))
+            {
+                throw new InvalidDataException("A certified global coverage ready marker disappeared before archival.");
+            }
+        }
+
+        foreach (var marker in PendingMarkers)
+        {
+            if (!File.Exists(marker))
+            {
+                throw new InvalidDataException("A certified global coverage pending marker disappeared before archival.");
+            }
+        }
+
         var publicationId = Guid.NewGuid().ToString("N");
         var archives = new Dictionary<string, string>(FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
         foreach (var directory in Directories)
@@ -76,34 +102,81 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
             archives[directory] = archive;
         }
 
-        foreach (var input in AllRawInputs)
-        {
-            if (!input.Matches(input.Path))
-            {
-                throw new InvalidDataException("A certified global coverage artifact changed before archival.");
-            }
-
-            var rawFile = input.Path;
-            var directory = Path.GetDirectoryName(rawFile) ?? throw new InvalidOperationException("A certified coverage artifact has no parent directory.");
-            var destination = Path.Combine(archives[directory], Path.GetFileName(rawFile));
-            File.Move(rawFile, destination);
-            if (!input.Matches(destination))
-            {
-                throw new InvalidDataException("An archived global coverage artifact does not match its certified contents.");
-            }
-        }
-
+        var sources = new List<string>(ReadyMarkers.Count + PendingMarkers.Count + AllRawInputs.Count);
+        var destinations = new List<string>(sources.Capacity);
         foreach (var marker in ReadyMarkers)
         {
-            File.Delete(marker);
+            AddToArchivePlan(marker);
         }
 
         foreach (var marker in PendingMarkers)
         {
-            File.Delete(marker);
+            AddToArchivePlan(marker);
+        }
+
+        var rawStart = sources.Count;
+        foreach (var input in AllRawInputs)
+        {
+            AddToArchivePlan(input.Path);
+        }
+
+        var movedCount = 0;
+        try
+        {
+            for (var i = 0; i < sources.Count; i++)
+            {
+                File.Move(sources[i], destinations[i]);
+                movedCount++;
+
+                if (i >= rawStart && !AllRawInputs[i - rawStart].Matches(destinations[i]))
+                {
+                    throw new InvalidDataException("An archived global coverage artifact does not match its certified contents.");
+                }
+            }
+        }
+        catch (Exception archivalException)
+        {
+            var rollbackExceptions = new List<Exception>();
+            for (var i = movedCount - 1; i >= 0; i--)
+            {
+                try
+                {
+                    File.Move(destinations[i], sources[i]);
+                }
+                catch (Exception rollbackException)
+                {
+                    rollbackExceptions.Add(rollbackException);
+                }
+            }
+
+            if (rollbackExceptions.Count > 0)
+            {
+                rollbackExceptions.Insert(0, archivalException);
+                throw new AggregateException("Global coverage archival failed and could not be fully rolled back.", rollbackExceptions);
+            }
+
+            throw;
         }
 
         Interlocked.Exchange(ref _authority, null)?.Complete();
+
+        void AddToArchivePlan(string source)
+        {
+            var directory = Path.GetDirectoryName(source) ?? throw new InvalidOperationException("A certified coverage artifact has no parent directory.");
+            if (!archives.TryGetValue(directory, out var archive))
+            {
+                throw new InvalidOperationException("A certified coverage artifact belongs to an unknown directory.");
+            }
+
+            var destination = Path.Combine(archive, Path.GetFileName(source));
+            if (File.Exists(destination) || Directory.Exists(destination))
+            {
+                throw new IOException("A global coverage archive destination already exists.");
+            }
+
+            sources.Add(source);
+            destinations.Add(destination);
+        }
     }
 
     public void Dispose()

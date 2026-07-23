@@ -95,9 +95,19 @@ internal sealed class GlobalCoverageInputReader
         long bitmapBytes = 0;
         foreach (var component in model.Components)
         {
+            if (component is null)
+            {
+                throw new InvalidDataException("The global coverage input contains a null component.");
+            }
+
             identityCharacters = checked(identityCharacters + (component.Name?.Length ?? 0));
             foreach (var file in component.Files)
             {
+                if (file is null)
+                {
+                    throw new InvalidDataException("The global coverage input contains a null file.");
+                }
+
                 entryCount = checked(entryCount + 1);
                 identityCharacters = checked(identityCharacters + (file.Path?.Length ?? 0));
                 AddBitmap(file.ExecutableBitmap);
