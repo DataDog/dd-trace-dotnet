@@ -12,9 +12,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage;
 
-#pragma warning disable DDSEAL001 // The friend test assembly derives from this handler to exercise start/install failure seams.
-internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandler
-#pragma warning restore DDSEAL001
+internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandler
 {
     private readonly object _lifecycleGate = new();
     private readonly GlobalCoverageAccumulator _accumulator;
@@ -28,10 +26,8 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
 
     internal DefaultWithGlobalCoverageEventHandler(
         GlobalCoverageAccumulatorLimits? limits = null,
-        CoverageModuleValueStrategy? moduleValueStrategy = null,
         string? configuredOutputDirectory = null,
         Func<string>? runIdProvider = null)
-        : base(moduleValueStrategy)
     {
         _accumulator = new GlobalCoverageAccumulator(limits);
         _outputManager = new GlobalCoverageOutputManager(
@@ -283,7 +279,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         }
     }
 
-    protected virtual void InitializeSnapshotOutput(GlobalCoverageSnapshot snapshot)
+    private void InitializeSnapshotOutput(GlobalCoverageSnapshot snapshot)
         => snapshot.InitializeOutput(_outputManager.FrozenMask, OnSnapshotDisposed);
 
     protected override object? OnSessionFinished(CoverageContextContainer context, IReadOnlyList<ModuleValue> modules)
@@ -452,7 +448,6 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
         }
 
         var accumulatorDiagnostics = _accumulator.GetDiagnostics();
-        var nativeDiagnostics = CoverageNativeAllocationDiagnostics.Process.GetSnapshot(CoverageModuleValueOrigin.TestContext);
         var processId = DomainMetadata.Instance.ProcessId;
         TestOptimization.Instance.Log.Debug<int, long, long, long, long>(
             "Global coverage context diagnostics: pid={ProcessId}, started={Started}, closed={Closed}, disposed={Disposed}, merged={Merged}.",
@@ -461,17 +456,7 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             diagnostics.Closed,
             diagnostics.Disposed,
             accumulatorDiagnostics.AcceptedContextCount);
-        TestOptimization.Instance.Log.Debug<int, long, long, long, long>(
-            "Global coverage native test-buffer diagnostics: pid={ProcessId}, currentBytes={CurrentBytes}, activeBuffers={ActiveBuffers}, allocations={Allocations}, frees={Frees}.",
-            processId,
-            nativeDiagnostics.CurrentBytes,
-            nativeDiagnostics.ActiveBuffers,
-            nativeDiagnostics.AllocationCount,
-            nativeDiagnostics.FreeCount);
-        TestOptimization.Instance.Log.Debug<int, long>(
-            "Global coverage native test-buffer size diagnostics: pid={ProcessId}, maximumBufferBytes={MaximumBufferBytes}.",
-            processId,
-            nativeDiagnostics.MaximumBufferBytes);
+        ModuleValue.LogNativeMemoryDiagnostics(processId);
     }
 
     private void OnSnapshotDisposed(GlobalCoverageSnapshot snapshot)
@@ -493,11 +478,11 @@ internal class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandl
             _owner = owner;
         }
 
-        internal override void CommitInstalled() => _owner.CommitAdmission(this);
+        public override void CommitInstalled() => _owner.CommitAdmission(this);
 
-        internal override void FailStart(GlobalCoverageFailureReason reason) => _owner.FailAdmission(this, reason);
+        public override void FailStart(GlobalCoverageFailureReason reason) => _owner.FailAdmission(this, reason);
 
-        internal override void Release() => _owner.ReleaseAdmission(this);
+        public override void Release() => _owner.ReleaseAdmission(this);
 
         internal bool TryTransition(AdmissionState expected, AdmissionState next)
             => Interlocked.CompareExchange(ref _state, (int)next, (int)expected) == (int)expected;

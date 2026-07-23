@@ -380,10 +380,10 @@ public sealed class CiRunGlobalCoverageMemoryTests
             $@"Global coverage context diagnostics: pid={testhostProcessId}, started=(\d+), closed=(\d+), disposed=(\d+), merged=(\d+)\.");
         var nativeMatch = FindLastMatch(
             logLines,
-            $@"Global coverage native test-buffer diagnostics: pid={testhostProcessId}, currentBytes=(\d+), activeBuffers=(\d+), allocations=(\d+), frees=(\d+)\.");
-        var nativeSizeMatch = FindLastMatch(
+            $@"Global coverage native context-buffer diagnostics: pid={testhostProcessId}, currentBytes=(\d+), peakBytes=(\d+), activeBuffers=(\d+), peakBuffers=(\d+)\.");
+        var nativeAllocationMatch = FindLastMatch(
             logLines,
-            $@"Global coverage native test-buffer size diagnostics: pid={testhostProcessId}, maximumBufferBytes=(\d+)\.");
+            $@"Global coverage native context-buffer allocation diagnostics: pid={testhostProcessId}, allocations=(\d+), frees=(\d+), maximumBufferBytes=(\d+)\.");
 
         Parse(contextMatch, 1).Should().Be(expectedCaseCount);
         Parse(contextMatch, 2).Should().Be(expectedCaseCount);
@@ -391,11 +391,13 @@ public sealed class CiRunGlobalCoverageMemoryTests
         Parse(contextMatch, 4).Should().Be(expectedCaseCount);
 
         Parse(nativeMatch, 1).Should().Be(0);
-        Parse(nativeMatch, 2).Should().Be(0);
-        var allocations = Parse(nativeMatch, 3);
+        Parse(nativeMatch, 2).Should().BeGreaterThanOrEqualTo(128 * 1024);
+        Parse(nativeMatch, 3).Should().Be(0);
+        Parse(nativeMatch, 4).Should().BeGreaterThanOrEqualTo(1);
+        var allocations = Parse(nativeAllocationMatch, 1);
         allocations.Should().BeGreaterThanOrEqualTo(expectedCaseCount);
-        Parse(nativeMatch, 4).Should().Be(allocations);
-        Parse(nativeSizeMatch, 1).Should().BeGreaterThanOrEqualTo(128 * 1024);
+        Parse(nativeAllocationMatch, 2).Should().Be(allocations);
+        Parse(nativeAllocationMatch, 3).Should().BeGreaterThanOrEqualTo(128 * 1024);
 
         static Match FindLastMatch(string[] lines, string pattern)
         {

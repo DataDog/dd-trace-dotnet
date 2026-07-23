@@ -15,12 +15,12 @@ internal sealed class CoverageContextDiagnostics
     private long _closed;
     private long _disposed;
 
-    internal void RecordStarted() => Interlocked.Increment(ref _started);
+    public void RecordStarted() => Interlocked.Increment(ref _started);
 
-    internal void RecordClosed() => Interlocked.Increment(ref _closed);
+    public void RecordClosed() => Interlocked.Increment(ref _closed);
 
-    internal void RecordDisposed() => Interlocked.Increment(ref _disposed);
+    public void RecordDisposed() => Interlocked.Increment(ref _disposed);
 
-    internal CoverageContextDiagnosticSnapshot GetSnapshot()
+    public CoverageContextDiagnosticSnapshot GetSnapshot()
         => new(Interlocked.Read(ref _started), Interlocked.Read(ref _closed), Interlocked.Read(ref _disposed));
 }

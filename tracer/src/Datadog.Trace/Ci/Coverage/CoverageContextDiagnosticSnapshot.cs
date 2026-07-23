@@ -9,16 +9,16 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal readonly struct CoverageContextDiagnosticSnapshot
 {
-    internal CoverageContextDiagnosticSnapshot(long started, long closed, long disposed)
+    public CoverageContextDiagnosticSnapshot(long started, long closed, long disposed)
     {
         Started = started;
         Closed = closed;
         Disposed = disposed;
     }
 
-    internal long Started { get; }
+    public long Started { get; }
 
-    internal long Closed { get; }
+    public long Closed { get; }
 
-    internal long Disposed { get; }
+    public long Disposed { get; }
 }

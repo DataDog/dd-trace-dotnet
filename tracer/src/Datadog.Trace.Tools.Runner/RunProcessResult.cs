@@ -7,7 +7,7 @@ namespace Datadog.Trace.Tools.Runner;
 
 internal readonly struct RunProcessResult
 {
-    internal RunProcessResult(int exitCode, bool timedOut, int rootProcessId, bool treeKillAttempted, bool treeKillSucceeded, bool reaped)
+    public RunProcessResult(int exitCode, bool timedOut, int rootProcessId, bool treeKillAttempted, bool treeKillSucceeded, bool reaped)
     {
         ExitCode = exitCode;
         TimedOut = timedOut;
@@ -17,15 +17,15 @@ internal readonly struct RunProcessResult
         Reaped = reaped;
     }
 
-    internal int ExitCode { get; }
+    public int ExitCode { get; }
 
-    internal bool TimedOut { get; }
+    public bool TimedOut { get; }
 
-    internal int RootProcessId { get; }
+    public int RootProcessId { get; }
 
-    internal bool TreeKillAttempted { get; }
+    public bool TreeKillAttempted { get; }
 
-    internal bool TreeKillSucceeded { get; }
+    public bool TreeKillSucceeded { get; }
 
-    internal bool Reaped { get; }
+    public bool Reaped { get; }
 }

@@ -9,25 +9,25 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal abstract class CoverageContextAdmission
 {
-    internal static readonly CoverageContextAdmission Noop = new NoopCoverageContextAdmission();
+    public static readonly CoverageContextAdmission Noop = new NoopCoverageContextAdmission();
 
-    internal abstract void CommitInstalled();
+    public abstract void CommitInstalled();
 
-    internal abstract void FailStart(GlobalCoverageFailureReason reason);
+    public abstract void FailStart(GlobalCoverageFailureReason reason);
 
-    internal abstract void Release();
+    public abstract void Release();
 
     private sealed class NoopCoverageContextAdmission : CoverageContextAdmission
     {
-        internal override void CommitInstalled()
+        public override void CommitInstalled()
         {
         }
 
-        internal override void FailStart(GlobalCoverageFailureReason reason)
+        public override void FailStart(GlobalCoverageFailureReason reason)
         {
         }
 
-        internal override void Release()
+        public override void Release()
         {
         }
     }

@@ -5,7 +5,7 @@
 
 #nullable enable
 
-using System;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage.Metadata;
 
@@ -15,18 +15,18 @@ internal static class CoverageMetadataValidator
     {
         if (metadata.CoverageMode is not 0 and not 1)
         {
-            throw new InvalidOperationException($"Unsupported coverage mode '{metadata.CoverageMode}'.");
+            ThrowHelper.ThrowInvalidOperationException($"Unsupported coverage mode '{metadata.CoverageMode}'.");
         }
 
         if (metadata.TotalLines < 0)
         {
-            throw new InvalidOperationException("Coverage metadata contains a negative total line count.");
+            ThrowHelper.ThrowInvalidOperationException("Coverage metadata contains a negative total line count.");
         }
 
         var bytesPerLine = metadata.CoverageMode == 0 ? sizeof(byte) : sizeof(int);
         if (metadata.TotalLines > int.MaxValue / bytesPerLine)
         {
-            throw new InvalidOperationException("Coverage metadata requires a raw counter buffer larger than the supported size.");
+            ThrowHelper.ThrowInvalidOperationException("Coverage metadata requires a raw counter buffer larger than the supported size.");
         }
 
         var rawByteLength = metadata.TotalLines * bytesPerLine;
@@ -35,24 +35,24 @@ internal static class CoverageMetadataValidator
         {
             if (file.Offset < 0 || file.LastExecutableLine < 0)
             {
-                throw new InvalidOperationException("Coverage metadata contains a negative file offset or line count.");
+                ThrowHelper.ThrowInvalidOperationException("Coverage metadata contains a negative file offset or line count.");
             }
 
             var end = (long)file.Offset + file.LastExecutableLine;
             if (end > int.MaxValue)
             {
-                throw new InvalidOperationException("Coverage metadata contains an overflowing file range.");
+                ThrowHelper.ThrowInvalidOperationException("Coverage metadata contains an overflowing file range.");
             }
 
             if (end > metadata.TotalLines)
             {
-                throw new InvalidOperationException("Coverage metadata contains a file range outside the module counter buffer.");
+                ThrowHelper.ThrowInvalidOperationException("Coverage metadata contains a file range outside the module counter buffer.");
             }
 
             var expectedBitmapLength = ((long)file.LastExecutableLine + 7) / 8;
             if (file.Bitmap is null || file.Bitmap.Length != expectedBitmapLength)
             {
-                throw new InvalidOperationException("Coverage metadata contains an executable bitmap with an invalid length.");
+                ThrowHelper.ThrowInvalidOperationException("Coverage metadata contains an executable bitmap with an invalid length.");
             }
         }
 
