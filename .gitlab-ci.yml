@@ -108,10 +108,20 @@ build:
         exit 1
       }
     - |
-      docker run --rm -m 10240M `
+      try {
+        $computerSystem = Get-CimInstance Win32_ComputerSystem
+        $operatingSystem = Get-CimInstance Win32_OperatingSystem
+        Write-Output ("Runner memory: {0:N1} GB total, {1:N1} GB free" -f ($computerSystem.TotalPhysicalMemory / 1GB), ($operatingSystem.FreePhysicalMemory * 1KB / 1GB))
+      } catch {
+        Write-Warning "Unable to retrieve runner memory information: $_"
+      }
+
+      # Enable MSVC /MP, but cap it at four compiler processes to limit peak memory usage.
+      docker run --rm -m 16384M `
         -v "$(Get-Location):c:\mnt" `
         -e CI_JOB_ID=${CI_JOB_ID} `
-        -e ENABLE_MULTIPROCESSOR_COMPILATION=false `
+        -e ENABLE_MULTIPROCESSOR_COMPILATION=true `
+        -e CL_MPCount=4 `
         -e WINDOWS_BUILDER=true `
         -e AWS_NETWORKING=true `
         -e SIGN_WINDOWS=true `
