@@ -1055,6 +1055,33 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData("otlp", true, true)] // OTLP export: explicit true is honored
+        [InlineData(null, true, false)] // non-OTLP export: explicit true is forced back to false
+        [InlineData(null, false, false)] // non-OTLP export: explicit false stays false
+        public void OtelTracesSpanMetricsEnabled_ForcedFalseWhenNotOtlpTraceExport(string tracesExporter, bool explicitValue, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.TracesExporter, tracesExporter),
+                (ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled, explicitValue.ToString()));
+            var telemetry = new ConfigurationTelemetry();
+            var settings = new TracerSettings(source, telemetry, new());
+
+            settings.OtelTracesSpanMetricsEnabled.Should().Be(expected);
+
+            var entries = telemetry.GetQueueForTesting()
+                                   .Where(e => e is { Key: ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled })
+                                   .OrderByDescending(e => e.SeqId)
+                                   .ToList();
+
+            // the originally-configured value, before the override is applied
+            entries.Should().ContainSingle(e => e.Origin == ConfigurationOrigins.Code)
+                   .Which.BoolValue.Should().Be(explicitValue);
+
+            var forcedFalse = explicitValue && !expected;
+            entries.Any(e => e.Origin == ConfigurationOrigins.Calculated && e.BoolValue == false).Should().Be(forcedFalse);
+        }
+
+        [Theory]
         [InlineData(null, 10000)]
         [InlineData("5000", 5000)]  // User custom value
         [InlineData("60000", 60000)]  // OTel spec default

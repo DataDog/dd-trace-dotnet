@@ -870,6 +870,22 @@ namespace Datadog.Trace.Configuration
             _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
 
             Manager = new(source, this, telemetry, errorLog);
+
+            // OTLP span metrics require OTLP trace export (see TracerManagerFactory.GetAgentWriter).
+            // Force to false otherwise, even if explicitly requested.
+            if (OtelTracesSpanMetricsEnabled && !Manager.InitialExporterSettings.IsOtlpTraceExport)
+            {
+                if (explicitSpanMetrics == true)
+                {
+                    Log.Warning(
+                        "{ConfigurationKey} is set to true, but traces are not being exported using OTLP encoding (OTEL_TRACES_EXPORTER={OtelTracesExporter}). OTLP span metrics require OTLP trace export, so this setting has been disabled.",
+                        ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled,
+                        otelTracesExporter);
+                }
+
+                OtelTracesSpanMetricsEnabled = false;
+                telemetry.Record(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled, false, ConfigurationOrigins.Calculated);
+            }
         }
 
         internal bool IsRunningInCiVisibility { get; }

@@ -995,8 +995,8 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "1.1.11",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "4.2.3",
-        "maxVersionAvailableInclusive": "4.2.3",
+        "maxVersionSupportedInclusive": "4.3.2",
+        "maxVersionAvailableInclusive": "4.3.2",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -1012,8 +1012,8 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "1.1.11",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "4.2.3",
-        "maxVersionAvailableInclusive": "4.2.3",
+        "maxVersionSupportedInclusive": "4.3.2",
+        "maxVersionAvailableInclusive": "4.3.2",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -1046,9 +1046,9 @@
         "minVersionAvailableInclusive": "1.1.11",
         "minVersionSupportedInclusive": "4.0.0",
         "minVersionTestedInclusive": "2.0.0",
-        "maxVersionSupportedInclusive": "4.2.3",
-        "maxVersionAvailableInclusive": "4.2.3",
-        "maxVersionTestedInclusive": "4.2.3"
+        "maxVersionSupportedInclusive": "4.3.2",
+        "maxVersionAvailableInclusive": "4.3.2",
+        "maxVersionTestedInclusive": "4.3.2"
       }
     ]
   },
@@ -1057,7 +1057,17 @@
     "assemblyName": "MSTestAdapter.PlatformServices",
     "minAssemblyVersionInclusive": "4.0.0",
     "maxAssemblyVersionInclusive": "4.65535.65535",
-    "packages": []
+    "packages": [
+      {
+        "name": "MSTest.TestAdapter",
+        "minVersionAvailableInclusive": "1.1.11",
+        "minVersionSupportedInclusive": "4.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "4.3.2",
+        "maxVersionAvailableInclusive": "4.3.2",
+        "maxVersionTestedInclusive": null
+      }
+    ]
   },
   {
     "integrationName": "MySql",
@@ -1285,9 +1295,9 @@
         "minVersionAvailableInclusive": "0.1.6",
         "minVersionSupportedInclusive": "1.0.1",
         "minVersionTestedInclusive": "1.4.214",
-        "maxVersionSupportedInclusive": "4.3.1",
-        "maxVersionAvailableInclusive": "4.3.1",
-        "maxVersionTestedInclusive": "4.3.1"
+        "maxVersionSupportedInclusive": "4.4.0",
+        "maxVersionAvailableInclusive": "4.4.0",
+        "maxVersionTestedInclusive": "4.4.0"
       }
     ]
   },
