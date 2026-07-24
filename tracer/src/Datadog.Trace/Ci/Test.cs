@@ -23,12 +23,6 @@ using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.Ci;
 
-internal enum TestLifecycleCheckpoint
-{
-    ConstructionCoverageHandleInstalled,
-    CloseCoverageHandleDetached,
-}
-
 /// <summary>
 /// CI Visibility test
 /// </summary>
@@ -36,8 +30,6 @@ public sealed class Test
 {
     private static readonly AsyncLocal<Test?> CurrentTest = new();
     private static readonly HashSet<Test> OpenedTests = new();
-    private static Action<TestLifecycleCheckpoint>? _lifecycleCallbackForTests;
-
     private readonly ITestOptimization _testOptimization;
     private readonly Scope _scope;
     private readonly Test? _priorTest;
@@ -59,13 +51,12 @@ public sealed class Test
 
         Scope? activatedScope = null;
         Coverage.CoverageSessionHandle? coverageSessionHandle = null;
-        var constructionCommitted = false;
         try
         {
             var tags = new TestSpanTags(Suite.Tags, name);
             var tracer = Tracer.Instance;
             var span = tracer.StartSpan(
-                string.IsNullOrEmpty(module.Framework) ? "test" : $"{module.Framework!.ToLowerInvariant()}.test",
+                StringUtil.IsNullOrEmpty(module.Framework) ? "test" : $"{module.Framework!.ToLowerInvariant()}.test",
                 tags: tags,
                 startTime: startDate,
                 traceId: traceId,
@@ -115,17 +106,12 @@ public sealed class Test
             }
 
             _coverageSessionHandle = coverageSessionHandle;
-            LifecycleCallbackForTests?.Invoke(TestLifecycleCheckpoint.ConstructionCoverageHandleInstalled);
-            constructionCommitted = true;
         }
         catch
         {
             try
             {
-                if (!constructionCommitted)
-                {
-                    (coverageSessionHandle ?? _coverageSessionHandle)?.AbortIncomplete(Coverage.GlobalCoverageFailureReason.TestConstructionFailed);
-                }
+                (coverageSessionHandle ?? _coverageSessionHandle)?.AbortIncomplete(Coverage.GlobalCoverageFailureReason.TestConstructionFailed);
             }
             catch
             {
@@ -151,12 +137,6 @@ public sealed class Test
 
             throw;
         }
-    }
-
-    internal static Action<TestLifecycleCheckpoint>? LifecycleCallbackForTests
-    {
-        get => _lifecycleCallbackForTests;
-        set => _lifecycleCallbackForTests = value;
     }
 
     internal bool IsClosed => Interlocked.CompareExchange(ref _finished, 0, 0) == 1;
@@ -539,7 +519,6 @@ public sealed class Test
         {
             coverageSessionHandle = Interlocked.Exchange(ref _coverageSessionHandle, null);
             coverageEndReturned = coverageSessionHandle is null || !coverageSessionHandle.IsValid;
-            LifecycleCallbackForTests?.Invoke(TestLifecycleCheckpoint.CloseCoverageHandleDetached);
             scope = _scope;
             var tags = (TestSpanTags)scope.Span.Tags;
 
@@ -628,7 +607,7 @@ public sealed class Test
                     tags.Type == TestTags.TypeBenchmark,
                     tags.TestIsNew == "true",
                     tags.EarlyFlakeDetectionTestAbortReason == "slow",
-                    !string.IsNullOrEmpty(tags.BrowserDriver),
+                    !StringUtil.IsNullOrEmpty(tags.BrowserDriver),
                     tags.IsRumActive == "true") is { } eventTypeWithMetadata)
             {
                 var retryReasonTag = tags.TestRetryReason switch

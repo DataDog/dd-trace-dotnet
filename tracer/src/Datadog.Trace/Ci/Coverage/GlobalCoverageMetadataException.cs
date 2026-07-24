@@ -11,7 +11,7 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal sealed class GlobalCoverageMetadataException : Exception
 {
-    internal GlobalCoverageMetadataException(string message)
+    public GlobalCoverageMetadataException(string message)
         : base(message)
     {
     }

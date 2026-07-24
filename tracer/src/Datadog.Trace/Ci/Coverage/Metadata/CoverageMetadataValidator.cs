@@ -11,7 +11,7 @@ namespace Datadog.Trace.Ci.Coverage.Metadata;
 
 internal static class CoverageMetadataValidator
 {
-    internal static int ValidateAndGetRawByteLength(ModuleCoverageMetadata metadata)
+    public static int ValidateAndGetRawByteLength(ModuleCoverageMetadata metadata)
     {
         if (metadata.CoverageMode is not 0 and not 1)
         {

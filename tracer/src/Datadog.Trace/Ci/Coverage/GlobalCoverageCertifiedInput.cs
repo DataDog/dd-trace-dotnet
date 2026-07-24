@@ -13,20 +13,20 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal sealed class GlobalCoverageCertifiedInput
 {
-    internal GlobalCoverageCertifiedInput(string path, long length, byte[] hash)
+    public GlobalCoverageCertifiedInput(string path, long length, byte[] hash)
     {
         Path = path;
         Length = length;
         Hash = hash;
     }
 
-    internal string Path { get; }
+    public string Path { get; }
 
-    internal long Length { get; }
+    public long Length { get; }
 
-    internal byte[] Hash { get; }
+    public byte[] Hash { get; }
 
-    internal bool Matches(string path)
+    public bool Matches(string path)
     {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 16 * 1024, FileOptions.SequentialScan);
         if (stream.Length != Length)

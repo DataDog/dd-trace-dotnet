@@ -9,9 +9,9 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal sealed class GlobalCoverageAccumulatorLimits
 {
-    internal static readonly GlobalCoverageAccumulatorLimits Default = new(8 * 1024 * 1024, 64 * 1024 * 1024, 10_000, 100_000);
+    public static readonly GlobalCoverageAccumulatorLimits Default = new(8 * 1024 * 1024, 64 * 1024 * 1024, 10_000, 100_000);
 
-    internal GlobalCoverageAccumulatorLimits(int maximumSingleBitmapBytes, int maximumBitmapBytesPerGeneration, int maximumModules, int maximumFileSlots)
+    public GlobalCoverageAccumulatorLimits(int maximumSingleBitmapBytes, int maximumBitmapBytesPerGeneration, int maximumModules, int maximumFileSlots)
     {
         MaximumSingleBitmapBytes = maximumSingleBitmapBytes;
         MaximumBitmapBytesPerGeneration = maximumBitmapBytesPerGeneration;
@@ -19,11 +19,11 @@ internal sealed class GlobalCoverageAccumulatorLimits
         MaximumFileSlots = maximumFileSlots;
     }
 
-    internal int MaximumSingleBitmapBytes { get; }
+    public int MaximumSingleBitmapBytes { get; }
 
-    internal int MaximumBitmapBytesPerGeneration { get; }
+    public int MaximumBitmapBytesPerGeneration { get; }
 
-    internal int MaximumModules { get; }
+    public int MaximumModules { get; }
 
-    internal int MaximumFileSlots { get; }
+    public int MaximumFileSlots { get; }
 }

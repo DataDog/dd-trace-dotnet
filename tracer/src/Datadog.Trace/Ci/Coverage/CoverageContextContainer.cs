@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage;
 
@@ -31,9 +32,9 @@ internal sealed class CoverageContextContainer : IDisposable
 
     public object? State { get; set; }
 
-    internal bool IsClosed => Volatile.Read(ref _closed) != 0;
+    public bool IsClosed => Volatile.Read(ref _closed) != 0;
 
-    internal ModuleValue? GetModuleValue(Module module)
+    public ModuleValue? GetModuleValue(Module module)
     {
         if (IsClosed)
         {
@@ -56,7 +57,7 @@ internal sealed class CoverageContextContainer : IDisposable
         }
     }
 
-    internal bool TryGetOrAddModuleValue(
+    public bool TryGetOrAddModuleValue(
         ModuleCoverageMetadata metadata,
         Module module,
         int rawByteLength,
@@ -100,7 +101,7 @@ internal sealed class CoverageContextContainer : IDisposable
         }
     }
 
-    internal bool TryCloseAndGetModules(out IReadOnlyList<ModuleValue> modules)
+    public bool TryCloseAndGetModules(out IReadOnlyList<ModuleValue> modules)
     {
         lock (_gate)
         {
@@ -117,20 +118,20 @@ internal sealed class CoverageContextContainer : IDisposable
         }
     }
 
-    internal ModuleValue[] SnapshotModules(int maximumModules = int.MaxValue)
+    public ModuleValue[] SnapshotModules(int maximumModules = int.MaxValue)
     {
         lock (_gate)
         {
             if (_modules.Count > maximumModules)
             {
-                throw new InvalidOperationException("The global coverage fallback contains too many modules.");
+                ThrowHelper.ThrowInvalidOperationException("The global coverage fallback contains too many modules.");
             }
 
             return _modules.Count == 0 ? Array.Empty<ModuleValue>() : _modules.ToArray();
         }
     }
 
-    internal void Clear() => Dispose();
+    public void Clear() => Dispose();
 
     public void Dispose()
     {

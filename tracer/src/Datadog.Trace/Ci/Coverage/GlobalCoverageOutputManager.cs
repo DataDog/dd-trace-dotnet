@@ -30,14 +30,14 @@ internal sealed class GlobalCoverageOutputManager
     private bool _failed;
     private long _committedGenerationCount;
 
-    internal GlobalCoverageOutputManager(string? configuredDirectory, string baseDirectory, Func<string> runIdProvider)
+    public GlobalCoverageOutputManager(string? configuredDirectory, string baseDirectory, Func<string> runIdProvider)
     {
         _configuredDirectory = configuredDirectory;
         _baseDirectory = baseDirectory;
         _runIdProvider = runIdProvider;
     }
 
-    internal byte FrozenMask
+    public byte FrozenMask
     {
         get
         {
@@ -48,7 +48,7 @@ internal sealed class GlobalCoverageOutputManager
         }
     }
 
-    internal bool IsFailed
+    public bool IsFailed
     {
         get
         {
@@ -59,7 +59,7 @@ internal sealed class GlobalCoverageOutputManager
         }
     }
 
-    internal IReadOnlyList<GlobalCoverageOutputRegistration> GetRegistrations()
+    public IReadOnlyList<GlobalCoverageOutputRegistration> GetRegistrations()
     {
         lock (_gate)
         {
@@ -67,7 +67,7 @@ internal sealed class GlobalCoverageOutputManager
         }
     }
 
-    internal bool EnsureConfiguredAndFreeze()
+    public bool EnsureConfiguredAndFreeze()
     {
         lock (_gate)
         {
@@ -76,7 +76,7 @@ internal sealed class GlobalCoverageOutputManager
                 return !_failed;
             }
 
-            if (!string.IsNullOrWhiteSpace(_configuredDirectory))
+            if (!StringUtil.IsNullOrWhiteSpace(_configuredDirectory))
             {
                 TryRegisterUnderLock(_configuredDirectory!, coordinator: true);
             }
@@ -86,11 +86,11 @@ internal sealed class GlobalCoverageOutputManager
         }
     }
 
-    internal bool RegisterCollectorAndFreeze(string directory)
+    public bool RegisterCollectorAndFreeze(string directory)
     {
         lock (_gate)
         {
-            if (!string.IsNullOrWhiteSpace(_configuredDirectory))
+            if (!StringUtil.IsNullOrWhiteSpace(_configuredDirectory))
             {
                 TryRegisterUnderLock(_configuredDirectory!, coordinator: true);
             }
@@ -101,7 +101,7 @@ internal sealed class GlobalCoverageOutputManager
         }
     }
 
-    internal string GetCoveragePath(GlobalCoverageOutputRegistration registration, long generationId)
+    public string GetCoveragePath(GlobalCoverageOutputRegistration registration, long generationId)
     {
         lock (_gate)
         {
@@ -112,7 +112,7 @@ internal sealed class GlobalCoverageOutputManager
         }
     }
 
-    internal void RecordGenerationCommit(byte requiredMask, byte committedMask)
+    public void RecordGenerationCommit(byte requiredMask, byte committedMask)
     {
         lock (_gate)
         {
@@ -126,7 +126,7 @@ internal sealed class GlobalCoverageOutputManager
         }
     }
 
-    internal GlobalCoverageStagedMarkerSet? TryStageReadyMarkers(CoverageContextDiagnosticSnapshot diagnostics)
+    public GlobalCoverageStagedMarkerSet? TryStageReadyMarkers(CoverageContextDiagnosticSnapshot diagnostics)
     {
         lock (_gate)
         {
@@ -199,7 +199,7 @@ internal sealed class GlobalCoverageOutputManager
         {
             if (_failed)
             {
-                throw new InvalidOperationException("Global coverage output became incomplete before ready-marker commit.");
+                ThrowHelper.ThrowInvalidOperationException("Global coverage output became incomplete before ready-marker commit.");
             }
 
             foreach (var marker in markers)
@@ -414,20 +414,25 @@ internal sealed class GlobalCoverageOutputManager
         }
     }
 
-    internal sealed class GlobalCoverageStagedMarkerSet : IDisposable
+    public sealed class GlobalCoverageStagedMarkerSet : IDisposable
     {
         private readonly IReadOnlyList<GlobalCoverageStagedArtifact> _markers;
         private GlobalCoverageOutputManager? _owner;
 
-        internal GlobalCoverageStagedMarkerSet(GlobalCoverageOutputManager owner, IReadOnlyList<GlobalCoverageStagedArtifact> markers)
+        public GlobalCoverageStagedMarkerSet(GlobalCoverageOutputManager owner, IReadOnlyList<GlobalCoverageStagedArtifact> markers)
         {
             _owner = owner;
             _markers = markers;
         }
 
-        internal void Commit()
+        public void Commit()
         {
-            var owner = _owner ?? throw new InvalidOperationException("The staged ready-marker set is no longer available.");
+            var owner = _owner;
+            if (owner is null)
+            {
+                ThrowHelper.ThrowInvalidOperationException("The staged ready-marker set is no longer available.");
+            }
+
             owner.CommitReadyMarkers(_markers);
             _owner = null;
         }

@@ -15,18 +15,18 @@ internal sealed class GlobalCoverageReconciliationAuthority : IDisposable
 {
     private FileStream? _claimStream;
 
-    internal GlobalCoverageReconciliationAuthority(string claimPath, FileStream claimStream)
+    public GlobalCoverageReconciliationAuthority(string claimPath, FileStream claimStream)
     {
         ClaimPath = claimPath;
         _claimStream = claimStream;
     }
 
-    internal string ClaimPath { get; }
+    public string ClaimPath { get; }
 
-    internal FileStream ClaimStream
+    public FileStream ClaimStream
         => Volatile.Read(ref _claimStream) ?? throw new ObjectDisposedException(nameof(GlobalCoverageReconciliationAuthority));
 
-    internal void Complete()
+    public void Complete()
     {
         var stream = Interlocked.Exchange(ref _claimStream, null) ?? throw new ObjectDisposedException(nameof(GlobalCoverageReconciliationAuthority));
         stream.Dispose();

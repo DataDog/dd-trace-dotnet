@@ -82,6 +82,47 @@ public class GlobalCoverageOutputProtocolTests
     }
 
     [Fact]
+    public unsafe void FinalizeAndSealWaitsForActiveContextBeforePublishingTerminalSnapshot()
+    {
+        var directory = CreateDirectory();
+        try
+        {
+            var handler = CreateHandler(directory);
+            var metadata = new TestModuleCoverageMetadata(
+                8,
+                0,
+                [new FileCoverageMetadata("/src/late-finalization.cs", 0, 8, [0xff])]);
+            var handle = handler.StartSession("xunit");
+            handler.Container!.TryGetOrAddModuleValue(
+                                   metadata,
+                                   typeof(GlobalCoverageOutputProtocolTests).Module,
+                                   CoverageMetadataValidator.ValidateAndGetRawByteLength(metadata),
+                                   out var module)
+                               .Should()
+                               .BeTrue();
+            ((byte*)module!.FilesLines)[7] = 1;
+
+            handler.FinalizeAndSeal().Should().BeFalse("the active context still owns an admission");
+            Directory.GetFiles(directory, "coverage-*.json").Should().BeEmpty();
+
+            handler.EndSession(handle);
+
+            handler.SealedComplete.Should().BeTrue();
+            var coveragePath = Directory.GetFiles(directory, "coverage-*.json").Should().ContainSingle().Subject;
+            var reader = new GlobalCoverageInputReader();
+            reader.TryRead(coveragePath, out var coverage).Should().BeTrue();
+            var file = coverage!.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject;
+            file.ExecutableBitmap.Should().Equal(0xff);
+            file.ExecutedBitmap.Should().Equal(0x01);
+            file.Data.Should().Equal(12.5, 8, 1);
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
     public void MissingRequiredOutputLeavesPendingUnmatchedAndSealIncomplete()
     {
         var directory = CreateDirectory();
@@ -193,7 +234,7 @@ public class GlobalCoverageOutputProtocolTests
         try
         {
             var handler = CreateHandler(directory);
-            var metadata = new ProtocolTestMetadata(
+            var metadata = new TestModuleCoverageMetadata(
                 8,
                 0,
                 [new FileCoverageMetadata("/src/generations.cs", 0, 8, [0xff])]);
@@ -314,6 +355,37 @@ public class GlobalCoverageOutputProtocolTests
     }
 
     [Fact]
+    public void SemanticallyInvalidCoverageBlocksCombineAndPreservesDestinationAndProtocol()
+    {
+        var directory = CreateDirectory();
+        var outputPath = Path.Combine(directory, "session-coverage-result.json");
+        var original = new byte[] { 2, 4, 6, 8 };
+        try
+        {
+            ProduceCompleteRun(directory);
+            File.WriteAllBytes(outputPath, original);
+            var rawPath = Directory.GetFiles(directory, "coverage-*.json").Single();
+            File.WriteAllText(
+                rawPath,
+                "{\"components\":[{\"name\":\"c\",\"files\":[{\"path\":\"p\",\"executableBitmap\":\"gA==\",\"executedBitmap\":\"/w==\"}]}]}",
+                new UTF8Encoding(false));
+
+            global::CoverageUtils.TryCombineAndGetTotalCoverage(directory, outputPath, out _).Should().BeFalse();
+
+            File.ReadAllBytes(outputPath).Should().Equal(original);
+            File.Exists(rawPath).Should().BeTrue();
+            Directory.GetFiles(directory, ".dd-coverage-process-incomplete-*").Should().ContainSingle();
+            Directory.GetFiles(directory, ".dd-coverage-process-ready-*").Should().ContainSingle();
+            Directory.GetFiles(directory, ".dd-coverage-command-owner-*.claim").Should().ContainSingle();
+            Directory.Exists(Path.Combine(directory, ".dd-coverage-completed")).Should().BeFalse();
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
     public void ReadyMarkerWithUtf8BomIsRejectedWithoutConsumingArtifacts()
     {
         var directory = CreateDirectory();
@@ -351,7 +423,8 @@ public class GlobalCoverageOutputProtocolTests
             CoverageUtils.TryReadAndCombine(directory, outputPath, authority, out var model, out var lease).Should().BeTrue();
             using (lease)
             {
-                new GlobalCoverageArtifactWriter().WriteAtomicReplace(outputPath, model!);
+                var writer = new GlobalCoverageArtifactWriter();
+                writer.WriteAtomicReplace(outputPath, model!);
                 lease!.Complete();
             }
 
@@ -513,7 +586,8 @@ public class GlobalCoverageOutputProtocolTests
                 var input = lease!.SelectedInputs.Should().ContainSingle().Subject;
                 File.AppendAllText(input.Path, " ");
 
-                new GlobalCoverageInputReader().TryRead(input.Path, lease.GetCertifiedInput(input.Path), out _).Should().BeFalse();
+                var reader = new GlobalCoverageInputReader();
+                reader.TryRead(input.Path, lease.GetCertifiedInput(input.Path), out _).Should().BeFalse();
             }
 
             Directory.GetFiles(directory, "coverage-*.json").Should().ContainSingle();
@@ -626,13 +700,5 @@ public class GlobalCoverageOutputProtocolTests
 
         handler.RequestSeal().Should().BeTrue();
         command.ReleaseActivity();
-    }
-
-    private sealed class ProtocolTestMetadata : ModuleCoverageMetadata
-    {
-        public ProtocolTestMetadata(int totalLines, int coverageMode, FileCoverageMetadata[] files)
-            : base(totalLines, coverageMode, files)
-        {
-        }
     }
 }

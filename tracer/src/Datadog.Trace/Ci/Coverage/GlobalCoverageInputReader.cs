@@ -18,7 +18,7 @@ internal sealed class GlobalCoverageInputReader
 {
     private readonly GlobalCoverageArtifactLimits _limits;
 
-    internal GlobalCoverageInputReader(GlobalCoverageArtifactLimits? limits = null)
+    public GlobalCoverageInputReader(GlobalCoverageArtifactLimits? limits = null)
     {
         _limits = limits ?? GlobalCoverageArtifactLimits.Default;
     }
@@ -39,10 +39,10 @@ internal sealed class GlobalCoverageInputReader
         return difference == 0;
     }
 
-    internal bool TryRead(string path, out GlobalCoverageInfo? model)
+    public bool TryRead(string path, out GlobalCoverageInfo? model)
         => TryRead(path, expectedInput: null, out model);
 
-    internal bool TryRead(string path, GlobalCoverageCertifiedInput? expectedInput, out GlobalCoverageInfo? model)
+    public bool TryRead(string path, GlobalCoverageCertifiedInput? expectedInput, out GlobalCoverageInfo? model)
     {
         model = null;
         try
@@ -83,7 +83,7 @@ internal sealed class GlobalCoverageInputReader
         }
     }
 
-    internal void ValidateModel(GlobalCoverageInfo model)
+    public void ValidateModel(GlobalCoverageInfo model)
     {
         if (model.Components.Count > _limits.MaximumComponents)
         {
@@ -112,6 +112,7 @@ internal sealed class GlobalCoverageInputReader
                 identityCharacters = checked(identityCharacters + (file.Path?.Length ?? 0));
                 AddBitmap(file.ExecutableBitmap);
                 AddBitmap(file.ExecutedBitmap);
+                ValidateExecutedBitmap(file.ExecutableBitmap, file.ExecutedBitmap);
             }
         }
 
@@ -143,13 +144,35 @@ internal sealed class GlobalCoverageInputReader
                 throw new InvalidDataException("The global coverage model bitmap limit was exceeded.");
             }
         }
+
+        static void ValidateExecutedBitmap(byte[]? executable, byte[]? executed)
+        {
+            if (executed is null)
+            {
+                return;
+            }
+
+            if (executable is null || executed.Length > executable.Length)
+            {
+                throw new InvalidDataException("A global coverage executed bitmap has no compatible executable bitmap.");
+            }
+
+            for (var i = 0; i < executed.Length; i++)
+            {
+                if ((executed[i] & ~executable[i]) != 0)
+                {
+                    throw new InvalidDataException("A global coverage executed bitmap contains a non-executable line.");
+                }
+            }
+        }
     }
 
     private byte[] RunPreflight(FileStream stream)
     {
         using var sha256 = SHA256.Create();
         using var hashingStream = new HashingReadStream(stream, sha256);
-        new GlobalCoverageJsonPreflightScanner(_limits).Scan(hashingStream);
+        var scanner = new GlobalCoverageJsonPreflightScanner(_limits);
+        scanner.Scan(hashingStream);
 
         return sha256.Hash ?? throw new CryptographicException("Unable to hash the global coverage input.");
     }
@@ -184,7 +207,7 @@ internal sealed class GlobalCoverageInputReader
         private readonly HashAlgorithm _hash;
         private bool _completed;
 
-        internal HashingReadStream(Stream inner, HashAlgorithm hash)
+        public HashingReadStream(Stream inner, HashAlgorithm hash)
         {
             _inner = inner;
             _hash = hash;

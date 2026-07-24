@@ -145,12 +145,12 @@ public class CoverageEventHandlerTests
     {
         const int contextCount = 10_000;
         const int rawByteLength = 128 * 1024;
-        const int executableLineCount = 1_024;
+        const int executableLineCount = contextCount * 2;
 
         var handler = new DefaultWithGlobalCoverageEventHandler();
         var expectedExecutableBitmap = Enumerable.Repeat((byte)0xff, executableLineCount / 8).ToArray();
         var expectedExecutedBitmap = Enumerable.Repeat((byte)0xaa, executableLineCount / 8).ToArray();
-        var metadata = new TestMetadata(
+        var metadata = new TestModuleCoverageMetadata(
             rawByteLength,
             0,
             [new FileCoverageMetadata("/src/stress.cs", 0, executableLineCount, expectedExecutableBitmap)]);
@@ -166,7 +166,7 @@ public class CoverageEventHandlerTests
                                .Should()
                                .BeTrue();
             var counters = (byte*)module!.FilesLines;
-            counters[(i % (executableLineCount / 2)) * 2] = 1;
+            counters[i * 2] = 1;
             handler.EndSession(handle);
         }
 
@@ -206,21 +206,13 @@ public class CoverageEventHandlerTests
     private static unsafe void WriteStaleFlowCounter()
         => *(byte*)CoverageReporter<StaleFlowMetadata>.GetFileCounter(0) = 1;
 
-    private static TestMetadata CreateMetadata(int totalLines, int coverageMode, int lastExecutableLine)
+    private static TestModuleCoverageMetadata CreateMetadata(int totalLines, int coverageMode, int lastExecutableLine)
         => new(
             totalLines,
             coverageMode,
             [new FileCoverageMetadata("/src/example.cs", 0, lastExecutableLine, new byte[(lastExecutableLine + 7) / 8])]);
 
-    private sealed class TestMetadata : ModuleCoverageMetadata
-    {
-        internal TestMetadata(int totalLines, int coverageMode, FileCoverageMetadata[] files)
-            : base(totalLines, coverageMode, files)
-        {
-        }
-    }
-
-    private sealed class StaleFlowMetadata : ModuleCoverageMetadata
+    private sealed class StaleFlowMetadata : TestModuleCoverageMetadata
     {
         public StaleFlowMetadata()
             : base(1, 0, [new FileCoverageMetadata("/src/stale.cs", 0, 1, [0x80])])

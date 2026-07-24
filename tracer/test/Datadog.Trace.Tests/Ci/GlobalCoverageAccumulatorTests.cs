@@ -22,7 +22,7 @@ public class GlobalCoverageAccumulatorTests
     public unsafe void AggregatesLineExecutionAndLineCallCountModes(int coverageMode)
     {
         var handler = new DefaultWithGlobalCoverageEventHandler();
-        var metadata = new TestMetadata(
+        var metadata = new TestModuleCoverageMetadata(
             16,
             coverageMode,
             [new FileCoverageMetadata("/src/mode.cs", 0, 16, [0xff, 0xff])]);
@@ -64,7 +64,7 @@ public class GlobalCoverageAccumulatorTests
     {
         var handler = new DefaultWithGlobalCoverageEventHandler(
             new GlobalCoverageAccumulatorLimits(maximumSingleBitmapBytes: 0, maximumBitmapBytesPerGeneration: 0, maximumModules: 1, maximumFileSlots: 1));
-        var metadata = new TestMetadata(8, 0, [new FileCoverageMetadata("/src/limit.cs", 0, 8, [0xff])]);
+        var metadata = new TestModuleCoverageMetadata(8, 0, [new FileCoverageMetadata("/src/limit.cs", 0, 8, [0xff])]);
         var handle = handler.StartSession("xunit");
         handler.Container!.TryGetOrAddModuleValue(
                                metadata,
@@ -181,14 +181,14 @@ public class GlobalCoverageAccumulatorTests
     public unsafe void UnionsOverlappingContextsAcrossModulesAndFilesWithoutInflatingDenominator()
     {
         var handler = new DefaultWithGlobalCoverageEventHandler();
-        var firstMetadata = new TestMetadata(
+        var firstMetadata = new TestModuleCoverageMetadata(
             16,
             0,
             [
                 new FileCoverageMetadata("/src/a.cs", 0, 8, [0xff]),
                 new FileCoverageMetadata("/src/b.cs", 8, 8, [0xff])
             ]);
-        var secondMetadata = new TestMetadata(8, 0, [new FileCoverageMetadata("/src/c.cs", 0, 8, [0xff])]);
+        var secondMetadata = new TestModuleCoverageMetadata(8, 0, [new FileCoverageMetadata("/src/c.cs", 0, 8, [0xff])]);
 
         MergeContext(handler, firstMetadata, typeof(GlobalCoverageAccumulatorTests).Module, [0, 8]);
         MergeContext(handler, firstMetadata, typeof(GlobalCoverageAccumulatorTests).Module, [0, 1, 8, 15]);
@@ -208,7 +208,7 @@ public class GlobalCoverageAccumulatorTests
     public unsafe void ContextClosedAfterGenerationSwapAppearsOnlyInNextSnapshot()
     {
         var handler = new DefaultWithGlobalCoverageEventHandler();
-        var metadata = new TestMetadata(8, 0, [new FileCoverageMetadata("/src/late.cs", 0, 8, [0xff])]);
+        var metadata = new TestModuleCoverageMetadata(8, 0, [new FileCoverageMetadata("/src/late.cs", 0, 8, [0xff])]);
         var handle = handler.StartSession("xunit");
         handler.Container!.TryGetOrAddModuleValue(
                                metadata,
@@ -247,13 +247,5 @@ public class GlobalCoverageAccumulatorTests
         }
 
         handler.EndSession(handle);
-    }
-
-    private sealed class TestMetadata : ModuleCoverageMetadata
-    {
-        internal TestMetadata(int totalLines, int coverageMode, FileCoverageMetadata[] files)
-            : base(totalLines, coverageMode, files)
-        {
-        }
     }
 }

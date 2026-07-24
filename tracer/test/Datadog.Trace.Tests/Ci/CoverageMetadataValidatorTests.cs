@@ -16,35 +16,35 @@ public class CoverageMetadataValidatorTests
 {
     [Fact]
     public void RejectsUnsupportedCoverageMode()
-        => Validate(new TestMetadata(1, 2, [new FileCoverageMetadata("file", 0, 1, [0x80])]))
+        => Validate(new TestModuleCoverageMetadata(1, 2, [new FileCoverageMetadata("file", 0, 1, [0x80])]))
           .Should().Throw<InvalidOperationException>();
 
     [Fact]
     public void RejectsNegativeTotalLines()
-        => Validate(new TestMetadata(-1, 0, [])).Should().Throw<InvalidOperationException>();
+        => Validate(new TestModuleCoverageMetadata(-1, 0, [])).Should().Throw<InvalidOperationException>();
 
     [Fact]
     public void RejectsRawCounterSizeOverflow()
-        => Validate(new TestMetadata(int.MaxValue, 1, [])).Should().Throw<InvalidOperationException>();
+        => Validate(new TestModuleCoverageMetadata(int.MaxValue, 1, [])).Should().Throw<InvalidOperationException>();
 
     [Fact]
     public void RejectsNegativeFileRange()
-        => Validate(new TestMetadata(1, 0, [new FileCoverageMetadata("file", -1, 1, [0x80])]))
+        => Validate(new TestModuleCoverageMetadata(1, 0, [new FileCoverageMetadata("file", -1, 1, [0x80])]))
           .Should().Throw<InvalidOperationException>();
 
     [Fact]
     public void RejectsOverflowingFileRange()
-        => Validate(new TestMetadata(int.MaxValue, 0, [new FileCoverageMetadata("file", int.MaxValue, 1, [0x80])]))
+        => Validate(new TestModuleCoverageMetadata(int.MaxValue, 0, [new FileCoverageMetadata("file", int.MaxValue, 1, [0x80])]))
           .Should().Throw<InvalidOperationException>();
 
     [Fact]
     public void RejectsFileRangeOutsideRawBuffer()
-        => Validate(new TestMetadata(1, 0, [new FileCoverageMetadata("file", 1, 1, [0x80])]))
+        => Validate(new TestModuleCoverageMetadata(1, 0, [new FileCoverageMetadata("file", 1, 1, [0x80])]))
           .Should().Throw<InvalidOperationException>();
 
     [Fact]
     public void RejectsExecutableBitmapWithWrongSize()
-        => Validate(new TestMetadata(9, 0, [new FileCoverageMetadata("file", 0, 9, [0xff])]))
+        => Validate(new TestModuleCoverageMetadata(9, 0, [new FileCoverageMetadata("file", 0, 9, [0xff])]))
           .Should().Throw<InvalidOperationException>();
 
     [Fact]
@@ -73,15 +73,7 @@ public class CoverageMetadataValidatorTests
         where TMetadata : ModuleCoverageMetadata, new()
         => _ = CoverageReporter<TMetadata>.GetFileCounter(0);
 
-    private sealed class TestMetadata : ModuleCoverageMetadata
-    {
-        internal TestMetadata(int totalLines, int coverageMode, FileCoverageMetadata[] files)
-            : base(totalLines, coverageMode, files)
-        {
-        }
-    }
-
-    private sealed class InvalidReporterMetadata : ModuleCoverageMetadata
+    private sealed class InvalidReporterMetadata : TestModuleCoverageMetadata
     {
         public InvalidReporterMetadata()
             : base(int.MaxValue, 1, [])

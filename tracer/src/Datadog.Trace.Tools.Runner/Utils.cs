@@ -284,32 +284,13 @@ namespace Datadog.Trace.Tools.Runner
         }
 
         public static int RunProcess(ProcessStartInfo startInfo, CancellationToken cancellationToken)
-            => RunProcessCore(startInfo, cancellationToken, timeout: null, stopwatch: null).ExitCode;
-
-        internal static RunProcessResult RunProcess(ProcessStartInfo startInfo, CancellationToken cancellationToken, TimeSpan timeout)
         {
-            if (timeout < TimeSpan.Zero)
-            {
-                throw new ArgumentOutOfRangeException(nameof(timeout));
-            }
-
-            return RunProcessCore(startInfo, cancellationToken, timeout, Stopwatch.StartNew());
-        }
-
-        private static RunProcessResult RunProcessCore(
-            ProcessStartInfo startInfo,
-            CancellationToken cancellationToken,
-            TimeSpan? timeout,
-            Stopwatch stopwatch)
-        {
-            var rootProcessId = -1;
             try
             {
                 using var childProcess = new Process();
                 childProcess.StartInfo = startInfo;
                 childProcess.EnableRaisingEvents = true;
                 childProcess.Start();
-                rootProcessId = childProcess.Id;
 
                 using var ctr = cancellationToken.Register(
                     () =>
@@ -324,66 +305,8 @@ namespace Datadog.Trace.Tools.Runner
                         }
                     });
 
-                if (timeout is null)
-                {
-                    childProcess.WaitForExit();
-                    return new RunProcessResult(
-                        cancellationToken.IsCancellationRequested ? 1 : childProcess.ExitCode,
-                        timedOut: false,
-                        rootProcessId,
-                        treeKillAttempted: false,
-                        treeKillSucceeded: false,
-                        reaped: true);
-                }
-
-                var remaining = timeout.Value - stopwatch.Elapsed;
-                var waitMilliseconds = remaining <= TimeSpan.Zero
-                                           ? 0
-                                           : (int)Math.Min(int.MaxValue, Math.Ceiling(remaining.TotalMilliseconds));
-                if (childProcess.WaitForExit(waitMilliseconds))
-                {
-                    return new RunProcessResult(
-                        cancellationToken.IsCancellationRequested ? 1 : childProcess.ExitCode,
-                        timedOut: false,
-                        rootProcessId,
-                        treeKillAttempted: false,
-                        treeKillSucceeded: false,
-                        reaped: true);
-                }
-
-                Log.Error<int>("RunProcess: Process {ProcessId} exceeded its test timeout and will be terminated.", rootProcessId);
-                var treeKillSucceeded = false;
-                try
-                {
-#if NET5_0_OR_GREATER
-                    childProcess.Kill(entireProcessTree: true);
-#else
-                    childProcess.Kill();
-#endif
-                    treeKillSucceeded = true;
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning<int>(ex, "RunProcess: Failed to terminate timed-out process {ProcessId}.", rootProcessId);
-                }
-
-                var reaped = false;
-                try
-                {
-                    reaped = childProcess.WaitForExit((int)TimeSpan.FromSeconds(30).TotalMilliseconds);
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning<int>(ex, "RunProcess: Failed while reaping timed-out process {ProcessId}.", rootProcessId);
-                }
-
-                return new RunProcessResult(
-                    exitCode: 1,
-                    timedOut: true,
-                    rootProcessId,
-                    treeKillAttempted: true,
-                    treeKillSucceeded,
-                    reaped);
+                childProcess.WaitForExit();
+                return cancellationToken.IsCancellationRequested ? 1 : childProcess.ExitCode;
             }
             catch (System.ComponentModel.Win32Exception win32Exception)
             {
@@ -406,7 +329,7 @@ namespace Datadog.Trace.Tools.Runner
                                 if (File.Exists(path))
                                 {
                                     startInfo.FileName = path;
-                                    return RunProcessCore(startInfo, cancellationToken, timeout, stopwatch);
+                                    return RunProcess(startInfo, cancellationToken);
                                 }
                             }
                         }
@@ -421,7 +344,7 @@ namespace Datadog.Trace.Tools.Runner
                             File.Exists(processPath))
                         {
                             startInfo.FileName = processPath;
-                            return RunProcessCore(startInfo, cancellationToken, timeout, stopwatch);
+                            return RunProcess(startInfo, cancellationToken);
                         }
                     }
                 }
@@ -433,13 +356,7 @@ namespace Datadog.Trace.Tools.Runner
                 AnsiConsole.WriteException(ex);
             }
 
-            return new RunProcessResult(
-                exitCode: 1,
-                timedOut: false,
-                rootProcessId,
-                treeKillAttempted: false,
-                treeKillSucceeded: false,
-                reaped: rootProcessId < 0);
+            return 1;
         }
 
         public static string[] SplitArgs(string command, bool keepQuote = false)

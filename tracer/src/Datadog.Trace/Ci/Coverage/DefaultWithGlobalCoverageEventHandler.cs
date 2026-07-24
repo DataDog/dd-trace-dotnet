@@ -22,9 +22,10 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
     private int _inFlightFinalizers;
     private LifecycleState _lifecycleState;
     private bool _sealRequested;
+    private bool _publishFinalSnapshotOnSeal;
     private bool _sealedComplete;
 
-    internal DefaultWithGlobalCoverageEventHandler(
+    public DefaultWithGlobalCoverageEventHandler(
         GlobalCoverageAccumulatorLimits? limits = null,
         string? configuredOutputDirectory = null,
         Func<string>? runIdProvider = null)
@@ -43,16 +44,16 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         Released,
     }
 
-    internal enum LifecycleState
+    public enum LifecycleState
     {
         Running,
         Completing,
         Sealed,
     }
 
-    internal GlobalCoverageAccumulatorSnapshot AccumulatorDiagnostics => _accumulator.GetDiagnostics();
+    public GlobalCoverageAccumulatorSnapshot AccumulatorDiagnostics => _accumulator.GetDiagnostics();
 
-    internal int ActiveContexts
+    public int ActiveContexts
     {
         get
         {
@@ -63,7 +64,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         }
     }
 
-    internal LifecycleState State
+    public LifecycleState State
     {
         get
         {
@@ -74,7 +75,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         }
     }
 
-    internal int InFlightStarts
+    public int InFlightStarts
     {
         get
         {
@@ -85,7 +86,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         }
     }
 
-    internal int InFlightFinalizers
+    public int InFlightFinalizers
     {
         get
         {
@@ -96,7 +97,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         }
     }
 
-    internal bool SealedComplete
+    public bool SealedComplete
     {
         get
         {
@@ -107,12 +108,12 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         }
     }
 
-    internal IReadOnlyList<GlobalCoverageOutputRegistration> OutputRegistrations => _outputManager.GetRegistrations();
+    public IReadOnlyList<GlobalCoverageOutputRegistration> OutputRegistrations => _outputManager.GetRegistrations();
 
-    internal void MarkIncomplete(GlobalCoverageFailureReason reason)
+    public void MarkIncomplete(GlobalCoverageFailureReason reason)
         => _accumulator.Suppress(reason);
 
-    internal GlobalCoverageSnapshotResult AcquireGlobalCoverageSnapshot()
+    public GlobalCoverageSnapshotResult AcquireGlobalCoverageSnapshot()
     {
         if (!_outputManager.EnsureConfiguredAndFreeze())
         {
@@ -174,10 +175,10 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         }
     }
 
-    internal bool TryCommit(GlobalCoverageSnapshot snapshot, Action action)
+    public bool TryCommit(GlobalCoverageSnapshot snapshot, Action action)
         => _accumulator.TryCommit(snapshot, action);
 
-    internal bool TryPublishRequiredFiles(GlobalCoverageSnapshot snapshot)
+    public bool TryPublishRequiredFiles(GlobalCoverageSnapshot snapshot)
     {
         var stagedArtifacts = new List<StagedOutput>();
         try
@@ -220,7 +221,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         }
     }
 
-    internal bool RegisterCollectorOutputDirectory(string directory)
+    public bool RegisterCollectorOutputDirectory(string directory)
     {
         var registered = _outputManager.RegisterCollectorAndFreeze(directory);
         if (!registered)
@@ -231,29 +232,11 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         return registered;
     }
 
-    internal bool FinalizeAndSeal()
-    {
-        var sealedComplete = false;
-        try
-        {
-            var snapshotResult = AcquireGlobalCoverageSnapshot();
-            if (snapshotResult.Status == GlobalCoverageSnapshotStatus.Success && snapshotResult.Snapshot is { } snapshot)
-            {
-                using (snapshot)
-                {
-                    TryPublishRequiredFiles(snapshot);
-                }
-            }
-        }
-        finally
-        {
-            sealedComplete = RequestSeal();
-        }
+    public bool FinalizeAndSeal() => RequestSeal(publishFinalSnapshot: true);
 
-        return sealedComplete;
-    }
+    public bool RequestSeal() => RequestSeal(publishFinalSnapshot: false);
 
-    internal bool RequestSeal()
+    private bool RequestSeal(bool publishFinalSnapshot)
     {
         var audit = false;
         lock (_lifecycleGate)
@@ -264,6 +247,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
             }
 
             _sealRequested = true;
+            _publishFinalSnapshotOnSeal |= publishFinalSnapshot;
             _lifecycleState = LifecycleState.Completing;
             audit = HasNoAdmissionsUnderLock();
         }
@@ -310,7 +294,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         {
             if (_lifecycleState == LifecycleState.Sealed)
             {
-                throw new InvalidOperationException("A coverage session cannot start after the test session has ended.");
+                ThrowHelper.ThrowInvalidOperationException("A coverage session cannot start after the test session has ended.");
             }
 
             if (_lifecycleState == LifecycleState.Completing)
@@ -429,6 +413,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         var diagnostics = ContextDiagnostics;
         var balanced = diagnostics.Started == diagnostics.Closed &&
                        diagnostics.Closed == diagnostics.Disposed;
+        bool publishFinalSnapshot;
         lock (_lifecycleGate)
         {
             if (_lifecycleState != LifecycleState.Completing || !HasNoAdmissionsUnderLock())
@@ -437,9 +422,14 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
             }
 
             _lifecycleState = LifecycleState.Sealed;
+            publishFinalSnapshot = _publishFinalSnapshotOnSeal;
         }
 
-        using var stagedReadyMarkers = balanced ? _outputManager.TryStageReadyMarkers(diagnostics) : null;
+        // Admissions must be closed before capturing the terminal generation. Otherwise, a context
+        // that closes during finalization can merge into the replacement generation after the
+        // published snapshot and be omitted from the ready protocol set.
+        var finalSnapshotPublished = !publishFinalSnapshot || TryPublishFinalSnapshot();
+        using var stagedReadyMarkers = balanced && finalSnapshotPublished ? _outputManager.TryStageReadyMarkers(diagnostics) : null;
         var complete = stagedReadyMarkers is not null &&
                        _accumulator.TryFinalizeCompleteness(stagedReadyMarkers.Commit);
         lock (_lifecycleGate)
@@ -459,6 +449,40 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         ModuleValue.LogNativeMemoryDiagnostics(processId);
     }
 
+    private bool TryPublishFinalSnapshot()
+    {
+        GlobalCoverageSnapshot? snapshot = null;
+        try
+        {
+            if (!_outputManager.EnsureConfiguredAndFreeze())
+            {
+                _accumulator.Suppress(GlobalCoverageFailureReason.OutputCommitFailed);
+                return false;
+            }
+
+            var result = _accumulator.AcquireSnapshot(GlobalContainer);
+            if (result.Status != GlobalCoverageSnapshotStatus.Success || result.Snapshot is not { } acquiredSnapshot)
+            {
+                return false;
+            }
+
+            snapshot = acquiredSnapshot;
+            InitializeSnapshotOutput(snapshot);
+            return TryPublishRequiredFiles(snapshot);
+        }
+        catch
+        {
+            // CompleteSeal can run from a coverage-context finally path. Keep that cleanup path
+            // non-throwing while leaving the process pending so reconciliation fails closed.
+            _accumulator.Suppress(GlobalCoverageFailureReason.SnapshotFailed);
+            return false;
+        }
+        finally
+        {
+            snapshot?.Dispose();
+        }
+    }
+
     private void OnSnapshotDisposed(GlobalCoverageSnapshot snapshot)
     {
         _outputManager.RecordGenerationCommit(snapshot.RequiredOutputMask, snapshot.CommittedOutputMask);
@@ -473,7 +497,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         private readonly DefaultWithGlobalCoverageEventHandler _owner;
         private int _state;
 
-        internal GlobalCoverageAdmission(DefaultWithGlobalCoverageEventHandler owner)
+        public GlobalCoverageAdmission(DefaultWithGlobalCoverageEventHandler owner)
         {
             _owner = owner;
         }
@@ -484,10 +508,10 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
 
         public override void Release() => _owner.ReleaseAdmission(this);
 
-        internal bool TryTransition(AdmissionState expected, AdmissionState next)
+        public bool TryTransition(AdmissionState expected, AdmissionState next)
             => Interlocked.CompareExchange(ref _state, (int)next, (int)expected) == (int)expected;
 
-        internal AdmissionState ReleaseState()
+        public AdmissionState ReleaseState()
             => (AdmissionState)Interlocked.Exchange(ref _state, (int)AdmissionState.Released);
     }
 
@@ -496,12 +520,12 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         private readonly DefaultWithGlobalCoverageEventHandler _owner;
         private int _released;
 
-        internal FinalizerAdmission(DefaultWithGlobalCoverageEventHandler owner)
+        public FinalizerAdmission(DefaultWithGlobalCoverageEventHandler owner)
         {
             _owner = owner;
         }
 
-        internal void Release()
+        public void Release()
         {
             if (Interlocked.CompareExchange(ref _released, 1, 0) == 0)
             {
@@ -512,14 +536,14 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
 
     private sealed class StagedOutput
     {
-        internal StagedOutput(byte bit, GlobalCoverageStagedArtifact artifact)
+        public StagedOutput(byte bit, GlobalCoverageStagedArtifact artifact)
         {
             Bit = bit;
             Artifact = artifact;
         }
 
-        internal byte Bit { get; }
+        public byte Bit { get; }
 
-        internal GlobalCoverageStagedArtifact Artifact { get; }
+        public GlobalCoverageStagedArtifact Artifact { get; }
     }
 }

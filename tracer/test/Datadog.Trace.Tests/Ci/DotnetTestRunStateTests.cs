@@ -8,6 +8,8 @@
 using System;
 using System.IO;
 using System.Text;
+using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 using FluentAssertions;
 using Xunit;
@@ -99,6 +101,60 @@ public class DotnetTestRunStateTests
         finally
         {
             Directory.Delete(parent, true);
+        }
+    }
+
+    [Fact]
+    public unsafe void LastParticipantReconcilesWhenOwnerFinishesFirst()
+    {
+        var directory = CreateDirectory();
+        try
+        {
+            using var owner = DotnetTestRunState.TryCreate(DotnetTestCommandKind.DotnetTestCommand, null, directory, "run-id");
+            using var participant = DotnetTestRunState.TryCreate(DotnetTestCommandKind.VSTestExecutor, null, directory, "run-id");
+            var claimPath = owner.ClaimPath!;
+            var handler = new DefaultWithGlobalCoverageEventHandler(configuredOutputDirectory: directory, runIdProvider: () => "run-id");
+            var metadata = new TestModuleCoverageMetadata(
+                8,
+                0,
+                [new FileCoverageMetadata("/src/owner-first.cs", 0, 8, [0xff])]);
+            var handle = handler.StartSession("xunit");
+            handler.Container!.TryGetOrAddModuleValue(
+                                   metadata,
+                                   typeof(DotnetTestRunStateTests).Module,
+                                   CoverageMetadataValidator.ValidateAndGetRawByteLength(metadata),
+                                   out var module)
+                               .Should()
+                               .BeTrue();
+            ((byte*)module!.FilesLines)[0] = 1;
+            ((byte*)module.FilesLines)[7] = 1;
+            handler.EndSession(handle);
+            handler.FinalizeAndSeal().Should().BeTrue();
+
+            DotnetCommon.FinalizeRunState(owner, exitCode: 0, exception: null);
+
+            Directory.GetFiles(directory, "session-coverage-*.json").Should().BeEmpty();
+            Directory.GetFiles(directory, "coverage-*.json").Should().ContainSingle();
+            File.Exists(claimPath).Should().BeTrue("the owner could not reconcile while another participant was active");
+
+            DotnetCommon.FinalizeRunState(participant, exitCode: 0, exception: null);
+
+            var publishedPath = Directory.GetFiles(directory, "session-coverage-*.json").Should().ContainSingle().Subject;
+            var reader = new GlobalCoverageInputReader();
+            reader.TryRead(publishedPath, out var coverage).Should().BeTrue();
+            var file = coverage!.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject;
+            file.ExecutableBitmap.Should().Equal(0xff);
+            file.ExecutedBitmap.Should().Equal(0x81);
+            file.Data.Should().Equal(25, 8, 2);
+            File.Exists(claimPath).Should().BeFalse();
+            Directory.GetFiles(directory, "coverage-*.json").Should().BeEmpty();
+            Directory.GetFiles(directory, ".dd-coverage-process-ready-*").Should().BeEmpty();
+            Directory.GetFiles(directory, ".dd-coverage-process-incomplete-*").Should().BeEmpty();
+            Directory.GetFiles(Path.Combine(directory, ".dd-coverage-completed"), "coverage-*.json", SearchOption.AllDirectories).Should().ContainSingle();
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
         }
     }
 

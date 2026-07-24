@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Ci.Coverage.Models.Global;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -21,25 +22,25 @@ internal sealed class GlobalCoverageArtifactWriter
     private readonly GlobalCoverageArtifactLimits _limits;
     private readonly GlobalCoverageInputReader _validator;
 
-    internal GlobalCoverageArtifactWriter(GlobalCoverageArtifactLimits? limits = null)
+    public GlobalCoverageArtifactWriter(GlobalCoverageArtifactLimits? limits = null)
     {
         _limits = limits ?? GlobalCoverageArtifactLimits.Default;
         _validator = new GlobalCoverageInputReader(_limits);
     }
 
-    internal void WriteAtomicNoReplace(string destinationPath, GlobalCoverageInfo model)
+    public void WriteAtomicNoReplace(string destinationPath, GlobalCoverageInfo model)
     {
         using var staged = Stage(destinationPath, model, replaceExisting: false);
         staged.Commit();
     }
 
-    internal void WriteAtomicReplace(string destinationPath, GlobalCoverageInfo model)
+    public void WriteAtomicReplace(string destinationPath, GlobalCoverageInfo model)
     {
         using var staged = Stage(destinationPath, model, replaceExisting: true);
         staged.Commit();
     }
 
-    internal GlobalCoverageStagedArtifact StageNoReplace(string destinationPath, GlobalCoverageInfo model)
+    public GlobalCoverageStagedArtifact StageNoReplace(string destinationPath, GlobalCoverageInfo model)
         => Stage(destinationPath, model, replaceExisting: false);
 
     private void TryDelete(string path)
@@ -56,18 +57,18 @@ internal sealed class GlobalCoverageArtifactWriter
 
     private GlobalCoverageStagedArtifact Stage(string destinationPath, GlobalCoverageInfo model, bool replaceExisting)
     {
-        if (string.IsNullOrWhiteSpace(destinationPath))
+        if (StringUtil.IsNullOrWhiteSpace(destinationPath))
         {
-            throw new ArgumentException("A global coverage destination path is required.", nameof(destinationPath));
+            ThrowHelper.ThrowArgumentException("A global coverage destination path is required.", nameof(destinationPath));
         }
 
         _validator.ValidateModel(model);
 
         var fullDestinationPath = Path.GetFullPath(destinationPath);
         var directory = Path.GetDirectoryName(fullDestinationPath);
-        if (string.IsNullOrEmpty(directory))
+        if (StringUtil.IsNullOrEmpty(directory))
         {
-            throw new InvalidOperationException("The global coverage destination has no parent directory.");
+            ThrowHelper.ThrowInvalidOperationException("The global coverage destination has no parent directory.");
         }
 
         Directory.CreateDirectory(directory);
