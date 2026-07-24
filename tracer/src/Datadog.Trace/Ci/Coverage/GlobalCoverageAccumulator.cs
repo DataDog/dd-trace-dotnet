@@ -40,6 +40,7 @@ internal sealed class GlobalCoverageAccumulator
     private int _suppressed;
     private int _failureReason;
     private long _completenessEpoch;
+    private long _acceptedContextCount;
     private bool _completenessFinalized;
 
     public GlobalCoverageAccumulator(GlobalCoverageAccumulatorLimits? limits = null)
@@ -87,27 +88,6 @@ internal sealed class GlobalCoverageAccumulator
     }
 
     public GlobalCoverageMergeResult TryMerge(IReadOnlyList<ModuleCoverageData> modules)
-        => TryMerge(modules, incrementContextCount: true);
-
-    public GlobalCoverageMergeResult TryMergeRetired(ModuleValue module)
-    {
-        if (IsSuppressed)
-        {
-            return GlobalCoverageMergeResult.AlreadySuppressed;
-        }
-
-        try
-        {
-            return TryMerge([ModuleCoverageData.Capture(module)], incrementContextCount: false);
-        }
-        catch (Exception ex) when (IsRecoverable(ex))
-        {
-            Suppress(GlobalCoverageFailureReason.MergeFailed);
-            return GlobalCoverageMergeResult.BecameSuppressedIncomplete;
-        }
-    }
-
-    private GlobalCoverageMergeResult TryMerge(IReadOnlyList<ModuleCoverageData> modules, bool incrementContextCount)
     {
         if (IsSuppressed)
         {
@@ -124,10 +104,8 @@ internal sealed class GlobalCoverageAccumulator
                 }
 
                 MergeIntoGeneration(_activeGeneration, modules);
-                if (incrementContextCount)
-                {
-                    _activeGeneration.AcceptedContextCount++;
-                }
+                _activeGeneration.AcceptedContextCount++;
+                _acceptedContextCount++;
 
                 return GlobalCoverageMergeResult.Merged;
             }
@@ -320,7 +298,7 @@ internal sealed class GlobalCoverageAccumulator
                 generation?.RetainedBitmapBytes ?? 0,
                 generation?.Modules.Count ?? 0,
                 generation?.FileSlotCount ?? 0,
-                generation?.AcceptedContextCount ?? 0,
+                _acceptedContextCount,
                 !IsSuppressed,
                 FailureReason);
         }

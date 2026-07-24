@@ -27,7 +27,6 @@ public static class CoverageReporter<TMeta>
     private static readonly TMeta Metadata;
     private static readonly Module Module;
     private static readonly int ModuleMemorySize;
-    private static ModuleValue? _discardModuleValue;
     private static ModuleValue? _globalModuleValue;
 
     static CoverageReporter()
@@ -55,37 +54,13 @@ public static class CoverageReporter<TMeta>
         var handler = CoverageReporter.Handler;
         try
         {
-            // Assemblies rewritten before CoverageProbe was introduced cannot release a buffer
-            // lease. Keep their writes harmless and process-lifetime; rebuilding upgrades them to
-            // the current instrumented ABI and restores per-test coverage.
-            return GetPointer(GetOrCreateDiscardModuleValue(handler), fileIndex);
-        }
-        catch
-        {
-            handler.MarkProbeDataIncomplete(GlobalCoverageFailureReason.ProbeDataIncomplete);
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Acquires the coverage counters for one instrumented method invocation.
-    /// </summary>
-    /// <param name="fileIndex">File index.</param>
-    /// <returns>A probe that keeps the native counter buffer alive until the invocation exits.</returns>
-    public static unsafe CoverageProbe AcquireFileCounter(int fileIndex)
-    {
-        var handler = CoverageReporter.Handler;
-        try
-        {
             var module = GetModuleValue(handler);
-            if (module is not null && module.TryAcquireProbe(GetByteOffset(fileIndex), out var pointer))
+            if (module is null)
             {
-                return new CoverageProbe(module, pointer);
+                ThrowHelper.ThrowInvalidOperationException("The global coverage buffer is unexpectedly closed.");
             }
 
-            // The context or process fallback is already retired. Late calls must remain safe, but
-            // this process-lifetime sink is intentionally excluded from terminal snapshots.
-            return new CoverageProbe(null, GetPointer(GetOrCreateDiscardModuleValue(handler), fileIndex));
+            return GetPointer(module, fileIndex);
         }
         catch
         {
@@ -128,26 +103,6 @@ public static class CoverageReporter<TMeta>
 
         Interlocked.CompareExchange(ref _globalModuleValue, module, null);
         return Volatile.Read(ref _globalModuleValue)!;
-    }
-
-    private static ModuleValue GetOrCreateDiscardModuleValue(CoverageEventHandler handler)
-    {
-        if (Volatile.Read(ref _discardModuleValue) is { } cached)
-        {
-            return cached;
-        }
-
-        if (!handler.DiscardContainer.TryGetOrAddModuleValue(
-                Metadata,
-                Module,
-                ModuleMemorySize,
-                out var module) || module is null)
-        {
-            ThrowHelper.ThrowInvalidOperationException("The process-lifetime coverage sink is unexpectedly closed.");
-        }
-
-        Interlocked.CompareExchange(ref _discardModuleValue, module, null);
-        return Volatile.Read(ref _discardModuleValue)!;
     }
 
     private static int GetByteOffset(int fileIndex)

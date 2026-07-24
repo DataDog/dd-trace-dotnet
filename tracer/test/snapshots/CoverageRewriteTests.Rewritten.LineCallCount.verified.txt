@@ -29,80 +29,43 @@ namespace CoverageRewriterAssembly
 			[CompilerGenerated]
 			get
 			{
-				CoverageProbe coverageProbe = CoverageReporter<ModuleCoverage>.AcquireFileCounter(0);
-				string result;
-				try
-				{
-					int* pointer = (int*)coverageProbe.Pointer;
-					pointer[4]++;
-					result = <MyProperty>k__BackingField;
-				}
-				catch
-				{
-					//try-fault
-					coverageProbe.Dispose();
-					throw;
-				}
-				coverageProbe.Dispose();
-				return result;
+				(*(int*)((byte*)CoverageReporter<ModuleCoverage>.GetFileCounter(0) + (nint)4 * (nint)4))++;
+				return <MyProperty>k__BackingField;
 			}
 			[CompilerGenerated]
 			set
 			{
-				CoverageProbe coverageProbe = CoverageReporter<ModuleCoverage>.AcquireFileCounter(0);
-				try
-				{
-					int* pointer = (int*)coverageProbe.Pointer;
-					pointer[4]++;
-					<MyProperty>k__BackingField = value;
-				}
-				catch
-				{
-					//try-fault
-					coverageProbe.Dispose();
-					throw;
-				}
-				coverageProbe.Dispose();
+				(*(int*)((byte*)CoverageReporter<ModuleCoverage>.GetFileCounter(0) + (nint)4 * (nint)4))++;
+				<MyProperty>k__BackingField = value;
 			}
 		}
 
 		public unsafe void Main()
 		{
-			CoverageProbe coverageProbe = CoverageReporter<ModuleCoverage>.AcquireFileCounter(0);
-			try
+			int* fileCounter = (int*)CoverageReporter<ModuleCoverage>.GetFileCounter(0);
+			fileCounter[7]++;
+			fileCounter[8]++;
+			Console.WriteLine("Main Method");
+			fileCounter[9]++;
+			int num = 0;
+			while (true)
 			{
-				int* pointer = (int*)coverageProbe.Pointer;
-				pointer[7]++;
-				pointer[8]++;
-				Console.WriteLine("Main Method");
-				pointer[9]++;
-				int num = 0;
-				while (true)
+				fileCounter[9]++;
+				if (num >= 100)
 				{
-					pointer[9]++;
-					if (num >= 100)
-					{
-						break;
-					}
-					pointer[10]++;
-					pointer[11]++;
-					Console.WriteLine(num);
-					pointer[12]++;
-					num++;
+					break;
 				}
-				pointer[14]++;
-				MyProperty = "Value";
-				pointer[16]++;
-				Console.WriteLine(MyProperty);
-				pointer[17]++;
+				fileCounter[10]++;
+				fileCounter[11]++;
+				Console.WriteLine(num);
+				fileCounter[12]++;
+				num++;
 			}
-			catch
-			{
-				//try-fault
-				coverageProbe.Dispose();
-				throw;
-			}
-			coverageProbe.Dispose();
+			fileCounter[14]++;
+			MyProperty = "Value";
+			fileCounter[16]++;
+			Console.WriteLine(MyProperty);
+			fileCounter[17]++;
 		}
 
 		[AsyncStateMachine(typeof(<MainAsync>d__5))]
