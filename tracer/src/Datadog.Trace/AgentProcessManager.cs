@@ -24,6 +24,9 @@ namespace Datadog.Trace
         internal const int KeepAliveInterval = 10_000;
         internal const int ExceptionRetryInterval = 2_000;
         internal const int MaxFailures = 5;
+        internal const int HealthConfirmationWindowMs = 2000;
+        internal const int InitialHealthCheckDelayMs = 50;
+        internal const double BackoffFactor = 1.75d;
 
         internal static readonly ProcessMetadata TraceAgentMetadata = new ProcessMetadata
         {
@@ -97,6 +100,9 @@ namespace Datadog.Trace
                 }
                 else
                 {
+                    var exporterSettings = new ExporterSettings(GlobalConfigurationSource.Instance, File.Exists, NullConfigurationTelemetry.Instance);
+                    DogStatsDMetadata.RequirePipeBound = exporterSettings.MetricsTransport == Vendors.StatsdClient.Transport.TransportType.NamedPipe;
+
                     Processes.Add(DogStatsDMetadata);
                 }
 
@@ -172,7 +178,7 @@ namespace Datadog.Trace
                                 {
                                     // This means we have never tried from this domain
 
-                                    if (metadata.ProcessIsHealthy())
+                                    if (metadata.IsHealthyDebounced())
                                     {
                                         // This means one of two things:
                                         // - Another domain has already started this process
@@ -182,25 +188,22 @@ namespace Datadog.Trace
                                         // Assume healthy to start, but look for problems
                                         metadata.ProcessState = ProcessState.Healthy;
 
-                                        // Check on a delay to be sure we keep the process available after a shutdown
-                                        var attempts = 7;
-                                        var delay = 50d;
+                                        var watched = Stopwatch.StartNew();
+                                        var delay = (double)InitialHealthCheckDelayMs;
 
-                                        while (--attempts > 0)
+                                        while (watched.ElapsedMilliseconds < HealthConfirmationWindowMs)
                                         {
-                                            await Task.Delay((int)delay).ConfigureAwait(false);
+                                            var remaining = HealthConfirmationWindowMs - (int)watched.ElapsedMilliseconds;
+                                            await Task.Delay(Math.Min((int)delay, remaining)).ConfigureAwait(false);
 
-                                            if (metadata.ProcessIsHealthy())
+                                            if (!metadata.IsHealthyDebounced())
                                             {
-                                                // Should result in a max delay of ~3.28 seconds before giving up
-                                                delay = delay * 1.75d;
-                                                continue;
+                                                Log.Information("Recovering from previous {Process} shutdown. Ready for start.", path);
+                                                metadata.ProcessState = ProcessState.ReadyToStart;
+                                                break;
                                             }
 
-                                            // The previous instance is gone, time to start the process
-                                            Log.Information("Recovering from previous {Process} shutdown. Ready for start.", path);
-                                            metadata.ProcessState = ProcessState.ReadyToStart;
-                                            break;
+                                            delay *= BackoffFactor;
                                         }
                                     }
                                     else
@@ -209,14 +212,31 @@ namespace Datadog.Trace
                                         metadata.ProcessState = ProcessState.ReadyToStart;
                                     }
                                 }
-                                else if (metadata.ProcessState == ProcessState.Healthy || metadata.ProcessState == ProcessState.Faulted)
+                                else if (metadata.ProcessState == ProcessState.Healthy || metadata.ProcessState == ProcessState.Faulted || metadata.ProcessState == ProcessState.ReadyToStart)
                                 {
                                     // This means we have tried to start from this domain before
-                                    metadata.ProcessState = metadata.ProcessIsHealthy() ? ProcessState.Healthy : ProcessState.ReadyToStart;
+                                    metadata.ProcessState = metadata.IsHealthyDebounced() ? ProcessState.Healthy : ProcessState.ReadyToStart;
                                 }
 
-                                if (metadata.ProcessState == ProcessState.ReadyToStart)
+                                if (metadata.ProcessState == ProcessState.ReadyToStart && metadata.RequirePipeBound && metadata.NamedPipeIsBound())
                                 {
+                                    metadata.MarkHealthy();
+                                }
+                                else if (metadata.ProcessState == ProcessState.ReadyToStart)
+                                {
+                                    if (metadata.RequirePipeBound && metadata.Process is { HasExited: false } stale)
+                                    {
+                                        try
+                                        {
+                                            Log.Information<string, int>("Killing broken {Process} (pid {Pid}) before restart; its named pipe never bound.", path, stale.Id);
+                                            metadata.KillTrackedProcess();
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            Log.Warning(ex, "Failed to kill stale {Process} before restart.", path);
+                                        }
+                                    }
+
                                     Log.Information("Attempting to start {Process}.", path);
 
                                     var startInfo = new ProcessStartInfo
@@ -238,7 +258,7 @@ namespace Datadog.Trace
                                         if (metadata.ProcessIsHealthy())
                                         {
                                             metadata.SequentialFailures = 0;
-                                            metadata.ProcessState = ProcessState.Healthy;
+                                            metadata.MarkHealthy();
                                             Log.Information("Successfully started {Process}.", path);
                                             break;
                                         }
@@ -290,13 +310,25 @@ namespace Datadog.Trace
 
         internal sealed class ProcessMetadata
         {
+            internal const int UnboundPipeGraceChecks = 2;
+
             private string _processPath;
+
+            private Process _process;
 
             public string PipeName { get; set; }
 
             public string Name { get; set; }
 
-            public Process Process { get; set; }
+            public Process Process
+            {
+                get => _process;
+                set
+                {
+                    _process = value;
+                    ConsecutiveUnboundPipeChecks = 0;
+                }
+            }
 
             public Task KeepAliveTask { get; set; }
 
@@ -306,6 +338,10 @@ namespace Datadog.Trace
             public bool IsBeingManaged { get; set; }
 
             public int SequentialFailures { get; set; }
+
+            public bool RequirePipeBound { get; set; }
+
+            public int ConsecutiveUnboundPipeChecks { get; private set; }
 
             public ProcessState ProcessState { get; set; } = ProcessState.NeverChecked;
 
@@ -323,10 +359,60 @@ namespace Datadog.Trace
 
             public string ProcessArguments { get; set; }
 
+            public void MarkHealthy()
+            {
+                ProcessState = ProcessState.Healthy;
+                ConsecutiveUnboundPipeChecks = 0;
+            }
+
+            public void KillTrackedProcess()
+            {
+                if (Process is not { } tracked)
+                {
+                    return;
+                }
+
+                if (!tracked.HasExited)
+                {
+                    tracked.Kill();
+                    tracked.WaitForExit(2000);
+                }
+
+                tracked.Dispose();
+                Process = null;
+            }
+
             public bool ProcessIsHealthy()
             {
-                // Named pipe can return false in some circumstances while it is being written to, so have a fallback
+                if (RequirePipeBound)
+                {
+                    return NamedPipeIsBound();
+                }
+
                 return NamedPipeIsBound() || ProgramIsRunning();
+            }
+
+            public bool IsHealthyDebounced()
+            {
+                if (!RequirePipeBound)
+                {
+                    return ProcessIsHealthy();
+                }
+
+                if (NamedPipeIsBound())
+                {
+                    ConsecutiveUnboundPipeChecks = 0;
+                    return true;
+                }
+
+                if (!ProgramIsRunning())
+                {
+                    ConsecutiveUnboundPipeChecks = 0;
+                    return false;
+                }
+
+                ConsecutiveUnboundPipeChecks++;
+                return ConsecutiveUnboundPipeChecks < UnboundPipeGraceChecks;
             }
 
             private bool ProgramIsRunning()
@@ -367,7 +453,7 @@ namespace Datadog.Trace
                 }
             }
 
-            private bool NamedPipeIsBound()
+            internal bool NamedPipeIsBound()
             {
                 var namedPipe = $"\\\\.\\pipe\\{PipeName}";
                 var namedPipeIsBound = File.Exists(namedPipe);
