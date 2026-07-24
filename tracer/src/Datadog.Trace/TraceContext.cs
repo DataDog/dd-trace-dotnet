@@ -139,9 +139,8 @@ namespace Datadog.Trace
             => spans.FirstSpan?.Context.TraceContext;
 
         /// <summary>
-        /// Gets the feature-flag span-enrichment state for this trace, creating it on first use.
-        /// Returns null when span enrichment is disabled, so callers can no-op via <c>?.</c> without
-        /// repeating the gate check at every callsite.
+        /// Gets the feature-flag span-enrichment state for this trace (created on first use), or null
+        /// when span enrichment is disabled.
         /// </summary>
         internal SpanEnrichmentState? GetOrCreateFeatureFlagEnrichment()
         {
