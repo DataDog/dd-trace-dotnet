@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -37,9 +38,7 @@ internal static class LegacyAspNetCoreResourceNameHelper
                     + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName!.Length - 6, 0)) // "action".Length
                     + 1; // '/' prefix
 
-        var sb = maxSize < 512
-                     ? new ValueStringBuilder(stackalloc char[512])
-                     : new ValueStringBuilder(); // too big to use stackallocation, so use array builder
+        var sb = StringBuilderCache.Acquire(maxSize);
 
         if (routeTemplate.Segments is { } segments)
         {
@@ -63,7 +62,7 @@ internal static class LegacyAspNetCoreResourceNameHelper
                             addedPart = true;
                         }
 
-                        sb.AppendAsLowerInvariant(part.Text);
+                        AppendLowerInvariant(sb, part.Text);
                     }
                     else
                     {
@@ -110,7 +109,7 @@ internal static class LegacyAspNetCoreResourceNameHelper
                          && (mustExpand || (expandRouteParameters && !IsIdentifierSegment(paramValue, out valueAsString))))
                         {
                             // write the expanded parameter value
-                            sb.AppendAsLowerInvariant(valueAsString);
+                            AppendLowerInvariant(sb, valueAsString);
                         }
                         else
                         {
@@ -122,7 +121,7 @@ internal static class LegacyAspNetCoreResourceNameHelper
                                 sb.Append('*');
                             }
 
-                            sb.AppendAsLowerInvariant(parameterName);
+                            AppendLowerInvariant(sb, parameterName);
                             if (part.IsOptional)
                             {
                                 sb.Append('?');
@@ -138,11 +137,33 @@ internal static class LegacyAspNetCoreResourceNameHelper
         // We never added anything, or we just added the first `/`, no need for explicit ToString()
         if (sb.Length <= 1)
         {
-            sb.Dispose();
+            StringBuilderCache.Release(sb);
             return "/";
         }
 
-        return sb.ToString();
+        return StringBuilderCache.GetStringAndRelease(sb);
+
+        static void AppendLowerInvariant(StringBuilder sb, string? value)
+        {
+            if (StringUtil.IsNullOrEmpty(value))
+            {
+                return;
+            }
+
+            if (value.Length >= 32)
+            {
+                // iterating over every character causes too much slow down
+                // for large parameters, so just suck up the extra allocation instead
+                sb.Append(value.ToLowerInvariant());
+                return;
+            }
+
+            sb.EnsureCapacity(sb.Length + value.Length);
+            for (var i = 0; i < value.Length; i++)
+            {
+                sb.Append(char.ToLowerInvariant(value[i]));
+            }
+        }
     }
 
     [TestingAndPrivateOnly]
