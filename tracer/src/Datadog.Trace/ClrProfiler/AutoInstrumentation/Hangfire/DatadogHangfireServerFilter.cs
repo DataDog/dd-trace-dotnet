@@ -51,8 +51,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Hangfire
         {
             if (context.TryDuckCast<IPerformedContextProxy>(out var performedContext))
             {
-                var shouldRestoreBaggage = performedContext.Items.TryGetValue(HangfireConstants.DatadogBaggageKey, out var previousBaggage);
-
                 try
                 {
                     if (performedContext.Items.TryGetValue(HangfireConstants.DatadogScopeKey, out var scope))
