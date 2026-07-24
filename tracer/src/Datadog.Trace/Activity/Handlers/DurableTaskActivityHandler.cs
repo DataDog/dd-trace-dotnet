@@ -20,14 +20,15 @@ namespace Datadog.Trace.Activity.Handlers
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DurableTaskActivityHandler>();
 
         public bool ShouldListenTo(string sourceName, string? version)
-            => sourceName == DurableTaskConstants.ActivitySourceName;
+            => sourceName == DurableTaskConstants.WebJobsActivitySourceName
+            || sourceName == DurableTaskConstants.SdkActivitySourceName;
 
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
         {
             var tags = new OpenTelemetryTags
             {
-                OtelLibraryName = DurableTaskConstants.ActivitySourceName,
+                OtelLibraryName = sourceName,
             };
 
             ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: tags, out _);

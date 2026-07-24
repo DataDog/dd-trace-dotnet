@@ -13,7 +13,11 @@ namespace Datadog.Trace.Activity.Handlers
     /// </summary>
     internal static class DurableTaskConstants
     {
-        internal const string ActivitySourceName = "WebJobs.Extensions.DurableTask";
+        // Host extension scheduling/metadata spans (create_orchestration, entity, etc.)
+        internal const string WebJobsActivitySourceName = "WebJobs.Extensions.DurableTask";
+
+        // Durable Task SDK execution spans (orchestration/activity/timer lifecycle in V2 tracing)
+        internal const string SdkActivitySourceName = "Microsoft.DurableTask";
 
         internal static class Tags
         {

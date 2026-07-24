@@ -39,7 +39,7 @@ public class DurableTaskActivityHandlerCommonTests
             new(DurableTaskConstants.Tags.Name, "MyOrchestrator"),
         };
 
-        DurableTaskActivityHandlerCommon.TryGetTag(tags, DurableTaskConstants.Tags.Name, out var value)
+        DurableTaskActivityHandlerCommon.TryGetTag(tags, DurableTaskConstants.Tags.Name, out var value!)
             .Should().BeTrue();
         value.Should().Be("MyOrchestrator");
     }
