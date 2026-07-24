@@ -554,7 +554,9 @@ partial class Build : NukeBuild
 
                 void GenerateNukeSmokeTestsMatrices()
                 {
-                    var isMainBranch = bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false");
+                    // TEMPORARY: Force legacy-runtime smoke-test retries in this PR to validate the pipeline wiring.
+                    // var isMainBranch = bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false");
+                    var isMainBranch = true;
                     var scenarioDict = SmokeTests.SmokeTestScenarios.GetAllScenarios();
                     var allScenarios = scenarioDict
                         .SelectMany(pair => pair.Value.Select(kv => (category: pair.Key, scenario: kv.Key, details: kv.Value)))
