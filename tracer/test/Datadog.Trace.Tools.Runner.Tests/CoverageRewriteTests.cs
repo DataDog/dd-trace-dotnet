@@ -208,7 +208,7 @@ public class CoverageRewriteTests
     }
 
     [Fact]
-    public void RewrittenFaultPathReleasesTheInvocationProbe()
+    public void RewrittenExceptionPathReleasesTheContextBufferAtSessionEnd()
     {
         var tempFileName = GetTempFile();
         var previousHandler = CoverageReporter.Handler;
@@ -252,7 +252,7 @@ public class CoverageRewriteTests
     }
 
     [Fact]
-    public void TailCallMethodIsLeftUnchanged()
+    public void TailCallMethodKeepsTheExistingCounterInstrumentationShape()
     {
         var tempFileName = GetTempFile();
         try
@@ -300,12 +300,14 @@ public class CoverageRewriteTests
 
             using var rewritten = AssemblyDefinition.ReadAssembly(tempFileName, new ReaderParameters { ReadSymbols = true, InMemory = true });
             var tailMethod = rewritten.MainModule.Types.Single(type => type.Name == "Class1").Methods.Single(method => method.Name == "TailCountdown");
-            tailMethod.Body.Instructions.Should().Contain(instruction => instruction.OpCode == OpCodes.Tail);
-            tailMethod.Body.Instructions
-                      .Where(instruction => instruction.Operand is MethodReference)
-                      .Select(instruction => ((MethodReference)instruction.Operand).Name)
-                      .Should()
-                      .NotContain("AcquireFileCounter");
+            var tailInstruction = tailMethod.Body.Instructions.Should().ContainSingle(instruction => instruction.OpCode == OpCodes.Tail).Subject;
+            tailMethod.Body.Instructions[tailMethod.Body.Instructions.IndexOf(tailInstruction) + 1].OpCode.Should().Be(OpCodes.Call);
+            var calledMethods = tailMethod.Body.Instructions
+                                          .Where(instruction => instruction.Operand is MethodReference)
+                                          .Select(instruction => ((MethodReference)instruction.Operand).Name);
+            calledMethods.Should().Contain("GetFileCounter");
+            calledMethods.Should().NotContain("AcquireFileCounter");
+            tailMethod.Body.ExceptionHandlers.Should().BeEmpty("coverage instrumentation must not rewrite the method control flow");
         }
         finally
         {

@@ -17,15 +17,11 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
     private readonly object _lifecycleGate = new();
     private readonly GlobalCoverageAccumulator _accumulator;
     private readonly GlobalCoverageOutputManager _outputManager;
-    private readonly Action _retirementPendingCallback;
-    private readonly Action<ModuleValue, bool> _retirementCompletedCallback;
     private int _inFlightStarts;
     private int _activeContexts;
     private int _inFlightFinalizers;
-    private int _retiredModulesPending;
     private LifecycleState _lifecycleState;
     private Action<bool>? _sealCompleted;
-    private bool _globalRetirementStarted;
     private bool _sealCompletionStarted;
     private bool _sealRequested;
     private bool _publishFinalSnapshotOnSeal;
@@ -41,8 +37,6 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
             configuredOutputDirectory,
             Environment.CurrentDirectory,
             runIdProvider ?? (() => TestOptimization.Instance.RunId));
-        _retirementPendingCallback = OnRetirementPending;
-        _retirementCompletedCallback = OnRetirementCompleted;
     }
 
     private enum AdmissionState
@@ -247,7 +241,6 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
     private bool RequestSeal(bool publishFinalSnapshot, Action<bool>? onCompleted)
     {
         var audit = false;
-        var retireGlobalContainer = false;
         bool? completed = null;
         lock (_lifecycleGate)
         {
@@ -265,13 +258,6 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
                 _sealRequested = true;
                 _publishFinalSnapshotOnSeal |= publishFinalSnapshot;
                 _lifecycleState = LifecycleState.Completing;
-                if (!_globalRetirementStarted)
-                {
-                    _globalRetirementStarted = true;
-                    _inFlightFinalizers++;
-                    retireGlobalContainer = true;
-                }
-
                 audit = HasNoAdmissionsUnderLock();
             }
         }
@@ -280,22 +266,6 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         {
             InvokeSealCompleted(onCompleted, completedValue);
             return completedValue;
-        }
-
-        if (retireGlobalContainer)
-        {
-            try
-            {
-                GlobalContainer.RetireModules(
-                    _retirementPendingCallback,
-                    _retirementCompletedCallback,
-                    mergeOnCompletion: true);
-                GlobalContainer.Dispose();
-            }
-            finally
-            {
-                ReleaseFinalizerAdmission();
-            }
         }
 
         if (audit)
@@ -371,10 +341,6 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
 
     protected override void MarkGlobalCoverageIncomplete(GlobalCoverageFailureReason reason)
         => _accumulator.Suppress(reason);
-
-    protected override Action GetRetirementPendingCallback() => _retirementPendingCallback;
-
-    protected override Action<ModuleValue, bool> GetRetirementCompletedCallback() => _retirementCompletedCallback;
 
     private void CommitAdmission(GlobalCoverageAdmission admission)
     {
@@ -456,48 +422,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
     }
 
     private bool HasNoAdmissionsUnderLock()
-        => _inFlightStarts == 0 && _activeContexts == 0 && _inFlightFinalizers == 0 && _retiredModulesPending == 0;
-
-    private void OnRetirementPending()
-    {
-        lock (_lifecycleGate)
-        {
-            _retiredModulesPending++;
-        }
-    }
-
-    private void OnRetirementCompleted(ModuleValue module, bool mergeRequired)
-    {
-        try
-        {
-            if (mergeRequired)
-            {
-                _accumulator.TryMergeRetired(module);
-            }
-        }
-        catch
-        {
-            // Probe cleanup runs from generated finally/fault IL and must never replace user code failures.
-            _accumulator.Suppress(GlobalCoverageFailureReason.ProbeDataIncomplete);
-        }
-        finally
-        {
-            var audit = false;
-            lock (_lifecycleGate)
-            {
-                if (_retiredModulesPending > 0)
-                {
-                    _retiredModulesPending--;
-                    audit = _sealRequested && HasNoAdmissionsUnderLock();
-                }
-            }
-
-            if (audit)
-            {
-                CompleteSeal();
-            }
-        }
-    }
+        => _inFlightStarts == 0 && _activeContexts == 0 && _inFlightFinalizers == 0;
 
     private void CompleteSeal()
     {
@@ -559,9 +484,9 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
                 return false;
             }
 
-            // The global fallback was retired and merged before seal completion, so the terminal
-            // snapshot reads only compact accumulator state and cannot race with late probes.
-            var result = _accumulator.AcquireSnapshot(globalContainer: null);
+            // Per-test buffers have already been compacted and released. The process-wide fallback
+            // is bounded by the instrumented modules, so capture it without changing probe lifetime.
+            var result = _accumulator.AcquireSnapshot(GlobalContainer);
             if (result.Status != GlobalCoverageSnapshotStatus.Success || result.Snapshot is not { } acquiredSnapshot)
             {
                 return false;
@@ -573,8 +498,8 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         }
         catch
         {
-            // CompleteSeal can run from a coverage-context finally path. Keep that cleanup path
-            // non-throwing while leaving the process pending so reconciliation fails closed.
+            // CompleteSeal can run while a coverage context is unwinding. Keep cleanup non-throwing
+            // while leaving the process pending so reconciliation fails closed.
             _accumulator.Suppress(GlobalCoverageFailureReason.SnapshotFailed);
             return false;
         }
@@ -601,8 +526,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         }
         catch
         {
-            // Completion can run from generated cleanup IL. Publication callbacks must never
-            // replace an exception from customer code.
+            // Publication callbacks must not replace failures from the test lifecycle.
         }
     }
 

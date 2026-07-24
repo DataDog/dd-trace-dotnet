@@ -141,27 +141,6 @@ public class CoverageEventHandlerTests
         context.SnapshotModules().Should().BeEmpty();
     }
 
-    [Fact]
-    public void OwnerReleaseBeforeRetiredBitStillCompletesRetirement()
-    {
-        var metadata = CreateMetadata(totalLines: 8, coverageMode: 0, lastExecutableLine: 1);
-        var module = new ModuleValue(
-            metadata,
-            typeof(CoverageEventHandlerTests).Module,
-            CoverageMetadataValidator.ValidateAndGetRawByteLength(metadata),
-            ModuleValue.BufferKind.Context);
-        var completionCount = 0;
-
-        module.Retire(
-            onRetirementPending: module.Dispose,
-            onRetirementCompleted: (_, _) => completionCount++,
-            mergeOnCompletion: false);
-
-        completionCount.Should().Be(1);
-        module.FilesLines.Should().Be(IntPtr.Zero);
-        module.AllocatedByteLength.Should().Be(0);
-    }
-
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
@@ -275,9 +254,8 @@ public class CoverageEventHandlerTests
 
     private static unsafe void WriteStaleFlowCounter()
     {
-        var probe = CoverageReporter<StaleFlowMetadata>.AcquireFileCounter(0);
-        *(byte*)probe.Pointer = 1;
-        probe.Dispose();
+        var pointer = (byte*)CoverageReporter<StaleFlowMetadata>.GetFileCounter(0);
+        *pointer = 1;
     }
 
     private static TestModuleCoverageMetadata CreateMetadata(int totalLines, int coverageMode, int lastExecutableLine)

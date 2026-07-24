@@ -23,7 +23,6 @@ internal sealed class CoverageContextContainer : IDisposable
     private ModuleValue? _currentModuleValue;
     private int _closed;
     private int _disposed;
-    private int _retired;
 
     public CoverageContextContainer(object? state = null, ModuleValue.BufferKind bufferKind = ModuleValue.BufferKind.Context)
     {
@@ -37,12 +36,14 @@ internal sealed class CoverageContextContainer : IDisposable
 
     public ModuleValue? GetModuleValue(Module module)
     {
-        if (IsClosed)
+        // This is the normal probe path. Session closure is coordinated by the test lifecycle,
+        // so preserve the historical lock-free lookup and reserve the lock for cache misses.
+        if (_closed != 0)
         {
             return null;
         }
 
-        if (Volatile.Read(ref _currentModuleValue) is { } current && current.Module == module)
+        if (_currentModuleValue is { } current && current.Module == module)
         {
             return current;
         }
@@ -134,28 +135,6 @@ internal sealed class CoverageContextContainer : IDisposable
 
     public void Clear() => Dispose();
 
-    public void RetireModules(
-        Action? onRetirementPending,
-        Action<ModuleValue, bool>? onRetirementCompleted,
-        bool mergeOnCompletion)
-    {
-        lock (_gate)
-        {
-            if (_retired != 0)
-            {
-                return;
-            }
-
-            _retired = 1;
-            _closed = 1;
-            _currentModuleValue = null;
-            foreach (var moduleValue in _modules)
-            {
-                moduleValue.Retire(onRetirementPending, onRetirementCompleted, mergeOnCompletion);
-            }
-        }
-    }
-
     public void Dispose()
     {
         ExceptionDispatchInfo? firstException = null;
@@ -171,15 +150,6 @@ internal sealed class CoverageContextContainer : IDisposable
             _currentModuleValue = null;
             try
             {
-                if (_retired == 0)
-                {
-                    _retired = 1;
-                    foreach (var moduleValue in _modules)
-                    {
-                        moduleValue.Retire(onRetirementPending: null, onRetirementCompleted: null, mergeOnCompletion: false);
-                    }
-                }
-
                 foreach (var moduleValue in _modules)
                 {
                     try

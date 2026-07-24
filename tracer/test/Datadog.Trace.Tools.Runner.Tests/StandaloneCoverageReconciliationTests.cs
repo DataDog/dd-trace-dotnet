@@ -125,47 +125,6 @@ public class StandaloneCoverageReconciliationTests
         }
     }
 
-    [Fact]
-    public unsafe void DeferredSealPublishesAfterTheLastProbeReleases()
-    {
-        var directory = CreateDirectory();
-        var previousHandler = CoverageReporter.Handler;
-        try
-        {
-            using var reconciliation = StandaloneCoverageReconciliation.TryCreate(directory, "run-id");
-            var handler = new DefaultWithGlobalCoverageEventHandler(configuredOutputDirectory: directory, runIdProvider: () => "run-id");
-            CoverageReporter.Handler = handler;
-            var handle = handler.StartSession("xunit");
-            var probe = CoverageReporter<DeferredSealMetadata>.AcquireFileCounter(0);
-            ((byte*)probe.Pointer)[0] = 1;
-            handler.EndSession(handle);
-            var published = false;
-
-            handler.FinalizeAndSeal(
-                       complete =>
-                       {
-                           published = complete && reconciliation!.TryPublish();
-                       })
-                   .Should()
-                   .BeFalse("the admitted probe still owns the context buffer");
-
-            ((byte*)probe.Pointer)[7] = 1;
-            probe.Dispose();
-
-            published.Should().BeTrue();
-            var outputPath = Directory.GetFiles(directory, "session-coverage-*.json").Should().ContainSingle().Subject;
-            var reader = new GlobalCoverageInputReader();
-            reader.TryRead(outputPath, out var coverage).Should().BeTrue();
-            coverage!.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject.ExecutedBitmap.Should().Equal(0x81);
-            Directory.GetFiles(directory, ".dd-coverage-command-owner-*.claim").Should().BeEmpty();
-        }
-        finally
-        {
-            CoverageReporter.Handler = previousHandler;
-            Directory.Delete(directory, true);
-        }
-    }
-
     private static unsafe void PublishGeneration(
         DefaultWithGlobalCoverageEventHandler handler,
         ModuleCoverageMetadata metadata,
@@ -201,20 +160,6 @@ public class StandaloneCoverageReconciliationTests
             TotalLinesField.SetValue(this, totalLines);
             CoverageModeField.SetValue(this, coverageMode);
             FilesField.SetValue(this, files);
-        }
-    }
-
-    private sealed class DeferredSealMetadata : ModuleCoverageMetadata
-    {
-        private static readonly FieldInfo TotalLinesField = typeof(ModuleCoverageMetadata).GetField(nameof(TotalLines))!;
-        private static readonly FieldInfo CoverageModeField = typeof(ModuleCoverageMetadata).GetField(nameof(CoverageMode))!;
-        private static readonly FieldInfo FilesField = typeof(ModuleCoverageMetadata).GetField("Files", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
-
-        public DeferredSealMetadata()
-        {
-            TotalLinesField.SetValue(this, 8);
-            CoverageModeField.SetValue(this, 0);
-            FilesField.SetValue(this, new FileCoverageMetadata[] { new("/src/deferred-seal.cs", 0, 8, [0xff]) });
         }
     }
 }

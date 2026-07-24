@@ -12,27 +12,19 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci.Coverage;
 
 internal sealed class ModuleValue : IDisposable
 {
-    private const int RetiredMask = int.MinValue;
-    private const int ReferenceCountMask = int.MaxValue;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ModuleValue>();
     private static readonly NativeMemoryDebugMetrics ContextBufferMetrics = new();
     private static readonly NativeMemoryDebugMetrics GlobalFallbackBufferMetrics = new();
     private readonly BufferKind _bufferKind;
     private readonly bool _recordNativeMemoryDiagnostics;
-    private Action<ModuleValue, bool>? _onRetirementCompleted;
     private IntPtr _filesLines;
     private int _allocatedByteLength;
-    private int _lifetimeState = 1; // The container owns one reference until it finishes reading the buffer.
-    private int _mergeOnRetirement;
-    private int _ownerReleased;
-    private int _retirementStarted;
 
     public ModuleValue(ModuleCoverageMetadata metadata, Module module, int fileLinesMemorySize, BufferKind bufferKind)
     {
@@ -83,9 +75,11 @@ internal sealed class ModuleValue : IDisposable
 
     public Module Module { get; }
 
-    public IntPtr FilesLines => Interlocked.CompareExchange(ref _filesLines, IntPtr.Zero, IntPtr.Zero);
+    // Instrumented methods read this on every entry. The test lifecycle owns the buffer lifetime,
+    // so keep the read identical to the original lock-free counter path.
+    public IntPtr FilesLines => _filesLines;
 
-    public int AllocatedByteLength => Volatile.Read(ref _allocatedByteLength);
+    public int AllocatedByteLength => _allocatedByteLength;
 
     public static void LogNativeMemoryDiagnostics(int processId)
     {
@@ -136,112 +130,10 @@ internal sealed class ModuleValue : IDisposable
             diagnostics.MaximumBufferBytes);
     }
 
-    public unsafe bool TryAcquireProbe(int offset, out void* pointer)
-    {
-        while (true)
-        {
-            var state = Volatile.Read(ref _lifetimeState);
-            if ((state & RetiredMask) != 0)
-            {
-                pointer = null;
-                return false;
-            }
-
-            if ((state & ReferenceCountMask) == ReferenceCountMask)
-            {
-                ThrowHelper.ThrowInvalidOperationException("The coverage probe reference count exceeded the supported range.");
-            }
-
-            if (Interlocked.CompareExchange(ref _lifetimeState, state + 1, state) == state)
-            {
-                pointer = (byte*)_filesLines + offset;
-                return true;
-            }
-        }
-    }
-
-    public void ReleaseProbe() => ReleaseReference();
-
-    /// <summary>
-    /// Stops new probes from acquiring the buffer while retaining the container's owner reference.
-    /// The owner can safely scan the counters before <see cref="Dispose()"/> releases that reference.
-    /// </summary>
-    public void Retire(
-        Action? onRetirementPending,
-        Action<ModuleValue, bool>? onRetirementCompleted,
-        bool mergeOnCompletion)
-    {
-        if (Interlocked.CompareExchange(ref _retirementStarted, 1, 0) != 0)
-        {
-            return;
-        }
-
-        _onRetirementCompleted = onRetirementCompleted;
-        if (mergeOnCompletion)
-        {
-            Volatile.Write(ref _mergeOnRetirement, 1);
-        }
-
-        // Register the retiring module before publishing the retired bit. The last probe can
-        // complete immediately after that publication, so the handler must already be waiting.
-        onRetirementPending?.Invoke();
-
-        while (true)
-        {
-            var state = Volatile.Read(ref _lifetimeState);
-            if ((state & ReferenceCountMask) > 1)
-            {
-                // At least one invocation overlapped the first scan. Capture its final writes
-                // again after all probe references have drained.
-                Volatile.Write(ref _mergeOnRetirement, 1);
-            }
-
-            var retiredState = state | RetiredMask;
-            if (Interlocked.CompareExchange(ref _lifetimeState, retiredState, state) == state)
-            {
-                // Dispose normally releases the owner after retirement. Handle a concurrent owner
-                // release too, so publishing the retired bit at zero references cannot strand a buffer.
-                if (retiredState == RetiredMask)
-                {
-                    CompleteRetirement();
-                }
-
-                return;
-            }
-        }
-    }
-
     public void Dispose()
     {
-        Retire(onRetirementPending: null, onRetirementCompleted: null, mergeOnCompletion: false);
-        if (Interlocked.Exchange(ref _ownerReleased, 1) == 0)
-        {
-            ReleaseReference();
-        }
-
+        FreeBuffer();
         GC.SuppressFinalize(this);
-    }
-
-    private void ReleaseReference()
-    {
-        var state = Interlocked.Decrement(ref _lifetimeState);
-        if (state == RetiredMask)
-        {
-            CompleteRetirement();
-        }
-    }
-
-    private void CompleteRetirement()
-    {
-        var onCompleted = Interlocked.Exchange(ref _onRetirementCompleted, null);
-        try
-        {
-            onCompleted?.Invoke(this, Volatile.Read(ref _mergeOnRetirement) != 0);
-        }
-        finally
-        {
-            FreeBuffer();
-        }
     }
 
     private void FreeBuffer()

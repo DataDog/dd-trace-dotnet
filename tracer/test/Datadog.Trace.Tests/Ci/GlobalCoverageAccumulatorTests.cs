@@ -200,7 +200,7 @@ public class GlobalCoverageAccumulatorTests
         snapshot.Model.Data[0].Should().Be(20.83);
         snapshot.Model.Data[1].Should().Be(24);
         snapshot.Model.Data[2].Should().Be(5);
-        handler.AccumulatorDiagnostics.AcceptedContextCount.Should().Be(0, "the accepted generation was detached into the snapshot");
+        handler.AccumulatorDiagnostics.AcceptedContextCount.Should().Be(3, "diagnostics report the process total across detached generations");
         snapshot.MergedContextCount.Should().Be(3);
     }
 

@@ -249,23 +249,13 @@ namespace Datadog.Trace.Coverage.Collector
                 var reportTypeGenericInstance = new GenericInstanceType(coverageReporterTypeReference);
                 reportTypeGenericInstance.GenericArguments.Add(moduleCoverageMetadataImplTypeDef);
 
-                var coverageProbeTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(CoverageProbe).FullName);
-                var coverageProbeTypeReference = module.ImportReference(coverageProbeTypeDefinition);
-                var reportAcquireCountersMethod = new MethodReference("AcquireFileCounter", coverageProbeTypeReference, reportTypeGenericInstance)
+                var reportGetCountersMethod = new MethodReference("GetFileCounter", new PointerType(module.TypeSystem.Void), reportTypeGenericInstance)
                 {
                     HasThis = false,
                     Parameters =
                     {
                         new ParameterDefinition(module.TypeSystem.Int32) { Name = "fileIndex" }
                     }
-                };
-                var probePointerGetter = new MethodReference("get_Pointer", new PointerType(module.TypeSystem.Void), coverageProbeTypeReference)
-                {
-                    HasThis = true
-                };
-                var probeDisposeMethod = new MethodReference(nameof(IDisposable.Dispose), module.TypeSystem.Void, coverageProbeTypeReference)
-                {
-                    HasThis = true
                 };
 
                 // GenericInstanceMethod? arrayEmptyOfIntMethodReference = null;
@@ -442,15 +432,6 @@ namespace Datadog.Trace.Coverage.Collector
 
                             var methodBody = moduleTypeMethod.Body;
                             var instructions = methodBody.Instructions;
-                            if (instructions.Any(static instruction => instruction.OpCode == OpCodes.Tail))
-                            {
-                                // The invocation probe is released from an outer fault handler and a shared return
-                                // epilogue. Wrapping a tail transfer in that protected region would invalidate its
-                                // stack-constant semantics, so leave these uncommon methods untouched.
-                                _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, contains a tail call.");
-                                continue;
-                            }
-
                             var instructionsOriginalLength = instructions.Count;
                             if (instructions.Capacity < instructionsOriginalLength * 2)
                             {
@@ -474,22 +455,21 @@ namespace Datadog.Trace.Coverage.Collector
                                 }
                             }
 
-                            // The probe local owns the native buffer for the complete invocation. The generated
-                            // outer fault handler and shared return epilogue release it on every exit path.
-                            var probeVariable = new VariableDefinition(coverageProbeTypeReference);
-                            VariableDefinition countersVariable;
-                            if (_coverageMode == CoverageMode.LineExecution)
+                            VariableDefinition? countersVariable = null;
+                            if (instructionsWithValidSequencePoints.Count > 1 || instructions[0] != instructionsWithValidSequencePoints[0].Instruction)
                             {
-                                countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Byte));
-                            }
-                            else
-                            {
-                                countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Int32));
-                            }
+                                // Step 3 - Modify local var to add the Coverage counters instance.
+                                if (_coverageMode == CoverageMode.LineExecution)
+                                {
+                                    countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Byte));
+                                }
+                                else
+                                {
+                                    countersVariable = new VariableDefinition(new PointerType(module.TypeSystem.Int32));
+                                }
 
-                            methodBody.Variables.Add(probeVariable);
-                            methodBody.Variables.Add(countersVariable);
-                            methodBody.InitLocals = true;
+                                methodBody.Variables.Add(countersVariable);
+                            }
 
                             // Step 4 - Insert the counter retriever
                             FileMetadata fileMetadata;
@@ -499,13 +479,12 @@ namespace Datadog.Trace.Coverage.Collector
                                 fileDictionaryIndex[filePath] = fileMetadata;
                             }
 
-                            var probeProtectedStart = Instruction.Create(OpCodes.Ldloca, probeVariable);
                             instructions.Insert(0, Instruction.Create(OpCodes.Ldc_I4, fileMetadata.Index));
-                            instructions.Insert(1, Instruction.Create(OpCodes.Call, reportAcquireCountersMethod));
-                            instructions.Insert(2, Instruction.Create(OpCodes.Stloc, probeVariable));
-                            instructions.Insert(3, probeProtectedStart);
-                            instructions.Insert(4, Instruction.Create(OpCodes.Call, probePointerGetter));
-                            instructions.Insert(5, Instruction.Create(OpCodes.Stloc, countersVariable));
+                            instructions.Insert(1, Instruction.Create(OpCodes.Call, reportGetCountersMethod));
+                            if (countersVariable is not null)
+                            {
+                                instructions.Insert(2, Instruction.Create(OpCodes.Stloc, countersVariable));
+                            }
 
                             // Step 5 - Insert line reporter
                             for (var i = 0; i < instructionsWithValidSequencePoints.Count; i++)
@@ -656,7 +635,6 @@ namespace Datadog.Trace.Coverage.Collector
                                 instructions.Insert(++optIdx, currentInstructionClone);
                             }
 
-                            AddProbeCleanup(methodBody, probeVariable, probeProtectedStart, probeDisposeMethod);
                             isDirty = true;
                         }
                     }
@@ -975,77 +953,6 @@ namespace Datadog.Trace.Coverage.Collector
             buffer[offset + 1] = (byte)(value >> 8);
             buffer[offset + 2] = (byte)(value >> 16);
             buffer[offset + 3] = (byte)(value >> 24);
-        }
-
-        private static void AddProbeCleanup(
-            Mono.Cecil.Cil.MethodBody methodBody,
-            VariableDefinition probeVariable,
-            Instruction protectedStart,
-            MethodReference probeDisposeMethod)
-        {
-            var instructions = methodBody.Instructions;
-            var returnInstructions = instructions.Where(static instruction => instruction.OpCode == OpCodes.Ret).ToArray();
-            VariableDefinition? returnVariable = null;
-            if (returnInstructions.Length > 0 && methodBody.Method.ReturnType.MetadataType != MetadataType.Void)
-            {
-                returnVariable = new VariableDefinition(methodBody.Method.ReturnType);
-                methodBody.Variables.Add(returnVariable);
-            }
-
-            var faultStart = Instruction.Create(OpCodes.Ldloca, probeVariable);
-            var faultDispose = Instruction.Create(OpCodes.Call, probeDisposeMethod);
-            var faultEnd = Instruction.Create(OpCodes.Endfinally);
-            var epilogueStart = returnInstructions.Length == 0 ? null : Instruction.Create(OpCodes.Ldloca, probeVariable);
-
-            foreach (var exceptionHandler in methodBody.ExceptionHandlers)
-            {
-                // Cecil represents "until the end of the method" with null. The generated outer
-                // fault handler extends the body, so existing regions must keep their original end.
-                exceptionHandler.TryEnd ??= faultStart;
-                exceptionHandler.HandlerEnd ??= faultStart;
-            }
-
-            if (epilogueStart is not null)
-            {
-                foreach (var returnInstruction in returnInstructions)
-                {
-                    if (returnVariable is not null)
-                    {
-                        returnInstruction.OpCode = OpCodes.Stloc;
-                        returnInstruction.Operand = returnVariable;
-                        instructions.Insert(instructions.IndexOf(returnInstruction) + 1, Instruction.Create(OpCodes.Leave, epilogueStart));
-                    }
-                    else
-                    {
-                        returnInstruction.OpCode = OpCodes.Leave;
-                        returnInstruction.Operand = epilogueStart;
-                    }
-                }
-            }
-
-            instructions.Add(faultStart);
-            instructions.Add(faultDispose);
-            instructions.Add(faultEnd);
-            if (epilogueStart is not null)
-            {
-                instructions.Add(epilogueStart);
-                instructions.Add(Instruction.Create(OpCodes.Call, probeDisposeMethod));
-                if (returnVariable is not null)
-                {
-                    instructions.Add(Instruction.Create(OpCodes.Ldloc, returnVariable));
-                }
-
-                instructions.Add(Instruction.Create(OpCodes.Ret));
-            }
-
-            methodBody.ExceptionHandlers.Add(
-                new ExceptionHandler(ExceptionHandlerType.Fault)
-                {
-                    TryStart = protectedStart,
-                    TryEnd = faultStart,
-                    HandlerStart = faultStart,
-                    HandlerEnd = epilogueStart,
-                });
         }
 
         private static void RemoveShortOpCodes(Instruction instruction)
