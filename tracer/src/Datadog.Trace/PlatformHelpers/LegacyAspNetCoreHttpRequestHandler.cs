@@ -30,9 +30,25 @@ internal sealed class LegacyAspNetCoreHttpRequestHandler
         _log = log;
     }
 
+    public static string GetDefaultResourceName(string httpMethod, string pathBase, string requestPath)
+    {
+        var absolutePath = string.IsNullOrEmpty(pathBase) ? requestPath : pathBase + requestPath;
+        var resourceUrl = UriHelpers.GetCleanUriPath(absolutePath).ToLowerInvariant();
+        return $"{httpMethod} {resourceUrl}";
+    }
+
+    public static string GetDefaultResourceName(LegacyAspNetCoreDiagnosticObserver.HttpRequestStruct request)
+    {
+        var httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+        var pathBase = request.PathBase.ToUriComponent();
+        var requestPath = request.Path.ToUriComponent();
+        return GetDefaultResourceName(httpMethod, pathBase, requestPath);
+    }
+
     public Scope StartAspNetCorePipelineScope(
         Tracer tracer,
-        LegacyAspNetCoreDiagnosticObserver.HttpRequestStruct request)
+        LegacyAspNetCoreDiagnosticObserver.HttpRequestStruct request,
+        string? resourceName)
     {
         // See also AspNetCoreHttpRequestHandler for the .NET Core implementation
         var tags = new AspNetCoreTags();
@@ -54,16 +70,13 @@ internal sealed class LegacyAspNetCoreHttpRequestHandler
                             : null;
         userAgent = string.IsNullOrEmpty(userAgent) ? null : userAgent;
 
-        // TODO: we should only create this resource name string if we actually need it, due to head sampling etc
-        var absolutePath = string.IsNullOrEmpty(pathBase) ? requestPath : pathBase + requestPath;
-        var resourceUrl = UriHelpers.GetCleanUriPath(absolutePath).ToLowerInvariant();
-        var resource = $"{httpMethod} {resourceUrl}";
+        resourceName ??= GetDefaultResourceName(request);
 
         var extractedContext = ExtractPropagatedContext(tracer, request.Headers).MergeBaggageInto(Baggage.Current);
 
         var scope = tracer.StartActiveInternal(OperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
         var span = scope.Span;
-        span.DecorateWebServerSpan(resource, httpMethod, host, url, userAgent, tags);
+        span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
 #pragma warning disable CS8620 // HeaderTags values are non-null, while AddHeadersToSpanAsTags also accepts nullable values.
 
         var headerTagsInternal = tracer.CurrentTraceSettings.Settings.HeaderTags;
@@ -95,20 +108,29 @@ internal sealed class LegacyAspNetCoreHttpRequestHandler
         return scope;
     }
 
-    public void StopAspNetCorePipelineScope(Tracer tracer, Scope scope, LegacyAspNetCoreDiagnosticObserver.HttpResponseStruct response)
+    public void StopAspNetCorePipelineScope(Tracer tracer, Scope scope, LegacyAspNetCoreDiagnosticObserver.HttpContextStruct context)
     {
         try
         {
+            var span = scope.Span;
             var settings = tracer.CurrentTraceSettings.Settings;
-            // TODO: Update resource name if required, once we delay setting it
-            if (!scope.Span.HasHttpStatusCode())
+
+            if (string.IsNullOrEmpty(span.ResourceName))
             {
-                scope.Span.SetHttpStatusCode(response.StatusCode, isServer: true, settings);
+                if (string.IsNullOrEmpty(span.ResourceName))
+                {
+                    span.ResourceName = GetDefaultResourceName(context.Request);
+                }
             }
 
-            if (settings.HeaderTags.Count != 0 && response.Headers is { Instance: not null } headers)
+            if (!span.HasHttpStatusCode())
             {
-                scope.Span.SetHeaderTags(
+                span.SetHttpStatusCode(context.Response.StatusCode, isServer: true, settings);
+            }
+
+            if (settings.HeaderTags.Count != 0 && context.Response.Headers is { Instance: not null } headers)
+            {
+                span.SetHeaderTags(
                     new LegacyAspNetCoreHeadersCollectionAdapter(headers),
                     settings.HeaderTags,
                     defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);

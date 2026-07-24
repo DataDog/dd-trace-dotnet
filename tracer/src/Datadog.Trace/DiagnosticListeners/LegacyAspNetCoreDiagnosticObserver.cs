@@ -96,7 +96,12 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
         Scope? scope = null;
         try
         {
-            scope = RequestHandler.StartAspNetCorePipelineScope(_tracer, httpContext.Request);
+            // Use an empty resource name here, as we will likely replace it as part of the request
+            // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
+            // If the app is using resource-based sampling rules, then we need to set a resource straight
+            // away, so force that by using null.
+            var resourceName = _tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
+            scope = RequestHandler.StartAspNetCorePipelineScope(_tracer, httpContext.Request, resourceName);
             items[HttpContextRequestStateKey] = new LegacyAspNetCoreRequestState(scope);
             scope = null;
         }
@@ -120,7 +125,7 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
             return;
         }
 
-        RequestHandler.StopAspNetCorePipelineScope(_tracer, state.RootScope, httpContext.Response);
+        RequestHandler.StopAspNetCorePipelineScope(_tracer, state.RootScope, httpContext);
     }
 
     private void OnHostingUnhandledException(object arg)
@@ -169,6 +174,7 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
         var httpMethod = httpContext.Request.Method?.ToUpperInvariant() ?? "UNKNOWN";
 
         RouteTemplateStruct? routeTemplate = null;
+        string? resourceName = null;
         if (rawRouteTemplate is not null)
         {
             try
@@ -203,13 +209,15 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
                 actionName: actionName,
                 expandRouteParameters: _tracer.Settings.ExpandRouteTemplatesEnabled);
 
-            rootSpan.ResourceName = $"{httpMethod} {httpContext.Request.PathBase.ToUriComponent()}{resourcePathName}";
+            resourceName = $"{httpMethod} {httpContext.Request.PathBase.ToUriComponent()}{resourcePathName}";
             tags.AspNetCoreRoute = parsedTemplate.TemplateText?.ToLowerInvariant();
-            return;
         }
 
         // Fallback, just use the default name
-        // TODO: lazy assign resource name here, instead of on HttpStart
+        rootSpan.ResourceName = resourceName
+                             ?? (string.IsNullOrEmpty(rootSpan.ResourceName)
+                                     ? LegacyAspNetCoreHttpRequestHandler.GetDefaultResourceName(httpContext.Request)
+                                     : rootSpan.ResourceName);
 
         ITemplateParserProxy? GetTemplateParser(IEnumerable? routers)
         {
