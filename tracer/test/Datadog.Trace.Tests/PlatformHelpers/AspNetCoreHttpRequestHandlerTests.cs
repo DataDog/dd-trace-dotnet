@@ -4,7 +4,10 @@
 // </copyright>
 
 #if !NETFRAMEWORK
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Util.Http;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
@@ -15,6 +18,32 @@ namespace Datadog.Trace.Tests.PlatformHelpers
     public class AspNetCoreHttpRequestHandlerTests
     {
         public const string OriginalPath = "/somepath/Home/Index";
+
+        [Theory]
+        [MemberData(nameof(AspNetCoreHttpUrlTestData.EscapedPaths), MemberType = typeof(AspNetCoreHttpUrlTestData))]
+        public void EscapesDecodedPathValuesInHttpUrlAndResource(string pathBase, string path, string expectedUrl, string expectedResourceName)
+        {
+            var request = new DefaultHttpRequest(new DefaultHttpContext())
+            {
+                Method = "GET",
+                Scheme = "http",
+                Host = new HostString("localhost"),
+                PathBase = new PathString(pathBase),
+                Path = new PathString(path),
+            };
+            var queryStringManager = new QueryStringManager(
+                reportQueryString: false,
+                timeout: 0,
+                maxSizeBeforeObfuscation: 0,
+                pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+
+            request.GetUrlForSpan(queryStringManager).Should().Be(expectedUrl);
+            var handler = new AspNetCoreHttpRequestHandler(
+                DatadogLogging.GetLoggerFor<AspNetCoreHttpRequestHandlerTests>(),
+                requestInOperationName: "aspnet_core.request",
+                integrationInfo: IntegrationId.AspNetCore);
+            handler.GetDefaultResourceName(request).Should().Be(expectedResourceName);
+        }
 
         [Theory]
         [InlineData(null, "/somepath/Home/Index")]

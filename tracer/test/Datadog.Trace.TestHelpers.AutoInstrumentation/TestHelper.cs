@@ -256,14 +256,23 @@ namespace Datadog.Trace.TestHelpers
                             .Replace("[POOL]", appPool)
                             .Replace("[VIRTUAL_APPLICATION]", virtualAppSection);
 
-            var isAspNetCore = appType == IisAppType.AspNetCoreInProcess || appType == IisAppType.AspNetCoreOutOfProcess;
-            if (isAspNetCore)
+            var sampleApplicationFileName = EnvironmentHelper.GetSampleApplicationFileName();
+            configTemplate = ExpandIisConfigurationTemplate(
+                configTemplate,
+                appType,
+                EnvironmentHelper.GetDotnetExe(),
+                sampleApplicationFileName,
+                EnvironmentHelper.IsCoreClr(),
+                out var aspNetCoreProcessToProfile);
+
+            if (EnvironmentTools.IsWindows()
+             && appType == IisAppType.AspNetCoreOutOfProcess
+             && !EnvironmentHelper.IsCoreClr()
+             && !EnvironmentTools.IsTestTarget64BitProcess())
             {
-                var hostingModel = appType == IisAppType.AspNetCoreInProcess ? "inprocess" : "outofprocess";
-                configTemplate = configTemplate
-                                .Replace("[DOTNET]", EnvironmentHelper.GetDotnetExe())
-                                .Replace("[RELATIVE_SAMPLE_PATH]", $".\\{EnvironmentHelper.GetSampleApplicationFileName()}")
-                                .Replace("[HOSTING_MODEL]", hostingModel);
+                // StartProcessWithProfiler normally applies this to the executable it launches. In this case it
+                // launches IIS Express, so apply it explicitly to the .NET Framework application launched by ANCM.
+                ProfilerHelper.SetCorFlags(Path.Combine(appPath, sampleApplicationFileName), Output, require32Bit: true);
             }
 
             if (usePartialTrust || useLegacyCasModel)
@@ -298,7 +307,7 @@ namespace Datadog.Trace.TestHelpers
                 agent,
                 arguments: string.Join(" ", args),
                 redirectStandardInput: true,
-                processToProfile: appType == IisAppType.AspNetCoreOutOfProcess ? "dotnet.exe" : iisExpress);
+                processToProfile: aspNetCoreProcessToProfile ?? iisExpress);
 
             var semaphore = new SemaphoreSlim(0, 1);
 
@@ -385,6 +394,46 @@ namespace Datadog.Trace.TestHelpers
                     SetEnvironmentVariable(variable.Key, variable.Value);
                 }
             }
+        }
+
+        internal static string ExpandIisConfigurationTemplate(
+            string configTemplate,
+            IisAppType appType,
+            string dotnetExecutable,
+            string sampleApplicationFileName,
+            bool isCoreClr,
+            out string aspNetCoreProcessToProfile)
+        {
+            var isAspNetCore = appType == IisAppType.AspNetCoreInProcess || appType == IisAppType.AspNetCoreOutOfProcess;
+            if (!isAspNetCore)
+            {
+                aspNetCoreProcessToProfile = null;
+                return configTemplate;
+            }
+
+            string processPath;
+            string argumentsAttribute;
+
+            var launchFrameworkExecutable = appType == IisAppType.AspNetCoreOutOfProcess && !isCoreClr;
+            if (launchFrameworkExecutable)
+            {
+                processPath = $".\\{sampleApplicationFileName}";
+                aspNetCoreProcessToProfile = sampleApplicationFileName;
+                argumentsAttribute = string.Empty;
+            }
+            else
+            {
+                processPath = dotnetExecutable;
+                aspNetCoreProcessToProfile = "dotnet.exe";
+                argumentsAttribute = $"""
+                                       arguments=".\{sampleApplicationFileName}"
+                                      """;
+            }
+
+            return configTemplate
+                  .Replace("[PROCESS_PATH]", processPath)
+                  .Replace("[ARGUMENTS_ATTRIBUTE]", argumentsAttribute)
+                  .Replace("[HOSTING_MODEL]", appType == IisAppType.AspNetCoreInProcess ? "inprocess" : "outofprocess");
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
@@ -533,7 +582,9 @@ namespace Datadog.Trace.TestHelpers
             int httpPort,
             HttpStatusCode expectedHttpStatusCode,
             int expectedSpanCount = 2,
-            bool filterServerSpans = true)
+            bool filterServerSpans = true,
+            HttpMethod httpMethod = null,
+            Dictionary<string, string> headers = null)
         {
             using var httpClient = new HttpClient();
 
@@ -541,7 +592,15 @@ namespace Datadog.Trace.TestHelpers
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
             var testStart = DateTimeOffset.UtcNow;
-            using var request = CreateHttpRequestMessage(HttpMethod.Get, $"http://localhost:{httpPort}{path}", testStart);
+            using var request = CreateHttpRequestMessage(httpMethod ?? HttpMethod.Get, $"http://localhost:{httpPort}{path}", testStart);
+            if (headers != null)
+            {
+                foreach (var header in headers)
+                {
+                    request.Headers.Add(header.Key, header.Value);
+                }
+            }
+
             using var response = await httpClient.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
             Output.WriteLine($"[http] {response.StatusCode} {content}");

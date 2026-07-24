@@ -488,12 +488,18 @@ namespace Datadog.Trace.ClrProfiler
         {
             var observers = new List<DiagnosticObserver>();
 
-#if !NETFRAMEWORK
             if (!SkipAspNetCoreDiagnosticObserver())
             {
+#if NETFRAMEWORK
+                var tracer = Tracer.Instance;
+                if (tracer.Settings.AspNetCoreNetFrameworkEnabled)
+                {
+                    observers.Add(new LegacyAspNetCoreDiagnosticObserver(tracer));
+                }
+#else
                 observers.Add(GetAspNetCoreDiagnosticObserver());
-            }
 #endif
+            }
 
             observers.Add(new QuartzDiagnosticObserver());
 
@@ -521,6 +527,7 @@ namespace Datadog.Trace.ClrProfiler
 
             return new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance, Iast.Iast.Instance, spanCodeOrigin: null);
         }
+#endif // #if !NETFRAMEWORK
 
         [Pure]
         private static bool SkipAspNetCoreDiagnosticObserver()
@@ -571,7 +578,6 @@ namespace Datadog.Trace.ClrProfiler
             // do not skip when running in an isolated Azure Functions worker process with extension v4
             return false;
         }
-#endif // #if !NETFRAMEWORK
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {
