@@ -313,6 +313,7 @@ public abstract class AspNetCoreNetFrameworkIisMvcTestsBase : TracingIntegration
         SetServiceVersion("1.0.0");
         SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.AspNetCoreNetFrameworkEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.ExperimentalFeaturesEnabled, ConfigurationKeys.FeatureFlags.AspNetCoreNetFrameworkEnabled);
 
         Fixture = fixture;
     }
