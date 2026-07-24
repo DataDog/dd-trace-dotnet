@@ -8,8 +8,10 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
@@ -39,6 +41,8 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
     private static readonly LegacyAspNetCoreHttpRequestHandler RequestHandler = new(Log);
 
     private readonly Tracer _tracer;
+    private int _templateResolved;
+    private ITemplateParserProxy? _templateParser;
 
     internal LegacyAspNetCoreDiagnosticObserver(Tracer tracer)
     {
@@ -143,55 +147,121 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
 
         if (!items.TryGetValue(HttpContextRequestStateKey, out var value)
          || value is not LegacyAspNetCoreRequestState state
-            || state.RootScope.Span is not { Tags: AspNetCoreTags tags } rootSpan)
+         || state.RootScope.Span is not { Tags: AspNetCoreTags tags } rootSpan)
         {
             return;
         }
 
-        var routeTemplate = action?.AttributeRouteInfo?.Template;
-        // TODO: use duck typing to create the parser and create the simplified names
-        // RouteTemplateStruct? routeTemplate = null;
-        // if (action?.AttributeRouteInfo?.Template is { } rawRouteTemplate)
-        // {
-        //     try
-        //     {
-        //         routeTemplate = TemplateParser.Parse(rawRouteTemplate);
-        //     }
-        //     catch { }
-        // }
-
+        var rawRouteTemplate = action?.AttributeRouteInfo?.Template;
         var routeDataValues = eventData.RouteData?.Values;
         var routeValues = action?.RouteValues;
 
         string? controllerName = routeValues?.TryGetValue("controller", out controllerName) == true
-                                    ? controllerName?.ToLowerInvariant()
-                                    : null;
+                                     ? controllerName?.ToLowerInvariant()
+                                     : null;
         string? actionName = routeValues?.TryGetValue("action", out actionName) == true
-                                ? actionName?.ToLowerInvariant()
-                                : null;
+                                 ? actionName?.ToLowerInvariant()
+                                 : null;
         string? areaName = routeValues?.TryGetValue("area", out areaName) == true
-                              ? areaName?.ToLowerInvariant()
-                              : null;
-        string? pagePath = routeValues?.TryGetValue("page", out pagePath) == true
-                              ? pagePath?.ToLowerInvariant()
-                              : null;
+                               ? areaName?.ToLowerInvariant()
+                               : null;
 
-        if (routeTemplate is null && controllerName is not null && actionName is not null)
+        var httpMethod = httpContext.Request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+
+        RouteTemplateStruct? routeTemplate = null;
+        if (rawRouteTemplate is not null)
         {
-            routeTemplate = areaName is null
-                                ? $"{controllerName}/{actionName}"
-                                : $"{areaName}/{controllerName}/{actionName}";
+            try
+            {
+                var parser = _templateParser ?? GetTemplateParser(eventData.RouteData?.Routers);
+                routeTemplate = parser?.Parse(rawRouteTemplate);
+            }
+            catch
+            {
+                // template parsing failures shouldn't cause crashes
+            }
         }
 
-        // If neither MVC naming source is usable, retain the normalized path resource assigned at Start.
-        if (routeTemplate is null)
+        if (routeTemplate is null && eventData.RouteData?.Routers is { } routers)
         {
+            foreach (var router in routers)
+            {
+                if (router.TryDuckCast<IRouteBaseProxy>(out var routeBase) && routeBase.ParsedTemplate is { } conventionalTemplate)
+                {
+                    routeTemplate = conventionalTemplate;
+                }
+            }
+        }
+
+        if (routeTemplate is { } parsedTemplate)
+        {
+            var resourcePathName = LegacyAspNetCoreResourceNameHelper.SimplifyRouteTemplate(
+                parsedTemplate,
+                routeDataValues,
+                areaName: areaName,
+                controllerName: controllerName,
+                actionName: actionName,
+                expandRouteParameters: _tracer.Settings.ExpandRouteTemplatesEnabled);
+
+            rootSpan.ResourceName = $"{httpMethod} {httpContext.Request.PathBase.ToUriComponent()}{resourcePathName}";
+            tags.AspNetCoreRoute = parsedTemplate.TemplateText?.ToLowerInvariant();
             return;
         }
 
-        var httpMethod = httpContext.Request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-        rootSpan.ResourceName = $"{httpMethod} {routeTemplate}";
-        tags.AspNetCoreRoute = routeTemplate;
+        // Fallback, just use the default name
+        // TODO: lazy assign resource name here, instead of on HttpStart
+
+        ITemplateParserProxy? GetTemplateParser(IEnumerable? routers)
+        {
+            if (Interlocked.Exchange(ref _templateResolved, 1) != 0)
+            {
+                // Only try this path once as kind of expensive
+                return null;
+            }
+
+            var templateParserType = TryResolveTemplateParserType(routers);
+            if (templateParserType is null)
+            {
+                return null;
+            }
+
+            var proxyResult = DuckType.GetOrCreateProxyType(typeof(ITemplateParserProxy), templateParserType);
+            if (!proxyResult.Success)
+            {
+                // oh no
+                return null;
+            }
+
+            var proxy = (ITemplateParserProxy)proxyResult.CreateInstance(null!);
+            return Interlocked.Exchange(ref _templateParser, proxy) ?? proxy;
+
+            static Type? TryResolveTemplateParserType(IEnumerable? routers)
+            {
+                const string typeName = "Microsoft.AspNetCore.Routing.Template.TemplateParser";
+
+                if (Type.GetType($"{typeName}, Microsoft.AspNetCore.Routing", throwOnError: false) is { } type)
+                {
+                    return type;
+                }
+
+                if (routers is null)
+                {
+                    return null;
+                }
+
+                foreach (var router in routers)
+                {
+                    if (router?.GetType().Assembly is { FullName: { } fullName } assembly
+                     && fullName.StartsWith("Microsoft.AspNetCore.Routing,", StringComparison.Ordinal)
+                     && assembly.GetType(typeName, throwOnError: false) is { } templateParserType)
+                    {
+                        return templateParserType;
+                    }
+                }
+
+                return null;
+            }
+        }
     }
 
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
@@ -242,6 +312,7 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
     internal struct RouteDataStruct
     {
         public IDictionary<string, object>? Values;
+        public IEnumerable? Routers;
     }
 
     [DuckCopy]
@@ -297,16 +368,48 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
         public int StatusCode;
     }
 
-    // [DuckCopy]
-    // internal struct RouteTemplateStruct
-    // {
-    //
-    // }
+    /// <summary>
+    /// Duck-type proxy for the static <c>Microsoft.AspNetCore.Routing.Template.TemplateParser</c> type
+    /// </summary>
+#pragma warning disable SA1201 // An interface should not follow a struct
+    internal interface ITemplateParserProxy
+#pragma warning restore SA1201
+    {
+        RouteTemplateStruct Parse(string routeTemplate);
+    }
 
-    // internal interface TemplateParserStruct
-    // {
-    //     RouteTemplateStruct Parse(string rawRouteTemplate);
-    // }
+    /// <summary>
+    /// Duck-type proxy for a conventional-routing <c>Microsoft.AspNetCore.Routing.RouteBase</c> instance
+    /// </summary>
+#pragma warning disable SA1201 // An interface should not follow a struct
+    internal interface IRouteBaseProxy
+#pragma warning restore SA1201
+    {
+        RouteTemplateStruct? ParsedTemplate { get; }
+    }
+
+    [DuckCopy]
+    internal struct RouteTemplateStruct
+    {
+        public string? TemplateText;
+        public IEnumerable? Segments;
+    }
+
+    [DuckCopy]
+    internal struct TemplateSegmentStruct
+    {
+        public IEnumerable? Parts;
+    }
+
+    [DuckCopy]
+    internal struct TemplatePartStruct
+    {
+        public bool IsParameter;
+        public bool IsCatchAll;
+        public bool IsOptional;
+        public string? Name;
+        public string? Text;
+    }
 }
 
 #endif

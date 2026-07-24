@@ -3,7 +3,7 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: aspnet_core.request,
-    Resource: GET bad-request,
+    Resource: GET /bad-request,
     Service: AspNetCoreIisNetFrameworkMvcTests,
     Type: web,
     Error: 1,

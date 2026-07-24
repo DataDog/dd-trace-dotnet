@@ -3,7 +3,7 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: aspnet_core.request,
-    Resource: GET delay/{seconds},
+    Resource: GET /delay/{seconds},
     Service: AspNetCoreIisNetFrameworkMvcTests,
     Type: web,
     Tags: {

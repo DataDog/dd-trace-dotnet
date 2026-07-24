@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: SetCurrent,
     Resource: SetCurrent,
-    Service: AspNetCoreIisNetFrameworkMvcTestsDisabledBase,
+    Service: AspNetCoreIisNetFrameworkMvcTestsDisabled,
     Tags: {
       env: integration_tests,
       language: dotnet,
