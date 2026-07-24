@@ -448,6 +448,10 @@ namespace Datadog.Trace.Configuration
                                              .WithKeys(ConfigurationKeys.AzureEventHubsBatchLinksEnabled)
                                              .AsBool(defaultValue: true);
 
+            AzureEventGridBatchLinksEnabled = config
+                                             .WithKeys(ConfigurationKeys.AzureEventGridBatchLinksEnabled)
+                                             .AsBool(defaultValue: true);
+
             AgentFeaturePollingEnabled = config
                                         .WithKeys(ConfigurationKeys.AgentFeaturePollingEnabled)
                                         .AsBool(defaultValue: true);
@@ -1136,6 +1140,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.AzureEventHubsBatchLinksEnabled"/>
         public bool AzureEventHubsBatchLinksEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether span links should be created for Azure Event Grid batch operations.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.AzureEventGridBatchLinksEnabled"/>
+        public bool AzureEventGridBatchLinksEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether the agent discovery service is enabled.
