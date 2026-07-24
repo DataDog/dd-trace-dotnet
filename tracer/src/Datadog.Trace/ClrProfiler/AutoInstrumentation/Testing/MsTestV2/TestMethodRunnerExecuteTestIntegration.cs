@@ -96,7 +96,7 @@ public static class TestMethodRunnerExecuteTestIntegration
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
     ParameterTypeNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo"],
     MinimumVersion = "4.0.0",
-    MaximumVersion = "4.*.*",
+    MaximumVersion = "4.2.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -160,4 +160,34 @@ public static class TestMethodRunnerExecuteTestIntegrationV3_9
         TestMethodExecutorRestore.Restore(state);
         return returnValue;
     }
+}
+
+/// <summary>
+/// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner.ExecuteTestAsync calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyNames = ["MSTestAdapter.PlatformServices"],
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
+    MethodName = "ExecuteTestAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.Interface.ITestContext", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo"],
+    MinimumVersion = "4.3.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable SA1402
+public static class TestMethodRunnerExecuteTestIntegrationV4_3
+#pragma warning restore SA1402
+{
+    internal static CallTargetState OnMethodBegin<TTarget, TTestContext, TTestMethod>(TTarget instance, TTestContext testContext, TTestMethod testMethod)
+        where TTarget : ITestMethodRunnerV3_9
+        where TTestMethod : ITestMethod
+        => TestMethodRunnerExecuteTestIntegrationV3_9.OnMethodBegin(instance, testMethod);
+
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+        => TestMethodRunnerExecuteTestIntegrationV3_9.OnMethodEnd(instance, returnValue, exception, in state);
+
+    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+        => TestMethodRunnerExecuteTestIntegrationV3_9.OnAsyncMethodEnd(instance, returnValue, exception, in state);
 }
