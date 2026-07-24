@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Coverage;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollector.InProcDataCollector;
@@ -38,6 +39,7 @@ public class InProcCoverageCollector : InProcDataCollection
 {
     private const string OutputPathKey = "OutputPath";
     private string? _outputPathValue = null;
+    private StandaloneCoverageReconciliation? _standaloneReconciliation;
 
     /// <summary>
     /// Initialize inproc coverage collector
@@ -60,7 +62,23 @@ public class InProcCoverageCollector : InProcDataCollection
 
         if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
         {
-            coverageHandler.RegisterCollectorOutputDirectory(_outputPathValue ?? Environment.CurrentDirectory);
+            var outputDirectory = _outputPathValue ?? Environment.CurrentDirectory;
+            if (coverageHandler.RegisterCollectorOutputDirectory(outputDirectory))
+            {
+                var coordinatorDirectory = outputDirectory;
+                foreach (var registration in coverageHandler.OutputRegistrations)
+                {
+                    if (registration.IsCoordinator)
+                    {
+                        coordinatorDirectory = registration.Directory;
+                        break;
+                    }
+                }
+
+                _standaloneReconciliation = StandaloneCoverageReconciliation.TryCreate(
+                    coordinatorDirectory,
+                    TestOptimization.Instance.RunId);
+            }
         }
     }
 
@@ -86,6 +104,40 @@ public class InProcCoverageCollector : InProcDataCollection
     /// <param name="testSessionEndArgs">Test session end arguments</param>
     public void TestSessionEnd(TestSessionEndArgs testSessionEndArgs)
     {
-        CoverageReporter.FinalizeGlobalCoverage();
+        var standaloneReconciliation = _standaloneReconciliation;
+        _standaloneReconciliation = null;
+        if (standaloneReconciliation is null)
+        {
+            CoverageReporter.FinalizeGlobalCoverage();
+            return;
+        }
+
+        var completionRegistered = false;
+        try
+        {
+            CoverageReporter.FinalizeGlobalCoverage(
+                complete =>
+                {
+                    try
+                    {
+                        if (complete)
+                        {
+                            standaloneReconciliation.TryPublish();
+                        }
+                    }
+                    finally
+                    {
+                        standaloneReconciliation.Dispose();
+                    }
+                });
+            completionRegistered = true;
+        }
+        finally
+        {
+            if (!completionRegistered)
+            {
+                standaloneReconciliation.Dispose();
+            }
+        }
     }
 }

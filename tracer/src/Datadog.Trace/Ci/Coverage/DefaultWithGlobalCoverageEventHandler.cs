@@ -17,10 +17,16 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
     private readonly object _lifecycleGate = new();
     private readonly GlobalCoverageAccumulator _accumulator;
     private readonly GlobalCoverageOutputManager _outputManager;
+    private readonly Action _retirementPendingCallback;
+    private readonly Action<ModuleValue, bool> _retirementCompletedCallback;
     private int _inFlightStarts;
     private int _activeContexts;
     private int _inFlightFinalizers;
+    private int _retiredModulesPending;
     private LifecycleState _lifecycleState;
+    private Action<bool>? _sealCompleted;
+    private bool _globalRetirementStarted;
+    private bool _sealCompletionStarted;
     private bool _sealRequested;
     private bool _publishFinalSnapshotOnSeal;
     private bool _sealedComplete;
@@ -35,6 +41,8 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
             configuredOutputDirectory,
             Environment.CurrentDirectory,
             runIdProvider ?? (() => TestOptimization.Instance.RunId));
+        _retirementPendingCallback = OnRetirementPending;
+        _retirementCompletedCallback = OnRetirementCompleted;
     }
 
     private enum AdmissionState
@@ -232,24 +240,62 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         return registered;
     }
 
-    public bool FinalizeAndSeal() => RequestSeal(publishFinalSnapshot: true);
+    public bool FinalizeAndSeal(Action<bool>? onCompleted = null) => RequestSeal(publishFinalSnapshot: true, onCompleted);
 
-    public bool RequestSeal() => RequestSeal(publishFinalSnapshot: false);
+    public bool RequestSeal() => RequestSeal(publishFinalSnapshot: false, onCompleted: null);
 
-    private bool RequestSeal(bool publishFinalSnapshot)
+    private bool RequestSeal(bool publishFinalSnapshot, Action<bool>? onCompleted)
     {
         var audit = false;
+        var retireGlobalContainer = false;
+        bool? completed = null;
         lock (_lifecycleGate)
         {
             if (_lifecycleState == LifecycleState.Sealed)
             {
-                return _sealedComplete;
+                completed = _sealedComplete;
             }
+            else
+            {
+                if (onCompleted is not null)
+                {
+                    _sealCompleted += onCompleted;
+                }
 
-            _sealRequested = true;
-            _publishFinalSnapshotOnSeal |= publishFinalSnapshot;
-            _lifecycleState = LifecycleState.Completing;
-            audit = HasNoAdmissionsUnderLock();
+                _sealRequested = true;
+                _publishFinalSnapshotOnSeal |= publishFinalSnapshot;
+                _lifecycleState = LifecycleState.Completing;
+                if (!_globalRetirementStarted)
+                {
+                    _globalRetirementStarted = true;
+                    _inFlightFinalizers++;
+                    retireGlobalContainer = true;
+                }
+
+                audit = HasNoAdmissionsUnderLock();
+            }
+        }
+
+        if (completed is { } completedValue)
+        {
+            InvokeSealCompleted(onCompleted, completedValue);
+            return completedValue;
+        }
+
+        if (retireGlobalContainer)
+        {
+            try
+            {
+                GlobalContainer.RetireModules(
+                    _retirementPendingCallback,
+                    _retirementCompletedCallback,
+                    mergeOnCompletion: true);
+                GlobalContainer.Dispose();
+            }
+            finally
+            {
+                ReleaseFinalizerAdmission();
+            }
         }
 
         if (audit)
@@ -271,8 +317,8 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         var merged = false;
         try
         {
-            var testCoverage = base.OnSessionFinished(context, modules);
-            var mergeResult = _accumulator.TryMerge(modules);
+            var testCoverage = ProcessSessionFinished(modules, out var moduleCoverage);
+            var mergeResult = _accumulator.TryMerge(moduleCoverage);
             merged = mergeResult != GlobalCoverageMergeResult.BecameSuppressedIncomplete;
             return testCoverage;
         }
@@ -325,6 +371,10 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
 
     protected override void MarkGlobalCoverageIncomplete(GlobalCoverageFailureReason reason)
         => _accumulator.Suppress(reason);
+
+    protected override Action GetRetirementPendingCallback() => _retirementPendingCallback;
+
+    protected override Action<ModuleValue, bool> GetRetirementCompletedCallback() => _retirementCompletedCallback;
 
     private void CommitAdmission(GlobalCoverageAdmission admission)
     {
@@ -406,7 +456,48 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
     }
 
     private bool HasNoAdmissionsUnderLock()
-        => _inFlightStarts == 0 && _activeContexts == 0 && _inFlightFinalizers == 0;
+        => _inFlightStarts == 0 && _activeContexts == 0 && _inFlightFinalizers == 0 && _retiredModulesPending == 0;
+
+    private void OnRetirementPending()
+    {
+        lock (_lifecycleGate)
+        {
+            _retiredModulesPending++;
+        }
+    }
+
+    private void OnRetirementCompleted(ModuleValue module, bool mergeRequired)
+    {
+        try
+        {
+            if (mergeRequired)
+            {
+                _accumulator.TryMergeRetired(module);
+            }
+        }
+        catch
+        {
+            // Probe cleanup runs from generated finally/fault IL and must never replace user code failures.
+            _accumulator.Suppress(GlobalCoverageFailureReason.ProbeDataIncomplete);
+        }
+        finally
+        {
+            var audit = false;
+            lock (_lifecycleGate)
+            {
+                if (_retiredModulesPending > 0)
+                {
+                    _retiredModulesPending--;
+                    audit = _sealRequested && HasNoAdmissionsUnderLock();
+                }
+            }
+
+            if (audit)
+            {
+                CompleteSeal();
+            }
+        }
+    }
 
     private void CompleteSeal()
     {
@@ -416,12 +507,14 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         bool publishFinalSnapshot;
         lock (_lifecycleGate)
         {
-            if (_lifecycleState != LifecycleState.Completing || !HasNoAdmissionsUnderLock())
+            if (_lifecycleState != LifecycleState.Completing ||
+                _sealCompletionStarted ||
+                !HasNoAdmissionsUnderLock())
             {
                 return;
             }
 
-            _lifecycleState = LifecycleState.Sealed;
+            _sealCompletionStarted = true;
             publishFinalSnapshot = _publishFinalSnapshotOnSeal;
         }
 
@@ -432,10 +525,16 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         using var stagedReadyMarkers = balanced && finalSnapshotPublished ? _outputManager.TryStageReadyMarkers(diagnostics) : null;
         var complete = stagedReadyMarkers is not null &&
                        _accumulator.TryFinalizeCompleteness(stagedReadyMarkers.Commit);
+        Action<bool>? sealCompleted;
         lock (_lifecycleGate)
         {
             _sealedComplete = complete;
+            _lifecycleState = LifecycleState.Sealed;
+            sealCompleted = _sealCompleted;
+            _sealCompleted = null;
         }
+
+        InvokeSealCompleted(sealCompleted, complete);
 
         var accumulatorDiagnostics = _accumulator.GetDiagnostics();
         var processId = DomainMetadata.Instance.ProcessId;
@@ -460,7 +559,9 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
                 return false;
             }
 
-            var result = _accumulator.AcquireSnapshot(GlobalContainer);
+            // The global fallback was retired and merged before seal completion, so the terminal
+            // snapshot reads only compact accumulator state and cannot race with late probes.
+            var result = _accumulator.AcquireSnapshot(globalContainer: null);
             if (result.Status != GlobalCoverageSnapshotStatus.Success || result.Snapshot is not { } acquiredSnapshot)
             {
                 return false;
@@ -489,6 +590,19 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         if (snapshot.RequiredOutputMask != snapshot.CommittedOutputMask)
         {
             _accumulator.Suppress(GlobalCoverageFailureReason.OutputCommitFailed);
+        }
+    }
+
+    private void InvokeSealCompleted(Action<bool>? callback, bool complete)
+    {
+        try
+        {
+            callback?.Invoke(complete);
+        }
+        catch
+        {
+            // Completion can run from generated cleanup IL. Publication callbacks must never
+            // replace an exception from customer code.
         }
     }
 

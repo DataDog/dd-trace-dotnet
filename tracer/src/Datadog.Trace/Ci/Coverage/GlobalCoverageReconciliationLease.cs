@@ -61,7 +61,9 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
     public GlobalCoverageCertifiedInput? GetCertifiedInput(string path)
         => _selectedByPath.TryGetValue(path, out var input) ? input : null;
 
-    public void Complete()
+    public void Complete() => Complete(publish: null);
+
+    public void Complete(Action? publish)
     {
         if (Interlocked.Exchange(ref _completed, 1) != 0)
         {
@@ -94,6 +96,14 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
             }
         }
 
+        var authority = Volatile.Read(ref _authority) ?? throw new ObjectDisposedException(nameof(GlobalCoverageReconciliationLease));
+        var claimPath = authority.ClaimPath;
+        var claimDirectory = Path.GetDirectoryName(claimPath);
+        if (claimDirectory is null)
+        {
+            ThrowHelper.ThrowInvalidOperationException("The global coverage authority claim has no parent directory.");
+        }
+
         var publicationId = Guid.NewGuid().ToString("N");
         var archives = new Dictionary<string, string>(FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
         foreach (var directory in Directories)
@@ -103,7 +113,14 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
             archives[directory] = archive;
         }
 
-        var sources = new List<string>(ReadyMarkers.Count + PendingMarkers.Count + AllRawInputs.Count);
+        if (!archives.ContainsKey(claimDirectory))
+        {
+            var archive = Path.Combine(claimDirectory, ".dd-coverage-completed", $"{RunToken}-{publicationId}");
+            Directory.CreateDirectory(archive);
+            archives[claimDirectory] = archive;
+        }
+
+        var sources = new List<string>(ReadyMarkers.Count + PendingMarkers.Count + AllRawInputs.Count + 1);
         var destinations = new List<string>(sources.Capacity);
         foreach (var marker in ReadyMarkers)
         {
@@ -121,6 +138,13 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
             AddToArchivePlan(input.Path);
         }
 
+        var rawEnd = sources.Count;
+        // Closing the authority claim is the point at which it can join the same reversible
+        // archival transaction as markers and raw coverage files.
+        authority.ReleaseForArchival();
+        Interlocked.Exchange(ref _authority, null);
+        AddToArchivePlan(claimPath);
+
         var movedCount = 0;
         try
         {
@@ -129,11 +153,15 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
                 File.Move(sources[i], destinations[i]);
                 movedCount++;
 
-                if (i >= rawStart && !AllRawInputs[i - rawStart].Matches(destinations[i]))
+                if (i >= rawStart && i < rawEnd && !AllRawInputs[i - rawStart].Matches(destinations[i]))
                 {
                     throw new InvalidDataException("An archived global coverage artifact does not match its certified contents.");
                 }
             }
+
+            // The final output becomes visible only after every certified protocol artifact has
+            // been archived. A failed commit rolls the protocol set back for a safe retry.
+            publish?.Invoke();
         }
         catch (Exception archivalException)
         {
@@ -158,8 +186,6 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
 
             throw;
         }
-
-        Interlocked.Exchange(ref _authority, null)?.Complete();
 
         void AddToArchivePlan(string source)
         {

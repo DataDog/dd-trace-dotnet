@@ -23,6 +23,7 @@ internal sealed class CoverageContextContainer : IDisposable
     private ModuleValue? _currentModuleValue;
     private int _closed;
     private int _disposed;
+    private int _retired;
 
     public CoverageContextContainer(object? state = null, ModuleValue.BufferKind bufferKind = ModuleValue.BufferKind.Context)
     {
@@ -133,6 +134,28 @@ internal sealed class CoverageContextContainer : IDisposable
 
     public void Clear() => Dispose();
 
+    public void RetireModules(
+        Action? onRetirementPending,
+        Action<ModuleValue, bool>? onRetirementCompleted,
+        bool mergeOnCompletion)
+    {
+        lock (_gate)
+        {
+            if (_retired != 0)
+            {
+                return;
+            }
+
+            _retired = 1;
+            _closed = 1;
+            _currentModuleValue = null;
+            foreach (var moduleValue in _modules)
+            {
+                moduleValue.Retire(onRetirementPending, onRetirementCompleted, mergeOnCompletion);
+            }
+        }
+    }
+
     public void Dispose()
     {
         ExceptionDispatchInfo? firstException = null;
@@ -148,6 +171,15 @@ internal sealed class CoverageContextContainer : IDisposable
             _currentModuleValue = null;
             try
             {
+                if (_retired == 0)
+                {
+                    _retired = 1;
+                    foreach (var moduleValue in _modules)
+                    {
+                        moduleValue.Retire(onRetirementPending: null, onRetirementCompleted: null, mergeOnCompletion: false);
+                    }
+                }
+
                 foreach (var moduleValue in _modules)
                 {
                     try

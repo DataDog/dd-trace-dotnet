@@ -41,9 +41,10 @@ internal static class GlobalCoverageReconciliation
         try
         {
             var canonicalInput = CanonicalizeDirectory(inputDirectory);
-            var pendingInInput = GetFilesBounded(canonicalInput, GlobalCoverageProtocol.PendingMarkerPattern);
-            var readyInInput = GetFilesBounded(canonicalInput, GlobalCoverageProtocol.ReadyMarkerPattern);
-            var claimsInInput = GetFilesBounded(canonicalInput, GlobalCoverageProtocol.CommandOwnerClaimPattern);
+            var authorityRunToken = reconciliationAuthority is null ? null : GetClaimRunToken(reconciliationAuthority.ClaimPath);
+            var pendingInInput = GetFilesBounded(canonicalInput, GetPendingMarkerPattern(authorityRunToken));
+            var readyInInput = GetFilesBounded(canonicalInput, GetReadyMarkerPattern(authorityRunToken));
+            var claimsInInput = GetFilesBounded(canonicalInput, GetClaimPattern(authorityRunToken));
             protocolPresent = pendingInInput.Length > 0 || readyInInput.Length > 0 || claimsInInput.Length > 0;
             if (!protocolPresent)
             {
@@ -64,14 +65,7 @@ internal static class GlobalCoverageReconciliation
                 FileShare.None);
 
             var claimPath = claimsInInput[0];
-            var claimFileName = Path.GetFileName(claimPath);
-            var claimRunToken = claimFileName.Substring(
-                GlobalCoverageProtocol.CommandOwnerClaimPrefix.Length,
-                claimFileName.Length - GlobalCoverageProtocol.CommandOwnerClaimPrefix.Length - GlobalCoverageProtocol.ClaimExtension.Length);
-            if (!IsLowerHex(claimRunToken, 64))
-            {
-                return false;
-            }
+            var claimRunToken = GetClaimRunToken(claimPath);
 
             if (reconciliationAuthority is null)
             {
@@ -90,7 +84,7 @@ internal static class GlobalCoverageReconciliation
 
             if (pendingInInput.Length == 0)
             {
-                if (GetFilesBounded(canonicalInput, GlobalCoverageProtocol.CoverageFilePattern).Length != 0)
+                if (GetFilesBounded(canonicalInput, GetCoverageFilePattern(authorityRunToken)).Length != 0)
                 {
                     return false;
                 }
@@ -230,7 +224,7 @@ internal static class GlobalCoverageReconciliation
 
             foreach (var directory in allDirectories)
             {
-                var claims = GetFilesBounded(directory, GlobalCoverageProtocol.CommandOwnerClaimPattern);
+                var claims = GetFilesBounded(directory, GetClaimPattern(authorityRunToken));
                 if (PathComparer.Equals(directory, canonicalInput))
                 {
                     var expectedClaim = Path.Combine(directory, GlobalCoverageProtocol.GetCommandOwnerClaimFileName(claimRunToken));
@@ -244,7 +238,7 @@ internal static class GlobalCoverageReconciliation
                     return false;
                 }
 
-                foreach (var pendingMarker in GetFilesBounded(directory, GlobalCoverageProtocol.PendingMarkerPattern))
+                foreach (var pendingMarker in GetFilesBounded(directory, GetPendingMarkerPattern(authorityRunToken)))
                 {
                     if (!allPending.Contains(pendingMarker))
                     {
@@ -252,7 +246,7 @@ internal static class GlobalCoverageReconciliation
                     }
                 }
 
-                foreach (var readyMarker in GetFilesBounded(directory, GlobalCoverageProtocol.ReadyMarkerPattern))
+                foreach (var readyMarker in GetFilesBounded(directory, GetReadyMarkerPattern(authorityRunToken)))
                 {
                     if (!allReady.Contains(readyMarker))
                     {
@@ -260,7 +254,7 @@ internal static class GlobalCoverageReconciliation
                     }
                 }
 
-                foreach (var coverageFile in GetFilesBounded(directory, GlobalCoverageProtocol.CoverageFilePattern))
+                foreach (var coverageFile in GetFilesBounded(directory, GetCoverageFilePattern(authorityRunToken)))
                 {
                     if (!allRawFiles.Contains(coverageFile))
                     {
@@ -322,6 +316,38 @@ internal static class GlobalCoverageReconciliation
 
         return files;
     }
+
+    private static string GetClaimRunToken(string claimPath)
+    {
+        var claimFileName = Path.GetFileName(claimPath);
+        if (!claimFileName.StartsWith(GlobalCoverageProtocol.CommandOwnerClaimPrefix, StringComparison.Ordinal) ||
+            !claimFileName.EndsWith(GlobalCoverageProtocol.ClaimExtension, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException("The global coverage authority claim has an invalid file name.");
+        }
+
+        var runToken = claimFileName.Substring(
+            GlobalCoverageProtocol.CommandOwnerClaimPrefix.Length,
+            claimFileName.Length - GlobalCoverageProtocol.CommandOwnerClaimPrefix.Length - GlobalCoverageProtocol.ClaimExtension.Length);
+        if (!IsLowerHex(runToken, 64))
+        {
+            throw new InvalidDataException("The global coverage authority claim has an invalid run token.");
+        }
+
+        return runToken;
+    }
+
+    private static string GetClaimPattern(string? runToken)
+        => runToken is null ? GlobalCoverageProtocol.CommandOwnerClaimPattern : GlobalCoverageProtocol.GetCommandOwnerClaimFileName(runToken);
+
+    private static string GetPendingMarkerPattern(string? runToken)
+        => runToken is null ? GlobalCoverageProtocol.PendingMarkerPattern : GlobalCoverageProtocol.PendingMarkerPrefix + runToken + "-*";
+
+    private static string GetReadyMarkerPattern(string? runToken)
+        => runToken is null ? GlobalCoverageProtocol.ReadyMarkerPattern : GlobalCoverageProtocol.ReadyMarkerPrefix + runToken + "-*";
+
+    private static string GetCoverageFilePattern(string? runToken)
+        => runToken is null ? GlobalCoverageProtocol.CoverageFilePattern : GlobalCoverageProtocol.CoverageFilePrefix + runToken + "-*" + GlobalCoverageProtocol.JsonExtension;
 
     private static FileFingerprint GetFileFingerprint(string path)
     {
@@ -550,7 +576,9 @@ internal static class GlobalCoverageReconciliation
             version != 1 ||
             !string.Equals(runToken, expectedRunToken, StringComparison.Ordinal) ||
             processId <= 0 ||
-            (kind != "dotnet-test" && kind != "vstest-executor"))
+            (kind != GlobalCoverageProtocol.DotnetTestClaimKind &&
+             kind != GlobalCoverageProtocol.VSTestExecutorClaimKind &&
+             kind != GlobalCoverageProtocol.CollectorClaimKind))
         {
             throw new InvalidDataException("A global coverage command claim failed validation.");
         }

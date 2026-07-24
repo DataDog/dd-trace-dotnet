@@ -43,6 +43,9 @@ internal sealed class GlobalCoverageArtifactWriter
     public GlobalCoverageStagedArtifact StageNoReplace(string destinationPath, GlobalCoverageInfo model)
         => Stage(destinationPath, model, replaceExisting: false);
 
+    public GlobalCoverageStagedArtifact StageReplace(string destinationPath, GlobalCoverageInfo model)
+        => Stage(destinationPath, model, replaceExisting: true);
+
     private void TryDelete(string path)
     {
         try
