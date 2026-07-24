@@ -2,14 +2,15 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-#if !NETFRAMEWORK
 using System;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
 using FluentAssertions;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Constraints;
+#if !NETFRAMEWORK
 using Microsoft.AspNetCore.Routing.Patterns;
+#endif
 using Microsoft.AspNetCore.Routing.Template;
 using Xunit;
 
@@ -17,7 +18,7 @@ namespace Datadog.Trace.Tests.DiagnosticListeners;
 
 public class AspNetCoreResourceNameHelperTests
 {
-    private static readonly RouteValueDictionary Values = new()
+    public static readonly RouteValueDictionary Values = new()
     {
         { "controller", "Home" },
         { "action", "Index" },
@@ -122,6 +123,42 @@ public class AspNetCoreResourceNameHelperTests
         { "{controller}/{action:string}", "/home/index", true },
     };
 
+    public static TheoryData<object> IdentifierSegments { get; } = new()
+    {
+        // Integers - both implementations agree these are identifiers
+        123, // true
+        0, // true
+        -5, // negative int: string "-5" has digit and hyphen is allowed // true
+        9999999999L, // true
+        // Whole number floats - string representation has no decimal point
+        123f, // true
+        12334567f, // true
+        123d, // true
+        1234567d, // true
+        // Fractional floats - we don't try to fast-track these, because for historical reasons
+        // we do a culture--sensitive comparison, and may-or-may not mark the same value as identifier or not
+        1.5f, // true
+        1.5d, // true
+        -1.5f, // true
+        -1.5d, // true
+        // Strings - both use UriHelpers directly
+        "123", // true
+        "abc", // short hex, no digits // false
+        "controller", // false
+        "14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d", // GUID string with digits // true
+        "hello-world", // contains non-hex letters // false
+
+        // GUIDs with digits - both implementations agree (passed as string, parsed to Guid)
+        Guid.Parse("14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d"),
+        Guid.Parse("00000000-0000-0000-0000-000000000000"),
+        // decimal
+        decimal.Parse("123"),
+        decimal.Parse("1234567"),
+        decimal.Parse("1.5"),
+        decimal.Parse("-1.5"),
+    };
+
+#if !NETFRAMEWORK
     [Theory]
     [MemberData(nameof(ValidRouteTemplates))]
     public void SimplifyRoutePattern_CleansValidRouteTemplates(string template, string expected, bool expandRouteTemplates)
@@ -200,28 +237,7 @@ public class AspNetCoreResourceNameHelperTests
     }
 
     [Theory]
-    // Integers - both implementations agree these are identifiers
-    [InlineData(123)] // true
-    [InlineData(0)] // true
-    [InlineData(-5)] // negative int: string "-5" has digit and hyphen is allowed // true
-    [InlineData(9999999999L)] // true
-    // Whole number floats - string representation has no decimal point
-    [InlineData(123f)] // true
-    [InlineData(12334567f)] // true
-    [InlineData(123d)] // true
-    [InlineData(1234567d)] // true
-    // Fractional floats - we don't try to fast-track these, because for historical reasons
-    // we do a culture--sensitive comparison, and may-or-may not mark the same value as identifier or not
-    [InlineData(1.5f)] // true
-    [InlineData(1.5d)] // true
-    [InlineData(-1.5f)] // true
-    [InlineData(-1.5d)] // true
-    // Strings - both use UriHelpers directly
-    [InlineData("123")] // true
-    [InlineData("abc")] // short hex, no digits // false
-    [InlineData("controller")] // false
-    [InlineData("14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d")] // GUID string with digits // true
-    [InlineData("hello-world")] // contains non-hex letters // false
+    [MemberData(nameof(IdentifierSegments))]
     public void IsIdentifierSegment_BothImplementationsAgree(object value)
     {
         // We're doing a culture-insensitive ToString() here for CI consistency,
@@ -235,30 +251,7 @@ public class AspNetCoreResourceNameHelperTests
         actual.Should().Be(expected);
     }
 
-    // Guid can't be used directly in InlineData
-    [Theory]
-    // GUIDs with digits - both implementations agree (passed as string, parsed to Guid)
-    [InlineData("14bb2eed-34f0-4aa2-b2c3-09c0e2166d4d")]
-    [InlineData("00000000-0000-0000-0000-000000000000")]
-    public void IsIdentifierSegment_BothImplementationsAgree_Guids(string guidString)
-    {
-        var guid = new Guid(guidString);
-        IsIdentifierSegment_BothImplementationsAgree(guid);
-    }
-
-    // Decimal can't be used in InlineData
-    [Theory]
-    [InlineData("123")]
-    [InlineData("1234567")]
-    [InlineData("1.5")]
-    [InlineData("-1.5")]
-    public void IsIdentifierSegment_BothImplementationsAgree_Decimal(string decimalString)
-    {
-        var value = decimal.Parse(decimalString);
-        IsIdentifierSegment_BothImplementationsAgree(value);
-    }
-
-    // These differ from the IsIdentifierSegment() result, but we don't care,
+    // These differ from the UriHelpers.IsIdentifierSegment() result, but we don't care,
     // because in this case our knowledge is better so we give a more accurate result
     [Theory]
     [InlineData("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")]
@@ -298,5 +291,5 @@ public class AspNetCoreResourceNameHelperTests
         resource.Should().Be(expected);
     }
 #endif
-}
 #endif
+}
