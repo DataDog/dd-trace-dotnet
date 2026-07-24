@@ -682,6 +682,51 @@ public class SpanMessagePackFormatterTests
         }
     }
 
+    [Fact]
+    public async Task ApmDisabled_WritesApmEnabledZero_OnAllSpans()
+    {
+        // When APM tracing is disabled, "_dd.apm.enabled":0 must be written to EVERY span
+        // (not just service-entry spans), so the backend flags every span in the trace correctly.
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.ApmTracingEnabled, false } });
+        await using var tracer = TracerHelper.Create(settings);
+        var traceContext = new TraceContext(tracer);
+
+        // local root, service A -> service-entry span
+        var rootContext = new SpanContext(null, traceContext, "service-A");
+        var root = new Span(rootContext, DateTimeOffset.UtcNow);
+        root.OperationName = "root";
+
+        // child in the SAME service A -> not a service-entry span
+        var sameServiceContext = new SpanContext(rootContext, traceContext, "service-A");
+        var sameService = new Span(sameServiceContext, DateTimeOffset.UtcNow);
+        sameService.OperationName = "same-service-child";
+
+        // child in a DIFFERENT service B -> service-entry span
+        var otherServiceContext = new SpanContext(rootContext, traceContext, "service-B");
+        var otherService = new Span(otherServiceContext, DateTimeOffset.UtcNow);
+        otherService.OperationName = "other-service-child";
+
+        foreach (var span in new[] { root, sameService, otherService })
+        {
+            span.SetDuration(TimeSpan.FromSeconds(1));
+        }
+
+        var traceChunk = new TraceChunkModel(new SpanCollection(new[] { root, sameService, otherService }));
+        var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
+        byte[] bytes = [];
+
+        var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
+        var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
+
+        result.Should().HaveCount(3);
+
+        // every span gets the tag, regardless of whether it is a service-entry span
+        foreach (var span in result)
+        {
+            span.GetMetric("_dd.apm.enabled").Should().Be(0d);
+        }
+    }
+
     private readonly struct TagsProcessor<T> : IItemProcessor<T>
     {
         private readonly Dictionary<string, T> _expectedTags;
