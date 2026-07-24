@@ -17,6 +17,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.OpenTelemetry.Traces;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
 {
@@ -539,7 +540,7 @@ namespace Datadog.Trace.Agent
             if (writeStatus == SpanBuffer.WriteStatus.Overflow)
             {
                 // The trace is too big for the buffer, no point in trying again
-                DropTrace(chunk.Count, ref _droppedTracesTooLarge);
+                DropTrace(chunk.Count, MetricTags.DropReason.TraceTooLarge);
                 return;
             }
 
@@ -562,21 +563,33 @@ namespace Datadog.Trace.Agent
                 if (writeStatus == SpanBuffer.WriteStatus.Overflow)
                 {
                     // The trace is too big for the buffer
-                    DropTrace(chunk.Count, ref _droppedTracesTooLarge);
+                    DropTrace(chunk.Count, MetricTags.DropReason.TraceTooLarge);
                     return;
                 }
             }
 
             // All the buffers are full :( drop the trace
-            DropTrace(chunk.Count, ref _droppedTracesBufferFull);
+            DropTrace(chunk.Count, MetricTags.DropReason.OverfullBuffer);
         }
 
-        private void DropTrace(int count, ref long droppedTraces)
+        private void DropTrace(int count, MetricTags.DropReason dropReason)
         {
-            Interlocked.Increment(ref droppedTraces);
+            switch (dropReason)
+            {
+                case MetricTags.DropReason.OverfullBuffer:
+                    Interlocked.Increment(ref _droppedTracesBufferFull);
+                    break;
+                case MetricTags.DropReason.TraceTooLarge:
+                    Interlocked.Increment(ref _droppedTracesTooLarge);
+                    break;
+                default:
+                    ThrowHelper.ThrowArgumentOutOfRangeException(nameof(dropReason), dropReason, "Unexpected trace drop reason");
+                    break;
+            }
+
             _traceKeepRateCalculator.IncrementDrops(1);
-            TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.OverfullBuffer, count);
-            TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.OverfullBuffer);
+            TelemetryFactory.Metrics.RecordCountSpanDropped(dropReason, count);
+            TelemetryFactory.Metrics.RecordCountTraceChunkDropped(dropReason);
 
             if (Volatile.Read(ref _traceMetricsEnabled))
             {
