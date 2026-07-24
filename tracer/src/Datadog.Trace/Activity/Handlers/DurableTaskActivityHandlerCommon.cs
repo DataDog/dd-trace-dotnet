@@ -23,7 +23,7 @@ namespace Datadog.Trace.Activity.Handlers
                     DurableTaskConstants.TaskTypes.CreateOrchestration => $"create_orchestration:{taskName}",
                     DurableTaskConstants.TaskTypes.Activity => $"activity:{taskName}",
                     DurableTaskConstants.TaskTypes.Entity => $"entity:{taskName}",
-                    _ => taskName,
+                    _ => taskName!,
                 };
             }
 
