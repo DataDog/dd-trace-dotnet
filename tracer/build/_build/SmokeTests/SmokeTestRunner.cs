@@ -253,6 +253,13 @@ public static partial class SmokeTestRunner
             AddIfNotConfigured("COMPlus_DbgEnableMiniDump", "1");
             AddIfNotConfigured("COMPlus_DbgMiniDumpType", "4");
             AddIfNotConfigured("DOTNET_DbgMiniDumpName", @"C:\dumps\coredump.%t.%p.dmp");
+
+            // TEMPORARY: Force the failing Windows x86/.NET 6 scenario to crash so CI dump collection can be verified.
+            // Remove this before requesting review.
+            if (imageTag == "dd-trace-dotnet/x86_6_0-windowsservercore-ltsc2022-tester")
+            {
+                AddIfNotConfigured("CRASH_APP_ON_STARTUP", "1");
+            }
         }
 
         env.AddRange(environment.Select(kvp => $"{kvp.Key}={kvp.Value}"));
