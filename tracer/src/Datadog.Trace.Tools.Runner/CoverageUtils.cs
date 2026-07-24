@@ -4,11 +4,9 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Models.Global;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner;
@@ -33,25 +31,47 @@ internal static class CoverageUtils
             return false;
         }
 
-        if (!TryCombineAndGetTotalCoverage(inputFolder, out globalCoverageInfo, useStdOut))
+        GlobalCoverageReconciliationLease reconciliationLease = null;
+        try
         {
-            return false;
-        }
+            if (!TryLoadAndCombine(inputFolder, outputFile, out globalCoverageInfo, out reconciliationLease, useStdOut))
+            {
+                return false;
+            }
 
-        using var fStream = File.OpenWrite(outputFile);
-        using var sWriter = new StreamWriter(fStream, Encoding.UTF8, 4096, false);
-        if (useStdOut)
+            if (useStdOut)
+            {
+                Utils.WriteSuccess($"Writing {outputFile}");
+            }
+
+            var writer = new GlobalCoverageArtifactWriter();
+            using var stagedOutput = writer.StageReplace(outputFile, globalCoverageInfo);
+            if (reconciliationLease is null)
+            {
+                stagedOutput.Commit();
+            }
+            else
+            {
+                reconciliationLease.Complete(stagedOutput.Commit);
+            }
+
+            return true;
+        }
+        finally
         {
-            Utils.WriteSuccess($"Writing {outputFile}");
+            reconciliationLease?.Dispose();
         }
-
-        new JsonSerializer().Serialize(sWriter, globalCoverageInfo);
-        return true;
     }
 
-    private static bool TryCombineAndGetTotalCoverage(string inputFolder, out GlobalCoverageInfo globalCoverageInfo, bool useStdOut = true)
+    private static bool TryLoadAndCombine(
+        string inputFolder,
+        string outputFile,
+        out GlobalCoverageInfo globalCoverageInfo,
+        out GlobalCoverageReconciliationLease reconciliationLease,
+        bool useStdOut)
     {
         globalCoverageInfo = default;
+        reconciliationLease = null;
 
         if (string.IsNullOrEmpty(inputFolder))
         {
@@ -76,9 +96,14 @@ internal static class CoverageUtils
         var jsonFiles = Array.Empty<string>();
         try
         {
-            jsonFiles = Directory.GetFiles(inputFolder, "*.json", SearchOption.TopDirectoryOnly);
+            if (!GlobalCoverageFileCombiner.TryAcquireInputFiles(inputFolder, authority: null, out jsonFiles, out reconciliationLease))
+            {
+                return false;
+            }
+
             if (jsonFiles.Length == 0)
             {
+                reconciliationLease?.Complete();
                 if (useStdOut)
                 {
                     Utils.WriteError($"'{inputFolder}' doesn't contain any json file.");
@@ -93,34 +118,23 @@ internal static class CoverageUtils
             AnsiConsole.WriteException(ex);
         }
 
-        List<GlobalCoverageInfo> globalCoverages = new();
-        foreach (var file in jsonFiles)
+        Action<string> onFileProcessed = useStdOut ? file => Utils.WriteSuccess($"Processing: {file}") : null;
+        if (!GlobalCoverageFileCombiner.TryCombine(
+                jsonFiles,
+                outputFile,
+                reconciliationLease,
+                onFileProcessed,
+                out globalCoverageInfo,
+                out var rejectedInput))
         {
-            var fileContent = File.ReadAllText(file);
-            try
+            if (useStdOut && rejectedInput is not null)
             {
-                if (JsonConvert.DeserializeObject<GlobalCoverageInfo>(fileContent) is { } gCoverageInfo)
-                {
-                    if (useStdOut)
-                    {
-                        Utils.WriteSuccess($"Processing: {file}");
-                    }
+                Utils.WriteError($"Error processing {rejectedInput}");
+            }
 
-                    globalCoverages.Add(gCoverageInfo);
-                }
-                else if (useStdOut)
-                {
-                    Utils.WriteSuccess($"Ignored: {file}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Utils.WriteError($"Error processing {file}");
-                AnsiConsole.WriteException(ex);
-            }
+            return false;
         }
 
-        globalCoverageInfo = GlobalCoverageInfo.Combine(globalCoverages.ToArray());
         return true;
     }
 }

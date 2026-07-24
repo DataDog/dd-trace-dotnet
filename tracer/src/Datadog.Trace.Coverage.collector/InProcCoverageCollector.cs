@@ -5,8 +5,8 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Coverage;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollector.InProcDataCollector;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.InProcDataCollector;
@@ -39,6 +39,7 @@ public class InProcCoverageCollector : InProcDataCollection
 {
     private const string OutputPathKey = "OutputPath";
     private string? _outputPathValue = null;
+    private StandaloneCoverageReconciliation? _standaloneReconciliation;
 
     /// <summary>
     /// Initialize inproc coverage collector
@@ -57,6 +58,27 @@ public class InProcCoverageCollector : InProcDataCollection
         if (testSessionStartArgs.GetPropertyValue(OutputPathKey) is string outputPath)
         {
             _outputPathValue = outputPath;
+        }
+
+        if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
+        {
+            var outputDirectory = _outputPathValue ?? Environment.CurrentDirectory;
+            if (coverageHandler.RegisterCollectorOutputDirectory(outputDirectory))
+            {
+                var coordinatorDirectory = outputDirectory;
+                foreach (var registration in coverageHandler.OutputRegistrations)
+                {
+                    if (registration.IsCoordinator)
+                    {
+                        coordinatorDirectory = registration.Directory;
+                        break;
+                    }
+                }
+
+                _standaloneReconciliation = StandaloneCoverageReconciliation.TryCreate(
+                    coordinatorDirectory,
+                    TestOptimization.Instance.RunId);
+            }
         }
     }
 
@@ -82,20 +104,40 @@ public class InProcCoverageCollector : InProcDataCollection
     /// <param name="testSessionEndArgs">Test session end arguments</param>
     public void TestSessionEnd(TestSessionEndArgs testSessionEndArgs)
     {
-        if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
+        var standaloneReconciliation = _standaloneReconciliation;
+        _standaloneReconciliation = null;
+        if (standaloneReconciliation is null)
         {
-            var globalCoverage = coverageHandler.GetCodeCoveragePercentage();
-            var outputPath = $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json";
-            if (!string.IsNullOrEmpty(_outputPathValue))
-            {
-                outputPath = Path.Combine(_outputPathValue, outputPath);
-            }
+            CoverageReporter.FinalizeGlobalCoverage();
+            return;
+        }
 
-            using var fileStream = File.OpenWrite(outputPath);
-            using var streamWriter = new StreamWriter(fileStream);
-            using var jsonWriter = new JsonTextWriter(streamWriter) { CloseOutput = true };
-            var jsonSerializer = new JsonSerializer();
-            jsonSerializer.Serialize(jsonWriter, globalCoverage);
+        var completionRegistered = false;
+        try
+        {
+            CoverageReporter.FinalizeGlobalCoverage(
+                complete =>
+                {
+                    try
+                    {
+                        if (complete)
+                        {
+                            standaloneReconciliation.TryPublish();
+                        }
+                    }
+                    finally
+                    {
+                        standaloneReconciliation.Dispose();
+                    }
+                });
+            completionRegistered = true;
+        }
+        finally
+        {
+            if (!completionRegistered)
+            {
+                standaloneReconciliation.Dispose();
+            }
         }
     }
 }

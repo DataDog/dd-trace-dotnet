@@ -6,13 +6,13 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 
 /// <summary>
-/// System.Int32 Microsoft.DotNet.Tools.Test.TestCommand::Run(System.CommandLine.ParseResult or string[]) calltarget instrumentation
+/// System.Int32 Microsoft.DotNet.Tools.Test.TestCommand::Run(System.CommandLine.ParseResult or string[]) and
+/// Microsoft.DotNet.Cli.Commands.Test.TestCommand::Run(System.CommandLine.ParseResult) calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "dotnet",
@@ -22,6 +22,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
     ParameterTypeNames = ["_"],
     MinimumVersion = "2.0.0",
     MaximumVersion = "9.*.*",
+    IntegrationName = DotnetCommon.DotnetTestIntegrationName)]
+[InstrumentMethod(
+    AssemblyName = "dotnet",
+    TypeName = "Microsoft.DotNet.Cli.Commands.Test.TestCommand",
+    MethodName = "Run",
+    ReturnTypeName = ClrNames.Int32,
+    ParameterTypeNames = ["System.CommandLine.ParseResult"],
+    MinimumVersion = "10.0.0",
+    MaximumVersion = "10.*.*",
     IntegrationName = DotnetCommon.DotnetTestIntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -34,12 +43,12 @@ public sealed class TestCommandRunIntegration
             return CallTargetState.GetDefault();
         }
 
-        return new CallTargetState(null, DotnetCommon.CreateSession());
+        return new CallTargetState(null, DotnetCommon.CreateRunState(DotnetTestCommandKind.DotnetTestCommand));
     }
 
     internal static CallTargetReturn<int> OnMethodEnd<TTarget>(int returnValue, Exception? exception, in CallTargetState state)
     {
-        DotnetCommon.FinalizeSession(state.State as TestSession, returnValue, exception);
+        DotnetCommon.FinalizeRunState(state.State as DotnetTestRunState, returnValue, exception);
         return new CallTargetReturn<int>(returnValue);
     }
 }

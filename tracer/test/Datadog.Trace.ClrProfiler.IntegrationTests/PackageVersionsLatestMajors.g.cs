@@ -1746,6 +1746,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> NUnitGlobalCoverageMemoryCoverlet =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET8_0
+                new object[] { "3.2.0" },
+                new object[] { "6.0.0" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> NUnitRetries =>
 
             new List<object[]>

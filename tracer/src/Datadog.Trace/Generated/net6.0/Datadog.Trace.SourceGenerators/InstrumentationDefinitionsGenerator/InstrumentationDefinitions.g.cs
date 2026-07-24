@@ -357,6 +357,7 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.VersionConflict.ProcessHelpersStartWithDoNotTraceIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.CoverageGetCoverageResultIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestCommandRunIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestCommand5ctorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestCommandctorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestCommandRunIntegration"

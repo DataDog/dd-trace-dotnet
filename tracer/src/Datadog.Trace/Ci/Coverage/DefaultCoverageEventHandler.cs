@@ -26,79 +26,62 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
     {
     }
 
-    protected override unsafe object? OnSessionFinished(CoverageContextContainer context)
+    protected override object? OnSessionFinished(CoverageContextContainer context, IReadOnlyList<ModuleValue> modules)
+        => ProcessSessionFinished(modules, out _);
+
+    protected object? ProcessSessionFinished(IReadOnlyList<ModuleValue> modules, out ModuleCoverageData[] moduleCoverage)
     {
         try
         {
-            var modules = context.CloseContext();
-
+            moduleCoverage = new ModuleCoverageData[modules.Count];
             Dictionary<string, FileCoverage>? fileDictionary = null;
-            var fileBitmapBuffer = stackalloc byte[512];
-            foreach (var moduleValue in modules)
+            for (var moduleIndex = 0; moduleIndex < modules.Count; moduleIndex++)
             {
-                foreach (var moduleFile in moduleValue.Metadata.Files)
+                var capturedModule = ModuleCoverageData.Capture(modules[moduleIndex]);
+                moduleCoverage[moduleIndex] = capturedModule;
+                for (var fileIndex = 0; fileIndex < capturedModule.Metadata.Files.Length; fileIndex++)
                 {
-                    var fileBitmapLastExecutableLine = moduleFile.LastExecutableLine;
-                    var fileBitmapSize = FileBitmap.GetSize(fileBitmapLastExecutableLine);
-                    using var fileBitmap = fileBitmapSize <= 512 ? new FileBitmap(fileBitmapBuffer, fileBitmapSize) : new FileBitmap(new byte[fileBitmapSize]);
-                    if (moduleValue.Metadata.CoverageMode == 0)
+                    var executedBitmap = capturedModule.ExecutedBitmaps[fileIndex];
+                    if (executedBitmap is null)
                     {
-                        var filesLines = (byte*)moduleValue.FilesLines + moduleFile.Offset;
-                        for (var i = 0; i < fileBitmapLastExecutableLine; i++)
-                        {
-                            if (filesLines[i] > 0)
-                            {
-                                fileBitmap.Set(i + 1);
-                            }
-                        }
-                    }
-                    else if (moduleValue.Metadata.CoverageMode == 1)
-                    {
-                        var filesLines = (int*)moduleValue.FilesLines + moduleFile.Offset;
-                        for (var i = 0; i < fileBitmapLastExecutableLine; i++)
-                        {
-                            if (filesLines[i] > 0)
-                            {
-                                fileBitmap.Set(i + 1);
-                            }
-                        }
+                        continue;
                     }
 
-                    if (fileBitmap.HasActiveBits())
+                    var moduleFile = capturedModule.Metadata.Files[fileIndex];
+                    FileCoverage? fileCoverage;
+                    if (fileDictionary is null)
                     {
-                        FileCoverage? fileCoverage;
-                        if (fileDictionary is null)
+                        fileCoverage = new FileCoverage
                         {
-                            fileCoverage = new FileCoverage
-                            {
-                                FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false)
-                            };
+                            FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false)
+                        };
 
-                            fileDictionary = new Dictionary<string, FileCoverage>
-                            {
-                                [moduleFile.Path] = fileCoverage
-                            };
-                        }
-                        else if (!fileDictionary.TryGetValue(moduleFile.Path, out fileCoverage))
+                        fileDictionary = new Dictionary<string, FileCoverage>
                         {
-                            fileCoverage = new FileCoverage
-                            {
-                                FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false)
-                            };
+                            [moduleFile.Path] = fileCoverage
+                        };
+                    }
+                    else if (!fileDictionary.TryGetValue(moduleFile.Path, out fileCoverage))
+                    {
+                        fileCoverage = new FileCoverage
+                        {
+                            FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(moduleFile.Path, false)
+                        };
 
-                            fileDictionary[moduleFile.Path] = fileCoverage;
-                        }
+                        fileDictionary[moduleFile.Path] = fileCoverage;
+                    }
 
-                        if (fileCoverage.Bitmap is { } bitmap)
-                        {
-                            using var currentBitmap = new FileBitmap(bitmap);
-                            var mergedBitmap = fileBitmap | currentBitmap;
-                            fileCoverage.Bitmap = mergedBitmap.GetInternalArrayOrToArrayAndDispose();
-                        }
-                        else
-                        {
-                            fileCoverage.Bitmap = fileBitmap.ToArray();
-                        }
+                    if (fileCoverage.Bitmap is { } bitmap)
+                    {
+                        using var capturedBitmap = new FileBitmap(executedBitmap);
+                        using var currentBitmap = new FileBitmap(bitmap);
+                        var mergedBitmap = capturedBitmap | currentBitmap;
+                        fileCoverage.Bitmap = mergedBitmap.GetInternalArrayOrToArrayAndDispose();
+                    }
+                    else
+                    {
+                        // The accumulator only reads the bitmap, so the per-test payload can reuse it.
+                        fileCoverage.Bitmap = executedBitmap;
                     }
                 }
             }
@@ -129,10 +112,5 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
             Log.Error(ex, "Error processing the coverage data.");
             throw;
         }
-    }
-
-    protected override void OnClearContext(CoverageContextContainer context)
-    {
-        context.Clear();
     }
 }

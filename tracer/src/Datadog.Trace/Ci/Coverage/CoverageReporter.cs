@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Util;
 
@@ -19,7 +20,7 @@ namespace Datadog.Trace.Ci.Coverage;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class CoverageReporter
 {
-    private static CoverageEventHandler _handler = CreateDefaultHandler(TestOptimization.Instance.Settings);
+    private static CoverageEventHandler? _handler;
 
     /// <summary>
     /// Gets or sets coverage handler
@@ -28,14 +29,38 @@ public static class CoverageReporter
     internal static CoverageEventHandler Handler
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handler;
+        get => LazyInitializer.EnsureInitialized(ref _handler, static () => CreateDefaultHandler(TestOptimization.Instance.Settings))!;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set => _handler = value ?? throw new ArgumentNullException(nameof(value));
+        set
+        {
+            if (value is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(value));
+            }
+
+            Volatile.Write(ref _handler, value);
+        }
     }
 
-    internal static CoverageContextContainer? Container => _handler.Container;
+    internal static CoverageContextContainer? Container => Handler.Container;
 
-    internal static CoverageContextContainer GlobalContainer => _handler.GlobalContainer;
+    internal static CoverageContextContainer GlobalContainer => Handler.GlobalContainer;
+
+    /// <summary>
+    /// Publishes the final global coverage snapshot and seals the process output, if coverage was used by this process.
+    /// </summary>
+    /// <returns>True when global coverage is not active or the process output was sealed completely.</returns>
+    internal static bool FinalizeGlobalCoverage(Action<bool>? onCompleted = null)
+    {
+        var handler = Volatile.Read(ref _handler);
+        if (handler is DefaultWithGlobalCoverageEventHandler globalHandler)
+        {
+            return globalHandler.FinalizeAndSeal(onCompleted);
+        }
+
+        onCompleted?.Invoke(true);
+        return true;
+    }
 
     /// <summary>
     /// Creates the default coverage event handler for the current CI Visibility coverage mode.
@@ -44,11 +69,11 @@ public static class CoverageReporter
     {
         if (settings is null)
         {
-            throw new ArgumentNullException(nameof(settings));
+            ThrowHelper.ThrowArgumentNullException(nameof(settings));
         }
 
         return settings.TestsSkippingEnabled == true && StringUtil.IsNullOrWhiteSpace(settings.CodeCoveragePath)
                    ? new DefaultCoverageEventHandler()
-                   : new DefaultWithGlobalCoverageEventHandler();
+                   : new DefaultWithGlobalCoverageEventHandler(configuredOutputDirectory: settings.CodeCoveragePath);
     }
 }
