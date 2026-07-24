@@ -47,7 +47,7 @@ namespace Datadog.Trace.Tagging
                 "http.method" => HttpMethod,
                 "http.request.headers.host" => HttpRequestHeadersHost,
                 "http.url" => HttpUrl,
-                "http.status_code" => HttpStatusCode,
+                "http.status_code" => HttpStatusCode?.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 "network.client.ip" => NetworkClientIp,
                 "http.client_ip" => HttpClientIp,
                 _ => base.GetTag(key),
@@ -71,7 +71,11 @@ namespace Datadog.Trace.Tagging
                     HttpUrl = value;
                     break;
                 case "http.status_code": 
-                    HttpStatusCode = value;
+                    if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedHttpStatusCode))
+                    {
+                        HttpStatusCode = parsedHttpStatusCode;
+                    }
+
                     break;
                 case "network.client.ip": 
                     NetworkClientIp = value;
@@ -117,7 +121,7 @@ namespace Datadog.Trace.Tagging
 
             if (HttpStatusCode is not null)
             {
-                processor.Process(new TagItem<string>("http.status_code", HttpStatusCode, HttpStatusCodeBytes));
+                processor.Process(new TagItem<int>("http.status_code", HttpStatusCode.Value, HttpStatusCodeBytes));
             }
 
             if (NetworkClientIp is not null)
@@ -173,7 +177,7 @@ namespace Datadog.Trace.Tagging
             if (HttpStatusCode is not null)
             {
                 sb.Append("http.status_code (tag):")
-                  .Append(HttpStatusCode)
+                  .Append(HttpStatusCode.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
                   .Append(',');
             }
 
