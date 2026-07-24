@@ -426,9 +426,16 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled)
                                          .AsBool(defaultValue: false);
 #if NETFRAMEWORK
-            AspNetCoreNetFrameworkEnabled = config
-                                            .WithKeys(ConfigurationKeys.FeatureFlags.AspNetCoreNetFrameworkEnabled)
-                                            .AsBool(defaultValue: false);
+            if (ExperimentalFeaturesEnabled.Contains(ConfigurationKeys.FeatureFlags.AspNetCoreNetFrameworkEnabled))
+            {
+                AspNetCoreNetFrameworkEnabled = config
+                                               .WithKeys(ConfigurationKeys.FeatureFlags.AspNetCoreNetFrameworkEnabled)
+                                               .AsBool(defaultValue: false);
+            }
+            else
+            {
+                AspNetCoreNetFrameworkEnabled = false;
+            }
 #endif
 #if !NET6_0_OR_GREATER
             // single span aspnetcore is only supported in .NET 6+, so override for telemetry purposes
