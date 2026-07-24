@@ -16,7 +16,6 @@ namespace Datadog.Trace.Tests.Agent
             var metadata = new AgentProcessManager.ProcessMetadata
             {
                 ProcessState = AgentProcessManager.ProcessState.ReadyToStart,
-                ConsecutiveUnboundPipeChecks = 3,
             };
 
             metadata.MarkHealthy();

@@ -249,7 +249,7 @@ namespace Datadog.Trace
                                         startInfo.Arguments = metadata.ProcessArguments;
                                     }
 
-                                    metadata.ConsecutiveUnboundPipeChecks = 0;
+                                    metadata.ResetPipeGrace();
 
                                     metadata.Process = Process.Start(startInfo);
                                     var timeout = 2000;
@@ -333,7 +333,7 @@ namespace Datadog.Trace
 
             public bool RequirePipeBound { get; set; }
 
-            public int ConsecutiveUnboundPipeChecks { get; set; }
+            public int ConsecutiveUnboundPipeChecks { get; private set; }
 
             public ProcessState ProcessState { get; set; } = ProcessState.NeverChecked;
 
@@ -354,6 +354,11 @@ namespace Datadog.Trace
             public void MarkHealthy()
             {
                 ProcessState = ProcessState.Healthy;
+                ConsecutiveUnboundPipeChecks = 0;
+            }
+
+            public void ResetPipeGrace()
+            {
                 ConsecutiveUnboundPipeChecks = 0;
             }
 
@@ -399,6 +404,7 @@ namespace Datadog.Trace
 
                 if (!ProgramIsRunning())
                 {
+                    ConsecutiveUnboundPipeChecks = 0;
                     return false;
                 }
 
