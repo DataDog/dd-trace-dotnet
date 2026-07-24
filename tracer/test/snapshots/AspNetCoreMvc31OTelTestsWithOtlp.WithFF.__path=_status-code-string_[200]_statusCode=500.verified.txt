@@ -1,0 +1,226 @@
+﻿{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "Samples.AspNetCoreMvc31"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "deployment.environment.name",
+            "value": {
+              "stringValue": "integration_tests"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "sdk-name"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "dotnet"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "sdk-version"
+            }
+          },
+          {
+            "key": "git.commit.sha",
+            "value": {
+              "stringValue": "normalized-git-commit-sha"
+            }
+          },
+          {
+            "key": "git.repository_url",
+            "value": {
+              "stringValue": "https://github.com/DataDog/dd-trace-dotnet"
+            }
+          },
+          {
+            "key": "runtime-id",
+            "value": {
+              "stringValue": "Guid_1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "spans": [
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "name": "GET status-code-string/{statuscode}",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
+                  "key": "http.route",
+                  "value": {
+                    "stringValue": "status-code-string/{statuscode}"
+                  }
+                },
+                {
+                  "key": "_dd.code_origin.type",
+                  "value": {
+                    "stringValue": "entry"
+                  }
+                },
+                {
+                  "key": "_dd.code_origin.frames.0.index",
+                  "value": {
+                    "stringValue": "0"
+                  }
+                },
+                {
+                  "key": "_dd.code_origin.frames.0.method",
+                  "value": {
+                    "stringValue": "StatusCodeTestString"
+                  }
+                },
+                {
+                  "key": "_dd.code_origin.frames.0.type",
+                  "value": {
+                    "stringValue": "Samples.AspNetCoreMvc.Controllers.HomeController"
+                  }
+                },
+                {
+                  "key": "_dd.code_origin.frames.0.file",
+                  "value": {
+                    "stringValue": "{SolutionDirectory}tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/HomeController.cs"
+                  }
+                },
+                {
+                  "key": "_dd.code_origin.frames.0.line",
+                  "value": {
+                    "stringValue": "65"
+                  }
+                },
+                {
+                  "key": "_dd.code_origin.frames.0.column",
+                  "value": {
+                    "stringValue": "9"
+                  }
+                },
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "GET"
+                  }
+                },
+                {
+                  "key": "url.scheme",
+                  "value": {
+                    "stringValue": "http"
+                  }
+                },
+                {
+                  "key": "url.path",
+                  "value": {
+                    "stringValue": "/status-code-string/%5B200%5D"
+                  }
+                },
+                {
+                  "key": "server.address",
+                  "value": {
+                    "stringValue": "localhost:00000"
+                  }
+                },
+                {
+                  "key": "user_agent.original",
+                  "value": {
+                    "stringValue": "testhelper"
+                  }
+                },
+                {
+                  "key": "http.request.headers.sample_correlation_identifier",
+                  "value": {
+                    "stringValue": "0000-0000-0000"
+                  }
+                },
+                {
+                  "key": "datadog-header-tag",
+                  "value": {
+                    "stringValue": "asp-net-core"
+                  }
+                },
+                {
+                  "key": "error.type",
+                  "value": {
+                    "stringValue": "500"
+                  }
+                },
+                {
+                  "key": "http.response.headers.server",
+                  "value": {
+                    "stringValue": "Kestrel"
+                  }
+                },
+                {
+                  "key": "server.port",
+                  "value": {
+                    "intValue": "normalized-server-port"
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "500"
+                  }
+                }
+              ],
+              "events": [
+                {
+                  "timeUnixNano": "0",
+                  "name": "exception",
+                  "attributes": [
+                    {
+                      "key": "exception.type",
+                      "value": {
+                        "stringValue": "System.Exception"
+                      }
+                    },
+                    {
+                      "key": "exception.message",
+                      "value": {
+                        "stringValue": "Input was not a status code"
+                      }
+                    },
+                    {
+                      "key": "exception.stacktrace",
+                      "value": {
+                        "stringValue": "System.Exception: Input was not a status code\n   at Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString(String input) in {SolutionDirectory}tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/HomeController.cs:line 74\n   at lambda_method2(Closure, Object, Object[])\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.SyncObjectResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Logged|12_1(ControllerActionInvoker invoker)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()\n--- End of stack trace from previous location ---\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResourceFilter>g__Awaited|25_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResourceExecutedContextSealed context)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.InvokeFilterPipelineAsync()\n--- End of stack trace from previous location ---\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)\n   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)\n   at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger logger)\n   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

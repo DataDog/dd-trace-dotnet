@@ -255,7 +255,7 @@ internal sealed partial class SecurityReporter
 
             if (status is not null)
             {
-                _span.SetHttpStatusCode(status.Value, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
+                _span.SetHttpStatusCode(status.Value, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings, Tracer.Instance.Settings.OtelSemanticsEnabled);
             }
         }
 
@@ -350,7 +350,7 @@ internal sealed partial class SecurityReporter
 
     internal void AddResponseHeaderTags()
     {
-        var route = _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
+        var route = _span.GetTag(Tags.HttpRoute) ?? _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
         if (route != null)
         {
             _span.SetTag(Tags.HttpEndpoint, route);
