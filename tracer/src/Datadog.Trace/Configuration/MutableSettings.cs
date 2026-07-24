@@ -1045,9 +1045,10 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         var httpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodesString);
 
+        var defaultHttpClientErrorStatusCodes = tracerSettings.OtelSemanticsEnabled ? "400-599" : "400-499";
         var httpClientErrorStatusCodesString = config
                                               .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes)
-                                              .AsString(defaultValue: "400-499");
+                                              .AsString(defaultValue: defaultHttpClientErrorStatusCodes);
 
         var httpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodesString);
 

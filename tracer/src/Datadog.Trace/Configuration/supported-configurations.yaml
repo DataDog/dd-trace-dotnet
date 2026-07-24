@@ -1137,13 +1137,14 @@ supportedConfigurations:
     documentation: |-
       Overrides the hostname reported to Datadog. When set, replaces the auto-detected hostname.
   DD_HTTP_CLIENT_ERROR_STATUSES:
-  - implementation: A
+  - implementation: B
     scope: managed
     type: string
     default: 400-499
     const_name: DeprecatedHttpClientErrorStatusCodes
     documentation: |-
       Configuration key for the application's client http statuses to set spans as errors by.
+      When DD_TRACE_OTEL_SEMANTICS_ENABLED is true, the default is <c>400-599</c>.
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
   DD_HTTP_SERVER_ERROR_STATUSES:
   - implementation: A
@@ -3078,6 +3079,7 @@ supportedConfigurations:
     const_name: HttpClientErrorStatusCodes
     documentation: |-
       Configuration key for the application's client http statuses to set spans as errors by.
+      When DD_TRACE_OTEL_SEMANTICS_ENABLED is true, the default is <c>400-599</c>.
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
   DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS:
   - implementation: A

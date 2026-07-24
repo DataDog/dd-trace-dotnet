@@ -158,6 +158,7 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// Configuration key for the application's client http statuses to set spans as errors by.
+    /// When DD_TRACE_OTEL_SEMANTICS_ENABLED is true, the default is <c>400-599</c>.
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
     public const string DeprecatedHttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
@@ -523,6 +524,7 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// Configuration key for the application's client http statuses to set spans as errors by.
+    /// When DD_TRACE_OTEL_SEMANTICS_ENABLED is true, the default is <c>400-599</c>.
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
     public const string HttpClientErrorStatusCodes = "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES";
