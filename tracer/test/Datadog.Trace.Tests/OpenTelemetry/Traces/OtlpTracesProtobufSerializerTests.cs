@@ -26,7 +26,7 @@ public class OtlpTracesProtobufSerializerTests
     [Fact]
     public void FinishBody_ReturnsZero_WhenNothingSerialized()
     {
-        var serializer = new OtlpTracesProtobufSerializer();
+        var serializer = new OtlpTracesProtobufSerializer(openTelemetrySemanticsEnabled: false);
         var buffer = new byte[1024];
 
         serializer.FinishBody(ref buffer, offset: 0, maxSize: buffer.Length).Should().Be(0);
@@ -35,7 +35,7 @@ public class OtlpTracesProtobufSerializerTests
     [Fact]
     public void SerializeSpans_ReturnsZero_WhenSpansExceedMaxSize()
     {
-        var serializer = new OtlpTracesProtobufSerializer();
+        var serializer = new OtlpTracesProtobufSerializer(openTelemetrySemanticsEnabled: false);
         var buffer = new byte[8 * 1024];
 
         // Pick a maxSize tiny enough that any real span overflows.
@@ -48,7 +48,7 @@ public class OtlpTracesProtobufSerializerTests
     [Fact]
     public void SerializeSpans_ReturnsZero_WhenWritesExceedBufferCapacity()
     {
-        var serializer = new OtlpTracesProtobufSerializer();
+        var serializer = new OtlpTracesProtobufSerializer(openTelemetrySemanticsEnabled: false);
 
         // Buffer is smaller than a single span's serialized form, so per-field writes
         // will throw IndexOutOfRangeException mid-serialization. The catch must roll
@@ -71,7 +71,7 @@ public class OtlpTracesProtobufSerializerTests
         var chunk1 = CreateChunk(CreateSpan(resourceName: "resource_name1"));
         var chunk2 = CreateChunk(CreateSpan(resourceName: "resource_name2"));
 
-        var serializer = new OtlpTracesProtobufSerializer();
+        var serializer = new OtlpTracesProtobufSerializer(openTelemetrySemanticsEnabled: false);
         var buffer = new byte[16 * 1024];
 
         var firstLength = serializer.SerializeSpans(ref buffer, 0, chunk1, spanBufferOffset: 0, maxSize: buffer.Length);
@@ -538,7 +538,7 @@ public class OtlpTracesProtobufSerializerTests
 
     private static OtlpSpan SerializeAndParse(TraceChunkModel chunk)
     {
-        var serializer = new OtlpTracesProtobufSerializer();
+        var serializer = new OtlpTracesProtobufSerializer(openTelemetrySemanticsEnabled: false);
         var buffer = new byte[64 * 1024];
         var written = serializer.SerializeSpans(ref buffer, 0, chunk, spanBufferOffset: 0, maxSize: buffer.Length);
         serializer.FinishBody(ref buffer, written, maxSize: buffer.Length);

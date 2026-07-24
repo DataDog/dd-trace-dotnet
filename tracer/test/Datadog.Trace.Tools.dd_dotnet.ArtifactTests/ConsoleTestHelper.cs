@@ -98,20 +98,37 @@ public abstract class ConsoleTestHelper : ToolTestHelper
 
         var helper = new CustomProcessHelper(agent, Process.Start(processStart)!, callback);
 
+        var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30));
         var completed = await Task.WhenAny(
                             helper.Task,
                             startedTask.Task,
-                            Task.Delay(TimeSpan.FromSeconds(30)));
+                            timeoutTask);
 
-        if (completed == startedTask.Task)
+        // Crash samples can print "Waiting" and exit before this await resumes. If both
+        // the process-exit and readiness tasks are complete, WhenAny may return either,
+        // so readiness should win. Don't apply that to timeouts: readiness after the
+        // timeout must still take the timeout/memory-dump path.
+        if (completed == startedTask.Task || (completed == helper.Task && startedTask.Task.IsCompleted))
         {
             return helper;
         }
 
         if (completed == helper.Task)
         {
+            // Startup exited before readiness. Include the exit code and drained output so
+            // crashes show native exit codes and any stack traces from the child process.
+            var exitCode = helper.Process.HasExited ? helper.Process.ExitCode : (int?)null;
+            var standardOutput = helper.StandardOutput;
+            var errorOutput = helper.ErrorOutput;
+
             helper.Dispose();
-            throw new Exception("The target process unexpectedly exited");
+
+            var exitCodeText = exitCode is { } code ? $"0x{code:X8}" : "unknown";
+
+            throw new Exception(
+                $"The target process unexpectedly exited with exit code {exitCodeText}" + Environment.NewLine +
+                "Standard output:" + Environment.NewLine + standardOutput + Environment.NewLine +
+                "Error output:" + Environment.NewLine + errorOutput);
         }
 
         // Try to capture a memory dump before giving up

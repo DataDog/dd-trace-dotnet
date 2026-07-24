@@ -27,6 +27,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             _output = output;
         }
 
+        [Flaky("Samples.Computer01 intermittently crashes with SIGSEGV; under investigation")]
         [TestAppFact("Samples.Computer01")]
         public void ManualAndProfilingEnvVarNotSet(string appName, string framework, string appAssembly)
         {
@@ -48,6 +49,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
         }
 
+        [Flaky("Samples.Computer01 intermittently crashes with SIGSEGV; under investigation")]
         [TestAppFact("Samples.Computer01")]
         public void ManualAndProfilingEnvVarTrue(string appName, string framework, string appAssembly)
         {
@@ -91,6 +93,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             agent.NbCallsOnProfilingEndpoint.Should().Be(0);
         }
 
+        [Flaky("Samples.Computer01 intermittently crashes with SIGSEGV; under investigation")]
         [TestAppFact("Samples.Computer01")]
         public void SsiAndProfilingEnvVarTrue(string appName, string framework, string appAssembly)
         {
@@ -105,6 +108,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
         }
 
+        [Flaky("Samples.Computer01 intermittently crashes with SIGSEGV; under investigation")]
         [TestAppFact("Samples.Computer01")]
         public void NoMetricsWhenSsiAndProfilingEnvVarTrue(string appName, string framework, string appAssembly)
         {
@@ -124,6 +128,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             Assert.True(parser == null, "Metrics files should not be generated");
         }
 
+        [Flaky("Samples.Computer01 intermittently crashes with SIGSEGV; under investigation")]
         [TestAppFact("Samples.Computer01")]
         public void SsiAndProfilingEnvVarFalse(string appName, string framework, string appAssembly)
         {
@@ -399,6 +404,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             AssertProfilingLogsContains(runner.Environment.LogDir, "Profiler enabled by SSI");
         }
 
+        [Flaky("Samples.Computer01 intermittently crashes with SIGSEGV; under investigation")]
         [TestAppFact("Samples.Computer01")]
         public void StableConfigWhenKillSwitchReadsEnvVars(string appName, string framework, string appAssembly)
         {

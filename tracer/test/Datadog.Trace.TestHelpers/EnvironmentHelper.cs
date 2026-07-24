@@ -176,7 +176,19 @@ namespace Datadog.Trace.TestHelpers
                 "DD_VERSION",
                 "DD_TAGS",
                 "DD_APPSEC_ENABLED",
-                "DD_WRITE_INSTRUMENTATION_TO_DISK"
+                "DD_WRITE_INSTRUMENTATION_TO_DISK",
+                "DD_TRACE_AGENT_URL",
+
+                // OpenTelemetry
+                "OTEL_TRACES_EXPORTER",
+                "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+                "OTEL_EXPORTER_OTLP_ENDPOINT",
+                "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
+                "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
+                "OTEL_METRICS_EXPORTER",
+                "OTEL_LOGS_EXPORTER",
+                "OTEL_EXPORTER_OTLP_PROTOCOL",
+                "OTEL_RESOURCE_ATTRIBUTES"
             };
 
             foreach (string variable in environmentVariables)

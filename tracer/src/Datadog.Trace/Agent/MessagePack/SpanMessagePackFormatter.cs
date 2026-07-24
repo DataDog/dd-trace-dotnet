@@ -879,9 +879,9 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            // add the "apm.enabled" tag with a value of 0
-            // to the first span in the chunk when APM is disabled
-            if (!model.TraceChunk.IsApmEnabled && model.IsLocalRoot)
+            // add the "apm.enabled" tag with a value of 0 to every span when APM tracing is disabled,
+            // so the backend flags every span in the trace as APM-disabled (not just service-entry spans).
+            if (!model.TraceChunk.IsApmEnabled)
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ApmEnabledNameBytes);

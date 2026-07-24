@@ -870,6 +870,22 @@ namespace Datadog.Trace.Configuration
             _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
 
             Manager = new(source, this, telemetry, errorLog);
+
+            // OTLP span metrics require OTLP trace export (see TracerManagerFactory.GetAgentWriter).
+            // Force to false otherwise, even if explicitly requested.
+            if (OtelTracesSpanMetricsEnabled && !Manager.InitialExporterSettings.IsOtlpTraceExport)
+            {
+                if (explicitSpanMetrics == true)
+                {
+                    Log.Warning(
+                        "{ConfigurationKey} is set to true, but traces are not being exported using OTLP encoding (OTEL_TRACES_EXPORTER={OtelTracesExporter}). OTLP span metrics require OTLP trace export, so this setting has been disabled.",
+                        ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled,
+                        otelTracesExporter);
+                }
+
+                OtelTracesSpanMetricsEnabled = false;
+                telemetry.Record(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled, false, ConfigurationOrigins.Calculated);
+            }
         }
 
         internal bool IsRunningInCiVisibility { get; }
@@ -1269,8 +1285,10 @@ namespace Datadog.Trace.Configuration
         internal bool OtelTracesSpanMetricsEnabled { get; }
 
         /// <summary>
-        /// Gets a value indicating whether only OTel semantic-convention attributes are emitted
-        /// on OTLP span metrics data points, suppressing all datadog.* attributes.
+        /// Gets a value indicating whether OpenTelemetry semantics mode is enabled.
+        /// When enabled, traces and OTLP span metrics data points will only emit OTel semantic-convention attributes,
+        /// suppressing Datadog-specific attributes.
+        /// Default is <c>false</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
         internal bool OtelSemanticsEnabled { get; }
