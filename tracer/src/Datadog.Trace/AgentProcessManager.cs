@@ -249,8 +249,6 @@ namespace Datadog.Trace
                                         startInfo.Arguments = metadata.ProcessArguments;
                                     }
 
-                                    metadata.ResetPipeGrace();
-
                                     metadata.Process = Process.Start(startInfo);
                                     var timeout = 2000;
 
@@ -316,11 +314,21 @@ namespace Datadog.Trace
 
             private string _processPath;
 
+            private Process _process;
+
             public string PipeName { get; set; }
 
             public string Name { get; set; }
 
-            public Process Process { get; set; }
+            public Process Process
+            {
+                get => _process;
+                set
+                {
+                    _process = value;
+                    ConsecutiveUnboundPipeChecks = 0;
+                }
+            }
 
             public Task KeepAliveTask { get; set; }
 
@@ -354,11 +362,6 @@ namespace Datadog.Trace
             public void MarkHealthy()
             {
                 ProcessState = ProcessState.Healthy;
-                ConsecutiveUnboundPipeChecks = 0;
-            }
-
-            public void ResetPipeGrace()
-            {
                 ConsecutiveUnboundPipeChecks = 0;
             }
 
