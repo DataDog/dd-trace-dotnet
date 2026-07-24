@@ -554,6 +554,7 @@ partial class Build : NukeBuild
 
                 void GenerateNukeSmokeTestsMatrices()
                 {
+                    var isMainBranch = bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false");
                     var scenarioDict = SmokeTests.SmokeTestScenarios.GetAllScenarios();
                     var allScenarios = scenarioDict
                         .SelectMany(pair => pair.Value.Select(kv => (category: pair.Key, scenario: kv.Key, details: kv.Value)))
@@ -562,6 +563,7 @@ partial class Build : NukeBuild
                         {
                             category = x.category.ToString(),
                             scenario = x.scenario,
+                            retryCountForRunCommand = isMainBranch && x.details.PublishFramework is "netcoreapp2.1" or "netcoreapp3.1" ? 1 : 0,
                         }))
                         .ToList();
 
