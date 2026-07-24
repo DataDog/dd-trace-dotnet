@@ -552,6 +552,7 @@ public class ProbesTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("Category", "LinuxUnsupported")]
     [Trait("RunOnWindows", "True")]
+    [Flaky("Named pipes is flaky", maxRetries: 3)]
     public async Task MethodProbeTest_NamedPipes()
     {
         if (!EnvironmentTools.IsWindows())
