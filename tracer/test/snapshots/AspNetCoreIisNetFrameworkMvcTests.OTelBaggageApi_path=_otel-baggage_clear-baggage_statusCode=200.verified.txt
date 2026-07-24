@@ -16,7 +16,7 @@
     TraceId: Id_1,
     SpanId: Id_3,
     Name: aspnet_core.request,
-    Resource: GET otel-baggage/clear-baggage,
+    Resource: GET /otel-baggage/clear-baggage,
     Service: AspNetCoreIisNetFrameworkMvcTests,
     Type: web,
     Tags: {

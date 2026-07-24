@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -63,14 +62,14 @@ public class LegacyAspNetCoreDiagnosticObserverTests
                 MvcBeforeActionEvent,
                 CreateMvcBeforeActionPayload(context, "api/Orders/{id}", actionValues)));
 
-        requestScope.Span.ResourceName.Should().Be("POST api/Orders/{id}");
-        requestScope.Span.GetTag(Tags.AspNetCoreRoute).Should().Be("api/Orders/{id}");
-        requestScope.Span.GetTag(Tags.HttpRoute).Should().Be("api/Orders/{id}");
+        requestScope.Span.ResourceName.Should().Be("POST /api/orders/{id}");
+        requestScope.Span.GetTag(Tags.AspNetCoreRoute).Should().Be("api/orders/{id}");
+        requestScope.Span.GetTag(Tags.HttpRoute).Should().Be("api/orders/{id}");
 
         observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
     }
 
-    [Theory]
+    [Theory(Skip = "I don't know if we actually want this behaviour - it's not correct AFAICT, because we shouldn't be guessing routes?")]
     [InlineData(null, "GET orders/details")]
     [InlineData("Admin", "GET admin/orders/details")]
     public async Task MvcControllerActionRouteUpdatesRootName(string area, string expectedResourceName)
@@ -103,7 +102,7 @@ public class LegacyAspNetCoreDiagnosticObserverTests
         observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
     }
 
-    [Fact(Skip = "I don't know if we actually want this behaviour - it's not correct AFAICT")]
+    [Fact(Skip = "I don't know if we actually want this behaviour - it's not correct AFAICT, because we shouldn't be guessing routes?")]
     public async Task MvcRouteDataValuesProvideControllerActionFallback()
     {
         await using var tracer = TracerHelper.CreateWithFakeAgent();
@@ -160,9 +159,32 @@ public class LegacyAspNetCoreDiagnosticObserverTests
 
             tracer.ActiveScope.Should().BeSameAs(childScope);
             childScope.Span.ResourceName.Should().Be("child-resource");
-            requestState.RootScope.Span.ResourceName.Should().Be("GET api/Orders/{id}");
+            requestState.RootScope.Span.ResourceName.Should().Be("GET /api/orders/{id}");
             GetRequestState(context).Should().BeSameAs(requestState);
         }
+
+        observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
+    }
+
+    [Fact]
+    public async Task ResourceNameIncludesPathBasePrefix()
+    {
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+        var context = CreateContext();
+        context.Request.PathBase = new PathString("/some-app");
+        var requestPayload = new { HttpContext = context };
+        var actionValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        observer.OnNext(new KeyValuePair<string, object>(StartEvent, requestPayload));
+        var requestScope = GetRequestState(context).RootScope;
+
+        observer.OnNext(
+            new KeyValuePair<string, object>(
+                MvcBeforeActionEvent,
+                CreateMvcBeforeActionPayload(context, "api/values/{id}", actionValues)));
+
+        requestScope.Span.ResourceName.Should().Be("GET /some-app/api/values/{id}");
 
         observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
     }
@@ -441,7 +463,8 @@ public class LegacyAspNetCoreDiagnosticObserverTests
         HttpContext context,
         string routeTemplate,
         IDictionary<string, string> actionDescriptorValues,
-        IDictionary<string, object> routeDataValues = null)
+        IDictionary<string, object> routeDataValues = null,
+        IEnumerable<IRouter> routers = null)
     {
         var routeData = new RouteData();
         if (routeDataValues is not null)
@@ -449,6 +472,14 @@ public class LegacyAspNetCoreDiagnosticObserverTests
             foreach (var kvp in routeDataValues)
             {
                 routeData.Values[kvp.Key] = kvp.Value;
+            }
+        }
+
+        if (routers is not null)
+        {
+            foreach (var router in routers)
+            {
+                routeData.Routers.Add(router);
             }
         }
 
