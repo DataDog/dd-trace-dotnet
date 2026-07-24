@@ -16,12 +16,17 @@ namespace Datadog.Trace.Tests.DiagnosticListeners;
 
 public class LegacyAspNetCoreResourceNameHelperTests
 {
-    [Theory]
+    [SkippableTheory]
     [MemberData(nameof(AspNetCoreResourceNameHelperTests.ValidRouteTemplates), MemberType = typeof(AspNetCoreResourceNameHelperTests))]
     public void SimplifyRouteTemplate_CleansValidRouteTemplates(string template, string expected, bool expandRouteTemplates)
     {
-        // RouteTemplate doesn't support the concept of encoded slashes, so "fix" the expected value
-        expected = expected.Replace("**", "*");
+        // RouteTemplate doesn't support the concept of encoded slashes, so skip those cases
+        // These were only introduced in ASP.NET Core 2.2 https://github.com/aspnet/Routing/pull/719,
+        // and are only supported when you're using endpoint routing
+        if (template.Contains("**") || expected.Contains("**"))
+        {
+            throw new SkipException();
+        }
 
         var routeTemplate = TemplateParser.Parse(template);
         var resource = LegacyAspNetCoreResourceNameHelper.SimplifyRouteTemplate(
