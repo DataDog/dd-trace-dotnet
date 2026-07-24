@@ -430,7 +430,7 @@ namespace Datadog.Trace.Tests.Agent
                 maxBufferSize: SpanBufferMessagePackSerializer.HeaderSizeConst,
                 initialTracerMetricsEnabled: true);
 
-            agent.WriteTrace(CreateTraceChunk(2));
+            agent.WriteTrace(CreateTraceChunk(1));
 
             agent.FrontBuffer.IsEmpty.Should().BeTrue();
             agent.BackBuffer.IsEmpty.Should().BeTrue();
@@ -438,9 +438,9 @@ namespace Datadog.Trace.Tests.Agent
             agent.DroppedTracesTooLarge.Should().Be(1);
 
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.EnqueuedTraces, 1, 1, null), Times.Once);
-            statsd.Verify(s => s.Increment(TracerMetricNames.Queue.EnqueuedSpans, 2, 1, null), Times.Once);
+            statsd.Verify(s => s.Increment(TracerMetricNames.Queue.EnqueuedSpans, 1, 1, null), Times.Once);
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.DroppedTraces, 1, 1, null), Times.Once);
-            statsd.Verify(s => s.Increment(TracerMetricNames.Queue.DroppedSpans, 2, 1, null), Times.Once);
+            statsd.Verify(s => s.Increment(TracerMetricNames.Queue.DroppedSpans, 1, 1, null), Times.Once);
             statsd.VerifyNoOtherCalls();
 
             await agent.FlushTracesAsync();

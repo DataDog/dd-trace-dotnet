@@ -104,6 +104,12 @@ namespace Datadog.Trace.Agent
 
                 if (!EnsureCapacity(size + _offset))
                 {
+                    if (TraceCount == 0)
+                    {
+                        // The trace cannot fit in an empty buffer
+                        return WriteStatus.Overflow;
+                    }
+
                     IsFull = true;
                     return WriteStatus.Full;
                 }
