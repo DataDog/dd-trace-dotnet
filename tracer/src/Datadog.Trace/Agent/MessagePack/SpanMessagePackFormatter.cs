@@ -973,7 +973,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
         }
 
-        internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>
+        internal struct TagWriter : IItemProcessor<string>, IItemProcessor<int>, IItemProcessor<double>, IItemProcessor<byte[]>
         {
             private readonly SpanMessagePackFormatter _formatter;
             private readonly ITagProcessor[] _tagProcessors;
@@ -1002,6 +1002,21 @@ namespace Datadog.Trace.Agent.MessagePack
                 else
                 {
                     _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, item.Value, _tagProcessors);
+                }
+
+                Count++;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Process(TagItem<int> item)
+            {
+                if (item.SerializedKey.IsEmpty)
+                {
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.Key, item.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), _tagProcessors);
+                }
+                else
+                {
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, item.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), _tagProcessors);
                 }
 
                 Count++;

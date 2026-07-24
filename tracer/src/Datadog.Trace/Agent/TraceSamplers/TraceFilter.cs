@@ -237,7 +237,7 @@ internal sealed class TraceFilter
         }
     }
 
-    private struct RegexTagFilterProcessor : IItemProcessor<string>
+    private struct RegexTagFilterProcessor : IItemProcessor<string>, IItemProcessor<int>
     {
         private readonly RegexTagFilter _filter;
         public bool Matched;
@@ -258,6 +258,20 @@ internal sealed class TraceFilter
                     // Key-only filter: any matching key is sufficient
                     // Key:Value filter: value must also match
                     Matched = _filter.ValuePattern is null || _filter.ValuePattern.IsMatch(item.Value);
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Process(TagItem<int> item)
+        {
+            if (!Matched)
+            {
+                if (_filter.KeyPattern.IsMatch(item.Key))
+                {
+                    // Key-only filter: any matching key is sufficient
+                    // Key:Value filter: value must also match
+                    Matched = _filter.ValuePattern is null || _filter.ValuePattern.IsMatch(item.Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
                 }
             }
         }

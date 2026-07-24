@@ -412,7 +412,7 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
         throw new NotImplementedException();
     }
 
-    internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>
+    internal struct TagWriter : IItemProcessor<string>, IItemProcessor<int>, IItemProcessor<double>
     {
         private readonly SpanMessagePackFormatter _formatter;
         private readonly ITagProcessor[]? _tagProcessors;
@@ -441,6 +441,21 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
             else
             {
                 _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, item.Value, _tagProcessors);
+            }
+
+            Count++;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Process(TagItem<int> item)
+        {
+            if (item.SerializedKey.IsEmpty)
+            {
+                _formatter.WriteTag(ref Bytes, ref Offset, item.Key, item.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), _tagProcessors);
+            }
+            else
+            {
+                _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, item.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), _tagProcessors);
             }
 
             Count++;
