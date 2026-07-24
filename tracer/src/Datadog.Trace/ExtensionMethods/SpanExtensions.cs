@@ -111,9 +111,6 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
-        internal static string GetRawHttpStatusCodeString(this Span span)
-            => span.GetTag(Tags.HttpStatusCode);
-
         internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, MutableSettings tracerSettings)
         {
             if (statusCode < 100 || statusCode >= 600)

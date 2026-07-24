@@ -138,8 +138,8 @@ namespace Datadog.Trace.Processors
             }
             else
             {
-                string httpStatusCode = span.GetRawHttpStatusCodeString();
-                if (!string.IsNullOrEmpty(httpStatusCode) && !TraceUtil.IsValidStatusCode(httpStatusCode))
+                int? httpStatusCode = span.GetHttpStatusCode();
+                if (httpStatusCode is not null && !TraceUtil.IsValidStatusCode(httpStatusCode))
                 {
                     Log.Debug("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={InvalidStatusCode}: {Span}", httpStatusCode, span);
                     span.Tags.SetTag(Tags.HttpStatusCode, null);
