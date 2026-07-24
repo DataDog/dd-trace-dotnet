@@ -43,10 +43,15 @@ public sealed class FeatureFlagsSdkEvaluateIntegration
             return new CallTargetReturn<TReturn?>(returnValue);
         }
 
-        var parameters = (State)state.State!;
         var tracer = Datadog.Trace.Tracer.Instance;
-        var manager = tracer.TracerManager;
-        var res = manager.FeatureFlags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey ?? string.Empty, parameters.Attributes);
+        if (tracer.TracerManager.FeatureFlags is not { } flags)
+        {
+            // Feature flags disabled: don't touch async-local scope state for a no-op.
+            return new CallTargetReturn<TReturn?>(returnValue);
+        }
+
+        var parameters = (State)state.State!;
+        var res = flags.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey ?? string.Empty, parameters.Attributes);
         var traceContext = tracer.InternalActiveScope?.Span?.Context.TraceContext;
 
         // Skip creating per-trace state for evaluations that would record nothing.

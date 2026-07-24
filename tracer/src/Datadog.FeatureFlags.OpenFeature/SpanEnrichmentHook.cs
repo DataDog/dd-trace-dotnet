@@ -16,7 +16,7 @@ using OpenFeature.Model;
 
 namespace Datadog.FeatureFlags.OpenFeature;
 
-internal sealed class SpanEnrichmentHook : Hook, IDisposable
+internal sealed class SpanEnrichmentHook : Hook
 {
     /// <inheritdoc/>
     public override ValueTask FinallyAsync<T>(
@@ -53,19 +53,12 @@ internal sealed class SpanEnrichmentHook : Hook, IDisposable
 
             FeatureFlagsSdk.AccumulateSpanEnrichment(serialId, doLog, targetingKey, hasVariant, context.FlagKey, runtimeValue);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Enrichment must never break flag evaluation.
-            System.Diagnostics.Debug.WriteLine($"[Datadog] SpanEnrichmentHook.FinallyAsync failed: {ex}");
         }
 
         return default;
-    }
-
-    /// <inheritdoc/>
-    public void Dispose()
-    {
-        // No owned resources; per-trace enrichment state is released with its trace context.
     }
 
     private static object? ToPlainObject(Value? value)
@@ -75,11 +68,11 @@ internal sealed class SpanEnrichmentHook : Hook, IDisposable
             return null;
         }
 
-        if (value.IsStructure)
+        if (value.AsStructure is { } structure)
         {
-            var structure = value.AsStructure!.AsDictionary();
-            var dict = new Dictionary<string, object?>(structure.Count);
-            foreach (var pair in structure)
+            var orig = structure.AsDictionary();
+            var dict = new Dictionary<string, object?>(orig.Count);
+            foreach (var pair in orig)
             {
                 dict[pair.Key] = ToPlainObject(pair.Value);
             }
@@ -87,10 +80,10 @@ internal sealed class SpanEnrichmentHook : Hook, IDisposable
             return dict;
         }
 
-        if (value.IsList)
+        if (value.AsList is { } listValue)
         {
-            var list = new List<object?>();
-            foreach (var item in value.AsList!)
+            var list = new List<object?>(listValue.Count);
+            foreach (var item in listValue)
             {
                 list.Add(ToPlainObject(item));
             }
@@ -98,20 +91,18 @@ internal sealed class SpanEnrichmentHook : Hook, IDisposable
             return list;
         }
 
-        if (value.IsBoolean)
+        if (value.AsBoolean is { } boolValue)
         {
-            return value.AsBoolean;
+            return boolValue;
         }
 
-        if (value.IsString)
+        if (value.AsString is { } stringValue)
         {
-            return value.AsString;
+            return stringValue;
         }
 
-        if (value.IsNumber)
+        if (value.AsDouble is { } d)
         {
-            var d = value.AsDouble ?? 0d;
-
             if (!double.IsNaN(d) && !double.IsInfinity(d) && d == Math.Floor(d) && Math.Abs(d) < 9.007199254740992E15)
             {
                 return (long)d;
@@ -120,9 +111,9 @@ internal sealed class SpanEnrichmentHook : Hook, IDisposable
             return d;
         }
 
-        if (value.IsDateTime)
+        if (value.AsDateTime is { } dateTimeValue)
         {
-            return value.AsDateTime;
+            return dateTimeValue;
         }
 
         return null;

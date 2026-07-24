@@ -206,7 +206,7 @@ namespace Datadog.Trace.FeatureFlags
             var valueStr = StringifyDefault(value);
             if (valueStr.Length > MaxDefaultValueLength)
             {
-                valueStr = TruncateValue(valueStr, MaxDefaultValueLength);
+                valueStr = valueStr.Substring(0, MaxDefaultValueLength);
             }
 
             lock (_gate)
@@ -235,7 +235,7 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        internal IReadOnlyList<KeyValuePair<string, string>> ToSpanTags()
+        internal List<KeyValuePair<string, string>> ToSpanTags()
         {
             OnToSpanTagsForTesting?.Invoke();
 
@@ -312,16 +312,6 @@ namespace Datadog.Trace.FeatureFlags
                 default:
                     return JsonHelper.SerializeObject(value);
             }
-        }
-
-        private static string TruncateValue(string value, int maxChars)
-        {
-            if (value.Length <= maxChars)
-            {
-                return value;
-            }
-
-            return value.Substring(0, maxChars);
         }
     }
 }

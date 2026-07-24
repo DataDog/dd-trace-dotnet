@@ -22,10 +22,10 @@ using Xunit;
 namespace Datadog.Trace.Tests.FeatureFlags;
 
 /// <summary>
-/// Unit tests for the .NET FFE APM span-enrichment codec + accumulator + Span.Finish write
-/// path. Covers: the codec golden-vector round-trip, the accumulator caps/dedupe, the accumulate
-/// branch logic, and the Span.Finish write path (gate-on positive control, gate-off negative
-/// control, and per-trace state isolation).
+/// Unit tests for the .NET FFE APM span-enrichment accumulator + Span.Finish write path. Covers:
+/// the accumulator caps/dedupe, the accumulate branch logic, and the Span.Finish write path
+/// (gate-on positive control, gate-off negative control, and per-trace state isolation). The codec
+/// itself is covered by <see cref="ULeb128EncoderTests"/>.
 /// </summary>
 [TracerRestorer]
 public class SpanEnrichmentTests
@@ -38,49 +38,6 @@ public class SpanEnrichmentTests
     // Set by the concurrency race test's reader task when it observes the "Collection was
     // modified" failure; the test asserts this stays false post-fix.
     private static volatile bool _raceFailed;
-
-    // ---------------------------------------------------------------------
-    // Codec golden vector + round-trip
-    // ---------------------------------------------------------------------
-
-    [Fact]
-    public void Codec_GoldenVector_EncodesToZAgUAg()
-    {
-        // {100,108,128,130} -> deltas [100,8,20,2] -> ULEB128 [0x64,0x08,0x14,0x02] -> base64 "ZAgUAg=="
-        ULeb128Encoder.EncodeDeltaVarint(new long[] { 100, 108, 128, 130 }).Should().Be(GoldenBase64);
-    }
-
-    [Fact]
-    public void Codec_Empty_ReturnsEmptyString()
-    {
-        ULeb128Encoder.EncodeDeltaVarint(new long[0]).Should().Be(string.Empty);
-    }
-
-    [Fact]
-    public void Codec_RoundTrip_DecodesBackToSortedDedupedIds()
-    {
-        var input = new long[] { 130, 100, 108, 128, 100 }; // unsorted + duplicate
-        var encoded = ULeb128Encoder.EncodeDeltaVarint(input);
-        encoded.Should().Be(GoldenBase64);
-
-        var decoded = DecodeDeltaVarint(encoded);
-        decoded.Should().Equal(new long[] { 100, 108, 128, 130 });
-    }
-
-    [Fact]
-    public void Codec_MultiByteVarint_RoundTrips()
-    {
-        // 200 needs 2 ULEB128 bytes (0xC8 0x01); exercise the continuation-bit path.
-        var input = new long[] { 5, 205, 500 };
-        var decoded = DecodeDeltaVarint(ULeb128Encoder.EncodeDeltaVarint(input));
-        decoded.Should().Equal(input);
-    }
-
-    [Fact]
-    public void Codec_HashTargetingKey_MatchesFrozenSha256()
-    {
-        SpanEnrichmentState.HashTargetingKey("user-123").Should().Be(User123Sha256);
-    }
 
     // ---------------------------------------------------------------------
     // Accumulator: serial ids + dedupe + max-200
@@ -293,39 +250,25 @@ public class SpanEnrichmentTests
     {
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
         await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
-        TracerRestorerAttribute.SetTracer(tracer);
 
-        var rootScope = (Scope)tracer.StartActive("root-op", new SpanCreationSettings { FinishOnClose = false });
+        var rootScope = (Scope)tracer.StartActive("root-op");
         var rootSpan = rootScope.Span;
         rootSpan.IsRootSpan.Should().BeTrue();
 
-        try
-        {
-            using (var childScope = tracer.StartActive("child-op"))
+        var evaluation = new Evaluation(
+            "native-flag",
+            "enabled",
+            EvaluationReason.Static,
+            variant: "treatment",
+            metadata: new Dictionary<string, string>
             {
-                var evaluation = new Evaluation(
-                    "native-flag",
-                    "enabled",
-                    EvaluationReason.Static,
-                    variant: "treatment",
-                    metadata: new Dictionary<string, string>
-                    {
-                        [FeatureFlagsEvaluator.MetadataSplitSerialId] = "100",
-                        [FeatureFlagsEvaluator.MetadataDoLog] = "true"
-                    });
+                [FeatureFlagsEvaluator.MetadataSplitSerialId] = "100",
+                [FeatureFlagsEvaluator.MetadataDoLog] = "true"
+            });
 
-                // The evaluation happens on the child, but enrichment is keyed to the trace, so it
-                // accumulates onto the shared trace context and surfaces on the local root span.
-                ((Scope)childScope).Span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!
-                    .AccumulateEvaluation(evaluation, "user-123");
-            }
-        }
-        finally
-        {
-            rootScope.Dispose();
-        }
+        rootSpan.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!.AccumulateEvaluation(evaluation, "user-123");
 
-        rootSpan.Finish();
+        rootScope.Dispose(); // finishes the span, which writes the ffe_* tags
 
         DecodeDeltaVarint(rootSpan.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(new long[] { 100 });
         var subjects = JsonConvert.DeserializeObject<Dictionary<string, string>>(rootSpan.GetTag(SpanEnrichmentState.TagSubjectsEnc)!)!;

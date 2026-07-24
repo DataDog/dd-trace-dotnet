@@ -53,8 +53,8 @@ public class SpanEnrichmentIntegrationTests : TestHelper
             ]);
 
         var output = await RunTest(agent, spanEnrichmentEnabled: true);
-        Assert.Contains("<INSTRUMENTED>", output);
-        Assert.Contains("Exit. OK", output);
+        output.Should().Contain("<INSTRUMENTED>");
+        output.Should().Contain("Exit. OK");
 
         // The sample wraps flag evaluation in "ffe.root" and a child "ffe.child" (including an eval
         // after an await). Wait for both spans — don't filter by operation name, or the wait loop
@@ -113,8 +113,8 @@ public class SpanEnrichmentIntegrationTests : TestHelper
 
         // Flag provider on, but the span-enrichment gate OFF: spans must carry NO ffe_* tags.
         var output = await RunTest(agent, spanEnrichmentEnabled: false);
-        Assert.Contains("<INSTRUMENTED>", output);
-        Assert.Contains("Exit. OK", output);
+        output.Should().Contain("<INSTRUMENTED>");
+        output.Should().Contain("Exit. OK");
 
         // Wait for both spans (root + child); don't filter by operation name or the wait loop only
         // counts "ffe.root" spans and never reaches 2.

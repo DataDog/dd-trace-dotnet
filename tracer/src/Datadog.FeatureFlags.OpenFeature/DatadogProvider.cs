@@ -169,8 +169,7 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
 #if NET6_0_OR_GREATER
         _metricsHook.Dispose();
 #endif
-        // Per-trace enrichment state lives on the trace context and is released with the trace,
-        // so there is no global state to clear on provider close.
-        _spanEnrichmentHook?.Dispose();
+        // The span-enrichment hook owns no resources and per-trace enrichment state is released with
+        // the trace context, so there's nothing to dispose on provider close.
     }
 }
