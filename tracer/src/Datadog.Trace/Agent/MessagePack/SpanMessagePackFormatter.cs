@@ -879,10 +879,9 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            // add the "apm.enabled" tag with a value of 0 to every service-entry (aka top-level) span
-            // when APM tracing is disabled, so the backend flags each service in the trace correctly
-            // (not just the local root span).
-            if (!model.TraceChunk.IsApmEnabled && span.IsTopLevel)
+            // add the "apm.enabled" tag with a value of 0 to every span when APM tracing is disabled,
+            // so the backend flags every span in the trace as APM-disabled (not just service-entry spans).
+            if (!model.TraceChunk.IsApmEnabled)
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ApmEnabledNameBytes);

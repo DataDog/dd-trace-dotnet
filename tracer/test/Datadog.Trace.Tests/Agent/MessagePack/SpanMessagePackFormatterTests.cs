@@ -683,10 +683,10 @@ public class SpanMessagePackFormatterTests
     }
 
     [Fact]
-    public async Task ApmDisabled_WritesApmEnabledZero_OnAllServiceEntrySpans()
+    public async Task ApmDisabled_WritesApmEnabledZero_OnAllSpans()
     {
-        // When APM tracing is disabled, "_dd.apm.enabled":0 must be written to EVERY service-entry
-        // (top-level) span, not just the local root span, so the backend flags each service correctly.
+        // When APM tracing is disabled, "_dd.apm.enabled":0 must be written to EVERY span
+        // (not just service-entry spans), so the backend flags every span in the trace correctly.
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.ApmTracingEnabled, false } });
         await using var tracer = TracerHelper.Create(settings);
         var traceContext = new TraceContext(tracer);
@@ -696,7 +696,7 @@ public class SpanMessagePackFormatterTests
         var root = new Span(rootContext, DateTimeOffset.UtcNow);
         root.OperationName = "root";
 
-        // child in the SAME service A -> NOT a service-entry span
+        // child in the SAME service A -> not a service-entry span
         var sameServiceContext = new SpanContext(rootContext, traceContext, "service-A");
         var sameService = new Span(sameServiceContext, DateTimeOffset.UtcNow);
         sameService.OperationName = "same-service-child";
@@ -719,16 +719,12 @@ public class SpanMessagePackFormatterTests
         var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
 
         result.Should().HaveCount(3);
-        var rootSpan = result.Single(s => s.Name == "root");
-        var sameServiceSpan = result.Single(s => s.Name == "same-service-child");
-        var otherServiceSpan = result.Single(s => s.Name == "other-service-child");
 
-        // service-entry spans (local root AND the different-service child) get the tag
-        rootSpan.GetMetric("_dd.apm.enabled").Should().Be(0d);
-        otherServiceSpan.GetMetric("_dd.apm.enabled").Should().Be(0d);
-
-        // same-service child is not a service-entry span, so it must NOT get the tag
-        sameServiceSpan.GetMetric("_dd.apm.enabled").Should().BeNull();
+        // every span gets the tag, regardless of whether it is a service-entry span
+        foreach (var span in result)
+        {
+            span.GetMetric("_dd.apm.enabled").Should().Be(0d);
+        }
     }
 
     private readonly struct TagsProcessor<T> : IItemProcessor<T>
