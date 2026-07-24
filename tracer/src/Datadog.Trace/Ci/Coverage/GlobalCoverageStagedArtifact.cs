@@ -7,6 +7,7 @@
 
 using System;
 using System.IO;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage;
 
@@ -18,16 +19,21 @@ internal sealed class GlobalCoverageStagedArtifact : IDisposable
     private readonly bool _replaceExisting;
     private string? _temporaryPath;
 
-    internal GlobalCoverageStagedArtifact(string temporaryPath, string destinationPath, bool replaceExisting)
+    public GlobalCoverageStagedArtifact(string temporaryPath, string destinationPath, bool replaceExisting)
     {
         _temporaryPath = temporaryPath;
         _destinationPath = destinationPath;
         _replaceExisting = replaceExisting;
     }
 
-    internal void Commit()
+    public void Commit()
     {
-        var temporaryPath = _temporaryPath ?? throw new InvalidOperationException("The staged global coverage artifact is no longer available.");
+        var temporaryPath = _temporaryPath;
+        if (temporaryPath is null)
+        {
+            ThrowHelper.ThrowInvalidOperationException("The staged global coverage artifact is no longer available.");
+        }
+
         if (_replaceExisting && File.Exists(_destinationPath))
         {
             File.Replace(temporaryPath, _destinationPath, null);

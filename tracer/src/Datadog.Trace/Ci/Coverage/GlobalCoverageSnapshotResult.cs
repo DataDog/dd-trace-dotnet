@@ -16,15 +16,15 @@ internal readonly struct GlobalCoverageSnapshotResult
         FailureReason = failureReason;
     }
 
-    internal GlobalCoverageSnapshotStatus Status { get; }
+    public GlobalCoverageSnapshotStatus Status { get; }
 
-    internal GlobalCoverageSnapshot? Snapshot { get; }
+    public GlobalCoverageSnapshot? Snapshot { get; }
 
-    internal GlobalCoverageFailureReason FailureReason { get; }
+    public GlobalCoverageFailureReason FailureReason { get; }
 
-    internal static GlobalCoverageSnapshotResult Success(GlobalCoverageSnapshot snapshot)
+    public static GlobalCoverageSnapshotResult Success(GlobalCoverageSnapshot snapshot)
         => new(GlobalCoverageSnapshotStatus.Success, snapshot, GlobalCoverageFailureReason.None);
 
-    internal static GlobalCoverageSnapshotResult Suppressed(GlobalCoverageFailureReason reason)
+    public static GlobalCoverageSnapshotResult Suppressed(GlobalCoverageFailureReason reason)
         => new(GlobalCoverageSnapshotStatus.SuppressedIncomplete, null, reason);
 }

@@ -9,7 +9,7 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal readonly struct GlobalCoverageAccumulatorSnapshot
 {
-    internal GlobalCoverageAccumulatorSnapshot(long generationId, int retainedBitmapBytes, int moduleCount, int fileSlotCount, long acceptedContextCount, bool isValid, GlobalCoverageFailureReason failureReason)
+    public GlobalCoverageAccumulatorSnapshot(long generationId, int retainedBitmapBytes, int moduleCount, int fileSlotCount, long acceptedContextCount, bool isValid, GlobalCoverageFailureReason failureReason)
     {
         GenerationId = generationId;
         RetainedBitmapBytes = retainedBitmapBytes;
@@ -20,17 +20,17 @@ internal readonly struct GlobalCoverageAccumulatorSnapshot
         FailureReason = failureReason;
     }
 
-    internal long GenerationId { get; }
+    public long GenerationId { get; }
 
-    internal int RetainedBitmapBytes { get; }
+    public int RetainedBitmapBytes { get; }
 
-    internal int ModuleCount { get; }
+    public int ModuleCount { get; }
 
-    internal int FileSlotCount { get; }
+    public int FileSlotCount { get; }
 
-    internal long AcceptedContextCount { get; }
+    public long AcceptedContextCount { get; }
 
-    internal bool IsValid { get; }
+    public bool IsValid { get; }
 
-    internal GlobalCoverageFailureReason FailureReason { get; }
+    public GlobalCoverageFailureReason FailureReason { get; }
 }

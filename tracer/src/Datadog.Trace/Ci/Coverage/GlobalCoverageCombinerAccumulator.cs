@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Ci.Coverage.Models.Global;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage;
 
@@ -22,16 +23,16 @@ internal sealed class GlobalCoverageCombinerAccumulator
     private long _bitmapBytes;
     private bool _materialized;
 
-    internal GlobalCoverageCombinerAccumulator(GlobalCoverageArtifactLimits? limits = null)
+    public GlobalCoverageCombinerAccumulator(GlobalCoverageArtifactLimits? limits = null)
     {
         _limits = limits ?? GlobalCoverageArtifactLimits.Default;
     }
 
-    internal void Add(GlobalCoverageInfo model)
+    public void Add(GlobalCoverageInfo model)
     {
         if (_materialized)
         {
-            throw new InvalidOperationException("The global coverage accumulator has already been materialized.");
+            ThrowHelper.ThrowInvalidOperationException("The global coverage accumulator has already been materialized.");
         }
 
         foreach (var component in model.Components)
@@ -79,11 +80,11 @@ internal sealed class GlobalCoverageCombinerAccumulator
         }
     }
 
-    internal GlobalCoverageInfo Materialize()
+    public GlobalCoverageInfo Materialize()
     {
         if (_materialized)
         {
-            throw new InvalidOperationException("The global coverage accumulator has already been materialized.");
+            ThrowHelper.ThrowInvalidOperationException("The global coverage accumulator has already been materialized.");
         }
 
         _materialized = true;
@@ -169,7 +170,7 @@ internal sealed class GlobalCoverageCombinerAccumulator
 
     private readonly struct NullableStringKey : IEquatable<NullableStringKey>
     {
-        internal NullableStringKey(string? value)
+        public NullableStringKey(string? value)
         {
             Value = value;
         }
@@ -185,31 +186,31 @@ internal sealed class GlobalCoverageCombinerAccumulator
 
     private sealed class ComponentAccumulator
     {
-        internal ComponentAccumulator(string? name)
+        public ComponentAccumulator(string? name)
         {
             Name = name;
         }
 
-        internal string? Name { get; }
+        public string? Name { get; }
 
-        internal Dictionary<NullableStringKey, FileAccumulator> Files { get; } = new();
+        public Dictionary<NullableStringKey, FileAccumulator> Files { get; } = new();
 
-        internal List<FileAccumulator> FileOrder { get; } = new();
+        public List<FileAccumulator> FileOrder { get; } = new();
     }
 
     private sealed class FileAccumulator
     {
-        internal FileAccumulator(string? path, byte[]? executableBitmap, byte[]? executedBitmap)
+        public FileAccumulator(string? path, byte[]? executableBitmap, byte[]? executedBitmap)
         {
             Path = path;
             ExecutableBitmap = executableBitmap;
             ExecutedBitmap = executedBitmap;
         }
 
-        internal string? Path { get; }
+        public string? Path { get; }
 
-        internal byte[]? ExecutableBitmap { get; set; }
+        public byte[]? ExecutableBitmap { get; set; }
 
-        internal byte[]? ExecutedBitmap { get; set; }
+        public byte[]? ExecutedBitmap { get; set; }
     }
 }

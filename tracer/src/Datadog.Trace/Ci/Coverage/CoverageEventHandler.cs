@@ -12,6 +12,7 @@ using System.Threading;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage;
 
@@ -21,11 +22,11 @@ internal abstract class CoverageEventHandler
     private readonly CoverageContextContainer _globalContainer = new(bufferKind: ModuleValue.BufferKind.GlobalFallback);
     private readonly CoverageContextDiagnostics _contextDiagnostics = new();
 
-    internal CoverageContextContainer? Container => _asyncContext.Value;
+    public CoverageContextContainer? Container => _asyncContext.Value;
 
-    internal CoverageContextContainer GlobalContainer => _globalContainer;
+    public CoverageContextContainer GlobalContainer => _globalContainer;
 
-    internal CoverageContextDiagnosticSnapshot ContextDiagnostics => _contextDiagnostics.GetSnapshot();
+    public CoverageContextDiagnosticSnapshot ContextDiagnostics => _contextDiagnostics.GetSnapshot();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public CoverageSessionHandle StartSession(string? testingFramework = null)
@@ -81,7 +82,7 @@ internal abstract class CoverageEventHandler
 
         if (!ReferenceEquals(handle.Owner, this))
         {
-            throw new InvalidOperationException("The coverage session handle belongs to another handler.");
+            ThrowHelper.ThrowInvalidOperationException("The coverage session handle belongs to another handler.");
         }
 
         var context = handle.Context!;
@@ -120,7 +121,7 @@ internal abstract class CoverageEventHandler
         }
     }
 
-    internal void AbortSession(CoverageSessionHandle handle, GlobalCoverageFailureReason reason)
+    public void AbortSession(CoverageSessionHandle handle, GlobalCoverageFailureReason reason)
     {
         try
         {
@@ -157,7 +158,7 @@ internal abstract class CoverageEventHandler
         }
     }
 
-    internal void MarkProbeDataIncomplete(GlobalCoverageFailureReason reason)
+    public void MarkProbeDataIncomplete(GlobalCoverageFailureReason reason)
     {
         try
         {

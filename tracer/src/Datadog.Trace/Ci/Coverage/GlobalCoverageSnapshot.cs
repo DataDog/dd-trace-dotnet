@@ -8,6 +8,7 @@
 using System;
 using System.Threading;
 using Datadog.Trace.Ci.Coverage.Models.Global;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage;
 
@@ -20,7 +21,7 @@ internal sealed class GlobalCoverageSnapshot : IDisposable
     private int _outputInitialized;
     private int _disposed;
 
-    internal GlobalCoverageSnapshot(
+    public GlobalCoverageSnapshot(
         GlobalCoverageInfo model,
         long generationId,
         long mergedContextCount,
@@ -36,32 +37,32 @@ internal sealed class GlobalCoverageSnapshot : IDisposable
         _releaseAdmission = releaseAdmission;
     }
 
-    internal GlobalCoverageInfo Model { get; }
+    public GlobalCoverageInfo Model { get; }
 
-    internal long GenerationId { get; }
+    public long GenerationId { get; }
 
-    internal long MergedContextCount { get; }
+    public long MergedContextCount { get; }
 
-    internal long CompletenessEpoch { get; }
+    public long CompletenessEpoch { get; }
 
-    internal bool IsDisposed => Volatile.Read(ref _disposed) != 0;
+    public bool IsDisposed => Volatile.Read(ref _disposed) != 0;
 
-    internal byte RequiredOutputMask => (byte)(Volatile.Read(ref _outputMasks) & 0xff);
+    public byte RequiredOutputMask => (byte)(Volatile.Read(ref _outputMasks) & 0xff);
 
-    internal byte CommittedOutputMask => (byte)((Volatile.Read(ref _outputMasks) >> 8) & 0xff);
+    public byte CommittedOutputMask => (byte)((Volatile.Read(ref _outputMasks) >> 8) & 0xff);
 
-    internal void InitializeOutput(byte requiredOutputMask, Action<GlobalCoverageSnapshot> disposeCallback)
+    public void InitializeOutput(byte requiredOutputMask, Action<GlobalCoverageSnapshot> disposeCallback)
     {
         if (Interlocked.CompareExchange(ref _outputInitialized, 1, 0) != 0)
         {
-            throw new InvalidOperationException("The global coverage snapshot output mask was already initialized.");
+            ThrowHelper.ThrowInvalidOperationException("The global coverage snapshot output mask was already initialized.");
         }
 
         Volatile.Write(ref _outputMasks, requiredOutputMask);
         _disposeCallback = disposeCallback;
     }
 
-    internal void RecordOutputCommit(byte bit)
+    public void RecordOutputCommit(byte bit)
     {
         while (true)
         {

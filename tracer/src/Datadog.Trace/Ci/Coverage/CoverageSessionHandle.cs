@@ -9,7 +9,7 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal sealed class CoverageSessionHandle
 {
-    internal static readonly CoverageSessionHandle Invalid = new();
+    public static readonly CoverageSessionHandle Invalid = new();
 
     private CoverageSessionHandle()
     {
@@ -18,22 +18,22 @@ internal sealed class CoverageSessionHandle
         Admission = CoverageContextAdmission.Noop;
     }
 
-    internal CoverageSessionHandle(CoverageEventHandler owner, CoverageContextContainer context, CoverageContextAdmission admission)
+    public CoverageSessionHandle(CoverageEventHandler owner, CoverageContextContainer context, CoverageContextAdmission admission)
     {
         Owner = owner;
         Context = context;
         Admission = admission;
     }
 
-    internal CoverageEventHandler? Owner { get; }
+    public CoverageEventHandler? Owner { get; }
 
-    internal CoverageContextContainer? Context { get; }
+    public CoverageContextContainer? Context { get; }
 
-    internal CoverageContextAdmission Admission { get; }
+    public CoverageContextAdmission Admission { get; }
 
-    internal bool IsValid => Owner is not null && Context is not null;
+    public bool IsValid => Owner is not null && Context is not null;
 
-    internal void AbortIncomplete(GlobalCoverageFailureReason reason)
+    public void AbortIncomplete(GlobalCoverageFailureReason reason)
     {
         Owner?.AbortSession(this, reason);
     }

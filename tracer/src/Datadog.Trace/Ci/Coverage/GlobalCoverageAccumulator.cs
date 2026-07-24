@@ -42,7 +42,7 @@ internal sealed class GlobalCoverageAccumulator
     private long _completenessEpoch;
     private bool _completenessFinalized;
 
-    internal GlobalCoverageAccumulator(GlobalCoverageAccumulatorLimits? limits = null)
+    public GlobalCoverageAccumulator(GlobalCoverageAccumulatorLimits? limits = null)
     {
         _limits = limits ?? GlobalCoverageAccumulatorLimits.Default;
         _activeGeneration = CreateGeneration();
@@ -55,9 +55,9 @@ internal sealed class GlobalCoverageAccumulator
         DetachedOwned,
     }
 
-    internal bool IsSuppressed => Volatile.Read(ref _suppressed) != 0;
+    public bool IsSuppressed => Volatile.Read(ref _suppressed) != 0;
 
-    internal GlobalCoverageFailureReason FailureReason => (GlobalCoverageFailureReason)Volatile.Read(ref _failureReason);
+    public GlobalCoverageFailureReason FailureReason => (GlobalCoverageFailureReason)Volatile.Read(ref _failureReason);
 
     private static bool IsRecoverable(Exception exception)
         => exception is OutOfMemoryException or OverflowException or GlobalCoverageLimitException or GlobalCoverageMetadataException;
@@ -92,7 +92,7 @@ internal sealed class GlobalCoverageAccumulator
         return globalCoverage;
     }
 
-    internal GlobalCoverageMergeResult TryMerge(IReadOnlyList<ModuleValue> modules)
+    public GlobalCoverageMergeResult TryMerge(IReadOnlyList<ModuleValue> modules)
     {
         if (IsSuppressed)
         {
@@ -120,7 +120,7 @@ internal sealed class GlobalCoverageAccumulator
         }
     }
 
-    internal void Suppress(GlobalCoverageFailureReason reason)
+    public void Suppress(GlobalCoverageFailureReason reason)
     {
         lock (_completenessGate)
         {
@@ -130,7 +130,7 @@ internal sealed class GlobalCoverageAccumulator
         ClearActiveGeneration();
     }
 
-    internal bool TryCommit(GlobalCoverageSnapshot snapshot, Action action)
+    public bool TryCommit(GlobalCoverageSnapshot snapshot, Action action)
     {
         ExceptionDispatchInfo? exception = null;
         var committed = false;
@@ -160,7 +160,7 @@ internal sealed class GlobalCoverageAccumulator
         return committed;
     }
 
-    internal bool TryFinalizeCompleteness(Action commitReady)
+    public bool TryFinalizeCompleteness(Action commitReady)
     {
         var failed = false;
         lock (_completenessGate)
@@ -213,7 +213,7 @@ internal sealed class GlobalCoverageAccumulator
         }
     }
 
-    internal GlobalCoverageSnapshotResult AcquireSnapshot(CoverageContextContainer globalContainer, Action? releaseAdmission = null)
+    public GlobalCoverageSnapshotResult AcquireSnapshot(CoverageContextContainer globalContainer, Action? releaseAdmission = null)
     {
         _snapshotGate.Wait();
         var releaseSnapshotGate = true;
@@ -280,7 +280,7 @@ internal sealed class GlobalCoverageAccumulator
         }
     }
 
-    internal GlobalCoverageAccumulatorSnapshot GetDiagnostics()
+    public GlobalCoverageAccumulatorSnapshot GetDiagnostics()
     {
         lock (_mergeGate)
         {
@@ -392,32 +392,32 @@ internal sealed class GlobalCoverageAccumulator
 
     private sealed class Generation
     {
-        internal Generation(long id)
+        public Generation(long id)
         {
             Id = id;
         }
 
-        internal long Id { get; }
+        public long Id { get; }
 
-        internal Dictionary<Module, ModuleEntry> Modules { get; } = new();
+        public Dictionary<Module, ModuleEntry> Modules { get; } = new();
 
-        internal int RetainedBitmapBytes { get; set; }
+        public int RetainedBitmapBytes { get; set; }
 
-        internal int FileSlotCount { get; set; }
+        public int FileSlotCount { get; set; }
 
-        internal long AcceptedContextCount { get; set; }
+        public long AcceptedContextCount { get; set; }
     }
 
     private sealed class ModuleEntry
     {
-        internal ModuleEntry(ModuleCoverageMetadata metadata)
+        public ModuleEntry(ModuleCoverageMetadata metadata)
         {
             Metadata = metadata;
             ExecutedBitmaps = new byte[metadata.Files.Length][];
         }
 
-        internal ModuleCoverageMetadata Metadata { get; }
+        public ModuleCoverageMetadata Metadata { get; }
 
-        internal byte[]?[] ExecutedBitmaps { get; }
+        public byte[]?[] ExecutedBitmaps { get; }
     }
 }

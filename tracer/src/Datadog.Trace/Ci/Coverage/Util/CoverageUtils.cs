@@ -11,6 +11,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Models.Global;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 internal static class CoverageUtils
 {
@@ -24,7 +25,7 @@ internal static class CoverageUtils
     public static bool TryCombineAndGetTotalCoverage(string? inputFolder, string? outputFile, out GlobalCoverageInfo? globalCoverageInfo)
     {
         globalCoverageInfo = null;
-        if (string.IsNullOrEmpty(outputFile))
+        if (StringUtil.IsNullOrEmpty(outputFile))
         {
             globalCoverageInfo = null;
             return false;
@@ -38,7 +39,8 @@ internal static class CoverageUtils
                 return false;
             }
 
-            new GlobalCoverageArtifactWriter().WriteAtomicReplace(outputFile!, globalCoverageInfo!);
+            var writer = new GlobalCoverageArtifactWriter();
+            writer.WriteAtomicReplace(outputFile!, globalCoverageInfo!);
             reconciliationLease?.Complete();
             return true;
         }
@@ -54,7 +56,7 @@ internal static class CoverageUtils
         return false;
     }
 
-    internal static bool TryReadAndCombine(
+    public static bool TryReadAndCombine(
         string? inputFolder,
         string? outputFile,
         GlobalCoverageReconciliationAuthority? authority,
@@ -66,7 +68,7 @@ internal static class CoverageUtils
 
         try
         {
-            if (string.IsNullOrEmpty(inputFolder))
+            if (StringUtil.IsNullOrEmpty(inputFolder))
             {
                 return false;
             }

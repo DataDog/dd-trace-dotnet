@@ -18,7 +18,7 @@ internal static class GlobalCoverageFileCombiner
 {
     private const int MaximumInputFiles = 65_536;
 
-    internal static bool TryAcquireInputFiles(
+    public static bool TryAcquireInputFiles(
         string inputFolder,
         GlobalCoverageReconciliationAuthority? authority,
         out string[] inputFiles,
@@ -39,7 +39,7 @@ internal static class GlobalCoverageFileCombiner
         return true;
     }
 
-    internal static bool TryCombine(
+    public static bool TryCombine(
         IReadOnlyList<string> inputFiles,
         string? outputFile,
         GlobalCoverageReconciliationLease? reconciliationLease,

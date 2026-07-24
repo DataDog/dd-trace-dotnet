@@ -8,6 +8,7 @@
 using System;
 using System.IO;
 using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage;
 
@@ -26,7 +27,7 @@ internal sealed class GlobalCoverageJsonPreflightScanner
     private long _bitmapBytes;
     private TextReader? _reader;
 
-    internal GlobalCoverageJsonPreflightScanner(GlobalCoverageArtifactLimits limits)
+    public GlobalCoverageJsonPreflightScanner(GlobalCoverageArtifactLimits limits)
     {
         _limits = limits;
         _readBuffer = new char[limits.ScannerBufferCharacters];
@@ -78,7 +79,7 @@ internal sealed class GlobalCoverageJsonPreflightScanner
                character is '+' or '/';
     }
 
-    internal void Scan(Stream stream)
+    public void Scan(Stream stream)
     {
         _reader = new StreamReader(stream, new UTF8Encoding(false, true), true, _limits.ScannerBufferCharacters, true);
         _readOffset = 0;
@@ -452,7 +453,7 @@ internal sealed class GlobalCoverageJsonPreflightScanner
     {
         if (_readOffset == 0)
         {
-            throw new InvalidOperationException("The global coverage scanner cannot unread across a buffer boundary.");
+            ThrowHelper.ThrowInvalidOperationException("The global coverage scanner cannot unread across a buffer boundary.");
         }
 
         _readOffset--;
@@ -460,12 +461,12 @@ internal sealed class GlobalCoverageJsonPreflightScanner
 
     private struct Frame
     {
-        internal ContainerKind Kind;
-        internal ArrayKind ArrayKind;
-        internal bool ExpectingProperty;
-        internal PropertyKind PendingProperty;
+        public ContainerKind Kind;
+        public ArrayKind ArrayKind;
+        public bool ExpectingProperty;
+        public PropertyKind PendingProperty;
 
-        internal Frame(ContainerKind kind, ArrayKind arrayKind, bool expectingProperty)
+        public Frame(ContainerKind kind, ArrayKind arrayKind, bool expectingProperty)
         {
             Kind = kind;
             ArrayKind = arrayKind;

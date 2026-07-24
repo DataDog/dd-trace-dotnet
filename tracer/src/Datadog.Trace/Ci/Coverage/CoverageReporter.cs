@@ -31,7 +31,15 @@ public static class CoverageReporter
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => LazyInitializer.EnsureInitialized(ref _handler, static () => CreateDefaultHandler(TestOptimization.Instance.Settings))!;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set => Volatile.Write(ref _handler, value ?? throw new ArgumentNullException(nameof(value)));
+        set
+        {
+            if (value is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(value));
+            }
+
+            Volatile.Write(ref _handler, value);
+        }
     }
 
     internal static CoverageContextContainer? Container => Handler.Container;
@@ -55,7 +63,7 @@ public static class CoverageReporter
     {
         if (settings is null)
         {
-            throw new ArgumentNullException(nameof(settings));
+            ThrowHelper.ThrowArgumentNullException(nameof(settings));
         }
 
         return settings.TestsSkippingEnabled == true && StringUtil.IsNullOrWhiteSpace(settings.CodeCoveragePath)

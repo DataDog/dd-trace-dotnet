@@ -98,7 +98,7 @@ public static class CoverageReporter<TMeta>
                 ModuleMemorySize,
                 out var module) || module is null)
         {
-            throw new InvalidOperationException("The global coverage context is unexpectedly closed.");
+            ThrowHelper.ThrowInvalidOperationException("The global coverage context is unexpectedly closed.");
         }
 
         Interlocked.CompareExchange(ref _globalModuleValue, module, null);

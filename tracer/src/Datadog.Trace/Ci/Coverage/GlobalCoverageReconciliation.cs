@@ -26,7 +26,7 @@ internal static class GlobalCoverageReconciliation
     private static readonly Encoding StrictUtf8 = new UTF8Encoding(false, true);
     private static readonly StringComparer PathComparer = FrameworkDescription.Instance.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 
-    internal static bool TryAcquire(
+    public static bool TryAcquire(
         string inputDirectory,
         GlobalCoverageReconciliationAuthority? authority,
         out GlobalCoverageReconciliationLease? lease,
@@ -683,25 +683,25 @@ internal static class GlobalCoverageReconciliation
 
     private sealed class Participant
     {
-        internal Participant(IReadOnlyList<GlobalCoverageMarkerRecord> readyRecords)
+        public Participant(IReadOnlyList<GlobalCoverageMarkerRecord> readyRecords)
         {
             ReadyRecords = readyRecords;
         }
 
-        internal IReadOnlyList<GlobalCoverageMarkerRecord> ReadyRecords { get; }
+        public IReadOnlyList<GlobalCoverageMarkerRecord> ReadyRecords { get; }
     }
 
     private sealed class FileFingerprint
     {
-        internal FileFingerprint(long length, byte[] hash)
+        public FileFingerprint(long length, byte[] hash)
         {
             Length = length;
             Hash = hash;
         }
 
-        internal long Length { get; }
+        public long Length { get; }
 
-        internal byte[] Hash { get; }
+        public byte[] Hash { get; }
     }
 
     private sealed class ProtocolMetadataBudget
@@ -709,17 +709,18 @@ internal static class GlobalCoverageReconciliation
         private readonly HashSet<string> _paths = new(PathComparer);
         private long _bytes;
 
-        internal void AddFile(string path)
+        public void AddFile(string path)
         {
             if (!_paths.Add(path))
             {
                 return;
             }
 
-            AddBytes(path, new FileInfo(path).Length);
+            var file = new FileInfo(path);
+            AddBytes(path, file.Length);
         }
 
-        internal void AddPath(string path)
+        public void AddPath(string path)
         {
             if (_paths.Add(path))
             {

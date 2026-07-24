@@ -11,29 +11,29 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal sealed class GlobalCoverageMarkerRecord
 {
-    internal int Version { get; set; }
+    public int Version { get; set; }
 
-    internal string? Status { get; set; }
+    public string? Status { get; set; }
 
-    internal string? RunToken { get; set; }
+    public string? RunToken { get; set; }
 
-    internal int ProcessId { get; set; }
+    public int ProcessId { get; set; }
 
-    internal string? Nonce { get; set; }
+    public string? Nonce { get; set; }
 
-    internal string? Directory { get; set; }
+    public string? Directory { get; set; }
 
-    internal int RequiredMask { get; set; }
+    public int RequiredMask { get; set; }
 
-    internal long CommittedGenerations { get; set; }
+    public long CommittedGenerations { get; set; }
 
-    internal long Started { get; set; }
+    public long Started { get; set; }
 
-    internal long Closed { get; set; }
+    public long Closed { get; set; }
 
-    internal long Disposed { get; set; }
+    public long Disposed { get; set; }
 
-    internal bool Coordinator { get; set; }
+    public bool Coordinator { get; set; }
 
-    internal List<string> Directories { get; } = new(2);
+    public List<string> Directories { get; } = new(2);
 }

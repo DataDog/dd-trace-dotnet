@@ -19,7 +19,7 @@ internal sealed class GlobalCoverageBoundedWriteStream : Stream
     private readonly string _limitExceededMessage;
     private long _writtenBytes;
 
-    internal GlobalCoverageBoundedWriteStream(Stream inner, long maximumBytes, string limitExceededMessage)
+    public GlobalCoverageBoundedWriteStream(Stream inner, long maximumBytes, string limitExceededMessage)
     {
         _inner = inner;
         _maximumBytes = maximumBytes;

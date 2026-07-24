@@ -9,7 +9,7 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal sealed class GlobalCoverageOutputRegistration
 {
-    internal GlobalCoverageOutputRegistration(byte bit, string directory, string pendingPath, string readyPath, bool coordinator)
+    public GlobalCoverageOutputRegistration(byte bit, string directory, string pendingPath, string readyPath, bool coordinator)
     {
         Bit = bit;
         Directory = directory;
@@ -18,13 +18,13 @@ internal sealed class GlobalCoverageOutputRegistration
         IsCoordinator = coordinator;
     }
 
-    internal byte Bit { get; }
+    public byte Bit { get; }
 
-    internal string Directory { get; }
+    public string Directory { get; }
 
-    internal string PendingPath { get; }
+    public string PendingPath { get; }
 
-    internal string ReadyPath { get; }
+    public string ReadyPath { get; }
 
-    internal bool IsCoordinator { get; set; }
+    public bool IsCoordinator { get; set; }
 }

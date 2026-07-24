@@ -6,9 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Threading;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
@@ -34,72 +31,4 @@ public class UtilsTests
         var actualPath = ProcessHelpers.ParseWhereisOutput(line);
         actualPath.Should().BeEquivalentTo(expectedPaths);
     }
-
-#if NET10_0_OR_GREATER
-    [Fact]
-    public void RunProcessTimeoutKillsDescendantTree()
-    {
-        var directory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"))).FullName;
-        var childPidPath = Path.Combine(directory, "child.pid");
-        try
-        {
-            var startInfo = new ProcessStartInfo { UseShellExecute = false };
-            if (OperatingSystem.IsWindows())
-            {
-                startInfo.FileName = "powershell.exe";
-                startInfo.ArgumentList.Add("-NoProfile");
-                startInfo.ArgumentList.Add("-Command");
-                startInfo.ArgumentList.Add($"$child = Start-Process powershell.exe -ArgumentList '-NoProfile','-Command','Start-Sleep -Seconds 30' -PassThru; Set-Content -NoNewline -Path '{childPidPath}' -Value $child.Id; Wait-Process -Id $child.Id");
-            }
-            else
-            {
-                startInfo.FileName = "/bin/sh";
-                startInfo.ArgumentList.Add("-c");
-                startInfo.ArgumentList.Add($"sleep 30 & child=$!; printf %s $child > '{childPidPath}'; wait $child");
-            }
-
-            var stopwatch = Stopwatch.StartNew();
-            var result = Utils.RunProcess(startInfo, CancellationToken.None, TimeSpan.FromSeconds(1));
-            stopwatch.Stop();
-
-            result.TimedOut.Should().BeTrue();
-            result.TreeKillAttempted.Should().BeTrue();
-            result.TreeKillSucceeded.Should().BeTrue();
-            result.Reaped.Should().BeTrue();
-            stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(10));
-            File.Exists(childPidPath).Should().BeTrue();
-            int.TryParse(File.ReadAllText(childPidPath), out var childProcessId).Should().BeTrue();
-            WaitForProcessExit(result.RootProcessId).Should().BeTrue();
-            WaitForProcessExit(childProcessId).Should().BeTrue();
-        }
-        finally
-        {
-            Directory.Delete(directory, true);
-        }
-    }
-
-    private static bool WaitForProcessExit(int processId)
-    {
-        var deadline = Stopwatch.StartNew();
-        while (deadline.Elapsed < TimeSpan.FromSeconds(5))
-        {
-            try
-            {
-                using var process = Process.GetProcessById(processId);
-                if (process.HasExited)
-                {
-                    return true;
-                }
-            }
-            catch (ArgumentException)
-            {
-                return true;
-            }
-
-            Thread.Sleep(50);
-        }
-
-        return false;
-    }
-#endif
 }

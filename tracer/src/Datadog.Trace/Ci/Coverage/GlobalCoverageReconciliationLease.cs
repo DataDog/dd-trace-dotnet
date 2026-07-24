@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage;
 
@@ -19,7 +20,7 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
     private GlobalCoverageReconciliationAuthority? _authority;
     private int _completed;
 
-    internal GlobalCoverageReconciliationLease(
+    public GlobalCoverageReconciliationLease(
         FileStream lockStream,
         GlobalCoverageReconciliationAuthority authority,
         string runToken,
@@ -45,22 +46,22 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
         Directories = directories;
     }
 
-    internal string RunToken { get; }
+    public string RunToken { get; }
 
-    internal IReadOnlyList<GlobalCoverageCertifiedInput> SelectedInputs { get; }
+    public IReadOnlyList<GlobalCoverageCertifiedInput> SelectedInputs { get; }
 
-    internal IReadOnlyList<GlobalCoverageCertifiedInput> AllRawInputs { get; }
+    public IReadOnlyList<GlobalCoverageCertifiedInput> AllRawInputs { get; }
 
-    internal IReadOnlyList<string> ReadyMarkers { get; }
+    public IReadOnlyList<string> ReadyMarkers { get; }
 
-    internal IReadOnlyList<string> PendingMarkers { get; }
+    public IReadOnlyList<string> PendingMarkers { get; }
 
-    internal IReadOnlyList<string> Directories { get; }
+    public IReadOnlyList<string> Directories { get; }
 
-    internal GlobalCoverageCertifiedInput? GetCertifiedInput(string path)
+    public GlobalCoverageCertifiedInput? GetCertifiedInput(string path)
         => _selectedByPath.TryGetValue(path, out var input) ? input : null;
 
-    internal void Complete()
+    public void Complete()
     {
         if (Interlocked.Exchange(ref _completed, 1) != 0)
         {
@@ -162,10 +163,15 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
 
         void AddToArchivePlan(string source)
         {
-            var directory = Path.GetDirectoryName(source) ?? throw new InvalidOperationException("A certified coverage artifact has no parent directory.");
+            var directory = Path.GetDirectoryName(source);
+            if (directory is null)
+            {
+                ThrowHelper.ThrowInvalidOperationException("A certified coverage artifact has no parent directory.");
+            }
+
             if (!archives.TryGetValue(directory, out var archive))
             {
-                throw new InvalidOperationException("A certified coverage artifact belongs to an unknown directory.");
+                ThrowHelper.ThrowInvalidOperationException("A certified coverage artifact belongs to an unknown directory.");
             }
 
             var destination = Path.Combine(archive, Path.GetFileName(source));

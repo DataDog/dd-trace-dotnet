@@ -6,7 +6,6 @@
 using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tags;
@@ -36,10 +35,6 @@ namespace Datadog.Trace.Tools.Runner
 
             this.SetHandler(ExecuteAsync);
         }
-
-        internal static TimeSpan? ProcessTimeoutForTests { get; set; }
-
-        internal static Action<ProcessStartInfo> ProcessStartObserverForTests { get; set; }
 
         private async Task ExecuteAsync(InvocationContext context)
         {
@@ -93,14 +88,10 @@ namespace Datadog.Trace.Tools.Runner
                     processInfo.ArgumentList.Add(arg);
                 }
 
-                ProcessStartObserverForTests?.Invoke(processInfo);
-
                 Log.Debug("RunCiCommand.FileName: '{FileName}'", processInfo.FileName);
                 Log.Debug("RunCiCommand.Arguments: '{Arguments}'", string.Join(" ", processInfo.ArgumentList));
                 Log.Debug("RunCiCommand.WorkingDirectory: '{WorkingDirectory}'", processInfo.WorkingDirectory);
-                var exitCode = ProcessTimeoutForTests is { } processTimeout
-                                   ? Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token, processTimeout).ExitCode
-                                   : Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
+                var exitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
                 Log.Debug<int>("RunCiCommand.ExitCode: {Value}", exitCode);
 
                 if (!initResults.TestSkippingEnabled)

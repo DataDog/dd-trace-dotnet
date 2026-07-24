@@ -16,22 +16,22 @@ namespace Datadog.Trace.Ci.Coverage;
 // while reconciliation intentionally resolves the directory supplied at consumption time.
 internal static class GlobalCoverageProtocol
 {
-    internal const int MarkerMaximumBytes = 128 * 1024;
-    internal const string PendingMarkerPrefix = ".dd-coverage-process-incomplete-";
-    internal const string ReadyMarkerPrefix = ".dd-coverage-process-ready-";
-    internal const string CommandOwnerClaimPrefix = ".dd-coverage-command-owner-";
-    internal const string ClaimExtension = ".claim";
-    internal const string ReconciliationLockFileName = ".dd-coverage-process-reconcile.lock";
-    internal const string CoverageFilePrefix = "coverage-";
-    internal const string JsonExtension = ".json";
-    internal const string PendingMarkerPattern = PendingMarkerPrefix + "*";
-    internal const string ReadyMarkerPattern = ReadyMarkerPrefix + "*";
-    internal const string CommandOwnerClaimPattern = CommandOwnerClaimPrefix + "*" + ClaimExtension;
-    internal const string CoverageFilePattern = CoverageFilePrefix + "*" + JsonExtension;
+    public const int MarkerMaximumBytes = 128 * 1024;
+    public const string PendingMarkerPrefix = ".dd-coverage-process-incomplete-";
+    public const string ReadyMarkerPrefix = ".dd-coverage-process-ready-";
+    public const string CommandOwnerClaimPrefix = ".dd-coverage-command-owner-";
+    public const string ClaimExtension = ".claim";
+    public const string ReconciliationLockFileName = ".dd-coverage-process-reconcile.lock";
+    public const string CoverageFilePrefix = "coverage-";
+    public const string JsonExtension = ".json";
+    public const string PendingMarkerPattern = PendingMarkerPrefix + "*";
+    public const string ReadyMarkerPattern = ReadyMarkerPrefix + "*";
+    public const string CommandOwnerClaimPattern = CommandOwnerClaimPrefix + "*" + ClaimExtension;
+    public const string CoverageFilePattern = CoverageFilePrefix + "*" + JsonExtension;
 
     private static readonly Encoding Utf8WithoutBom = new UTF8Encoding(false, true);
 
-    internal static string GetRunToken(string runId)
+    public static string GetRunToken(string runId)
     {
         var bytes = Utf8WithoutBom.GetBytes(runId);
 #if NET6_0_OR_GREATER
@@ -52,21 +52,21 @@ internal static class GlobalCoverageProtocol
         return builder.ToString();
     }
 
-    internal static string GetProcessIdentity(string runToken, int processId, string nonce)
+    public static string GetProcessIdentity(string runToken, int processId, string nonce)
         => $"{runToken}-{processId.ToString(CultureInfo.InvariantCulture)}-{nonce}";
 
-    internal static string GetPendingMarkerFileName(string processIdentity)
+    public static string GetPendingMarkerFileName(string processIdentity)
         => PendingMarkerPrefix + processIdentity;
 
-    internal static string GetReadyMarkerFileName(string processIdentity)
+    public static string GetReadyMarkerFileName(string processIdentity)
         => ReadyMarkerPrefix + processIdentity;
 
-    internal static string GetCommandOwnerClaimFileName(string runToken)
+    public static string GetCommandOwnerClaimFileName(string runToken)
         => CommandOwnerClaimPrefix + runToken + ClaimExtension;
 
-    internal static string GetCoverageGenerationPrefix(string processIdentity)
+    public static string GetCoverageGenerationPrefix(string processIdentity)
         => $"{CoverageFilePrefix}{processIdentity}-";
 
-    internal static string GetCoverageFileName(string processIdentity, long generationId)
+    public static string GetCoverageFileName(string processIdentity, long generationId)
         => $"{GetCoverageGenerationPrefix(processIdentity)}{generationId.ToString(CultureInfo.InvariantCulture)}{JsonExtension}";
 }

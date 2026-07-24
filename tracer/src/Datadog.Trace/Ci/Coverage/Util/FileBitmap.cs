@@ -12,6 +12,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using Datadog.Trace.Util;
 
 #if NETCOREAPP3_1_OR_GREATER
 using System.Runtime.Intrinsics;
@@ -144,7 +145,7 @@ internal readonly unsafe ref struct FileBitmap
 
         if (fromLine <= 0 || toLine < fromLine)
         {
-            throw new ArgumentException("Invalid range");
+            ThrowHelper.ThrowArgumentException("Invalid range");
         }
 
         for (var i = fromLine; i <= toLine; i++)
@@ -585,7 +586,7 @@ internal readonly unsafe ref struct FileBitmap
     {
         if (numOfLines < 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(numOfLines));
+            ThrowHelper.ThrowArgumentOutOfRangeException(nameof(numOfLines));
         }
 
         return checked((int)(((long)numOfLines + 7) / 8));

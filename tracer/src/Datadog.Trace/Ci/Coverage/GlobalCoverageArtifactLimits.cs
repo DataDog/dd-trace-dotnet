@@ -9,7 +9,7 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal sealed class GlobalCoverageArtifactLimits
 {
-    internal static readonly GlobalCoverageArtifactLimits Default = new(
+    public static readonly GlobalCoverageArtifactLimits Default = new(
         maximumSerializedBytes: 256L * 1024 * 1024,
         maximumBitmapBytes: 8 * 1024 * 1024,
         maximumModelBitmapBytes: 128L * 1024 * 1024,
@@ -21,7 +21,7 @@ internal sealed class GlobalCoverageArtifactLimits
         maximumDepth: 64,
         scannerBufferCharacters: 16 * 1024);
 
-    internal GlobalCoverageArtifactLimits(
+    public GlobalCoverageArtifactLimits(
         long maximumSerializedBytes,
         int maximumBitmapBytes,
         long maximumModelBitmapBytes,
@@ -45,23 +45,23 @@ internal sealed class GlobalCoverageArtifactLimits
         ScannerBufferCharacters = scannerBufferCharacters;
     }
 
-    internal long MaximumSerializedBytes { get; }
+    public long MaximumSerializedBytes { get; }
 
-    internal int MaximumBitmapBytes { get; }
+    public int MaximumBitmapBytes { get; }
 
-    internal long MaximumModelBitmapBytes { get; }
+    public long MaximumModelBitmapBytes { get; }
 
-    internal int MaximumComponents { get; }
+    public int MaximumComponents { get; }
 
-    internal int MaximumEntries { get; }
+    public int MaximumEntries { get; }
 
-    internal int MaximumIdentityCharacters { get; }
+    public int MaximumIdentityCharacters { get; }
 
-    internal int MaximumPropertyCharacters { get; }
+    public int MaximumPropertyCharacters { get; }
 
-    internal int MaximumScalarCharacters { get; }
+    public int MaximumScalarCharacters { get; }
 
-    internal int MaximumDepth { get; }
+    public int MaximumDepth { get; }
 
-    internal int ScannerBufferCharacters { get; }
+    public int ScannerBufferCharacters { get; }
 }

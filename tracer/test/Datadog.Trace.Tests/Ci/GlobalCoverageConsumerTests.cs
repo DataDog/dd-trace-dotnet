@@ -32,7 +32,8 @@ public class GlobalCoverageConsumerTests
                 JsonSerializer.Create().Serialize(writer, model);
             }
 
-            new GlobalCoverageInputReader().TryRead(path, out var result).Should().BeTrue();
+            var reader = new GlobalCoverageInputReader();
+            reader.TryRead(path, out var result).Should().BeTrue();
             var file = result!.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject;
             file.Path.Should().Be("/src/example.cs");
             file.ExecutedBitmap.Should().Equal(0x80);
@@ -55,7 +56,8 @@ public class GlobalCoverageConsumerTests
                 "{\"components\":[{\"name\":\"c\",\"files\":[{\"path\":\"p\",\"executableBitmap\":\"AQID\",\"executedBitmap\":\"AQ==\"}]}]}",
                 new UTF8Encoding(false));
 
-            new GlobalCoverageInputReader(limits).TryRead(path, out _).Should().BeFalse();
+            var reader = new GlobalCoverageInputReader(limits);
+            reader.TryRead(path, out _).Should().BeFalse();
         }
         finally
         {
@@ -75,7 +77,8 @@ public class GlobalCoverageConsumerTests
                 "{\"components\":[{\"name\":\"name\",\"files\":[]}]}",
                 new UTF8Encoding(false));
 
-            new GlobalCoverageInputReader(limits).TryRead(path, out _).Should().BeFalse();
+            var reader = new GlobalCoverageInputReader(limits);
+            reader.TryRead(path, out _).Should().BeFalse();
         }
         finally
         {
@@ -93,7 +96,49 @@ public class GlobalCoverageConsumerTests
         {
             File.WriteAllText(path, json, new UTF8Encoding(false));
 
-            new GlobalCoverageInputReader().TryRead(path, out _).Should().BeFalse();
+            var reader = new GlobalCoverageInputReader();
+            reader.TryRead(path, out _).Should().BeFalse();
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Theory]
+    [InlineData("{\"components\":[{\"name\":\"c\",\"files\":[{\"path\":\"p\",\"executableBitmap\":\"gA==\",\"executedBitmap\":\"/w==\"}]}]}")]
+    [InlineData("{\"components\":[{\"name\":\"c\",\"files\":[{\"path\":\"p\",\"executedBitmap\":\"gA==\"}]}]}")]
+    [InlineData("{\"components\":[{\"name\":\"c\",\"files\":[{\"path\":\"p\",\"executableBitmap\":\"gA==\",\"executedBitmap\":\"gAA=\"}]}]}")]
+    public void InputReaderRejectsExecutedBitmapThatIsNotACompatibleExecutableSubset(string json)
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, json, new UTF8Encoding(false));
+
+            var reader = new GlobalCoverageInputReader();
+            reader.TryRead(path, out _).Should().BeFalse();
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void InputReaderAcceptsShorterExecutedBitmapAsImplicitTrailingZeros()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(
+                path,
+                "{\"components\":[{\"name\":\"c\",\"files\":[{\"path\":\"p\",\"executableBitmap\":\"//8=\",\"executedBitmap\":\"gA==\"}]}]}",
+                new UTF8Encoding(false));
+
+            var reader = new GlobalCoverageInputReader();
+            reader.TryRead(path, out var result).Should().BeTrue();
+            result!.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject.Data.Should().Equal(6.25, 16, 1);
         }
         finally
         {
@@ -106,12 +151,12 @@ public class GlobalCoverageConsumerTests
     {
         var accumulator = new GlobalCoverageCombinerAccumulator(CreateSmallLimits(maximumBitmapBytes: 8, maximumIdentityCharacters: 128));
         accumulator.Add(CreateModel(null, null, [0xf0], [0x80]));
-        accumulator.Add(CreateModel(null, null, [0x0f, 0xff], [0x40, 0x80]));
+        accumulator.Add(CreateModel(null, null, [0x0f, 0xff], [0x08, 0x80]));
 
         var model = accumulator.Materialize();
         var file = model.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject;
         file.ExecutableBitmap.Should().Equal(0xff, 0xff);
-        file.ExecutedBitmap.Should().Equal(0xc0, 0x80);
+        file.ExecutedBitmap.Should().Equal(0x88, 0x80);
         file.Data.Should().Equal(18.75, 16, 3);
     }
 
@@ -122,11 +167,13 @@ public class GlobalCoverageConsumerTests
         var path = Path.Combine(directory, "coverage.json");
         try
         {
-            new GlobalCoverageArtifactWriter().WriteAtomicNoReplace(path, CreateModel("component", "/src/example.cs", [0xff], [0x80]));
+            var writer = new GlobalCoverageArtifactWriter();
+            writer.WriteAtomicNoReplace(path, CreateModel("component", "/src/example.cs", [0xff], [0x80]));
 
             var bytes = File.ReadAllBytes(path);
             (bytes.Length >= 3 && bytes[0] == 0xef && bytes[1] == 0xbb && bytes[2] == 0xbf).Should().BeFalse();
-            new GlobalCoverageInputReader().TryRead(path, out _).Should().BeTrue();
+            var reader = new GlobalCoverageInputReader();
+            reader.TryRead(path, out _).Should().BeTrue();
             Directory.GetFiles(directory, "*.tmp").Should().BeEmpty();
         }
         finally
@@ -145,7 +192,8 @@ public class GlobalCoverageConsumerTests
         try
         {
             var limits = CreateSmallLimits(maximumBitmapBytes: 8, maximumIdentityCharacters: 128, maximumSerializedBytes: 1);
-            var action = () => new GlobalCoverageArtifactWriter(limits).WriteAtomicReplace(path, CreateModel("component", "/src/example.cs", [0xff], [0x80]));
+            var writer = new GlobalCoverageArtifactWriter(limits);
+            var action = () => writer.WriteAtomicReplace(path, CreateModel("component", "/src/example.cs", [0xff], [0x80]));
 
             action.Should().Throw<InvalidDataException>();
             File.ReadAllBytes(path).Should().Equal(original);
@@ -166,7 +214,8 @@ public class GlobalCoverageConsumerTests
         File.WriteAllBytes(path, original);
         try
         {
-            var action = () => new GlobalCoverageArtifactWriter().WriteAtomicNoReplace(path, CreateModel("component", "/src/example.cs", [0xff], [0x80]));
+            var writer = new GlobalCoverageArtifactWriter();
+            var action = () => writer.WriteAtomicNoReplace(path, CreateModel("component", "/src/example.cs", [0xff], [0x80]));
 
             action.Should().Throw<IOException>();
             File.ReadAllBytes(path).Should().Equal(original);

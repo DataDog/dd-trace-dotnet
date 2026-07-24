@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
@@ -25,42 +26,43 @@ namespace Datadog.Trace.Tests.Ci;
 public class TestCoverageLifecycleTests : SettingsTestsBase
 {
     [Fact]
-    public void ConstructorFailureAfterHandleAssignmentAbortsCoverageContext()
+    public void ConstructorFailureAfterCoverageStartAbortsCoverageContext()
     {
         using var harness = new TestHarness();
-        Test.LifecycleCallbackForTests = checkpoint =>
-        {
-            if (checkpoint == TestLifecycleCheckpoint.ConstructionCoverageHandleInstalled)
-            {
-                throw new InvalidOperationException("Injected construction failure.");
-            }
-        };
+        var logger = new Mock<IDatadogLogger>();
+        logger.Setup(
+                   x => x.Debug<string, string, string>(
+                       "######### New Test Created: {Name} ({Suite} | {Module})",
+                       It.IsAny<string>(),
+                       It.IsAny<string>(),
+                       It.IsAny<string>(),
+                       It.IsAny<int>(),
+                       It.IsAny<string>()))
+              .Throws(new InvalidOperationException("Injected construction failure."));
+        harness.TestOptimizationMock.Setup(x => x.Log).Returns(logger.Object);
 
         var action = () => harness.Suite.CreateTest("constructor-failure");
 
         action.Should().Throw<InvalidOperationException>().WithMessage("Injected construction failure.");
-        AssertBalancedSuppressedCoverage(harness.Handler, GlobalCoverageFailureReason.TestConstructionFailed);
+        AssertBalancedSuppressedCoverage(harness.GlobalHandler, GlobalCoverageFailureReason.TestConstructionFailed);
     }
 
     [Fact]
-    public void CloseFailureAfterHandleExchangeAbortsCoverageContext()
+    public void CoverageEndFailureStillClosesAndDisposesTheContext()
     {
-        using var harness = new TestHarness();
+        var handler = new ThrowingCoverageEventHandler();
+        using var harness = new TestHarness(handler);
         var test = harness.Suite.CreateTest("close-failure");
-        Test.LifecycleCallbackForTests = checkpoint =>
-        {
-            if (checkpoint == TestLifecycleCheckpoint.CloseCoverageHandleDetached)
-            {
-                throw new InvalidOperationException("Injected close failure.");
-            }
-        };
 
         var action = () => test.Close(TestStatus.Pass);
 
-        action.Should().Throw<InvalidOperationException>().WithMessage("Injected close failure.");
+        action.Should().Throw<InvalidOperationException>().WithMessage("Injected coverage-end failure.");
         test.IsClosed.Should().BeTrue();
         Test.ActiveTests.Should().NotContain(test);
-        AssertBalancedSuppressedCoverage(harness.Handler, GlobalCoverageFailureReason.TestCloseBeforeCoverage);
+        handler.ContextDiagnostics.Started.Should().Be(1);
+        handler.ContextDiagnostics.Closed.Should().Be(1);
+        handler.ContextDiagnostics.Disposed.Should().Be(1);
+        handler.Container.Should().BeNull();
     }
 
     private static void AssertBalancedSuppressedCoverage(DefaultWithGlobalCoverageEventHandler handler, GlobalCoverageFailureReason reason)
@@ -78,7 +80,7 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
         private readonly ITestOptimization _previousTestOptimization;
         private readonly CoverageEventHandler _previousCoverageHandler;
 
-        internal TestHarness()
+        public TestHarness(CoverageEventHandler? handler = null)
         {
             _previousTestOptimization = TestOptimization.Instance;
             _previousCoverageHandler = CoverageReporter.Handler;
@@ -86,33 +88,36 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
             var settings = new TestOptimizationSettings(
                 CreateConfigurationSource((ConfigurationKeys.CIVisibility.CodeCoverage, "1")),
                 NullConfigurationTelemetry.Instance);
-            var testOptimization = new Mock<ITestOptimization>();
+            TestOptimizationMock = new Mock<ITestOptimization>();
             var hostInfo = new Mock<ITestOptimizationHostInfo>();
             hostInfo.Setup(x => x.GetOperatingSystemVersion()).Returns("test-os-version");
-            testOptimization.Setup(x => x.Settings).Returns(settings);
-            testOptimization.Setup(x => x.Log).Returns(DatadogLogging.GetLoggerFor(typeof(TestCoverageLifecycleTests)));
-            testOptimization.Setup(x => x.CIValues).Returns(new TestCIEnvironmentValues(Directory.GetCurrentDirectory()));
-            testOptimization.Setup(x => x.HostInfo).Returns(hostInfo.Object);
+            TestOptimizationMock.Setup(x => x.Settings).Returns(settings);
+            TestOptimizationMock.Setup(x => x.Log).Returns(DatadogLogging.GetLoggerFor(typeof(TestCoverageLifecycleTests)));
+            TestOptimizationMock.Setup(x => x.CIValues).Returns(new TestCIEnvironmentValues(Directory.GetCurrentDirectory()));
+            TestOptimizationMock.Setup(x => x.HostInfo).Returns(hostInfo.Object);
 
-            Handler = new DefaultWithGlobalCoverageEventHandler();
-            TestOptimization.Instance = testOptimization.Object;
+            Handler = handler ?? new DefaultWithGlobalCoverageEventHandler();
+            TestOptimization.Instance = TestOptimizationMock.Object;
             CoverageReporter.Handler = Handler;
             Session = TestSession.GetOrCreate("dotnet test", workingDirectory: null, framework: "xunit", startDate: null);
             Module = Session.CreateModule("coverage-lifecycle");
             Suite = Module.GetOrCreateSuite("coverage-lifecycle-suite");
         }
 
-        internal DefaultWithGlobalCoverageEventHandler Handler { get; }
+        public Mock<ITestOptimization> TestOptimizationMock { get; }
 
-        internal TestSession Session { get; }
+        public CoverageEventHandler Handler { get; }
 
-        internal TestModule Module { get; }
+        public DefaultWithGlobalCoverageEventHandler GlobalHandler => (DefaultWithGlobalCoverageEventHandler)Handler;
 
-        internal TestSuite Suite { get; }
+        public TestSession Session { get; }
+
+        public TestModule Module { get; }
+
+        public TestSuite Suite { get; }
 
         public void Dispose()
         {
-            Test.LifecycleCallbackForTests = null;
             Suite.Close();
             Module.Close();
             Session.Close(TestStatus.Pass);
@@ -121,9 +126,19 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
         }
     }
 
+    private sealed class ThrowingCoverageEventHandler : CoverageEventHandler
+    {
+        protected override void OnSessionStart(CoverageContextContainer context)
+        {
+        }
+
+        protected override object? OnSessionFinished(CoverageContextContainer context, IReadOnlyList<ModuleValue> modules)
+            => throw new InvalidOperationException("Injected coverage-end failure.");
+    }
+
     private sealed class TestCIEnvironmentValues : CIEnvironmentValues
     {
-        internal TestCIEnvironmentValues(string workspacePath)
+        public TestCIEnvironmentValues(string workspacePath)
         {
             WorkspacePath = workspacePath;
             Repository = "https://github.com/DataDog/dd-trace-dotnet";

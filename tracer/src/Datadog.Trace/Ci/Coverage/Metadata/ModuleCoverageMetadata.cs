@@ -39,13 +39,6 @@ public abstract class ModuleCoverageMetadata
     {
     }
 
-    internal ModuleCoverageMetadata(int totalLines, int coverageMode, FileCoverageMetadata[] files)
-    {
-        TotalLines = totalLines;
-        CoverageMode = coverageMode;
-        Files = files;
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int GetOffset(int fileIndex)
     {

@@ -228,7 +228,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             return null;
         }
 
-        internal static DotnetTestRunState CreateRunState(DotnetTestCommandKind commandKind)
+        public static DotnetTestRunState CreateRunState(DotnetTestCommandKind commandKind)
         {
             var session = CreateSession();
             if (IsDataCollectorDomain || IsVSTestArtifactsPostprocessCommand(Environment.CommandLine))
@@ -312,7 +312,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         internal static void FinalizeSession(TestSession? session, int exitCode, Exception? exception)
             => FinalizeSessionCore(session, exitCode, exception, allowInternalCoverage: true, runState: null);
 
-        internal static void FinalizeRunState(DotnetTestRunState? runState, int exitCode, Exception? exception)
+        public static void FinalizeRunState(DotnetTestRunState? runState, int exitCode, Exception? exception)
         {
             if (runState is null || !runState.TryBeginFinalization())
             {
@@ -322,7 +322,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             runState.ReleaseActivity();
             try
             {
-                FinalizeSessionCore(runState.Session, exitCode, exception, runState.IsReconciliationOwner, runState);
+                var canReconcile = runState.ReconciliationRole is DotnetTestReconciliationRole.ReconciliationOwner or
+                                                                  DotnetTestReconciliationRole.NonOwnerParticipant;
+                FinalizeSessionCore(runState.Session, exitCode, exception, canReconcile, runState);
             }
             finally
             {
@@ -434,7 +436,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                     return;
                 }
 
-                new GlobalCoverageArtifactWriter().WriteAtomicReplace(outputPath, globalCoverage);
+                var writer = new GlobalCoverageArtifactWriter();
+                writer.WriteAtomicReplace(outputPath, globalCoverage);
 
                 // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
                 if (session is not null &&

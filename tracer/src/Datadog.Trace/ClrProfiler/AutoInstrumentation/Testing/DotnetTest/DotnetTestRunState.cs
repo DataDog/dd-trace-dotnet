@@ -55,22 +55,22 @@ internal sealed class DotnetTestRunState : IDisposable
         _claimStream = claimStream;
     }
 
-    internal DotnetTestCommandKind CommandKind { get; }
+    public DotnetTestCommandKind CommandKind { get; }
 
-    internal TestSession? Session { get; }
+    public TestSession? Session { get; }
 
-    internal DotnetTestReconciliationRole ReconciliationRole { get; }
+    public DotnetTestReconciliationRole ReconciliationRole { get; }
 
-    internal string? CoverageDirectory { get; }
+    public string? CoverageDirectory { get; }
 
-    internal string? ClaimPath { get; }
+    public string? ClaimPath { get; }
 
-    internal bool IsReconciliationOwner => ReconciliationRole == DotnetTestReconciliationRole.ReconciliationOwner;
+    public bool IsReconciliationOwner => ReconciliationRole == DotnetTestReconciliationRole.ReconciliationOwner;
 
-    internal static DotnetTestRunState CreateNotApplicable(DotnetTestCommandKind commandKind, TestSession? session)
+    public static DotnetTestRunState CreateNotApplicable(DotnetTestCommandKind commandKind, TestSession? session)
         => new(commandKind, session, DotnetTestReconciliationRole.NotApplicable, null, null, null, null);
 
-    internal static DotnetTestRunState TryCreate(DotnetTestCommandKind commandKind, TestSession? session, string coverageDirectory, string runId)
+    public static DotnetTestRunState TryCreate(DotnetTestCommandKind commandKind, TestSession? session, string coverageDirectory, string runId)
     {
         FileStream? activityStream = null;
         FileStream? claimStream = null;
@@ -152,13 +152,13 @@ internal sealed class DotnetTestRunState : IDisposable
         }
     }
 
-    internal bool TryBeginFinalization()
+    public bool TryBeginFinalization()
         => Interlocked.CompareExchange(ref _finalizationStarted, 1, 0) == 0;
 
-    internal void ReleaseActivity()
+    public void ReleaseActivity()
         => Interlocked.Exchange(ref _activityStream, null)?.Dispose();
 
-    internal GlobalCoverageReconciliationAuthority? TakeReconciliationAuthority()
+    public GlobalCoverageReconciliationAuthority? TakeReconciliationAuthority()
     {
         if (!IsReconciliationOwner || ClaimPath is null)
         {
