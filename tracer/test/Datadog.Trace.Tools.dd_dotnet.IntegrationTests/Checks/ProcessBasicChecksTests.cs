@@ -45,6 +45,112 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     {
     }
 
+    [SkippableTheory]
+    [InlineData("/app/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so")]
+    [InlineData("/app/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so")]
+    [InlineData("/app/datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so")]
+    [InlineData("/app/datadog/linux-musl-arm64/Datadog.Trace.ClrProfiler.Native.so")]
+    public void DetectsBundleWhenMainModuleDirectoryMatchesAppDirectory(string profilerPath)
+    {
+        // Path.GetDirectoryName normalizes the root separator of a forward-slash path
+        // differently on real Windows, so this Unix-style exact-match scenario only holds
+        // on Linux/macOS - see DetectsBundleWhenMainModuleDirectoryMatchesAppDirectoryOnWindows.
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+        const string mainModule = "/app/app";
+
+        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: false);
+
+        result.Should().BeTrue();
+    }
+
+    [SkippableTheory]
+    [InlineData(@"C:\app\datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll")]
+    [InlineData(@"C:\app\datadog\win-x86\Datadog.Trace.ClrProfiler.Native.dll")]
+    public void DetectsBundleWhenMainModuleDirectoryMatchesAppDirectoryOnWindows(string profilerPath)
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.Linux);
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+        const string mainModule = @"C:\app\app";
+
+        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: false);
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DetectsBundleWhenRunningOnAzureAppService()
+    {
+        var profilerPath = $"{ProcessBasicCheck.AzureAppServiceRootPath}/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so";
+        var environmentVariables = new Dictionary<string, string>
+        {
+            ["WEBSITE_SITE_NAME"] = "app",
+            ["CORECLR_PROFILER"] = Utils.Profilerid,
+            ["CORECLR_ENABLE_PROFILING"] = "1",
+            ["CORECLR_PROFILER_PATH"] = profilerPath
+        };
+        var coreClrModule = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "coreclr.dll" : "libcoreclr.so";
+        var process = new ProcessInfo("dotnet", 1, environmentVariables, "/usr/share/dotnet/dotnet", [coreClrModule]);
+
+        using var console = ConsoleHelper.Redirect();
+
+        ProcessBasicCheck.Run(process, MockRegistryService([], ProfilerPath));
+
+        console.Output.Should().Contain(TracingWithBundleProfilerPath);
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            console.Output.Should().NotContain(TracingWithInstallerWindowsNetCore);
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            console.Output.Should().NotContain(TracingWithInstallerLinux);
+        }
+    }
+
+    [Fact]
+    public void DoesNotDetectBundleWhenLaunchedAsDotnetDllOutsideAzureAppService()
+    {
+        const string mainModule = "/usr/share/dotnet/dotnet";
+        var profilerPath = $"{ProcessBasicCheck.AzureAppServiceRootPath}/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so";
+
+        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: false);
+
+        result.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("/opt/datadog/Datadog.Trace.ClrProfiler.Native.so")]
+    [InlineData("/app/datadog/linux-x64/Datadog.Tracer.Native.so")]
+    public void DoesNotDetectBundleForNonBundlePaths(string? profilerPath)
+    {
+        const string mainModule = "/app/app";
+
+        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: false);
+
+        result.Should().BeFalse();
+    }
+
+    [SkippableFact]
+    public void DetectsBundleWhenAnyProfilerPathValueMatches()
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+        const string mainModule = "/app/app";
+        string?[] profilerPathValues =
+        [
+            null,
+            "/opt/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+            "/app/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
+        ];
+
+        var result = ProcessBasicCheck.TracingWithBundle(profilerPathValues, mainModule, isAzureAppService: false);
+
+        result.Should().BeTrue();
+    }
+
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
     public async Task DetectRuntime()

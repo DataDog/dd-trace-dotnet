@@ -21,6 +21,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
     {
         internal const string ClsidKey = @"SOFTWARE\Classes\CLSID\" + Utils.Profilerid + @"\InprocServer32";
         internal const string Clsid32Key = @"SOFTWARE\Classes\Wow6432Node\CLSID\" + Utils.Profilerid + @"\InprocServer32";
+        private const string AzureAppServiceSiteNameKey = "WEBSITE_SITE_NAME";
+        internal const string AzureAppServiceRootPath = "/home/site/wwwroot";
 
         public static bool Run(ProcessInfo process, IRegistryService? registryService = null)
         {
@@ -189,9 +191,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var corProfilerPathValue);
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey32, out var corProfilerPathValue32);
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey64, out var corProfilerPathValue64);
+            var isAzureAppService = process.EnvironmentVariables.TryGetValue(AzureAppServiceSiteNameKey, out _);
 
             string?[] valuesToCheck = { corProfilerPathValue, corProfilerPathValue32, corProfilerPathValue64 };
-            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process);
+            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process.MainModule, isAzureAppService);
 
             if (!ok && isTracingUsingBundle)
             {
@@ -629,12 +632,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 or "1";
         }
 
-        private static bool TracingWithBundle(string?[] profilerPathValues, ProcessInfo process)
+        internal static bool TracingWithBundle(string?[] profilerPathValues, string? mainModule, bool isAzureAppService)
         {
-            // Get the file path of the main module (the .exe file)
-            string? filePath = process.MainModule;
-            string? directoryPath = Path.GetDirectoryName(filePath);
-
             string[] expectedEndingsForBundleSetup =
             {
                 "/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so",
@@ -645,13 +644,31 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 "\\datadog\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll"
             };
 
-            foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
+            if (isAzureAppService)
             {
-                foreach (var profilerPath in profilerPathValues)
+                foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
                 {
-                    if (profilerPath is not null && profilerPath.Equals(directoryPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
+                    foreach (var profilerPath in profilerPathValues)
                     {
-                        return true;
+                        if (profilerPath is not null && profilerPath.Equals(AzureAppServiceRootPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                var directoryPath = Path.GetDirectoryName(mainModule);
+
+                foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
+                {
+                    foreach (var profilerPath in profilerPathValues)
+                    {
+                        if (profilerPath is not null && profilerPath.Equals(directoryPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
                     }
                 }
             }
