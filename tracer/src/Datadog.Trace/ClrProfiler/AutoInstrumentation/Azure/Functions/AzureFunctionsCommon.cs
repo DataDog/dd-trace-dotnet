@@ -311,7 +311,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                             extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
                             break;
 
-                        case "EventGrid" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid, defaultValue: false):
+                        case "EventGrid" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventGrid):
                         {
                             extractedContext = EventGridFunctionsCommon.CreateReceiveSpanContext(tracer, functionContext, entry.Key as string, Baggage.Current);
                             break;
