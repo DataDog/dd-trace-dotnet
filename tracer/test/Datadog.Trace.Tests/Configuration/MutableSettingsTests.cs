@@ -611,15 +611,15 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [InlineData(null, null, null, "400-499")]
-        [InlineData(null, null, "true", "400-599")]
         [InlineData(null, null, "false", "400-499")]
+        [InlineData(null, null, "true", "400-599")]
         [InlineData(null, "500", null, "500")]
         [InlineData("555", null, null, "555")]
         [InlineData("555", "525", null, "555")]
         [InlineData(null, "500", "true", "500")]
         [InlineData("555", null, "true", "555")]
         [InlineData("555", "525", "true", "555")]
-        public void ValidateClientErrorStatusCodes(string newClientErrorKeyValue, string deprecatedClientErrorKeyValue, string otelSemanticsEnabled, string expectedClientErrorCodes)
+        public void ValidateClientErrorStatusCodes(string newClientErrorKeyValue, string    , string otelSemanticsEnabled, string expectedClientErrorCodes)
         {
             const string httpClientErrorStatusCodes = "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES";
             const string deprecatedHttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
