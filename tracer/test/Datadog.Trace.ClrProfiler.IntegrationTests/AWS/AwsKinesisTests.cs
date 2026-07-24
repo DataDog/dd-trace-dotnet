@@ -21,6 +21,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
     [UsesVerify]
     public class AwsKinesisTests : TracingIntegrationTest
     {
+        // Keep in sync with Samples.AWS.Kinesis
+        private const string PreTestCleanupOperationName = "KINESIS-CLEAN-UP-SHOULD-NOT-BE-IN-SNAPSHOT";
+
         public AwsKinesisTests(ITestOutputHelper output)
             : base("AWS.Kinesis", output)
         {
@@ -81,10 +84,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 settings.DisableRequireUniquePrefix();
 
-                await VerifyHelper.VerifySpans(spans, settings);
+                await VerifyHelper.VerifySpans(ExcludePreTestCleanupSpans(spans), settings);
 
                 await telemetry.AssertIntegrationEnabledAsync(IntegrationId.AwsKinesis);
             }
+        }
+
+        private static IReadOnlyCollection<MockSpan> ExcludePreTestCleanupSpans(IEnumerable<MockSpan> spans)
+        {
+            var spanList = spans.ToList();
+            var excludedTraceIds = spanList.Where(s => s.Name == PreTestCleanupOperationName)
+                                           .Select(s => s.TraceId)
+                                           .ToHashSet();
+
+            return spanList.Where(s => !excludedTraceIds.Contains(s.TraceId)).ToList();
         }
     }
 }
