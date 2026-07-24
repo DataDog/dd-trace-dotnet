@@ -50,10 +50,16 @@ public static class CoverageReporter
     /// Publishes the final global coverage snapshot and seals the process output, if coverage was used by this process.
     /// </summary>
     /// <returns>True when global coverage is not active or the process output was sealed completely.</returns>
-    internal static bool FinalizeGlobalCoverage()
+    internal static bool FinalizeGlobalCoverage(Action<bool>? onCompleted = null)
     {
         var handler = Volatile.Read(ref _handler);
-        return handler is not DefaultWithGlobalCoverageEventHandler globalHandler || globalHandler.FinalizeAndSeal();
+        if (handler is DefaultWithGlobalCoverageEventHandler globalHandler)
+        {
+            return globalHandler.FinalizeAndSeal(onCompleted);
+        }
+
+        onCompleted?.Invoke(true);
+        return true;
     }
 
     /// <summary>

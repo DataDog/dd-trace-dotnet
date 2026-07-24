@@ -28,6 +28,9 @@ internal static class GlobalCoverageProtocol
     public const string ReadyMarkerPattern = ReadyMarkerPrefix + "*";
     public const string CommandOwnerClaimPattern = CommandOwnerClaimPrefix + "*" + ClaimExtension;
     public const string CoverageFilePattern = CoverageFilePrefix + "*" + JsonExtension;
+    public const string DotnetTestClaimKind = "dotnet-test";
+    public const string VSTestExecutorClaimKind = "vstest-executor";
+    public const string CollectorClaimKind = "collector";
 
     private static readonly Encoding Utf8WithoutBom = new UTF8Encoding(false, true);
 

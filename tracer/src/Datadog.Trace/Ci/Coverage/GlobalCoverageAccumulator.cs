@@ -62,12 +62,6 @@ internal sealed class GlobalCoverageAccumulator
     private static bool IsRecoverable(Exception exception)
         => exception is OutOfMemoryException or OverflowException or GlobalCoverageLimitException or GlobalCoverageMetadataException;
 
-    private static void SetBit(byte[] bitmap, int zeroBasedLine)
-    {
-        var byteIndex = zeroBasedLine >> 3;
-        bitmap[byteIndex] |= (byte)(128 >> (zeroBasedLine & 7));
-    }
-
     private static GlobalCoverageInfo Materialize(Generation generation)
     {
         var globalCoverage = new GlobalCoverageInfo();
@@ -92,7 +86,28 @@ internal sealed class GlobalCoverageAccumulator
         return globalCoverage;
     }
 
-    public GlobalCoverageMergeResult TryMerge(IReadOnlyList<ModuleValue> modules)
+    public GlobalCoverageMergeResult TryMerge(IReadOnlyList<ModuleCoverageData> modules)
+        => TryMerge(modules, incrementContextCount: true);
+
+    public GlobalCoverageMergeResult TryMergeRetired(ModuleValue module)
+    {
+        if (IsSuppressed)
+        {
+            return GlobalCoverageMergeResult.AlreadySuppressed;
+        }
+
+        try
+        {
+            return TryMerge([ModuleCoverageData.Capture(module)], incrementContextCount: false);
+        }
+        catch (Exception ex) when (IsRecoverable(ex))
+        {
+            Suppress(GlobalCoverageFailureReason.MergeFailed);
+            return GlobalCoverageMergeResult.BecameSuppressedIncomplete;
+        }
+    }
+
+    private GlobalCoverageMergeResult TryMerge(IReadOnlyList<ModuleCoverageData> modules, bool incrementContextCount)
     {
         if (IsSuppressed)
         {
@@ -109,7 +124,11 @@ internal sealed class GlobalCoverageAccumulator
                 }
 
                 MergeIntoGeneration(_activeGeneration, modules);
-                _activeGeneration.AcceptedContextCount++;
+                if (incrementContextCount)
+                {
+                    _activeGeneration.AcceptedContextCount++;
+                }
+
                 return GlobalCoverageMergeResult.Merged;
             }
         }
@@ -213,7 +232,7 @@ internal sealed class GlobalCoverageAccumulator
         }
     }
 
-    public GlobalCoverageSnapshotResult AcquireSnapshot(CoverageContextContainer globalContainer, Action? releaseAdmission = null)
+    public GlobalCoverageSnapshotResult AcquireSnapshot(CoverageContextContainer? globalContainer, Action? releaseAdmission = null)
     {
         _snapshotGate.Wait();
         var releaseSnapshotGate = true;
@@ -241,7 +260,18 @@ internal sealed class GlobalCoverageAccumulator
                 ownership = SnapshotOwnership.DetachedOwned;
             }
 
-            MergeIntoGeneration(detached, globalContainer.SnapshotModules(_limits.MaximumModules));
+            if (globalContainer is not null)
+            {
+                var globalModules = globalContainer.SnapshotModules(_limits.MaximumModules);
+                var globalCoverage = new ModuleCoverageData[globalModules.Length];
+                for (var i = 0; i < globalModules.Length; i++)
+                {
+                    globalCoverage[i] = ModuleCoverageData.Capture(globalModules[i]);
+                }
+
+                MergeIntoGeneration(detached, globalCoverage);
+            }
+
             var model = Materialize(detached);
             _ = model.GetTotalPercentage();
 
@@ -298,18 +328,13 @@ internal sealed class GlobalCoverageAccumulator
 
     private Generation CreateGeneration() => new(Interlocked.Increment(ref _nextGenerationId));
 
-    private unsafe void MergeIntoGeneration(Generation generation, IReadOnlyList<ModuleValue> modules)
+    private void MergeIntoGeneration(Generation generation, IReadOnlyList<ModuleCoverageData> modules)
     {
-        foreach (var moduleValue in modules)
+        foreach (var moduleCoverage in modules)
         {
-            var metadata = moduleValue.Metadata;
-            var expectedRawByteLength = CoverageMetadataValidator.ValidateAndGetRawByteLength(metadata);
-            if (moduleValue.AllocatedByteLength != expectedRawByteLength)
-            {
-                throw new GlobalCoverageMetadataException("A coverage buffer length does not match its metadata.");
-            }
+            var metadata = moduleCoverage.Metadata;
 
-            if (!generation.Modules.TryGetValue(moduleValue.Module, out var moduleEntry))
+            if (!generation.Modules.TryGetValue(moduleCoverage.Module, out var moduleEntry))
             {
                 if (generation.Modules.Count >= _limits.MaximumModules)
                 {
@@ -323,7 +348,7 @@ internal sealed class GlobalCoverageAccumulator
                 }
 
                 moduleEntry = new ModuleEntry(metadata);
-                generation.Modules.Add(moduleValue.Module, moduleEntry);
+                generation.Modules.Add(moduleCoverage.Module, moduleEntry);
                 generation.FileSlotCount = newFileSlotCount;
             }
             else if (!ReferenceEquals(moduleEntry.Metadata, metadata))
@@ -331,39 +356,26 @@ internal sealed class GlobalCoverageAccumulator
                 throw new GlobalCoverageMetadataException("The same module was observed with different coverage metadata.");
             }
 
-            var rawPointer = moduleValue.FilesLines;
-            if (rawPointer == IntPtr.Zero)
-            {
-                throw new GlobalCoverageMetadataException("A coverage buffer was disposed before aggregation.");
-            }
-
             for (var fileIndex = 0; fileIndex < metadata.Files.Length; fileIndex++)
             {
                 var file = metadata.Files[fileIndex];
-                var executedBitmap = moduleEntry.ExecutedBitmaps[fileIndex];
-                if (metadata.CoverageMode == 0)
+                var sourceBitmap = moduleCoverage.ExecutedBitmaps[fileIndex];
+                if (sourceBitmap is null)
                 {
-                    var counters = (byte*)rawPointer + file.Offset;
-                    for (var lineIndex = 0; lineIndex < file.LastExecutableLine; lineIndex++)
-                    {
-                        if (counters[lineIndex] > 0)
-                        {
-                            executedBitmap ??= AllocateBitmap(generation, file.LastExecutableLine);
-                            SetBit(executedBitmap, lineIndex);
-                        }
-                    }
+                    continue;
                 }
-                else
+
+                var expectedBitmapLength = FileBitmap.GetSize(file.LastExecutableLine);
+                if (sourceBitmap.Length != expectedBitmapLength)
                 {
-                    var counters = (int*)rawPointer + file.Offset;
-                    for (var lineIndex = 0; lineIndex < file.LastExecutableLine; lineIndex++)
-                    {
-                        if (counters[lineIndex] > 0)
-                        {
-                            executedBitmap ??= AllocateBitmap(generation, file.LastExecutableLine);
-                            SetBit(executedBitmap, lineIndex);
-                        }
-                    }
+                    throw new GlobalCoverageMetadataException("A captured coverage bitmap length does not match its metadata.");
+                }
+
+                var executedBitmap = moduleEntry.ExecutedBitmaps[fileIndex];
+                executedBitmap ??= AllocateBitmap(generation, file.LastExecutableLine);
+                for (var byteIndex = 0; byteIndex < sourceBitmap.Length; byteIndex++)
+                {
+                    executedBitmap[byteIndex] |= sourceBitmap[byteIndex];
                 }
 
                 moduleEntry.ExecutedBitmaps[fileIndex] = executedBitmap;

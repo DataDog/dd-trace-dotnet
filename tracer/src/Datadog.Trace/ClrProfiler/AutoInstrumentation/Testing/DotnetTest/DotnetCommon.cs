@@ -437,7 +437,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                 }
 
                 var writer = new GlobalCoverageArtifactWriter();
-                writer.WriteAtomicReplace(outputPath, globalCoverage);
+                using var stagedOutput = writer.StageReplace(outputPath, globalCoverage);
+                if (reconciliationLease is null)
+                {
+                    stagedOutput.Commit();
+                }
+                else
+                {
+                    reconciliationLease.Complete(stagedOutput.Commit);
+                }
 
                 // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
                 if (session is not null &&
@@ -452,7 +460,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                         coveredLines: data[2]);
                 }
 
-                reconciliationLease?.Complete();
                 if (reconciliationLease is not null && runState is not null)
                 {
                     Log.Debug<DotnetTestCommandKind>(

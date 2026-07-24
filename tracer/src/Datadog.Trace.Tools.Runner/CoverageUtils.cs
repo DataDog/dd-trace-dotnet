@@ -45,8 +45,16 @@ internal static class CoverageUtils
             }
 
             var writer = new GlobalCoverageArtifactWriter();
-            writer.WriteAtomicReplace(outputFile, globalCoverageInfo);
-            reconciliationLease?.Complete();
+            using var stagedOutput = writer.StageReplace(outputFile, globalCoverageInfo);
+            if (reconciliationLease is null)
+            {
+                stagedOutput.Commit();
+            }
+            else
+            {
+                reconciliationLease.Complete(stagedOutput.Commit);
+            }
+
             return true;
         }
         finally

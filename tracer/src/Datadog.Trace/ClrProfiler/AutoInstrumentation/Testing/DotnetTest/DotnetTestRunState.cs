@@ -6,9 +6,7 @@
 #nullable enable
 
 using System;
-using System.Globalization;
 using System.IO;
-using System.Text;
 using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Coverage;
@@ -32,9 +30,8 @@ internal enum DotnetTestReconciliationRole
 
 internal sealed class DotnetTestRunState : IDisposable
 {
-    private static readonly Encoding Utf8WithoutBom = new UTF8Encoding(false, true);
     private FileStream? _activityStream;
-    private FileStream? _claimStream;
+    private GlobalCoverageReconciliationAuthority? _authority;
     private int _finalizationStarted;
 
     private DotnetTestRunState(
@@ -44,7 +41,7 @@ internal sealed class DotnetTestRunState : IDisposable
         string? coverageDirectory,
         string? claimPath,
         FileStream? activityStream,
-        FileStream? claimStream)
+        GlobalCoverageReconciliationAuthority? authority)
     {
         CommandKind = commandKind;
         Session = session;
@@ -52,7 +49,7 @@ internal sealed class DotnetTestRunState : IDisposable
         CoverageDirectory = coverageDirectory;
         ClaimPath = claimPath;
         _activityStream = activityStream;
-        _claimStream = claimStream;
+        _authority = authority;
     }
 
     public DotnetTestCommandKind CommandKind { get; }
@@ -73,7 +70,7 @@ internal sealed class DotnetTestRunState : IDisposable
     public static DotnetTestRunState TryCreate(DotnetTestCommandKind commandKind, TestSession? session, string coverageDirectory, string runId)
     {
         FileStream? activityStream = null;
-        FileStream? claimStream = null;
+        GlobalCoverageReconciliationAuthority? authority = null;
         string? canonicalDirectory = null;
         string? claimPath = null;
         try
@@ -94,11 +91,14 @@ internal sealed class DotnetTestRunState : IDisposable
                 canonicalDirectory,
                 GlobalCoverageProtocol.GetCommandOwnerClaimFileName(runToken));
 
-            try
-            {
-                claimStream = new FileStream(claimPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
-            }
-            catch (IOException) when (File.Exists(claimPath))
+            var claimKind = commandKind == DotnetTestCommandKind.DotnetTestCommand
+                                ? GlobalCoverageProtocol.DotnetTestClaimKind
+                                : GlobalCoverageProtocol.VSTestExecutorClaimKind;
+            authority = GlobalCoverageReconciliationAuthority.TryCreate(
+                canonicalDirectory,
+                runToken,
+                claimKind);
+            if (authority is null)
             {
                 return new DotnetTestRunState(
                     commandKind,
@@ -110,19 +110,6 @@ internal sealed class DotnetTestRunState : IDisposable
                     null);
             }
 
-            using (var writer = new StreamWriter(claimStream, Utf8WithoutBom, 1024, true))
-            {
-                writer.Write("{\"version\":1,\"runToken\":\"");
-                writer.Write(runToken);
-                writer.Write("\",\"pid\":");
-                writer.Write(DomainMetadata.Instance.ProcessId.ToString(CultureInfo.InvariantCulture));
-                writer.Write(",\"kind\":\"");
-                writer.Write(commandKind == DotnetTestCommandKind.DotnetTestCommand ? "dotnet-test" : "vstest-executor");
-                writer.Write("\"}");
-                writer.Flush();
-                claimStream.Flush(true);
-            }
-
             return new DotnetTestRunState(
                 commandKind,
                 session,
@@ -130,13 +117,13 @@ internal sealed class DotnetTestRunState : IDisposable
                 canonicalDirectory,
                 claimPath,
                 activityStream,
-                claimStream);
+                authority);
         }
         catch
         {
-            claimStream?.Dispose();
+            authority?.Dispose();
             activityStream?.Dispose();
-            if (claimStream is not null && claimPath is not null)
+            if (authority is not null && claimPath is not null)
             {
                 TryDelete(claimPath);
             }
@@ -165,14 +152,13 @@ internal sealed class DotnetTestRunState : IDisposable
             return null;
         }
 
-        var stream = Interlocked.Exchange(ref _claimStream, null);
-        return stream is null ? null : new GlobalCoverageReconciliationAuthority(ClaimPath, stream);
+        return Interlocked.Exchange(ref _authority, null);
     }
 
     public void Dispose()
     {
         ReleaseActivity();
-        Interlocked.Exchange(ref _claimStream, null)?.Dispose();
+        Interlocked.Exchange(ref _authority, null)?.Dispose();
     }
 
     private static void TryDelete(string path)

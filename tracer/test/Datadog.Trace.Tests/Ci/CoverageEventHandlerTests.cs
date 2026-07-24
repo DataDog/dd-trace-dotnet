@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Metadata;
+using Datadog.Trace.Ci.Coverage.Models.Tests;
 using FluentAssertions;
 using Xunit;
 
@@ -141,6 +142,73 @@ public class CoverageEventHandlerTests
     }
 
     [Fact]
+    public void OwnerReleaseBeforeRetiredBitStillCompletesRetirement()
+    {
+        var metadata = CreateMetadata(totalLines: 8, coverageMode: 0, lastExecutableLine: 1);
+        var module = new ModuleValue(
+            metadata,
+            typeof(CoverageEventHandlerTests).Module,
+            CoverageMetadataValidator.ValidateAndGetRawByteLength(metadata),
+            ModuleValue.BufferKind.Context);
+        var completionCount = 0;
+
+        module.Retire(
+            onRetirementPending: module.Dispose,
+            onRetirementCompleted: (_, _) => completionCount++,
+            mergeOnCompletion: false);
+
+        completionCount.Should().Be(1);
+        module.FilesLines.Should().Be(IntPtr.Zero);
+        module.AllocatedByteLength.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public unsafe void PerTestCoveragePreservesTheExactUnionAcrossModules(int coverageMode)
+    {
+        var handler = new DefaultCoverageEventHandler();
+        var metadata = new TestModuleCoverageMetadata(
+            8,
+            coverageMode,
+            [new FileCoverageMetadata("/src/shared.cs", 0, 8, [0xff])]);
+        var rawByteLength = CoverageMetadataValidator.ValidateAndGetRawByteLength(metadata);
+        var handle = handler.StartSession("xunit");
+        handler.Container!.TryGetOrAddModuleValue(
+                               metadata,
+                               typeof(CoverageEventHandlerTests).Module,
+                               rawByteLength,
+                               out var firstModule)
+                           .Should()
+                           .BeTrue();
+        handler.Container.TryGetOrAddModuleValue(
+                             metadata,
+                             typeof(string).Module,
+                             rawByteLength,
+                             out var secondModule)
+                       .Should()
+                       .BeTrue();
+
+        if (coverageMode == 0)
+        {
+            ((byte*)firstModule!.FilesLines)[0] = 1;
+            ((byte*)secondModule!.FilesLines)[7] = 1;
+        }
+        else
+        {
+            // Call counters are deliberately unsynchronized; only zero versus non-zero is meaningful.
+            ((int*)firstModule!.FilesLines)[0] = -1;
+            ((int*)secondModule!.FilesLines)[7] = int.MinValue;
+        }
+
+        var coverage = handler.EndSession(handle).Should().BeOfType<TestCoverage>().Subject;
+
+        coverage.Files.Should().ContainSingle().Subject.Bitmap.Should().Equal(0x81);
+        firstModule.FilesLines.Should().Be(IntPtr.Zero);
+        secondModule.FilesLines.Should().Be(IntPtr.Zero);
+    }
+
+    [Fact]
     public unsafe void TenThousandClosedContextsKeepTheExactUnionInOneCompactBitmap()
     {
         const int contextCount = 10_000;
@@ -168,6 +236,8 @@ public class CoverageEventHandlerTests
             var counters = (byte*)module!.FilesLines;
             counters[i * 2] = 1;
             handler.EndSession(handle);
+            module.FilesLines.Should().Be(IntPtr.Zero, "closed contexts must release native buffers immediately");
+            module.AllocatedByteLength.Should().Be(0);
         }
 
         var contextDiagnostics = handler.ContextDiagnostics;
@@ -204,7 +274,11 @@ public class CoverageEventHandlerTests
     }
 
     private static unsafe void WriteStaleFlowCounter()
-        => *(byte*)CoverageReporter<StaleFlowMetadata>.GetFileCounter(0) = 1;
+    {
+        var probe = CoverageReporter<StaleFlowMetadata>.AcquireFileCounter(0);
+        *(byte*)probe.Pointer = 1;
+        probe.Dispose();
+    }
 
     private static TestModuleCoverageMetadata CreateMetadata(int totalLines, int coverageMode, int lastExecutableLine)
         => new(

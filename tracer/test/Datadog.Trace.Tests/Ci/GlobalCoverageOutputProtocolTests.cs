@@ -9,6 +9,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
@@ -118,6 +119,184 @@ public class GlobalCoverageOutputProtocolTests
         }
         finally
         {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
+    public unsafe void RetiredContextKeepsProbeBufferAliveAndMergesLateWritesBeforeRelease()
+    {
+        var directory = CreateDirectory();
+        var previousHandler = CoverageReporter.Handler;
+        try
+        {
+            var handler = CreateHandler(directory);
+            CoverageReporter.Handler = handler;
+            var handle = handler.StartSession("xunit");
+            var probe = CoverageReporter<RetiredProbeMetadata>.AcquireFileCounter(0);
+            ((byte*)probe.Pointer)[0] = 1;
+            var module = handler.Container!.SnapshotModules().Should().ContainSingle().Subject;
+
+            handler.EndSession(handle);
+
+            module.FilesLines.Should().NotBe(IntPtr.Zero, "the active invocation still owns the native buffer");
+            ((byte*)probe.Pointer)[7] = 1;
+            probe.Dispose();
+
+            module.FilesLines.Should().Be(IntPtr.Zero);
+            module.AllocatedByteLength.Should().Be(0);
+            using var snapshot = handler.AcquireGlobalCoverageSnapshot().Snapshot!;
+            var file = snapshot.Model.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject;
+            file.ExecutedBitmap.Should().Equal(0x81);
+            file.Data.Should().Equal(25, 8, 2);
+        }
+        finally
+        {
+            CoverageReporter.Handler = previousHandler;
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
+    public unsafe void ConcurrentProbeReleaseMergesEveryLateWriteBeforeFreeingTheBuffer()
+    {
+        const int probeCount = 32;
+        var directory = CreateDirectory();
+        var previousHandler = CoverageReporter.Handler;
+        try
+        {
+            var handler = CreateHandler(directory);
+            CoverageReporter.Handler = handler;
+            var handle = handler.StartSession("xunit");
+            var probes = new CoverageProbe[probeCount];
+            for (var i = 0; i < probes.Length; i++)
+            {
+                probes[i] = CoverageReporter<ConcurrentRetiredProbeMetadata>.AcquireFileCounter(0);
+            }
+
+            var module = handler.Container!.SnapshotModules().Should().ContainSingle().Subject;
+            handler.EndSession(handle);
+
+            Parallel.For(
+                0,
+                probes.Length,
+                i =>
+                {
+                    var probe = probes[i];
+                    ((byte*)probe.Pointer)[i] = 1;
+                    probe.Dispose();
+                });
+
+            module.FilesLines.Should().Be(IntPtr.Zero);
+            module.AllocatedByteLength.Should().Be(0);
+            using var snapshot = handler.AcquireGlobalCoverageSnapshot().Snapshot!;
+            var file = snapshot.Model.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject;
+            file.ExecutedBitmap.Should().Equal(0xff, 0xff, 0xff, 0xff);
+            file.Data.Should().Equal(100, probeCount, probeCount);
+        }
+        finally
+        {
+            CoverageReporter.Handler = previousHandler;
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
+    public unsafe void LegacyProbeUsesProcessLifetimeSinkAndCannotWriteIntoPublishedCoverage()
+    {
+        var directory = CreateDirectory();
+        var previousHandler = CoverageReporter.Handler;
+        try
+        {
+            var handler = CreateHandler(directory);
+            CoverageReporter.Handler = handler;
+            var handle = handler.StartSession("xunit");
+            var pointer = (byte*)CoverageReporter<LegacyProbeMetadata>.GetFileCounter(0);
+
+            handler.EndSession(handle);
+            pointer[0] = 1;
+
+            handler.GlobalContainer.SnapshotModules().Should().BeEmpty();
+            handler.DiscardContainer.SnapshotModules().Should().ContainSingle();
+            handler.FinalizeAndSeal().Should().BeTrue();
+            var coveragePath = Directory.GetFiles(directory, "coverage-*.json").Should().ContainSingle().Subject;
+            var reader = new GlobalCoverageInputReader();
+            reader.TryRead(coveragePath, out var coverage).Should().BeTrue();
+            coverage!.Components.Should().BeEmpty();
+        }
+        finally
+        {
+            CoverageReporter.Handler = previousHandler;
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
+    public unsafe void RetiredCallCountProbeMergesLateWritesWithoutDoubleCountingTheContext()
+    {
+        var directory = CreateDirectory();
+        var previousHandler = CoverageReporter.Handler;
+        try
+        {
+            var handler = CreateHandler(directory);
+            CoverageReporter.Handler = handler;
+            var handle = handler.StartSession("xunit");
+            var probe = CoverageReporter<RetiredCallCountProbeMetadata>.AcquireFileCounter(0);
+            ((int*)probe.Pointer)[0]++;
+
+            handler.EndSession(handle);
+            ((int*)probe.Pointer)[7]++;
+            probe.Dispose();
+
+            handler.AccumulatorDiagnostics.AcceptedContextCount.Should().Be(1);
+            using var snapshot = handler.AcquireGlobalCoverageSnapshot().Snapshot!;
+            var file = snapshot.Model.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject;
+            file.ExecutedBitmap.Should().Equal(0x81);
+            file.Data.Should().Equal(25, 8, 2);
+        }
+        finally
+        {
+            CoverageReporter.Handler = previousHandler;
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
+    public unsafe void SealWaitsForActiveProbeAndRejectsWritesAcquiredAfterTerminalSnapshot()
+    {
+        var directory = CreateDirectory();
+        var previousHandler = CoverageReporter.Handler;
+        try
+        {
+            var handler = CreateHandler(directory);
+            CoverageReporter.Handler = handler;
+            var handle = handler.StartSession("xunit");
+            var probe = CoverageReporter<SealBoundaryProbeMetadata>.AcquireFileCounter(0);
+            ((byte*)probe.Pointer)[0] = 1;
+            handler.EndSession(handle);
+
+            handler.FinalizeAndSeal().Should().BeFalse("an admitted probe can still change coverage");
+            Directory.GetFiles(directory, "coverage-*.json").Should().BeEmpty();
+
+            ((byte*)probe.Pointer)[7] = 1;
+            probe.Dispose();
+
+            handler.SealedComplete.Should().BeTrue();
+            var coveragePath = Directory.GetFiles(directory, "coverage-*.json").Should().ContainSingle().Subject;
+            var reader = new GlobalCoverageInputReader();
+            reader.TryRead(coveragePath, out var coverage).Should().BeTrue();
+            coverage!.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject.ExecutedBitmap.Should().Equal(0x81);
+
+            var rejectedProbe = CoverageReporter<SealBoundaryProbeMetadata>.AcquireFileCounter(0);
+            ((byte*)rejectedProbe.Pointer)[3] = 1;
+            rejectedProbe.Dispose();
+
+            reader.TryRead(coveragePath, out coverage).Should().BeTrue();
+            coverage!.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject.ExecutedBitmap.Should().Equal(0x81);
+        }
+        finally
+        {
+            CoverageReporter.Handler = previousHandler;
             Directory.Delete(directory, true);
         }
     }
@@ -409,7 +588,7 @@ public class GlobalCoverageOutputProtocolTests
     }
 
     [Fact]
-    public void OwnerClaimAndExclusiveReconciliationPublishOnceAndDeleteClaimLast()
+    public void OwnerClaimAndExclusiveReconciliationPublishAndArchiveAsOneTransaction()
     {
         var directory = CreateDirectory();
         try
@@ -424,14 +603,117 @@ public class GlobalCoverageOutputProtocolTests
             using (lease)
             {
                 var writer = new GlobalCoverageArtifactWriter();
-                writer.WriteAtomicReplace(outputPath, model!);
-                lease!.Complete();
+                using var stagedOutput = writer.StageReplace(outputPath, model!);
+                lease!.Complete(stagedOutput.Commit);
             }
 
             File.Exists(outputPath).Should().BeTrue();
             File.Exists(owner.ClaimPath!).Should().BeFalse();
             Directory.GetFiles(directory, "coverage-*.json").Should().BeEmpty();
             Directory.GetFiles(directory, ".dd-coverage-process-*").Should().ContainSingle(path => path.EndsWith("reconcile.lock", StringComparison.Ordinal));
+            Directory.GetFiles(Path.Combine(directory, ".dd-coverage-completed"), ".dd-coverage-command-owner-*.claim", SearchOption.AllDirectories).Should().ContainSingle();
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
+    public void CertifiedInputMutationBeforeCommitLeavesOutputAndProtocolUnchanged()
+    {
+        var directory = CreateDirectory();
+        try
+        {
+            ProduceCompleteRun(directory);
+            var outputPath = Path.Combine(directory, "session-coverage-result.json");
+            CoverageUtils.TryReadAndCombine(directory, outputPath, authority: null, out var model, out var lease).Should().BeTrue();
+            using (lease)
+            {
+                var writer = new GlobalCoverageArtifactWriter();
+                using (var stagedOutput = writer.StageReplace(outputPath, model!))
+                {
+                    File.AppendAllText(lease!.SelectedInputs.Should().ContainSingle().Subject.Path, " ");
+
+                    var complete = () => lease.Complete(stagedOutput.Commit);
+                    complete.Should().Throw<InvalidDataException>();
+                }
+            }
+
+            File.Exists(outputPath).Should().BeFalse();
+            Directory.GetFiles(directory, "coverage-*.json").Should().ContainSingle();
+            Directory.GetFiles(directory, ".dd-coverage-process-incomplete-*").Should().ContainSingle();
+            Directory.GetFiles(directory, ".dd-coverage-process-ready-*").Should().ContainSingle();
+            Directory.GetFiles(directory, ".dd-coverage-command-owner-*.claim").Should().ContainSingle();
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
+    public void OutputCommitFailureRollsBackRawMarkersAndAuthorityClaim()
+    {
+        var directory = CreateDirectory();
+        try
+        {
+            ProduceCompleteRun(directory);
+            var outputPath = Path.Combine(directory, "session-coverage-result.json");
+            Directory.CreateDirectory(outputPath);
+            CoverageUtils.TryReadAndCombine(directory, outputPath, authority: null, out var model, out var lease).Should().BeTrue();
+            using (lease)
+            {
+                var writer = new GlobalCoverageArtifactWriter();
+                using (var stagedOutput = writer.StageReplace(outputPath, model!))
+                {
+                    var complete = () => lease!.Complete(stagedOutput.Commit);
+                    complete.Should().Throw<IOException>();
+                }
+            }
+
+            Directory.Exists(outputPath).Should().BeTrue();
+            Directory.GetFiles(directory, "coverage-*.json").Should().ContainSingle();
+            Directory.GetFiles(directory, ".dd-coverage-process-incomplete-*").Should().ContainSingle();
+            Directory.GetFiles(directory, ".dd-coverage-process-ready-*").Should().ContainSingle();
+            Directory.GetFiles(directory, ".dd-coverage-command-owner-*.claim").Should().ContainSingle();
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
+    public void ExplicitCurrentAuthorityIgnoresClaimLeftByAnInterruptedOlderRun()
+    {
+        var directory = CreateDirectory();
+        try
+        {
+            ProduceCompleteRunForId(directory, "stale-run");
+            var staleClaim = Directory.GetFiles(directory, ".dd-coverage-command-owner-*.claim").Should().ContainSingle().Subject;
+            using var currentOwner = DotnetTestRunState.TryCreate(DotnetTestCommandKind.DotnetTestCommand, null, directory, "run-id");
+            ProduceCompleteRun(directory);
+            currentOwner.ReleaseActivity();
+
+            var outputPath = Path.Combine(directory, "session-coverage-result.json");
+            using var authority = currentOwner.TakeReconciliationAuthority();
+            CoverageUtils.TryReadAndCombine(directory, outputPath, authority, out var model, out var lease).Should().BeTrue();
+            using (lease)
+            {
+                var writer = new GlobalCoverageArtifactWriter();
+                using (var stagedOutput = writer.StageReplace(outputPath, model!))
+                {
+                    lease!.Complete(stagedOutput.Commit);
+                }
+            }
+
+            File.Exists(outputPath).Should().BeTrue();
+            File.Exists(staleClaim).Should().BeTrue("only the explicitly authorized run may be reconciled");
+            Directory.GetFiles(directory, ".dd-coverage-command-owner-*.claim").Should().ContainSingle().Which.Should().Be(staleClaim);
+            Directory.GetFiles(directory, "coverage-*.json").Should().ContainSingle("the older run's raw artifact remains untouched");
+            Directory.GetFiles(directory, ".dd-coverage-process-incomplete-*").Should().ContainSingle();
+            Directory.GetFiles(directory, ".dd-coverage-process-ready-*").Should().ContainSingle();
         }
         finally
         {
@@ -618,7 +900,7 @@ public class GlobalCoverageOutputProtocolTests
             {
                 File.AppendAllText(changedInput.Path, " ");
 
-                var complete = lease.Complete;
+                var complete = () => lease.Complete();
                 complete.Should().Throw<InvalidDataException>();
                 inputs.Should().OnlyContain(input => File.Exists(input.Path));
 
@@ -671,10 +953,12 @@ public class GlobalCoverageOutputProtocolTests
     private static DefaultWithGlobalCoverageEventHandler CreateHandler(string configuredDirectory)
         => new(configuredOutputDirectory: configuredDirectory, runIdProvider: () => "run-id");
 
-    private static void ProduceCompleteRun(string directory)
+    private static void ProduceCompleteRun(string directory) => ProduceCompleteRunForId(directory, "run-id");
+
+    private static void ProduceCompleteRunForId(string directory, string runId)
     {
-        using var command = DotnetTestRunState.TryCreate(DotnetTestCommandKind.DotnetTestCommand, null, directory, "run-id");
-        var handler = CreateHandler(directory);
+        using var command = DotnetTestRunState.TryCreate(DotnetTestCommandKind.DotnetTestCommand, null, directory, runId);
+        var handler = new DefaultWithGlobalCoverageEventHandler(configuredOutputDirectory: directory, runIdProvider: () => runId);
         var handle = handler.StartSession("xunit");
         handler.EndSession(handle);
         using (var snapshot = handler.AcquireGlobalCoverageSnapshot().Snapshot!)
@@ -700,5 +984,45 @@ public class GlobalCoverageOutputProtocolTests
 
         handler.RequestSeal().Should().BeTrue();
         command.ReleaseActivity();
+    }
+
+    private sealed class RetiredProbeMetadata : TestModuleCoverageMetadata
+    {
+        public RetiredProbeMetadata()
+            : base(8, 0, [new FileCoverageMetadata("/src/retired-probe.cs", 0, 8, [0xff])])
+        {
+        }
+    }
+
+    private sealed class SealBoundaryProbeMetadata : TestModuleCoverageMetadata
+    {
+        public SealBoundaryProbeMetadata()
+            : base(8, 0, [new FileCoverageMetadata("/src/seal-boundary.cs", 0, 8, [0xff])])
+        {
+        }
+    }
+
+    private sealed class ConcurrentRetiredProbeMetadata : TestModuleCoverageMetadata
+    {
+        public ConcurrentRetiredProbeMetadata()
+            : base(32, 0, [new FileCoverageMetadata("/src/concurrent-retired-probe.cs", 0, 32, [0xff, 0xff, 0xff, 0xff])])
+        {
+        }
+    }
+
+    private sealed class LegacyProbeMetadata : TestModuleCoverageMetadata
+    {
+        public LegacyProbeMetadata()
+            : base(1, 0, [new FileCoverageMetadata("/src/legacy-probe.cs", 0, 1, [0x80])])
+        {
+        }
+    }
+
+    private sealed class RetiredCallCountProbeMetadata : TestModuleCoverageMetadata
+    {
+        public RetiredCallCountProbeMetadata()
+            : base(8, 1, [new FileCoverageMetadata("/src/retired-call-count-probe.cs", 0, 8, [0xff])])
+        {
+        }
     }
 }

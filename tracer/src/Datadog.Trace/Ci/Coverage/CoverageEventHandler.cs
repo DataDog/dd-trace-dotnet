@@ -19,10 +19,13 @@ namespace Datadog.Trace.Ci.Coverage;
 internal abstract class CoverageEventHandler
 {
     private readonly AsyncLocal<CoverageContextContainer?> _asyncContext = new();
+    private readonly CoverageContextContainer _discardContainer = new(bufferKind: ModuleValue.BufferKind.GlobalFallback);
     private readonly CoverageContextContainer _globalContainer = new(bufferKind: ModuleValue.BufferKind.GlobalFallback);
     private readonly CoverageContextDiagnostics _contextDiagnostics = new();
 
     public CoverageContextContainer? Container => _asyncContext.Value;
+
+    public CoverageContextContainer DiscardContainer => _discardContainer;
 
     public CoverageContextContainer GlobalContainer => _globalContainer;
 
@@ -97,6 +100,7 @@ internal abstract class CoverageEventHandler
         }
 
         _contextDiagnostics.RecordClosed();
+        context.RetireModules(GetRetirementPendingCallback(), GetRetirementCompletedCallback(), mergeOnCompletion: false);
         try
         {
             var sessionEndData = OnSessionFinished(context, modules);
@@ -177,6 +181,10 @@ internal abstract class CoverageEventHandler
     }
 
     protected virtual CoverageContextContainer CreateContext(object? state) => new(state);
+
+    protected virtual Action? GetRetirementPendingCallback() => null;
+
+    protected virtual Action<ModuleValue, bool>? GetRetirementCompletedCallback() => null;
 
     protected virtual void InstallContext(CoverageContextContainer context) => _asyncContext.Value = context;
 

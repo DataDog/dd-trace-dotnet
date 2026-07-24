@@ -64,6 +64,14 @@ internal static class GlobalCoverageFileCombiner
 
             if (!inputReader.TryRead(file, reconciliationLease?.GetCertifiedInput(file), out var globalCoverage) || globalCoverage is null)
             {
+                if (reconciliationLease is null)
+                {
+                    // Legacy directories were historically best-effort: unrelated or malformed JSON
+                    // files do not invalidate otherwise usable coverage. Certified protocol inputs
+                    // remain fail-closed because every selected artifact is part of the completeness proof.
+                    continue;
+                }
+
                 rejectedInput = file;
                 return false;
             }
