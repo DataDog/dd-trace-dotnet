@@ -162,7 +162,7 @@ findstr /s /i "DD_TRACE" "*.cpp" 2>\\.\NUL
 
 ## Logging Guidelines
 
-Use clear, customer-facing terminology in log messages to avoid confusion. `Profiler` is ambiguous—it can refer to the .NET profiling APIs we use internally or the Continuous Profiler product.
+Use clear, customer-facing terminology in log messages to avoid confusion. `Profiler` is ambiguous — it can refer to the .NET profiling APIs we use internally or the Continuous Profiler product.
 
 **Customer-facing terminology (high-level logs):**
 - **Datadog SDK** — When disabling the entire product or referring to the whole monitoring solution
