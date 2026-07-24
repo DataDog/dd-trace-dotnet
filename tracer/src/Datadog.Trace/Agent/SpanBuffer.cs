@@ -64,6 +64,8 @@ namespace Datadog.Trace.Agent
 
         public bool IsFull { get; private set; }
 
+        internal int MaxBufferSize => _maxBufferSize;
+
         // For tests only
         internal bool IsLocked => _locked;
 
@@ -102,6 +104,12 @@ namespace Datadog.Trace.Agent
 
                 if (!EnsureCapacity(size + _offset))
                 {
+                    if (TraceCount == 0)
+                    {
+                        // The trace cannot fit in an empty buffer
+                        return WriteStatus.Overflow;
+                    }
+
                     IsFull = true;
                     return WriteStatus.Full;
                 }
