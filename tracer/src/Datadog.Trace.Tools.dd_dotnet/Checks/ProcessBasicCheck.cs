@@ -194,7 +194,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             var isAzureAppService = process.EnvironmentVariables.TryGetValue(AzureAppServiceSiteNameKey, out _);
 
             string?[] valuesToCheck = { corProfilerPathValue, corProfilerPathValue32, corProfilerPathValue64 };
-            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process.MainModule, isAzureAppService);
+            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process, isAzureAppService);
 
             if (!ok && isTracingUsingBundle)
             {
@@ -632,8 +632,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 or "1";
         }
 
-        internal static bool TracingWithBundle(string?[] profilerPathValues, string? mainModule, bool isAzureAppService)
+        internal static bool TracingWithBundle(string?[] profilerPathValues, ProcessInfo process, bool isAzureAppService)
         {
+            var directoryPath = isAzureAppService ? AzureAppServiceRootPath : Path.GetDirectoryName(process.MainModule);
+
             string[] expectedEndingsForBundleSetup =
             {
                 "/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so",
@@ -644,31 +646,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 "\\datadog\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll"
             };
 
-            if (isAzureAppService)
+            foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
             {
-                foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
+                foreach (var profilerPath in profilerPathValues)
                 {
-                    foreach (var profilerPath in profilerPathValues)
+                    if (profilerPath is not null && profilerPath.Equals(directoryPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (profilerPath is not null && profilerPath.Equals(AzureAppServiceRootPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                var directoryPath = Path.GetDirectoryName(mainModule);
-
-                foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
-                {
-                    foreach (var profilerPath in profilerPathValues)
-                    {
-                        if (profilerPath is not null && profilerPath.Equals(directoryPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return true;
-                        }
+                        return true;
                     }
                 }
             }

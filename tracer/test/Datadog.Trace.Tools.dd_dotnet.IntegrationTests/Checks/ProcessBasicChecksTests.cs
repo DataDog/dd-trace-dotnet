@@ -57,9 +57,9 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         // on Linux/macOS - see DetectsBundleWhenMainModuleDirectoryMatchesAppDirectoryOnWindows.
         SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
-        const string mainModule = "/app/app";
+        var process = CreateProcessInfo(mainModuleDirectory: "/app");
 
-        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: false);
+        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], process, isAzureAppService: false);
 
         result.Should().BeTrue();
     }
@@ -72,9 +72,9 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
-        const string mainModule = @"C:\app\app";
+        var process = CreateProcessInfo(mainModuleDirectory: @"C:\app");
 
-        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: false);
+        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], process, isAzureAppService: false);
 
         result.Should().BeTrue();
     }
@@ -112,10 +112,10 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     [Fact]
     public void DoesNotDetectBundleWhenLaunchedAsDotnetDllOutsideAzureAppService()
     {
-        const string mainModule = "/usr/share/dotnet/dotnet";
+        var process = CreateProcessInfo(mainModuleDirectory: "/usr/share/dotnet");
         var profilerPath = $"{ProcessBasicCheck.AzureAppServiceRootPath}/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so";
 
-        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: false);
+        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], process, isAzureAppService: false);
 
         result.Should().BeFalse();
     }
@@ -126,9 +126,9 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     [InlineData("/app/datadog/linux-x64/Datadog.Tracer.Native.so")]
     public void DoesNotDetectBundleForNonBundlePaths(string? profilerPath)
     {
-        const string mainModule = "/app/app";
+        var process = CreateProcessInfo(mainModuleDirectory: "/app");
 
-        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], mainModule, isAzureAppService: false);
+        var result = ProcessBasicCheck.TracingWithBundle([profilerPath], process, isAzureAppService: false);
 
         result.Should().BeFalse();
     }
@@ -138,7 +138,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     {
         SkipOn.Platform(SkipOn.PlatformValue.Windows);
 
-        const string mainModule = "/app/app";
+        var process = CreateProcessInfo(mainModuleDirectory: "/app");
         string?[] profilerPathValues =
         [
             null,
@@ -146,7 +146,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             "/app/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
         ];
 
-        var result = ProcessBasicCheck.TracingWithBundle(profilerPathValues, mainModule, isAzureAppService: false);
+        var result = ProcessBasicCheck.TracingWithBundle(profilerPathValues, process, isAzureAppService: false);
 
         result.Should().BeTrue();
     }
@@ -688,5 +688,15 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             .Returns(profilerKeyValue);
 
         return registryService.Object;
+    }
+
+    private static ProcessInfo CreateProcessInfo(string mainModuleDirectory)
+    {
+        return new ProcessInfo(
+            "app",
+            1,
+            new Dictionary<string, string>(),
+            mainModule: $"{mainModuleDirectory}/app",
+            modules: []);
     }
 }
