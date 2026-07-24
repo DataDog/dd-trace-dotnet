@@ -283,7 +283,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             parentSpan.Type.Should().Be(SpanTypes.Web);
             parentSpan.ResourceName.Should().Be(resourceName);
             AssertTagHasValue(parentSpan, Tags.SpanKind, SpanKinds.Server);
-            AssertTagHasValue(parentSpan, Tags.HttpStatusCode, statusCode.ToString());
+            AssertTagHasValue(parentSpan, Tags.HttpStatusCode, statusCode.ToString()); // TODO: This lookup may also need to lookup the OTel http.response.status_code
             parentSpan.Error.Should().Be(isError);
 
             if (expectedSpanTags is not null)

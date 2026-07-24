@@ -204,7 +204,7 @@ namespace Datadog.Trace.Tests
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, openTelemetrySemanticsEnabled: true);
 
-            span.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            span.GetHttpStatusCode().Should().BeNull();
             span.GetMetric(key).Should().Be((double)statusCode);
         }
 
@@ -223,7 +223,7 @@ namespace Datadog.Trace.Tests
             using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, openTelemetrySemanticsEnabled: true);
 
-            span.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            span.GetHttpStatusCode().Should().BeNull();
             span.GetMetric(key).Should().Be((double)statusCode);
         }
     }

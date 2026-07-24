@@ -361,13 +361,6 @@ namespace Datadog.Trace.Agent
         [TestingAndPrivateOnly]
         internal StatsAggregationKey BuildKey(Span span, List<PeerTagKey> peerTagKeys, out PeerTagResults peerTagResults, out AdditionalTagResults additionalTagResults)
         {
-            var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
-
-            if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
-            {
-                httpStatusCode = 0;
-            }
-
             // Check gRPC status code tags in priority order per CSS v1.2.0 spec.
             // Stored as string to match the Go agent's wire format (GRPCStatusCode is a string field).
             // This preserves the distinction between "0" (gRPC OK) and "" (no gRPC status).
@@ -459,7 +452,7 @@ namespace Datadog.Trace.Agent
                 span.ServiceName,
                 span.OperationName,
                 span.Type,
-                httpStatusCode,
+                span.GetHttpStatusCode() ?? 0,
                 span.Context.Origin?.StartsWith("synthetics") == true,
                 spanKind,
                 _isOtlp ? span.Error : false,
