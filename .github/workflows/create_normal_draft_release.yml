@@ -37,6 +37,3 @@ jobs:
             forced_commit_id: ${{ inputs.forced_commit_id }}
             ignore_gitlab_failures: ${{ inputs.ignore_gitlab_failures }}
             is_hotfix: false
-        secrets:
-            AZURE_DEVOPS_TOKEN: ${{ secrets.AZURE_DEVOPS_TOKEN }}
-            NUGET_TRUSTED_PUBLISHING_USERNAME: ${{ secrets.NUGET_TRUSTED_PUBLISHING_USERNAME }}
