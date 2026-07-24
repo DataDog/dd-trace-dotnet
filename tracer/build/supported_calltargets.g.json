@@ -11861,10 +11861,35 @@
     },
     "MaximumVersion": {
       "Item1": 4,
-      "Item2": 65535,
+      "Item2": 2,
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteTestIntegrationV3_9",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
+    "TargetMethodName": "ExecuteTestAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    "TargetParameterTypes": [
+      "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.Interface.ITestContext",
+      "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 3,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteTestIntegrationV4_3",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
