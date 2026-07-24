@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Data;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
 using Moq;
 using Xunit;
@@ -68,6 +71,61 @@ namespace Datadog.Trace.Tests.ExtensionMethods
                 Assert.Equal("myServerName" + "NoCache" + i, commandTags.OutHost);
             }
         }
+
+        [Theory]
+        [InlineData(true, 500, "500")]
+        [InlineData(true, 200, null)]
+        [InlineData(false, 500, null)]
+        [InlineData(false, 200, null)]
+        public void SetHttpStatusCode_SetsErrorTypeWhenOtelSemanticsEnabledForErrorStatusCode(
+            bool otelSemanticsEnabled,
+            int statusCode,
+            string expectedErrorType)
+        {
+            var span = CreateSpan(openTelemetrySemanticsEnabled: otelSemanticsEnabled);
+            var settings = CreateMutableSettings();
+
+            span.SetHttpStatusCode(statusCode, isServer: true, settings);
+
+            Assert.Equal(expectedErrorType, span.GetTag(Tags.ErrorType));
+        }
+
+        [Fact]
+        public void SetHttpStatusCode_ForServerSpan_DoesNotOverwriteExistingErrorType()
+        {
+            const string existingErrorType = "System.InvalidOperationException";
+            var span = CreateSpan(openTelemetrySemanticsEnabled: true);
+            var settings = CreateMutableSettings();
+            span.SetTag(Tags.ErrorType, existingErrorType);
+
+            span.SetHttpStatusCode(500, isServer: true, settings);
+
+            Assert.Equal(existingErrorType, span.GetTag(Tags.ErrorType));
+        }
+
+        [Fact]
+        public void SetHttpStatusCode_ForClientSpan_DoesNotOverwriteExistingErrorType()
+        {
+            const string existingErrorType = "System.InvalidOperationException";
+            var span = CreateSpan(openTelemetrySemanticsEnabled: true);
+            var settings = CreateMutableSettings();
+            span.SetTag(Tags.ErrorType, existingErrorType);
+
+            span.SetHttpStatusCode(500, isServer: false, settings);
+
+            Assert.Equal(existingErrorType, span.GetTag(Tags.ErrorType));
+        }
+
+        private static MutableSettings CreateMutableSettings()
+            => new TracerSettings().Manager.InitialMutableSettings;
+
+        private static Span CreateSpan(bool openTelemetrySemanticsEnabled = false)
+            => new(
+                new SpanContext(traceId: 1, spanId: 1),
+                DateTimeOffset.UtcNow,
+                tags: null,
+                links: null,
+                openTelemetrySemanticsEnabled);
 
         private static IDbCommand CreateDbCommand(string connectionString, string commandText = null)
         {
