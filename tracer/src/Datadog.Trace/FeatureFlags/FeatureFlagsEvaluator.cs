@@ -26,15 +26,20 @@ namespace Datadog.Trace.FeatureFlags
     {
         internal const string MetadataAllocationKey = "__dd_allocation_key";
 
+        internal const string MetadataSplitSerialId = FeatureFlagMetadataKeys.SplitSerialId;
+        internal const string MetadataDoLog = FeatureFlagMetadataKeys.DoLog;
+
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
 
         private readonly ReportExposureDelegate? _onExposureEvent;
         private readonly ServerConfiguration? _config;
+        private readonly bool _spanEnrichmentEnabled;
 
-        public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config)
+        public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config, bool spanEnrichmentEnabled = false)
         {
             _onExposureEvent = onExposureEvent;
             _config = config;
+            _spanEnrichmentEnabled = spanEnrichmentEnabled;
             if (_config is null)
             {
                 Log.Debug("Creating Evaluator without config");
@@ -161,7 +166,7 @@ namespace Datadog.Trace.FeatureFlags
                                            : hadRules ? EvaluationReason.TargetingMatch
                                            : EvaluationReason.Static;
 
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, reason, now, context);
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context);
                             }
                         }
                     }
@@ -626,12 +631,14 @@ namespace Datadog.Trace.FeatureFlags
             ValueType resultType,
             object? defaultValue,
             Flag flag,
-            string variationKey,
+            Split split,
             Allocation allocation,
             EvaluationReason reason,
             DateTime evalTime,
             EvaluationContext? context)
         {
+            var variationKey = split.VariationKey!;
+
             if (StringUtil.IsNullOrEmpty(flag.Key))
             {
                 return ParseError($"Variant not found for: {variationKey}");
@@ -648,10 +655,24 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             var mappedValue = MapValue(resultType, variant.Value);
+            var doLog = allocation.DoLog.HasValue && allocation.DoLog.Value;
             var metadata = new Dictionary<string, string>
             {
-                [MetadataAllocationKey] = allocation.Key
+                [MetadataAllocationKey] = allocation.Key,
             };
+
+            // do_log and the split serial id are only consumed by APM span enrichment, so emit them
+            // (and the serial-id ToString) only when that feature is enabled. doLog itself is still
+            // needed below to drive exposure dispatch.
+            if (_spanEnrichmentEnabled)
+            {
+                metadata[MetadataDoLog] = doLog ? "true" : "false";
+
+                if (split.SerialId.HasValue)
+                {
+                    metadata[MetadataSplitSerialId] = split.SerialId.Value.ToString(CultureInfo.InvariantCulture);
+                }
+            }
 
             var evaluation = new Evaluation(
                 flagKey,
@@ -660,7 +681,6 @@ namespace Datadog.Trace.FeatureFlags
                 variant: variant.Key,
                 metadata: metadata);
 
-            var doLog = allocation.DoLog.HasValue && allocation.DoLog.Value;
             if (doLog)
             {
                 DispatchExposure(flagKey, evaluation, evalTime, context);

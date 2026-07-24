@@ -542,8 +542,10 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemWorkItemCompleteIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitReflectInvokeMethodIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.NUnit,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkAccumulateSpanEnrichmentIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkIsAvailableIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkIsSpanEnrichmentEnabledIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkRegisterOnNewConfigEventHandlerIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.OpenFeature,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry.TracerProviderBuilderIntegration"

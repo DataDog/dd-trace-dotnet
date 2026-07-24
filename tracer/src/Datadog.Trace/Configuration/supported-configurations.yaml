@@ -3135,6 +3135,16 @@ supportedConfigurations:
     documentation: |-
       Enables Feature Flags Provider (Experimental).
       Default value is <c>false</c> (disabled).
+  DD_EXPERIMENTAL_FLAGGING_PROVIDER_SPAN_ENRICHMENT_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'false'
+    product: FeatureFlags
+    const_name: SpanEnrichmentEnabled
+    documentation: |-
+      Enables APM span enrichment with feature-flag evaluation metadata (Experimental).
+      Default value is <c>false</c> (disabled).
   DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED:
   - implementation: A
     scope: managed
