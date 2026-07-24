@@ -20,6 +20,7 @@ namespace Samples.DatabaseHelper
         /// <param name="providerSpecificCommandExecutor">A <see cref="IDbCommandExecutor"/> specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand, used to call DbCommand methods.</param>
         /// <param name="cancellationToken">A cancellation token passed into downstream async methods.</param>
         /// <param name="useTransactionScope">Whether or not a Transcation Scope should be created.</param>
+        /// <param name="flushAfterEachExecutor">Whether each executor should use a separate trace that is flushed before the next executor starts.</param>
         /// <typeparam name="TCommand">The DbCommand implementation specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand.</typeparam>
         /// <returns>A task representing the asynchronous operation.</returns>
         public static async Task RunAllAsync<TCommand>(
@@ -27,7 +28,8 @@ namespace Samples.DatabaseHelper
             DbCommandFactory commandFactory,
             IDbCommandExecutor providerSpecificCommandExecutor,
             CancellationToken cancellationToken,
-            bool useTransactionScope = true)
+            bool useTransactionScope = true,
+            bool flushAfterEachExecutor = false)
             where TCommand : IDbCommand
         {
             var executors = new List<IDbCommandExecutor>
@@ -54,13 +56,7 @@ namespace Samples.DatabaseHelper
                                 new DbCommandNetStandardInterfaceGenericExecutor<TCommand>(),
                             };
 
-            using (var root = SampleHelpers.CreateScope("RunAllAsync<TCommand>"))
-            {
-                foreach (var executor in executors)
-                {
-                    await RunAsync(connection, commandFactory, executor, cancellationToken, useTransactionScope);
-                }
-            }
+            await RunExecutorsAsync(connection, commandFactory, executors, cancellationToken, useTransactionScope, "RunAllAsync<TCommand>", flushAfterEachExecutor);
         }
 
         /// <summary>
@@ -70,12 +66,14 @@ namespace Samples.DatabaseHelper
         /// <param name="commandFactory">A <see cref="DbCommandFactory"/> implementation specific to an ADO.NET provider, e.g. SqlCommand, NpgsqlCommand.</param>
         /// <param name="cancellationToken">A cancellation token passed into downstream async methods.</param>
         /// <param name="useTransactionScope">Whether or not a Transcation Scope should be created.</param>
+        /// <param name="flushAfterEachExecutor">Whether each executor should use a separate trace that is flushed before the next executor starts.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         public static async Task RunBaseClassesAsync(
             IDbConnection connection,
             DbCommandFactory commandFactory,
             CancellationToken cancellationToken,
-            bool useTransactionScope = true)
+            bool useTransactionScope = true,
+            bool flushAfterEachExecutor = false)
         {
             var executors = new List<IDbCommandExecutor>
                             {
@@ -92,13 +90,7 @@ namespace Samples.DatabaseHelper
                                 new DbCommandNetStandardInterfaceExecutor(),
                             };
 
-            using (var root = SampleHelpers.CreateScope("RunBaseClassesAsync"))
-            {
-                foreach (var executor in executors)
-                {
-                    await RunAsync(connection, commandFactory, executor, cancellationToken, useTransactionScope);
-                }
-            }
+            await RunExecutorsAsync(connection, commandFactory, executors, cancellationToken, useTransactionScope, "RunBaseClassesAsync", flushAfterEachExecutor);
         }
 
         public static async Task RunSingleAsync(
@@ -144,6 +136,39 @@ namespace Samples.DatabaseHelper
                 {
                     await RunAsync(connection, commandFactory, executor, cancellationToken, useTransactionScope);
                 }
+            }
+        }
+
+        private static async Task RunExecutorsAsync(
+            IDbConnection connection,
+            DbCommandFactory commandFactory,
+            List<IDbCommandExecutor> executors,
+            CancellationToken cancellationToken,
+            bool useTransactionScope,
+            string rootScopeName,
+            bool flushAfterEachExecutor)
+        {
+            if (!flushAfterEachExecutor)
+            {
+                using (SampleHelpers.CreateScope(rootScopeName))
+                {
+                    foreach (var executor in executors)
+                    {
+                        await RunAsync(connection, commandFactory, executor, cancellationToken, useTransactionScope);
+                    }
+                }
+
+                return;
+            }
+
+            foreach (var executor in executors)
+            {
+                using (SampleHelpers.CreateScope(rootScopeName))
+                {
+                    await RunAsync(connection, commandFactory, executor, cancellationToken, useTransactionScope);
+                }
+
+                await SampleHelpers.ForceTracerFlushAsync();
             }
         }
 

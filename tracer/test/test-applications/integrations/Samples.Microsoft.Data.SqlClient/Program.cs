@@ -24,12 +24,10 @@ namespace Samples.Microsoft.Data.SqlClient
                     return 13;
                 }
 
-                await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
+                await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token, flushAfterEachExecutor: true);
             }
 
-            // Flush the first phase's trace before starting the next phase. Each phase produces a single
-            // large trace, so draining this one first stops the two from competing for the writer's buffers
-            // (a locally dropped trace here would fail the exact span-count assertion in the test).
+            // Flush any spans created while disposing the first connection before starting the next phase.
             await SampleHelpers.ForceTracerFlushAsync();
 
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile
@@ -46,10 +44,10 @@ namespace Samples.Microsoft.Data.SqlClient
                 }
 
                 // Do not use the strongly typed SqlCommandExecutor because the type casts will fail
-                await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token);
+                await RelationalDatabaseTestHarness.RunBaseClassesAsync(connection, commandFactory, cts.Token, flushAfterEachExecutor: true);
             }
 
-            // Flush before exit so all spans are delivered (deterministic, unlike a fixed delay).
+            // Flush any spans created while disposing the second connection before exit.
             await SampleHelpers.ForceTracerFlushAsync();
             return 0;
         }
