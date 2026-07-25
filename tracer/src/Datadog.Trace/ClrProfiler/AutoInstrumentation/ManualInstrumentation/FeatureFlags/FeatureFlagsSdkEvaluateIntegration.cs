@@ -43,7 +43,7 @@ public sealed class FeatureFlagsSdkEvaluateIntegration
         }
 
         var parameters = (State)state.State!;
-        var res = TracerManager.Instance.FeatureFlags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey ?? string.Empty, parameters.Attributes);
+        var res = TracerManager.Instance.FeatureFlags?.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey, parameters.Attributes);
         return new CallTargetReturn<TReturn?>(res.DuckCast<TReturn>());
     }
 
