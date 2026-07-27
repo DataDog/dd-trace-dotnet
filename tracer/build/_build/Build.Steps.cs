@@ -295,6 +295,13 @@ partial class Build
                     .SetTargetPath(Solution)
                     .SetVerbosity(NuGetVerbosity.Normal)
                     .SetProcessLogOutput(!IsServerBuild)
+                    .SetProcessCustomLogger((type, text) =>
+                    {
+                        if (!text.StartsWith("Installed ", StringComparison.Ordinal))
+                        {
+                            NuGetTasks.NuGetLogger(type, text);
+                        }
+                    })
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackagesDirectory(NugetPackageDirectory)));
             }
