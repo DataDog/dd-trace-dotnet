@@ -38,7 +38,7 @@ namespace Datadog.Trace.Agent
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
 
-        public ApiOtlp(IApiRequestFactory apiRequestFactory, TracerSettings settings, ExporterSettings exporterSettings, IDatadogLogger log = null)
+        public ApiOtlp(IApiRequestFactory tracesRequestFactory, IApiRequestFactory metricsRequestFactory, TracerSettings settings, ExporterSettings exporterSettings, IDatadogLogger log = null)
         {
             // optionally injecting a log instance in here for testing purposes
             _log = log ?? StaticLog;
@@ -46,8 +46,8 @@ namespace Datadog.Trace.Agent
             _sendStats = SendStatsAsyncImpl;
             _sendTraces = SendTracesAsyncImpl;
 
-            _apiRequestFactory = apiRequestFactory;
-            _metricsRequestFactory = OtlpTransportStrategy.GetMetrics(exporterSettings);
+            _apiRequestFactory = tracesRequestFactory;
+            _metricsRequestFactory = metricsRequestFactory;
             _tracesEncoding = exporterSettings.TracesEncoding;
             _tracesEndpoint = _apiRequestFactory.GetEndpoint(null); // The base endpoint for OTLP traces already includes the path component
             _statsEndpoint = exporterSettings.OtlpMetricsEndpoint;

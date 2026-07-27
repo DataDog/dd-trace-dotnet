@@ -79,6 +79,9 @@
       env: integration_tests,
       language: dotnet,
       span.kind: server
+    },
+    Metrics: {
+      _dd.apm.enabled: 0.0
     }
   }
 ]

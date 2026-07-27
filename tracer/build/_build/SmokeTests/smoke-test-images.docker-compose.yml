@@ -54,7 +54,7 @@ services:
   aspnet-8_0-alpine3_20:
     image: mcr.microsoft.com/dotnet/aspnet:8.0-alpine3.20@sha256:d5623b71c892cb18132948955e6415284987c5f69f86fd8ce4cedc9f38659c08
   aspnet-8_0-bookworm-slim:
-    image: mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim@sha256:9822a6201c64c9f38b8a190832a7ae21cd30150d509b3ea170fd83b4f4e6166a
+    image: mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim@sha256:8f6a307ae32fb393a4b4bcde0a81f0ce3f0a715de0e5575df71f3030448f2dde
   aspnet-8_0-jammy:
     image: mcr.microsoft.com/dotnet/aspnet:8.0-jammy@sha256:35dc939380d440307f8f957877d2c8f4c608ea22f596d09f5ad3c11e87402b31
   aspnet-8_0-jammy-chiseled:
@@ -68,7 +68,7 @@ services:
   aspnet-9_0-alpine3_20-composite:
     image: mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.20-composite@sha256:23a8f85858298867478ab0fbcaf99aa4453f0586b1c2bde124b688150c4d4912
   aspnet-9_0-bookworm-slim:
-    image: mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim@sha256:8b9f90e53d41154d42e537517aef22e8fe497baabd43e423d5f2edafd06f04f6
+    image: mcr.microsoft.com/dotnet/aspnet:9.0-bookworm-slim@sha256:86085bc68dde4a8cdfd8c2342acc3bf843eade855092879a85e3f3adb56e55c7
   aspnet-9_0-noble:
     image: mcr.microsoft.com/dotnet/aspnet:9.0-noble@sha256:5ad129827db5bf710906a43db07f4f1e2209bd2a8e3403ffea1ffe6961a82dc1
   aspnet-9_0-noble-chiseled:
@@ -120,7 +120,7 @@ services:
   sdk-9_0-alpine3_20:
     image: mcr.microsoft.com/dotnet/sdk:9.0-alpine3.20@sha256:823a26bb53762a51795dbcdcf67659360d6f62823f5a83dc380cbef226d4ded3
   sdk-9_0-bookworm-slim:
-    image: mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim@sha256:ee0d20fbc3dfc60ae2d9d9115a9b750c18576a47f24073119dd09d93e072cb89
+    image: mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim@sha256:cb9d975bf57fd1b0915858d1db1184bea20f7f746f0536323fcab49673144e8c
   sdk-9_0-noble:
     image: mcr.microsoft.com/dotnet/sdk:9.0-noble@sha256:72b2c1fba104eed0765e76c66256dd57b8b00c5e7c7fd16ad3eb254ad18db3fc
   sdk-10_0-alpine3_22:

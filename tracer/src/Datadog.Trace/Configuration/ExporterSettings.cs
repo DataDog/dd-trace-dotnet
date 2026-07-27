@@ -257,6 +257,11 @@ namespace Datadog.Trace.Configuration
         internal TracesEncoding TracesEncoding { get; }
 
         /// <summary>
+        /// Gets a value indicating whether traces are exported using OTLP encoding. Depends on OTEL_TRACES_EXPORTER=otlp.
+        /// </summary>
+        internal bool IsOtlpTraceExport => TracesEncoding is TracesEncoding.OtlpProtobuf or TracesEncoding.OtlpJson;
+
+        /// <summary>
         /// Gets the transport used to send traces to the Agent.
         /// </summary>
         internal TracesTransportType TracesTransport { get; }

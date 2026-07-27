@@ -237,7 +237,10 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Tri-state gate for OTLP span metrics export (traces.span.sdk.metrics.duration).
         /// When unset, auto-enables iff OTEL_TRACES_EXPORTER=otlp and DD_METRICS_OTEL_ENABLED=true.
-        /// When true, always enables span metrics export regardless of other settings.
+        /// When true, enables span metrics export, unless traces aren't actually exported using
+        /// OTLP encoding, in which case the setting is forced back to false (with a warning
+        /// logged and the calculated value reported in telemetry), since OTLP span metrics
+        /// require OTLP trace export.
         /// When false, always disables span metrics export.
         /// </summary>
         public const string TracesSpanMetricsEnabled = "OTEL_TRACES_SPAN_METRICS_ENABLED";
