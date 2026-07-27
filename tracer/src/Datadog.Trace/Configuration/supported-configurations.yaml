@@ -3070,7 +3070,7 @@ supportedConfigurations:
       Automatically apply header values as tags on traces.
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.HeaderTags"/>
   DD_TRACE_HTTP_CLIENT_ERROR_STATUSES:
-  - implementation: A
+  - implementation: B
     scope: managed
     type: string
     default: 400-499
