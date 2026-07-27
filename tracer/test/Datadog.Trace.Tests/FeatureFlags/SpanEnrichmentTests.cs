@@ -592,6 +592,45 @@ public class SpanEnrichmentTests
     }
 
     // ---------------------------------------------------------------------
+    // Wire-format snapshot: byte-exact ffe_* values through the real formatter
+    // ---------------------------------------------------------------------
+
+    [Fact]
+    public async Task Serialize_FfeWireFormat_MatchesFrozenSnapshot()
+    {
+        // Byte-exact snapshot of the three ffe_* tag values exactly as they land in the serialized
+        // "meta" map. This locks the frozen cross-SDK contract end-to-end: the bare tag names, the
+        // ULEB128 delta-varint + base64 flag encoding, the { sha256hex: base64 } subjects JSON, and
+        // the compact runtime-defaults JSON. A change to any of these diverges from the other tracers
+        // and must fail here loudly. (The codec in isolation is covered by ULeb128EncoderTests.)
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
+        await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
+
+        var scope = (Scope)tracer.StartActive("root-op");
+        var span = scope.Span;
+
+        var enrichment = span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!;
+        enrichment.AddSerialId(100);
+        enrichment.AddSerialId(108);
+        enrichment.AddSerialId(128);
+        enrichment.AddSerialId(130);
+        enrichment.AddSubject("user-123", 100);
+        enrichment.AddDefault("my-flag", "fallback-value");
+
+        span.Finish();
+        var serialized = Serialize(span).Single();
+
+        // flags: {100,108,128,130} -> deltas [100,8,20,2] -> ULEB128 [0x64,0x08,0x14,0x02] -> base64.
+        serialized.GetTag(SpanEnrichmentState.TagFlagsEnc).Should().Be("ZAgUAg==");
+
+        // subjects: { sha256("user-123"): base64(ULEB128 of {100}) }. {100} -> [0x64] -> "ZA==".
+        serialized.GetTag(SpanEnrichmentState.TagSubjectsEnc).Should().Be($"{{\"{User123Sha256}\":\"ZA==\"}}");
+
+        // runtime defaults: compact { flagKey: valueStr } JSON, no whitespace.
+        serialized.GetTag(SpanEnrichmentState.TagRuntimeDefaults).Should().Be("{\"my-flag\":\"fallback-value\"}");
+    }
+
+    // ---------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------
 
