@@ -11,11 +11,14 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.OpenTelemetry.Common;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.OpenTelemetry;
@@ -359,6 +362,36 @@ public class OtlpMapperTests
         OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128, openTelemetrySemanticsEnabled: false);
 
         attributes.Should().Contain(kv => kv.Key == tagKey, because: $"'{tagKey}' should be emitted as a span attribute when OTel trace compatibility is disabled");
+    }
+
+    [Fact]
+    public async Task EmitAttributesFromSpan_EmitsFeatureFlagEnrichment_OnLocalRoot()
+    {
+        // Regression: ffe_* enrichment is produced at serialization time (not stored on span.Tags),
+        // and OTLP export bypasses SpanMessagePackFormatter. Without OtlpMapper emitting these too,
+        // OTLP-exported traces would silently drop all feature-flag enrichment.
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
+        await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
+
+        var scope = (Scope)tracer.StartActive("root-op");
+        var span = scope.Span;
+
+        var enrichment = span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!;
+        enrichment.AddSerialId(100);
+        enrichment.AddSubject("user-123", 100);
+        enrichment.AddDefault("my-flag", "fallback-value");
+        span.Finish();
+
+        // Main TraceChunkModel constructor so IsLocalRoot is derived from TraceContext.RootSpan.
+        var spanModel = new TraceChunkModel(new SpanCollection(new[] { span })).GetSpanModel(0);
+        spanModel.IsLocalRoot.Should().BeTrue();
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit: 128, openTelemetrySemanticsEnabled: false);
+
+        attributes.Should().Contain(kv => kv.Key == SpanEnrichmentState.TagFlagsEnc && (string)kv.Value! == "ZA==");
+        attributes.Should().Contain(kv => kv.Key == SpanEnrichmentState.TagSubjectsEnc);
+        attributes.Should().Contain(kv => kv.Key == SpanEnrichmentState.TagRuntimeDefaults && (string)kv.Value! == "{\"my-flag\":\"fallback-value\"}");
     }
 
     private static Span CreateSpan(string? origin = null)

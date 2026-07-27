@@ -40,8 +40,9 @@ namespace Datadog.Trace.FeatureFlags
 
         private readonly HashSet<long> _serialIds = new();
 
-        // Raw targeting key -> set of serial ids. The key is hashed (SHA256) lazily in
-        // BuildSpanTags(), on the serializer thread, so the hash never runs on the evaluation path.
+        // SHA256-hex(targeting key) -> set of serial ids. The raw targeting key (often a customer
+        // identifier, and unbounded in length) is hashed at accumulation time and never retained on
+        // the trace, so we don't pin user-controlled data for the trace/writer-queue lifetime.
         private readonly Dictionary<string, HashSet<long>> _subjects = new();
 
         // flagKey -> value string (first-wins).
@@ -176,10 +177,13 @@ namespace Datadog.Trace.FeatureFlags
 
         internal void AddSubject(string targetingKey, long id)
         {
-            // Store the raw targeting key; it is hashed lazily in BuildSpanTags() (serializer thread).
+            // Hash the raw targeting key immediately so only the fixed-size digest is retained on the
+            // trace (never the raw, potentially user-identifying value). Hashing here (evaluation path)
+            // rather than in BuildSpanTags() keeps customer-controlled data off the trace/writer queue.
+            var hashed = HashTargetingKey(targetingKey);
             lock (_gate)
             {
-                if (_subjects.TryGetValue(targetingKey, out var ids))
+                if (_subjects.TryGetValue(hashed, out var ids))
                 {
                     if (ids.Count >= MaxExperimentsPerSubject && !ids.Contains(id))
                     {
@@ -197,7 +201,7 @@ namespace Datadog.Trace.FeatureFlags
                     return;
                 }
 
-                _subjects[targetingKey] = [id];
+                _subjects[hashed] = [id];
             }
         }
 
@@ -286,11 +290,11 @@ namespace Datadog.Trace.FeatureFlags
                 string? subjectsEnc = null;
                 if (subjects is not null)
                 {
-                    // Hash the raw targeting keys here (serializer thread), not at accumulation time.
+                    // Keys are already SHA256-hex digests (hashed at accumulation time in AddSubject).
                     var encoded = new Dictionary<string, string>(subjects.Count);
                     foreach (var pair in subjects)
                     {
-                        encoded[HashTargetingKey(pair.Key)] = ULeb128Encoder.EncodeDeltaVarint(pair.Value);
+                        encoded[pair.Key] = ULeb128Encoder.EncodeDeltaVarint(pair.Value);
                     }
 
                     subjectsEnc = JsonHelper.SerializeObject(encoded);
