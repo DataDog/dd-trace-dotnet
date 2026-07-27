@@ -634,17 +634,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         internal static bool TracingWithBundle(string?[] profilerPathValues, ProcessInfo process, bool isAzureAppService)
         {
-            string? directoryPath;
-
-            if (isAzureAppService)
-            {
-                directoryPath = AzureAppServiceRootPath;
-            }
-            else
-            {
-                string? filePath = process.MainModule;
-                directoryPath = Path.GetDirectoryName(filePath);
-            }
+            string? filePath = process.MainModule;
+            string? directoryPath = Path.GetDirectoryName(filePath);
 
             string[] expectedEndingsForBundleSetup =
             {
@@ -661,6 +652,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 foreach (var profilerPath in profilerPathValues)
                 {
                     if (profilerPath is not null && profilerPath.Equals(directoryPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                    else if (isAzureAppService && profilerPath is not null && profilerPath.Equals(AzureAppServiceRootPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
                     {
                         return true;
                     }

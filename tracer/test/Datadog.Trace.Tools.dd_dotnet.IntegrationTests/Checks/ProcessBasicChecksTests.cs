@@ -50,10 +50,9 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     [InlineData("/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so")]
     [InlineData("/home/site/wwwroot/datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so")]
     [InlineData("/home/site/wwwroot/datadog/linux-musl-arm64/Datadog.Trace.ClrProfiler.Native.so")]
-    public void DetectsBundleWhenRunningOnAzureAppService(string profilerPath)
+    public void DetectsBundleInAzureAppServiceRootWhenMainModuleIsDotnet(string profilerPath)
     {
-        SkipOn.Platform(SkipOn.PlatformValue.Windows);
-        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.AllExcept(SkipOn.PlatformValue.Linux);
 
         var environmentVariables = new Dictionary<string, string>
         {
@@ -71,6 +70,28 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         console.Output.Should().Contain(TracingWithBundleProfilerPath);
 
         console.Output.Should().NotContain(TracingWithInstallerLinux);
+    }
+
+    [SkippableFact]
+    public void DoesNotDetectBundleInAzureAppServiceRootOutsideAzureAppService()
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Linux);
+
+        const string profilerPath = "/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so";
+        var environmentVariables = new Dictionary<string, string>
+        {
+            ["CORECLR_PROFILER"] = Utils.Profilerid,
+            ["CORECLR_ENABLE_PROFILING"] = "1",
+            ["CORECLR_PROFILER_PATH"] = profilerPath
+        };
+        var process = new ProcessInfo("dotnet", 1, environmentVariables, "/usr/share/dotnet/dotnet", ["libcoreclr.so"]);
+
+        using var console = ConsoleHelper.Redirect();
+
+        ProcessBasicCheck.Run(process, MockRegistryService([], ProfilerPath));
+
+        console.Output.Should().NotContain(TracingWithBundleProfilerPath);
+        console.Output.Should().Contain(TracingWithInstallerLinux);
     }
 
     [SkippableFact]
