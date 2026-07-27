@@ -120,6 +120,41 @@
 /tracer/src/**/*GCP*.cs                                                         @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
 /tracer/test/**/*GCP*.cs                                                        @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
 
+## START - CI Visibility test ownership compatibility
+# Our current version of DatadogTestLogger 0.0.54 does not support expanding ** patterns for our tests
+# So to get this working well and get the correct teams to be reported we are expanding these out manually
+# Note: these all already have ** patterns that do what the following are doing so no _real_ changes to CODEOWNERs
+# TODO: Remove these explicit entries when the logger supports ** patterns
+
+### Data Streams Monitoring
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AWS/DataStreamsMonitoringAwsKinesisTests.cs      @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AWS/DataStreamsMonitoringAwsSnsTests.cs          @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AWS/DataStreamsMonitoringAwsSqsTests.cs          @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Azure/DataStreamsMonitoringAzureServiceBusTests.cs @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/DataStreamsMonitoringHttpClientTests.cs          @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/DataStreamsMonitoringKafkaTests.cs               @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/DataStreamsMonitoringManualApiTest.cs            @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/DataStreamsMonitoringRabbitMQTests.cs            @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
+
+### Serverless (AWS Lambda)
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AWS/AwsLambdaTests.cs    @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/tracer/test/Datadog.Trace.Tests/Configuration/TracerSettingsAwsLambdaTests.cs  @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/tracer/test/Datadog.Trace.Tests/LambdaCommonTests.cs                           @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/tracer/test/Datadog.Trace.Tests/LambdaRequestBuilderTests.cs                   @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+
+### Serverless (Azure)
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AzureFunctionsMessagingTriggerTests.cs @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AzureFunctionsTests.cs  @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/test/Datadog.Trace.Tests/ClrProfiler/AutoInstrumentation/Azure/Functions/AzureFunctionsCommonTests.cs @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/test/Datadog.Trace.Tests/Configuration/ExporterSettingsAzureFunctionsPipeTests.cs @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/test/Datadog.Trace.Tests/Configuration/ImmutableAzureAppServiceSettingsTests.cs @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/test/Datadog.Trace.Tests/Configuration/TracerSettingsAzureAppServiceTests.cs @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/test/Datadog.Trace.Tests/PlatformHelpers/AzureAppServicesTests.cs        @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+
+### Serverless (GCP)
+/tracer/test/Datadog.Trace.Tests/Configuration/ImmutableGCPFunctionSettingsTests.cs @DataDog/tracing-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+## END - CI Visibility test ownership compatibility
+
 # ASM
 /tracer/src/Datadog.Trace/AppSec/         @DataDog/asm-dotnet
 /tracer/src/Datadog.Tracer.Native/iast/    @DataDog/asm-dotnet
