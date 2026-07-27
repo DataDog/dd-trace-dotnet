@@ -10,9 +10,6 @@ namespace Samples.AWS.Kinesis
 {
     static class SyncHelpers
     {
-
-        private const string StreamName = "MyStreamName";
-
         public static void StartKinesisTasks(AmazonKinesisClient kinesisClient)
         {
             Console.WriteLine("Beginning Synchronous methods");
@@ -35,7 +32,7 @@ namespace Samples.AWS.Kinesis
 
         public static void CreateStream(AmazonKinesisClient kinesisClient)
         {
-            var createStreamRequest = new CreateStreamRequest { StreamName = StreamName };
+            var createStreamRequest = new CreateStreamRequest { StreamName = Common.StreamName };
 
             var response = kinesisClient.CreateStream(createStreamRequest);
             Console.WriteLine($"CreateStream(CreateStreamRequest) HTTP status code: {response.HttpStatusCode}");
@@ -43,7 +40,7 @@ namespace Samples.AWS.Kinesis
 
         public static void DeleteStream(AmazonKinesisClient kinesisClient)
         {
-            var deleteStreamRequest = new DeleteStreamRequest { StreamName = StreamName };
+            var deleteStreamRequest = new DeleteStreamRequest { StreamName = Common.StreamName };
 
             var response = kinesisClient.DeleteStream(deleteStreamRequest);
             Console.WriteLine($"DeleteStream(DeleteStreamRequest) HTTP status code: {response.HttpStatusCode}");
@@ -53,7 +50,7 @@ namespace Samples.AWS.Kinesis
         {
             var putRecordRequest = new PutRecordRequest
             {
-                StreamName = StreamName,
+                StreamName = Common.StreamName,
                 PartitionKey = Guid.NewGuid().ToString(),
             };
 
@@ -70,7 +67,7 @@ namespace Samples.AWS.Kinesis
             var pokemon = new Dictionary<string, object> { { "id", "393" }, { "name", "Piplup" }, { "type", "water" } };
             var putRecordsRequest = new PutRecordsRequest
             {
-                StreamName = StreamName,
+                StreamName = Common.StreamName,
                 Records = new List<PutRecordsRequestEntry>
                 {
                     new PutRecordsRequestEntry

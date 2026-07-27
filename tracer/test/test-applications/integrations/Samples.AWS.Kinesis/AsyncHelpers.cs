@@ -12,9 +12,6 @@ namespace Samples.AWS.Kinesis
 {
     static class AsyncHelpers
     {
-
-        private const string StreamName = "MyStreamName";
-
         public static async Task StartKinesisTasks(AmazonKinesisClient kinesisClient)
         {
             Console.WriteLine("Beginning Async methods");
@@ -37,7 +34,7 @@ namespace Samples.AWS.Kinesis
 
         public static async Task CreateStreamAsync(AmazonKinesisClient kinesisClient)
         {
-            var createStreamRequest = new CreateStreamRequest { StreamName = StreamName };
+            var createStreamRequest = new CreateStreamRequest { StreamName = Common.StreamName };
 
             var response = await kinesisClient.CreateStreamAsync(createStreamRequest);
             Console.WriteLine($"CreateStreamAsync(CreateStreamRequest) HTTP status code: {response.HttpStatusCode}");
@@ -45,7 +42,7 @@ namespace Samples.AWS.Kinesis
         
         public static async Task DeleteStreamAsync(AmazonKinesisClient kinesisClient)
         {
-            var deleteStreamRequest = new DeleteStreamRequest { StreamName = StreamName };
+            var deleteStreamRequest = new DeleteStreamRequest { StreamName = Common.StreamName };
 
             var response = await kinesisClient.DeleteStreamAsync(deleteStreamRequest);
             Console.WriteLine($"DeleteStreamAsync(DeleteStreamRequest) HTTP status code: {response.HttpStatusCode}");
@@ -55,7 +52,7 @@ namespace Samples.AWS.Kinesis
         {
             var putRecordRequest = new PutRecordRequest
             {
-                StreamName = StreamName,
+                StreamName = Common.StreamName,
                 PartitionKey = Guid.NewGuid().ToString(),
             };
 
@@ -72,7 +69,7 @@ namespace Samples.AWS.Kinesis
             var pokemon = new Dictionary<string, object> { { "id", "393" }, { "name", "Piplup" }, { "type", "water" } };
             var putRecordsRequest = new PutRecordsRequest
             {
-                StreamName = StreamName,
+                StreamName = Common.StreamName,
                 Records = new List<PutRecordsRequestEntry>
                 {
                     new PutRecordsRequestEntry
