@@ -289,6 +289,13 @@
     <ClInclude Include="CommittedMemoryProbe.h" />
     <ClInclude Include="IEEHeapReporter.h" />
     <ClInclude Include="EEHeapReporter.h" />
+    <ClInclude Include="AddressRegion.h" />
+    <ClInclude Include="IAddressSpaceMap.h" />
+    <ClInclude Include="AddressSpaceMap.h" />
+    <ClInclude Include="IClrNativeHeapSnapshot.h" />
+    <ClInclude Include="ClrNativeHeapSnapshot.h" />
+    <ClInclude Include="MemoryBreakdownFrames.h" />
+    <ClInclude Include="MemoryBreakdownProvider.h" />
     <ClInclude Include="INativeThreadList.h" />
     <ClInclude Include="INetworkListener.h" />
     <ClInclude Include="ISsiLifetime.h" />
@@ -464,6 +471,9 @@
     <ClCompile Include="DacNativeHeapEnumerator.cpp" />
     <ClCompile Include="CommittedMemoryProbe.cpp" />
     <ClCompile Include="EEHeapReporter.cpp" />
+    <ClCompile Include="AddressSpaceMap.cpp" />
+    <ClCompile Include="ClrNativeHeapSnapshot.cpp" />
+    <ClCompile Include="MemoryBreakdownProvider.cpp" />
     <ClCompile Include="TypeReferenceTreeJsonSerializer.cpp" />
     <ClCompile Include="TypeReferenceTreeBinarySerializer.cpp" />
     <ClCompile Include="MemoryResourceManager.cpp" />

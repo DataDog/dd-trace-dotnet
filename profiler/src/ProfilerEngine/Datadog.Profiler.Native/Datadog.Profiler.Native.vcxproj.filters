@@ -60,6 +60,9 @@
     <Filter Include="EEHeap">
       <UniqueIdentifier>{b2c9f5a1-4e3d-4f27-9c1a-7a6e0d2b8c11}</UniqueIdentifier>
     </Filter>
+    <Filter Include="MemoryBreakdown">
+      <UniqueIdentifier>{c3d0a6b2-5f4e-4038-ad2b-8b7f1e3c9d22}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -570,6 +573,27 @@
     <ClInclude Include="EEHeapReporter.h">
       <Filter>EEHeap</Filter>
     </ClInclude>
+    <ClInclude Include="AddressRegion.h">
+      <Filter>MemoryBreakdown</Filter>
+    </ClInclude>
+    <ClInclude Include="IAddressSpaceMap.h">
+      <Filter>MemoryBreakdown</Filter>
+    </ClInclude>
+    <ClInclude Include="AddressSpaceMap.h">
+      <Filter>MemoryBreakdown</Filter>
+    </ClInclude>
+    <ClInclude Include="IClrNativeHeapSnapshot.h">
+      <Filter>MemoryBreakdown</Filter>
+    </ClInclude>
+    <ClInclude Include="ClrNativeHeapSnapshot.h">
+      <Filter>MemoryBreakdown</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryBreakdownFrames.h">
+      <Filter>MemoryBreakdown</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryBreakdownProvider.h">
+      <Filter>MemoryBreakdown</Filter>
+    </ClInclude>
     <ClInclude Include="SnapshotCooldown.h">
       <Filter>HeapSnapshot</Filter>
     </ClInclude>
@@ -910,6 +934,15 @@
     </ClCompile>
     <ClCompile Include="EEHeapReporter.cpp">
       <Filter>EEHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="AddressSpaceMap.cpp">
+      <Filter>MemoryBreakdown</Filter>
+    </ClCompile>
+    <ClCompile Include="ClrNativeHeapSnapshot.cpp">
+      <Filter>MemoryBreakdown</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryBreakdownProvider.cpp">
+      <Filter>MemoryBreakdown</Filter>
     </ClCompile>
     <ClCompile Include="InlineVTCache.cpp">
       <Filter>HeapSnapshot</Filter>

@@ -12,7 +12,8 @@
 
 #include <set>
 
-CdacNativeHeapEnumerator::CdacNativeHeapEnumerator()
+CdacNativeHeapEnumerator::CdacNativeHeapEnumerator(IAddressSpaceMap* addressSpaceMap) :
+    _addressSpaceMap(addressSpaceMap)
 {
     uintptr_t descriptorAddress = 0;
     if (!cdac::ContractDescriptorLocator::TryLocate(descriptorAddress))
@@ -77,7 +78,7 @@ std::vector<ClrNativeHeapInfo> CdacNativeHeapEnumerator::EnumerateAll()
     };
 
     cdac::LoaderContract loader(target);
-    cdac::GCContract gc(target);
+    cdac::GCContract gc(target, _addressSpaceMap);
 
     // 1. JIT code heaps.
     if (hasContract("ExecutionManager") && loader.IsCodeHeapSupported())

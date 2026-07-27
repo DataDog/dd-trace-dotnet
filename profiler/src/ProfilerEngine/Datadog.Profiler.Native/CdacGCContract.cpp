@@ -465,7 +465,7 @@ void GCContract::AddCardTable(uintptr_t cardTableInfoAddr, const Sink& sink)
         // are scattered per element (card/brick/bundle/seg-mapping/mark-array) with reserved gaps. The
         // runtime does not expose the committed total, so we derive it from the OS region map. Fall back
         // to the reserved size if the query is unavailable (e.g. not in-process).
-        uint64_t committed = eeheap::QueryCommittedBytes(cardTableInfoAddr, static_cast<uint64_t>(size));
+        uint64_t committed = eeheap::QueryCommittedBytes(_addressSpaceMap, cardTableInfoAddr, static_cast<uint64_t>(size));
         info.Committed = committed != 0 ? committed : static_cast<uint64_t>(size);
         info.Kind = NativeHeapKind::GCBookkeeping;
         info.State = NativeHeapState::RegionOfRegions;

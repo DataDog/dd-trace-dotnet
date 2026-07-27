@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+class IAddressSpaceMap;
+
 namespace cdac
 {
 // GC data contract ("c1"): GC-owned native memory regions (free regions, handle-table segments,
@@ -21,8 +23,11 @@ class GCContract
 public:
     using Sink = std::function<void(const ClrNativeHeapInfo&)>;
 
-    explicit GCContract(Target& target) :
-        _target(target)
+    // `addressSpaceMap` (optional) is used for the gap-aware card-table committed size; when null a
+    // map is captured on demand (see eeheap::QueryCommittedBytes).
+    explicit GCContract(Target& target, IAddressSpaceMap* addressSpaceMap = nullptr) :
+        _target(target),
+        _addressSpaceMap(addressSpaceMap)
     {
     }
 
@@ -67,5 +72,6 @@ private:
     static NativeHeapKind MapFreeRegionKind(FreeRegionKind kind);
 
     Target& _target;
+    IAddressSpaceMap* _addressSpaceMap;
 };
 } // namespace cdac

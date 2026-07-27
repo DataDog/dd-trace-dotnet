@@ -608,6 +608,14 @@ void CorProfilerCallback::InitializeServices()
         }
     }
 
+    // The MemoryBreakdownProvider is created after Sample::ValuesCount is frozen below, so its two new
+    // value types (committed/rss) must be registered here to be counted and declared in the profile.
+    // Its constructor's GetOrRegister then returns these same offsets.
+    if (_pConfiguration->IsMemoryBreakdownEnabled())
+    {
+        valueTypeProvider.GetOrRegister(MemoryBreakdownProvider::SampleTypeDefinitions);
+    }
+
     // Avoid iterating twice on all providers in order to inject this value in each constructor
     // and store it in CollectorBase so it can be used in TransformRawSample (where the sample is created)
     auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
@@ -657,14 +665,24 @@ void CorProfilerCallback::InitializeServices()
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get(), _pRuntimeInfo.get());
 
-    // The eeheap report (a from-scratch SOS !eeheap) works on both .NET Core (cDAC for .NET 11+,
-    // DAC otherwise) and .NET Framework (mscordacwks DAC), so it is registered outside the
-    // event-pipe/ETW runtime branches, gated only by its config flag.
+    // The eeheap report (a from-scratch SOS !eeheap) and the memory-breakdown provider both consume the
+    // CLR native/managed heap snapshot (cDAC for .NET 11+, DAC otherwise, mscordacwks DAC on .NET
+    // Framework). Create the shared, per-export snapshot when either feature is enabled; it also owns
+    // the per-export OS address-space map. Working-set (RSS) capture is only worth its cost when the
+    // memory-breakdown provider is on AND its working-set option is enabled.
+    if (_pConfiguration->IsEEHeapEnabled() || _pConfiguration->IsMemoryBreakdownEnabled())
+    {
+        const bool captureWorkingSet =
+            _pConfiguration->IsMemoryBreakdownEnabled() && _pConfiguration->IsMemoryBreakdownWorkingSetEnabled();
+
+        _clrNativeHeapSnapshot = std::make_unique<ClrNativeHeapSnapshot>(_pRuntimeInfo.get(), captureWorkingSet);
+    }
+
     if (_pConfiguration->IsEEHeapEnabled())
     {
         _pEEHeapReporter = RegisterService<EEHeapReporter>(
             _pConfiguration.get(),
-            _pRuntimeInfo.get(),
+            _clrNativeHeapSnapshot.get(),
             _metricsRegistry
             );
     }
@@ -682,8 +700,18 @@ void CorProfilerCallback::InitializeServices()
         _pSsiManager.get(),
         _pAllocationsRecorder.get(),
         _pHeapSnapshotManager,
-        _pEEHeapReporter
+        _pEEHeapReporter,
+        _clrNativeHeapSnapshot.get()
         );
+
+    // Process-level memory breakdown: one reconciled memory flamegraph per export. Registered after the
+    // exporter is created so it can share the CLR/OS snapshot; invalidation is handled by the exporter.
+    if (_pConfiguration->IsMemoryBreakdownEnabled())
+    {
+        _memoryBreakdownProvider = std::make_unique<MemoryBreakdownProvider>(
+            valueTypeProvider, _clrNativeHeapSnapshot.get(), _metricsRegistry);
+        _pExporter->RegisterProcessSamplesProvider(_memoryBreakdownProvider.get());
+    }
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
         _pConfiguration->IsCpuProfilingEnabled() && // CPU profiling must be enabled

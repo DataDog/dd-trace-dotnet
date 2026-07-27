@@ -7,6 +7,7 @@
 
 #include "OsSpecificApi.h"
 
+#include "AddressSpaceMap.h"
 #include "IConfiguration.h"
 #include "IThreadInfo.h"
 #include "Log.h"
@@ -24,7 +25,9 @@
 
 #include <memory>
 #include <sstream>
+#include <vector>
 
+#include <psapi.h>
 #include <tlhelp32.h>
 #include <windows.h>
 
@@ -368,6 +371,197 @@ double GetProcessLifetime()
     // Calculate the difference and convert it from 100-nanosecond intervals to seconds.
     double duration = static_cast<double>(end.QuadPart - start.QuadPart) / 10000000.0;
     return duration;
+}
+
+size_t GetSystemPageSize()
+{
+    SYSTEM_INFO info{};
+    GetSystemInfo(&info);
+    return info.dwPageSize != 0 ? static_cast<size_t>(info.dwPageSize) : 4096;
+}
+
+namespace {
+
+// "r-x" / "rw-" style protection string from a PAGE_* protection mask (diagnostics only).
+std::string ProtectionToString(DWORD protect)
+{
+    const bool exec = (protect & (PAGE_EXECUTE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY)) != 0;
+    const bool read = (protect & (PAGE_READONLY | PAGE_READWRITE | PAGE_WRITECOPY | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY)) != 0;
+    const bool write = (protect & (PAGE_READWRITE | PAGE_WRITECOPY | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY)) != 0;
+
+    std::string s;
+    s.push_back(read ? 'r' : '-');
+    s.push_back(write ? 'w' : '-');
+    s.push_back(exec ? 'x' : '-');
+    return s;
+}
+
+// Leaf name (after the last path separator) of a device/DOS path, converted to UTF-8.
+std::string LeafNameUtf8(const wchar_t* widePath, size_t length)
+{
+    size_t start = 0;
+    for (size_t i = 0; i < length; ++i)
+    {
+        if (widePath[i] == L'\\' || widePath[i] == L'/')
+        {
+            start = i + 1;
+        }
+    }
+
+    const wchar_t* leaf = widePath + start;
+    int leafLen = static_cast<int>(length - start);
+    if (leafLen <= 0)
+    {
+        return {};
+    }
+
+    int needed = WideCharToMultiByte(CP_UTF8, 0, leaf, leafLen, nullptr, 0, nullptr, nullptr);
+    if (needed <= 0)
+    {
+        return {};
+    }
+    std::string result(static_cast<size_t>(needed), '\0');
+    WideCharToMultiByte(CP_UTF8, 0, leaf, leafLen, result.data(), needed, nullptr, nullptr);
+    return result;
+}
+
+std::string GetMappedModuleName(HANDLE hProcess, const void* address)
+{
+    wchar_t name[MAX_PATH * 2] = {0};
+    DWORD length = ::GetMappedFileNameW(hProcess, const_cast<void*>(address), name, ARRAYSIZE(name));
+    if (length == 0)
+    {
+        return {};
+    }
+    return LeafNameUtf8(name, length);
+}
+
+// Fills the working set (resident) bytes of a single committed run via QueryWorkingSetEx.
+uint64_t QueryWorkingSet(HANDLE hProcess, uintptr_t base, uint64_t size, size_t pageSize)
+{
+    if (size == 0 || pageSize == 0)
+    {
+        return 0;
+    }
+
+    constexpr size_t BatchPages = 1024;
+    const uint64_t pages = size / pageSize;
+    uint64_t resident = 0;
+
+    std::vector<PSAPI_WORKING_SET_EX_INFORMATION> batch;
+    batch.reserve(BatchPages);
+
+    for (uint64_t first = 0; first < pages; first += BatchPages)
+    {
+        uint64_t count = pages - first;
+        if (count > BatchPages)
+        {
+            count = BatchPages;
+        }
+
+        batch.assign(static_cast<size_t>(count), PSAPI_WORKING_SET_EX_INFORMATION{});
+        for (uint64_t i = 0; i < count; ++i)
+        {
+            batch[static_cast<size_t>(i)].VirtualAddress =
+                reinterpret_cast<PVOID>(base + (first + i) * pageSize);
+        }
+
+        DWORD cb = static_cast<DWORD>(count * sizeof(PSAPI_WORKING_SET_EX_INFORMATION));
+        if (!::QueryWorkingSetEx(hProcess, batch.data(), cb))
+        {
+            continue; // best effort
+        }
+
+        for (uint64_t i = 0; i < count; ++i)
+        {
+            if (batch[static_cast<size_t>(i)].VirtualAttributes.Valid)
+            {
+                resident += pageSize;
+            }
+        }
+    }
+
+    return resident;
+}
+
+RegionCategory CategorizeWindows(const MEMORY_BASIC_INFORMATION& mbi)
+{
+    if (mbi.State == MEM_FREE)
+    {
+        return RegionCategory::Free;
+    }
+    if (mbi.State == MEM_RESERVE)
+    {
+        return RegionCategory::Reserved;
+    }
+
+    switch (mbi.Type)
+    {
+        case MEM_IMAGE: return RegionCategory::Image;
+        case MEM_MAPPED: return RegionCategory::MappedFile;
+        case MEM_PRIVATE: return RegionCategory::PrivateData;
+        default: return RegionCategory::Other;
+    }
+}
+
+} // namespace
+
+std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap(bool includeWorkingSet)
+{
+    std::vector<AddressRegion> regions;
+
+    HANDLE hProcess = ::GetCurrentProcess();
+    SYSTEM_INFO si{};
+    GetSystemInfo(&si);
+    const size_t pageSize = si.dwPageSize != 0 ? static_cast<size_t>(si.dwPageSize) : 4096;
+
+    uintptr_t addr = reinterpret_cast<uintptr_t>(si.lpMinimumApplicationAddress);
+    const uintptr_t maxAddr = reinterpret_cast<uintptr_t>(si.lpMaximumApplicationAddress);
+
+    // Safety cap so a corrupt/pathological map cannot stall the walk.
+    constexpr uint64_t MaxRegions = 1ull << 21;
+    uint64_t walked = 0;
+
+    while (addr <= maxAddr && walked++ < MaxRegions)
+    {
+        MEMORY_BASIC_INFORMATION mbi{};
+        if (::VirtualQueryEx(hProcess, reinterpret_cast<LPCVOID>(addr), &mbi, sizeof(mbi)) != sizeof(mbi))
+        {
+            break;
+        }
+
+        const uintptr_t regionEnd = reinterpret_cast<uintptr_t>(mbi.BaseAddress) + mbi.RegionSize;
+
+        AddressRegion region;
+        region.Address = reinterpret_cast<uintptr_t>(mbi.BaseAddress);
+        region.Size = static_cast<uint64_t>(mbi.RegionSize);
+        region.Category = CategorizeWindows(mbi);
+        if (mbi.State == MEM_COMMIT)
+        {
+            region.Committed = static_cast<uint64_t>(mbi.RegionSize);
+            region.Protection = ProtectionToString(mbi.Protect);
+        }
+
+        if (region.Category == RegionCategory::Image || region.Category == RegionCategory::MappedFile)
+        {
+            region.ModuleName = GetMappedModuleName(hProcess, mbi.BaseAddress);
+        }
+
+        if (includeWorkingSet && mbi.State == MEM_COMMIT)
+        {
+            region.Rss = QueryWorkingSet(hProcess, region.Address, region.Size, pageSize);
+        }
+
+        regions.push_back(std::move(region));
+
+        if (regionEnd <= addr)
+        {
+            break; // no forward progress -> avoid spinning at the top of the address space
+        }
+        addr = regionEnd;
+    }
+
+    return std::make_unique<AddressSpaceMap>(std::move(regions), /*providesCommitted*/ true, /*providesRss*/ includeWorkingSet);
 }
 
 } // namespace OsSpecificApi

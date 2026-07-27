@@ -28,6 +28,7 @@
 #include "IHeapSnapshotManager.h"
 #include "IGcSettingsProvider.h"
 #include "IEEHeapReporter.h"
+#include "IClrNativeHeapSnapshot.h"
 #include "MetadataProvider.h"
 
 #include <cassert>
@@ -88,7 +89,8 @@ ProfileExporter::ProfileExporter(
     ISsiManager* ssiManager,
     IAllocationsRecorder* allocationsRecorder,
     IHeapSnapshotManager* heapSnapshotManager,
-    IEEHeapReporter* eeHeapReporter)
+    IEEHeapReporter* eeHeapReporter,
+    IClrNativeHeapSnapshot* clrNativeHeapSnapshot)
     :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _applicationStore{applicationStore},
@@ -100,7 +102,8 @@ ProfileExporter::ProfileExporter(
     _ssiManager{ssiManager},
     ProviderList{GetEnabledProfilers(enabledProfilers)},
     _heapSnapshotManager{heapSnapshotManager},
-    _eeHeapReporter{eeHeapReporter}
+    _eeHeapReporter{eeHeapReporter},
+    _clrNativeHeapSnapshot{clrNativeHeapSnapshot}
 {
     _exporter = CreateExporter(_configuration, CreateFixedTags(_configuration, runtimeInfo, enabledProfilers));
     _outputPath = CreatePprofOutputPath(_configuration);
@@ -625,6 +628,14 @@ bool ProfileExporter::Export(bool lastCall)
     auto eeHeapContent = (_eeHeapReporter != nullptr)
         ? _eeHeapReporter->GetAndClearEEHeapContent()
         : std::string{};
+
+    // Both consumers (process samples above + eeheap JSON) have now read the shared CLR/OS snapshot for
+    // this export; invalidate it so the next export re-captures. The process samples are already built
+    // into shared_ptr<Sample>, so this does not affect what gets added to each profile below.
+    if (_clrNativeHeapSnapshot != nullptr)
+    {
+        _clrNativeHeapSnapshot->Invalidate();
+    }
 
     for (auto& runtimeId : keys)
     {

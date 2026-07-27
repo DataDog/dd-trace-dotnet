@@ -6,6 +6,7 @@
 #include <cstdint>
 
 class IMemoryReader;
+class IAddressSpaceMap;
 
 namespace eeheap
 {
@@ -16,12 +17,19 @@ namespace eeheap
 // reserved block size. Returns 0 for a null/zero region.
 uint64_t ProbeCommittedBytes(IMemoryReader& reader, uintptr_t base, uint64_t reserved);
 
-// Returns the number of committed bytes within [base, base + reserved) using the OS region map
-// (VirtualQuery on Windows, /proc/self/maps on Linux). Unlike ProbeCommittedBytes this is gap-aware:
-// it sums every committed sub-range in the reservation rather than stopping at the first hole, and
-// its cost is O(number of distinct regions) instead of O(number of pages). Required for the GC
-// "bookkeeping" (card table) block, whose committed runs are scattered per element with reserved
-// gaps between them. In-process only; returns 0 when the region map cannot be determined (callers
-// fall back to the reserved size). The result is capped at reserved.
+// Returns the number of committed bytes within [base, base + reserved) using the shared OS region
+// map (IAddressSpaceMap). Unlike ProbeCommittedBytes this is gap-aware: it sums every committed
+// sub-range in the reservation rather than stopping at the first hole, at O(log n + k) cost. Required
+// for the GC "bookkeeping" (card table) block, whose committed runs are scattered per element with
+// reserved gaps between them.
+//
+// When `map` is non-null the answer comes from it directly (no syscalls - the map was captured once
+// for the whole export). When `map` is null a map is captured on demand via
+// OsSpecificApi::CaptureAddressSpaceMap(false), preserving the previous standalone behavior (used by
+// tests and any caller without a shared map). In-process only; returns 0 when the region map cannot
+// be determined. The result is capped at reserved.
+uint64_t QueryCommittedBytes(const IAddressSpaceMap* map, uintptr_t base, uint64_t reserved);
+
+// Convenience overload that captures a fresh map on demand (map == nullptr).
 uint64_t QueryCommittedBytes(uintptr_t base, uint64_t reserved);
 } // namespace eeheap

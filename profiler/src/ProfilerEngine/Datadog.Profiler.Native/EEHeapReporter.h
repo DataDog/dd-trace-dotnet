@@ -14,33 +14,26 @@
 #include <vector>
 
 class IConfiguration;
-class IRuntimeInfo;
-class INativeHeapEnumerator;
+class IClrNativeHeapSnapshot;
 class MetricsRegistry;
 class ProxyMetric;
 
-// Service that produces eeheap.json. On first use it lazily builds the right native-heap backend
-// selected by the runtime version (cDAC for .NET 11+, DAC otherwise), then on every export
-// enumerates the CLR native heaps and serializes them to JSON. Enumeration is timed and exposed
-// both as a log line and as the dotnet_eeheap_duration metric.
+// Service that produces eeheap.json. It sources the CLR native heaps from the shared, per-export
+// ClrNativeHeapSnapshot (which owns the DAC/cDAC backend and the OS address-space map), then on
+// every export serializes them to JSON. Enumeration is timed and exposed both as a log line and as
+// the dotnet_eeheap_duration metric.
 class EEHeapReporter : public IEEHeapReporter, public ServiceBase
 {
 public:
-    EEHeapReporter(IConfiguration* pConfiguration, IRuntimeInfo* pRuntimeInfo, MetricsRegistry& metricsRegistry);
+    EEHeapReporter(IConfiguration* pConfiguration, IClrNativeHeapSnapshot* pSnapshot, MetricsRegistry& metricsRegistry);
     ~EEHeapReporter() override;
 
     // IEEHeapReporter
     std::string GetAndClearEEHeapContent() override;
 
 public: // exposed for unit tests
-    // Backend selection rule: .NET 11+ (and not .NET Framework) -> cDAC; everything earlier -> DAC.
-    static bool ShouldUseCdac(IRuntimeInfo* pRuntimeInfo);
-
     // Serializes native-heap records to the eeheap.json shape.
     static std::string ToJson(const char* source, const std::vector<ClrNativeHeapInfo>& heaps);
-
-    // Injects a (fake) backend, bypassing the version-based factory. For tests only.
-    void InjectEnumeratorForTest(std::unique_ptr<INativeHeapEnumerator> enumerator, const char* backendName);
 
 protected:
     const char* GetName() override
@@ -53,15 +46,10 @@ protected:
     bool StopImpl() override;
 
 private:
-    void EnsureBackendCreated();
-
     IConfiguration* _pConfiguration;
-    IRuntimeInfo* _pRuntimeInfo;
+    IClrNativeHeapSnapshot* _pSnapshot;
 
     std::mutex _lock;
-    bool _backendCreated = false;
-    std::unique_ptr<INativeHeapEnumerator> _enumerator;
-    const char* _backendName = "none";
 
     // Last enumeration duration in milliseconds, surfaced via dotnet_eeheap_duration.
     uint64_t _duration = 0;

@@ -65,6 +65,7 @@ struct DacContext
     ISOSDacInterface8* sos8 = nullptr;   // full generation table incl. POH (.NET 5+); null on .NET FX
     ISOSDacInterface13* sos13 = nullptr; // kind-aware traverse + per-LoaderAllocator heaps (.NET 8+)
     IMemoryReader* reader = nullptr;
+    IAddressSpaceMap* addressSpaceMap = nullptr; // optional; for the gap-aware card-table committed size
     int versionMajor = 0;
     bool isCore = true;
 };
@@ -731,7 +732,8 @@ void DrainMemoryEnum(
     NativeHeapState state,
     bool attachHeap,
     std::vector<ClrNativeHeapInfo>& results,
-    bool queryCommitted = false)
+    bool queryCommitted = false,
+    IAddressSpaceMap* addressSpaceMap = nullptr)
 {
     if (memEnum == nullptr)
     {
@@ -758,7 +760,7 @@ void DrainMemoryEnum(
             info.Size = static_cast<uint64_t>(regions[i].Size);
             if (queryCommitted)
             {
-                uint64_t committed = eeheap::QueryCommittedBytes(info.Address, info.Size);
+                uint64_t committed = eeheap::QueryCommittedBytes(addressSpaceMap, info.Address, info.Size);
                 info.Committed = committed != 0 ? committed : info.Size;
             }
             else
@@ -806,7 +808,7 @@ void EnumerateGcMemoryRegions(const DacContext& ctx, std::vector<ClrNativeHeapIn
     {
         // Bookkeeping is a region-of-regions covering all heaps, so no single heap index applies. The
         // enum reports the reserved card-table size; commit is scattered, so derive it from the OS map.
-        DrainMemoryEnum(memEnum, NativeHeapKind::GCBookkeeping, /*useExtraDataSubkind*/ false, NativeHeapState::RegionOfRegions, /*attachHeap*/ false, results, /*queryCommitted*/ true);
+        DrainMemoryEnum(memEnum, NativeHeapKind::GCBookkeeping, /*useExtraDataSubkind*/ false, NativeHeapState::RegionOfRegions, /*attachHeap*/ false, results, /*queryCommitted*/ true, ctx.addressSpaceMap);
         memEnum->Release();
     }
 }
@@ -814,7 +816,7 @@ void EnumerateGcMemoryRegions(const DacContext& ctx, std::vector<ClrNativeHeapIn
 
 namespace dac
 {
-std::vector<ClrNativeHeapInfo> EnumerateNativeHeapsFromSos(ISOSDacInterface* sos, int versionMajor, bool isCore)
+std::vector<ClrNativeHeapInfo> EnumerateNativeHeapsFromSos(ISOSDacInterface* sos, int versionMajor, bool isCore, IAddressSpaceMap* addressSpaceMap)
 {
     std::vector<ClrNativeHeapInfo> results;
     if (sos == nullptr)
@@ -829,6 +831,7 @@ std::vector<ClrNativeHeapInfo> EnumerateNativeHeapsFromSos(ISOSDacInterface* sos
     DacContext ctx;
     ctx.sos = sos;
     ctx.reader = &reader;
+    ctx.addressSpaceMap = addressSpaceMap;
     ctx.versionMajor = versionMajor;
     ctx.isCore = isCore;
 
@@ -872,7 +875,8 @@ std::vector<ClrNativeHeapInfo> EnumerateNativeHeapsFromSos(ISOSDacInterface* sos
 }
 } // namespace dac
 
-DacNativeHeapEnumerator::DacNativeHeapEnumerator(IRuntimeInfo* pRuntimeInfo)
+DacNativeHeapEnumerator::DacNativeHeapEnumerator(IRuntimeInfo* pRuntimeInfo, IAddressSpaceMap* addressSpaceMap) :
+    _addressSpaceMap(addressSpaceMap)
 {
     if (pRuntimeInfo != nullptr)
     {
@@ -897,5 +901,5 @@ std::vector<ClrNativeHeapInfo> DacNativeHeapEnumerator::EnumerateAll()
     // Invalidate the DAC's cache so the snapshot reflects current target memory (best-effort).
     _dac.Flush();
 
-    return dac::EnumerateNativeHeapsFromSos(_dac.GetSos(), _versionMajor, _isCore);
+    return dac::EnumerateNativeHeapsFromSos(_dac.GetSos(), _versionMajor, _isCore, _addressSpaceMap);
 }

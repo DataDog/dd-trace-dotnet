@@ -3,12 +3,9 @@
 
 #include "EEHeapReporter.h"
 
-#include "CdacNativeHeapEnumerator.h"
 #include "ClrNativeHeapInfo.h"
-#include "DacNativeHeapEnumerator.h"
+#include "IClrNativeHeapSnapshot.h"
 #include "IConfiguration.h"
-#include "INativeHeapEnumerator.h"
-#include "IRuntimeInfo.h"
 #include "Log.h"
 #include "MetricsRegistry.h"
 #include "OpSysTools.h"
@@ -16,9 +13,9 @@
 
 #include <sstream>
 
-EEHeapReporter::EEHeapReporter(IConfiguration* pConfiguration, IRuntimeInfo* pRuntimeInfo, MetricsRegistry& metricsRegistry) :
+EEHeapReporter::EEHeapReporter(IConfiguration* pConfiguration, IClrNativeHeapSnapshot* pSnapshot, MetricsRegistry& metricsRegistry) :
     _pConfiguration{pConfiguration},
-    _pRuntimeInfo{pRuntimeInfo}
+    _pSnapshot{pSnapshot}
 {
     _durationMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_eeheap_duration", [this]() {
         return static_cast<double>(_duration);
@@ -35,48 +32,6 @@ bool EEHeapReporter::StartImpl()
 bool EEHeapReporter::StopImpl()
 {
     return true;
-}
-
-bool EEHeapReporter::ShouldUseCdac(IRuntimeInfo* pRuntimeInfo)
-{
-    return (pRuntimeInfo != nullptr) &&
-           !pRuntimeInfo->IsDotnetFramework() &&
-           (pRuntimeInfo->GetMajorVersion() >= 11);
-}
-
-void EEHeapReporter::InjectEnumeratorForTest(std::unique_ptr<INativeHeapEnumerator> enumerator, const char* backendName)
-{
-    std::lock_guard<std::mutex> lock(_lock);
-    _backendCreated = true;
-    _backendName = backendName;
-    _enumerator = std::move(enumerator);
-}
-
-void EEHeapReporter::EnsureBackendCreated()
-{
-    if (_backendCreated)
-    {
-        return;
-    }
-    _backendCreated = true;
-
-    // .NET 11+ (and not .NET Framework) -> cDAC contracts; everything earlier -> the DAC.
-    if (ShouldUseCdac(_pRuntimeInfo))
-    {
-        _backendName = "cdac";
-        _enumerator = std::make_unique<CdacNativeHeapEnumerator>();
-    }
-    else
-    {
-        _backendName = "dac";
-        _enumerator = std::make_unique<DacNativeHeapEnumerator>(_pRuntimeInfo);
-    }
-
-    if (_enumerator == nullptr || !_enumerator->IsAvailable())
-    {
-        Log::Info("!eeheap (", _backendName, "): native-heap backend unavailable; no eeheap.json will be produced.");
-        _enumerator.reset();
-    }
 }
 
 namespace
@@ -128,23 +83,24 @@ std::string EEHeapReporter::GetAndClearEEHeapContent()
 {
     std::lock_guard<std::mutex> lock(_lock);
 
-    EnsureBackendCreated();
-    if (_enumerator == nullptr)
+    if (_pSnapshot == nullptr || !_pSnapshot->IsAvailable())
     {
         return std::string{};
     }
 
+    const char* backendName = _pSnapshot->GetBackendName();
+
     const auto start = OpSysTools::GetHighPrecisionTimestamp();
-    std::vector<ClrNativeHeapInfo> heaps = _enumerator->EnumerateAll();
+    const std::vector<ClrNativeHeapInfo>& heaps = _pSnapshot->GetSnapshot();
     const auto elapsed = OpSysTools::GetHighPrecisionTimestamp() - start;
     _duration = static_cast<uint64_t>(elapsed.count() / 1000000);
 
-    Log::Info("!eeheap (", _backendName, "): enumerated ", heaps.size(), " native heaps in ", _duration, " ms.");
+    Log::Info("!eeheap (", backendName, "): enumerated ", heaps.size(), " native heaps in ", _duration, " ms.");
 
     if (heaps.empty())
     {
         return std::string{};
     }
 
-    return ToJson(_backendName, heaps);
+    return ToJson(backendName, heaps);
 }

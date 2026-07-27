@@ -10,6 +10,7 @@
 struct ISOSDacInterface;
 
 class IRuntimeInfo;
+class IAddressSpaceMap;
 
 // DAC backend (pre-.NET 11 + .NET Framework): enumerates CLR native heaps via ISOSDacInterface - the
 // same APIs SOS !eeheap and ClrMD's EnumerateClrNativeHeaps use. Order matches ClrMD:
@@ -17,7 +18,8 @@ class IRuntimeInfo;
 class DacNativeHeapEnumerator : public INativeHeapEnumerator
 {
 public:
-    explicit DacNativeHeapEnumerator(IRuntimeInfo* pRuntimeInfo);
+    // `addressSpaceMap` (optional) is used for the gap-aware card-table committed size.
+    explicit DacNativeHeapEnumerator(IRuntimeInfo* pRuntimeInfo, IAddressSpaceMap* addressSpaceMap = nullptr);
     ~DacNativeHeapEnumerator() override = default;
 
     std::vector<ClrNativeHeapInfo> EnumerateAll() override;
@@ -25,6 +27,7 @@ public:
 
 private:
     DacInterface _dac;
+    IAddressSpaceMap* _addressSpaceMap = nullptr;
     bool _available = false;
     int _versionMajor = 0; // runtime major version (0 = unknown); drives the loader-heap pointer fixups
     bool _isCore = true;   // false for .NET Framework
@@ -37,5 +40,5 @@ namespace dac
 // failing call degrades to "skip that source". versionMajor/isCore identify the runtime so the
 // classic-DAC loader-heap pointer fixups (ExplicitControl vs Normal) can match ClrMD; they are only
 // consulted when ISOSDacInterface13 is unavailable (.NET 5-7). 0/true is a safe default for tests.
-std::vector<ClrNativeHeapInfo> EnumerateNativeHeapsFromSos(ISOSDacInterface* sos, int versionMajor = 0, bool isCore = true);
+std::vector<ClrNativeHeapInfo> EnumerateNativeHeapsFromSos(ISOSDacInterface* sos, int versionMajor = 0, bool isCore = true, IAddressSpaceMap* addressSpaceMap = nullptr);
 } // namespace dac

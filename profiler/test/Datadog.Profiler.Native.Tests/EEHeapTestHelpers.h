@@ -4,6 +4,8 @@
 #pragma once
 
 #include "ClrNativeHeapInfo.h"
+#include "IAddressSpaceMap.h"
+#include "IClrNativeHeapSnapshot.h"
 #include "IMemoryReader.h"
 #include "INativeHeapEnumerator.h"
 
@@ -158,4 +160,59 @@ private:
     std::vector<ClrNativeHeapInfo> _heaps;
     bool _available;
     int _enumerateCount = 0;
+};
+
+// A fully-canned IClrNativeHeapSnapshot for reporter/provider tests. Returns a fixed set of CLR
+// heaps and an optional fake address-space map.
+class FakeClrNativeHeapSnapshot : public IClrNativeHeapSnapshot
+{
+public:
+    FakeClrNativeHeapSnapshot(std::vector<ClrNativeHeapInfo> heaps, bool available, const char* backendName = "fake", IAddressSpaceMap* map = nullptr) :
+        _heaps(std::move(heaps)), _available(available), _backendName(backendName), _map(map)
+    {
+    }
+
+    const std::vector<ClrNativeHeapInfo>& GetSnapshot() override
+    {
+        _enumerateCount++;
+        return _heaps;
+    }
+
+    IAddressSpaceMap* GetAddressSpaceMap() override
+    {
+        return _map;
+    }
+
+    void Invalidate() override
+    {
+        _invalidateCount++;
+    }
+
+    bool IsAvailable() override
+    {
+        return _available;
+    }
+
+    const char* GetBackendName() override
+    {
+        return _backendName;
+    }
+
+    int EnumerateCount() const
+    {
+        return _enumerateCount;
+    }
+
+    int InvalidateCount() const
+    {
+        return _invalidateCount;
+    }
+
+private:
+    std::vector<ClrNativeHeapInfo> _heaps;
+    bool _available;
+    const char* _backendName;
+    IAddressSpaceMap* _map;
+    int _enumerateCount = 0;
+    int _invalidateCount = 0;
 };

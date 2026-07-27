@@ -4,6 +4,7 @@
 #include "gtest/gtest.h"
 
 #include "ClrNativeHeapInfo.h"
+#include "ClrNativeHeapSnapshot.h"
 #include "EEHeapReporter.h"
 #include "EEHeapTestHelpers.h"
 #include "MetricsRegistry.h"
@@ -43,35 +44,35 @@ std::vector<ClrNativeHeapInfo> SampleHeaps()
 
 // --- backend selection --------------------------------------------------------------------------
 
-TEST(EEHeapReporterTest, ShouldUseCdacForNet11AndAbove)
+TEST(ClrNativeHeapSnapshotTest, ShouldUseCdacForNet11AndAbove)
 {
     RuntimeInfoHelper net11(11, 0, false);
-    EXPECT_TRUE(EEHeapReporter::ShouldUseCdac(net11.GetRuntimeInfo()));
+    EXPECT_TRUE(ClrNativeHeapSnapshot::ShouldUseCdac(net11.GetRuntimeInfo()));
 
     RuntimeInfoHelper net12(12, 0, false);
-    EXPECT_TRUE(EEHeapReporter::ShouldUseCdac(net12.GetRuntimeInfo()));
+    EXPECT_TRUE(ClrNativeHeapSnapshot::ShouldUseCdac(net12.GetRuntimeInfo()));
 }
 
-TEST(EEHeapReporterTest, ShouldUseDacForPreNet11)
+TEST(ClrNativeHeapSnapshotTest, ShouldUseDacForPreNet11)
 {
     RuntimeInfoHelper net6(6, 0, false);
     RuntimeInfoHelper net8(8, 0, false);
     RuntimeInfoHelper net10(10, 0, false);
 
-    EXPECT_FALSE(EEHeapReporter::ShouldUseCdac(net6.GetRuntimeInfo()));
-    EXPECT_FALSE(EEHeapReporter::ShouldUseCdac(net8.GetRuntimeInfo()));
-    EXPECT_FALSE(EEHeapReporter::ShouldUseCdac(net10.GetRuntimeInfo()));
+    EXPECT_FALSE(ClrNativeHeapSnapshot::ShouldUseCdac(net6.GetRuntimeInfo()));
+    EXPECT_FALSE(ClrNativeHeapSnapshot::ShouldUseCdac(net8.GetRuntimeInfo()));
+    EXPECT_FALSE(ClrNativeHeapSnapshot::ShouldUseCdac(net10.GetRuntimeInfo()));
 }
 
-TEST(EEHeapReporterTest, ShouldUseDacForFrameworkEvenWhenMajorIsHigh)
+TEST(ClrNativeHeapSnapshotTest, ShouldUseDacForFrameworkEvenWhenMajorIsHigh)
 {
     RuntimeInfoHelper framework(11, 0, true);
-    EXPECT_FALSE(EEHeapReporter::ShouldUseCdac(framework.GetRuntimeInfo()));
+    EXPECT_FALSE(ClrNativeHeapSnapshot::ShouldUseCdac(framework.GetRuntimeInfo()));
 }
 
-TEST(EEHeapReporterTest, ShouldUseDacWhenRuntimeInfoIsNull)
+TEST(ClrNativeHeapSnapshotTest, ShouldUseDacWhenRuntimeInfoIsNull)
 {
-    EXPECT_FALSE(EEHeapReporter::ShouldUseCdac(nullptr));
+    EXPECT_FALSE(ClrNativeHeapSnapshot::ShouldUseCdac(nullptr));
 }
 
 // --- JSON serialization -------------------------------------------------------------------------
@@ -105,17 +106,13 @@ TEST(EEHeapReporterTest, ToJsonProducesExpectedShape)
 TEST(EEHeapReporterTest, GetContentEnumeratesAndRecordsDurationMetric)
 {
     MetricsRegistry registry;
-    RuntimeInfoHelper net8(8, 0, false);
-    EEHeapReporter reporter(nullptr, net8.GetRuntimeInfo(), registry);
-
-    auto fake = std::make_unique<FakeNativeHeapEnumerator>(SampleHeaps(), /*available*/ true);
-    auto* fakePtr = fake.get();
-    reporter.InjectEnumeratorForTest(std::move(fake), "dac");
+    FakeClrNativeHeapSnapshot snapshot(SampleHeaps(), /*available*/ true, "dac");
+    EEHeapReporter reporter(nullptr, &snapshot, registry);
 
     std::string content = reporter.GetAndClearEEHeapContent();
     EXPECT_FALSE(content.empty());
     EXPECT_NE(content.find("\"source\":\"dac\""), std::string::npos);
-    EXPECT_EQ(fakePtr->EnumerateCount(), 1);
+    EXPECT_EQ(snapshot.EnumerateCount(), 1);
 
     // The dotnet_eeheap_duration ProxyMetric must be registered.
     auto metrics = registry.Collect();
@@ -133,13 +130,20 @@ TEST(EEHeapReporterTest, GetContentEnumeratesAndRecordsDurationMetric)
 TEST(EEHeapReporterTest, GetContentReturnsEmptyWhenBackendYieldsNoHeaps)
 {
     MetricsRegistry registry;
-    RuntimeInfoHelper net8(8, 0, false);
-    EEHeapReporter reporter(nullptr, net8.GetRuntimeInfo(), registry);
-
-    auto fake = std::make_unique<FakeNativeHeapEnumerator>(std::vector<ClrNativeHeapInfo>{}, /*available*/ true);
-    reporter.InjectEnumeratorForTest(std::move(fake), "dac");
+    FakeClrNativeHeapSnapshot snapshot(std::vector<ClrNativeHeapInfo>{}, /*available*/ true, "dac");
+    EEHeapReporter reporter(nullptr, &snapshot, registry);
 
     EXPECT_TRUE(reporter.GetAndClearEEHeapContent().empty());
+}
+
+TEST(EEHeapReporterTest, GetContentReturnsEmptyWhenSnapshotUnavailable)
+{
+    MetricsRegistry registry;
+    FakeClrNativeHeapSnapshot snapshot(SampleHeaps(), /*available*/ false, "dac");
+    EEHeapReporter reporter(nullptr, &snapshot, registry);
+
+    EXPECT_TRUE(reporter.GetAndClearEEHeapContent().empty());
+    EXPECT_EQ(snapshot.EnumerateCount(), 0);
 }
 
 // --- ServiceBase lifecycle ----------------------------------------------------------------------
@@ -147,8 +151,8 @@ TEST(EEHeapReporterTest, GetContentReturnsEmptyWhenBackendYieldsNoHeaps)
 TEST(EEHeapReporterTest, ServiceLifecycleStartsAndStopsOnce)
 {
     MetricsRegistry registry;
-    RuntimeInfoHelper net8(8, 0, false);
-    EEHeapReporter reporter(nullptr, net8.GetRuntimeInfo(), registry);
+    FakeClrNativeHeapSnapshot snapshot(SampleHeaps(), /*available*/ true, "dac");
+    EEHeapReporter reporter(nullptr, &snapshot, registry);
 
     EXPECT_TRUE(reporter.Start());
     EXPECT_FALSE(reporter.Start());

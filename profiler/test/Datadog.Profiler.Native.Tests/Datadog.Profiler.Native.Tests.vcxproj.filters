@@ -33,6 +33,12 @@
     <ClCompile Include="CommittedMemoryProbeTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="AddressSpaceMapTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryBreakdownProviderTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="DacNativeHeapEnumeratorTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>

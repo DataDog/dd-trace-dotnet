@@ -8,6 +8,8 @@
 
 #include <memory>
 
+class IAddressSpaceMap;
+
 namespace cdac
 {
 class Target;
@@ -20,7 +22,8 @@ class Target;
 class CdacNativeHeapEnumerator : public INativeHeapEnumerator
 {
 public:
-    CdacNativeHeapEnumerator();
+    // `addressSpaceMap` (optional) is forwarded to the GC contract for the card-table committed size.
+    explicit CdacNativeHeapEnumerator(IAddressSpaceMap* addressSpaceMap = nullptr);
     ~CdacNativeHeapEnumerator() override;
 
     std::vector<ClrNativeHeapInfo> EnumerateAll() override;
@@ -29,5 +32,6 @@ public:
 private:
     InProcessMemoryReader _reader;
     std::unique_ptr<cdac::Target> _target;
+    IAddressSpaceMap* _addressSpaceMap = nullptr;
     bool _available = false;
 };
