@@ -505,10 +505,11 @@ namespace Datadog.Trace
                 {
                     DebuggerManager.Instance.ExceptionReplay?.EndRequest();
 
-                    // Feature-flag span enrichment (ffe_* tags) is written at serialization time
-                    // (SpanMessagePackFormatter.WriteTags and OtlpMapper.EmitAttributesFromSpan),
-                    // reading Context.TraceContext.FeatureFlagEnrichment, so encoding/serialization
-                    // stays off this (customer) Finish path.
+                    // Feature-flag span enrichment (ffe_* tags) is encoded and written at serialization
+                    // time (SpanMessagePackFormatter.WriteTags and OtlpMapper.EmitAttributesFromSpan),
+                    // reading Context.TraceContext.FeatureFlagEnrichment, so no ffe_* work runs at
+                    // Finish(). (Targeting keys are hashed earlier, at accumulation time, so the raw
+                    // value is never retained — see SpanEnrichmentState.AddSubject.)
                     //
                     // Known limitation: because ffe_* are no longer materialized on span.Tags at
                     // Finish(), single-span sampling rules (DD_SPAN_SAMPLING_RULES) that match on an
