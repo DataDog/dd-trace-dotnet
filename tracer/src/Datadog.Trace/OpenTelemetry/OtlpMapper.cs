@@ -68,6 +68,11 @@ internal static class OtlpMapper
         }
 
         writeKeyValue(ref state, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
+
+        if (traceChunk.ClientComputedStats)
+        {
+            writeKeyValue(ref state, new KeyValue("_dd.stats_computed", "true"));
+        }
     }
 
     public static bool IsHandledResourceAttribute(string tagKey)
@@ -81,58 +86,77 @@ internal static class OtlpMapper
                tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
     }
 
-    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit)
+    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit, bool openTelemetrySemanticsEnabled)
     {
         return EmitAttributesFromSpan(
             in spanModel,
             limit,
+            openTelemetrySemanticsEnabled,
             ref writeKeyValue,
             static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue));
     }
 
-    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, ref TState state, KeyValueWriter<TState> writeKeyValue)
+    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, bool openTelemetrySemanticsEnabled, ref TState state, KeyValueWriter<TState> writeKeyValue)
     {
         int count = 0;
         int droppedAttributesCount = 0;
 
-        if (count < limit)
+        if (!openTelemetrySemanticsEnabled)
         {
-            writeKeyValue(ref state, new KeyValue("service.name", spanModel.Span.ServiceName));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
-        }
+            if (count < limit)
+            {
+                writeKeyValue(ref state, new KeyValue("service.name", spanModel.Span.ServiceName));
+                count++;
+            }
+            else
+            {
+                droppedAttributesCount++;
+            }
 
-        if (count < limit)
-        {
-            writeKeyValue(ref state, new KeyValue("operation.name", spanModel.Span.OperationName));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
-        }
+            if (count < limit)
+            {
+                writeKeyValue(ref state, new KeyValue("operation.name", spanModel.Span.OperationName));
+                count++;
+            }
+            else
+            {
+                droppedAttributesCount++;
+            }
 
-        if (count < limit)
-        {
-            writeKeyValue(ref state, new KeyValue("resource.name", spanModel.Span.ResourceName));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
-        }
+            if (count < limit)
+            {
+                writeKeyValue(ref state, new KeyValue("resource.name", spanModel.Span.ResourceName));
+                count++;
+            }
+            else
+            {
+                droppedAttributesCount++;
+            }
 
-        if (count < limit)
-        {
-            writeKeyValue(ref state, new KeyValue("span.type", spanModel.Span.Type));
-            count++;
-        }
-        else
-        {
-            droppedAttributesCount++;
+            if (count < limit)
+            {
+                writeKeyValue(ref state, new KeyValue("span.type", spanModel.Span.Type));
+                count++;
+            }
+            else
+            {
+                droppedAttributesCount++;
+            }
+
+            // add "runtime-id" tag to service-entry (aka top-level) spans
+            var testOptimization = Ci.TestOptimization.Instance;
+            if (spanModel.Span.IsTopLevel && (!testOptimization.IsRunning || !testOptimization.Settings.Agentless))
+            {
+                if (count < limit)
+                {
+                    writeKeyValue(ref state, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
+                    count++;
+                }
+                else
+                {
+                    droppedAttributesCount++;
+                }
+            }
         }
 
         // Write trace tags
@@ -141,22 +165,6 @@ internal static class OtlpMapper
             if (count < limit)
             {
                 writeKeyValue(ref state, new KeyValue(Trace.Tags.LastParentId, spanModel.Span.Context.LastParentId));
-                count++;
-            }
-            else
-            {
-                droppedAttributesCount++;
-            }
-        }
-
-        // TODO: Only write these as resource attributes
-        // add "runtime-id" tag to service-entry (aka top-level) spans
-        var testOptimization = Ci.TestOptimization.Instance;
-        if (spanModel.Span.IsTopLevel && (!testOptimization.IsRunning || !testOptimization.Settings.Agentless))
-        {
-            if (count < limit)
-            {
-                writeKeyValue(ref state, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
                 count++;
             }
             else
@@ -195,7 +203,7 @@ internal static class OtlpMapper
             tagProcessors = tracer.TracerManager?.TagProcessors;
         }
 
-        var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit);
+        var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
         spanModel.Span.Tags.EnumerateTags(ref tagWriter);
         count = tagWriter.Count;
         droppedAttributesCount += tagWriter.DroppedCount;
@@ -203,7 +211,7 @@ internal static class OtlpMapper
 
         // Write span metrics
         // Note: I could have done this earlier but I wanted to simulate the same behavior as the MessagePack formatter.
-        var metricsWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit);
+        var metricsWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
         spanModel.Span.Tags.EnumerateMetrics(ref metricsWriter);
         count = metricsWriter.Count;
         droppedAttributesCount += metricsWriter.DroppedCount;
@@ -223,18 +231,20 @@ internal static class OtlpMapper
         private readonly KeyValueWriter<TState> _writeKeyValue;
         private readonly ITagProcessor[]? _tagProcessors;
         private readonly int _limit;
+        private readonly bool _openTelemetrySemanticsEnabled;
 
         public TState State;
         public int Count;
         public int DroppedCount;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal TagWriter(TState state, KeyValueWriter<TState> writeKeyValue, ITagProcessor[]? tagProcessors, int count, int limit)
+        internal TagWriter(TState state, KeyValueWriter<TState> writeKeyValue, ITagProcessor[]? tagProcessors, int count, int limit, bool openTelemetrySemanticsEnabled = false)
         {
             State = state;
             _writeKeyValue = writeKeyValue;
             _tagProcessors = tagProcessors;
             _limit = limit;
+            _openTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
 
             Count = count;
             DroppedCount = 0;
@@ -252,6 +262,25 @@ internal static class OtlpMapper
             if (key == "telemetry.sdk.name"
                 || key == "telemetry.sdk.language"
                 || key == "telemetry.sdk.version")
+            {
+                return;
+            }
+
+            // When OTel trace compatibility is enabled, suppress tags that would duplicate
+            // OTLP-native fields or Datadog-specific attributes not relevant to OTel consumers.
+            if (_openTelemetrySemanticsEnabled
+                && (key == Tags.ErrorMsg
+                    || key == Tags.ErrorStack
+                    // Do not exclude "error.type" because it is a stable OTel attribute,
+                    // see https://opentelemetry.io/docs/specs/semconv/registry/attributes/error/
+                    || key == "otel.status_code"
+                    || key == "otel.status_description"
+                    || key == Tags.SpanKind
+                    || key == "service.name"
+                    || key == "service.version"
+                    || key == "service.instance.id"
+                    || key == Tags.InstrumentationName
+                    || key == "http-client-handler-type"))
             {
                 return;
             }

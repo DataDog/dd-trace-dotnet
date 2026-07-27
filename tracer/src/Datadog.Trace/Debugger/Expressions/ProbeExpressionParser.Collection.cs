@@ -450,33 +450,29 @@ internal partial class ProbeExpressionParser<T>
 
     private bool TryGetCollectionIteratorProperty(ParameterExpression itParameter, string propertyName, out Expression propertyExpression)
     {
-        propertyExpression = null;
+        return TryGetDictionaryEntryMember(itParameter, propertyName, out propertyExpression);
+    }
 
-        if (itParameter.Type == typeof(DictionaryEntry))
+    private bool TryGetDictionaryEntryMember(Expression dictionaryEntryExpression, string propertyName, out Expression memberExpression)
+    {
+        memberExpression = null;
+
+        if (!IsDictionaryEntryType(dictionaryEntryExpression.Type))
         {
-            var property = Expression.Property(itParameter, propertyName);
-            propertyExpression = propertyName switch
-            {
-                nameof(KeyValuePair<int, int>.Key) => property,
-                nameof(KeyValuePair<int, int>.Value) when TryRedactDictionaryValueMember(itParameter, out var redactedValue) => redactedValue,
-                _ => property,
-            };
-            return true;
+            return false;
         }
 
-        if (itParameter.Type.IsGenericType && itParameter.Type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>))
+        switch (propertyName)
         {
-            var property = Expression.Property(itParameter, propertyName);
-            propertyExpression = propertyName switch
-            {
-                nameof(KeyValuePair<int, int>.Key) => property,
-                nameof(KeyValuePair<int, int>.Value) when TryRedactDictionaryValueMember(itParameter, out var redactedValue) => redactedValue,
-                _ => property,
-            };
-            return true;
+            case nameof(KeyValuePair<int, int>.Key):
+                memberExpression = Expression.Property(dictionaryEntryExpression, propertyName);
+                return true;
+            case nameof(KeyValuePair<int, int>.Value):
+                memberExpression = TryRedactDictionaryValueMember(dictionaryEntryExpression, out var redactedValue) ? redactedValue : Expression.Property(dictionaryEntryExpression, propertyName);
+                return true;
+            default:
+                return false;
         }
-
-        return false;
     }
 
     private bool TryRedactDictionaryValueMember(Expression dictionaryEntryExpression, out Expression redactedValue)
@@ -536,10 +532,18 @@ internal partial class ProbeExpressionParser<T>
         return false;
     }
 
-    private MemberExpression RedactedDictionaryValueMember(RedactedDictionaryValueExpression redactedDictionaryValue, string propertyOrFieldValue)
+    private Expression RedactedDictionaryValueMember(RedactedDictionaryValueExpression redactedDictionaryValue, string propertyOrFieldValue)
     {
         var valueExpression = redactedDictionaryValue.ValueExpression;
-        var memberExpression = Expression.PropertyOrField(valueExpression, propertyOrFieldValue);
+        if (!TryResolveSafeMemberExpression(valueExpression, propertyOrFieldValue, out var memberExpression, out var reason))
+        {
+            AddError($"{valueExpression}.{propertyOrFieldValue}", reason);
+            var undefinedValue = UndefinedValue();
+            (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())
+               .Add(undefinedValue, new RedactedDictionaryValueExpression(redactedDictionaryValue.ShouldRedactExpression, undefinedValue));
+            return undefinedValue;
+        }
+
         (_redactedDictionaryValues ??= new Dictionary<Expression, RedactedDictionaryValueExpression>())
            .Add(memberExpression, new RedactedDictionaryValueExpression(redactedDictionaryValue.ShouldRedactExpression, memberExpression));
         return memberExpression;
@@ -568,6 +572,11 @@ internal partial class ProbeExpressionParser<T>
         return TryGetRedactedDictionaryValue(source, out var redactedDictionaryValue)
                    ? RedactDictionaryOperationWithGuard(redactedDictionaryValue.ShouldRedactExpression, operation)
                    : operation;
+    }
+
+    private Expression RedactDictionaryUndefinedOperation(Expression source)
+    {
+        return RedactDictionaryOperation(source, ReturnDefaultValueExpression());
     }
 
     private Expression RedactDictionaryOperationWithGuard(Expression shouldRedact, Expression operation)

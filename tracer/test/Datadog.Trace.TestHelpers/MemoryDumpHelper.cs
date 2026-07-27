@@ -92,7 +92,7 @@ namespace Datadog.Trace.TestHelpers
 
                     void OnDataReceived(string output)
                     {
-                        if (output == procdumpStarted)
+                        if (output.Replace("\0", string.Empty) == procdumpStarted)
                         {
                             tcs.TrySetResult(true);
                         }
@@ -102,18 +102,21 @@ namespace Datadog.Trace.TestHelpers
 
                     helper.Drain();
 
-                    if (helper.StandardOutput.Contains("Dump count reached") || !helper.StandardOutput.Contains("Dump count not reached"))
+                    var standardOutput = helper.StandardOutput.Replace("\0", string.Empty);
+                    var errorOutput = helper.ErrorOutput.Replace("\0", string.Empty);
+
+                    if (standardOutput.Contains("Dump count reached") || !standardOutput.Contains("Dump count not reached"))
                     {
                         _output.Report($"[dump] procdump for process {pid} exited with code {helper.Process.ExitCode}");
                         _output.Report($"[dump] Using {_path}");
 
-                        _output.Report($"[dump][stdout] {helper.StandardOutput}");
-                        _output.Report($"[dump][stderr] {helper.ErrorOutput}");
+                        _output.Report($"[dump][stdout] {standardOutput}");
+                        _output.Report($"[dump][stderr] {errorOutput}");
                     }
 
                     // It looks like there's a small race condition where this could happen before the OnDataReceived callback is called.
                     // So redo the check before setting the task as cancelled.
-                    if (helper.StandardOutput.Contains(procdumpStarted))
+                    if (standardOutput.Contains(procdumpStarted))
                     {
                         tcs.TrySetResult(true);
                     }

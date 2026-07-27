@@ -309,6 +309,11 @@ namespace BuggyBits
                 {
                     urls.Add($"{rootUrl}/SteadyState");
                 }
+
+                if ((_scenario & Scenario.EndpointProfiling) == Scenario.EndpointProfiling)
+                {
+                    urls.Add($"{rootUrl}/Products/EndpointProfiling");
+                }
             }
 
             return urls;

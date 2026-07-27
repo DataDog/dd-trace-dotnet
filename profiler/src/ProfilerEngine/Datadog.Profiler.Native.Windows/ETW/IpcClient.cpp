@@ -135,13 +135,16 @@ HANDLE IpcClient::GetEndPoint(IIpcLogger* pLogger, const std::string& portName, 
         pLogger->Info(builder.str());
     }
 
+    // SECURITY_SQOS_PRESENT | SECURITY_ANONYMOUS prevents a malicious process that squats the
+    // well-known pipe name from impersonating this (potentially high-privilege) process via
+    // ImpersonateNamedPipeClient. Without it, the connection defaults to SecurityImpersonation.
     HANDLE hPipe = ::CreateFileA(
         portName.c_str(),
         GENERIC_READ | GENERIC_WRITE,
         0,
         nullptr,
         OPEN_EXISTING,
-        FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
+        SECURITY_SQOS_PRESENT | SECURITY_ANONYMOUS | FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
         nullptr);
 
     return hPipe;

@@ -38,7 +38,8 @@ namespace BuggyBits
         GetAwaiterGetResult = 1024, // using GetAwaiter().GetResult() instead of await
         UseResultProperty = 2048, // using Result property instead of GetAwaiter().GetResult()
         ShortLived = 4096,      // short lived threads
-        SteadyState = 8192,     // ~100 idle threads + controlled, bounded allocations for reproducible memory captures
+        EndpointProfiling = 8192, // lightweight CPU work for endpoint profiling tests
+        SteadyState = 16384,     // ~100 idle threads + controlled, bounded allocations for reproducible memory captures
     }
 
     public class Program

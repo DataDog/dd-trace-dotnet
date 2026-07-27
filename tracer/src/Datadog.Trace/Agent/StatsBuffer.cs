@@ -16,11 +16,9 @@ namespace Datadog.Trace.Agent
     {
         private readonly List<StatsAggregationKey> _keysToRemove;
 
-        private ClientStatsPayload _header;
-
         public StatsBuffer(ClientStatsPayload header, StatsCardinalityLimiter cardinalityLimiter, StatsCardinalityReporter cardinalityReporter)
         {
-            _header = header;
+            Header = header;
             CardinalityLimiter = cardinalityLimiter;
             _keysToRemove = new();
             Buckets = new();
@@ -35,6 +33,8 @@ namespace Datadog.Trace.Agent
         public StatsCardinalityReporter CardinalityReporter { get; }
 
         public long Start { get; private set; }
+
+        public ClientStatsPayload Header { get; }
 
         /// <summary>
         /// Gets the number of buckets that have received at least one hit in the current flush window.
@@ -150,7 +150,7 @@ namespace Datadog.Trace.Agent
         public void Serialize(Stream stream, long bucketDuration)
         {
             var count = 10; // Base: Hostname, Env, Version, Stats, Lang, TracerVersion, RuntimeID, Sequence, Service, TracerDdTags
-            var details = _header.Details;
+            var details = Header.Details;
 
             var serializedTags = details.ProcessTags?.SerializedTags;
             var writeTags = !StringUtil.IsNullOrEmpty(serializedTags);
@@ -168,7 +168,7 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteMapHeader(stream, count);
 
             MessagePackBinary.WriteStringBytes(stream, HostnameKeyBytes);
-            MessagePackBinary.WriteString(stream, _header.HostName ?? string.Empty);
+            MessagePackBinary.WriteString(stream, Header.HostName ?? string.Empty);
 
             MessagePackBinary.WriteStringBytes(stream, EnvKeyBytes);
             if (StringUtil.IsNullOrEmpty(details.Environment))
@@ -203,7 +203,7 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, Tracer.RuntimeId);
 
             MessagePackBinary.WriteStringBytes(stream, SequenceKeyBytes);
-            MessagePackBinary.WriteInt64(stream, _header.GetSequenceNumber());
+            MessagePackBinary.WriteInt64(stream, Header.GetSequenceNumber());
 
             MessagePackBinary.WriteStringBytes(stream, ServiceKeyBytes);
             MessagePackBinary.WriteString(stream, details.DefaultServiceName ?? string.Empty);

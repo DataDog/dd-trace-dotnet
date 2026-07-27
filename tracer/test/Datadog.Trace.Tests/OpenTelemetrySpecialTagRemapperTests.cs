@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.TestTracer;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -141,6 +142,89 @@ namespace Datadog.Trace.Tests
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             Assert.Equal(expected, span.GetMetric(Tags.Analytics));
+        }
+
+#if NET6_0_OR_GREATER
+        [Theory]
+        [InlineData((int)Datadog.Trace.Activity.DuckTypes.ActivityStatusCode.Ok, "STATUS_CODE_OK")]
+        [InlineData((int)Datadog.Trace.Activity.DuckTypes.ActivityStatusCode.Error, "STATUS_CODE_ERROR")]
+        [InlineData((int)Datadog.Trace.Activity.DuckTypes.ActivityStatusCode.Unset, "STATUS_CODE_UNSET")]
+        public void ActivityStatus_IsReflectedInOtelStatusCode_WhenOtelSemanticsEnabled(int activityStatus, string expectedOtelStatusCode)
+        {
+            var activityMock = new Mock<IActivity6>();
+            activityMock.Setup(x => x.TagObjects).Returns(new Dictionary<string, object>());
+            activityMock.Setup(x => x.Status).Returns((Datadog.Trace.Activity.DuckTypes.ActivityStatusCode)activityStatus);
+
+            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
+            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, openTelemetrySemanticsEnabled: true);
+
+            span.GetTag("otel.status_code").Should().Be(expectedOtelStatusCode);
+        }
+#endif
+
+        [Theory]
+        [InlineData("OK", "STATUS_CODE_OK")]
+        [InlineData("ERROR", "STATUS_CODE_ERROR")]
+        [InlineData("UNSET", "STATUS_CODE_UNSET")]
+        [InlineData(null, "STATUS_CODE_UNSET")]
+        public void ShortFormOtelStatusCode_IsNormalized_WhenActivity6Unavailable(string shortFormValue, string expectedOtelStatusCode)
+        {
+            var activityMock = new Mock<IActivity5>();
+            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Internal);
+            var tagObjects = new Dictionary<string, object>();
+            if (shortFormValue is not null)
+            {
+                tagObjects["otel.status_code"] = shortFormValue;
+            }
+
+            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
+
+            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
+            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, openTelemetrySemanticsEnabled: true);
+
+            span.GetTag("otel.status_code").Should().Be(expectedOtelStatusCode);
+        }
+
+        [Fact]
+        public void HttpStatusCode_WithIntegerValue_IsNotRemapped_WhenOtelSemanticsEnabled()
+        {
+            const string key = "http.status_code";
+            const int statusCode = 200;
+            var activityMock = new Mock<IActivity5>();
+            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Server);
+            var tagObjects = new Dictionary<string, object> { { key, statusCode } };
+            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
+
+            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
+            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, openTelemetrySemanticsEnabled: true);
+
+            span.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            span.GetMetric(key).Should().Be((double)statusCode);
+        }
+
+        [Fact]
+        public void HttpResponseStatusCode_WithIntegerValue_IsNotRemapped_WhenOtelSemanticsEnabled()
+        {
+            const string key = "http.response.status_code";
+            const int statusCode = 200;
+            var activityMock = new Mock<IActivity5>();
+            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Server);
+            var tagObjects = new Dictionary<string, object> { { key, statusCode } };
+            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
+
+            var spanContext = _tracer.CreateSpanContext(parent: null, serviceName: null, traceId: new TraceId(0, 1), spanId: 1);
+            var span = new Span(spanContext, DateTimeOffset.UtcNow, new OpenTelemetryTags());
+            using var scope = new Scope(parent: null, span, new AsyncLocalScopeManager(), finishOnClose: true);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, openTelemetrySemanticsEnabled: true);
+
+            span.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            span.GetMetric(key).Should().Be((double)statusCode);
         }
     }
 }
