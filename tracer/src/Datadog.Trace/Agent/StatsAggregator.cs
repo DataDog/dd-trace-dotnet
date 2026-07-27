@@ -728,16 +728,16 @@ namespace Datadog.Trace.Agent
             var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind));
             var isSpanKindEligible = spanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Consumer or SpanKinds.Producer;
 
-            if (_isOtlp)
-            {
-                // OTLP span metrics (SEMCON-1093 FR04): only service-entry (top-level) or explicitly measured spans.
-                if (!span.IsTopLevel && span.GetMetric(Tags.Measured) != 1.0)
-                {
-                    return;
-                }
-            }
-            else if (!(span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
-                     || span.GetMetric(Tags.PartialSnapshot) >= 0)
+            // SEMCON-1093 FR04: OTLP span metrics only for service-entry (top-level) or explicitly measured spans.
+            // Non-OTLP: also includes span-kind-eligible spans, and excludes partial snapshots.
+            // Note: !(x >= 0) is intentionally used instead of x < 0 because GetMetric returns double?,
+            // and null < 0 is false while !(null >= 0) is true — we want null (unset) to pass through.
+            var isEligible = _isOtlp
+                ? span.IsTopLevel || span.GetMetric(Tags.Measured) == 1.0
+                : (span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
+                  && !(span.GetMetric(Tags.PartialSnapshot) >= 0);
+
+            if (!isEligible)
             {
                 return;
             }
