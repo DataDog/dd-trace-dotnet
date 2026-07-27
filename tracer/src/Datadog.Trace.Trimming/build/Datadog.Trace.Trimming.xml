@@ -634,6 +634,7 @@
       <type fullname="System.AttributeTargets" />
       <type fullname="System.AttributeUsageAttribute" />
       <type fullname="System.BadImageFormatException" />
+      <type fullname="System.Base64FormattingOptions" />
       <type fullname="System.BitConverter" />
       <type fullname="System.Boolean" />
       <type fullname="System.Buffer" />
