@@ -108,10 +108,72 @@ build:
         exit 1
       }
     - |
-      docker run --rm -m 10240M `
+      try {
+        $computerSystem = Get-CimInstance Win32_ComputerSystem
+        $operatingSystem = Get-CimInstance Win32_OperatingSystem
+        Write-Output ("Runner memory: {0:N1} GB total, {1:N1} GB free" -f ($computerSystem.TotalPhysicalMemory / 1GB), ($operatingSystem.FreePhysicalMemory * 1KB / 1GB))
+        Write-Output "Runner logical processors: $($computerSystem.NumberOfLogicalProcessors)"
+      } catch {
+        Write-Warning "Unable to retrieve runner information: $_"
+      }
+
+      $containerName = "dd-trace-build-$env:CI_JOB_ID"
+      $containerMemoryLimit = 20GB
+      $dockerPath = (Get-Command docker).Source
+      $statsJob = Start-Job -ArgumentList $containerName, $containerMemoryLimit, $dockerPath -ScriptBlock {
+        param($name, $memoryLimit, $docker)
+
+        function ConvertTo-Bytes([string] $value) {
+          if ($value -notmatch '^\s*([0-9]+(?:\.[0-9]+)?)\s*([KMGT]?i?B)\s*$') {
+            return $null
+          }
+
+          $factors = @{
+            B   = 1
+            KB  = 1KB
+            KiB = 1KB
+            MB  = 1MB
+            MiB = 1MB
+            GB  = 1GB
+            GiB = 1GB
+            TB  = 1TB
+            TiB = 1TB
+          }
+
+          return [double]$Matches[1] * $factors[$Matches[2]]
+        }
+
+        $containerSeen = $false
+        $peakBytes = 0.0
+        $peakUsage = "unknown"
+
+        while ($true) {
+          $stats = & $docker stats $name --no-stream --format "{{.MemUsage}}" 2>$null
+          if ($LASTEXITCODE -eq 0 -and $stats) {
+            $containerSeen = $true
+            $usage = ($stats -split '/', 2)[0].Trim()
+            $usageBytes = ConvertTo-Bytes $usage
+            if ($null -ne $usageBytes -and $usageBytes -gt $peakBytes) {
+              $peakBytes = $usageBytes
+              $peakUsage = $usage
+            }
+          } elseif ($containerSeen) {
+            break
+          }
+
+          Start-Sleep -Seconds 5
+        }
+
+        $peakPercent = 100 * $peakBytes / $memoryLimit
+        Write-Output ("Peak container memory: {0} ({1:N1}% of limit)" -f $peakUsage, $peakPercent)
+      }
+
+      # Enable MSVC /MP, capped at the runner's logical processor count.
+      docker run --name $containerName --rm -m 20480M `
         -v "$(Get-Location):c:\mnt" `
         -e CI_JOB_ID=${CI_JOB_ID} `
-        -e ENABLE_MULTIPROCESSOR_COMPILATION=false `
+        -e ENABLE_MULTIPROCESSOR_COMPILATION=true `
+        -e CL_MPCount=16 `
         -e WINDOWS_BUILDER=true `
         -e AWS_NETWORKING=true `
         -e SIGN_WINDOWS=true `
@@ -121,6 +183,19 @@ build:
         -e CI_JOB_NAME_SLUG `
         $env:WINDOWS_BUILD_IMAGE `
         Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
+      $buildExitCode = $LASTEXITCODE
+
+      Wait-Job $statsJob -Timeout 15 | Out-Null
+      if ($statsJob.State -eq 'Running') {
+        Stop-Job $statsJob
+      }
+
+      Receive-Job $statsJob
+      Remove-Job $statsJob -Force
+
+      if ($buildExitCode -ne 0) {
+        throw "Docker build container exited with code $buildExitCode"
+      }
     - mkdir artifacts-out
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
     - remove-item -recurse -force build-out\${CI_JOB_ID}
