@@ -1,2 +1,12 @@
 <Project>
+  <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.vcxproj'">
+    <!-- Suppress warnings from vendored headers without suppressing warnings in Datadog code. -->
+    <ExternalIncludePath>$(MSBuildThisFileDirectory)..\native-lib\spdlog\include;$(ExternalIncludePath)</ExternalIncludePath>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup Condition="'$(MSBuildProjectExtension)' == '.vcxproj'">
+    <ClCompile>
+      <ExternalWarningLevel>Level0</ExternalWarningLevel>
+    </ClCompile>
+  </ItemDefinitionGroup>
 </Project>

@@ -43,7 +43,7 @@
     <CORECLR_PATH>..\..\..\shared\src\native-lib\coreclr</CORECLR_PATH>
     <ProjectName>Datadog.Tracer.Native</ProjectName>
     <LIB_PATH>..\..\..\shared\src\native-lib\</LIB_PATH>
-    <LIB_INCLUDES>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(LIB_PATH)spdlog\include</LIB_INCLUDES>
+    <LIB_INCLUDES>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath)</LIB_INCLUDES>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
