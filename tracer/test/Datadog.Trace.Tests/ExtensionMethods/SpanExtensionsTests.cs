@@ -8,6 +8,7 @@ using System.Data;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
+using FluentAssertions;
 using Moq;
 using Xunit;
 
@@ -39,9 +40,9 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             string expectedHost)
         {
             var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
-            Assert.Equal(expectedDbName, commandTags.DbName);
-            Assert.Equal(expectedUserId, commandTags.DbUser);
-            Assert.Equal(expectedHost, commandTags.OutHost);
+            commandTags.DbName.Should().Be(expectedDbName);
+            commandTags.DbUser.Should().Be(expectedUserId);
+            commandTags.OutHost.Should().Be(expectedHost);
         }
 
         [Fact]
@@ -56,8 +57,8 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
                 var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
 
-                Assert.True(DbCommandCache.Cache.IsCaching);
-                Assert.Equal("myServerName" + i, commandTags.OutHost);
+                DbCommandCache.Cache.IsCaching.Should().BeTrue();
+                commandTags.OutHost.Should().Be("myServerName" + i);
             }
 
             // Test the logic with cache disabled
@@ -67,8 +68,8 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
                 var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
 
-                Assert.False(DbCommandCache.Cache.IsCaching);
-                Assert.Equal("myServerName" + "NoCache" + i, commandTags.OutHost);
+                DbCommandCache.Cache.IsCaching.Should().BeFalse();
+                commandTags.OutHost.Should().Be("myServerName" + "NoCache" + i);
             }
         }
 
@@ -87,7 +88,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
             span.SetHttpStatusCode(statusCode, isServer: true, settings);
 
-            Assert.Equal(expectedErrorType, span.GetTag(Tags.ErrorType));
+            span.GetTag(Tags.ErrorType).Should().Be(expectedErrorType);
         }
 
         [Fact]
@@ -100,7 +101,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
             span.SetHttpStatusCode(500, isServer: true, settings);
 
-            Assert.Equal(existingErrorType, span.GetTag(Tags.ErrorType));
+            span.GetTag(Tags.ErrorType).Should().Be(existingErrorType);
         }
 
         [Fact]
@@ -113,7 +114,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
             span.SetHttpStatusCode(500, isServer: false, settings);
 
-            Assert.Equal(existingErrorType, span.GetTag(Tags.ErrorType));
+            span.GetTag(Tags.ErrorType).Should().Be(existingErrorType);
         }
 
         private static MutableSettings CreateMutableSettings()
