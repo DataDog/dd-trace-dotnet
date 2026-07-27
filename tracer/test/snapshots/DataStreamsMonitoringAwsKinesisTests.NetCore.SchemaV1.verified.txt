@@ -14,7 +14,7 @@
             topic:MyStreamName,
             type:kinesis
           ],
-          Hash: 488941857031791118,
+          Hash: <Hash>,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,
@@ -32,7 +32,7 @@
             topic:MyStreamName,
             type:kinesis
           ],
-          Hash: 488941857031791118,
+          Hash: <Hash>,
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           PayloadSize: /w==,

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -21,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
     [UsesVerify]
     public class AwsKinesisTests : TracingIntegrationTest
     {
+        private static readonly Regex StreamNameRegex = new(@"MyStreamName-[a-f0-9]{32}", VerifyHelper.RegOptions);
+
         public AwsKinesisTests(ITestOutputHelper output)
             : base("AWS.Kinesis", output)
         {
@@ -72,6 +75,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: aws_kinesis");
                 settings.AddSimpleScrubber("peer.service: localstack", "peer.service: aws_kinesis");
                 settings.AddSimpleScrubber("peer.service: localstack_arm64", "peer.service: aws_kinesis");
+                settings.AddRegexScrubber(StreamNameRegex, "MyStreamName");
                 // V4 uses the sockets handler by default where possible instead of the httpclienthandler
                 settings.AddSimpleScrubber("http-client-handler-type: System.Net.Http.SocketsHttpHandler", "http-client-handler-type: System.Net.Http.HttpClientHandler");
                 if (!string.IsNullOrWhiteSpace(host))

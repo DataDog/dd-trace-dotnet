@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -22,6 +23,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
     [UsesVerify]
     public class DataStreamsMonitoringAwsKinesisTests : TracingIntegrationTest
     {
+        private static readonly Regex StreamNameRegex = new(@"MyStreamName-[a-f0-9]{32}", VerifyHelper.RegOptions);
+        private static readonly Regex PathwayHashRegex = new(@"Hash: \d+", VerifyHelper.RegOptions);
+
         public DataStreamsMonitoringAwsKinesisTests(ITestOutputHelper output)
             : base("AWS.Kinesis", output)
         {
@@ -76,6 +80,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.UseFileName($"{nameof(DataStreamsMonitoringAwsKinesisTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
                 settings.AddDataStreamsScrubber();
+                settings.AddRegexScrubber(StreamNameRegex, "MyStreamName");
+                settings.AddRegexScrubber(PathwayHashRegex, "Hash: <Hash>");
                 if (!string.IsNullOrWhiteSpace(host))
                 {
                     settings.AddSimpleScrubber(host, "localhost:00000");
