@@ -118,24 +118,44 @@ build:
       }
 
       $containerName = "dd-trace-build-$env:CI_JOB_ID"
-      $statsJob = Start-Job -ArgumentList $containerName -ScriptBlock {
-        param($name)
+      $containerMemoryLimit = 20GB
+      $dockerPath = (Get-Command docker).Source
+      $statsJob = Start-Job -ArgumentList $containerName, $containerMemoryLimit, $dockerPath -ScriptBlock {
+        param($name, $memoryLimit, $docker)
+
+        function ConvertTo-Bytes([string] $value) {
+          if ($value -notmatch '^\s*([0-9]+(?:\.[0-9]+)?)\s*([KMGT]?i?B)\s*$') {
+            return $null
+          }
+
+          $factors = @{
+            B   = 1
+            KB  = 1KB
+            KiB = 1KB
+            MB  = 1MB
+            MiB = 1MB
+            GB  = 1GB
+            GiB = 1GB
+            TB  = 1TB
+            TiB = 1TB
+          }
+
+          return [double]$Matches[1] * $factors[$Matches[2]]
+        }
 
         $containerSeen = $false
-        $peakPercent = 0.0
+        $peakBytes = 0.0
         $peakUsage = "unknown"
 
         while ($true) {
-          $stats = docker stats $name --no-stream --format "{{.MemPerc}}|{{.MemUsage}}" 2>$null
+          $stats = & $docker stats $name --no-stream --format "{{.MemUsage}}" 2>$null
           if ($LASTEXITCODE -eq 0 -and $stats) {
             $containerSeen = $true
-            $parts = $stats -split '\|', 2
-            $percent = 0.0
-            if ($parts.Count -eq 2 -and
-                [double]::TryParse($parts[0].Trim().TrimEnd('%'), [Globalization.NumberStyles]::Float, [Globalization.CultureInfo]::InvariantCulture, [ref]$percent) -and
-                $percent -gt $peakPercent) {
-              $peakPercent = $percent
-              $peakUsage = $parts[1].Trim()
+            $usage = ($stats -split '/', 2)[0].Trim()
+            $usageBytes = ConvertTo-Bytes $usage
+            if ($null -ne $usageBytes -and $usageBytes -gt $peakBytes) {
+              $peakBytes = $usageBytes
+              $peakUsage = $usage
             }
           } elseif ($containerSeen) {
             break
@@ -144,6 +164,7 @@ build:
           Start-Sleep -Seconds 5
         }
 
+        $peakPercent = 100 * $peakBytes / $memoryLimit
         Write-Output ("Peak container memory: {0} ({1:N1}% of limit)" -f $peakUsage, $peakPercent)
       }
 
