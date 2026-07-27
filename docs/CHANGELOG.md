@@ -52,6 +52,53 @@
 
 
 
+
+## [Release 3.50.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.50.0)
+
+## Summary
+
+- [Tracing] Add support for Serilog 4.4.0
+- [Test Optimization] Add support for MSTest 4.3.0
+- [ASM] Handle billing issues for standonly mode
+- [Dynamic Instrumentation] Redact sensitive values in expression dumps
+
+## Changes
+
+### Tracer
+* [OTLP] Removing the path with OtelTracesSpanMetricsEnabled (#8921)
+* Add support for Serilog 4.4.0 (#8917)
+
+### CI Visibility
+* fix(mstest): support ExecuteTestAsync in 4.3 (#8934)
+
+### ASM
+* [ASM] Set _dd.apm.enabled:0 on all spans (#8923)
+* [IAST] Exclude FSharp.* assemblies from dataflow (#8905)
+* [AppSec] Report agentic onboarding marker in configuration telemetry (RFC-1113) (#8920)
+
+### Continuous Profiler
+* [Profiler] Fix possible namepipe-related issues (#8821)
+
+### Debugger
+* [Debugger] Redact sensitive values in expression dumps (#8879)
+
+### Build / Test
+* Move TestOptimizationFeatureTests to TracerInstanceTestCollection (#8880)
+* [Debugger] Deflake instanceof assembly lookup tests (#8885)
+* chore(benchmarks): migrate benchmarking base image to :newest tag (#8924)
+* Mark CheckProfilesSentThroughNamedPipe Flaky (#8932)
+* Forward BP_EXTERNAL_S3_URL through benchmark CI triggers (#8882)
+* make sure parent env variables are not polluting the test env (#8883)
+* Attempt to fix more flake in System.Data.SqlClient (#8899)
+* Forward BP_EXTERNAL_S3_URL explicitly on benchmark triggers (#8908)
+* clean env variables in the correct place (#8918)
+* [Tests] Skip MySQL and Npgsql tests on database timeouts (#8922)
+* Exclude EndServerAsyncAdd from WCF legacy snapshots (#8927)
+* Fix Azure Service Bus sample restore (#8933)
+
+
+[Changes since 3.49.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.49.0...v3.50.0)
+
 ## [Release 3.49.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.49.0)
 
 ## Summary
