@@ -2,7 +2,9 @@ stages:
   - build
   - publish
   - package
-  - shared-pipeline
+  - shared-pipeline-build
+  - shared-pipeline-test
+  - shared-pipeline-publish
   - publish
   - benchmarks
   # These benchmarks are running in parallel with the legacy ones
