@@ -196,9 +196,9 @@ internal sealed class OtlpExporter : IOtlpExporter
         // doesn't fit. The send path consumes the buffer synchronously, so it is safe to return it
         // to the pool once the request completes.
         var buffer = ArrayPool<byte>.Shared.Rent(InitialBufferSize);
+        var bytesWritten = 0;
         try
         {
-            int bytesWritten;
             while (!OtlpLogsSerializer.TrySerializeLogs(logs, buffer, _resourceTags, out bytesWritten, startPosition))
             {
                 if (buffer.Length >= MaxBufferSize)
@@ -213,7 +213,7 @@ internal sealed class OtlpExporter : IOtlpExporter
                 // Rent the larger buffer before returning the old one so a failed rent can't leave
                 // us returning the same array twice via the finally block.
                 var newBuffer = ArrayPool<byte>.Shared.Rent(Math.Min(buffer.Length * 2, MaxBufferSize));
-                ArrayPool<byte>.Shared.Return(buffer);
+                ArrayPool<byte>.Shared.Return(buffer, clearArray: true);
                 buffer = newBuffer;
             }
 
@@ -240,6 +240,10 @@ internal sealed class OtlpExporter : IOtlpExporter
         }
         finally
         {
+            // Log payloads may contain sensitive customer data. On successful serialization,
+            // only the written portion needs clearing. If serialization failed, bytesWritten is
+            // zero and the partial write length is unknown, so clear the entire rented buffer.
+            Array.Clear(buffer, 0, bytesWritten > 0 ? bytesWritten : buffer.Length);
             ArrayPool<byte>.Shared.Return(buffer);
         }
     }
