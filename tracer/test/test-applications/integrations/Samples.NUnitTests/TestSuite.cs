@@ -14,11 +14,6 @@ namespace Samples.NUnitTests
         {
             var writer = TestContext.Progress;
             writer.WriteLine($"Pid: {Process.GetCurrentProcess().Id}");
-            writer.WriteLine("Environment Variables:");
-            foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
-            {
-                writer.WriteLine($"  {entry.Key} = {entry.Value}");
-            }
             writer.WriteLine(string.Empty);
         }
 

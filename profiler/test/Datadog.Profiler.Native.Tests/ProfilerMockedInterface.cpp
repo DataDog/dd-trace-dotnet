@@ -38,6 +38,13 @@ std::tuple<std::unique_ptr<ISsiManager>, MockSsiManager&> CreateSsiManager()
     return {std::move(manager), *managerPtr};
 }
 
+std::tuple<std::unique_ptr<IMetadataProvider>, MockMetadataProvider&> CreateMetadataProvider()
+{
+    std::unique_ptr<IMetadataProvider> provider = std::make_unique<MockMetadataProvider>();
+    auto providerPtr = static_cast<MockMetadataProvider*>(provider.get());
+    return {std::move(provider), *providerPtr};
+}
+
 std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth)
 {
     std::vector<std::pair<std::string, std::string>> result;

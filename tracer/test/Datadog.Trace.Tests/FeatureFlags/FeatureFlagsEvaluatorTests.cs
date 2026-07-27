@@ -130,7 +130,7 @@ public partial class FeatureFlagsEvaluatorTests
         var ctx = new EvaluationContext("user-123");
         var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", ctx);
         Assert.Equal("default", result.Value);
-        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal(EvaluationReason.Split, result.Reason); // Flag has shards → Split reason
         Assert.Equal("on", result.Variant);
 
         var noTargettingKeyCtx = new EvaluationContext(string.Empty); // no targetingKey
@@ -269,8 +269,9 @@ public partial class FeatureFlagsEvaluatorTests
     // ---------------------------------------------------------------------
 
     [Fact]
-    public void EvaluateSimpleStringFlagReturnsTargetingMatch()
+    public void EvaluateSimpleStringFlagReturnsSplitReason()
     {
+        // CreateSimpleFlag creates a flag with shards (100% rollout), so reason is Split
         var flags = new Dictionary<string, Flag>
         {
             ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.String, "test-value", "on")
@@ -282,7 +283,7 @@ public partial class FeatureFlagsEvaluatorTests
         var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", ctx);
 
         Assert.Equal("test-value", result.Value);
-        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal(EvaluationReason.Split, result.Reason);
         Assert.Equal("on", result.Variant);
     }
 
@@ -354,7 +355,7 @@ public partial class FeatureFlagsEvaluatorTests
         var result = evaluator.Evaluate("exposure-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
 
         Assert.Equal("tracked-value", result.Value);
-        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal(EvaluationReason.Static, result.Reason); // No rules, no shards → Static
         Assert.Equal("tracked", result.Variant);
 
         // DoLog=true -> one exposure event
@@ -384,7 +385,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         // The allocation is active (2020-2099 dates), so it should match
         Assert.Equal("time-limited", result.Value);
-        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal(EvaluationReason.Static, result.Reason); // No rules, no shards → Static
         Assert.Equal("time-limited", result.Variant);
     }
 
@@ -426,7 +427,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         // The allocation is active (2020-2099 dates), so it should match
         Assert.Equal("time-limited", result.Value);
-        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Equal(EvaluationReason.Static, result.Reason); // No rules, no shards → Static
         Assert.Equal("time-limited", result.Variant);
     }
 
@@ -453,6 +454,73 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal("default", result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
         Assert.Equal("PARSE_ERROR", result.Error);
+    }
+
+    [Fact]
+    public void EvaluateNoRulesNoShardsReturnsStaticReason()
+    {
+        // Flag with allocation that has:
+        // - Rules = null (no targeting rules)
+        // - Splits with one Split containing Shards = [] (empty list)
+        // This represents a flag that always returns the same value (100% to one variant, no bucketing)
+        var variants = new Dictionary<string, Variant>
+        {
+            ["static-variant"] = new Variant("static-variant", "static-value")
+        };
+
+        var splits = new List<Split>
+        {
+            new Split { VariationKey = "static-variant", Shards = new List<Shard>() } // Empty shards
+        };
+
+        var alloc = new Allocation { Key = "static-alloc", Rules = null, Splits = splits, DoLog = false };
+        var flag = new Flag { Key = "static-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
+
+        var flags = new Dictionary<string, Flag> { ["static-flag"] = flag };
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext("any-user");
+
+        var result = evaluator.Evaluate("static-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        Assert.Equal("static-value", result.Value);
+        Assert.Equal(EvaluationReason.Static, result.Reason);
+        Assert.Equal("static-variant", result.Variant);
+    }
+
+    [Fact]
+    public void EvaluateNoRulesWithShardsReturnsSplitReason()
+    {
+        // Flag with allocation that has:
+        // - Rules = null (no targeting rules)
+        // - Splits with non-empty Shards (percentage-based rollout)
+        // This represents a percentage rollout without targeting rules
+        var variants = new Dictionary<string, Variant>
+        {
+            ["split-variant"] = new Variant("split-variant", "split-value")
+        };
+
+        var shards = new List<Shard>
+        {
+            new Shard { Salt = "test-salt", TotalShards = 100, Ranges = new List<ShardRange> { new ShardRange { Start = 0, End = 100 } } }
+        };
+
+        var splits = new List<Split>
+        {
+            new Split { VariationKey = "split-variant", Shards = shards } // Non-empty shards
+        };
+
+        var alloc = new Allocation { Key = "split-alloc", Rules = null, Splits = splits, DoLog = false };
+        var flag = new Flag { Key = "split-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
+
+        var flags = new Dictionary<string, Flag> { ["split-flag"] = flag };
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext("user-in-bucket");
+
+        var result = evaluator.Evaluate("split-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        Assert.Equal("split-value", result.Value);
+        Assert.Equal(EvaluationReason.Split, result.Reason);
+        Assert.Equal("split-variant", result.Variant);
     }
 
     [Theory]

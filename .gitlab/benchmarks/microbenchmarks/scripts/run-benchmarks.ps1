@@ -84,8 +84,10 @@ $hostFramework = "net6.0"
 # Matches Build.cs: on Windows, benchmarks run against net472, netcoreapp3.1, net6.0
 $runtimes = @("net472", "netcoreapp3.1", "net6.0")
 
-# Source bin folder (built by Nuke in how_to_fetch_release)
-$sourceBinDir = "$benchmarkProjectDir\bin\Release\$hostFramework"
+# Source bin folder (built by Nuke in how_to_fetch_release).
+# Under UseArtifactsOutput (set in tracer/Directory.Build.props) the per-project
+# bin output lives at <repo>/artifacts/bin/<Project>/<config>_<tfm>/.
+$sourceBinDir = "$env:CODE_SRC\artifacts\bin\$Project\release_$hostFramework"
 
 if (-not (Test-Path "$sourceBinDir\$Project.exe")) {
     Write-Error "Benchmark executable not found at: $sourceBinDir\$Project.exe"
@@ -135,7 +137,7 @@ $arguments = @("-r") + $runtimes + @(
     # We change this manually on benchmark methods from 200 ms to 500 ms on 
     # less stable benchmarks with "[IterationTime(500)]"
     "--iterationTime", "200",
-    "--launchCount", "10",
+    "--launchCount", "5",
     "--warmupCount", "10",
     "--iterationCount", "10",
     "--buildTimeout", "3600",

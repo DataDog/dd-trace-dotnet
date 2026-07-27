@@ -62,7 +62,10 @@ internal abstract class CoverageInfo
         _data = [Math.Round((executed / total) * 100, 2).ToValidPercentage(), total, executed];
     }
 
-    protected void ClearData()
+    /// <summary>
+    /// Invalidates cached percentage and line counts for this coverage node and its children.
+    /// </summary>
+    internal void ClearData()
     {
         _data = null;
 

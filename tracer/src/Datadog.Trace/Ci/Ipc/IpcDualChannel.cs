@@ -6,6 +6,9 @@
 
 using System;
 using System.IO;
+using System.Reflection;
+using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -35,6 +38,7 @@ internal abstract class IpcDualChannel : IDisposable
             TypeNameHandling = TypeNameHandling.All,
             Formatting = Formatting.None,
             NullValueHandling = NullValueHandling.Ignore,
+            ContractResolver = new IpcContractResolver(),
             SerializationBinder = new CustomSerializationBinder(),
         });
     }
@@ -104,6 +108,41 @@ internal abstract class IpcDualChannel : IDisposable
         public void BindToName(Type serializedType, out string? assemblyName, out string? typeName)
         {
             DefaultSerializationBinder.Instance.BindToName(serializedType, out assemblyName, out typeName);
+        }
+    }
+
+    private sealed class IpcContractResolver : DefaultContractResolver
+    {
+        protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
+        {
+            var property = base.CreateProperty(member, memberSerialization);
+            if (ShouldSuppressNestedTypeNames(member))
+            {
+                property.TypeNameHandling = TypeNameHandling.None;
+                property.ItemTypeNameHandling = TypeNameHandling.None;
+            }
+
+            return property;
+        }
+
+        private static bool ShouldSuppressNestedTypeNames(MemberInfo member)
+        {
+            if (member.DeclaringType == typeof(SessionCodeCoverageMessage))
+            {
+                return member.Name == nameof(SessionCodeCoverageMessage.BackfillValidation) ||
+                       member.Name == nameof(SessionCodeCoverageMessage.SupersededResultIds);
+            }
+
+            if (member.DeclaringType == typeof(CodeCoverageBackfillValidation))
+            {
+                return member.Name == nameof(CodeCoverageBackfillValidation.ExpectedCoveredLinesByBackendPath) ||
+                       member.Name == nameof(CodeCoverageBackfillValidation.RequiredBackendPathsWithCoverage) ||
+                       member.Name == nameof(CodeCoverageBackfillValidation.RequiredBackendLinesByBackendPath) ||
+                       member.Name == nameof(CodeCoverageBackfillValidation.RepresentedBackendLinesByBackendPath) ||
+                       member.Name == nameof(CodeCoverageBackfillValidation.LocalCandidateByBackendPath);
+            }
+
+            return false;
         }
     }
 }

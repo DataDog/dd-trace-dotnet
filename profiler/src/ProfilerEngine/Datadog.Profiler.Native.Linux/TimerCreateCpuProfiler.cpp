@@ -11,11 +11,19 @@
 #include "OpSysTools.h"
 #include "ProfilerSignalManager.h"
 #include "IConfiguration.h"
+#ifdef ARM64
+#include "UnwindingRecorderFactory.h"
+#endif
 
 #include <sys/syscall.h> /* Definition of SYS_* constants */
+#include <sys/resource.h>
 #include <sys/types.h>
+#include <sys/utsname.h>
 #include <ucontext.h>
 #include <unistd.h>
+
+#include <fstream>
+#include <string>
 
 std::atomic<TimerCreateCpuProfiler*> TimerCreateCpuProfiler::Instance = nullptr;
 
@@ -25,14 +33,16 @@ TimerCreateCpuProfiler::TimerCreateCpuProfiler(
     IManagedThreadList* pManagedThreadsList,
     CpuSampleProvider* pProvider,
     MetricsRegistry& metricsRegistry,
-    IUnwinder* pUnwinder) noexcept
+    IUnwinder* pUnwinder,
+    UnwindingRecorderFactory* pUnwindingRecorderFactory) noexcept
     :
     _pSignalManager{pSignalManager}, // put it as parameter for better testing
     _pManagedThreadsList{pManagedThreadsList},
     _pProvider{pProvider},
     _samplingInterval{pConfiguration->GetCpuProfilingInterval()},
     _nbThreadsInSignalHandler{0},
-    _pUnwinder{pUnwinder}
+    _pUnwinder{pUnwinder},
+    _pUnwindingRecorderFactory{pUnwindingRecorderFactory}
 {
     Log::Info("Cpu profiling interval: ", _samplingInterval.count(), "ms");
     Log::Info("timer_create Cpu profiler is enabled");
@@ -70,6 +80,32 @@ const char* TimerCreateCpuProfiler::GetName()
 
 bool TimerCreateCpuProfiler::StartImpl()
 {
+    // Dump environment info to help diagnose timer_create failures
+    {
+        struct utsname uts;
+        if (uname(&uts) == 0)
+        {
+            Log::Info("Kernel: ", uts.sysname, " ", uts.release, " ", uts.machine);
+        }
+
+        struct rlimit rl;
+        if (getrlimit(RLIMIT_SIGPENDING, &rl) == 0)
+        {
+            Log::Info("RLIMIT_SIGPENDING: soft=", rl.rlim_cur, " hard=", rl.rlim_max);
+        }
+
+        std::ifstream status("/proc/self/status");
+        std::string line;
+        while (std::getline(status, line))
+        {
+            if (line.rfind("SigQ:", 0) == 0)
+            {
+                Log::Info("Signal queue at startup: ", line);
+                break;
+            }
+        }
+    }
+
     if (_pSignalManager == nullptr)
     {
         Log::Info("Profiler Signal manager was not correctly initialized (see previous messages).",
@@ -254,9 +290,21 @@ bool TimerCreateCpuProfiler::Collect(void* ctx)
         return false;
     }
 
-    auto buffer = rawCpuSample->Stack.AsSpan();
-    auto count = _pUnwinder->Unwind(ctx, buffer.data(), buffer.size());
-    rawCpuSample->Stack.SetCount(count);
+    std::uintptr_t stackBase = 0;
+    std::uintptr_t stackEnd = 0;
+    std::tie(stackBase, stackEnd) = threadInfo->GetStackBounds();
+
+    UnwindingRecorder* recorder = nullptr;
+#ifdef ARM64
+    auto scopedTracer = UnwindingRecorderFactory::ScopedTracer(nullptr);
+    if (_pUnwindingRecorderFactory != nullptr)
+    {
+        scopedTracer = _pUnwindingRecorderFactory->GetTracer();
+        recorder = scopedTracer.get();
+    }
+#endif
+
+    auto count = _pUnwinder->Unwind(ctx, rawCpuSample->Stack, stackBase, stackEnd, recorder);
 
     if (count == 0)
     {
@@ -302,7 +350,26 @@ void TimerCreateCpuProfiler::RegisterThreadImpl(ManagedThreadInfo* threadInfo)
     clockid_t clock = ((~tid) << 3) | 6; // CPUCLOCK_SCHED | CPUCLOCK_PERTHREAD_MASK thread_cpu_clock(tid);
     if (syscall(__NR_timer_create, clock, &sev, &timerId) < 0)
     {
-        Log::Error("Call to timer_create failed for thread ", tid);
+        auto err = errno;
+        Log::Error("Call to timer_create failed for thread ", tid,
+                   ". errno=", err, " (", strerror(err), ")");
+
+        struct rlimit rl;
+        if (getrlimit(RLIMIT_SIGPENDING, &rl) == 0)
+        {
+            Log::Error("RLIMIT_SIGPENDING: soft=", rl.rlim_cur, " hard=", rl.rlim_max);
+        }
+
+        std::ifstream status("/proc/self/status");
+        std::string line;
+        while (std::getline(status, line))
+        {
+            if (line.rfind("SigQ:", 0) == 0)
+            {
+                Log::Error("Signal queue: ", line);
+                break;
+            }
+        }
         return;
     }
 

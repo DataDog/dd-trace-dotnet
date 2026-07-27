@@ -32,14 +32,14 @@ namespace Datadog.Trace.Activity
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpHelpers));
 
-        internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span)
+        internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span, bool openTelemetrySemanticsEnabled = false)
             where TInner : IActivity
         {
-            AgentConvertSpan(activity, span);
+            AgentConvertSpan(activity, span, openTelemetrySemanticsEnabled);
         }
 
         // See trace agent func convertSpan: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L459
-        private static void AgentConvertSpan<TInner>(TInner activity, Span span)
+        private static void AgentConvertSpan<TInner>(TInner activity, Span span, bool openTelemetrySemanticsEnabled)
             where TInner : IActivity
         {
             // This code path _should_ only be called from places where the span being closed was created with OTel tags
@@ -66,7 +66,7 @@ namespace Datadog.Trace.Activity
             // - service.namespace
             // - service.version
 
-            if (w3cActivity is not null)
+            if (!openTelemetrySemanticsEnabled && w3cActivity is not null)
             {
                 tags.OtelTraceId = w3cActivity.TraceId;
             }
@@ -79,20 +79,20 @@ namespace Datadog.Trace.Activity
             {
                 if (activity5.HasTagObjects())
                 {
-                    var state = new OtelTagsEnumerationState(span);
+                    var state = new OtelTagsEnumerationState(span, openTelemetrySemanticsEnabled);
                     ActivityEnumerationHelper.EnumerateTagObjects(activity5, ref state, static (ref s, kvp) =>
                     {
-                        OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                        OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                         return true;
                     });
                 }
             }
             else if (activity.HasTags())
             {
-                var state = new OtelTagsEnumerationState(span);
+                var state = new OtelTagsEnumerationState(span, openTelemetrySemanticsEnabled);
                 ActivityEnumerationHelper.EnumerateTags(activity, ref state, static (ref s, kvp) =>
                 {
-                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);
+                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                     return true;
                 });
             }
@@ -137,49 +137,72 @@ namespace Datadog.Trace.Activity
             // span.SetTag("w3c.tracestate", w3CActivity.TraceStateString);
 
             // Add the library name and library version
-            if (activity5 is not null)
+            if (!openTelemetrySemanticsEnabled)
             {
-                // For .NET Activity .NET 5+ the Source.Name is only set via ActivitySource.StartActivity
-                // and not when an Activity object is created manually and having .Start() called on it
-                if (!string.IsNullOrEmpty(activity5.Source.Name))
+                if (activity5 is not null)
                 {
-                    tags.OtelLibraryName = activity5.Source.Name;
-                }
-
-                if (!string.IsNullOrEmpty(activity5.Source.Version))
-                {
-                    tags.OtelLibraryVersion = activity5.Source.Version;
-                }
-            }
-
-            // Set OTEL status code and OTEL status description
-            if (tags.OtelStatusCode is null)
-            {
-                if (activity6 is not null)
-                {
-                    tags.OtelStatusCode = activity6.Status switch
+                    // For .NET Activity .NET 5+ the Source.Name is only set via ActivitySource.StartActivity
+                    // and not when an Activity object is created manually and having .Start() called on it
+                    if (!string.IsNullOrEmpty(activity5.Source.Name))
                     {
-                        ActivityStatusCode.Unset => "STATUS_CODE_UNSET",
-                        ActivityStatusCode.Ok => "STATUS_CODE_OK",
-                        ActivityStatusCode.Error => "STATUS_CODE_ERROR",
-                        _ => "STATUS_CODE_UNSET"
-                    };
-                }
-                else
-                {
-                    tags.OtelStatusCode = "STATUS_CODE_UNSET";
+                        tags.OtelLibraryName = activity5.Source.Name;
+                    }
+
+                    if (!string.IsNullOrEmpty(activity5.Source.Version))
+                    {
+                        tags.OtelLibraryVersion = activity5.Source.Version;
+                    }
                 }
             }
 
+            // Set OTEL status code
+            // Also handles short-form tag values ("OK"/"ERROR"/"UNSET") originally set by the OTel API
+            // (we don't remap these values when when OTel Semantics are enabled)
+            if (tags.OtelStatusCode is null && activity6 is not null)
+            {
+                tags.OtelStatusCode = activity6.Status switch
+                {
+                    ActivityStatusCode.Unset => "STATUS_CODE_UNSET",
+                    ActivityStatusCode.Ok => "STATUS_CODE_OK",
+                    ActivityStatusCode.Error => "STATUS_CODE_ERROR",
+                    _ => "STATUS_CODE_UNSET"
+                };
+            }
+            else
+            {
+                tags.OtelStatusCode = tags.OtelStatusCode switch
+                {
+                    null => "STATUS_CODE_UNSET",
+                    "OK" => "STATUS_CODE_OK",
+                    "ERROR" => "STATUS_CODE_ERROR",
+                    "UNSET" => "STATUS_CODE_UNSET",
+                    string s => s,
+                };
+            }
+
+            // Set OTEL status description
             // Map the OTEL status to error tags
             // See trace agent func status2Error: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L583
             if (activity6?.Status == ActivityStatusCode.Error)
             {
-                AgentStatus2ErrorActivity6(activity6, span, tags);
+                if (openTelemetrySemanticsEnabled)
+                {
+                    span.Error = true;
+                    span.SetTag(Tags.ErrorMsg, activity6?.StatusDescription);
+                }
+                else
+                {
+                    AgentStatus2ErrorActivity6(activity6, span, tags);
+                }
             }
             else if (string.Equals(tags.OtelStatusCode, "STATUS_CODE_ERROR", StringComparison.Ordinal))
             {
-                if (activity5 is not null)
+                if (openTelemetrySemanticsEnabled)
+                {
+                    span.Error = true;
+                    span.SetTag(Tags.ErrorMsg, span.GetTag("otel.status_description") as string);
+                }
+                else if (activity5 is not null)
                 {
                     AgentStatus2ErrorActivity5(activity5, span);
                 }
@@ -377,7 +400,8 @@ namespace Datadog.Trace.Activity
         /// <param name="allowUnrolling">When enabled, enumerable values will be set as multiple indexed tags, e.g. (key[0], value0), (key[1], value1) </param>
         /// <param name="setKnownValues">When enabled, the key value can be used to set "standard" properties, such as <see cref="Span.OperationName"/>.
         /// When disabled, tags that would otherwise set these values are ignored. </param>
-        internal static void SetTagObject(Span span, string key, object? value, bool allowUnrolling = true, bool setKnownValues = true)
+        /// <param name="remapOtelKeys">When enabled, remaps OpenTelemetry keys that we must special-case. This must be false when observing the OpenTelemetry semantic conventions. </param>
+        internal static void SetTagObject(Span span, string key, object? value, bool allowUnrolling = true, bool setKnownValues = true, bool remapOtelKeys = true)
         {
             if (value is null)
             {
@@ -388,13 +412,13 @@ namespace Datadog.Trace.Activity
             switch (value)
             {
                 case char c:
-                    AgentSetOtlpTag(span, key, c.ToString());
+                    AgentSetOtlpTag(span, key, c.ToString(), remapOtelKeys: remapOtelKeys);
                     break;
                 case string s:
-                    AgentSetOtlpTag(span, key, s);
+                    AgentSetOtlpTag(span, key, s, remapOtelKeys: remapOtelKeys);
                     break;
                 case bool b:
-                    AgentSetOtlpTag(span, key, b ? "true" : "false");
+                    AgentSetOtlpTag(span, key, b ? "true" : "false", remapOtelKeys: remapOtelKeys);
                     break;
                 case byte b:
                     span.SetMetric(key, b);
@@ -410,7 +434,8 @@ namespace Datadog.Trace.Activity
                     break;
                 case int i: // TODO: Can't get here from OTEL API, test with Activity API
                     // special case where we need to remap "http.response.status_code" and the deprecated "http.status_code"
-                    if (key == "http.response.status_code" || key == "http.status_code")
+                    // If we opt-in to using the OTEL semantic conventions, we must not remap any tags.
+                    if (remapOtelKeys && (key == "http.response.status_code" || key == "http.status_code"))
                     {
                         if (setKnownValues)
                         {
@@ -445,32 +470,38 @@ namespace Datadog.Trace.Activity
                         foreach (var element in (enumerable))
                         {
                             // we are only supporting a single level of unrolling
-                            SetTagObject(span, $"{key}.{index}", element, allowUnrolling: false);
+                            SetTagObject(span, $"{key}.{index}", element, allowUnrolling: false, remapOtelKeys: remapOtelKeys);
                             index++;
                         }
 
                         if (index == 0)
                         {
                             // indicates that it was an empty array, we need to add the tag
-                            AgentSetOtlpTag(span, key, "[]");
+                            AgentSetOtlpTag(span, key, "[]", remapOtelKeys: remapOtelKeys);
                         }
                     }
                     else
                     {
                         // we've already unrolled once, don't do it again for IEnumerable values
-                        AgentSetOtlpTag(span, key, JsonHelper.SerializeObject(value));
+                        AgentSetOtlpTag(span, key, JsonHelper.SerializeObject(value), remapOtelKeys: remapOtelKeys);
                     }
 
                     break;
                 default:
-                    AgentSetOtlpTag(span, key, value.ToString());
+                    AgentSetOtlpTag(span, key, value.ToString(), remapOtelKeys: remapOtelKeys);
                     break;
             }
         }
 
         // See trace agent func setMetaOTLP: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L424
-        internal static void AgentSetOtlpTag(Span span, string key, string? value, bool setKnownValues = true)
+        internal static void AgentSetOtlpTag(Span span, string key, string? value, bool setKnownValues = true, bool remapOtelKeys = true)
         {
+            if (!remapOtelKeys)
+            {
+                span.SetTag(key, value);
+                return;
+            }
+
             switch (key)
             {
                 case "operation.name":
@@ -505,21 +536,6 @@ namespace Datadog.Trace.Activity
                     if (GoStrConvParseBool(value) is bool b)
                     {
                         span.SetMetric(Tags.Analytics, b ? 1 : 0);
-                    }
-
-                    break;
-                case "otel.status_code":
-                    if (setKnownValues)
-                    {
-                        var newStatusCodeString = value switch
-                        {
-                            null => "STATUS_CODE_UNSET",
-                            "ERROR" => "STATUS_CODE_ERROR",
-                            "UNSET" => "STATUS_CODE_UNSET",
-                            "OK" => "STATUS_CODE_OK",
-                            string s => s,
-                        };
-                        span.SetTag(key, newStatusCodeString);
                     }
 
                     break;

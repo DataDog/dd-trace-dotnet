@@ -37,7 +37,7 @@ internal static class ProfilerAvailabilityHelper
 
     private static bool GetIsContinuousProfilerAvailable(Func<bool> isClrProfilerAttached, bool isAwsLambda, bool isAzureFunction)
     {
-        // Profiler is not available on ARM(64)
+        // Profiler is not available on ARM (32-bit)
         var fd = FrameworkDescription.Instance;
         if (!IsSupportedArch(fd))
         {
@@ -66,7 +66,7 @@ internal static class ProfilerAvailabilityHelper
             return fd.OSPlatform switch
             {
                 OSPlatformName.Windows when fd.ProcessArchitecture is ProcessArchitecture.X64 or ProcessArchitecture.X86 => true,
-                OSPlatformName.Linux when fd.ProcessArchitecture is ProcessArchitecture.X64 => true,
+                OSPlatformName.Linux when fd.ProcessArchitecture is ProcessArchitecture.X64 or ProcessArchitecture.Arm64 => true,
                 _ => false,
             };
         }

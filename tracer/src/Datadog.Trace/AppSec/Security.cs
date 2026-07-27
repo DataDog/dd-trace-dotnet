@@ -541,6 +541,8 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmSessionFingerprint, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmSessionFingerprint));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmProcessorOverrides, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmProcessorOverrides));
             rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomDataScanners, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmCustomDataScanners));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmDdMulticonfig, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmDdMulticonfig));
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmTraceTaggingRules, _settings.NoCustomLocalRules && WafSupportsCapability(RcmCapabilitiesIndices.AsmTraceTaggingRules));
             // follows a different pattern to rest of ASM remote config, if available it's the RC value
             // that takes precedence. This follows what other products do.
             rcm.SetCapability(RcmCapabilitiesIndices.AsmAutoUserInstrumentationMode, true);

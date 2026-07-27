@@ -54,7 +54,7 @@ internal class AppSecBenchmarkUtils
         var path = AppContext.BaseDirectory;
         while (folder.Exists)
         {
-            path = Path.Combine(folder.FullName, "./shared/bin/monitoring-home");
+            path = Path.Combine(folder.FullName, "./artifacts/monitoring-home");
             if (Directory.Exists(path))
             {
                 break;

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Snapshots;
@@ -13,14 +14,12 @@ namespace Datadog.Trace.Debugger.Expressions
 {
     internal interface IProbeProcessor
     {
-        bool ShouldProcess(in ProbeData probeData);
+        bool TryBeginProcess(in ProbeData probeData, [NotNullWhen(true)] out IDebuggerSnapshotCreator? snapshotCreator);
 
         bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator snapshotCreator, in ProbeData probeData);
 
         void LogException(Exception ex, IDebuggerSnapshotCreator snapshotCreator);
 
         IProbeProcessor UpdateProbeProcessor(ProbeDefinition probe);
-
-        IDebuggerSnapshotCreator CreateSnapshotCreator();
     }
 }

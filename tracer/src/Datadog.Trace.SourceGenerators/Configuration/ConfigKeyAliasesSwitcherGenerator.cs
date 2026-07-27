@@ -105,9 +105,9 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
         var aliases = new Dictionary<string, string[]>();
         foreach (var kvp in parsedData.Configurations)
         {
-            if (kvp.Value.Aliases is { Length: > 0 })
+            if (kvp.Value.Aliases.Count > 0)
             {
-                aliases[kvp.Key] = kvp.Value.Aliases;
+                aliases[kvp.Key] = kvp.Value.Aliases.AsArray()!;
             }
         }
 

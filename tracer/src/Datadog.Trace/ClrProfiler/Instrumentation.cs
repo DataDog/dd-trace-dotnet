@@ -575,6 +575,10 @@ namespace Datadog.Trace.ClrProfiler
 
         private static void InitializeDebugger(TracerSettings tracerSettings)
         {
+            // DebuggerManager construction is intentionally cheap: it only reads the default
+            // settings sources. The "should we actually start any debugger product?" decision
+            // is made here, at the call site, so when nothing is enabled we don't even allocate
+            // the Task/ContinueWith pair for UpdateConfiguration.
             var manager = DebuggerManager.Instance;
             var debuggerSettings = manager.DebuggerSettings;
 
@@ -584,21 +588,18 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Information("Dynamic Instrumentation is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
             }
 
-            if (!debuggerSettings.DynamicInstrumentationEnabled
-             && !debuggerSettings.CodeOriginForSpansEnabled
-             && !manager.ExceptionReplaySettings.Enabled)
+            if (!DebuggerManager.ShouldInitialize(tracerSettings, debuggerSettings, manager.ExceptionReplaySettings.Enabled))
             {
                 Log.Debug("Debugger products are not enabled");
+                return;
             }
-            else
-            {
-                _ = manager.UpdateConfiguration(tracerSettings)
-                           .ContinueWith(
-                                t => Log.Error(t?.Exception, "Error initializing debugger"),
-                                CancellationToken.None,
-                                TaskContinuationOptions.OnlyOnFaulted,
-                                TaskScheduler.Default);
-            }
+
+            _ = manager.UpdateConfiguration(tracerSettings)
+                       .ContinueWith(
+                            static t => Log.Error(t?.Exception, "Error initializing debugger"),
+                            CancellationToken.None,
+                            TaskContinuationOptions.OnlyOnFaulted,
+                            TaskScheduler.Default);
         }
 
         // /!\ This method is called by reflection in the SampleHelpers

@@ -6,7 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -14,12 +14,11 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols.Model;
+using Datadog.Trace.Debugger.ThirdParty;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -37,26 +36,27 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly string? _environment;
         private readonly SemaphoreSlim _assemblySemaphore;
         private readonly SemaphoreSlim _discoveryServiceSemaphore;
-        private readonly SemaphoreSlim _enablementSemaphore;
         private readonly HashSet<string> _alreadyProcessed;
         private readonly ImmutableHashSet<string> _symDb3rdPartyIncludes;
         private readonly ImmutableHashSet<string> _symDb3rdPartyExcludes;
         private readonly long _thresholdInBytes;
         private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private readonly IBatchUploadApi _api;
-        private readonly IRcmSubscriptionManager _subscriptionManager;
-        private readonly ISubscription _subscription;
+        private readonly ISymbolUploadApi _api;
         private readonly object _disposeLock = new();
         private readonly IDiscoveryService _discoveryService;
+
+        // The (uploadId, batchNum) pair groups all batches uploaded by this
+        // uploader instance. The same values are stamped into both the
+        // attachment Root and the EvP event metadata so the backend can
+        // match them up.
+        private readonly Guid _symdbUploadId = Guid.NewGuid();
         private volatile bool _disposed;
-        private byte[]? _payload;
-        private string? _symDbEndpoint;
-        private bool _isSymDbEnabled;
+        private volatile string? _symDbEndpoint;
+        private long _symdbBatchNum;
 
         private SymbolsUploader(
-            IBatchUploadApi api,
+            ISymbolUploadApi api,
             IDiscoveryService discoveryService,
-            IRcmSubscriptionManager remoteConfigurationManager,
             DebuggerSettings settings,
             TracerSettings tracerSettings,
             Func<string> serviceNameProvider)
@@ -71,45 +71,20 @@ namespace Datadog.Trace.Debugger.Symbols
             _api = api;
             _assemblySemaphore = new SemaphoreSlim(1);
             _discoveryServiceSemaphore = new SemaphoreSlim(0);
-            _enablementSemaphore = new SemaphoreSlim(0);
             _thresholdInBytes = settings.SymbolDatabaseBatchSizeInBytes;
             _symDb3rdPartyIncludes = settings.SymDbThirdPartyDetectionIncludes;
             _symDb3rdPartyExcludes = settings.SymDbThirdPartyDetectionExcludes;
             _jsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             _discoveryService.SubscribeToChanges(ConfigurationChanged);
-            _subscription = new Subscription(Callback, RcmProducts.LiveDebuggingSymbolDb);
-            _subscriptionManager = remoteConfigurationManager;
-            _subscriptionManager.SubscribeToChanges(_subscription);
-        }
-
-        private ApplyDetails[] Callback(Dictionary<string, List<RemoteConfiguration>> addedConfig, Dictionary<string, List<RemoteConfigurationPath>>? removedConfig)
-        {
-            var result =
-                (from configByProduct in addedConfig
-                 where configByProduct.Key == RcmProducts.LiveDebuggingSymbolDb
-                 from remoteConfiguration in configByProduct.Value
-                 where remoteConfiguration.Path.Id.StartsWith(DefinitionPaths.SymDB, StringComparison.Ordinal)
-                 select new NamedRawFile(remoteConfiguration.Path, remoteConfiguration.Contents)
-                 into rawFile
-                 select rawFile.Deserialize<SymDbEnablement>()).FirstOrDefault();
-
-            if (_isSymDbEnabled == false && result.TypedFile?.UploadSymbols == true)
-            {
-                _isSymDbEnabled = true;
-                _enablementSemaphore.Release(1);
-            }
-            else if (_isSymDbEnabled && result.TypedFile?.UploadSymbols == false)
-            {
-                _isSymDbEnabled = false;
-                UnRegisterToAssemblyLoadEvent();
-                _processExit.TrySetResult(true);
-            }
-
-            return [];
         }
 
         private void ConfigurationChanged(AgentConfiguration configuration)
         {
+            if (_disposed || _processExit.Task.IsCompleted)
+            {
+                return;
+            }
+
             if (string.IsNullOrEmpty(configuration.SymbolDbEndpoint))
             {
                 Log.Debug("`SymbolDb endpoint` is null. This can happen if your datadog-agent version is lower than 7.45");
@@ -117,26 +92,63 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             _symDbEndpoint = configuration.SymbolDbEndpoint;
-            _discoveryServiceSemaphore.Release(1);
             _discoveryService.RemoveSubscription(ConfigurationChanged);
+            try
+            {
+                _discoveryServiceSemaphore.Release(1);
+            }
+            catch (ObjectDisposedException)
+            {
+                // The uploader may be disabled while discovery publishes an update.
+            }
         }
 
-        public static IDebuggerUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, DebuggerSettings settings, Func<string> serviceNameProvider)
+        public static IDebuggerUploader Create(ISymbolUploadApi api, IDiscoveryService discoveryService, TracerSettings tracerSettings, DebuggerSettings settings, Func<string> serviceNameProvider)
         {
             if (!settings.SymbolDatabaseUploadEnabled)
             {
                 Log.Information("Symbol database uploading is disabled. To enable it, please set {EnvironmentVariable} environment variable to 'true'.", ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled);
-                return new NoOpSymbolUploader();
-            }
-
-            if (!ThirdPartyModules.IsValid)
-            {
-                Log.Warning("Third party modules load has failed. Disabling Symbol Uploader.");
-                return new NoOpSymbolUploader();
+                return NoOpSymbolUploader.Instance;
             }
 
             // TODO: we need to be able to update the tracer settings dynamically
-            return new SymbolsUploader(api, discoveryService, remoteConfigurationManager, settings, tracerSettings, serviceNameProvider);
+            return new SymbolsUploader(api, discoveryService, settings, tracerSettings, serviceNameProvider);
+        }
+
+        private static async Task WriteSymbols(Stream stream, StringBuilder builder)
+        {
+            const int bufferSize = 4096;
+            using var streamWriter = new StreamWriter(stream, EncodingHelpers.Utf8NoBom, bufferSize, leaveOpen: true);
+#if NETCOREAPP
+            foreach (var chunk in builder.GetChunks())
+            {
+                await streamWriter.WriteAsync(chunk).ConfigureAwait(false);
+            }
+#else
+            char[]? buffer = null;
+            try
+            {
+                buffer = ArrayPool<char>.Shared.Rent(bufferSize);
+                var remaining = builder.Length;
+                var position = 0;
+                while (remaining > 0)
+                {
+                    var count = remaining > buffer.Length ? buffer.Length : remaining;
+                    builder.CopyTo(position, buffer, 0, count);
+                    await streamWriter.WriteAsync(buffer, 0, count).ConfigureAwait(false);
+                    position += count;
+                    remaining -= count;
+                }
+            }
+            finally
+            {
+                if (buffer != null)
+                {
+                    ArrayPool<char>.Shared.Return(buffer);
+                }
+            }
+#endif
+            await streamWriter.FlushAsync().ConfigureAwait(false);
         }
 
         private void RegisterToAssemblyLoadEvent()
@@ -156,7 +168,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task ProcessItemAsync(Assembly assembly)
         {
-            if (!_isSymDbEnabled || _disposed)
+            if (_disposed)
             {
                 return;
             }
@@ -172,7 +184,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     semaphoreAcquired = await _assemblySemaphore.WaitAsync(acquireTimeout).ConfigureAwait(false);
                 }
 
-                if (!_isSymDbEnabled || _processExit.Task.IsCompleted || _disposed)
+                if (_processExit.Task.IsCompleted || _disposed)
                 {
                     return;
                 }
@@ -209,6 +221,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task ProcessItem(Assembly assembly)
         {
+            // Disable/dispose is cooperative: already-running extraction or upload can finish one bounded batch.
             try
             {
                 var assemblyName = assembly.GetName().Name;
@@ -266,26 +279,25 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task UploadClasses(Root root, IEnumerable<Model.Scope> classes)
         {
-            var rootAsString = JsonHelper.SerializeObject(root);
-            if (!TryBuildPrefixAndSuffix(rootAsString, out var prefix, out var suffix))
-            {
-                // this should not happen unless Root/Scope JSON shape changes
-                Log.Warning("Unable to find insertion point for class scopes in SymDB payload");
-                return;
-            }
-
-            var prefixLength = prefix.Length;
-            var builder = StringBuilderCache.Acquire(prefixLength + (int)_thresholdInBytes + suffix.Length + 16);
-            builder.Append(prefix);
+            // The payload builder is used for the whole upload: each batch
+            // starts by appending a fresh prefix (with a per-batch batch_num),
+            // class scopes are appended directly into it, and on flush we
+            // append ']' + suffix and stream its chars directly as UTF-8.
+            var payloadBuilder = StringBuilderCache.Acquire((int)_thresholdInBytes + 256);
 
             var serializer = JsonSerializer.Create(_jsonSerializerSettings);
             using var pooledWriter = new Utf8CountingPooledTextWriter();
 
-            var accumulatedBytes = 0;
-            var hasAnyClass = false;
-
             try
             {
+                if (!TryStartBatch(root, payloadBuilder, out var suffix, out var batchNum))
+                {
+                    return;
+                }
+
+                var accumulatedBytes = 0;
+                var hasAnyClass = false;
+
                 foreach (var classSymbol in classes)
                 {
                     if (classSymbol == default)
@@ -293,19 +305,21 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    // Try to serialize and append the class
-                    if (!TrySerializeClass(classSymbol, builder, hasAnyClass, serializer, pooledWriter, accumulatedBytes, out var newByteCount))
+                    if (!TrySerializeClass(classSymbol, payloadBuilder, hasAnyClass, serializer, pooledWriter, accumulatedBytes, out var newByteCount))
                     {
-                        // If we couldn't append because it would exceed capacity,
-                        // upload current batch first
                         bool succeeded = false;
                         if (hasAnyClass)
                         {
-                            await Upload(builder, prefixLength, suffix).ConfigureAwait(false);
+                            await Flush(payloadBuilder, suffix, batchNum).ConfigureAwait(false);
+                            payloadBuilder.Length = 0;
                             accumulatedBytes = 0;
                             hasAnyClass = false;
-                            // Try again with empty builder
-                            succeeded = TrySerializeClass(classSymbol, builder, hasAnyClass, serializer, pooledWriter, accumulatedBytes, out newByteCount);
+                            if (!TryStartBatch(root, payloadBuilder, out suffix, out batchNum))
+                            {
+                                return;
+                            }
+
+                            succeeded = TrySerializeClass(classSymbol, payloadBuilder, hasAnyClass, serializer, pooledWriter, accumulatedBytes, out newByteCount);
                         }
 
                         if (!succeeded)
@@ -320,41 +334,57 @@ namespace Datadog.Trace.Debugger.Symbols
                     hasAnyClass = true;
                 }
 
-                // Upload any remaining data
                 if (hasAnyClass)
                 {
-                    await Upload(builder, prefixLength, suffix).ConfigureAwait(false);
+                    await Flush(payloadBuilder, suffix, batchNum).ConfigureAwait(false);
                 }
             }
             finally
             {
-                if (builder != null)
-                {
-                    StringBuilderCache.Release(builder);
-                }
+                StringBuilderCache.Release(payloadBuilder);
             }
         }
 
-        private async Task Upload(StringBuilder builder, int prefixLength, string suffix)
+        private bool TryStartBatch(Root root, StringBuilder builder, out string suffix, out long batchNum)
+        {
+            batchNum = Interlocked.Increment(ref _symdbBatchNum);
+            root.UploadId = _symdbUploadId;
+            root.BatchNum = batchNum;
+            root.Final = false;
+            var rootAsString = JsonHelper.SerializeObject(root);
+            if (!TryBuildPrefixAndSuffix(rootAsString, out var prefix, out suffix))
+            {
+                // this should not happen unless Root/Scope JSON shape changes
+                Log.Warning("Unable to find insertion point for class scopes in SymDB payload");
+                return false;
+            }
+
+            builder.Append(prefix);
+            return true;
+        }
+
+        private async Task Flush(StringBuilder builder, string suffix, long batchNum)
         {
             builder.Append(']');
             builder.Append(suffix);
-            await SendSymbol(builder.ToString()).ConfigureAwait(false);
-            builder.Length = prefixLength;
+            var metadata = new SymDbUploadMetadata(
+                Service: _serviceName.Value,
+                Version: _serviceVersion,
+                UploadId: _symdbUploadId,
+                BatchNum: batchNum,
+                // Always false: the .NET tracer continuously uploads new code as
+                // assemblies get loaded; there is no defined end-of-upload point.
+                Final: false);
+            await SendSymbol(static (stream, state) => WriteSymbols(stream, state), builder, metadata).ConfigureAwait(false);
         }
 
-        private async Task<bool> SendSymbol(string symbol)
+        private async Task<bool> SendSymbol<TState>(Func<Stream, TState, Task> writeSymbols, TState state, SymDbUploadMetadata metadata)
         {
-            var count = Encoding.UTF8.GetByteCount(symbol);
-            if (_payload == null || count > _payload.Length)
-            {
-                _payload = new byte[count];
-            }
-
-            Encoding.UTF8.GetBytes(symbol, 0, symbol.Length, _payload, 0);
             try
             {
-                return await _api.SendBatchAsync(new ArraySegment<byte>(_payload, 0, count)).ConfigureAwait(false);
+                return await _api
+                    .SendBatchAsync(writeSymbols, state, metadata)
+                    .ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -387,7 +417,6 @@ namespace Datadog.Trace.Debugger.Symbols
                 return false;
             }
 
-            // Safe to append
             if (hasAnyClass)
             {
                 payloadBuilder.Append(',');
@@ -428,12 +457,16 @@ namespace Datadog.Trace.Debugger.Symbols
                 return;
             }
 
-            if (await WaitForEnablementAsync().ConfigureAwait(false) == false)
+            lock (_disposeLock)
             {
-                return;
+                if (_disposed || _processExit.Task.IsCompleted)
+                {
+                    return;
+                }
+
+                RegisterToAssemblyLoadEvent();
             }
 
-            RegisterToAssemblyLoadEvent();
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             foreach (var assembly in assemblies)
             {
@@ -443,16 +476,16 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task<bool> WaitForDiscoveryServiceAsync()
         {
+            if (_disposed || _processExit.Task.IsCompleted)
+            {
+                return false;
+            }
+
             if (!string.IsNullOrEmpty(_symDbEndpoint))
             {
                 // if it is already set, return immediately.
                 // theoretically, this can be reverted in case of version downgrade, but we not support that atm.
                 return true;
-            }
-
-            if (_disposed || _processExit.Task.IsCompleted)
-            {
-                return false;
             }
 
             await Task.Yield();
@@ -469,40 +502,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     return false;
                 }
 
-                return !string.IsNullOrEmpty(Volatile.Read(ref _symDbEndpoint));
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
-            }
-            catch (ObjectDisposedException)
-            {
-                return false;
-            }
-        }
-
-        private async Task<bool> WaitForEnablementAsync()
-        {
-            if (_disposed || _processExit.Task.IsCompleted)
-            {
-                return false;
-            }
-
-            await Task.Yield();
-
-            try
-            {
-                var completedTask = await Task.WhenAny(
-                                                   _enablementSemaphore.WaitAsync(),
-                                                   _processExit.Task)
-                                              .ConfigureAwait(false);
-
-                if (completedTask == _processExit.Task || _disposed)
-                {
-                    return false;
-                }
-
-                return true;
+                return !string.IsNullOrEmpty(_symDbEndpoint);
             }
             catch (OperationCanceledException)
             {
@@ -531,9 +531,8 @@ namespace Datadog.Trace.Debugger.Symbols
                 _disposed = true;
                 _processExit.TrySetResult(true);
                 UnRegisterToAssemblyLoadEvent();
-                _subscriptionManager.Unsubscribe(_subscription);
+                _discoveryService.RemoveSubscription(ConfigurationChanged);
                 _assemblySemaphore.Dispose();
-                _enablementSemaphore.Dispose();
                 _discoveryServiceSemaphore.Dispose();
             }
         }

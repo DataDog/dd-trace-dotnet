@@ -358,7 +358,8 @@ namespace Datadog.Trace.DatabaseMonitoring
                         var actualRemaining = Interlocked.Decrement(ref _remainingErrorLogs);
                         if (actualRemaining >= 0)
                         {
-                            Log.Error<string, int>(e, "Error setting context_info [{ContextValue}] for DB query, falling back to service only propagation mode. There won't be any link with APM traces. (will log this error {N} more time and then stop)", HexConverter.ToString(contextValue), actualRemaining);
+                            // We're making a SQL call, so this could fail for all sorts of reasons out of our control.
+                            Log.ErrorSkipTelemetry<string, int>(e, "Error setting context_info [{ContextValue}] for DB query, falling back to service only propagation mode. There won't be any link with APM traces. (will log this error {N} more time and then stop)", HexConverter.ToString(contextValue), actualRemaining);
                         }
                     }
 

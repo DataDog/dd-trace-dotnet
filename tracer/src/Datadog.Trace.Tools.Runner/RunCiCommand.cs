@@ -6,6 +6,7 @@
 using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
@@ -41,7 +42,7 @@ namespace Datadog.Trace.Tools.Runner
             var program = args[0];
 
             // Initialize and configure CI Visibility for this command
-            var initResults = await CiUtils.InitializeCiCommandsAsync(_applicationContext, context, _runSettings, _apiKeyOption, program, args, false).ConfigureAwait(false);
+            var initResults = await CiUtils.InitializeCiCommandsAsync(_applicationContext, context, _runSettings, _apiKeyOption, program, args, includeRunScopedBackfillEnvironment: true, reducePathLength: false).ConfigureAwait(false);
             if (!initResults.Success)
             {
                 return;
@@ -49,13 +50,14 @@ namespace Datadog.Trace.Tools.Runner
 
             // Final command to execute
             var arguments = Utils.GetArgumentsAsString(initResults.Arguments);
-            var command = $"{program} {arguments}".Trim();
+            var command = Utils.GetArgumentsAsString(new[] { program }.Concat(initResults.Arguments));
 
-            // Propagate original test command and working directory
+            // Keep the public test session command unchanged while propagating the normalized child command for coverage backfill internals.
             if (initResults.ProfilerEnvironmentVariables is { } profilerEnvironmentVariables)
             {
                 profilerEnvironmentVariables[ConfigurationKeys.CIVisibility.TestSessionCommand] = Environment.CommandLine;
                 profilerEnvironmentVariables[ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory] = Environment.CurrentDirectory;
+                profilerEnvironmentVariables[ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand] = command;
             }
 
             // Run child process
@@ -71,32 +73,39 @@ namespace Datadog.Trace.Tools.Runner
                 await initResults.UploadRepositoryChangesTask().ConfigureAwait(false);
             }
 
-            if (Program.CallbackForTests is { } callbackForTests)
+            try
             {
-                callbackForTests(program, arguments, initResults.ProfilerEnvironmentVariables);
-                return;
-            }
+                if (Program.CallbackForTests is { } callbackForTests)
+                {
+                    callbackForTests(program, arguments, initResults.ProfilerEnvironmentVariables);
+                    return;
+                }
 
-            Log.Debug("RunCiCommand: Launching: {Value}", command);
-            var processInfo = Utils.GetProcessStartInfo(program, Environment.CurrentDirectory, initResults.ProfilerEnvironmentVariables);
-            foreach (var arg in initResults.Arguments)
+                Log.Debug("RunCiCommand: Launching: {Value}", command);
+                var processInfo = Utils.GetProcessStartInfo(program, Environment.CurrentDirectory, initResults.ProfilerEnvironmentVariables);
+                foreach (var arg in initResults.Arguments)
+                {
+                    processInfo.ArgumentList.Add(arg);
+                }
+
+                Log.Debug("RunCiCommand.FileName: '{FileName}'", processInfo.FileName);
+                Log.Debug("RunCiCommand.Arguments: '{Arguments}'", string.Join(" ", processInfo.ArgumentList));
+                Log.Debug("RunCiCommand.WorkingDirectory: '{WorkingDirectory}'", processInfo.WorkingDirectory);
+                var exitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
+                Log.Debug<int>("RunCiCommand.ExitCode: {Value}", exitCode);
+
+                if (!initResults.TestSkippingEnabled)
+                {
+                    // Awaiting git repository task after running the command if ITR test skipping is disabled.
+                    await initResults.UploadRepositoryChangesTask().ConfigureAwait(false);
+                }
+
+                context.ExitCode = exitCode;
+            }
+            finally
             {
-                processInfo.ArgumentList.Add(arg);
+                initResults.CleanupTemporaryArgumentFiles();
             }
-
-            Log.Debug("RunCiCommand.FileName: '{FileName}'", processInfo.FileName);
-            Log.Debug("RunCiCommand.Arguments: '{Arguments}'", string.Join(" ", processInfo.ArgumentList));
-            Log.Debug("RunCiCommand.WorkingDirectory: '{WorkingDirectory}'", processInfo.WorkingDirectory);
-            var exitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
-            Log.Debug<int>("RunCiCommand.ExitCode: {Value}", exitCode);
-
-            if (!initResults.TestSkippingEnabled)
-            {
-                // Awaiting git repository task after running the command if ITR test skipping is disabled.
-                await initResults.UploadRepositoryChangesTask().ConfigureAwait(false);
-            }
-
-            context.ExitCode = exitCode;
         }
     }
 }

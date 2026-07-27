@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Profiler.Native.Linux" VERSION 3.44.0)
+project("Datadog.Profiler.Native.Linux" VERSION 3.51.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
@@ -31,10 +31,29 @@ endif()
 
 if (RUN_UBSAN)
     add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DDD_SANITIZERS)
+
+    # On arm64 Linux the CLR exports typeinfo for ProfToEEInterfaceImpl, so UBSAN's
+    # vptr check fires on every call through an ICorProfilerInfo* COM interface
+    # (QueryInterface, AddRef, Release, GetFunctionFromIP, ...). Those call sites
+    # are scattered across CorProfilerCallback, ManagedCodeCache, ManagedThreadList
+    # and most service ctors/dtors, so per-function __attribute__((no_sanitize("vptr")))
+    # turns into whack-a-mole and any missed site aborts under -fno-sanitize-recover=all.
+    # On x86_64 the CLR does not export that typeinfo, so the check is silently skipped
+    # and nothing is lost by disabling it globally. Scope the suppression to clang + arm64
+    # so x86_64 builds still benefit from the full UBSAN coverage.
+    if (ISARM64)
+        add_compile_options(-fno-sanitize=vptr)
+        add_link_options(-fno-sanitize=vptr)
+    endif()
 endif()
 
 if (RUN_TSAN)
-    add_compile_options(-fsanitize=thread -g -fno-omit-frame-pointer -DDD_SANITIZERS)
+    # DD_SANITIZE_THREAD (distinct from the general DD_SANITIZERS flag shared
+    # with ASAN/UBSAN) gates TSAN-only annotations (see SpinningMutex.hpp /
+    # ReaderWriterSpinningMutex.hpp) that call into libtsan's __tsan_mutex_* API.
+    # Those symbols only exist when actually linked with -fsanitize=thread, so
+    # this must NOT be defined under ASAN/UBSAN-only builds.
+    add_compile_options(-fsanitize=thread -g -fno-omit-frame-pointer -DDD_SANITIZERS -DDD_SANITIZE_THREAD)
 endif()
 
 if(ISLINUX)
@@ -59,15 +78,15 @@ endif()
 if (ISLINUX)
     # ------------------------------------------------------
     # Hardening: make sure no target in this project ever
-    # requests an executable stack.  Without this, glibc ≥2.41
-    # (Debian 13 "trixie", Fedora 40, etc.) rejects the shared
+    # requests an executable stack.  Without this, glibc >=2.41
+    # (Debian 13 "trixie", Fedora 40, etc.) rejects the shared
     # library with:
     #   "cannot enable executable stack as shared object requires"
     # ------------------------------------------------------
     # 1. Tell the assembler to emit a .note.GNU-stack note that
-    #    marks the object as **non‑exec‑stack**.
+    #    marks the object as **non-exec-stack**.
     add_compile_options("$<$<COMPILE_LANGUAGE:ASM>:-Wa,--noexecstack>")
-    # 2. Instruct the linker to *clear* any stray exec‑stack flag
+    # 2. Instruct the linker to *clear* any stray exec-stack flag
     #    that might still be present when it produces the final ELF.
     add_link_options(-Wl,-z,noexecstack)
 endif()
@@ -89,6 +108,13 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DEPLOY_DIR})
 # ******************************************************
 
 FILE(GLOB LINUX_PROFILER_SRC CONFIGURE_DEPENDS "*.cpp")
+
+if (ISARM64)
+    list(REMOVE_ITEM LINUX_PROFILER_SRC "${CMAKE_CURRENT_SOURCE_DIR}/Backtrace2Unwinder.cpp")
+else()
+    list(REMOVE_ITEM LINUX_PROFILER_SRC "${CMAKE_CURRENT_SOURCE_DIR}/HybridUnwinder.cpp")
+    list(REMOVE_ITEM LINUX_PROFILER_SRC "${CMAKE_CURRENT_SOURCE_DIR}/UnwindingRecorder.cpp")
+endif()
 
 FILE(GLOB COMMON_PROFILER_SRC LIST_DIRECTORIES false "../Datadog.Profiler.Native/*.cpp")
 FILE(GLOB EXCLUDE_DLLMAIN "../Datadog.Profiler.Native/DllMain.cpp")

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
@@ -506,6 +507,19 @@ public class DataStreamsManagerTests
     }
 
     [Fact]
+    public void GetOrCreateEdgeTags_EventBridge_ReturnsExpectedTagsAndCachesByEventBusAndDetailType()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new EventBridgeEdgeTagCacheKey("event-bus-1", "detail-type-1");
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"exchange:{k.EventBusName}", $"topic:{k.DetailType}", "type:eventbridge"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"exchange:{k.EventBusName}", $"topic:{k.DetailType}", "type:eventbridge"]);
+
+        second.Should().BeSameAs(first);
+        first.Should().Equal("direction:out", "exchange:event-bus-1", "topic:detail-type-1", "type:eventbridge");
+    }
+
+    [Fact]
     public void GetOrCreateEdgeTags_Sns_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
     {
         var dsm = GetDataStreamManager(true, out _);
@@ -538,7 +552,7 @@ public class DataStreamsManagerTests
     public void GetOrCreateEdgeTags_ServiceBus_ReturnsSameArrayReference_WhenCalledTwiceWithSameKey()
     {
         var dsm = GetDataStreamManager(true, out _);
-        var key = new ServiceBusEdgeTagCacheKey("my-entity");
+        var key = new ServiceBusEdgeTagCacheKey("my-entity", IsConsume: true);
 
         var first = dsm.GetOrCreateEdgeTags(key, static k => ["direction:in", $"topic:{k.EntityPath}", "type:servicebus"]);
         var second = dsm.GetOrCreateEdgeTags(key, static k => ["direction:in", $"topic:{k.EntityPath}", "type:servicebus"]);

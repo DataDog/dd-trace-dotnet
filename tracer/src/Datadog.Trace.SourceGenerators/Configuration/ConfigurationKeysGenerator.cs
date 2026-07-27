@@ -115,19 +115,49 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         var configurations = new Dictionary<string, ConfigEntry>();
         var diagnostics = new List<DiagnosticInfo>();
 
+        // Validate every entry's scope and documentation, regardless of scope.
         foreach (var kvp in parsedData.Configurations)
         {
             var entry = kvp.Value;
-            string? deprecationMessage = null;
 
-            // Check if this key has a deprecation message
-            parsedData.Deprecations?.TryGetValue(kvp.Key, out deprecationMessage);
+            // Scope is required, non-empty, and must contain only recognized tokens.
+            if (entry.Scope.Count == 0)
+            {
+                diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Missing scope", $"Configuration key '{kvp.Key}' is missing a 'scope' field in supported-configurations.yaml. Use: managed and/or native.", DiagnosticSeverity.Error));
+            }
+            else
+            {
+                foreach (var scopeValue in entry.Scope.AsSpan())
+                {
+                    if (scopeValue is not ("managed" or "native"))
+                    {
+                        diagnostics.Add(CreateDiagnosticInfo("DDSG0009", "Invalid scope", $"Configuration key '{kvp.Key}' has unrecognized scope value '{scopeValue}'. Valid values: managed, native.", DiagnosticSeverity.Error));
+                    }
+                }
+            }
 
-            // Documentation is mandatory for all configuration keys
+            // Documentation is mandatory for all configuration keys, including native-only ones.
             if (string.IsNullOrEmpty(entry.Documentation))
             {
                 diagnostics.Add(CreateDiagnosticInfo("DDSG0008", "Missing documentation", $"Configuration key '{kvp.Key}' is missing a 'documentation' field in supported-configurations.yaml", DiagnosticSeverity.Error));
             }
+        }
+
+        // Generate C# constants only for managed-scoped keys. native-only keys are registered
+        // for coverage tracking (enforced by the ValidateNativeConfigurations Nuke step) and
+        // produce no constant. Scope is already validated above, so filtering on "managed" is safe.
+        foreach (var kvp in parsedData.Configurations)
+        {
+            var entry = kvp.Value;
+            if (!ScopeContains(entry.Scope, "managed"))
+            {
+                continue;
+            }
+
+            string? deprecationMessage = null;
+
+            // Check if this key has a deprecation message
+            parsedData.Deprecations?.TryGetValue(kvp.Key, out deprecationMessage);
 
             configurations[kvp.Key] = new ConfigEntry(
                 entry.Key,
@@ -138,6 +168,21 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         }
 
         return new Result<ConfigurationData>(new ConfigurationData(configurations), new EquatableArray<DiagnosticInfo>(diagnostics.ToArray()));
+    }
+
+    // Allocation-free, case-sensitive membership check over a scope array. Avoids LINQ since the
+    // generator runs on every compilation (including IDE keystrokes).
+    private static bool ScopeContains(EquatableArray<string> scope, string value)
+    {
+        foreach (var s in scope.AsSpan())
+        {
+            if (s == value)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string GenerateProductPartialClass(string product, List<KeyValuePair<string, ConfigEntry>> entries)

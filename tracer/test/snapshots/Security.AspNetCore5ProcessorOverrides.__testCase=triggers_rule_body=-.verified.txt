@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -32,6 +32,10 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"custom-scanner-detection-rule","name":"Custom Scanner Detection Test Rule","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"CUSTOM_TEST_PATTERN_12345","parameters":[{"address":"server.request.body","highlight":["CUSTOM_TEST_PATTERN_12345"],"key_path":["Property"],"value":"CUSTOM_TEST_PATTERN_12345"}]}]}]},
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: OnPost,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.DataRazorPageModel,
+      _dd.code_origin.type: entry,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -78,6 +82,10 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"custom-scanner-detection-rule","name":"Custom Scanner Detection Test Rule","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"CUSTOM_TEST_PATTERN_12345","parameters":[{"address":"server.request.body","highlight":["CUSTOM_TEST_PATTERN_12345"],"key_path":["Property"],"value":"CUSTOM_TEST_PATTERN_12345"}]}]}]},
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: OnPost,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.DataRazorPageModel,
+      _dd.code_origin.type: entry,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -124,6 +132,10 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"custom-scanner-detection-rule","name":"Custom Scanner Detection Test Rule","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"CUSTOM_TEST_PATTERN_12345","parameters":[{"address":"server.request.body","highlight":["CUSTOM_TEST_PATTERN_12345"],"key_path":["Property"],"value":"CUSTOM_TEST_PATTERN_12345"}]}]}]},
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: OnPost,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.DataRazorPageModel,
+      _dd.code_origin.type: entry,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -170,6 +182,10 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"custom-scanner-detection-rule","name":"Custom Scanner Detection Test Rule","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"CUSTOM_TEST_PATTERN_12345","parameters":[{"address":"server.request.body","highlight":["CUSTOM_TEST_PATTERN_12345"],"key_path":["Property"],"value":"CUSTOM_TEST_PATTERN_12345"}]}]}]},
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: OnPost,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.DataRazorPageModel,
+      _dd.code_origin.type: entry,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },
@@ -216,6 +232,10 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"custom-scanner-detection-rule","name":"Custom Scanner Detection Test Rule","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"CUSTOM_TEST_PATTERN_12345","parameters":[{"address":"server.request.body","highlight":["CUSTOM_TEST_PATTERN_12345"],"key_path":["Property"],"value":"CUSTOM_TEST_PATTERN_12345"}]}]}]},
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: OnPost,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.DataRazorPageModel,
+      _dd.code_origin.type: entry,
       _dd.origin: appsec,
       _dd.runtime_family: dotnet
     },

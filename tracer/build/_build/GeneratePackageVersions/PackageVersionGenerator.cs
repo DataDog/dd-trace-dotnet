@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using NuGet.Versioning;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Logger = Serilog.Log;
@@ -178,11 +179,88 @@ namespace GeneratePackageVersions
                 }
             }
 
+            ReportNewMajorVersionsAvailable(entries, testedVersions);
+
             _latestMinors.Finish();
             _latestMajors.Finish();
             _latestSpecific.Finish();
             _strategyGenerator.Finish();
             return testedVersions;
+        }
+
+        /// <summary>
+        /// Records packages whose latest stable NuGet version is at or above their MaxVersionExclusive (a new
+        /// major outside the range we test), for the bump PR. Ceiling = highest MaxVersionExclusive per package.
+        /// </summary>
+        private void ReportNewMajorVersionsAvailable(IEnumerable<PackageVersionEntry> entries, List<TestedPackage> testedVersions)
+        {
+            // All entries that sit at a package's ceiling (its highest MaxVersionExclusive). Split-range
+            // packages (e.g. GraphQL 6.0.0 and 9.0.0) keep only the top entry, since only it would adopt
+            // the next major; same-ceiling siblings (e.g. RabbitMQ + DataStreamsRabbitMQ, both <8.0.0) are
+            // all kept, so a shared package's new major flags every integration that must widen its range.
+            var ceilingEntriesByPackage = entries
+                .GroupBy(e => e.NugetPackageSearchName)
+                .ToDictionary(
+                    g => g.Key,
+                    g =>
+                    {
+                        var withMax = g.Select(e => (entry: e, max: NuGetVersion.Parse(e.MaxVersionExclusive))).ToList();
+                        var ceiling = withMax.Max(x => x.max);
+                        return withMax.Where(x => x.max == ceiling)
+                                      .Select(x => x.entry)
+                                      .OrderBy(e => e.IntegrationName, StringComparer.Ordinal)
+                                      .ToList();
+                    });
+
+            // Highest in-range version we selected to test this run, per package. Across split-range
+            // entries that share a package name we take the overall max.
+            var currentCapByPackage = testedVersions
+                .GroupBy(t => t.NugetPackageSearchName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Max(t => t.MaxVersion));
+
+            foreach (var packageName in QueriedVersions.Keys.OrderBy(k => k, StringComparer.Ordinal))
+            {
+                if (!ceilingEntriesByPackage.TryGetValue(packageName, out var ceilingEntries))
+                {
+                    continue;
+                }
+
+                var maxVersionExclusive = NuGetVersion.Parse(ceilingEntries[0].MaxVersionExclusive);
+
+                // Only listed versions count: an unlisted/yanked major isn't really "available".
+                NuGetVersion latestAvailable = null;
+                foreach (var candidate in QueriedVersions[packageName])
+                {
+                    if (candidate.IsListed
+                        && NuGetVersion.TryParse(candidate.Version, out var parsed)
+                        && (latestAvailable is null || parsed > latestAvailable))
+                    {
+                        latestAvailable = parsed;
+                    }
+                }
+
+                if (latestAvailable is not null && latestAvailable >= maxVersionExclusive)
+                {
+                    // Fall back to the exclusive bound only if nothing was tested in range (shouldn't
+                    // happen for a package that has in-range versions on NuGet).
+                    var currentCap = currentCapByPackage.TryGetValue(packageName, out var tested)
+                        ? tested.ToString()
+                        : ceilingEntries[0].MaxVersionExclusive;
+
+                    var latestExact = latestAvailable.ToNormalizedString();
+
+                    foreach (var entry in ceilingEntries)
+                    {
+                        BumpReport.AddMajorAvailable(new PackageBumpReport.MajorAvailableEntry(
+                            entry.NugetPackageSearchName,
+                            entry.IntegrationName,
+                            currentCap,
+                            latestExact));
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -198,6 +276,7 @@ namespace GeneratePackageVersions
         {
             var previouslyTested = GetPreviouslyTestedVersions(entry.IntegrationName);
             var result = new List<VersionWithDate>();
+            var ignored = new List<VersionWithDate>();
 
             foreach (var v in versions)
             {
@@ -209,16 +288,26 @@ namespace GeneratePackageVersions
 
                 if (publishedTooRecently && !atOrBelowPreviousMax)
                 {
-                    BumpReport.AddCooldown(new PackageBumpReport.CooldownEntry(
-                        entry.NugetPackageSearchName,
-                        entry.IntegrationName,
-                        v.Version,
-                        v.Published));
+                    ignored.Add(v);
                 }
                 else
                 {
                     result.Add(v);
                 }
+            }
+
+            var keptVersion = result.Count > 0
+                ? result.Select(v => new Version(v.Version)).Max().ToString()
+                : null;
+
+            foreach (var v in ignored)
+            {
+                BumpReport.AddCooldown(new PackageBumpReport.CooldownEntry(
+                    entry.NugetPackageSearchName,
+                    entry.IntegrationName,
+                    keptVersion,
+                    v.Version,
+                    v.Published));
             }
 
             return result;

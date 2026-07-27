@@ -9,6 +9,7 @@ on:
 jobs:
   bump_smoke_test_docker_images:
     runs-on: windows-latest
+    environment: version-bump-env
     permissions:
       actions: read # read secrets
       id-token: write # Required for dd-octo-sts authentication
@@ -25,9 +26,9 @@ jobs:
           policy: self.auto_bump_smoke_test_docker_images.create-pr
 
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           global-json-file: global.json
 
@@ -53,6 +54,9 @@ jobs:
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ steps.octo-sts.outputs.token }}
+          # The branch name is referenced in .azure-pipelines/ultimate-pipeline.yml
+          # (isDockerImageBumpPr) to force-enable the installer tests on this PR.
+          # Keep the two in sync if this ever changes.
           branch: "bot/smoke-test-docker-image-bump"
           commit-message: "[Smoke Test Docker Image Bump]"
           delete-branch: true
@@ -66,7 +70,7 @@ jobs:
 
       - name: Send Slack notification about generating failure
         if: failure()
-        uses: slackapi/slack-github-action@03ea5433c137af7c0495bc0cad1af10403fc800c # v3.0.2
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
           # This data can be any valid JSON from a previous step in the GitHub Action
           payload: |
@@ -74,4 +78,4 @@ jobs:
               "github_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBOOK_URL_GENERATEPACKAGEVERSIONS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_GENERATEPACKAGEVERSIONS }}

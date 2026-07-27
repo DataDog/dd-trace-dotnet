@@ -114,7 +114,7 @@
         <!-- will be used as the relative path from the binary roots to the respective bianary files.                                                       -->
         <RelativeProjectPathBase>$(MSBuildProjectDirectory.Substring($(SourceRoot.Length)))</RelativeProjectPathBase>
 
-        <BuildOutputRoot>$(EnlistmentRoot)\profiler\$(BuildOutputFolderName)</BuildOutputRoot>
+        <BuildOutputRoot>$(EnlistmentRoot)\artifacts\profiler-build</BuildOutputRoot>
         <BuildOutputRoot>$([System.IO.Path]::GetFullPath( $(BuildOutputRoot) ))</BuildOutputRoot>
 
         <!-- By default, Configuration is DEBUG, but user can (and will) overwrite it.                                                                      -->

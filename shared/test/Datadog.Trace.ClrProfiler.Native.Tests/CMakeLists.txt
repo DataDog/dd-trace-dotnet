@@ -29,10 +29,10 @@ elseif (ISARM)
 endif()
 
 SET(TEST_EXECUTABLE_NAME "Datadog.Trace.ClrProfiler.Native.Tests")
-# ======================= change the output dir
-SET(OUTPUT_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+# Set output folders. Don't use CACHE as variable name is reused across projects.
+SET(OUTPUT_BIN_DIR "${CMAKE_SOURCE_DIR}/artifacts/native-bin/Datadog.Trace.ClrProfiler.Native.Tests")
 
-SET(TEST_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin/)
+SET(TEST_OUTPUT_DIR ${OUTPUT_BIN_DIR}/)
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${TEST_OUTPUT_DIR})

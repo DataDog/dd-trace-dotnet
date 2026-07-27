@@ -28,6 +28,10 @@ namespace Datadog.Trace.Security.Unit.Tests
                     { "1.19", RcmCapabilitiesIndices.AsmExclusionData, true },
                     { null, RcmCapabilitiesIndices.AsmExclusionData, false },
                     { "INVALID", RcmCapabilitiesIndices.AsmExclusionData, false },
+                    { "1.27", RcmCapabilitiesIndices.AsmDdMulticonfig, true },
+                    { "1.26", RcmCapabilitiesIndices.AsmDdMulticonfig, false },
+                    { "1.27", RcmCapabilitiesIndices.AsmTraceTaggingRules, true },
+                    { "1.26", RcmCapabilitiesIndices.AsmTraceTaggingRules, false },
         };
 
         [Theory]

@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         ReturnTypeName = "!!0",
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint", "!!0" },
         MinimumVersion = "2.0.0", // 2.6.45, but dll uses 2.0.0
-        MaximumVersion = "2.*.*",
+        MaximumVersion = "3.*.*",
         IntegrationName = StackExchangeRedisHelper.IntegrationName)]
     [InstrumentMethod(
         AssemblyName = "StackExchange.Redis.StrongName",

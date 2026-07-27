@@ -83,6 +83,12 @@ public class AppSecContextTests
 
         public Dictionary<string, object> FingerprintDerivatives => throw new System.NotImplementedException();
 
+        public Dictionary<string, object> WafSpanAttributes => throw new System.NotImplementedException();
+
+        public bool Keep => throw new System.NotImplementedException();
+
+        public bool HasKeep => throw new System.NotImplementedException();
+
         public bool ShouldReportSecurityResult => throw new System.NotImplementedException();
     }
 }

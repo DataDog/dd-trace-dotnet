@@ -92,7 +92,8 @@ internal sealed class JenkinsEnvironmentValues<TValueProvider>(TValueProvider va
         VariablesToBypass = new Dictionary<string, string?>();
         SetVariablesIfNotEmpty(
             VariablesToBypass,
-            ConfigurationKeys.CIVisibility.CustomTraceId);
+            ConfigurationKeys.CIVisibility.CustomTraceId,
+            ConfigurationKeys.CIVisibility.CustomParentId);
 
         PrBaseBranch = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.ChangeTarget);
         PrNumber = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.ChangeId);

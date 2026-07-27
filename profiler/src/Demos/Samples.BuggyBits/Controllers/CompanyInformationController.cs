@@ -19,7 +19,7 @@ namespace BuggyBits.Controllers
             this.dataLayer = dataLayer;
         }
 
-        public IActionResult Index(bool shortLived=false)
+        public IActionResult Index(bool shortLived = false)
         {
             if (shortLived)
             {
@@ -37,6 +37,14 @@ namespace BuggyBits.Controllers
         public IActionResult AccessGithub()
         {
             ViewData["TessGithubPage"] = $"Simulating a call to GitHub at {DateTime.Now.TimeOfDay}";
+            return View("Index");
+        }
+
+        [HttpPost]
+        public IActionResult Contact(ContactViewModel model)
+        {
+            BuggyMail mail = new BuggyMail();
+            mail.SendEmail(model.Message, "whocares-at-buggymail");
             return View("Index");
         }
 
@@ -60,14 +68,6 @@ namespace BuggyBits.Controllers
             worker.Start();
             worker.Join();
             return result;
-        }
-
-        [HttpPost]
-        public IActionResult Contact(ContactViewModel model)
-        {
-            BuggyMail mail = new BuggyMail();
-            mail.SendEmail(model.Message, "whocares-at-buggymail");
-            return View("Index");
         }
     }
 }

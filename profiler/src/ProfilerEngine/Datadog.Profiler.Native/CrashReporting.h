@@ -136,6 +136,8 @@ public:
     int32_t STDMETHODCALLTYPE CrashProcess() override;
     int32_t STDMETHODCALLTYPE SetCrashMessage(const char* message) override;
 
+    static std::vector<StackFrame> MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames);
+
 protected:
     uint32_t _pid;
     int32_t _signal;
@@ -145,10 +147,6 @@ protected:
     virtual std::vector<std::pair<int32_t, std::string>> GetThreads() = 0;
     virtual std::vector<StackFrame> GetThreadFrames(int32_t tid, ResolveManagedCallstack resolveManagedCallstack, void* context) = 0;
 
-#ifdef DD_TEST
-public:
-#endif
-    static std::vector<StackFrame> MergeFrames(const std::vector<StackFrame>& nativeFrames, const std::vector<StackFrame>& managedFrames);
 private:
     int32_t ExportImpl(ddog_Endpoint* endpoint);
     

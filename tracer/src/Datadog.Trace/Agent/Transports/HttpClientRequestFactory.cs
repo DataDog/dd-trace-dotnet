@@ -41,7 +41,7 @@ namespace Datadog.Trace.Agent.Transports
             _client.DefaultRequestHeaders.ConnectionClose = true;
         }
 
-        public Uri GetEndpoint(string relativePath) => UriHelpers.Combine(_baseEndpoint, relativePath);
+        public Uri GetEndpoint(string relativePath) => relativePath is null ? _baseEndpoint : UriHelpers.Combine(_baseEndpoint, relativePath);
 
 #if NET5_0_OR_GREATER // in .NET 6 we derive a SocketHandlerRequestFactory
         public virtual string Info(Uri endpoint)

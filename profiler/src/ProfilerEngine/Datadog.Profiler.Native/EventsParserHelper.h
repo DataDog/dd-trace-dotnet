@@ -8,23 +8,33 @@
 // end
 
 #include "../../../../shared/src/native-src/string.h"
-#include "assert.h"
-
 
 class EventsParserHelper
 {
 public:
     // Points to the UTF16, null terminated string from the given event data buffer
-    // and update the offset accordingly
+    // and updates the offset accordingly. Returns nullptr if the buffer does not
+    // contain a null terminator within bounds (malformed event).
     static WCHAR* ReadWideString(LPCBYTE pEventData, ULONG cbEventData, ULONG* offset)
     {
+        if (*offset >= cbEventData)
+        {
+            return nullptr;
+        }
+
         WCHAR* start = (WCHAR*)(pEventData + *offset);
-        size_t length = WStrLen(start);
+        const size_t maxChars = (cbEventData - *offset) / sizeof(WCHAR);
+
+        const WCHAR* end = std::char_traits<WCHAR>::find(start, maxChars, WCHAR('\0'));
+        if (end == nullptr)
+        {
+            return nullptr;
+        }
+
+        const size_t length = (size_t)(end - start);
 
         // Account for the null character
         *offset += (ULONG)((length + 1) * sizeof(WCHAR));
-
-        assert(*offset <= cbEventData);
         return start;
     }
 

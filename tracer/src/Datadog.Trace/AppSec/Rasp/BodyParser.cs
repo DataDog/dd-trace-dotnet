@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -26,7 +27,12 @@ internal static class BodyParser
             return null;
         }
 
-        using var reader = new StreamReader(json);
+        using var reader = new StreamReader(
+            json,
+            Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true,
+            bufferSize: 1024,
+            leaveOpen: true);
         using var jsonReader = new JsonTextReader(reader) { ArrayPool = JsonArrayPool.Shared };
         jsonReader.MaxDepth = null; // disable built-in limit; we enforce MaxDepth ourselves
 

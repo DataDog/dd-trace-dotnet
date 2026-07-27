@@ -152,6 +152,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                                     SharedItems.PushScope(HttpContext.Current, HttpProxyContextKey, proxyContext.Value.Scope);
                                     // Update the context to use the proxy span's context
                                     extractedContext = proxyContext.Value.Context;
+                                    tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(proxyContext.Value.Scope.Span, headers.Value);
                                 }
                             }
                         }
@@ -181,6 +182,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     if (headers is not null)
                     {
                         tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(span, headers.Value, tracer.CurrentTraceSettings.Settings.HeaderTags, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                        tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(span, headers.Value);
                     }
 
                     tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);

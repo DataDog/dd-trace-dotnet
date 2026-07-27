@@ -22,6 +22,7 @@ Expressions:
     exception,
     scopeMemberArray) =>
 {
+    string $dd_el_result;
     var this = (scopeMember.Value == null)
         ? default(DebuggerExpressionLanguageTests.TestStruct)
         : (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
@@ -49,8 +50,9 @@ Expressions:
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = (DebuggerExpressionLanguageTests.TestStruct.NestedObject.ParentProtectedStaticMember == "Hello from parent protected static member").ToString();
 
-    return $dd_el_result;
+    return "UndefinedValue";
 }
-Result: The result of the expression is: True
+Result: The result of the expression is: UndefinedValue
+Errors:
+EvaluationError { Expression = this.ChildNested.ParentProtectedStaticMember, Message = Static member access is skipped because it could trigger the declaring type initializer. }

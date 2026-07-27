@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,79 +29,56 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         private static readonly TimeSpan TinyWait = TimeSpan.FromMilliseconds(50);
 
         [Fact]
-        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
-        public void SinkSendsMessagesToLogsApi()
+        public async Task SinkSendsMessagesToLogsApi()
         {
-            using var mutex = new ManualResetEventSlim();
-
-            var logsApi = new TestLogsApi(_ =>
-            {
-                mutex.Set();
-                return true;
-            });
+            var logsApi = new TestLogsApi();
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new DirectSubmissionLogSink(logsApi, LogSettingsHelper.GetFormatter(), options);
+            await using var sink = new DirectSubmissionLogSink(logsApi, LogSettingsHelper.GetFormatter(), options, oversizeLogCallback: null, sinkDisabledCallback: null, startBackgroundLoop: false);
             sink.Start();
 
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "First message"));
+            await sink.RunOneIterationAsync(noDelay: true);
 
-            // Wait for the logs to be sent, should be done in 50ms
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
             logsApi.Logs.Should().ContainSingle();
         }
 
         [Fact]
-        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
-        public void SinkRejectsGiantMessages()
+        public async Task SinkRejectsGiantMessages()
         {
-            using var mutex = new ManualResetEventSlim();
-
+            var oversizeFired = 0;
             var logsApi = new TestLogsApi();
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new DirectSubmissionLogSink(
+            await using var sink = new DirectSubmissionLogSink(
                 logsApi,
                 LogSettingsHelper.GetFormatter(),
                 options,
-                oversizeLogCallback: _ => mutex.Set(),
-                sinkDisabledCallback: () => { });
+                oversizeLogCallback: _ => Interlocked.Increment(ref oversizeFired),
+                sinkDisabledCallback: () => { },
+                startBackgroundLoop: false);
             sink.Start();
 
             var message = new StringBuilder().Append('x', repeatCount: 1024 * 1024).ToString();
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, message));
+            await sink.RunOneIterationAsync(noDelay: true);
 
-            // Wait for the logs to be sent, should be done in 50ms
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            oversizeFired.Should().Be(1);
             logsApi.Logs.Should().BeEmpty();
         }
 
         [Fact]
-        public void SinkSendsMessageAsJsonBatch()
+        public async Task SinkSendsMessageAsJsonBatch()
         {
-            using var mutex = new ManualResetEventSlim();
-            int logsReceived = 0;
-            const int expectedCount = 2;
-
-            bool LogsSentCallback(int x)
-            {
-                if (Interlocked.Add(ref logsReceived, x) == expectedCount)
-                {
-                    mutex.Set();
-                }
-
-                return true;
-            }
-
-            var logsApi = new TestLogsApi(LogsSentCallback);
+            var logsApi = new TestLogsApi();
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new DirectSubmissionLogSink(logsApi, LogSettingsHelper.GetFormatter(), options);
+            await using var sink = new DirectSubmissionLogSink(logsApi, LogSettingsHelper.GetFormatter(), options, oversizeLogCallback: null, sinkDisabledCallback: null, startBackgroundLoop: false);
             sink.Start();
 
             var firstMessage = "First message";
             var secondMessage = "Second message";
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, firstMessage));
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Information, secondMessage));
+            await sink.RunOneIterationAsync(noDelay: true);
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
             logsApi.Logs.Should().NotBeEmpty();
 
             var logs = logsApi.Logs
@@ -117,25 +95,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         }
 
         [Fact]
-        public void SinkSendsMultipleBatches()
+        public async Task SinkSendsMultipleBatches()
         {
-            using var mutex = new ManualResetEventSlim();
-            int logsReceived = 0;
-            const int expectedCount = 5;
-
-            bool LogsSentCallback(int x)
-            {
-                if (Interlocked.Add(ref logsReceived, x) == expectedCount)
-                {
-                    mutex.Set();
-                }
-
-                return true;
-            }
-
-            var logsApi = new TestLogsApi(LogsSentCallback);
+            var logsApi = new TestLogsApi();
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new DirectSubmissionLogSink(logsApi, LogSettingsHelper.GetFormatter(), options);
+            await using var sink = new DirectSubmissionLogSink(logsApi, LogSettingsHelper.GetFormatter(), options, oversizeLogCallback: null, sinkDisabledCallback: null, startBackgroundLoop: false);
             sink.Start();
 
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "First message"));
@@ -144,9 +108,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Information, "Fourth message"));
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Information, "Fifth message"));
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            await sink.RunOneIterationAsync(noDelay: true);
 
-            logsApi.Logs.Should().HaveCountGreaterOrEqualTo(3); // batch size is 2, so at least 3 batches
+            logsApi.Logs.Should().HaveCount(3); // batch size is 2, so exactly 3 batches (2+2+1)
 
             var logs = logsApi.Logs
                               .Select(batch => Encoding.UTF8.GetString(batch.Logs.Array))
@@ -162,15 +126,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [InlineData(false)]
         public async Task EmitBatchEchoesLogsApiReturnValue(bool logsApiResponse)
         {
-            using var mutex = new ManualResetEventSlim();
-            bool LogsSentCallback(int x)
-            {
-                mutex.Set();
-
-                return logsApiResponse;
-            }
-
-            var logsApi = new TestLogsApi(LogsSentCallback);
+            var logsApi = new TestLogsApi(_ => logsApiResponse);
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
             var sink = new TestSink(logsApi, LogSettingsHelper.GetFormatter(), options);
             sink.Start();
@@ -184,35 +140,28 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         }
 
         [Fact]
-        public void IfCircuitBreakerBreaksThenNoApiRequestsAreSent()
+        public async Task IfCircuitBreakerBreaksThenNoApiRequestsAreSent()
         {
-            using var mutex = new ManualResetEventSlim();
-            int logsReceived = 0;
-
-            bool LogsSentCallback(int x)
-            {
-                Interlocked.Add(ref logsReceived, x);
-                mutex.Set();
-                return false;
-            }
-
-            var logsApi = new TestLogsApi(LogsSentCallback);
+            var logsApi = new TestLogsApi(_ => false);
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new DirectSubmissionLogSink(logsApi, LogSettingsHelper.GetFormatter(), options);
+            await using var sink = new DirectSubmissionLogSink(logsApi, LogSettingsHelper.GetFormatter(), options, oversizeLogCallback: null, sinkDisabledCallback: null, startBackgroundLoop: false);
             sink.Start();
 
+            CircuitStatus lastStatus = default;
             for (var i = 0; i < FailuresBeforeCircuitBreak; i++)
             {
                 sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "A message"));
-                mutex.Wait(30_000).Should().BeTrue();
-                mutex.Reset();
+                lastStatus = await sink.RunOneIterationAsync(noDelay: true);
             }
 
-            // circuit should be broken
-            sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "A message"));
-            mutex.Wait(3_000).Should().BeFalse(); // don't expect it to be set
+            lastStatus.Should().Be(CircuitStatus.PermanentlyBroken);
+            logsApi.Logs.Should().HaveCount(FailuresBeforeCircuitBreak);
 
-            logsReceived.Should().Be(FailuresBeforeCircuitBreak);
+            // circuit is permanently broken — further enqueues and iterations should not reach the API
+            sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "A message"));
+            await sink.RunOneIterationAsync(noDelay: true);
+
+            logsApi.Logs.Should().HaveCount(FailuresBeforeCircuitBreak);
         }
 
         internal class TestLogEvent : DirectSubmissionLogEvent
@@ -277,7 +226,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
             public TestSink(ILogsApi api, LogFormatter formatter, BatchingSinkOptions sinkOptions)
             {
-                _sink = new(api, formatter, sinkOptions);
+                _sink = new(api, formatter, sinkOptions, oversizeLogCallback: null, sinkDisabledCallback: null, startBackgroundLoop: false);
             }
 
             public Task<bool> CallEmitBatch(Queue<DirectSubmissionLogEvent> events)

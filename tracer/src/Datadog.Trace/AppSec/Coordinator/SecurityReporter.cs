@@ -66,6 +66,8 @@ internal sealed partial class SecurityReporter
         { "X-SigSci-Tags", string.Empty },
     };
 
+    private static readonly Dictionary<string, string?> AlwaysResponseHeaders = new() { { "content-length", string.Empty }, { "content-type", string.Empty } };
+
     private static readonly Dictionary<string, string?> ResponseHeaders = new() { { "content-length", string.Empty }, { "content-type", string.Empty }, { "Content-Encoding", string.Empty }, { "Content-Language", string.Empty } };
     private readonly HttpTransportBase _httpTransport;
     private readonly Span _span;
@@ -93,7 +95,17 @@ internal sealed partial class SecurityReporter
     {
         if (_span.IsAppsecEvent())
         {
-            AddResponseHeaderTags();
+            var route = _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
+            if (route != null)
+            {
+                _span.SetTag(Tags.HttpEndpoint, route);
+            }
+        }
+
+        if (CanAccessHeaders)
+        {
+            var headers = _span.IsAppsecEvent() ? ResponseHeaders : AlwaysResponseHeaders;
+            AddHeaderTags(_span, _httpTransport.GetResponseHeaders(), headers, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
     }
 
@@ -191,15 +203,22 @@ internal sealed partial class SecurityReporter
 
         AttackerFingerprintHelper.AddSpanTags(_span, result);
 
-        if (result.ShouldReportSecurityResult)
+        AddWafSpanAttributes(result.WafSpanAttributes);
+
+        if (result.Keep)
+        {
+            Security.Instance?.SetTraceSamplingPriority(_span);
+        }
+
+        var hasSecurityEvents = result.Data is { Count: > 0 };
+
+        if (hasSecurityEvents || blocked)
         {
             _span.SetTag(Tags.AppSecEvent, "true");
             if (blocked)
             {
                 _span.SetTag(Tags.AppSecBlocked, "true");
             }
-
-            Security.Instance?.SetTraceSamplingPriority(_span);
 
             LogMatchesIfDebugEnabled(result.Data, blocked);
 
@@ -277,6 +296,48 @@ internal sealed partial class SecurityReporter
         }
     }
 
+    private void AddWafSpanAttributes(Dictionary<string, object?>? attributes)
+    {
+        if (attributes is null || attributes.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var kv in attributes)
+        {
+            SetWafSpanAttribute(kv.Key, kv.Value);
+        }
+    }
+
+    private void SetWafSpanAttribute(string key, object? value)
+    {
+        switch (value)
+        {
+            case string s:
+                _span.SetTag(key, s);
+                break;
+            case bool b:
+                _span.SetMetric(key, b ? 1d : 0d);
+                break;
+            case long l:
+                _span.SetMetric(key, l);
+                break;
+            case ulong u:
+                _span.SetMetric(key, u);
+                break;
+            case double d:
+                _span.SetMetric(key, d);
+                break;
+            default:
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Unsupported WAF span attribute type {Type} for key {Key}", value?.GetType(), key);
+                }
+
+                break;
+        }
+    }
+
     private void AddRaspSpanMetrics(IResult result, Span localRootSpan)
     {
         // We don't want to fill the spans with not useful data, so we only send it when RASP has been used
@@ -289,17 +350,15 @@ internal sealed partial class SecurityReporter
 
     internal void AddResponseHeaderTags()
     {
-        TryAddEndPoint();
-        var headers = CanAccessHeaders ? _httpTransport.GetResponseHeaders() : new NameValueHeadersCollection(new NameValueCollection());
-        AddHeaderTags(_span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
-    }
-
-    private void TryAddEndPoint()
-    {
         var route = _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
         if (route != null)
         {
             _span.SetTag(Tags.HttpEndpoint, route);
+        }
+
+        if (CanAccessHeaders)
+        {
+            AddHeaderTags(_span, _httpTransport.GetResponseHeaders(), ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
     }
 }

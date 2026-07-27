@@ -3,4 +3,11 @@
   This file intentionally left blank...
   to stop msbuild from looking up the folder hierarchy
   -->
+
+  <PropertyGroup>
+    <!-- Send obj/ output to the repo-root artifacts/ tree, matching the rest of the tracer. -->
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <!-- Normalize so that downstream tools that string-compare paths don't trip on `tracer\..\` segments -->
+    <ArtifactsPath>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\..\..\..\..\artifacts'))</ArtifactsPath>
+  </PropertyGroup>
 </Project>

@@ -17,12 +17,13 @@ using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger
 {
     internal sealed class LineProbeResolver : ILineProbeResolver
     {
-        private const int MinTrailingSegmentsForFallbackMatch = 4;
+        private const int MinTrailingSegmentsForFallbackMatch = 2;
         private const int MaxSameFileNameExamples = 3;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LineProbeResolver>();
         private readonly ImmutableHashSet<string> _thirdPartyDetectionExcludes;
@@ -62,9 +63,20 @@ namespace Datadog.Trace.Debugger
             return separatorIndex >= 0 ? span.Slice(separatorIndex + 1).ToString() : span.ToString();
         }
 
-        private static string BuildLoadedAssemblySourceFileMismatchMessage()
+        internal static string BuildLoadedAssemblySourceFileMismatchMessage(LineProbeResolveErrorDetails details)
         {
-            return "Source file location for probe did not match the PDB document path of a loaded, symbolicated assembly with the same file name.";
+            var builder = StringBuilderCache.Acquire();
+            builder.Append("Source file location for probe did not uniquely match the PDB document path of a loaded, symbolicated assembly with the same file name.");
+            builder.Append(" Fallback failure reason: ");
+            builder.Append(details.Key.FallbackFailureReason);
+            builder.Append(". Best matching trailing segments: ");
+            builder.Append(details.BestMatchingTrailingSegments);
+            builder.Append(". Qualified fallback matches: ");
+            builder.Append(details.QualifiedFallbackMatchCount);
+            builder.Append(". Same file name matches: ");
+            builder.Append(details.SameFileNameMatchCount);
+            builder.Append('.');
+            return StringBuilderCache.GetStringAndRelease(builder);
         }
 
         private static string BuildAssemblyNotLoadedOrSymbolsUnavailableMessage()
@@ -101,7 +113,6 @@ namespace Datadog.Trace.Debugger
             bool includeExamplePaths,
             ref int sameFileNameMatchCount,
             ref int bestMatchingTrailingSegments,
-            ref int qualifiedFallbackMatchCount,
             ref List<string>? sameFileNameMatches)
         {
             if (result.ExampleSameFileNamePath is null)
@@ -120,8 +131,6 @@ namespace Datadog.Trace.Debugger
             {
                 bestMatchingTrailingSegments = result.BestMatchingTrailingSegments;
             }
-
-            qualifiedFallbackMatchCount += result.QualifiedMatchCount;
         }
 
         private static LineProbeResolutionDiagnostics BuildMinimalDiagnostics(string probeFile, int? probeLine, string probeId)
@@ -210,7 +219,6 @@ namespace Datadog.Trace.Debugger
                 var symbolicatedAssemblyCount = 0;
                 var sameFileNameMatchCount = 0;
                 var bestMatchingTrailingSegments = 0;
-                var qualifiedFallbackMatchCount = 0;
 
                 foreach (var candidateAssembly in AppDomain.CurrentDomain.GetAssemblies())
                 {
@@ -237,10 +245,9 @@ namespace Datadog.Trace.Debugger
                         includeDetailedDiagnostics,
                         ref sameFileNameMatchCount,
                         ref bestMatchingTrailingSegments,
-                        ref qualifiedFallbackMatchCount,
                         ref sameFileNameMatches);
 
-                    // Only bind when a single global fallback candidate has the best score.
+                    // Only bind when a single global fallback candidate has the strictly best score.
                     // Assemblies with internally ambiguous fallback matches must still participate in that global tie.
                     bestFallbackMatchSelection.Track(candidateAssembly, in closestPathMatch);
                 }
@@ -257,7 +264,7 @@ namespace Datadog.Trace.Debugger
                     symbolicatedAssemblyCount,
                     sameFileNameMatchCount,
                     bestMatchingTrailingSegments,
-                    qualifiedFallbackMatchCount,
+                    bestFallbackMatchSelection.QualifiedMatchCount,
                     bestFallbackMatchSelection.HasAmbiguousBestMatch,
                     includeDetailedDiagnostics ? sameFileNameMatches?.ToArray() ?? [] : []);
                 return false;
@@ -297,21 +304,32 @@ namespace Datadog.Trace.Debugger
 
                 if (!TryFindAssemblyContainingFile(sourceFile, diagnosticLevel, out var assemblyPathMatch, out var searchDiagnostics))
                 {
-                    var reason = searchDiagnostics is { SameFileNameMatchCount: > 0 }
+                    var isSourceFileMismatch = searchDiagnostics is { SameFileNameMatchCount: > 0 };
+                    // Resolver outcome matrix:
+                    // - no same-file candidate: Unbound, ReportError=false. DynamicInstrumentation reports RECEIVED and retries on future assembly loads.
+                    // - same-file candidates but no exact/unique fallback: Unbound, ReportError=true. DynamicInstrumentation reports ERROR with this message, but keeps retrying in case a later assembly provides an exact/unique match.
+                    // - invalid probe metadata / missing PDB / missing sequence point / unexpected exception: Error. DynamicInstrumentation reports ERROR and does not keep the probe in the retry set.
+                    // - bound: Bound. DynamicInstrumentation requests instrumentation; future assembly loads do not invalidate the already bound location.
+                    var reason = isSourceFileMismatch
                                      ? LineProbeResolveReason.LoadedAssemblySourceFileMismatch
                                      : LineProbeResolveReason.AssemblyNotLoadedOrSymbolsUnavailable;
-                    var message = searchDiagnostics is { SameFileNameMatchCount: > 0 }
-                                      ? BuildLoadedAssemblySourceFileMismatchMessage()
-                                      : BuildAssemblyNotLoadedOrSymbolsUnavailableMessage();
+                    var errorKey = searchDiagnostics?.ToErrorKey(reason) ?? new LineProbeResolveErrorKey(reason);
+                    var errorDetails = searchDiagnostics?.ToErrorDetails(errorKey) ?? new LineProbeResolveErrorDetails(errorKey);
                     var unresolvedDiagnostics = diagnosticLevel == LineProbeDiagnosticLevel.Full
                                                     ? searchDiagnostics?.ToDiagnostics(lineNum, probe.Id) ?? BuildMinimalDiagnostics(sourceFile, lineNum, probe.Id)
                                                     : BuildMinimalDiagnostics(sourceFile, lineNum, probe.Id);
+                    var message = isSourceFileMismatch
+                                      ? diagnosticLevel == LineProbeDiagnosticLevel.Full ? BuildLoadedAssemblySourceFileMismatchMessage(errorDetails) : null
+                                      : BuildAssemblyNotLoadedOrSymbolsUnavailableMessage();
 
                     return new LineProbeResolveResult(
                         LiveProbeResolveStatus.Unbound,
                         reason,
                         message,
-                        unresolvedDiagnostics);
+                        unresolvedDiagnostics,
+                        errorKey,
+                        errorDetails,
+                        ReportError: isSourceFileMismatch);
                 }
 
                 var filePathFromPdb = assemblyPathMatch.Path;
@@ -376,10 +394,13 @@ namespace Datadog.Trace.Debugger
         {
             private BestFallbackMatch? _bestMatch;
             private int _bestMatchingTrailingSegments;
+            private int _qualifiedMatchCount;
 
             public BestFallbackMatch? BestMatch => HasAmbiguousBestMatch ? null : _bestMatch;
 
             public bool HasAmbiguousBestMatch { get; private set; }
+
+            public int QualifiedMatchCount => _qualifiedMatchCount;
 
             public void Track(Assembly assembly, in ClosestPathBySuffixResult result)
             {
@@ -388,6 +409,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
+                _qualifiedMatchCount += result.QualifiedMatchCount;
                 var candidateScore = result.BestQualifiedMatchingTrailingSegments;
                 if (candidateScore > _bestMatchingTrailingSegments)
                 {
@@ -770,6 +792,22 @@ namespace Datadog.Trace.Debugger
                     SymbolicatedAssemblyCount: SymbolicatedAssemblyCount,
                     SameFileNameMatchCount: SameFileNameMatchCount,
                     SameFileNameExamples: SameFileNameExamples);
+            }
+
+            public LineProbeResolveErrorKey ToErrorKey(LineProbeResolveReason reason)
+            {
+                return new LineProbeResolveErrorKey(
+                    reason,
+                    FallbackFailureReason);
+            }
+
+            public LineProbeResolveErrorDetails ToErrorDetails(LineProbeResolveErrorKey key)
+            {
+                return new LineProbeResolveErrorDetails(
+                    key,
+                    BestMatchingTrailingSegments,
+                    QualifiedFallbackMatchCount,
+                    SameFileNameMatchCount);
             }
         }
 

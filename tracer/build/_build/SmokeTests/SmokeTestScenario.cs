@@ -119,6 +119,10 @@ public record TrimmingScenario : SmokeTestScenario
     public required string PackageName { get; init; }
     public string? PackageVersionSuffix { get; init; }
     public string InstallCommand => InstallType.GetInstallCommand();
+
+    // Single-file trimming publishes bundled user assemblies without Assembly.Location.
+    // Code Origin still emits reflection-derived frame tags, but PDB-backed file/line/column tags are unavailable.
+    public override string SnapshotFile => "smoke_test_snapshots_trimming";
 }
 
 public record WindowsMsiScenario : SmokeTestScenario

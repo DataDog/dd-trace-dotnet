@@ -173,13 +173,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return CreateInvalidatedAsyncLineDebuggerState();
                 }
 
-                if (!probeData.Processor.ShouldProcess(in probeData))
+                if (!probeData.Processor.TryBeginProcess(in probeData, out var snapshotCreator))
                 {
                     return CreateInvalidatedAsyncLineDebuggerState();
                 }
 
                 var kickoffParentObject = AsyncHelper.GetAsyncKickoffThisObject(instance);
-                var state = new AsyncLineDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance, kickoffParentObject);
+                var state = new AsyncLineDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance, kickoffParentObject, snapshotCreator);
                 var asyncInfo = new AsyncCaptureInfo(state.MoveNextInvocationTarget, state.KickoffInvocationTarget, state.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: state.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: state.MethodMetadataInfo.AsyncMethodHoistedArguments);
                 var captureInfo = new CaptureInfo<Type>(state.MethodMetadataIndex, value: null, type: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLineAsync, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath), asyncCaptureInfo: asyncInfo);
 

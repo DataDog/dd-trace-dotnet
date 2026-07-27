@@ -172,13 +172,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            if (!probeData.Processor.ShouldProcess(in probeData))
+            if (!probeData.Processor.TryBeginProcess(in probeData, out var snapshotCreator))
             {
                 state = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
                 return;
             }
 
-            var asyncState = new AsyncMethodDebuggerState(probeId, ref probeData)
+            var asyncState = new AsyncMethodDebuggerState(probeId, ref probeData, snapshotCreator)
             {
                 KickoffInvocationTarget = kickoffInfo.KickoffParentObject,
                 StartTime = DateTimeOffset.UtcNow,

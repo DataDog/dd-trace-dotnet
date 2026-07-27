@@ -99,7 +99,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             {
                 sample.Message.Should().Be("IOE - False");
                 sample.Type.Should().Be("System.InvalidOperationException");
-                Assert.True(sample.Stacktrace.EndWith(stack));
+                Assert.True(sample.Stacktrace.EndWith(stack, out var stackEndWithMessage), stackEndWithMessage);
             }
         }
     }

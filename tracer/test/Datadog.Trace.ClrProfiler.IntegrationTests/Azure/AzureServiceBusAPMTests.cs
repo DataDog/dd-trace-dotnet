@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
     [Trait("DockerGroup", "2")]
     [Trait("Category", "ArmUnsupported")]
     [UsesVerify]
+    [Collection(AzureMessagingEmulatorTestsCollection.Name)]
     public class AzureServiceBusAPMTests : TracingIntegrationTest
     {
         public AzureServiceBusAPMTests(ITestOutputHelper output)

@@ -131,7 +131,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, expectedSpans, settings, "application/json");
         }
 
+        [Trait("Category", "EndToEnd")]
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
         public async Task TestNullAction()
         {
             // test integrations like ReflectedHttpActionDescriptor_ExecuteAsync_Integration and ControllerActionInvoker_InvokeAction_Integration dont crash

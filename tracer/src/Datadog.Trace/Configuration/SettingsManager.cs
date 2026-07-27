@@ -12,6 +12,7 @@ using System.Threading;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Serverless;
 
 namespace Datadog.Trace.Configuration;
 
@@ -21,6 +22,7 @@ public sealed partial record TracerSettings
     {
         private readonly TracerSettings _tracerSettings;
         private readonly ConfigurationTelemetry _initialTelemetry;
+        private readonly ServerlessCompatPipeNames _pipeNames;
         private readonly List<SettingChangeSubscription> _subscribers = [];
 
         private IConfigurationSource _dynamicConfigurationSource = NullConfigurationSource.Instance;
@@ -40,7 +42,15 @@ public sealed partial record TracerSettings
             // We don't re-record error logs, so we just use the built-in for that
             var initialTelemetry = new ConfigurationTelemetry();
             InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, initialTelemetry, errorLog, tracerSettings);
-            InitialExporterSettings = new ExporterSettings(source, initialTelemetry);
+
+            // Build Raw once here so we can both pass it into ExporterSettings and read
+            // ServerlessCompatPath to decide whether to generate pipe names. Pipe names are
+            // generated at most once per process and reused on every reconfig so the compat
+            // layer continues to see the same name.
+            var initialRawExporterSettings = new ExporterSettings.Raw(source, initialTelemetry);
+            _pipeNames = CreatePipeNames(initialRawExporterSettings.ServerlessCompatPath);
+            InitialExporterSettings = new ExporterSettings(initialRawExporterSettings, initialTelemetry, _pipeNames);
+
             _tracerSettings = tracerSettings;
             _initialTelemetry = initialTelemetry;
             initialTelemetry.CopyTo(telemetry);
@@ -126,6 +136,30 @@ public sealed partial record TracerSettings
                 _dynamicConfigurationSource = dynamicConfigSource;
                 return UpdateSettings(dynamicConfigSource, _manualConfigurationSource, centralTelemetry);
             }
+        }
+
+        private static ServerlessCompatPipeNames CreatePipeNames(string? compatPathOverride)
+        {
+            // Named pipes are Windows-only; short-circuit on other platforms before touching AzureInfo or the disk.
+            if (!FrameworkDescription.Instance.IsWindows()
+                || !AzureInfo.Instance.IsAzureFunction
+                || AzureInfo.Instance.IsUsingSiteExtension
+                || !ServerlessCompatPipeNameHelper.IsCompatLayerAvailableWithPipeSupport(compatPathOverride))
+            {
+                return ServerlessCompatPipeNames.None;
+            }
+
+            var names = new ServerlessCompatPipeNames(
+                TracesPipeName: $"dd_trace_{Guid.NewGuid():N}",
+                MetricsPipeName: $"dd_dogstatsd_{Guid.NewGuid():N}");
+
+            Log.Information(
+                "Azure Functions environment detected with Serverless Compatibility Layer. " +
+                "Generated unique pipe names — traces: {TracesPipeName}, metrics: {MetricsPipeName}",
+                names.TracesPipeName,
+                names.MetricsPipeName);
+
+            return names;
         }
 
         private bool UpdateSettings(
@@ -217,7 +251,7 @@ public sealed partial record TracerSettings
 
             Log.Information("Notifying consumers of new settings");
             var updatedMutableSettings = isSameMutableSettings ? null : newMutableSettings;
-            var updatedExporterSettings = isSameExporterSettings ? null : new ExporterSettings(newRawExporterSettings, telemetry);
+            var updatedExporterSettings = isSameExporterSettings ? null : new ExporterSettings(newRawExporterSettings, telemetry, _pipeNames);
 
             return new SettingChanges(updatedMutableSettings, updatedExporterSettings, currentMutable, currentExporter);
         }

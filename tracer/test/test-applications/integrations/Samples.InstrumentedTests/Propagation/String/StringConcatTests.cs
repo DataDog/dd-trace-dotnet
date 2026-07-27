@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using Xunit;
 
@@ -78,6 +79,42 @@ public class StringConcatTests : InstrumentationTestsBase
         var testString5 = AddTaintedString("+-*/{}");
 
         FormatTainted(System.String.Concat(new List<string> { testString1, testString2, testString3, testString4, testString5 })).Should().Be(":+-01-+::+-abc-+::+-ABCD-+::+-.,;:?-+::+-+-*/{}-+:");
+    }
+
+    [Fact]
+    public void GivenDeferredStringEnumerable_WhenCallingConcat_EnumerableIsOnlyEnumeratedOnce()
+    {
+        const int elementCount = 3;
+        var sideEffectInvocations = 0;
+        var values = Enumerable.Range(0, elementCount).Select(i =>
+        {
+            sideEffectInvocations++;
+            return i == 0 ? TaintedString : $"value{i}";
+        });
+
+        var result = System.String.Concat(values);
+
+        Assert.Equal("TaintedStringvalue1value2", result);
+        Assert.Equal(elementCount, sideEffectInvocations);
+        Assert.Equal(":+-TaintedString-+:value1value2", FormatTainted(result));
+    }
+
+    [Fact]
+    public void GivenDeferredGenericEnumerable_WhenCallingConcat_EnumerableIsOnlyEnumeratedOnce()
+    {
+        const int elementCount = 3;
+        var sideEffectInvocations = 0;
+        var values = Enumerable.Range(0, elementCount).Select<int, object>(i =>
+        {
+            sideEffectInvocations++;
+            return i == 0 ? TaintedObject : $"value{i}";
+        });
+
+        var result = System.String.Concat(values);
+
+        Assert.Equal("TaintedObjectvalue1value2", result);
+        Assert.Equal(elementCount, sideEffectInvocations);
+        Assert.Equal(":+-TaintedObject-+:value1value2", FormatTainted(result));
     }
 
     [Fact]
@@ -708,4 +745,3 @@ public class StringConcatTests : InstrumentationTestsBase
         System.String.Concat(obj).Should().BeEmpty();
     }
 }
-

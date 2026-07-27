@@ -15,7 +15,6 @@ using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
-using Datadog.Trace.LibDatadog;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
@@ -35,7 +34,7 @@ namespace Datadog.Trace.Configuration
     public partial record TracerSettings
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerSettings>();
-        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS"];
+        private static readonly HashSet<string> DefaultExperimentalFeatures = ["DD_TAGS", ConfigurationKeys.StatsAdditionalTags];
 
         private readonly Lazy<string> _fallbackApplicationName;
 
@@ -59,19 +58,6 @@ namespace Datadog.Trace.Configuration
         /// <param name="telemetry">The telemetry collection instance. Typically you should create a new <see cref="ConfigurationTelemetry"/> </param>
         /// <param name="errorLog">Used to record cases where telemetry is overridden </param>
         internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog)
-            : this(source, telemetry, errorLog, LibDatadogAvailabilityHelper.IsLibDatadogAvailable)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TracerSettings"/> class.
-        /// The "main" constructor for <see cref="TracerSettings"/> that should be used internally in the library.
-        /// </summary>
-        /// <param name="source">The configuration source. If <c>null</c> is provided, uses <see cref="NullConfigurationSource"/> </param>
-        /// <param name="telemetry">The telemetry collection instance. Typically you should create a new <see cref="ConfigurationTelemetry"/> </param>
-        /// <param name="errorLog">Used to record cases where telemetry is overridden </param>
-        /// <param name="isLibDatadogAvailable">Used to check whether the libdatadog library is available. Useful for integration tests</param>
-        internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, OverrideErrorLog errorLog, LibDatadogAvailableResult isLibDatadogAvailable)
         {
             var commaSeparator = Separators.Comma;
             source ??= NullConfigurationSource.Instance;
@@ -84,7 +70,11 @@ namespace Datadog.Trace.Configuration
                     {
                         null or "none" => new HashSet<string>(),
                         "all" => DefaultExperimentalFeatures,
-                        string s => new HashSet<string>(s.Split([','], StringSplitOptions.RemoveEmptyEntries)),
+#if NET6_0_OR_GREATER
+                        string s => new HashSet<string>(s.Split(commaSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)),
+#else
+                        string s => new HashSet<string>(s.Split(commaSeparator, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim())),
+#endif
                     };
 
             PropagateProcessTags = config
@@ -620,6 +610,98 @@ namespace Datadog.Trace.Configuration
                 StatsComputationEnabled = false;
             }
 
+            if (!ExperimentalFeaturesEnabled.Contains(ConfigurationKeys.StatsAdditionalTags))
+            {
+                StatsAdditionalTags = [];
+            }
+            else
+            {
+                // Deduplicate and sort up front so the aggregator receives a frozen, normalized list
+                // and so the configured-key cap drops a deterministic (alphabetical) set.
+                var statsAdditionalTags = config
+                                         .WithKeys(ConfigurationKeys.StatsAdditionalTags)
+                                         .AsString();
+                if (StringUtil.IsNullOrWhiteSpace(statsAdditionalTags))
+                {
+                    StatsAdditionalTags = [];
+                }
+                else
+                {
+                    HashSet<string>? entries = null;
+                    const int maxStatsAdditionalTagKeys = 4; // backend stats pipeline only supports a few primary tag dimensions
+
+                    // split the string value to find the tags
+                    foreach (var splitValue in statsAdditionalTags.SplitIntoSpans(','))
+                    {
+                        var span = splitValue.AsSpan().Trim();
+                        if (span.IsEmpty)
+                        {
+                            continue;
+                        }
+
+                        entries ??= [];
+                        entries.Add(span.ToString());
+                    }
+
+                    if (entries is { Count: > 0 })
+                    {
+                        // If we have more than maxStatsAdditionalTagKeys, we need to drop the remaining
+                        List<string>? dropped = null;
+                        var entryCount = Math.Min(entries.Count, maxStatsAdditionalTagKeys);
+                        var tags = new string[entryCount];
+                        var i = 0;
+
+                        // We order by the tags here, to ensure the stats aggregation key stats are consistent
+                        foreach (var entry in entries.OrderBy(static x => x, StringComparer.Ordinal))
+                        {
+                            if (i >= maxStatsAdditionalTagKeys)
+                            {
+                                dropped ??= [];
+                                dropped.Add(entry);
+                            }
+                            else
+                            {
+                                tags[i] = entry;
+                                i++;
+                            }
+                        }
+
+                        StatsAdditionalTags = tags;
+                        if (dropped is not null)
+                        {
+                            Log.Warning<int, string>(
+                                "DD_TRACE_STATS_ADDITIONAL_TAGS exceeds the maximum of {Max} keys. The following keys were dropped: {Dropped}",
+                                maxStatsAdditionalTagKeys,
+                                string.Join(",", dropped));
+                        }
+                    }
+                    else
+                    {
+                        StatsAdditionalTags = [];
+                    }
+                }
+            }
+
+            StatsAdditionalTagsCardinalityLimit = config
+                                                 .WithKeys(ConfigurationKeys.StatsAdditionalTagsCardinalityLimit)
+                                                 .AsInt32(defaultValue: 100, validator: x => x > 0).Value;
+
+            StatsResourceCardinalityLimit = config
+                                           .WithKeys(ConfigurationKeys.StatsResourceCardinalityLimit)
+                                           .AsInt32(defaultValue: 1024, validator: x => x > 0).Value;
+
+            StatsHttpEndpointCardinalityLimit = config
+                                               .WithKeys(ConfigurationKeys.StatsHttpEndpointCardinalityLimit)
+                                               .AsInt32(defaultValue: 512, validator: x => x > 0).Value;
+
+            StatsPeerTagsCardinalityLimit = config
+                                           .WithKeys(ConfigurationKeys.StatsPeerTagsCardinalityLimit)
+                                           .AsInt32(defaultValue: 512, validator: x => x > 0).Value;
+
+            StatsComputationBucketsCardinalityLimit = config
+                                                     .WithKeys(ConfigurationKeys.StatsComputationBucketsCardinalityLimit)
+                                                     .AsInt32(defaultValue: 2048, validator: x => x > 0).Value;
+
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
                                    .AsString(GetDefaultHttpClientExclusions());
@@ -638,16 +720,24 @@ namespace Datadog.Trace.Configuration
                                                   ? TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator)
                                                   : [];
 
-            DbmPropagationMode = config
-                                .WithKeys(ConfigurationKeys.DbmPropagationMode)
-                                .GetAs(
-                                     defaultValue: new(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
-                                     converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
-                                     validator: null);
+            var dbmPropagationMode = config
+                                    .WithKeys(ConfigurationKeys.DbmPropagationMode)
+                                    .GetAs(
+                                         defaultValue: new(new(DbmPropagationLevel.Disabled), nameof(DbmPropagationLevel.Disabled)),
+                                         converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationResult>.Failure(),
+                                         validator: null);
+            DbmPropagationMode = dbmPropagationMode.EffectiveLevel;
 
             DbmInjectSqlBasehash = config
                 .WithKeys(ConfigurationKeys.DbmInjectSqlBasehash)
                 .AsBool(false);
+
+            if (dbmPropagationMode.ForceInjectBaseHash && !DbmInjectSqlBasehash)
+            {
+                // dynamic_service overrides the DbmInjectSqlBaseHash setting
+                DbmInjectSqlBasehash = true;
+                telemetry.Record(ConfigurationKeys.DbmInjectSqlBasehash, true, ConfigurationOrigins.Calculated);
+            }
 
             RemoteConfigurationEnabled = config.WithKeys(ConfigurationKeys.Rcm.RemoteConfigurationEnabled).AsBool(true);
 
@@ -703,6 +793,28 @@ namespace Datadog.Trace.Configuration
                 ? new HashSet<string>(TrimSplitString(enabledMeters, commaSeparator), StringComparer.Ordinal)
                 : new HashSet<string>(StringComparer.Ordinal);
 
+            OpenTelemetryMetricsCardinalityLimit = config
+                                    .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit)
+                                    .AsInt32(2000, value => value > 0).Value;
+
+#if NET6_0_OR_GREATER
+            OtlpRuntimeMetricsEnabled = OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled && RuntimeMetricsEnabled;
+#else
+            // Default to false on unsupported TFMs so the StatsD RuntimeMetricsWriter runs as expected.
+            OtlpRuntimeMetricsEnabled = false;
+#endif
+
+            // OTEL_TRACES_SPAN_METRICS_ENABLED is a tri-state: explicit true/false overrides auto-detection.
+            // When unset, span metrics are auto-enabled iff OTEL_TRACES_EXPORTER=otlp AND DD_METRICS_OTEL_ENABLED=true.
+            var otelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString();
+            var explicitSpanMetrics = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled).AsBool();
+            OtelTracesSpanMetricsEnabled = explicitSpanMetrics
+                ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled);
+
+            OtelSemanticsEnabled = config
+                .WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled)
+                .AsBool(defaultValue: false);
+
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
@@ -757,69 +869,22 @@ namespace Datadog.Trace.Configuration
             // We create a lazy here because this is kind of expensive, and we want to avoid calling it if we can
             _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
 
-            // There's a circular dependency here because DataPipeline depends on ExporterSettings,
-            // but the settings manager depends on TracerSettings. Basically this is all fine as long
-            // as nothing in the MutableSettings or ExporterSettings depends on the value of DataPipelineEnabled!
             Manager = new(source, this, telemetry, errorLog);
 
-            DataPipelineEnabled = config
-                                  .WithKeys(ConfigurationKeys.TraceDataPipelineEnabled)
-                                  .AsBool(defaultValue: false);
-
-            if (DataPipelineEnabled)
+            // OTLP span metrics require OTLP trace export (see TracerManagerFactory.GetAgentWriter).
+            // Force to false otherwise, even if explicitly requested.
+            if (OtelTracesSpanMetricsEnabled && !Manager.InitialExporterSettings.IsOtlpTraceExport)
             {
-                // Due to missing quantization and obfuscation in native side, we can't enable the native trace exporter
-                // as it may lead to different stats results than the managed one.
-                if (StatsComputationEnabled)
+                if (explicitSpanMetrics == true)
                 {
-                    DataPipelineEnabled = false;
                     Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but {ConfigurationKeys.StatsComputationEnabled} is enabled. Disabling data pipeline.");
-                    telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
+                        "{ConfigurationKey} is set to true, but traces are not being exported using OTLP encoding (OTEL_TRACES_EXPORTER={OtelTracesExporter}). OTLP span metrics require OTLP trace export, so this setting has been disabled.",
+                        ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled,
+                        otelTracesExporter);
                 }
 
-                // Windows supports UnixDomainSocket https://devblogs.microsoft.com/commandline/af_unix-comes-to-windows/
-                // but tokio hasn't added support for it yet https://github.com/tokio-rs/tokio/issues/2201
-                // There's an issue here, in that technically a user can initially be configured to send over TCP/named pipes,
-                // and so we allow and enable the datapipeline. Later, they could configure the app in code to send over UDS.
-                // This is a problem, as we currently don't support toggling the data pipeline at runtime, so we explicitly block
-                // this scenario in the public API.
-                if (Manager.InitialExporterSettings.TracesTransport == TracesTransportType.UnixDomainSocket && FrameworkDescription.Instance.IsWindows())
-                {
-                    DataPipelineEnabled = false;
-                    Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but TracesTransport is set to UnixDomainSocket which is not supported on Windows. Disabling data pipeline.");
-                    telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-
-                if (!isLibDatadogAvailable.IsAvailable)
-                {
-                    DataPipelineEnabled = false;
-                    if (isLibDatadogAvailable.Exception is not null)
-                    {
-                        Log.Warning(
-                            isLibDatadogAvailable.Exception,
-                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
-                    }
-                    else
-                    {
-                        Log.Warning(
-                            $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but libdatadog is not available. Disabling data pipeline.");
-                    }
-
-                    telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
-
-                // SSI already utilizes libdatadog. To prevent unexpected behavior,
-                // we proactively disable the data pipeline when SSI is enabled. Theoretically, this should not cause any issues,
-                // but as a precaution, we are taking a conservative approach during the initial rollout phase.
-                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.SsiDeployed)))
-                {
-                    DataPipelineEnabled = false;
-                    Log.Warning(
-                        $"{ConfigurationKeys.TraceDataPipelineEnabled} is enabled, but SSI is enabled. Disabling data pipeline.");
-                    telemetry.Record(ConfigurationKeys.TraceDataPipelineEnabled, false, ConfigurationOrigins.Calculated);
-                }
+                OtelTracesSpanMetricsEnabled = false;
+                telemetry.Record(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled, false, ConfigurationOrigins.Calculated);
             }
         }
 
@@ -856,6 +921,14 @@ namespace Datadog.Trace.Configuration
         /// Gets the names of enabled Meters.
         /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMeterNames"/>
         internal HashSet<string> OpenTelemetryMeterNames { get; }
+
+        /// <summary>
+        /// Gets the maximum number of distinct attribute sets (metric points) tracked per metric stream
+        /// for the experimental OpenTelemetry Metrics API support. Measurements beyond this limit are
+        /// aggregated into a single overflow metric point.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit"/>
+        internal int OpenTelemetryMetricsCardinalityLimit { get; }
 
         /// <summary>
         /// Gets a value indicating whether the OpenTelemetry metrics exporter is enabled.
@@ -1007,6 +1080,49 @@ namespace Datadog.Trace.Configuration
         public bool StatsComputationEnabled { get; }
 
         /// <summary>
+        /// Gets the span tag keys to extract and include as additional aggregation dimensions
+        /// for client-side stats. Deduplicated, sorted, and capped at 4 keys.
+        /// Empty unless the feature is enabled via <see cref="ExperimentalFeaturesEnabled"/>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsAdditionalTags"/>
+        internal string[] StatsAdditionalTags { get; }
+
+        /// <summary>
+        /// Gets the maximum number of distinct stat entries with additional tags admitted
+        /// into each flush bucket.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsAdditionalTagsCardinalityLimit"/>
+        internal int StatsAdditionalTagsCardinalityLimit { get; }
+
+        /// <summary>
+        /// Gets the maximum number of distinct resource values admitted into client-side stats
+        /// per flush interval. Values beyond the cap are collapsed to "tracer_blocked_value".
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsResourceCardinalityLimit"/>
+        internal int StatsResourceCardinalityLimit { get; }
+
+        /// <summary>
+        /// Gets the maximum number of distinct http.endpoint values admitted into client-side stats
+        /// per flush interval. Values beyond the cap are collapsed to "tracer_blocked_value".
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsHttpEndpointCardinalityLimit"/>
+        internal int StatsHttpEndpointCardinalityLimit { get; }
+
+        /// <summary>
+        /// Gets the maximum number of distinct peer-tag combinations admitted into client-side stats
+        /// per flush interval. Combinations beyond the cap are collapsed to "tracer_blocked_value".
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsPeerTagsCardinalityLimit"/>
+        internal int StatsPeerTagsCardinalityLimit { get; }
+
+        /// <summary>
+        /// Gets the hard upper bound on the number of distinct client-side stats buckets per flush
+        /// interval. New buckets beyond the cap collapse into a single "tracer_blocked_value" overflow bucket.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.StatsComputationBucketsCardinalityLimit"/>
+        internal int StatsComputationBucketsCardinalityLimit { get; }
+
+        /// <summary>
         /// Gets a value indicating whether to enable span linking for individual messages
         /// when using Azure Service Bus batch operations.
         /// </summary>
@@ -1153,10 +1269,29 @@ namespace Datadog.Trace.Configuration
         internal bool RuntimeMetricsDiagnosticsMetricsApiEnabled { get; }
 
         /// <summary>
-        /// Gets a value indicating whether libdatadog data pipeline
-        /// is enabled.
+        /// Gets a value indicating whether runtime metrics should be collected in OTEL format and exported via OTLP.
+        /// True when runtime metrics are enabled AND (DD_METRICS_OTEL_ENABLED=true AND OTEL_METRICS_EXPORTER=otlp).
+        /// When true, OTLP takes precedence over DogStatsD for runtime metrics.
         /// </summary>
-        internal bool DataPipelineEnabled { get; }
+        internal bool OtlpRuntimeMetricsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether OTLP span metrics export is enabled.
+        /// Derived from the tri-state OTEL_TRACES_SPAN_METRICS_ENABLED:
+        /// explicit true/false overrides auto-detection; when unset, enabled iff
+        /// OTEL_TRACES_EXPORTER=otlp and DD_METRICS_OTEL_ENABLED=true.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled"/>
+        internal bool OtelTracesSpanMetricsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether OpenTelemetry semantics mode is enabled.
+        /// When enabled, traces and OTLP span metrics data points will only emit OTel semantic-convention attributes,
+        /// suppressing Datadog-specific attributes.
+        /// Default is <c>false</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
+        internal bool OtelSemanticsEnabled { get; }
 
         /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.
@@ -1435,24 +1570,28 @@ namespace Datadog.Trace.Configuration
             return string.Empty;
         }
 
-        private static DbmPropagationLevel? ToDbmPropagationInput(string inputValue)
+        private static DbmPropagationResult? ToDbmPropagationInput(string inputValue)
         {
             inputValue = inputValue.Trim(); // we know inputValue isn't null (and have tests for it)
             if (inputValue.Equals("disabled", StringComparison.OrdinalIgnoreCase))
             {
-                return DbmPropagationLevel.Disabled;
+                return new(DbmPropagationLevel.Disabled);
             }
             else if (inputValue.Equals("service", StringComparison.OrdinalIgnoreCase))
             {
-                return DbmPropagationLevel.Service;
+                return new(DbmPropagationLevel.Service);
+            }
+            else if (inputValue.Equals("dynamic_service", StringComparison.OrdinalIgnoreCase))
+            {
+                return new(DbmPropagationLevel.Service, forceInjectBaseHash: true);
             }
             else if (inputValue.Equals("full", StringComparison.OrdinalIgnoreCase))
             {
-                return DbmPropagationLevel.Full;
+                return new(DbmPropagationLevel.Full);
             }
             else
             {
-                Log.Warning("Wrong setting '{PropagationInput}' for DD_DBM_PROPAGATION_MODE supported values include: disabled, service or full", inputValue);
+                Log.Warning("Wrong setting '{PropagationInput}' for DD_DBM_PROPAGATION_MODE supported values include: disabled, service, dynamic_service or full", inputValue);
                 return null;
             }
         }
@@ -1461,6 +1600,12 @@ namespace Datadog.Trace.Configuration
         {
             Log.Warning("Unsupported OTLP protocol '{Protocol}'. Supported values are 'grpc', 'http/protobuf' and 'http/json'. Using default: http/protobuf", inputValue);
             return ParsingResult<OtlpProtocol>.Failure();
+        }
+
+        private readonly struct DbmPropagationResult(DbmPropagationLevel level, bool forceInjectBaseHash = false)
+        {
+            public readonly DbmPropagationLevel EffectiveLevel = level;
+            public readonly bool ForceInjectBaseHash = forceInjectBaseHash;
         }
     }
 }

@@ -22,6 +22,7 @@ namespace Datadog.Profiler.SmokeTests
         public void CheckSmoke(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
         }
     }

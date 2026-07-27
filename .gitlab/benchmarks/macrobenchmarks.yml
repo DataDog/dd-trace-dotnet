@@ -1,4 +1,8 @@
 include:
+  # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
+  # GitLab does not expand top-level `variables:` inside `include:` keywords,
+  # so the group path cannot be parameterized here. Update both `project:`
+  # lines by hand at org-split cutover.
   - project: 'DataDog/benchmarking-platform-tools'
     file: 'images/templates/gitlab/check-slo-breaches.template.yml'
   - project: 'DataDog/benchmarking-platform-tools'
@@ -66,7 +70,7 @@ check-azure-pipeline:
 build-dd-trace-dotnet-macrobenchmarks-ami:
   stage: build-win
   tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:dd-trace-dotnet-macro
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:newest
   allow_failure: true
   when: manual
   timeout: 3h
@@ -538,7 +542,7 @@ profiler_cpu_timer_create-arm64:
   stage: benchmarks-win
   needs: ["check-azure-pipeline"]
   tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:newest
   id_tokens:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
@@ -569,8 +573,8 @@ profiler_cpu_timer_create-arm64:
 
     RUNNER_AFTER_SCRIPT_TIMEOUT: 1h
 
-    # Allows ephemeral instances to read content from benchmarking-platform
-    DDOCTOSTS_SCOPE: "DataDog/benchmarking-platform"
+    # Allows ephemeral instances to read content from benchmarking-platform.
+    DDOCTOSTS_SCOPE: "${GITHUB_ORG_INTERNAL}/benchmarking-platform"
     DDOCTOSTS_POLICY: "gitlab.github-access.read-contents"
 
     AWS_REGION: "us-east-1"

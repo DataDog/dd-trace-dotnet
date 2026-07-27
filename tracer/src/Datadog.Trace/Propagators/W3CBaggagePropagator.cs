@@ -1,4 +1,4 @@
-﻿// <copyright file="W3CBaggagePropagator.cs" company="Datadog">
+// <copyright file="W3CBaggagePropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -257,13 +257,13 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
         {
             if (itemCount >= maxBaggageItems)
             {
-                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageItemCountExceeded);
+                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageExtractItemExceeded);
                 break;
             }
 
             if (pair.StartIndex + pair.Length > maxBaggageLength)
             {
-                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageByteCountExceeded);
+                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageExtractByteExceeded);
                 break;
             }
 

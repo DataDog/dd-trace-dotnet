@@ -27,13 +27,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncMethodDebuggerState"/> class.
         /// </summary>
-        internal AsyncMethodDebuggerState(string probeId, ref ProbeData probeData)
+        internal AsyncMethodDebuggerState(string probeId, ref ProbeData probeData, IDebuggerSnapshotCreator snapshotCreator)
         {
             ProbeId = probeId;
             HasLocalsOrReturnValue = false;
             HasArguments = false;
-            var processor = probeData.Processor;
-            SnapshotCreator = processor.CreateSnapshotCreator();
+            SnapshotCreator = snapshotCreator;
             ProbeData = probeData;
         }
 

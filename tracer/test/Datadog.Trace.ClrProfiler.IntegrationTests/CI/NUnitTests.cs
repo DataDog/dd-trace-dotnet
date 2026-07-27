@@ -271,6 +271,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                     break;
                             }
 
+                            Assert.True(targetSpan.Tags.Remove(IntelligentTestRunnerTags.TestTestsSkippingEnabled));
+
                             // check remaining tag (only the name)
                             targetSpan.Tags.Should().ContainSingle();
 

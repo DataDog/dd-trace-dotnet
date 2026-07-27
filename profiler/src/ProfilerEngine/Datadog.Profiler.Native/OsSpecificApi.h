@@ -22,11 +22,14 @@ class IAllocationsListener;
 class IContentionListener;
 class IGCSuspensionsListener;
 class CallstackProvider;
+class ManagedCodeCache;
 
 // Those functions must be defined in the main projects (Linux and Windows)
 // Here are forward declarations to avoid hard coupling
 namespace OsSpecificApi
 {
+    void InitializeUnwinder(ManagedCodeCache* managedCodeCache);
+
     std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
         ICorProfilerInfo4* pCorProfilerInfo,
         IConfiguration const* pConfiguration,

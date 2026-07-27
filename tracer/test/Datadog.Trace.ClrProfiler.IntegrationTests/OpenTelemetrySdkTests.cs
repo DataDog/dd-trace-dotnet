@@ -76,6 +76,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "network.protocol.name"
         };
 
+        // Single source of truth for translating an OTLP http/protobuf payload (rendered as JSON
+        // by the test agent with snake_case field names and string-form enum values) to the
+        // OTLP http/json shape (camelCase field names, integer enum values). When a new OTLP
+        // field or enum reaches the serializer, add the mapping here.
+        private static readonly (string From, string To)[] ProtobufToJsonFieldNameMappings =
+        {
+            ("\"resource_spans\"",        "\"resourceSpans\""),
+            ("\"scope_spans\"",           "\"scopeSpans\""),
+            ("\"trace_id\"",              "\"traceId\""),
+            ("\"span_id\"",               "\"spanId\""),
+            ("\"parent_span_id\"",        "\"parentSpanId\""),
+            ("\"start_time_unix_nano\"",  "\"startTimeUnixNano\""),
+            ("\"end_time_unix_nano\"",    "\"endTimeUnixNano\""),
+            ("\"time_unix_nano\"",        "\"timeUnixNano\""),
+            ("\"string_value\"",          "\"stringValue\""),
+            ("\"double_value\"",          "\"doubleValue\""),
+            ("\"int_value\"",             "\"intValue\""),
+            ("\"bool_value\"",            "\"boolValue\""),
+            ("\"array_value\"",           "\"arrayValue\""),
+        };
+
+        private static readonly (string From, string To)[] ProtobufToJsonEnumMappings =
+        {
+            ("\"kind\": \"SPAN_KIND_INTERNAL\"", "\"kind\": 1"),
+            ("\"kind\": \"SPAN_KIND_SERVER\"",   "\"kind\": 2"),
+            ("\"kind\": \"SPAN_KIND_CLIENT\"",   "\"kind\": 3"),
+            ("\"kind\": \"SPAN_KIND_PRODUCER\"", "\"kind\": 4"),
+            ("\"kind\": \"SPAN_KIND_CONSUMER\"", "\"kind\": 5"),
+            ("\"code\": \"STATUS_CODE_UNSET\"",  "\"code\": 0"),
+            ("\"code\": \"STATUS_CODE_OK\"",     "\"code\": 1"),
+            ("\"code\": \"STATUS_CODE_ERROR\"",  "\"code\": 2"),
+        };
+
         private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
         private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
         private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
@@ -110,10 +143,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
-                // Reduce CI flake by only testing the Datadog SDK. We can test the OTel SDK manualy if needed.
-                // yield return [packageVersion[0], "false", "true", "http/protobuf", false];
-                yield return [packageVersion[0], "true", "false", "http/json", false];
-                yield return [packageVersion[0], "true", "false", "http/json", true];
+                // Reduce CI flake by only testing the Datadog SDK. We can test the OTel SDK manually if needed.
+                // yield return [packageVersion[0], "false", "true", "http/protobuf", false, false];
+                yield return [packageVersion[0], "true", "false", "http/json", false, false];
+                yield return [packageVersion[0], "true", "false", "http/json", true, false];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", false, false];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", true, false];
+                yield return [packageVersion[0], "true", "false", "http/json", false, true];
+                yield return [packageVersion[0], "true", "false", "http/json", true, true];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", false, true];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", true, true];
             }
         }
 
@@ -229,13 +268,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-#if NET6_0_OR_GREATER
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [MemberData(nameof(GetOtlpTracesTestData))]
-        public async Task SubmitsOtlpTraces(string packageVersion, string datadogTracesEnabled, string otelTracesEnabled, string protocol, bool useAgentHostBackup)
+        public async Task SubmitsOtlpTraces(string packageVersion, string datadogTracesEnabled, string otelTracesEnabled, string protocol, bool useAgentHostBackup, bool openTelemetrySemanticsEnabled)
         {
             SetServiceVersion("1.0.x"); // We need this to be consistent with the in-code 1.0.x version set in the OTel SDK builder
+            SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
 
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
             var runtimeMajor = Environment.Version.Major;
@@ -250,9 +289,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _ => string.Empty
             };
 
-            snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD_{protocol.Replace("/", "_")}";
+            snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD{(openTelemetrySemanticsEnabled ? "_OtelSemantics" : string.Empty)}";
 
-            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
+            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "127.0.0.1";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
 
             await ClearTestAgentSession(testAgentHost);
@@ -291,12 +330,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
-                using var httpClient = new System.Net.Http.HttpClient();
-                var tracesResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/traces");
-                tracesResponse.EnsureSuccessStatusCode();
-
-                var tracesJson = await tracesResponse.Content.ReadAsStringAsync();
-                var tracesRequests = JToken.Parse(tracesJson);
+                // The sample exports traces during shutdown, so there can be a brief delay
+                // between process exit and the data appearing in the test-agent. Poll with
+                // retries to avoid a race, matching the pattern used by SubmitsOtlpMetrics
+                // and SubmitsOtlpLogs.
+                var tracesRequests = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/traces");
 
                 tracesRequests.Should().NotBeNullOrEmpty();
 
@@ -382,6 +420,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     {
                         span[parentSpanIdKey] = "normalized-parent-span-id";
                     }
+
+                    // Our JSON and Protobuf OTLP exporters differ in serialization behavior when there are no attributes.
+                    // Standardize them here by removing an empty array
+                    if (span["attributes"] is JArray attributes && attributes.Count == 0)
+                    {
+                        ((JObject)span).Remove("attributes");
+                    }
                 }
 
                 foreach (var attribute in tracesRequests.SelectTokens("$..spans[*].attributes[?(@.key == 'otel.trace_id')]"))
@@ -411,10 +456,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var @event in tracesRequests.SelectTokens("$..events[*]"))
                 {
-                    if (@event[timeUnixNanoKey] != null)
-                    {
-                        @event[timeUnixNanoKey] = "0";
-                    }
+                    ((JObject)@event).Remove(timeUnixNanoKey);
+                    ((JObject)@event).AddFirst(new JProperty(timeUnixNanoKey, "0"));
                 }
 
                 // For the Datadog SDK, perform more sanitization
@@ -494,6 +537,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_exceptionStacktraceOtlpRegex, @"string_value"": ""System.ArgumentException: Example argument exception""");
                 settings.AddRegexScrubber(_exceptionStacktraceOtlpJsonRegex, @"stringValue"": ""System.ArgumentException: Example argument exception""");
+
+                // Add scrubbers only for http/protobuf
+                if (protocol == "http/protobuf")
+                {
+                    AddProtobufToJsonScrubbers(settings);
+                }
+
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpTraces{snapshotName}";
 
                 await Verifier.Verify(finalJson, settings)
@@ -501,7 +551,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .DisableRequireUniquePrefix();
             }
         }
-#endif
 
 #if NET6_0_OR_GREATER
         [SkippableTheory]
@@ -529,6 +578,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("DD_ENV", string.Empty);
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
+            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "false");
             SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "OpenTelemetryMetricsMeter");
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", datadogMetricsEnabled);
             SetEnvironmentVariable("OTEL_METRICS_EXPORTER_ENABLED", otelMetricsEnabled);
@@ -594,6 +644,79 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await Verifier.Verify(formattedJson, settings)
                               .UseFileName(fileName)
                               .DisableRequireUniquePrefix();
+            }
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        public async Task SubmitsOtlpRuntimeMetrics()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
+
+            await ClearTestAgentSession(testAgentHost);
+
+            SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "true");
+            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "NoneExistingMeter");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:4318");
+            SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "60000");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
+
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
+            using (await RunSampleAndWaitForExit(agent))
+            {
+                var metricsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/metrics");
+                metricsData.Should().NotBeNullOrEmpty();
+
+                // Deduplicate metrics across multiple export intervals, keeping one per metric name
+                var dedupedMetrics = new JArray(
+                    metricsData
+                        .SelectTokens("$..scope_metrics[*].metrics[*]")
+                        .GroupBy(m => m["name"]?.ToString())
+                        .Select(g => g.First())
+                        .OrderBy(m => m["name"]?.ToString()));
+
+                // Collapse all exports into a single resource_metrics structure for snapshot comparison
+                var collapsed = metricsData[0]!.DeepClone();
+                ((JArray)collapsed.SelectToken("$.resource_metrics")!).RemoveAll();
+                var firstExport = metricsData.SelectToken("$[0].resource_metrics[0]")!.DeepClone();
+                firstExport.SelectToken("$.scope_metrics[0].metrics")!.Replace(dedupedMetrics);
+                ((JArray)collapsed["resource_metrics"]!).Add(firstExport);
+
+                // Clear data_points for each metric to ensure consistency between runs
+                foreach (var section in collapsed.SelectTokens("$..metrics[*].*"))
+                {
+                    if (section is JObject obj && obj["data_points"] is JArray)
+                    {
+                        obj["data_points"] = new JArray();
+                    }
+                }
+
+                // Replace resource attribute values with placeholders to avoid volatile data
+                foreach (var attribute in collapsed.SelectTokens("$..resource.attributes[*]"))
+                {
+                    var key = attribute["key"]?.ToString();
+                    if (key is not null)
+                    {
+                        attribute["value"] = JToken.FromObject(new { string_value = $"<{key}>" });
+                    }
+                }
+
+                var formattedJson = new JArray(collapsed).ToString(Formatting.Indented);
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                // Single snapshot for all TFMs: the OTel SDK sample transitively references
+                // System.Diagnostics.DiagnosticSource 9.0+, which gets loaded into the host process
+                // even on .NET 6. Reflection in MeterObservableUpDownCounterReflection then resolves
+                // CreateObservableUpDownCounter on every TFM, so the polyfill produces identical wire
+                // output across .NET 6/7/8/9/10+.
+                await Verifier.Verify(formattedJson, settings)
+                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.{nameof(SubmitsOtlpRuntimeMetrics)}")
+                              .DisableRequireUniquePrefix();
+
+                agent.StatsdRequests.Should().BeEmpty(
+                    "StatsD runtime metrics should be disabled when OTLP runtime metrics are active");
             }
         }
 #endif
@@ -851,6 +974,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             return string.Empty;
+        }
+
+        private static void AddProtobufToJsonScrubbers(VerifyTests.VerifySettings settings)
+        {
+            foreach (var (from, to) in ProtobufToJsonFieldNameMappings)
+            {
+                settings.AddSimpleScrubber(from, to);
+            }
+
+            foreach (var (from, to) in ProtobufToJsonEnumMappings)
+            {
+                settings.AddSimpleScrubber(from, to);
+            }
         }
     }
 }

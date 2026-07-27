@@ -21,9 +21,15 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
             _timeout = timeout;
             _logger = logger;
 
+            // CultureInvariant is required so that case-insensitive matching does not depend on the
+            // ambient culture. Without it, non-ASCII input forces per-character culture-aware case
+            // folding (a measurable CPU spike on .NET Framework), and Turkic cultures mis-case the
+            // dotted/dotless 'I' so that keywords containing 'i' (api, public, signature, ...) are
+            // never redacted.
             const RegexOptions options = RegexOptions.Compiled |
                                          RegexOptions.IgnoreCase |
-                                         RegexOptions.IgnorePatternWhitespace;
+                                         RegexOptions.IgnorePatternWhitespace |
+                                         RegexOptions.CultureInvariant;
 
             _regex = new Regex(pattern, options, _timeout);
 

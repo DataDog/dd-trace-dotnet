@@ -162,7 +162,7 @@ std::unique_ptr<libdatadog::Exporter> ProfileExporter::CreateExporter(IConfigura
 
 std::unique_ptr<libdatadog::Profile> ProfileExporter::CreateProfile(std::string serviceName)
 {
-    return std::make_unique<libdatadog::Profile>(_configuration, _sampleTypeDefinitions, ProfilePeriodType, ProfilePeriodUnit, std::move(serviceName));
+    return libdatadog::Profile::Create(_configuration, _sampleTypeDefinitions, ProfilePeriodType, ProfilePeriodUnit, std::move(serviceName));
 }
 
 void ProfileExporter::RegisterUpscaleProvider(IUpscaleProvider* provider)
@@ -400,6 +400,14 @@ void ProfileExporter::Add(std::shared_ptr<Sample> const& sample)
     {
         auto applicationInfo = _applicationStore->GetApplicationInfo(std::string(sample->GetRuntimeId()));
         profileInfoScope.profileInfo.profile = CreateProfile(applicationInfo.ServiceName);
+        if (profileInfoScope.profileInfo.profile == nullptr)
+        {
+            Log::Error("Failed to create profile for service '", applicationInfo.ServiceName,
+                       "' (runtime id: ", sample->GetRuntimeId(),
+                       ", sample type definitions: ", _sampleTypeDefinitions.size(),
+                       "). Sample will be dropped.");
+            return;
+        }
     }
     auto* profile = profileInfoScope.profileInfo.profile.get();
     Add(profile, sample);
@@ -437,6 +445,14 @@ void ProfileExporter::SetEndpoint(const std::string& runtimeId, uint64_t traceId
     {
         auto applicationInfo = _applicationStore->GetApplicationInfo(runtimeId);
         profileInfoScope.profileInfo.profile = CreateProfile(applicationInfo.ServiceName);
+        if (profileInfoScope.profileInfo.profile == nullptr)
+        {
+            Log::Error("Failed to create profile for service '", applicationInfo.ServiceName,
+                       "' (runtime id: ", runtimeId,
+                       ", sample type definitions: ", _sampleTypeDefinitions.size(),
+                       ") while setting endpoint. Endpoint will not be set.");
+            return;
+        }
     }
 
     auto* profile = profileInfoScope.profileInfo.profile.get();
@@ -600,6 +616,9 @@ bool ProfileExporter::Export(bool lastCall)
     // additional content to be sent along the .pprof
     auto metricsFileContent = CreateMetricsFileContent();
     auto classHistogramContent = CreateClassHistogramContent();
+    auto referenceTreeFiles = (_heapSnapshotManager != nullptr)
+        ? _heapSnapshotManager->GetAndClearReferenceTreeContent()
+        : std::vector<IHeapSnapshotManager::FileEntry>{};
 
     for (auto& runtimeId : keys)
     {
@@ -666,17 +685,28 @@ bool ProfileExporter::Export(bool lastCall)
             additionalTags.Add("git.commit.sha", applicationInfo.CommitSha);
         }
 
-        auto filesToSend = std::vector<std::pair<std::string, std::string>>{};
+        auto filesToSend = std::vector<std::pair<std::string, std::vector<uint8_t>>>{};
 
         if (!metricsFileContent.empty())
         {
-            filesToSend.emplace_back(MetricsFilename, std::move(metricsFileContent));
+            Log::Debug("Attaching file: ", MetricsFilename, " (", metricsFileContent.size(), " bytes)");
+            filesToSend.emplace_back(MetricsFilename,
+                std::vector<uint8_t>(metricsFileContent.begin(), metricsFileContent.end()));
         }
 
         if (!classHistogramContent.empty())
         {
-            filesToSend.emplace_back(ClassHistogramFilename, std::move(classHistogramContent));
+            Log::Debug("Attaching file: ", ClassHistogramFilename, " (", classHistogramContent.size(), " bytes)");
+            filesToSend.emplace_back(ClassHistogramFilename,
+                std::vector<uint8_t>(classHistogramContent.begin(), classHistogramContent.end()));
             additionalTags.Add("profile_has_class_histogram", "true");
+        }
+
+        for (auto& [filename, content] : referenceTreeFiles)
+        {
+            Log::Debug("Attaching file: ", filename, " (", content.size(), " bytes)");
+            filesToSend.emplace_back(filename, std::move(content));
+            additionalTags.Add("profile_has_reference_tree", "true");
         }
 
         std::string metadataJson = GetMetadataJson();
@@ -746,6 +776,7 @@ std::string ProfileExporter::CreateClassHistogramContent() const
 
     return "";
 }
+
 
 std::string ProfileExporter::GetMetadataJson() const
 {
@@ -840,8 +871,6 @@ std::string ProfileExporter::GetInfoJson(std::string& runtimeId) const
     {
         return "";
     }
-    auto sectionCount = metadata.size();
-    auto currentSection = 0;
 
     // the json schema is supposed to send sections under the systemInfo element
     std::stringstream builder;
@@ -849,8 +878,9 @@ std::string ProfileExporter::GetInfoJson(std::string& runtimeId) const
         AppendProfilerInfo(builder, runtimeId);
     builder << ",";
         AppendGcConfig(builder);
-    builder << ",";
-        AppendEnvVars(builder);
+
+    // There might not be any env var so deal with the ',' in AppendEnvVars
+    AppendEnvVars(builder, metadata);
     builder << "}";
 
     return builder.str();
@@ -915,47 +945,25 @@ void ProfileExporter::AppendValueList(const tags& kvp, std::stringstream& builde
     }
 }
 
-bool ProfileExporter::AppendEnvVars(std::stringstream& builder) const
+void ProfileExporter::AppendEnvVars(std::stringstream& builder, const IMetadataProvider::metadata_t& metadata) const
 {
-    auto const& metadata = _metadataProvider->Get();
-    if (metadata.empty())
-    {
-        return false;
-    }
-
-    bool firstSection = true;
     for (auto const& [section, kvp] : metadata)
     {
         if (section == MetadataProvider::SectionEnvVars)
         {
-            if (!firstSection)
-            {
-                builder << ", ";
-            }
+            builder << ", ";
             ElementStart(builder, "System Properties");
             AppendValueList(kvp, builder);
             ElementEnd(builder);
-            firstSection = false;
         }
         else if (section == MetadataProvider::SectionOverrides)
         {
-            if (!firstSection)
-            {
-                builder << ", ";
-            }
+            builder << ", ";
             ElementStart(builder, "System Overrides");
             AppendValueList(kvp, builder);
             ElementEnd(builder);
-            firstSection = false;
-        }
-        else
-        {
-            // skip Runtime Settings and others
-            continue;
         }
     }
-
-    return true;
 }
 
 void ProfileExporter::AppendGcConfig(std::stringstream& builder) const

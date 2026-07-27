@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+#if !NET8_0_OR_GREATER
 using System.Runtime.Serialization;
+#endif
 using System.Threading;
 
 namespace Samples.ExceptionGenerator
@@ -37,10 +39,12 @@ namespace Samples.ExceptionGenerator
         {
         }
 
+#if !NET8_0_OR_GREATER
         protected GenericException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
+#endif
     }
 
     internal class GenericExceptionsScenario

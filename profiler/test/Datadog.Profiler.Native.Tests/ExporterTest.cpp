@@ -13,9 +13,9 @@
 
 namespace libdatadog {
 
-Profile CreateEmptyProfile(std::unique_ptr<IConfiguration> const& configuration)
+std::unique_ptr<Profile> CreateEmptyProfile(std::unique_ptr<IConfiguration> const& configuration)
 {
-    return Profile(configuration.get(), {{"cpu", "nanosecond"}}, "RealTime", "Nanoseconds", "my app");
+    return Profile::Create(configuration.get(), {{"cpu", "nanosecond"}}, "RealTime", "Nanoseconds", "my app");
 }
 
 TEST(ExporterTest, EnsureCrashOnDebug)
@@ -103,7 +103,7 @@ TEST(ExporterTest, CheckFileCreatedWithFileExporter)
     auto profile = CreateEmptyProfile(configuration);
 
     auto tags = Tags();
-    ASSERT_NO_FATAL_FAILURE(exporter->Send(&profile, std::move(tags), {}, std::string(), std::string(), std::string())) << "sending the profile crashed";
+    ASSERT_NO_FATAL_FAILURE(exporter->Send(profile.get(), std::move(tags), {}, std::string(), std::string(), std::string())) << "sending the profile crashed";
 
     ASSERT_FALSE(fs::is_empty(outputFolder));
 }

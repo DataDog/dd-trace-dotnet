@@ -6,7 +6,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.LibDatadog;
+
 using Datadog.Trace.Telemetry;
 
 namespace Benchmarks.Trace;
@@ -45,14 +45,10 @@ public static class TracerHelper
 
     extension(TracerSettings)
     {
-        internal static TracerSettings Create(Dictionary<string, object> settings)
-            => Create(settings, LibDatadogAvailabilityHelper.IsLibDatadogAvailable);
-
-        internal static TracerSettings Create(Dictionary<string, object> settings, LibDatadogAvailableResult isLibDatadogAvailable) =>
+        internal static TracerSettings Create(Dictionary<string, object> settings) =>
             new(
                 new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => FormattableString.Invariant($"{x.Value}"))),
                 new ConfigurationTelemetry(),
-                new OverrideErrorLog(),
-                isLibDatadogAvailable);
+                new OverrideErrorLog());
     }
 }

@@ -23,6 +23,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
         protected const string ServiceName = "graphql";
 
+        protected const string Tab = "    ";
+
         protected static Scope CreateScopeFromExecuteAsync(Tracer tracer, IntegrationId integrationId, GraphQLTags tags, string serviceName, string queryOperationName, string source, string queryOperationType)
         {
             var (resolvedServiceName, serviceNameSource) = tracer.CurrentTraceSettings.GetServiceNameMetadata(serviceName);
@@ -56,21 +58,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             }
         }
 
-        protected static void ConstructErrorLocationsMessage(StringBuilder builder, string tab, IEnumerable locations)
+        protected static void ConstructErrorLocationsMessage(StringBuilder builder, IEnumerable locations)
         {
-            builder.AppendLine($"{tab + tab}\"locations\": [");
+            builder.AppendLine($"{Tab + Tab}\"locations\": [");
+            var i = 0;
             foreach (var location in locations)
             {
                 if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
                 {
-                    builder.AppendLine($"{tab + tab + tab}{{");
-                    builder.AppendLine($"{tab + tab + tab + tab}\"line\": {locationProxy.Line},");
-                    builder.AppendLine($"{tab + tab + tab + tab}\"column\": {locationProxy.Column}");
-                    builder.AppendLine($"{tab + tab + tab}}},");
+                    if (i != 0)
+                    {
+                        builder.AppendLine(",");
+                    }
+
+                    builder.AppendLine($"{Tab + Tab + Tab}{{");
+                    builder.Append($"{Tab + Tab + Tab + Tab}\"line\": ").Append(locationProxy.Line).AppendLine(",");
+                    builder.Append($"{Tab + Tab + Tab + Tab}\"column\": ").Append(locationProxy.Column).AppendLine();
+                    builder.Append($"{Tab + Tab + Tab}}}");
+                    i++;
                 }
             }
 
-            builder.AppendLine($"{tab + tab}]");
+            builder.AppendLine().AppendLine($"{Tab + Tab}]");
         }
     }
 }

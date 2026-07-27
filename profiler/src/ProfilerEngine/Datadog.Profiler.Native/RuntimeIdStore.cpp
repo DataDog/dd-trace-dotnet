@@ -34,16 +34,10 @@ bool RuntimeIdStore::StartImpl()
     {    // variable not set - try to infer the location instead
         Log::Debug("DD_INTERNAL_NATIVE_LOADER_PATH variable not found. Inferring native loader path");
 
-        // the native loader is always available in the same directory
-#ifdef _WINDOWS
-        auto nativeLoaderFilename = NativeLoaderFilename;
-#else
+        // the native loader is always available in the same directory as the current module
         auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
-        // the native loader is in the parent directory
         auto nativeLoaderPath = currentModulePath.parent_path() / NativeLoaderFilename;
-        auto nativeLoaderFilename = nativeLoaderPath.string();
-#endif
-        _instance = LoadDynamicLibrary(nativeLoaderFilename);
+        _instance = LoadDynamicLibrary(nativeLoaderPath.string());
     }
 
 

@@ -233,19 +233,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true } codeOrigin)
                 {
-                    var method = routeEndpoint.Value.RequestDelegate?.Method;
-                    if (method != null)
+                    if (AspNetCoreEndpointCodeOrigin.TryGetTypeAndMethod(routeEndpoint.Value, out var type, out var method))
                     {
-                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint.Value.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
-                    }
-                    else if (routeEndpoint.Value.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
-                    {
-                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null. Extracting code origin from RouteEndpoint.RequestDelegate.Target.Handler {Handler}", handler);
-                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
+                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, type, method);
                     }
                     else
                     {
-                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null and could not extract handler from RouteEndpoint.RequestDelegate.Target");
+                        Log.Debug("Could not extract type and method for endpoint code origin. Endpoint: {EndpointDisplayName}", routeEndpoint.Value.DisplayName);
                     }
                 }
 
@@ -294,7 +288,8 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var appsecEnabled = _security.AppsecEnabled;
             var iastEnabled = _iast.Settings.Enabled;
-            var isCodeOriginEnabled = CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true };
+            var codeOrigin = CurrentCodeOrigin;
+            var isCodeOriginEnabled = codeOrigin is { Settings.CodeOriginForSpansEnabled: true };
 
             if (!appsecEnabled && !iastEnabled && !isCodeOriginEnabled)
             {
@@ -305,11 +300,11 @@ namespace Datadog.Trace.DiagnosticListeners
              && typedArg.HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan })
             {
-                if (isCodeOriginEnabled)
+                if (isCodeOriginEnabled && !codeOrigin!.HasCodeOrigin(rootSpan))
                 {
                     if (AspNetCoreDiagnosticObserver.TryGetTypeAndMethod(typedArg, out var type, out var method))
                     {
-                        CurrentCodeOrigin!.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, type, method);
                     }
                     else
                     {

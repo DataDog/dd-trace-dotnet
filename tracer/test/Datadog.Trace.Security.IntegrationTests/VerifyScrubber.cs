@@ -1,4 +1,4 @@
-﻿// <copyright file="VerifyScrubber.cs" company="Datadog">
+// <copyright file="VerifyScrubber.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -79,5 +79,19 @@ internal static class VerifyScrubber
                     }
                 }
             });
+    }
+
+    internal static void ScrubbResponseContentLength(this VerifySettings settings)
+    {
+#if !NET8_O_OR_GREATER
+        // Simple scrubber for the response content type in .NET 8
+        // .NET 8 doesn't add the content-length header, whereas previous versions do
+        settings.AddSimpleScrubber(
+            """_dd.appsec.s.res.headers: [{"content-length":[8]}],""",
+            string.Empty);
+        settings.AddSimpleScrubber(
+            """http.response.headers.content-length: 0,""",
+            string.Empty);
+#endif
     }
 }

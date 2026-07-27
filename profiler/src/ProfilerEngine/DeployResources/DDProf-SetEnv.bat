@@ -2,7 +2,7 @@
 ECHO\
 ECHO Usage:
 ECHO     DDProf-SetEnv.bat [Bit-ness] [Deploy Directory]
-ECHO Note: should be run from <github tracer root>\shared\bin\monitoring-home
+ECHO Note: should be run from <github tracer root>\artifacts\monitoring-home
 
 ECHO\
 IF "%1"=="" (

@@ -13,6 +13,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
@@ -448,9 +449,13 @@ internal static class XUnitIntegration
     }
 
     internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>?>? traits = null)
+        => ShouldSkip(ref runnerInstance, out isUnskippable, out isForcedRun, out _, traits);
+
+    internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance, out bool isUnskippable, out bool isForcedRun, out SkippableTest? skippableTest, Dictionary<string, List<string>?>? traits = null)
     {
         isUnskippable = false;
         isForcedRun = false;
+        skippableTest = null;
 
         if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled != true)
         {
@@ -459,11 +464,25 @@ internal static class XUnitIntegration
 
         var testClassName = runnerInstance.TestClass?.ToString() ?? string.Empty;
         var testMethod = runnerInstance.TestMethod;
-        var itrShouldSkip = Common.ShouldSkip(testClassName, testMethod?.Name ?? string.Empty, runnerInstance.TestMethodArguments, testMethod?.GetParameters());
+        var moduleName = GetTestModuleName(ref runnerInstance);
+        var itrShouldSkip = Common.ShouldSkip(testClassName, testMethod?.Name ?? string.Empty, runnerInstance.TestMethodArguments, testMethod?.GetParameters(), out var matchedSkippableTest, moduleName, metadataTestName: runnerInstance.TestCase.DisplayName);
         traits ??= runnerInstance.TestCase.Traits;
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
-        isForcedRun = itrShouldSkip && isUnskippable;
-        return itrShouldSkip && !isUnskippable;
+        isForcedRun = matchedSkippableTest is not null && isUnskippable;
+        var shouldSkip = itrShouldSkip && !isUnskippable;
+        skippableTest = shouldSkip ? matchedSkippableTest : null;
+        return shouldSkip;
+    }
+
+    internal static string? GetTestModuleName(ref TestRunnerStruct runnerInstance)
+    {
+        var currentModuleName = TestModule.Current?.Tags.Bundle ?? TestModule.Current?.Tags.Module;
+        if (!StringUtil.IsNullOrWhiteSpace(currentModuleName))
+        {
+            return currentModuleName;
+        }
+
+        return runnerInstance.TestClass?.Assembly.GetName().Name;
     }
 
     internal static TestOptimizationClient.TestManagementResponseTestPropertiesAttributes GetTestManagementProperties(ref TestRunnerStruct runnerInstance)

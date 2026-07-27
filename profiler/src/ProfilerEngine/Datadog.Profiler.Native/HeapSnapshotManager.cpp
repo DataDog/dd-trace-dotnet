@@ -3,8 +3,14 @@
 
 #include "HeapSnapshotManager.h"
 #include "INativeThreadList.h"
+#include "IRuntimeInfo.h"
 #include "OpSysTools.h"
 #include "ThreadsCpuManager.h"
+#include "TypeReferenceTree.h"
+#include "ReferenceChainTraverser.h"
+#include "TypeReferenceTreeJsonSerializer.h"
+#include "TypeReferenceTreeBinarySerializer.h"
+#include "ReferenceChainTypes.h"
 
 #include "Log.h"
 
@@ -16,7 +22,8 @@ HeapSnapshotManager::HeapSnapshotManager(
     IFrameStore* pFrameStore,
     IThreadsCpuManager* pThreadsCpuManager,
     MetricsRegistry& metricsRegistry,
-    INativeThreadList* pNativeThreadList) :
+    INativeThreadList* pNativeThreadList,
+    IRuntimeInfo* pRuntimeInfo) :
     ServiceBase(),
     _session(0),
     _gen2Size(0),
@@ -27,6 +34,7 @@ HeapSnapshotManager::HeapSnapshotManager(
     _pFrameStore{pFrameStore},
     _pThreadsCpuManager{pThreadsCpuManager},
     _pNativeThreadList{pNativeThreadList},
+    _pRuntimeInfo{pRuntimeInfo},
     _runtimeSessionKeywords(0),
     _runtimeSessionVerbosity(0),
     _startTimestamp(0ns),
@@ -37,15 +45,29 @@ HeapSnapshotManager::HeapSnapshotManager(
     _objectCount(0),
     _totalSize(0),
     _duration(0),
-    _cachedItemsSize(0)
+    _cachedItemsSize(0),
+    _snapshotCooldown(0ns)
 {
-    _isHeapDumpInProgress.store(false),
+    _isHeapDumpInProgress.store(false);
     _inducedGCNumber.store(-1);
     _shouldStartHeapDump.store(false);
     _shouldCleanupHeapDumpSession.store(false);
-    _heapDumpInterval = pConfiguration->GetHeapSnapshotInterval();
     _memPressureThreshold = pConfiguration->GetHeapSnapshotMemoryPressureThreshold();
     _snapshotCheckInterval = pConfiguration->GetHeapSnapshotCheckInterval();
+    _referenceTreeFormat = pConfiguration->GetReferenceTreeFormat();
+
+    auto testInterval = pConfiguration->GetTestHeapSnapshotInterval();
+    _delayFirstSnapshot = (testInterval.count() > 0);
+    if (_delayFirstSnapshot)
+    {
+        _heapDumpInterval = testInterval;
+    }
+    else
+    {
+        _heapDumpInterval = std::chrono::duration_cast<std::chrono::seconds>(pConfiguration->GetHeapSnapshotInterval());
+    }
+
+    _snapshotCooldown = SnapshotCooldown(_heapDumpInterval);
 
     _heapSnapshotDurationMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_heapsnapshot_duration", [this]() {
         return static_cast<double>(_duration);
@@ -61,6 +83,10 @@ HeapSnapshotManager::HeapSnapshotManager(
 
 
     _pCorProfilerInfo->AddRef();
+
+    // Initialize reference tree and inline VT cache (persisted across dumps)
+    _typeReferenceTree = std::make_unique<TypeReferenceTree>();
+    _pInlineVTCache = std::make_unique<InlineVTCache>(pCorProfilerInfo, pFrameStore);
 }
 
 HeapSnapshotManager::~HeapSnapshotManager()
@@ -151,6 +177,10 @@ void HeapSnapshotManager::MainLoopIteration()
         // close the session + start/stop the fake session to reset the keywords/verbosity
         _shouldCleanupHeapDumpSession.store(false);
         CleanupSession();
+
+        // Note: GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods.
+        // They fail with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE from another thread, and crash the CLR after a GC.
+        // --> Traversal is done during the OnBulkRoot* event handlers (see OnBulkRootEdges/OnBulkRootStaticVar).
     }
     else
     if (_shouldStartHeapDump.load())
@@ -172,6 +202,33 @@ std::string HeapSnapshotManager::GetAndClearHeapSnapshotText()
     _cachedItemsSize.store(0, std::memory_order_relaxed);
 
     return heapSnapshotText;
+}
+
+std::vector<IHeapSnapshotManager::FileEntry> HeapSnapshotManager::GetAndClearReferenceTreeContent()
+{
+    std::lock_guard lock(_histogramLock);
+    std::vector<FileEntry> result;
+
+    if (_typeReferenceTree->IsEmpty())
+    {
+        return result;
+    }
+
+    if ((_referenceTreeFormat & ReferenceTreeFormat_Json) != 0)
+    {
+        auto json = TypeReferenceTreeJsonSerializer::Serialize(*_typeReferenceTree, _pFrameStore);
+        result.emplace_back("reference_tree.json",
+            std::vector<uint8_t>(json.begin(), json.end()));
+    }
+
+    if ((_referenceTreeFormat & ReferenceTreeFormat_Binary) != 0)
+    {
+        auto bin = TypeReferenceTreeBinarySerializer::Serialize(*_typeReferenceTree, _pFrameStore);
+        result.emplace_back("reference_tree.bin", std::move(bin));
+    }
+
+    _typeReferenceTree->Clear();
+    return result;
 }
 
 // NOTE: must be called under the lock
@@ -266,6 +323,122 @@ void HeapSnapshotManager::OnBulkEdges(
     // TODO: should be used to rebuild the reference chain. For more details,
     //       the array of edges is strongly related to the array of nodes received in OnBulkNodes.
     // read https://chnasarre.medium.com/net-gcdump-internals-fcce5d327be7?source=friends_link&sk=3225ff119458adafc0e6935951fcc323
+    // NOTE: We're using root-based traversal instead, so this is not needed
+}
+
+void HeapSnapshotManager::OnBulkRootEdges(
+    uint32_t index,
+    uint32_t count,
+    GCBulkRootEdgeValue* pRoots)
+{
+    std::lock_guard lock(_histogramLock);
+
+    Log::Debug("OnBulkRootEdges: index=", index, " count=", count);
+
+    uint32_t successCount = 0;
+    uint32_t failCount = 0;
+
+    for (size_t i = 0; i < count; i++)
+    {
+        auto& root = pRoots[i];
+
+        // GCRootFlags::Interior: address points inside an object, not at the ObjectID header.
+        // GetClassFromObject expects a real ObjectID; resolving interior pointers to the containing
+        // object is not implemented (would need bulk-node range index or CLR API support).
+        if ((static_cast<uint32_t>(root.Flags) & static_cast<uint32_t>(GCRootFlags::Interior)) != 0)
+        {
+            continue;
+        }
+
+        // Map GCRootKind to RootCategory
+        RootCategory category;
+        if (root.Kind == GCRootKind::Stack)
+        {
+            category = RootCategory::Stack;  // local variable
+        }
+        else if (root.Kind == GCRootKind::Finalizer)
+        {
+            category = RootCategory::Finalizer;
+        }
+        else if (root.Kind == GCRootKind::Handle)
+        {
+            if ((static_cast<uint32_t>(root.Flags) & static_cast<uint32_t>(GCRootFlags::Pinning)) != 0)
+            {
+                category = RootCategory::Pinning;
+            }
+            else
+            {
+                category = RootCategory::Handle;
+            }
+        }
+        else if (root.Kind == GCRootKind::Other)
+        {
+            category = RootCategory::Other;
+        }
+        else
+        {
+            category = RootCategory::Unknown;
+        }
+
+
+        // GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods
+        // (i.e. NOT from another thread and NOT after a GC)
+        ClassID rootClassID;
+        HRESULT hr = _pCorProfilerInfo->GetClassFromObject(root.RootedNodeAddress, &rootClassID);
+        if (FAILED(hr))
+        {
+            failCount++;
+            continue;
+        }
+
+        SIZE_T size = 0;
+        hr = _pCorProfilerInfo->GetObjectSize2(root.RootedNodeAddress, &size);
+        if (FAILED(hr))
+        {
+            failCount++;
+
+            continue;
+        }
+
+        successCount++;
+        RootInfo rootInfo(root.RootedNodeAddress, category, rootClassID, size);
+
+        // Traverse the object graph from this root immediately (while still in GC callback context)
+        if (_pReferenceChainTraverser)
+        {
+            _pReferenceChainTraverser->TraverseFromSingleRoot(rootInfo);
+        }
+    }
+
+    Log::Debug("OnBulkRootEdges: batch done, success=", successCount, " failed=", failCount);
+}
+
+void HeapSnapshotManager::OnBulkRootStaticVar(const GCBulkRootStaticVarValue& root, const WCHAR* fieldName)
+{
+    std::lock_guard lock(_histogramLock);
+
+    // GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods
+    SIZE_T size = 0;
+    HRESULT hr = _pCorProfilerInfo->GetObjectSize2(root.ObjectID, &size);
+    if (FAILED(hr))
+    {
+        if (Log::IsDebugEnabled())
+        {
+            std::string typeName;
+            _pFrameStore->GetTypeName(static_cast<ClassID>(root.TypeID), typeName);
+            Log::Debug("[STATIC_ROOT] GetObjectSize2 failed for field='", shared::ToString(fieldName),
+                       "' type='", typeName, "' hr=", hr);
+        }
+        return;
+    }
+
+    RootInfo rootInfo(root.ObjectID, RootCategory::StaticVariable, root.TypeID, size, fieldName);
+
+    // Traverse the object graph from this root immediately (while still in GC callback context)
+    if (_pReferenceChainTraverser)
+    {
+        _pReferenceChainTraverser->TraverseFromSingleRoot(rootInfo);
+    }
 }
 
 void HeapSnapshotManager::OnGarbageCollectionStart(
@@ -352,10 +525,15 @@ void HeapSnapshotManager::OnGarbageCollectionEnd(
 //  - wait for the configured interval since the previous one
 void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
 {
-    // DEBUG: we cannot start a gcdump: it breaks in the CLR because it is not allowed to start a GC during another GC
+    // Cannot start a GC dump while one is in progress, pending start, or pending cleanup.
+    if (_session != 0 || _shouldStartHeapDump.load() || _shouldCleanupHeapDumpSession.load())
+    {
+        return;
+    }
 
-    // already set so no need to check again
-    if (_shouldStartHeapDump.load() || _shouldCleanupHeapDumpSession.load())
+    auto now = OpSysTools::GetHighPrecisionTimestamp();
+
+    if (!_snapshotCooldown.IsAllowed(now))
     {
         return;
     }
@@ -370,17 +548,16 @@ void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
         }
     }
 
-    auto now = OpSysTools::GetHighPrecisionTimestamp();
     if (_lastTimestamp == 0ns)
     {
-        // for tests purposes, we start the first snapshot right away
         if (_memPressureThreshold == 0)
         {
-
-            // wait at least _heapDumpInterval after the first snapshot
             _lastTimestamp = now;
 
-            _shouldStartHeapDump.store(true);
+            if (!_delayFirstSnapshot)
+            {
+                _shouldStartHeapDump.store(true);
+            }
             return;
         }
     }
@@ -395,6 +572,48 @@ void HeapSnapshotManager::StartAsyncSnapshotIfNeeded()
     }
 }
 
+void HeapSnapshotManager::LogRuntimeVersionRangeOnce()
+{
+    if (_runtimeVersionLogged)
+    {
+        return;
+    }
+    _runtimeVersionLogged = true;
+
+    if (_pRuntimeInfo == nullptr)
+    {
+        return;
+    }
+
+    // The CLR version is already computed once by CorProfilerCallback and shared
+    // via IRuntimeInfo.
+    const bool isDesktop = _pRuntimeInfo->IsDotnetFramework();
+    const uint16_t major = _pRuntimeInfo->GetMajorVersion();
+    const uint16_t minor = _pRuntimeInfo->GetMinorVersion();
+
+    // The GCDesc reader's MethodTable flag bit and GCDesc encoding have been
+    // validated against .NET 6 through 10.
+    // Outside that range we do not disable the feature -- the runtime self-test
+    // governs actual behavior -- but we record a diagnostic note.
+    bool isTestedRange;
+    if (isDesktop)  // this should never happen (check done in CorProfilerCallback)
+    {
+        isTestedRange = false;
+    }
+    else
+    {
+        isTestedRange = (major >= 6 && major <= 10);
+    }
+
+    Log::Info("HeapSnapshotManager: detected runtime ",
+              (isDesktop ? ".NET Framework (desktop CLR)" : ".NET Core/.NET"),
+              " version ", major, ".", minor,
+              isTestedRange
+                  ? ". GCDesc reference-chain reader has been validated for this runtime."
+                  : ". This runtime is outside the validated range (.NET 6-10); "
+                    "the GCDesc self-test will determine whether reference-chain traversal stays enabled.");
+}
+
 void HeapSnapshotManager::StartGCDump()
 {
     if (_session != 0)
@@ -403,10 +622,30 @@ void HeapSnapshotManager::StartGCDump()
         return;
     }
 
-    // reset the class histogram
+    LogRuntimeVersionRangeOnce();
+
+    // reset the class histogram and reference tree
     {
         std::lock_guard lock(_histogramLock);
         _classHistogram.clear();
+        _typeReferenceTree->Clear();
+
+        // Create/reset the traverser so it is ready to process roots during GC callbacks.
+        // InlineVTCache is persisted across dumps to avoid re-inspecting types for inline VTs.
+        // Visited set is pre-sized from the previous dump's high-water-mark to avoid Grow() storms.
+        //
+        // If the GCDesc reader previously failed its self-test, do not create the
+        // traverser: the reference tree is skipped while the class histogram still runs.
+        if (_gcDescDisabled)
+        {
+            _pReferenceChainTraverser.reset();
+        }
+        else
+        {
+            _pReferenceChainTraverser = std::make_unique<ReferenceChainTraverser>(
+                _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree, *_pInlineVTCache,
+                _visitedSetHighWatermark);
+        }
 
         _cachedItemsSize.store(0, std::memory_order_relaxed);
     }
@@ -448,14 +687,41 @@ void HeapSnapshotManager::OnEndGCDump()
     // for debugging purpose only
     std::cout << _objectCount << " objects for " << _totalSize / (1024 * 1024) << " MB during " << _duration << "ms" << std::endl
               << std::endl;
-
-//    {
-//        // dump each entry in _classHistogram
-//        std::lock_guard lock(_histogramLock);
-//        auto content = GetHeapSnapshotText();
-//        std::cout << content << std::endl;
-//    }
 #endif
+
+    // Log traversal statistics and persist high-water-mark for next dump's pre-sizing.
+    // Traversal itself was done incrementally during OnBulkRoot* callbacks.
+    if (_pReferenceChainTraverser)
+    {
+        _pReferenceChainTraverser->LogStats();
+
+        size_t hwm = _pReferenceChainTraverser->GetVisitedHighWatermark();
+        size_t peakEntries = _pReferenceChainTraverser->GetVisitedPeakEntryCount();
+        if (hwm > _visitedSetHighWatermark)
+        {
+            _visitedSetHighWatermark = hwm;
+        }
+        Log::Debug("VisitedObjectSet high watermark for next dump: ", _visitedSetHighWatermark,
+                   " buckets (peak entries this dump: ", peakEntries, ")");
+
+        // If the GCDesc reader failed its self-test during this dump, disable
+        // reference-chain traversal for all subsequent dumps. The class histogram
+        // is unaffected and continues to be produced.
+        if (!_pReferenceChainTraverser->IsGCDescTrusted())
+        {
+            _gcDescDisabled = true;
+            Log::Warn("Reference-chain traversal has been disabled for the remainder of the process "
+                      "because the GCDesc reader failed its self-test. Heap class histograms are unaffected.");
+        }
+    }
+
+    if (_pInlineVTCache)
+    {
+        Log::Debug("InlineVTCache memory: ", _pInlineVTCache->GetMemorySize(), " bytes (",
+                   _pInlineVTCache->GetEntryCount(), " types with inline VTs)");
+    }
+
+    _snapshotCooldown.OnDumpEnd(_lastTimestamp);
 
     // DEBUG: we cannot stop here the session + start/stop a fake one to reset the keywords/verbosity
     //        because it could deadlock the GC
@@ -473,6 +739,8 @@ void HeapSnapshotManager::CleanupSession()
     {
         // TODO: could this happen if the dedicated thread is scheduled BEFORE the GC End callback returns?
     }
+
+    _snapshotCooldown.OnCleanupDone(OpSysTools::GetHighPrecisionTimestamp());
 
     // Before the fix of https://github.com/dotnet/runtime/issues/121462, it is needed to start
     // and stop a session JUST to reset the keywords/verbosity of the Microsoft-Windows-DotNETRuntime provider

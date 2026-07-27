@@ -5,11 +5,13 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Demos.Util;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Hosting;
 
 namespace Samples.Website_AspNetCore01
@@ -46,20 +48,6 @@ namespace Samples.Website_AspNetCore01
                 WriteLine($"host built in {sw.ElapsedMilliseconds} ms");
                 sw.Restart();
 
-                // ASP.NET Core accepts listening url via what is set by Visual Studio
-                // (from the launchsettings.json). It could be overriden by --Urls
-                // on the command line
-                var configuration = host.Services.GetService(typeof(IConfiguration)) as IConfiguration;
-                var rootUrl = configuration["Urls"];
-
-                // otherwise, use the default ASP.NET Core value
-                if (string.IsNullOrEmpty(rootUrl))
-                {
-                    rootUrl = "http://localhost:5000";
-                }
-
-                WriteLine($"Listening to {rootUrl}");
-
                 var cts = new CancellationTokenSource();
                 using (var selfInvoker = new SelfInvoker(cts.Token))
                 {
@@ -71,6 +59,13 @@ namespace Samples.Website_AspNetCore01
 
                     sw.Stop();
                     WriteLine($"host started in {sw.ElapsedMilliseconds} ms");
+
+                    var server = (IServer)host.Services.GetService(typeof(IServer));
+                    var addressFeature = server.Features.Get<IServerAddressesFeature>();
+                    var rootUrl = addressFeature.Addresses.FirstOrDefault() ?? "http://localhost:5000";
+
+                    WriteLine($"Listening to {rootUrl}");
+                    Console.WriteLine($"##LISTENING_URL:{rootUrl}##");
 
                     WriteLine();
                     WriteLine($"Started at {DateTime.UtcNow}.");

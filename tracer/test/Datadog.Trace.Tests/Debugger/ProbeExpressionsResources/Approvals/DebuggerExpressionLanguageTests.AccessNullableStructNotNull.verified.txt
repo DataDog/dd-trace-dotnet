@@ -50,10 +50,10 @@ Expressions:
     var $dd_el_result = (this.NullableNotNullValue == null)
         ? "null"
         : {
-            fieldsArray = this.NullableNotNullValue
-                .GetType()
-                .GetFields(
-                    BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+            fieldsArray = ProbeExpressionParser<string>
+                .GetSafeFieldsForDump(
+                    this.NullableNotNullValue.GetType().GetFields(
+                        BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                 .OrderBy(fieldInfo => fieldInfo.MetadataToken)
                 .ToArray();
             fieldValues = new StringBuilder();
@@ -64,7 +64,7 @@ Expressions:
                 {
                     fieldValues.Append(
                         ProbeExpressionParser<string>.DumpObject(
-                            fieldsArray[index].GetValue(this.NullableNotNullValue),
+                            ProbeExpressionParser<string>.GetFieldValueForDump(fieldsArray[index], this.NullableNotNullValue),
                             fieldsArray[index].FieldType,
                             fieldsArray[index].Name,
                             0));
@@ -91,4 +91,4 @@ Expressions:
 
     return $dd_el_result;
 }
-Result: The result of the expression is: Empty=00000000-0000-0000-0000-000000000000, _a=0, _b=0, _c=0, _d=0, ...
+Result: The result of the expression is: _a=0, _b=0, _c=0, _d=0, ...

@@ -409,6 +409,42 @@ public class MethodMatcherTests
     }
 
     [Fact]
+    public async Task IsMethodMatch_OverloadedAsyncMethod_DoesNotInstantiateMethodAttributes()
+    {
+        // Arrange
+        ConstructorCountingAttribute.ConstructorCallCount = 0;
+        try
+        {
+            await AsyncMethodWithConstructorCountingAttribute();
+        }
+        catch (Exception ex)
+        {
+            var firstFrame = ex.StackTrace.Split(new[] { Environment.NewLine }, StringSplitOptions.None)[0];
+            var stackTraceMethodText = firstFrame.Substring(firstFrame.IndexOf("at ") + 3);
+            stackTraceMethodText = stackTraceMethodText.Substring(0, stackTraceMethodText.IndexOf(" in "));
+
+            var stateMachineType = typeof(MethodMatcherTests)
+                                  .GetNestedTypes(BindingFlags.NonPublic)
+                                  .FirstOrDefault(t => t.Name.Contains(nameof(AsyncMethodWithConstructorCountingAttribute)) && t.Name.Contains("d__"));
+
+            stateMachineType.Should().NotBeNull("Test setup failed - async state machine type not found");
+
+            var moveNextMethod = stateMachineType.GetMethod("MoveNext", BindingFlags.NonPublic | BindingFlags.Instance);
+            moveNextMethod.Should().NotBeNull("Test setup failed - MoveNext method not found");
+
+            // Act
+            var result = MethodMatcher.IsMethodMatch(stackTraceMethodText, moveNextMethod);
+
+            // Assert
+            result.Should().BeTrue();
+            ConstructorCountingAttribute.ConstructorCallCount.Should().Be(0, "state-machine resolution should inspect method attributes without instantiating them");
+            return;
+        }
+
+        throw new InvalidOperationException("Test setup failed - expected async method to throw");
+    }
+
+    [Fact]
     public void IsMethodMatch_NestedGenericClass_MatchesCorrectly()
     {
         // Arrange
@@ -516,6 +552,19 @@ public class MethodMatcherTests
         throw new Exception("Test exception from generic async method");
     }
 
+    [ConstructorCounting]
+    private async Task AsyncMethodWithConstructorCountingAttribute()
+    {
+        await Task.Delay(1);
+        throw new Exception("Test exception from attributed async method");
+    }
+
+    [ConstructorCounting]
+    private async Task AsyncMethodWithConstructorCountingAttribute(int unused)
+    {
+        await Task.Delay(1);
+    }
+
     private async Task TestMethodWithAsyncLocalFunction()
     {
         async Task LocalFunction()
@@ -568,5 +617,16 @@ public class MethodMatcherTests
             await Task.Delay(1); // Simulate some async cleanup
             throw new Exception("Test exception during async dispose");
         }
+    }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    private class ConstructorCountingAttribute : Attribute
+    {
+        public ConstructorCountingAttribute()
+        {
+            ConstructorCallCount++;
+        }
+
+        public static int ConstructorCallCount { get; set; }
     }
 }

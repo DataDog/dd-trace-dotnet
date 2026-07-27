@@ -244,7 +244,10 @@ namespace Datadog.Trace.Debugger.Caching
             {
                 if (_cache.TryGetValue(key, out var item))
                 {
-                    return value;
+                    item.UpdateAccess(_timeProvider.UtcNow);
+                    Interlocked.Increment(ref _hits);
+                    _evictionPolicy.Access(key);
+                    return item.Value;
                 }
 
                 value = valueFactory(key);

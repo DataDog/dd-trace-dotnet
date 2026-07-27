@@ -50,6 +50,7 @@ namespace Honeypot
             NugetPackages.Add("GraphQL", new [] { "GraphQL" });
             NugetPackages.Add("GraphQL.SystemReactive", new [] { "GraphQL.SystemReactive" });
             NugetPackages.Add("HotChocolate.Execution", new[] { "HotChocolate.AspNetCore" });
+            NugetPackages.Add("HotChocolate.Types", new[] { "HotChocolate.AspNetCore" });
             NugetPackages.Add("System.Net.Http", new [] { "System.Net.Http" });
             NugetPackages.Add("System.Net.Http.WinHttpHandler", new [] { "System.Net.Http.WinHttpHandler" });
             NugetPackages.Add("Microsoft.Extensions.Logging.Abstractions", new [] { "Microsoft.Extensions.Logging.Abstractions" });
@@ -122,7 +123,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.VisualStudio.TraceDataCollector", Array.Empty<string>());
             NugetPackages.Add("Microsoft.TestPlatform.CrossPlatEngine", Array.Empty<string>());
             NugetPackages.Add("MSTest.TestFramework", new [] { "MSTest.TestFramework" });
-            NugetPackages.Add("MSTestAdapter.PlatformServices", Array.Empty<string>());
+            NugetPackages.Add("MSTestAdapter.PlatformServices", new [] { "MSTest.TestAdapter" });
             NugetPackages.Add("RestSharp", Array.Empty<string>());
             NugetPackages.Add("Hangfire.Core", new [] { "Hangfire.Core" });
 
@@ -130,7 +131,10 @@ namespace Honeypot
             NugetPackages.Add("Datadog.Trace", new string[] { });
             NugetPackages.Add("Datadog.Trace.Manual", new string[] { });
             NugetPackages.Add("Datadog.Trace.OpenTracing", new string[] { });
-            
+
+            // Serverless
+            NugetPackages.Add("Datadog.Serverless.Compat", new string[] { });
+
             // Feature Flags
             NugetPackages.Add("Datadog.FeatureFlags.OpenFeature", new [] { "OpenFeature" });
             NugetPackages.Add("OpenFeature", Array.Empty<string>());

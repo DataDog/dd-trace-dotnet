@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <memory>
@@ -13,6 +14,7 @@
 #include "StackSnapshotResultBuffer.h"
 
 class IConfiguration;
+class UnwindingRecorder;
 
 class StackFramesCollectorBase
 {
@@ -25,6 +27,7 @@ protected:
     void SetFrameCount(std::uint16_t count);
 
     shared::span<uintptr_t> Data();
+    Callstack& CallStack();
 
     StackSnapshotResultBuffer* GetStackSnapshotResult();
     bool IsCurrentCollectionAbortRequested();
@@ -49,11 +52,12 @@ public:
     void PrepareForNextCollection();
     bool SuspendTargetThread(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended);
     void ResumeTargetThreadIfRequired(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR);
-    StackSnapshotResultBuffer* CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR);
+    StackSnapshotResultBuffer* CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, UnwindingRecorder* recorder = nullptr);
 
 protected:
     ManagedThreadInfo* _pCurrentCollectionThreadInfo;
     CallstackProvider* _callstackProvider;
+    std::atomic<UnwindingRecorder*> _recorder{nullptr};
 
 private:
     std::unique_ptr<StackSnapshotResultBuffer> _pStackSnapshotResult;

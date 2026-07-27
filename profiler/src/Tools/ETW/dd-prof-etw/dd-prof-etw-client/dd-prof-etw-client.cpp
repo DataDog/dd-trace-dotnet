@@ -209,10 +209,10 @@ int main(int argc, char* argv[])
     std::cout << "Exposing " << pipeName << "\n";
 
     EtwEventDumper eventDumper;
-    std::unique_ptr<ConsoleLogger> logger = std::make_unique<ConsoleLogger>();
-    auto handler = std::make_unique<EtwEventsHandler>(logger.get(), &eventDumper, pEventsFile);
+    auto logger = std::make_shared<ConsoleLogger>();
+    auto handler = std::make_unique<EtwEventsHandler>(logger, &eventDumper, pEventsFile);
     auto server = IpcServer::StartAsync(
-        logger.get(),
+        logger,
         pipeName,
         handler.get(),
         (1 << 16) + sizeof(IpcHeader),

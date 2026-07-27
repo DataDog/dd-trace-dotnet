@@ -105,6 +105,9 @@ HRESULT DebuggerMethodRewriter::WriteCallsToLogArgOrLocal(
         {
             Logger::Warn("DebuggerRewriter: Failed to determine if ", isArgs ? "argument" : "local", " index = ", argOrLocalIndex,
                          " is By-Ref like.");
+            // We couldn't reliably determine whether this value is byref-like.
+            // Do not instrument it. Instrumenting byref-like values can lead to runtime failures.
+            continue;
         }
         else if (isTypeIsByRefLike)
         {
@@ -287,7 +290,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     if (probes.empty())
     {
-        Logger::Info("There are no probes for methodDef: ", methodHandler->GetMethodDef());
+        Logger::Debug("There are no probes for methodDef: ", methodHandler->GetMethodDef());
         return S_OK;
     }
 
@@ -1967,6 +1970,8 @@ bool DebuggerMethodRewriter::DoesILContainUnsupportedInstructions(ILRewriter& re
 HRESULT DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(const ComPtr<IMetaDataImport2>& metadataImport,
                                                                   const ULONG32 typeToken, bool& isTypeImplementIAsyncStateMachine)
 {
+    isTypeImplementIAsyncStateMachine = false;
+
     HCORENUM interfaceImplsEnum = nullptr;
     ULONG actualImpls;
     mdInterfaceImpl impls;
@@ -1982,7 +1987,6 @@ HRESULT DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(const ComPtr<I
     if (actualImpls != 1)
     {
         // our compiler generated nested type should implement exactly one interface
-        isTypeImplementIAsyncStateMachine = false;
         return S_OK;
     }
 
@@ -1994,13 +1998,22 @@ HRESULT DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(const ComPtr<I
         return E_FAIL;
     }
 
+    // The Interface column is a TypeDefOrRef coded token. For debugger-instrumented application modules,
+    // IAsyncStateMachine is imported from corelib and should therefore be a TypeRef. TypeDef/TypeSpec tokens
+    // represent other interfaces for our purposes, so they are not async state machines and should not be logged.
+    if (TypeFromToken(interfaceToken) != mdtTypeRef)
+    {
+        return S_OK;
+    }
+
     // get the interface type props
     WCHAR type_name[kNameMaxSize]{};
     DWORD type_name_len = 0;
     mdAssembly assemblyToken;
     if (metadataImport->GetTypeRefProps(interfaceToken, &assemblyToken, type_name, kNameMaxSize, &type_name_len) != S_OK)
     {
-        Logger::Warn("DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine: failed to get type ref props");
+        // The token is a TypeRef but could not be resolved, so keep this diagnostic at Debug.
+        Logger::Debug("DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine: failed to get type ref props");
         return E_FAIL;
     }
 
@@ -2012,7 +2025,6 @@ HRESULT DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(const ComPtr<I
         return S_OK;
     }
 
-    isTypeImplementIAsyncStateMachine = false;
     return S_OK;
 }
 
@@ -2503,8 +2515,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         return E_FAIL;
     }
 
-    Logger::Info("*** DebuggerMethodRewriter::Rewrite() Finished: ", caller->type.name, ".", caller->name,
-                 "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
+    Logger::Debug("*** DebuggerMethodRewriter::Rewrite() Finished: ", caller->type.name, ".", caller->name,
+                  "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", Arguments=", numArgs, "]");
 
     hr = this->m_corProfiler->info_->ApplyMetaData(module_id);
     if (FAILED(hr))

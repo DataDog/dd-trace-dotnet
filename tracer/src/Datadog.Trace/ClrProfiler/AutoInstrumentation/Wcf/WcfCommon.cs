@@ -196,6 +196,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 {
                     var headerTagsProcessor = new SpanContextPropagator.SpanTagHeaderTagProcessor(span);
                     tracer.TracerManager.SpanContextPropagator.ExtractHeaderTags(ref headerTagsProcessor, headers.Value, tracer.CurrentTraceSettings.Settings.HeaderTags!, SpanContextPropagator.HttpRequestHeadersTagPrefix);
+                    tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(span, headers.Value);
                 }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);

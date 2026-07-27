@@ -47,7 +47,7 @@ Expression: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = this.String is int;
+    var $dd_el_result = InstanceOfHelper.IsInstanceOf(this.String, "System.Int32");
 
     return $dd_el_result;
 }

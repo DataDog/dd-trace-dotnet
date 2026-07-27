@@ -89,7 +89,22 @@ namespace Samples.Kafka
 
         private static Partition GetPartition(ClientConfig config, string topic)
         {
-            var numPartitions = TopicPartitions.GetOrAdd(topic, t => GetTopicPartitionCount(topic, config));
+            // Only cache the partition count once metadata reports a non-zero
+            // value, otherwise a transient propagation lag would pin every
+            // produce on this topic to partition 0 for the rest of the run.
+            if (!TopicPartitions.TryGetValue(topic, out var numPartitions) || numPartitions <= 0)
+            {
+                numPartitions = GetTopicPartitionCount(topic, config);
+                if (numPartitions > 0)
+                {
+                    TopicPartitions[topic] = numPartitions;
+                }
+                else
+                {
+                    return new Partition(0);
+                }
+            }
+
             var partition = LastUsedPartition.GetOrAdd(topic, t => 0);
             if (partition >= numPartitions)
             {

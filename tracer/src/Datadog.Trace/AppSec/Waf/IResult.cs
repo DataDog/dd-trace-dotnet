@@ -46,6 +46,19 @@ namespace Datadog.Trace.AppSec.Waf
 
         Dictionary<string, object?>? FingerprintDerivatives { get; }
 
+        /// <summary>
+        /// Gets trace-tagging attributes.
+        /// </summary>
+        Dictionary<string, object?>? WafSpanAttributes { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the WAF asked the tracer to keep
+        /// the trace. When absent, falls back to <see cref="ShouldReportSecurityResult"/>.
+        /// </summary>
+        bool Keep { get; }
+
+        bool HasKeep { get; }
+
         bool ShouldReportSecurityResult { get; }
     }
 }

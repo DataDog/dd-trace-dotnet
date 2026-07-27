@@ -1,0 +1,8 @@
+# Default-deny; only ship what restore-working-directory.yml downstream restores.
+**
+
+!artifacts/bin/**
+!artifacts/obj/**
+!artifacts/monitoring-home/**
+!artifacts/ProfilerResources/**
+!packages/**

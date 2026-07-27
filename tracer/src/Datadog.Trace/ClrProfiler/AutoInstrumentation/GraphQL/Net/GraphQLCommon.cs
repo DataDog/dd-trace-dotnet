@@ -10,6 +10,8 @@ using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
@@ -133,7 +135,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             }
         }
 
-        private static string ConstructErrorMessage(IExecutionErrors executionErrors)
+        [TestingAndPrivateOnly]
+        internal static string ConstructErrorMessage(IExecutionErrors executionErrors)
         {
             if (executionErrors == null)
             {
@@ -144,42 +147,70 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             try
             {
-                var tab = "    ";
                 builder.AppendLine("errors: [");
 
                 for (int i = 0; i < executionErrors.Count; i++)
                 {
+                    if (builder.Length >= TruncatorTagsProcessor.MaxMetaValLen)
+                    {
+                        // Too big, give up
+                        break;
+                    }
+
+                    if (i > 0)
+                    {
+                        builder.Append(',').AppendLine();
+                    }
+
                     var executionError = executionErrors[i];
 
-                    builder.AppendLine($"{tab}{{");
+                    builder.AppendLine($"{Tab}{{");
 
                     var message = executionError.Message;
                     if (message != null)
                     {
-                        builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
+                        builder.Append($"{Tab + Tab}\"message\": \"")
+                               .Append(message.Replace("\r", "\\r").Replace("\n", "\\n"))
+                               .AppendLine("\",");
                     }
 
                     var paths = executionError.Path;
-                    if (paths != null)
+                    if (paths != null && builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
                     {
-                        builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", paths)}\",");
+                        builder.Append($"{Tab + Tab}\"path\": \"");
+                        var addSeparator = false;
+                        foreach (var path in paths)
+                        {
+                            if (addSeparator)
+                            {
+                                builder.Append('.');
+                            }
+
+                            builder.Append(path);
+                            addSeparator = true;
+                        }
+
+                        builder.AppendLine("\",");
                     }
 
                     var code = executionError.Code;
                     if (code != null)
                     {
-                        builder.AppendLine($"{tab + tab}\"code\": \"{code}\",");
+                        builder.Append($"{Tab + Tab}\"code\": \"")
+                               .Append(code)
+                               .AppendLine("\",");
                     }
 
                     var locations = executionError.Locations;
-                    if (locations != null)
+                    if (locations != null && builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
                     {
-                        ConstructErrorLocationsMessage(builder, tab, locations);
+                        ConstructErrorLocationsMessage(builder, locations);
                     }
 
-                    builder.AppendLine($"{tab}}},");
+                    builder.Append($"{Tab}}}");
                 }
 
+                builder.AppendLine();
                 builder.AppendLine("]");
             }
             catch (Exception ex)
@@ -189,7 +220,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 return "errors: []";
             }
 
-            return Util.StringBuilderCache.GetStringAndRelease(builder);
+            if (builder.Length < TruncatorTagsProcessor.MaxMetaValLen)
+            {
+                return Util.StringBuilderCache.GetStringAndRelease(builder);
+            }
+
+            // pre-truncate if we got too large
+            var result = builder.ToString(startIndex: 0, length: TruncatorTagsProcessor.MaxMetaValLen);
+            Util.StringBuilderCache.Release(builder);
+            return result;
         }
 
         private static List<SpanEvent> ConstructErrorEvents(IExecutionErrors executionErrors)

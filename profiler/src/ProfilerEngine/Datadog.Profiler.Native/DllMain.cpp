@@ -140,11 +140,6 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
         return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
     }
 
-#ifdef ARM64
-    Log::Warn("Profiler is deactivated because it runs on an unsupported architecture.");
-    return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
-#endif
-
     CorProfilerCallbackFactory* factory = new CorProfilerCallbackFactory(std::move(configuration));
     if (factory == nullptr)
     {

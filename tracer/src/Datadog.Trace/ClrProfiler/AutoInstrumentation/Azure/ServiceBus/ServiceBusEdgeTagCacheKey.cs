@@ -8,7 +8,9 @@
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
 /// <summary>
-/// Value-type cache key for Azure Service Bus consume edge tags. Using a named struct avoids boxing and
+/// Value-type cache key for Azure Service Bus edge tags. Using a named struct avoids boxing and
 /// is compatible with all supported target frameworks.
+/// <see cref="IsConsume"/> distinguishes produce (direction:out) from consume (direction:in)
+/// so that both directions share a single cache type without key collision.
 /// </summary>
-internal readonly record struct ServiceBusEdgeTagCacheKey(string EntityPath);
+internal readonly record struct ServiceBusEdgeTagCacheKey(string EntityPath, bool IsConsume);

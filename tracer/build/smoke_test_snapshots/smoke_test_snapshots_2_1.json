@@ -54,13 +54,21 @@
         "http.client_ip": "127.0.0.1",
         "http.method": "GET",
         "http.request.headers.host": "localhost:5000",
+        "http.response.headers.content-type": "text/plain; charset=utf-8",
         "http.route": "api/values",
         "http.status_code": "200",
         "http.url": "http://localhost:5000/api/values",
         "language": "dotnet",
         "network.client.ip": "127.0.0.1",
         "runtime-id": "b34b2bed-9444-4597-87f6-b8202b03b1b8",
-        "span.kind": "server"
+        "span.kind": "server",
+        "_dd.code_origin.type": "entry",
+        "_dd.code_origin.frames.0.index": "0",
+        "_dd.code_origin.frames.0.method": "Get",
+        "_dd.code_origin.frames.0.type": "AspNetCoreSmokeTest.ValuesController",
+        "_dd.code_origin.frames.0.file": "/src/ValuesController.cs",
+        "_dd.code_origin.frames.0.line": "19",
+        "_dd.code_origin.frames.0.column": "13"
       },
       "metrics": {
         "_dd.appsec.enabled": 1.0,

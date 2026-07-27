@@ -834,6 +834,9 @@ namespace Datadog.Trace
         internal const string CodeOriginFrameIndex = "_dd.code_origin.frames.0.index";
         internal const string CodeOriginFrameMethod = "_dd.code_origin.frames.0.method";
         internal const string CodeOriginFrameType = "_dd.code_origin.frames.0.type";
+        internal const string CodeOriginFrameFile = "_dd.code_origin.frames.0.file";
+        internal const string CodeOriginFrameLine = "_dd.code_origin.frames.0.line";
+        internal const string CodeOriginFrameColumn = "_dd.code_origin.frames.0.column";
 
         internal static class User
         {

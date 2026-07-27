@@ -10,6 +10,7 @@
 
 #include "FakeSamples.h"
 #include "IMetadataProvider.h"
+#include "MetadataProvider.h"
 #include "MetricsRegistry.h"
 #include "ProfilerMockedInterface.h"
 #include "RuntimeInfoHelper.h"
@@ -804,4 +805,301 @@ TEST(ProfileExporterTest, CheckAllocationIsEnabledWhenHeapIsEnabled)
 
     ASSERT_TRUE(tag.find("allocations") != std::string::npos);
     ASSERT_TRUE(tag.find("heap") != std::string::npos);
+}
+
+TEST(ProfileExporterTest, CheckNoCrashWhenProfileCreationFails)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+
+    fs::path pprofTempDir;
+    EXPECT_CALL(mockConfiguration, GetProfilesOutputDirectory()).WillRepeatedly(ReturnRef(pprofTempDir));
+
+    std::string agentUrl;
+    EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
+
+#if _WINDOWS
+    std::string namedPipeName;
+    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
+#endif
+
+    std::string agentHost = "localhost";
+    EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
+    int agentPort = 8126;
+    EXPECT_CALL(mockConfiguration, GetAgentPort()).Times(1).WillOnce(Return(agentPort));
+    std::string host = "localhost";
+    EXPECT_CALL(mockConfiguration, GetHostname()).Times(1).WillOnce(ReturnRef(host));
+    EXPECT_CALL(mockConfiguration, IsAgentless()).Times(1).WillOnce(Return(false));
+
+    std::vector<std::pair<std::string, std::string>> tags;
+    EXPECT_CALL(mockConfiguration, GetUserTags()).Times(1).WillOnce(ReturnRef(tags));
+
+    auto applicationStore = MockApplicationStore();
+
+    std::string runtimeId = "MyRid";
+    ApplicationInfo applicationInfo{"MyApp", "myenv", "1.0.2"};
+    EXPECT_CALL(applicationStore, GetApplicationInfo(runtimeId)).WillRepeatedly(Return(applicationInfo));
+
+    RuntimeInfoHelper helper(6, 0, false);
+    IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
+    EnabledProfilers enabledProfilers(configuration.get(), false, false);
+
+    // Empty sample type definitions will cause Profile::Create to return nullptr
+    std::vector<SampleValueType> sampleTypeDefinitions;
+
+    MetricsRegistry metricsRegistry;
+    IAllocationsRecorder* allocRecorder = nullptr;
+    IMetadataProvider* metadataProvider = nullptr;
+    ISsiManager* ssiManager = nullptr;
+    IHeapSnapshotManager* heapSnapshotManager = nullptr;
+    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo,
+                                    &enabledProfilers, metricsRegistry, metadataProvider, ssiManager, allocRecorder, heapSnapshotManager);
+
+    auto callstack = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}});
+    auto labels = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}};
+    auto sample = CreateSample(runtimeId, callstack, labels, 42);
+
+    ASSERT_NO_FATAL_FAILURE(exporter.Add(sample)) << "Adding a sample when profile creation fails must not crash";
+
+    auto exported = exporter.Export();
+    ASSERT_FALSE(exported) << "Export must return false when profile creation failed";
+}
+// ----- GetInfoJson tests -----
+
+struct InfoJsonTestComponents
+{
+    std::unique_ptr<IConfiguration> configuration;
+    MockConfiguration* mockConfiguration = nullptr;
+    MockApplicationStore applicationStore;
+    std::unique_ptr<RuntimeInfoHelper> runtimeInfoHelper;
+    std::unique_ptr<EnabledProfilers> enabledProfilers;
+    MetricsRegistry metricsRegistry;
+    std::unique_ptr<IMetadataProvider> metadataProvider;
+    MockMetadataProvider* mockMetadataProvider = nullptr;
+    std::unique_ptr<ISsiManager> ssiManager;
+    MockSsiManager* mockSsiManager = nullptr;
+    MockGcSettingsProvider gcSettingsProvider;
+
+    fs::path pprofDir;
+    std::string agentUrl = "http://localhost:8126";
+    std::string host = "localhost";
+    std::vector<std::pair<std::string, std::string>> tags;
+};
+
+std::unique_ptr<InfoJsonTestComponents> CreateInfoJsonTestComponents(bool withSsiManager, bool withMetadataProvider)
+{
+    auto c = std::make_unique<InfoJsonTestComponents>();
+
+    auto [config, mockConfig] = CreateConfiguration();
+    c->configuration = std::move(config);
+    c->mockConfiguration = &mockConfig;
+
+    EXPECT_CALL(mockConfig, GetProfilesOutputDirectory()).WillRepeatedly(ReturnRef(c->pprofDir));
+    EXPECT_CALL(mockConfig, GetAgentUrl()).WillRepeatedly(ReturnRef(c->agentUrl));
+    EXPECT_CALL(mockConfig, GetHostname()).WillRepeatedly(ReturnRef(c->host));
+    EXPECT_CALL(mockConfig, IsAgentless()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mockConfig, GetUserTags()).WillRepeatedly(ReturnRef(c->tags));
+
+    EXPECT_CALL(mockConfig, IsWallTimeProfilingEnabled()).WillRepeatedly(Return(true));
+    EXPECT_CALL(mockConfig, IsCpuProfilingEnabled()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mockConfig, IsExceptionProfilingEnabled()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mockConfig, IsGcThreadsCpuTimeEnabled()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mockConfig, IsThreadLifetimeEnabled()).WillRepeatedly(Return(false));
+    EXPECT_CALL(mockConfig, GetEnablementStatus()).WillRepeatedly(Return(EnablementStatus::Auto));
+
+    c->runtimeInfoHelper = std::make_unique<RuntimeInfoHelper>(4, 8, true);
+    c->enabledProfilers = std::make_unique<EnabledProfilers>(c->configuration.get(), false, false);
+
+    if (withSsiManager)
+    {
+        auto [ssi, mockSsi] = CreateSsiManager();
+        c->ssiManager = std::move(ssi);
+        c->mockSsiManager = &mockSsi;
+        EXPECT_CALL(mockSsi, GetDeploymentMode()).WillRepeatedly(Return(DeploymentMode::SingleStepInstrumentation));
+    }
+
+    if (withMetadataProvider)
+    {
+        auto [mp, mockMp] = CreateMetadataProvider();
+        c->metadataProvider = std::move(mp);
+        c->mockMetadataProvider = &mockMp;
+    }
+
+    EXPECT_CALL(c->gcSettingsProvider, GetMode()).WillRepeatedly(Return(GCMode::Workstation));
+
+    return c;
+}
+
+std::unique_ptr<ProfileExporter> CreateExporterForInfoJsonTest(InfoJsonTestComponents& c)
+{
+    std::vector<SampleValueType> sampleTypeDefinitions({{"walltime", "nanoseconds"}});
+    auto exporter = std::make_unique<ProfileExporter>(
+        std::move(sampleTypeDefinitions),
+        c.mockConfiguration,
+        &c.applicationStore,
+        c.runtimeInfoHelper->GetRuntimeInfo(),
+        c.enabledProfilers.get(),
+        c.metricsRegistry,
+        c.metadataProvider.get(),
+        c.ssiManager.get(),
+        nullptr,
+        nullptr);
+    exporter->RegisterGcSettingsProvider(&c.gcSettingsProvider);
+    return exporter;
+}
+
+void AssertValidInfoJsonStructure(const std::string& json)
+{
+    ASSERT_FALSE(json.empty());
+    ASSERT_EQ(json.front(), '{');
+    ASSERT_EQ(json.back(), '}');
+    ASSERT_EQ(json.find(",}"), std::string::npos) << "Trailing comma found in: " << json;
+    ASSERT_EQ(json.find(",,"), std::string::npos) << "Double comma found in: " << json;
+    ASSERT_NE(json.find("\"profiler\""), std::string::npos) << "Missing profiler section in: " << json;
+    ASSERT_NE(json.find("\"GC Config\""), std::string::npos) << "Missing GC Config section in: " << json;
+}
+
+TEST(ProfileExporterTest, InfoJsonIsEmptyWhenNoSsiManager)
+{
+    auto c = CreateInfoJsonTestComponents(false, false);
+    auto exporter = CreateExporterForInfoJsonTest(*c);
+
+    std::string runtimeId = "test-rid";
+    auto result = exporter->GetInfoJson(runtimeId);
+
+    ASSERT_TRUE(result.empty());
+}
+
+TEST(ProfileExporterTest, InfoJsonIsEmptyWhenMetadataIsEmpty)
+{
+    auto c = CreateInfoJsonTestComponents(true, true);
+
+    IMetadataProvider::metadata_t emptyMetadata;
+    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(emptyMetadata));
+
+    auto exporter = CreateExporterForInfoJsonTest(*c);
+
+    std::string runtimeId = "test-rid";
+    auto result = exporter->GetInfoJson(runtimeId);
+
+    ASSERT_TRUE(result.empty());
+}
+
+TEST(ProfileExporterTest, InfoJsonHasNoTrailingCommaWhenNoEnvVarsSection)
+{
+    auto c = CreateInfoJsonTestComponents(true, true);
+
+    IMetadataProvider::metadata_t metadata = {
+        {"Unknown Section", {{"key1", "value1"}}}
+    };
+    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
+
+    auto exporter = CreateExporterForInfoJsonTest(*c);
+
+    std::string runtimeId = "test-rid";
+    auto result = exporter->GetInfoJson(runtimeId);
+
+    AssertValidInfoJsonStructure(result);
+    ASSERT_EQ(result.find("\"System Properties\""), std::string::npos);
+    ASSERT_EQ(result.find("\"System Overrides\""), std::string::npos);
+}
+
+TEST(ProfileExporterTest, InfoJsonHasNoTrailingCommaWhenOnlyRuntimeSettings)
+{
+    auto c = CreateInfoJsonTestComponents(true, true);
+
+    IMetadataProvider::metadata_t metadata = {
+        {MetadataProvider::SectionRuntimeSettings, {{"Start Time", "2026-05-05T17:18:21Z"}}}
+    };
+    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
+
+    auto exporter = CreateExporterForInfoJsonTest(*c);
+
+    std::string runtimeId = "test-rid";
+    auto result = exporter->GetInfoJson(runtimeId);
+
+    AssertValidInfoJsonStructure(result);
+    ASSERT_EQ(result.find("\"System Properties\""), std::string::npos);
+    ASSERT_EQ(result.find("\"System Overrides\""), std::string::npos);
+    ASSERT_EQ(result.find("\"Runtime Settings\""), std::string::npos) << "Runtime Settings should not appear in info JSON";
+}
+
+TEST(ProfileExporterTest, InfoJsonContainsSystemPropertiesWhenEnvVarsExist)
+{
+    auto c = CreateInfoJsonTestComponents(true, true);
+
+    IMetadataProvider::metadata_t metadata = {
+        {MetadataProvider::SectionEnvVars, {{"DD_TRACE_DEBUG", "1"}}}
+    };
+    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
+
+    auto exporter = CreateExporterForInfoJsonTest(*c);
+
+    std::string runtimeId = "test-rid";
+    auto result = exporter->GetInfoJson(runtimeId);
+
+    AssertValidInfoJsonStructure(result);
+    ASSERT_NE(result.find("\"System Properties\""), std::string::npos);
+    ASSERT_NE(result.find("\"DD_TRACE_DEBUG\""), std::string::npos);
+}
+
+TEST(ProfileExporterTest, InfoJsonContainsSystemOverridesWhenOverridesExist)
+{
+    auto c = CreateInfoJsonTestComponents(true, true);
+
+    IMetadataProvider::metadata_t metadata = {
+        {MetadataProvider::SectionOverrides, {{"DD_PROFILING_ENABLED", "true"}}}
+    };
+    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
+
+    auto exporter = CreateExporterForInfoJsonTest(*c);
+
+    std::string runtimeId = "test-rid";
+    auto result = exporter->GetInfoJson(runtimeId);
+
+    AssertValidInfoJsonStructure(result);
+    ASSERT_NE(result.find("\"System Overrides\""), std::string::npos);
+    ASSERT_NE(result.find("\"DD_PROFILING_ENABLED\""), std::string::npos);
+}
+
+TEST(ProfileExporterTest, InfoJsonContainsBothSectionsWhenBothExist)
+{
+    auto c = CreateInfoJsonTestComponents(true, true);
+
+    IMetadataProvider::metadata_t metadata = {
+        {MetadataProvider::SectionEnvVars, {{"DD_TRACE_DEBUG", "1"}}},
+        {MetadataProvider::SectionOverrides, {{"DD_PROFILING_ENABLED", "true"}}}
+    };
+    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
+
+    auto exporter = CreateExporterForInfoJsonTest(*c);
+
+    std::string runtimeId = "test-rid";
+    auto result = exporter->GetInfoJson(runtimeId);
+
+    AssertValidInfoJsonStructure(result);
+    ASSERT_NE(result.find("\"System Properties\""), std::string::npos);
+    ASSERT_NE(result.find("\"System Overrides\""), std::string::npos);
+
+    auto propsPos = result.find("\"System Properties\"");
+    auto overridesPos = result.find("\"System Overrides\"");
+    ASSERT_LT(propsPos, overridesPos) << "System Properties should appear before System Overrides";
+}
+
+TEST(ProfileExporterTest, InfoJsonHandlesEmptyKeyValueList)
+{
+    auto c = CreateInfoJsonTestComponents(true, true);
+
+    IMetadataProvider::metadata_t metadata = {
+        {MetadataProvider::SectionEnvVars, {}}
+    };
+    EXPECT_CALL(*c->mockMetadataProvider, Get()).WillRepeatedly(ReturnRef(metadata));
+
+    auto exporter = CreateExporterForInfoJsonTest(*c);
+
+    std::string runtimeId = "test-rid";
+    auto result = exporter->GetInfoJson(runtimeId);
+
+    AssertValidInfoJsonStructure(result);
+    ASSERT_NE(result.find("\"System Properties\": {}"), std::string::npos)
+        << "Expected empty System Properties object in: " << result;
 }

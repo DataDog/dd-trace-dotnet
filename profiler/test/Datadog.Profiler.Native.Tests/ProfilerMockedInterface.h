@@ -14,6 +14,7 @@
 #include "IContentionListener.h"
 #include "IExporter.h"
 #include "IGcSettingsProvider.h"
+#include "IMetadataProvider.h"
 #include "IMetricsSender.h"
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
@@ -95,12 +96,15 @@ public:
     MOCK_METHOD(bool, IsManagedActivationEnabled, (), (const override));
     MOCK_METHOD(void, SetEnablementStatus, (EnablementStatus status), (override));
     MOCK_METHOD(bool, IsHeapSnapshotEnabled, (), (const override));
+    MOCK_METHOD(bool, IsHeapSnapshotSkipTraversal, (), (const override));
     MOCK_METHOD(std::chrono::minutes, GetHeapSnapshotInterval, (), (const override));
     MOCK_METHOD(std::chrono::milliseconds, GetHeapSnapshotCheckInterval, (), (const override));
     MOCK_METHOD(uint32_t, GetHeapSnapshotMemoryPressureThreshold, (), (const override));
+    MOCK_METHOD(std::chrono::seconds, GetTestHeapSnapshotInterval, (), (const override));
     MOCK_METHOD(uint32_t, GetHeapHandleLimit, (), (const override));
     MOCK_METHOD(bool, UseManagedCodeCache, (), (const override));
     MOCK_METHOD(bool, IsMemoryFootprintEnabled, (), (const override));
+    MOCK_METHOD(uint32_t, GetReferenceTreeFormat, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -144,6 +148,20 @@ public:
     MOCK_METHOD(void, ProcessEnd, (), (override));
     MOCK_METHOD(SkipProfileHeuristicType, GetSkipProfileHeuristic, (), (const override));
     MOCK_METHOD(DeploymentMode, GetDeploymentMode, (), (const override));
+};
+
+class MockMetadataProvider : public IMetadataProvider
+{
+public:
+    MOCK_METHOD(void, Initialize, (), (override));
+    MOCK_METHOD(void, Add, (std::string const&, std::string const&, std::string const&), (override));
+    MOCK_METHOD(IMetadataProvider::metadata_t const&, Get, (), (override));
+};
+
+class MockGcSettingsProvider : public IGcSettingsProvider
+{
+public:
+    MOCK_METHOD(GCMode, GetMode, (), (override));
 };
 
 class MockMetricsSender : public IMetricsSender
@@ -277,6 +295,7 @@ std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamples
 std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector();
 std::tuple<std::unique_ptr<ISsiManager>, MockSsiManager&> CreateSsiManager();
+std::tuple<std::unique_ptr<IMetadataProvider>, MockMetadataProvider&> CreateMetadataProvider();
 
 std::shared_ptr<Sample> CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, std::string>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value);
 

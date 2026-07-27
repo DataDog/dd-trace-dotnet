@@ -102,6 +102,8 @@ public:
     inline int32_t SetTimerId(int32_t timerId);
     inline int32_t GetTimerId() const;
     inline bool CanBeInterrupted() const;
+    inline void SetStackBounds(std::uintptr_t stackBase, std::uintptr_t stackEnd);
+    inline std::pair<std::uintptr_t, std::uintptr_t> GetStackBounds() const;
 #endif
 
 #ifdef DD_TEST
@@ -170,6 +172,8 @@ private:
     // doing a syscalls.
     volatile int* _sharedMemoryArea;
     std::int32_t _timerId;
+    std::uintptr_t _stackBase = 0;
+    std::uintptr_t _stackEnd = 0;
 #endif
     uint64_t _blockingThreadId;
     shared::WSTRING _blockingThreadName;
@@ -429,6 +433,17 @@ inline std::int32_t ManagedThreadInfo::SetTimerId(std::int32_t timerId)
 inline std::int32_t ManagedThreadInfo::GetTimerId() const
 {
     return _timerId;
+}
+
+inline void ManagedThreadInfo::SetStackBounds(std::uintptr_t stackBase, std::uintptr_t stackEnd)
+{
+    _stackBase = stackBase;
+    _stackEnd = stackEnd;
+}
+
+inline std::pair<std::uintptr_t, std::uintptr_t> ManagedThreadInfo::GetStackBounds() const
+{
+    return {_stackBase, _stackEnd};
 }
 #endif
 

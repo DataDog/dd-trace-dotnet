@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -14,6 +14,7 @@
       http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
+      http.response.headers.content-type: application/json; charset=utf-8,
       http.route: rasp/downstreamtoself,
       http.status_code: 200,
       http.url: http://localhost:00000/Rasp/DownstreamToSelf,
@@ -22,6 +23,10 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: DownstreamToSelfPost,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.RaspController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -69,6 +74,7 @@
       http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
+      http.response.headers.content-type: application/json; charset=utf-8,
       http.route: rasp/echo,
       http.status_code: 200,
       http.url: http://localhost:00000/Rasp/Echo,
@@ -76,6 +82,10 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: EchoPost,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.RaspController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {

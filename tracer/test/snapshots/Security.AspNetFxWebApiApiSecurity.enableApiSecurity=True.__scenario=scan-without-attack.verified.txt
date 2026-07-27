@@ -33,6 +33,8 @@
       http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
+      http.response.headers.content-length: 35,
+      http.response.headers.content-type: application/json; charset=utf-8,
       http.route: api/home/api-security/{id},
       http.status_code: 200,
       http.url: http://localhost:00000/api/home/api-security/12,

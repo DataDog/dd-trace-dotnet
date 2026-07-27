@@ -9,6 +9,7 @@ using System.Linq;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Security.Unit.Tests.Utils;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
 using Encoder = Datadog.Trace.AppSec.WafEncoding.Encoder;
@@ -123,6 +124,31 @@ public class EncoderUnitTests : WafLibraryRequiredTest
     [InlineData(WafConstants.MaxContainerSize - 1, WafConstants.MaxContainerSize - 1)]
     [InlineData(WafConstants.MaxContainerSize, WafConstants.MaxContainerSize)]
     [InlineData(WafConstants.MaxContainerSize + 10000, WafConstants.MaxContainerSize)]
+    public void TestNonIListEnumerableLength(int length, int expectedLength)
+    {
+        // The legacy encoder's type switch has no case for IEnumerable<object>;
+        // it falls through to EncodeUnknownType which calls ToString() on the
+        // enumerable, so this test only applies to the new Encoder.
+        Skip.If(_encoder is not Encoder, "Test only applies to the new (unsafe) Encoder");
+
+        // Lazy LINQ enumerable: RepeatIterator<T> implements IEnumerable<T> but
+        // not IList, so this exercises the non-IList branch of ProcessIEnumerable
+        var target = Enumerable.Repeat((object)"test", length);
+
+        using var intermediate = _encoder.Encode(target, applySafetyLimits: true);
+
+        intermediate.ResultDdwafObject.NbEntries.Should().Be((ulong)expectedLength);
+
+        var result = intermediate.ResultDdwafObject.Decode() as List<object>;
+        result.Should().NotBeNull();
+        result.Should().HaveCount(expectedLength);
+        result.Should().AllBeEquivalentTo("test");
+    }
+
+    [SkippableTheory]
+    [InlineData(WafConstants.MaxContainerSize - 1, WafConstants.MaxContainerSize - 1)]
+    [InlineData(WafConstants.MaxContainerSize, WafConstants.MaxContainerSize)]
+    [InlineData(WafConstants.MaxContainerSize + 10000, WafConstants.MaxContainerSize)]
     public void TestMapLength(int length, int expectedLength)
     {
         var target = Enumerable.Range(0, length).ToDictionary(x => x.ToString(), _ => (object)"test");
@@ -132,6 +158,58 @@ public class EncoderUnitTests : WafLibraryRequiredTest
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Count);
+    }
+
+    [SkippableFact]
+    public void DictionaryEntriesWithEmptyKeysAreSkipped_StringValues()
+    {
+        var target = new Dictionary<string, string>
+        {
+            { "key1", "value1" },
+            { string.Empty, "skipped-middle" },
+            { "key2", "value2" },
+        };
+
+        using var intermediate = _encoder.Encode(target, applySafetyLimits: true);
+
+        // Invariant 1: NbEntries reflects the count *after* skipping invalid keys.
+        // Under the bug, NbEntries remained at the original count (3) because the caller's
+        // childrenCount was never decremented.
+        intermediate.ResultDdwafObject.NbEntries.Should().Be(2UL);
+
+        // Invariant 2: the encoded slots [0, NbEntries) contain exactly the valid entries with
+        // their values intact. Under the bug, the decoder either threw (reading a zeroed slot
+        // as a null key) or surfaced stale/shifted data from beyond the valid entries.
+        var result = intermediate.ResultDdwafObject.Decode() as Dictionary<string, object>;
+        result.Should().NotBeNull();
+        result.Should().HaveCount(2);
+        result.Should().Contain("key1", "value1");
+        result.Should().Contain("key2", "value2");
+        result.Should().NotContainKey(string.Empty);
+    }
+
+    [SkippableFact]
+    public void DictionaryEntriesWithEmptyKeysAreSkipped_ObjectValues_EmptyKeyAtEnd()
+    {
+        // Empty key at the end exercises the worst case under the bug: the final slot is never
+        // written, so a decode that reads NbEntries=count slots reads uninitialized memory.
+        var target = new Dictionary<string, object>
+        {
+            { "key1", "value1" },
+            { "key2", 42 },
+            { string.Empty, "skipped-end" },
+        };
+
+        using var intermediate = _encoder.Encode(target, applySafetyLimits: true);
+
+        intermediate.ResultDdwafObject.NbEntries.Should().Be(2UL);
+
+        var result = intermediate.ResultDdwafObject.Decode() as Dictionary<string, object>;
+        result.Should().NotBeNull();
+        result.Should().HaveCount(2);
+        result.Should().Contain("key1", "value1");
+        result.Should().ContainKey("key2").WhoseValue.Should().Be(42L);
+        result.Should().NotContainKey(string.Empty);
     }
 
     [SkippableTheory]
@@ -186,6 +264,39 @@ public class EncoderUnitTests : WafLibraryRequiredTest
     {
         Encoder.FormatArgs(args).Should().Be(expectedOutput);
         EncoderLegacy.FormatArgs(args).Should().Be(expectedOutput);
+    }
+
+    [SkippableFact]
+    public void JValueScalarsKeepTheirNativeTypes()
+    {
+        var target = JToken.Parse(
+            """
+            {
+              "output": {
+                "attributes": {
+                  "string": { "value": "literal" },
+                  "integer": { "value": 662607015 },
+                  "signed": { "value": -42 },
+                  "double": { "value": 3.14 },
+                  "bool": { "value": true }
+                }
+              }
+            }
+            """);
+
+        using var intermediate = _encoder.Encode(target, applySafetyLimits: true);
+        var result = intermediate.ResultDdwafObject.Decode();
+
+        result.Should().BeOfType<Dictionary<string, object>>();
+        var resultDic = (Dictionary<string, object>)result;
+        var output = resultDic["output"].Should().BeOfType<Dictionary<string, object>>().Subject;
+        var attributes = output["attributes"].Should().BeOfType<Dictionary<string, object>>().Subject;
+
+        attributes["string"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", "literal" } });
+        attributes["integer"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", 662607015L } });
+        attributes["signed"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", -42L } });
+        attributes["double"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", 3.14D } });
+        attributes["bool"].Should().BeEquivalentTo(new Dictionary<string, object> { { "value", true } });
     }
 
     private static List<object> MakeNestedList(int nestingDepth)

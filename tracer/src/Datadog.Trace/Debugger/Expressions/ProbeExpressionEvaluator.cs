@@ -30,12 +30,14 @@ internal sealed class ProbeExpressionEvaluator
         DebuggerExpression?[]? templates,
         DebuggerExpression? condition,
         DebuggerExpression? metric,
-        KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? spanDecorations)
+        KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? spanDecorations,
+        CaptureExpressionDefinition[]? captureExpressions)
     {
         Templates = templates;
         Condition = condition;
         Metric = metric;
         SpanDecorations = spanDecorations;
+        CaptureExpressions = captureExpressions;
     }
 
     /// <summary>
@@ -128,13 +130,51 @@ internal sealed class ProbeExpressionEvaluator
 
     internal KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? SpanDecorations { get; }
 
+    internal CaptureExpressionDefinition[]? CaptureExpressions { get; }
+
     internal ExpressionEvaluationResult Evaluate(MethodScopeMembers scopeMembers)
     {
-        if (Templates == null && Condition == null && Metric == null && SpanDecorations == null)
+        return Evaluate(scopeMembers, out _);
+    }
+
+    internal ExpressionEvaluationResult Evaluate(MethodScopeMembers scopeMembers, out ProbeExpressionsCacheEntry? entry)
+    {
+        if (Templates == null && Condition == null && Metric == null && SpanDecorations == null && CaptureExpressions == null)
         {
+            entry = null;
             return default;
         }
 
+        entry = GetCacheEntry(scopeMembers);
+        var compiled = entry.GetOrCompile(this, scopeMembers);
+
+        ExpressionEvaluationResult result = default;
+        EvaluateTemplates(ref result, scopeMembers, compiled.Templates);
+        EvaluateCondition(ref result, scopeMembers, compiled.Condition);
+        EvaluateMetric(ref result, scopeMembers, compiled.Metric);
+        EvaluateSpanDecorations(ref result, scopeMembers, compiled.Decorations);
+        return result;
+    }
+
+    internal void EvaluateCaptureExpressions(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers)
+    {
+        EvaluateCaptureExpressions(ref result, scopeMembers, entry: null);
+    }
+
+    internal void EvaluateCaptureExpressions(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, ProbeExpressionsCacheEntry? entry)
+    {
+        if (CaptureExpressions == null)
+        {
+            return;
+        }
+
+        entry ??= GetCacheEntry(scopeMembers);
+        var compiledExpressions = entry.GetOrCompileCaptureExpressions(this, scopeMembers);
+        EvaluateCaptureExpressionsCore(ref result, scopeMembers, compiledExpressions, CaptureExpressions);
+    }
+
+    private ProbeExpressionsCacheEntry GetCacheEntry(MethodScopeMembers scopeMembers)
+    {
         // Use runtime types for caching/compilation safety (polymorphic calls can break casts if we compile for declared types).
         var invocationTarget = scopeMembers.InvocationTarget;
         var thisType = invocationTarget.Value?.GetType() ?? invocationTarget.Type ?? typeof(object);
@@ -147,15 +187,7 @@ internal sealed class ProbeExpressionEvaluator
         var memberCount = scopeMembers.MemberCount;
         var bucketKey = new ProbeExpressionsBucketKey(thisType, returnRuntimeType, memberCount);
         var bucket = _cache.GetOrAdd(bucketKey, static _ => new ProbeExpressionsBucket(Log));
-        var entry = bucket.GetOrAdd(scopeMembers, memberCount);
-        var compiled = entry.GetOrCompile(this, scopeMembers);
-
-        ExpressionEvaluationResult result = default;
-        EvaluateTemplates(ref result, scopeMembers, compiled.Templates);
-        EvaluateCondition(ref result, scopeMembers, compiled.Condition);
-        EvaluateMetric(ref result, scopeMembers, compiled.Metric);
-        EvaluateSpanDecorations(ref result, scopeMembers, compiled.Decorations);
-        return result;
+        return bucket.GetOrAdd(scopeMembers, memberCount);
     }
 
     private void EvaluateTemplates(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<string>[]? compiledExpressions)
@@ -227,7 +259,6 @@ internal sealed class ProbeExpressionEvaluator
         }
 
         CompiledExpression<bool> compiledExpression = default;
-
         try
         {
             if (!cached.HasValue)
@@ -241,12 +272,14 @@ internal sealed class ProbeExpressionEvaluator
             if (compiledExpression.Errors != null)
             {
                 (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
+                result.HasConditionError = true;
             }
         }
         catch (Exception e)
         {
             HandleException(ref result, compiledExpression, e);
             result.Condition = true;
+            result.HasConditionError = true;
         }
     }
 
@@ -406,6 +439,63 @@ internal sealed class ProbeExpressionEvaluator
         }
     }
 
+    private void EvaluateCaptureExpressionsCore(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<object>[]? compiledExpressions, CaptureExpressionDefinition[] captureExpressions)
+    {
+        if (compiledExpressions == null)
+        {
+            return;
+        }
+
+        ExpressionEvaluationResult.CaptureExpressionResult[]? capturedValues = null;
+        var capturedValuesCount = 0;
+        for (int i = 0; i < compiledExpressions.Length; i++)
+        {
+            var compiledExpression = compiledExpressions[i];
+            try
+            {
+                var captureExpression = captureExpressions[i];
+                // CreateCaptureExpressions guarantees Name is a non-empty, non-null string.
+                var name = captureExpression.Name;
+
+                if (!IsExpression(compiledExpression))
+                {
+                    continue;
+                }
+
+                var value = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
+                if (value is UndefinedValue)
+                {
+                    if (compiledExpression.Errors != null)
+                    {
+                        (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
+                    }
+
+                    continue;
+                }
+
+                // Runtime failures can leave slack in the array; CaptureExpressionCount is the authoritative length.
+                (capturedValues ??= new ExpressionEvaluationResult.CaptureExpressionResult[compiledExpressions.Length])[capturedValuesCount++] =
+                    new ExpressionEvaluationResult.CaptureExpressionResult(
+                    name,
+                    value,
+                    value?.GetType() ?? typeof(object),
+                    captureExpression.CaptureLimitInfo);
+
+                if (compiledExpression.Errors != null)
+                {
+                    (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
+                }
+            }
+            catch (Exception e)
+            {
+                HandleException(ref result, compiledExpression, e);
+            }
+        }
+
+        result.CaptureExpressions = capturedValues;
+        result.CaptureExpressionCount = capturedValuesCount;
+    }
+
     private CompiledExpression<string>[]? CompileTemplates(MethodScopeMembers scopeMembers)
     {
         if (Templates == null)
@@ -524,6 +614,28 @@ internal sealed class ProbeExpressionEvaluator
         return compiledExpressions;
     }
 
+    internal CompiledExpression<object>[]? CompileCaptureExpressions(MethodScopeMembers scopeMembers)
+    {
+        if (CaptureExpressions == null)
+        {
+            return null;
+        }
+
+        // Keep this array index-aligned with CaptureExpressions; evaluation uses the same index to read
+        // the capture name and limits for each compiled delegate.
+        var compiledExpressions = new CompiledExpression<object>[CaptureExpressions.Length];
+        for (int i = 0; i < CaptureExpressions.Length; i++)
+        {
+            var expression = CaptureExpressions[i].Expression;
+            if (expression?.Json != null && IsExpression(expression) == true)
+            {
+                compiledExpressions[i] = ProbeExpressionParser<object>.ParseCaptureExpression(expression.Value.Json, scopeMembers, CaptureExpressions[i].CaptureLimitInfo);
+            }
+        }
+
+        return compiledExpressions;
+    }
+
     private bool? IsLiteral(DebuggerExpression? expression)
     {
         if (expression is null)
@@ -531,7 +643,7 @@ internal sealed class ProbeExpressionEvaluator
             return null;
         }
 
-        return string.IsNullOrEmpty(expression.Value.Json);
+        return StringUtil.IsNullOrEmpty(expression.Value.Json);
     }
 
     private bool IsLiteral<T>(CompiledExpression<T> expression)
@@ -546,7 +658,7 @@ internal sealed class ProbeExpressionEvaluator
             return null;
         }
 
-        return !string.IsNullOrEmpty(expression.Value.Json) && string.IsNullOrEmpty(expression.Value.Str);
+        return !StringUtil.IsNullOrEmpty(expression.Value.Json) && StringUtil.IsNullOrEmpty(expression.Value.Str);
     }
 
     private bool IsExpression<T>(CompiledExpression<T> expression)
@@ -604,9 +716,9 @@ internal sealed class ProbeExpressionEvaluator
     internal CompiledProbeExpressions CompileAll(MethodScopeMembers scopeMembers)
     {
         return new CompiledProbeExpressions(
-            templates: Templates == null ? null : CompileTemplates(scopeMembers),
-            condition: Condition == null ? null : CompileCondition(scopeMembers),
-            metric: Metric == null ? null : CompileMetric(scopeMembers),
-            decorations: SpanDecorations == null ? null : CompileDecorations(scopeMembers));
+            CompileTemplates(scopeMembers),
+            CompileCondition(scopeMembers),
+            CompileMetric(scopeMembers),
+            CompileDecorations(scopeMembers));
     }
 }

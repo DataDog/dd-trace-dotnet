@@ -163,6 +163,8 @@ internal static class MetricTags
     {
         [Description("truncation_reason:baggage_item_count_exceeded")]BaggageItemCountExceeded,
         [Description("truncation_reason:baggage_byte_count_exceeded")]BaggageByteCountExceeded,
+        [Description("truncation_reason:baggage_extract_item_exceeded")]BaggageExtractItemExceeded,
+        [Description("truncation_reason:baggage_extract_byte_exceeded")]BaggageExtractByteExceeded,
     }
 
     public enum ContextHeaderMalformed
@@ -184,6 +186,51 @@ internal static class MetricTags
         [Description("component_name:iast")] Iast,
         [Description("component_name:iast_derived")] IastDerived,
         [Description("component_name:iast_aspects")] IastAspects,
+    }
+
+    internal enum DebuggerMemoryPressureState
+    {
+        [Description("state:enter")] Enter,
+        [Description("state:exit")] Exit,
+    }
+
+    internal enum DebuggerMemoryPressureTrigger
+    {
+        [Description("trigger:none")] None,
+        [Description("trigger:memory")] Memory,
+        [Description("trigger:gc")] Gc,
+        [Description("trigger:both")] Both,
+    }
+
+    internal enum DebuggerMemoryPressureDisabledReason
+    {
+        [Description("reason:no_signals")] NoSignals,
+        [Description("reason:error")] Error,
+    }
+
+    internal enum DebuggerMemoryPressureMemoryBucket
+    {
+        [Description("bucket:lt_70")] LessThan70,
+        [Description("bucket:70_80")] From70To80,
+        [Description("bucket:80_85")] From80To85,
+        [Description("bucket:85_90")] From85To90,
+        [Description("bucket:gte_90")] GreaterThanOrEqual90,
+    }
+
+    internal enum DebuggerMemoryPressureGcBucket
+    {
+        [Description("bucket:lt_1")] LessThan1,
+        [Description("bucket:1_2")] From1To2,
+        [Description("bucket:2_5")] From2To5,
+        [Description("bucket:gte_5")] GreaterThanOrEqual5,
+    }
+
+    internal enum DebuggerMemoryPressureDurationBucket
+    {
+        [Description("bucket:lt_1s")] LessThan1Second,
+        [Description("bucket:1_5s")] From1To5Seconds,
+        [Description("bucket:5_30s")] From5To30Seconds,
+        [Description("bucket:gte_30s")] GreaterThanOrEqual30Seconds,
     }
 
     internal enum IntegrationName
@@ -278,7 +325,8 @@ internal static class MetricTags
         [Description("integration_name:datadogtracemanual")] DatadogTraceManual,
         [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection,
         [Description("integration_name:protobuf")] Protobuf,
-        [Description("integration_name:hangfire")] Hangfire
+        [Description("integration_name:hangfire")] Hangfire,
+        [Description("integration_name:serverlesscompat")] ServerlessCompat
     }
 
     public enum InstrumentationError
@@ -427,6 +475,41 @@ internal static class MetricTags
     {
         [Description("encoding:protobuf")] Protobuf,
         [Description("encoding:json")] Json,
+    }
+
+    // Note that these tags need to remain in sync with StatsCardinalityReporter.StatsdTags.Tags
+    // (both order and values)
+    [EnumExtensions]
+    internal enum CollapsedStatsFields
+    {
+        [Description("")] None,
+        [Description("collapsed:whole_key")] WholeKey,
+
+        [Description("collapsed:resource")] Resource,
+        [Description("collapsed:http_endpoint")] HttpEndpoint,
+        [Description("collapsed:peer_tags")] PeerTags,
+        [Description("collapsed:additional_metric_tags")] AdditionalMetricTags,
+
+        [Description("collapsed:resource;collapsed:http_endpoint")] ResourceAndHttpEndpoint,
+        [Description("collapsed:resource;collapsed:peer_tags")] ResourceAndPeerTags,
+        [Description("collapsed:resource;collapsed:additional_metric_tags")] ResourceAndAdditionalMetricTags,
+
+        [Description("collapsed:http_endpoint;collapsed:peer_tags")] HttpEndpointAndPeerTags,
+        [Description("collapsed:http_endpoint;collapsed:additional_metric_tags")] HttpEndpointAndAdditionalMetricTags,
+        [Description("collapsed:peer_tags;collapsed:additional_metric_tags")] PeerTagsAndAdditionalMetricTags,
+
+        [Description("collapsed:resource;collapsed:http_endpoint;collapsed:peer_tags")] ResourceAndHttpEndpointAndPeerTags,
+        [Description("collapsed:resource;collapsed:http_endpoint;collapsed:additional_metric_tags")] ResourceAndHttpEndpointAndAdditionalMetricTags,
+        [Description("collapsed:resource;collapsed:peer_tags;collapsed:additional_metric_tags")] ResourceAndPeerTagsAndAdditionalMetricTags,
+        [Description("collapsed:http_endpoint;collapsed:peer_tags;collapsed:additional_metric_tags")] HttpEndpointAndPeerTagsAndAdditionalMetricTags,
+
+        [Description("collapsed:resource;collapsed:http_endpoint;collapsed:peer_tags;collapsed:additional_metric_tags")] ResourceAndHttpEndpointAndPeerTagsAndAdditionalMetricTags,
+    }
+
+    internal enum OversizedStatsFields
+    {
+        [Description("")] None,
+        [Description("oversized:additional_metric_tags")] AdditionalMetricTags,
     }
 
     public enum CIVisibilityTestFramework

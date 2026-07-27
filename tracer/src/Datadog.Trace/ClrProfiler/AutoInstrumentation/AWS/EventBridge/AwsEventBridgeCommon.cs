@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
     internal static class AwsEventBridgeCommon
     {
         private const string DatadogAwsEventBridgeServiceName = "aws-eventbridge";
+        internal const string DefaultEventBusName = "default";
         private const string EventBridgeRequestOperationName = "eventbridge.request";
         private const string EventBridgeServiceName = "EventBridge";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsEventBridgeCommon));
@@ -82,6 +83,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
             }
 
             return null;
+        }
+
+        internal static string GetEventBusNameOrDefault(string? eventBusName)
+        {
+            return StringUtil.IsNullOrEmpty(eventBusName) ? DefaultEventBusName : eventBusName;
         }
 
         internal static string GetOperationName(Tracer tracer)

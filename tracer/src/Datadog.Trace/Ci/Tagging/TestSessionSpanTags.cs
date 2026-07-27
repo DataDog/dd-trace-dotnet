@@ -112,6 +112,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
     [Tag(IntelligentTestRunnerTags.TestsSkipped)]
     public string? TestsSkipped { get; set; }
 
+    [Tag(IntelligentTestRunnerTags.TestTestsSkippingEnabled)]
+    public string? IntelligentTestRunnerTestsSkippingEnabled { get; set; }
+
     [Tag(IntelligentTestRunnerTags.SkippingType)]
     public string? IntelligentTestRunnerSkippingType { get; set; }
 

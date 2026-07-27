@@ -40,7 +40,7 @@ Creating a new instrumentation implementation typically uses the following proce
 6. Create integration tests for your instrumentation. For more details, see [Testing](#testing).
    1. Create (or reuse) a sample application that uses the target library, which ideally exercises all the code paths in your new instrumentation. Use an `$(ApiVersion)` MSBuild variables to allow testing against multiple package versions in CI. 
    2. Add a new entry in the SpanMetadataRules files (see the /tracer/test/Datadog.Trace.TestHelpers/SpanMetadata*Rules.cs files) that define the expected Name, Type, and Tags for the new integration spans, and run build target `GenerateSpanDocumentation` to generate the updated Markdown file. For new instrumentation, you should add the definitions for all existing schema versions.
-   3. Add an entry in [tracer/build/PackageVersionsGeneratorDefinitions.json](../../tracer/build/PackageVersionsGeneratorDefinitions.json) defining the range of all supported versions. See the existing definitions for examples. You may need to add an entry in the [tracer/build/Honeypot/IntegrationGroups.cs](../../tracer/build//Honeypot/IntegrationGroups.cs) to specify the Nuget Package instrumented by the integration. 
+   3. Add an entry in [tracer/build/PackageVersionsGeneratorDefinitions.json](../../tracer/build/PackageVersionsGeneratorDefinitions.json) defining the range of all supported versions. See the existing definitions for examples. You may need to add an entry in the [tracer/build/_build/Honeypot/IntegrationGroups.cs](../../tracer/build/_build/Honeypot/IntegrationGroups.cs) to specify the Nuget Package instrumented by the integration. 
    4. Run `./tracer/build.ps1 GeneratePackageVersions`. This generates the xunit test data for package versions in the `TestData` that you can use as `[MemberData]` for your `[Theory]` tests. 
    5. If needed, add a docker image in the docker-compose.yml to allow the CI to test against it. Locally, you can use docker-compose as well and start only the dependencies you need.
    6. Use the `MockTracerAgent` and the newly defined `SpanMetadataRules` method in your integration test to confirm your instrumentation is working as expected.
@@ -291,19 +291,29 @@ Additional information regarding the specific limitations with these can be foun
 
 ### AutoInstrumentation Generator
 
-There's a tool to help developers in the process of creating all the boilerplate code for new instrumentations.
+There are two tools to help developers create the boilerplate code for new instrumentations: an interactive **GUI** and a scriptable **CLI**. See [InstrumentationGenerator.md](./InstrumentationGenerator.md) for full documentation.
 
-To run the tool use: `./tracer/build.ps1 RunInstrumentationGenerator`
+**GUI** (interactive browsing and generation):
 
-#### Nuke command:
+```bash
+./tracer/build.ps1 RunInstrumentationGenerator
+```
+
+**CLI** (scriptable, CI-friendly, AI-assisted workflows):
+
+```bash
+# Via Nuke
+.\tracer\build.cmd RunInstrumentationGeneratorCli --assembly-path "path/to/MyLib.dll" --type-name "MyLib.MyClass" --method-name "DoSomething"
+
+# Via dotnet run (--framework is required because the project's TargetFrameworks is plural even with a single TFM)
+dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net10.0 -- generate path/to/MyLib.dll -t MyLib.MyClass -m DoSomething
+```
+
+#### GUI screenshots:
 
 ![nuke command](./images/gen01.jpg)
 
-#### Main window:
-
 ![tool main window](./images/gen02.jpg)
-
-#### Creating a new Instrumentation class with the DuckType proxies:
 
 ![tool main window](./images/gen03.jpg)
 

@@ -33,7 +33,7 @@ namespace Datadog.Trace.Agent.Transports
             return endpoint.ToString();
         }
 
-        public Uri GetEndpoint(string relativePath) => UriHelpers.Combine(_baseEndpoint, relativePath);
+        public Uri GetEndpoint(string relativePath) => relativePath is null ? _baseEndpoint : UriHelpers.Combine(_baseEndpoint, relativePath);
 
         public IApiRequest Create(Uri endpoint)
         {

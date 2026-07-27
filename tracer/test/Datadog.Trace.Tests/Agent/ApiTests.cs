@@ -13,6 +13,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -219,7 +220,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var api = new Api(factoryMock.Object, TestStatsdManager.NoOp, new ContainerMetadata(containerId: null, entityId: null), updateSampleRates: null, updateConfigState: null, partialFlushEnabled: false, healthMetricsEnabled: false);
 
-            var statsBuffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var statsBuffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])), new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance));
 
             await api.SendStatsAsync(statsBuffer, 1, 0);
 
@@ -242,7 +243,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var api = new Api(factoryMock.Object, TestStatsdManager.NoOp, new ContainerMetadata(containerId: null, entityId: null), updateSampleRates: null, updateConfigState: null, partialFlushEnabled: false, healthMetricsEnabled: false);
 
-            var statsBuffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var statsBuffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])), new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance));
 
             await api.SendStatsAsync(statsBuffer, 1, 0);
 

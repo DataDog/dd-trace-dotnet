@@ -133,7 +133,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             else
             {
                 // Apply the stored configuration
-                var configs = configurationState.GetWafConfigurations(updating);
+                var configs = configurationState.BuildWafUpdatePayload(updating);
 
                 if (configs.HasData)
                 {

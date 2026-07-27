@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Linux.ApiWrapper" VERSION 3.44.0)
+project("Datadog.Linux.ApiWrapper" VERSION 3.51.0)
 
 # ******************************************************
 # Compiler options
@@ -37,6 +37,10 @@ endif()
 # ******************************************************
 
 SET(API_WRAPPER_BASENAME Datadog.Linux.ApiWrapper)
+# For arm64, we cannot replace the x64 suffix with arm64.
+# This library is already shipped and used by customers. Their scripts expect the x64 suffix.
+# SSI relies on this file.
+# Changing this would bring little value but lots of headaches.
 SET(API_WRAPPER_SHARED_LIB_NAME ${API_WRAPPER_BASENAME}.x64)
 
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${DEPLOY_DIR})
@@ -50,6 +54,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DEPLOY_DIR})
 add_library(${API_WRAPPER_SHARED_LIB_NAME} SHARED
     functions_to_wrap.c
     socket_operations.c
+    filesystem_operations.c
     common.c
 )
 

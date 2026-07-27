@@ -56,10 +56,10 @@ partial class Build
        .Before(PackNuGet, BuildMsi, ZipMonitoringHome)
        .Executes(() =>
         {
-            // also sign the NuGet package "bin" folder, as they are what gets packed in the NuGet
+            // also sign the per-project bin output, since these are what gets packed in the NuGet.
+            // Under UseArtifactsOutput (tracer/Directory.Build.props) the bin lives at artifacts/bin/<Project>/<pivot>/.
             var dllsInBin = ProjectsToPack
-                           .Select(project => project.Directory)
-                           .SelectMany(projectDir => projectDir.GlobFiles("**/bin/**/Datadog*.dll"));
+                           .SelectMany(project => (ArtifactsBinDirectory / project.Name).GlobFiles("**/Datadog*.dll"));
             var homeDlls = MonitoringHomeDirectory.GlobFiles("**/Datadog*.dll");
             var waf = MonitoringHomeDirectory.GlobFiles("**/ddwaf.dll");
 

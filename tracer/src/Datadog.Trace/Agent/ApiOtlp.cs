@@ -3,12 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET6_0_OR_GREATER
-
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.Transports;
@@ -31,15 +28,17 @@ namespace Datadog.Trace.Agent
 
         private readonly IDatadogLogger _log;
         private readonly IApiRequestFactory _apiRequestFactory;
+        private readonly IApiRequestFactory _metricsRequestFactory;
         private readonly TracesEncoding _tracesEncoding;
         private readonly Uri _tracesEndpoint;
-        private readonly KeyValuePair<string, string>[] _tracesHeaders;
-        private readonly Uri _statsEndpoint; // This endpoint is passed for the _sendStats callback, but otherwise unused
+        private readonly Uri _statsEndpoint;
+        private readonly bool _spanMetricsEnabled;
+        private readonly bool _otelSemanticsEnabled;
+        private readonly OtlpProtocol _metricsEncoding;
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
-        private readonly Datadog.Trace.OpenTelemetry.Metrics.OtlpExporter _metricsExporter;
 
-        public ApiOtlp(IApiRequestFactory apiRequestFactory, TracerSettings settings, ExporterSettings exporterSettings, IDatadogLogger log = null)
+        public ApiOtlp(IApiRequestFactory tracesRequestFactory, IApiRequestFactory metricsRequestFactory, TracerSettings settings, ExporterSettings exporterSettings, IDatadogLogger log = null)
         {
             // optionally injecting a log instance in here for testing purposes
             _log = log ?? StaticLog;
@@ -47,14 +46,15 @@ namespace Datadog.Trace.Agent
             _sendStats = SendStatsAsyncImpl;
             _sendTraces = SendTracesAsyncImpl;
 
-            _apiRequestFactory = apiRequestFactory;
+            _apiRequestFactory = tracesRequestFactory;
+            _metricsRequestFactory = metricsRequestFactory;
             _tracesEncoding = exporterSettings.TracesEncoding;
-            _tracesEndpoint = exporterSettings.OtlpTracesEndpoint;
-            _tracesHeaders = exporterSettings.OtlpTracesHeaders ?? [];
+            _tracesEndpoint = _apiRequestFactory.GetEndpoint(null); // The base endpoint for OTLP traces already includes the path component
             _statsEndpoint = exporterSettings.OtlpMetricsEndpoint;
+            _spanMetricsEnabled = settings.OtelTracesSpanMetricsEnabled;
+            _otelSemanticsEnabled = settings.OtelSemanticsEnabled;
+            _metricsEncoding = exporterSettings.OtlpMetricsProtocol;
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
-
-            _metricsExporter = new Datadog.Trace.OpenTelemetry.Metrics.OtlpExporter(settings, exporterSettings);
         }
 
         private delegate Task<SendResult> SendCallback<T>(IApiRequest request, bool isFinalTry, T state);
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Agent
             var state = new SendStatsState(stats, bucketDuration, tracerObfuscationVersion);
 
             // We are supposed to be fire and forget for these stats, with no retries
-            return SendWithRetry(_statsEndpoint, _sendStats, state, retryLimit: 0);
+            return SendWithRetry(_statsEndpoint, _metricsRequestFactory, _sendStats, state, retryLimit: 0);
         }
 
         public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
@@ -90,10 +90,10 @@ namespace Datadog.Trace.Agent
 
             var state = new SendTracesState(traces, numberOfTraces, statsComputationEnabled, numberOfDroppedP0Traces, numberOfDroppedP0Spans, apmTracingEnabled);
 
-            return SendWithRetry(_tracesEndpoint, _sendTraces, state);
+            return SendWithRetry(_tracesEndpoint, _apiRequestFactory, _sendTraces, state);
         }
 
-        private async Task<bool> SendWithRetry<T>(Uri endpoint, SendCallback<T> callback, T state, int retryLimit = 5)
+        private async Task<bool> SendWithRetry<T>(Uri endpoint, IApiRequestFactory requestFactory, SendCallback<T> callback, T state, int retryLimit = 5)
         {
             // retry up to 5 times with exponential back-off
             var retryCount = 1;
@@ -105,7 +105,7 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    request = _apiRequestFactory.Create(endpoint);
+                    request = requestFactory.Create(endpoint);
                 }
                 catch (Exception ex)
                 {
@@ -165,10 +165,60 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private Task<SendResult> SendStatsAsyncImpl(IApiRequest request, bool isFinalTry, SendStatsState state)
+        private async Task<SendResult> SendStatsAsyncImpl(IApiRequest request, bool isFinalTry, SendStatsState state)
         {
-            _log.Debug("Sending APM trace stats is currently only supported on .NET 6+");
-            return Task.FromResult(SendResult.Success);
+            if (!_spanMetricsEnabled)
+            {
+                return SendResult.Success;
+            }
+
+            var useJson = _metricsEncoding == OtlpProtocol.HttpJson;
+            var payload = useJson
+                ? OtlpSpanStatsSerializer.SerializeJson(state.Stats, state.BucketDuration, _otelSemanticsEnabled)
+                : OtlpSpanStatsSerializer.Serialize(state.Stats, state.BucketDuration, _otelSemanticsEnabled);
+
+            if (payload is null)
+            {
+                return SendResult.Success;
+            }
+
+            var contentType = useJson ? MimeTypes.Json : MimeTypes.XProtobuf;
+
+            IApiResponse response = null;
+            try
+            {
+                response = await request.PostAsync(new ArraySegment<byte>(payload), contentType).ConfigureAwait(false);
+
+                if (response.StatusCode == 200)
+                {
+                    _log.Debug("Successfully sent span metrics to OTLP metrics endpoint.");
+                    return SendResult.Success;
+                }
+
+                if (response.StatusCode == 429 || response.StatusCode == 502 || response.StatusCode == 503 || response.StatusCode == 504)
+                {
+                    return isFinalTry ? SendResult.Failed_DontRetry : SendResult.Failed_CanRetry;
+                }
+
+                if (isFinalTry)
+                {
+                    try
+                    {
+                        var body = await response.ReadAsStringAsync().ConfigureAwait(false);
+                        _log.Error<int, string>("Failed to send span metrics: status {StatusCode}, response: {Response}", response.StatusCode, body);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error<int>(ex, "Failed to send span metrics with status {StatusCode}", response.StatusCode);
+                    }
+                }
+
+                return SendResult.Failed_DontRetry;
+            }
+            finally
+            {
+                response?.Dispose();
+            }
         }
 
         private async Task<SendResult> SendTracesAsyncImpl(IApiRequest request, bool finalTry, SendTracesState state)
@@ -177,11 +227,6 @@ namespace Datadog.Trace.Agent
 
             var traces = state.Traces;
             var numberOfTraces = state.NumberOfTraces;
-
-            foreach (var header in _tracesHeaders)
-            {
-                request.AddHeader(header.Key, header.Value);
-            }
 
             // TODO: Determine if we need to send the following information somehow:
             // - DroppedP0Traces
@@ -196,8 +241,13 @@ namespace Datadog.Trace.Agent
                 try
                 {
                     // TODO: Telemetry - Record OTLP Traces API submissions
-                    // TODO: Add more precise logic for "application/x-protobuf" vs "application/json"
-                    response = await request.PostAsync(traces, MimeTypes.Json).ConfigureAwait(false);
+                    var contentType = _tracesEncoding switch
+                    {
+                        TracesEncoding.OtlpProtobuf => MimeTypes.XProtobuf,
+                        _ => MimeTypes.Json,
+                    };
+
+                    response = await request.PostAsync(traces, contentType).ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
@@ -304,4 +354,3 @@ namespace Datadog.Trace.Agent
         }
     }
 }
-#endif

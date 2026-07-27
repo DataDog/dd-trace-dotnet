@@ -17,7 +17,7 @@ internal static class IntelligentTestRunnerTags
     public const string TestsSkipped = "_dd.ci.itr.tests_skipped";
 
     /// <summary>
-    /// Test Session Intelligent Test Runner tests skipping is enabled flag
+    /// Intelligent Test Runner tests skipping is enabled flag
     /// </summary>
     public const string TestTestsSkippingEnabled = "test.itr.tests_skipping.enabled";
 

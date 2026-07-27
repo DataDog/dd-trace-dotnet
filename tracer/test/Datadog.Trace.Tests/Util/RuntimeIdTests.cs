@@ -12,6 +12,9 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Util
 {
+    // Mutates the _DD_ROOT_DOTNET_SESSION_ID env var and the lazy-cached RuntimeId._rootSessionId. Must run
+    // serially with anything that reads RuntimeId.GetRootSessionId(), which is basically everything
+    [Collection(nameof(EnvironmentVariablesTestCollection))]
     [EnvironmentRestorer(ConfigurationKeys.Telemetry.RootSessionId)]
     public class RuntimeIdTests
     {

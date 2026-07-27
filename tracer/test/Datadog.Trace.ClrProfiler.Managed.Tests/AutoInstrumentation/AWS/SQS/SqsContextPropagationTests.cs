@@ -106,4 +106,32 @@ public class SqsContextPropagationTests
         extractedTraceContext["x-datadog-parent-id"].Should().Be(_spanContext.SpanId.ToString());
         extractedTraceContext["x-datadog-trace-id"].Should().Be(_spanContext.TraceId.ToString());
     }
+
+    [Theory]
+    [InlineData("bad\"value")]
+    [InlineData("back\\slash")]
+    [InlineData("\"},\"injected\":\"true")]
+    internal async Task MaliciousOrigin_AttributeValueIsParseableAndRoundTrips(string maliciousOrigin)
+    {
+        var spanContext = new SpanContext(
+            new TraceId(1234567890123456789UL, 9876543210987654321UL),
+            spanId: 6766950223540265769UL,
+            samplingPriority: 1,
+            serviceName: "test-sqs",
+            origin: maliciousOrigin);
+
+        var request = new SendMessageRequest { MessageBody = "msg" };
+        var proxy = request.DuckCast<IContainsMessageAttributes>();
+
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        ContextPropagation.InjectHeadersIntoMessage(tracer, proxy, spanContext, dataStreamsManager: null, CachedMessageHeadersHelper<SendMessageRequest>.Instance);
+
+        var messageAttributes = (Dictionary<string, MessageAttributeValue>)proxy.MessageAttributes;
+        messageAttributes.TryGetValue(DatadogKey, out var datadogAttr).Should().BeTrue();
+
+        // the _datadog attribute string must be parseable JSON despite the malicious origin
+        var parsed = JsonConvert.DeserializeObject<Dictionary<string, string>>(datadogAttr.StringValue);
+        parsed.Should().NotBeNull();
+        parsed["x-datadog-origin"].Should().Be(maliciousOrigin);
+    }
 }
