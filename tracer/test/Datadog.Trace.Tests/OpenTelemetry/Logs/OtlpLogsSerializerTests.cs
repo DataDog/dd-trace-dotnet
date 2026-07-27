@@ -5,6 +5,7 @@
 
 #if NETCOREAPP3_1_OR_GREATER
 
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Datadog.Trace.OpenTelemetry.Logs;
@@ -91,6 +92,34 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
             bytesWritten.Should().BeGreaterThan(startPosition);
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void TrySerializeLogs_AttributeToStringThrowsOverflowException_PropagatesAsSerializationFailure(bool throwIndexOutOfRangeException)
+        {
+            Exception expectedException = throwIndexOutOfRangeException
+                                              ? new IndexOutOfRangeException()
+                                              : new ArgumentException();
+            var logs = new List<LogPoint>
+            {
+                new()
+                {
+                    Message = "hello",
+                    LogLevel = 2,
+                    CategoryName = "Test",
+                    Attributes = { ["attribute"] = new ThrowingToString(expectedException) },
+                },
+            };
+            var buffer = new byte[InitialBufferSize];
+
+            var act = () => OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out _);
+
+            act.Should()
+               .Throw<InvalidOperationException>()
+               .WithMessage("Failed to convert an OTLP log attribute value to a string.")
+               .WithInnerException(expectedException.GetType());
+        }
+
         private static List<LogPoint> CreateLogs(int count, int messageSize)
         {
             var message = new string('x', messageSize);
@@ -109,6 +138,11 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
                 environment: "test-env",
                 serviceVersion: "1.0.0",
                 globalTags: new ReadOnlyDictionary<string, string>(new Dictionary<string, string>()));
+
+        private sealed class ThrowingToString(Exception exception)
+        {
+            public override string ToString() => throw exception;
+        }
     }
 }
 

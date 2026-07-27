@@ -189,7 +189,7 @@ internal static class OtlpLogsSerializer
 
         foreach (var attr in log.Attributes)
         {
-            writePosition = WriteKeyValueAttribute(buffer, writePosition, attr.Key, attr.Value?.ToString() ?? string.Empty);
+            writePosition = WriteKeyValueAttribute(buffer, writePosition, attr.Key, GetAttributeValue(attr.Value));
         }
 
         if (log.TraceId != TraceId.Zero)
@@ -216,6 +216,21 @@ internal static class OtlpLogsSerializer
         ProtobufSerializer.WriteReservedLength(buffer, logRecordLengthPosition, writePosition - (logRecordLengthPosition + ReserveSizeForLength));
 
         return writePosition;
+    }
+
+    private static string GetAttributeValue(object? value)
+    {
+        try
+        {
+            return value?.ToString() ?? string.Empty;
+        }
+        catch (Exception ex) when (ex is ArgumentException or IndexOutOfRangeException)
+        {
+            // These exception types are also used by the protobuf writers to signal that the
+            // destination buffer is too small. Wrap exceptions thrown by application ToString()
+            // implementations so TrySerializeLogs does not mistake them for buffer exhaustion.
+            throw new InvalidOperationException("Failed to convert an OTLP log attribute value to a string.", ex);
+        }
     }
 
     private static int WriteLogRecordBody(byte[] buffer, int writePosition, string value)
