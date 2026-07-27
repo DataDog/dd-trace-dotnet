@@ -102,7 +102,7 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
             // away, so force that by using null.
             var resourceName = _tracer.CurrentTraceSettings.HasResourceBasedSamplingRule ? null : string.Empty;
             scope = RequestHandler.StartAspNetCorePipelineScope(_tracer, httpContext.Request, resourceName);
-            items[HttpContextRequestStateKey] = new LegacyAspNetCoreRequestState(scope);
+            items[HttpContextRequestStateKey] = new LegacyAspNetCoreRequestState(scope, httpContext.Request);
             scope = null;
         }
         catch
@@ -153,6 +153,26 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
         if (!items.TryGetValue(HttpContextRequestStateKey, out var value)
          || value is not LegacyAspNetCoreRequestState state
          || state.RootScope.Span is not { Tags: AspNetCoreTags tags } rootSpan)
+        {
+            return;
+        }
+
+        // We don't support endpoint routing on .NET Framework, but the pipeline can still be
+        // re-executed by middleware (e.g. UseExceptionHandler or UseStatusCodePagesWithReExecute),
+        // firing additional MvcBeforeAction events. Only the first execution should name the root span.
+        var isFirstExecution = state.IsFirstPipelineExecution;
+        if (isFirstExecution)
+        {
+            state.IsFirstPipelineExecution = false;
+            if (!state.MatchesOriginalPath(httpContext.Request))
+            {
+                // URL has changed from the original request, so treat this as a subsequent
+                // execution (typically occurs for 404s) and don't rename the root span.
+                isFirstExecution = false;
+            }
+        }
+
+        if (!isFirstExecution)
         {
             return;
         }
@@ -360,6 +380,11 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
     internal interface IPathString
 #pragma warning restore SA1201
     {
+        /// <summary>
+        /// Gets the unescaped path value (may be null when the path is empty).
+        /// </summary>
+        public string? Value { get; }
+
         public string ToUriComponent();
     }
 

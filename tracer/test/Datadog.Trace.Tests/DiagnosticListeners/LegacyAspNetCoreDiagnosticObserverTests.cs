@@ -167,6 +167,126 @@ public class LegacyAspNetCoreDiagnosticObserverTests
     }
 
     [Fact]
+    public async Task PipelineReExecutionDoesNotOverwriteResourceName()
+    {
+        // Simulates e.g. UseExceptionHandler / UseStatusCodePagesWithReExecute re-running the
+        // pipeline on an error path after the "real" action already named the root span.
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+        var context = CreateContext();
+        var requestPayload = new { HttpContext = context };
+        var actionValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["controller"] = "Orders",
+            ["action"] = "Details",
+        };
+
+        observer.OnNext(new KeyValuePair<string, object>(StartEvent, requestPayload));
+        var requestScope = GetRequestState(context).RootScope;
+
+        observer.OnNext(
+            new KeyValuePair<string, object>(
+                MvcBeforeActionEvent,
+                CreateMvcBeforeActionPayload(context, "api/Orders/{id}", actionValues)));
+
+        requestScope.Span.ResourceName.Should().Be("GET /api/orders/{id}");
+        requestScope.Span.GetTag(Tags.AspNetCoreRoute).Should().Be("api/orders/{id}");
+
+        // Pipeline re-executes on the error path and fires MvcBeforeAction again
+        context.Request.Path = new PathString("/home/error");
+        var errorActionValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["controller"] = "Home",
+            ["action"] = "Error",
+        };
+
+        observer.OnNext(
+            new KeyValuePair<string, object>(
+                MvcBeforeActionEvent,
+                CreateMvcBeforeActionPayload(context, "home/error", errorActionValues)));
+
+        // The root span must still reflect the original endpoint, not the error page
+        requestScope.Span.ResourceName.Should().Be("GET /api/orders/{id}");
+        requestScope.Span.GetTag(Tags.AspNetCoreRoute).Should().Be("api/orders/{id}");
+
+        observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
+    }
+
+    [Fact]
+    public async Task MvcActionOnReExecutedPathDoesNotOverwriteResourceName()
+    {
+        // Simulates status-code-pages re-execution where the path is rewritten before any MVC
+        // action ran on the original request, so even the first MvcBeforeAction is on the error path.
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+        var context = CreateContext();
+        var requestPayload = new { HttpContext = context };
+
+        observer.OnNext(new KeyValuePair<string, object>(StartEvent, requestPayload));
+        var requestScope = GetRequestState(context).RootScope;
+
+        // Path is rewritten by the re-execution before the (only) MVC action runs
+        context.Request.Path = new PathString("/error/404");
+        var errorActionValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["controller"] = "Error",
+            ["action"] = "Index",
+        };
+
+        observer.OnNext(
+            new KeyValuePair<string, object>(
+                MvcBeforeActionEvent,
+                CreateMvcBeforeActionPayload(context, "error/{code}", errorActionValues)));
+
+        // Because the path no longer matches the original, the guard skips naming and the
+        // error route must not leak onto the root span
+        requestScope.Span.GetTag(Tags.AspNetCoreRoute).Should().BeNull();
+        requestScope.Span.ResourceName.Should().NotBe("GET /error/{code}");
+
+        // The re-execution middleware restores the original path before the request completes,
+        // so the final (fallback) resource name reflects the original request
+        context.Request.Path = new PathString("/baseline/sql");
+        observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
+
+        requestScope.Span.ResourceName.Should().Be("GET /baseline/sql");
+    }
+
+    [Fact]
+    public async Task PathBaseSegmentMigrationIsNotTreatedAsReExecution()
+    {
+        // Middleware such as Map/UsePathBase can move a segment from Path into PathBase between Start
+        // and MvcBeforeAction. The combined path is unchanged, so this is still the first execution and
+        // should name the root span. This uses a trailing-slash PathBase, where PathString.Add collapses
+        // the duplicated separator during migration - the comparison must account for that.
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        IObserver<KeyValuePair<string, object>> observer = new LegacyAspNetCoreDiagnosticObserver(tracer);
+        var context = CreateContext();
+        context.Request.PathBase = new PathString("/some/slash/");
+        context.Request.Path = new PathString("/other/slash");
+        var requestPayload = new { HttpContext = context };
+
+        observer.OnNext(new KeyValuePair<string, object>(StartEvent, requestPayload));
+        var requestScope = GetRequestState(context).RootScope;
+
+        // Map migrates "/other" into PathBase; Add collapses the trailing/leading slash pair so the
+        // new PathBase is "/some/slash/other" (no double slash) and Path becomes "/slash".
+        context.Request.PathBase = new PathString("/some/slash/other");
+        context.Request.Path = new PathString("/slash");
+        var actionValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        observer.OnNext(
+            new KeyValuePair<string, object>(
+                MvcBeforeActionEvent,
+                CreateMvcBeforeActionPayload(context, "slash/{id}", actionValues)));
+
+        // The route tag is only set on the first execution, so its presence proves the migrated path
+        // was recognised as matching the original (not treated as a re-execution).
+        requestScope.Span.GetTag(Tags.AspNetCoreRoute).Should().Be("slash/{id}");
+
+        observer.OnNext(new KeyValuePair<string, object>(StopEvent, requestPayload));
+    }
+
+    [Fact]
     public async Task ResourceNameIncludesPathBasePrefix()
     {
         await using var tracer = TracerHelper.CreateWithFakeAgent();
