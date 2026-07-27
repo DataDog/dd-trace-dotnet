@@ -168,12 +168,12 @@ build:
         Write-Output ("Peak container memory: {0} ({1:N1}% of limit)" -f $peakUsage, $peakPercent)
       }
 
-      # Enable MSVC /MP, but cap it at eight compiler processes to limit peak memory usage.
+      # Enable MSVC /MP, capped at the runner's logical processor count.
       docker run --name $containerName --rm -m 20480M `
         -v "$(Get-Location):c:\mnt" `
         -e CI_JOB_ID=${CI_JOB_ID} `
         -e ENABLE_MULTIPROCESSOR_COMPILATION=true `
-        -e CL_MPCount=8 `
+        -e CL_MPCount=16 `
         -e WINDOWS_BUILDER=true `
         -e AWS_NETWORKING=true `
         -e SIGN_WINDOWS=true `
