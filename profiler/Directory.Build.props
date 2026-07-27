@@ -208,7 +208,7 @@
                PatchSpdlogFile in tracer/build/_build/UpdateVendors/VendoredDependency.cs).
                Defined here on Windows for consistency. -->
         <PreprocessorDefinitions>%(PreprocessorDefinitions);MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS=1;FMT_UNICODE=0;DD_SPDLOG_NO_MDC</PreprocessorDefinitions>
-        <ExternalWarningLevel>Level0</ExternalWarningLevel>
+        <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
 	      <BuildStlModules>false</BuildStlModules>
 	      <EnableModules>false</EnableModules>
       </ClCompile>
