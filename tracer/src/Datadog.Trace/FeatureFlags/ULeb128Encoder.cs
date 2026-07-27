@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Buffers;
 
 namespace Datadog.Trace.FeatureFlags
 {
@@ -16,19 +15,21 @@ namespace Datadog.Trace.FeatureFlags
     /// ascending → delta-from-previous → unsigned LEB128 (7 bits/byte, MSB = continuation)
     /// → base64. The empty set encodes to the empty string (the tag is then omitted).
     /// Runs on the serializer thread (from <c>SpanMessagePackFormatter</c>).
-    /// Allocation-conscious: the sort copy and varint payload use the stack for small sets
-    /// (modern runtimes) and a pooled buffer otherwise, so only the base64 result allocates.
+    /// Allocation-conscious: on modern runtimes small sets encode entirely on the stack, so only
+    /// the base64 result allocates; older runtimes and large sets fall back to plain heap buffers.
     /// </summary>
     internal static class ULeb128Encoder
     {
         // A 64-bit value needs at most ceil(64/7) = 10 ULEB128 bytes.
         private const int MaxVarintBytes = 10;
 
+#if NET6_0_OR_GREATER
         // Sets at or below this many ids are encoded entirely on the stack (modern runtimes only):
         // 128 longs (1 KiB) for the sort copy + 128*10 bytes (~1.25 KiB) for the payload. Serial-id
         // sets are bounded by SpanEnrichmentState.MaxSerialIds (200), so the common case stays on
         // the stack; larger sets fall back to the array pool.
         private const int StackAllocMaxIds = 128;
+#endif
 
         /// <summary>
         /// Encodes a collection of serial ids (possibly unsorted, with duplicates) into a
@@ -46,9 +47,10 @@ namespace Datadog.Trace.FeatureFlags
 
             var count = serialIds.Length;
 
-#if NETCOREAPP3_1_OR_GREATER
+#if NET6_0_OR_GREATER
             // Fast path: dedupe + sort + encode entirely on the stack, no pooling, no copy to a
-            // heap array. Span.Sort and the ReadOnlySpan base64 overload are both BCL on .NET Core.
+            // heap array. Span.Sort (MemoryExtensions.Sort, .NET 5+) and the ReadOnlySpan base64
+            // overload are both BCL on modern .NET.
             if (count <= StackAllocMaxIds)
             {
                 Span<long> ids = stackalloc long[count];
@@ -61,23 +63,17 @@ namespace Datadog.Trace.FeatureFlags
             }
 #endif
 
-            // Fallback (large sets, or .NET Framework / netstandard2.0 which lack Span.Sort and the
-            // ReadOnlySpan base64 overload): rent both buffers so nothing beyond the result allocates.
-            var idBuffer = ArrayPool<long>.Shared.Rent(count);
-            var payloadBuffer = ArrayPool<byte>.Shared.Rent(count * MaxVarintBytes);
-            try
-            {
-                serialIds.CopyTo(idBuffer);
-                Array.Sort(idBuffer, 0, count);
+            // Fallback (large sets, or .NET Framework / netstandard2.0 / netcoreapp3.1, which lack
+            // Span.Sort): plain heap arrays. ArrayPool is unavailable uniformly across these TFMs
+            // (net461 has no BCL System.Buffers; the vendored copy is not compiled for net6.0), and
+            // this is the cold path — the allocation-free stack fast path above covers the common case.
+            var idBuffer = new long[count];
+            serialIds.CopyTo(idBuffer);
+            Array.Sort(idBuffer, 0, count);
 
-                var written = EncodeSorted(new ReadOnlySpan<long>(idBuffer, 0, count), payloadBuffer);
-                return Convert.ToBase64String(payloadBuffer, 0, written);
-            }
-            finally
-            {
-                ArrayPool<long>.Shared.Return(idBuffer);
-                ArrayPool<byte>.Shared.Return(payloadBuffer);
-            }
+            var payloadBuffer = new byte[count * MaxVarintBytes];
+            var written = EncodeSorted(new ReadOnlySpan<long>(idBuffer, 0, count), payloadBuffer);
+            return Convert.ToBase64String(payloadBuffer, 0, written);
         }
 
         // Encodes an ascending-sorted span, skipping adjacent duplicates (structural dedupe matching
