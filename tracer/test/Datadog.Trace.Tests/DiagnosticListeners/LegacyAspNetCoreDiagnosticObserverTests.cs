@@ -29,8 +29,6 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.DiagnosticListeners;
 
-[Collection(nameof(TracerInstanceTestCollection))]
-[TracerRestorer]
 public class LegacyAspNetCoreDiagnosticObserverTests
 {
     private const string StartEvent = "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start";
@@ -498,12 +496,11 @@ public class LegacyAspNetCoreDiagnosticObserverTests
         var payload = new { HttpContext = context };
 
         observer.OnNext(new KeyValuePair<string, object>(StartEvent, payload));
+        observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
 
         var requestScope = GetRequestState(context).RootScope;
         requestScope.Span.GetTag("http.url").Should().Be(expectedUrl);
         requestScope.Span.ResourceName.Should().Be(expectedResourceName);
-
-        observer.OnNext(new KeyValuePair<string, object>(StopEvent, payload));
     }
 
     [Fact]
