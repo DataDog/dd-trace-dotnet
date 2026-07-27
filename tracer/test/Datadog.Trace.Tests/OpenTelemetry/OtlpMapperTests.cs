@@ -394,6 +394,43 @@ public class OtlpMapperTests
         attributes.Should().Contain(kv => kv.Key == SpanEnrichmentState.TagRuntimeDefaults && (string)kv.Value! == "{\"my-flag\":\"fallback-value\"}");
     }
 
+    [Fact]
+    public async Task EmitAttributesFromSpan_ReservesEnrichmentSlots_WhenSpanTagsExceedLimit()
+    {
+        // ffe_* enrichment must be prioritized over arbitrary customer span tags: a heavily-tagged
+        // local root that hits the OTLP attribute limit must still carry enrichment (the MessagePack
+        // path has no such limit, so dropping it here would diverge). Emitting ffe_* before the span
+        // tags reserves their slots. OTEL-semantics mode skips the service/operation/etc. block, so
+        // with no origin/last_parent set the three ffe_* attributes are emitted first, deterministically.
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
+        await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
+
+        var scope = (Scope)tracer.StartActive("root-op");
+        var span = scope.Span;
+        for (var i = 0; i < 5; i++)
+        {
+            span.SetTag($"customer.tag.{i}", "v");
+        }
+
+        var enrichment = span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!;
+        enrichment.AddSerialId(100);
+        enrichment.AddSubject("user-123", 100);
+        enrichment.AddDefault("my-flag", "fallback-value");
+        span.Finish();
+
+        var spanModel = new TraceChunkModel(new SpanCollection(new[] { span })).GetSpanModel(0);
+
+        var attributes = new List<KeyValue>();
+        // limit 3 = exactly the three ffe_* slots; every customer tag must then spill.
+        var dropped = OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit: 3, openTelemetrySemanticsEnabled: true);
+
+        attributes.Should().Contain(kv => kv.Key == SpanEnrichmentState.TagFlagsEnc);
+        attributes.Should().Contain(kv => kv.Key == SpanEnrichmentState.TagSubjectsEnc);
+        attributes.Should().Contain(kv => kv.Key == SpanEnrichmentState.TagRuntimeDefaults);
+        attributes.Should().NotContain(kv => kv.Key.StartsWith("customer.tag."));
+        dropped.Should().BeGreaterOrEqualTo(5, "the five customer tags all spill once the three enrichment slots are taken");
+    }
+
     private static Span CreateSpan(string? origin = null)
     {
         var traceContext = new TraceContext(new StubDatadogTracer());

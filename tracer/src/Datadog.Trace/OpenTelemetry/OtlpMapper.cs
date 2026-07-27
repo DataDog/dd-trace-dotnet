@@ -188,40 +188,12 @@ internal static class OtlpMapper
             }
         }
 
-        // Notes for later:
-        // - Do we actually need to add _dd.base_service tag even though the OTLP span shares the same service name?
-
-        // add _dd.base_service tag to spans where the service name has been overrideen
-        // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
-        // SCI tags will be sent only once per trace
-        // if (Security.Instance.AppsecEnabled && model.IsLocalRoot && span.Context.TraceContext?.WafExecuted is true)
-        // AAS tags need to be set on any span for the backend to properly handle the billing.
-
-        // Write span tags
-        ITagProcessor[]? tagProcessors = null;
-        if (spanModel.Span.Context.TraceContext?.Tracer is Tracer tracer)
-        {
-            tagProcessors = tracer.TracerManager?.TagProcessors;
-        }
-
-        var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
-        spanModel.Span.Tags.EnumerateTags(ref tagWriter);
-        count = tagWriter.Count;
-        droppedAttributesCount += tagWriter.DroppedCount;
-        state = tagWriter.State;
-
-        // Write span metrics
-        // Note: I could have done this earlier but I wanted to simulate the same behavior as the MessagePack formatter.
-        var metricsWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
-        spanModel.Span.Tags.EnumerateMetrics(ref metricsWriter);
-        count = metricsWriter.Count;
-        droppedAttributesCount += metricsWriter.DroppedCount;
-        state = metricsWriter.State;
-
         // Feature-flag span enrichment (ffe_* attributes), local-root only. Mirrors the block in
         // SpanMessagePackFormatter.WriteTags: these values are produced on the serializer thread from
         // Context.TraceContext.FeatureFlagEnrichment, not stored on span.Tags, so they must be emitted
-        // here too or OTLP-exported traces would omit them entirely.
+        // here too or OTLP-exported traces would omit them entirely. Emitted before the arbitrary
+        // customer span tags (like the other Datadog-internal attributes above) so a heavily-tagged
+        // span that hits the attribute limit does not silently drop enrichment.
         if (spanModel.IsLocalRoot &&
             spanModel.Span.Context.TraceContext?.FeatureFlagEnrichment is { } featureFlagEnrichment &&
             featureFlagEnrichment.HasData())
@@ -267,6 +239,36 @@ internal static class OtlpMapper
                 }
             }
         }
+
+        // Notes for later:
+        // - Do we actually need to add _dd.base_service tag even though the OTLP span shares the same service name?
+
+        // add _dd.base_service tag to spans where the service name has been overrideen
+        // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
+        // SCI tags will be sent only once per trace
+        // if (Security.Instance.AppsecEnabled && model.IsLocalRoot && span.Context.TraceContext?.WafExecuted is true)
+        // AAS tags need to be set on any span for the backend to properly handle the billing.
+
+        // Write span tags
+        ITagProcessor[]? tagProcessors = null;
+        if (spanModel.Span.Context.TraceContext?.Tracer is Tracer tracer)
+        {
+            tagProcessors = tracer.TracerManager?.TagProcessors;
+        }
+
+        var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
+        spanModel.Span.Tags.EnumerateTags(ref tagWriter);
+        count = tagWriter.Count;
+        droppedAttributesCount += tagWriter.DroppedCount;
+        state = tagWriter.State;
+
+        // Write span metrics
+        // Note: I could have done this earlier but I wanted to simulate the same behavior as the MessagePack formatter.
+        var metricsWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
+        spanModel.Span.Tags.EnumerateMetrics(ref metricsWriter);
+        count = metricsWriter.Count;
+        droppedAttributesCount += metricsWriter.DroppedCount;
+        state = metricsWriter.State;
 
         // if (model.IsLocalRoot)
         // add the "apm.enabled" tag with a value of 0
