@@ -40,17 +40,18 @@ namespace Datadog.Trace.FeatureFlags
 
         private readonly HashSet<long> _serialIds = new();
 
-        // SHA256(targetingKey) -> set of serial ids.
+        // Raw targeting key -> set of serial ids. The key is hashed (SHA256) lazily in
+        // BuildSpanTags(), on the serializer thread, so the hash never runs on the evaluation path.
         private readonly Dictionary<string, HashSet<long>> _subjects = new();
 
         // flagKey -> value string (first-wins).
         private readonly Dictionary<string, string> _defaults = new();
 
         /// <summary>
-        /// Gets or sets a fault-injection hook invoked at the start of <see cref="ToSpanTags"/>. Test-only,
-        /// used to verify the write path in <c>Span.Finish()</c> never lets enrichment break span finish.
+        /// Gets or sets a fault-injection hook invoked at the start of <see cref="BuildSpanTags"/>. Test-only,
+        /// used to verify the serializer-thread write path never lets enrichment break span serialization.
         /// </summary>
-        internal Action? OnToSpanTagsForTesting { get; set; }
+        internal Action? OnBuildSpanTagsForTesting { get; set; }
 
         internal static string HashTargetingKey(string targetingKey) => Sha256Helper.ComputeHashAsHexString(targetingKey);
 
@@ -175,11 +176,10 @@ namespace Datadog.Trace.FeatureFlags
 
         internal void AddSubject(string targetingKey, long id)
         {
-            var hashed = HashTargetingKey(targetingKey);
-
+            // Store the raw targeting key; it is hashed lazily in BuildSpanTags() (serializer thread).
             lock (_gate)
             {
-                if (_subjects.TryGetValue(hashed, out var ids))
+                if (_subjects.TryGetValue(targetingKey, out var ids))
                 {
                     if (ids.Count >= MaxExperimentsPerSubject && !ids.Contains(id))
                     {
@@ -197,7 +197,7 @@ namespace Datadog.Trace.FeatureFlags
                     return;
                 }
 
-                _subjects[hashed] = [id];
+                _subjects[targetingKey] = [id];
             }
         }
 
@@ -235,63 +235,77 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        internal List<KeyValuePair<string, string>> ToSpanTags()
+        /// <summary>
+        /// Builds the encoded <c>ffe_*</c> tag values for the root span. Runs on the serializer
+        /// thread (from <c>SpanMessagePackFormatter</c>), so encoding, JSON serialization and
+        /// subject hashing stay off the customer's <c>Span.Finish()</c> path. Never throws; on
+        /// failure it returns <see langword="default"/> so serialization is never broken.
+        /// </summary>
+        internal FeatureFlagSpanTags BuildSpanTags()
         {
-            OnToSpanTagsForTesting?.Invoke();
-
-            var tags = new List<KeyValuePair<string, string>>(3);
-            long[]? serialIds = null;
-            Dictionary<string, long[]>? subjects = null;
-            Dictionary<string, string>? defaults = null;
-
-            lock (_gate)
+            try
             {
-                if (_serialIds.Count > 0)
-                {
-                    serialIds = [.. _serialIds];
-                }
+                OnBuildSpanTagsForTesting?.Invoke();
 
-                if (_subjects.Count > 0)
+                long[]? serialIds = null;
+                Dictionary<string, long[]>? subjects = null;
+                Dictionary<string, string>? defaults = null;
+
+                lock (_gate)
                 {
-                    subjects = new Dictionary<string, long[]>(_subjects.Count);
-                    foreach (var pair in _subjects)
+                    if (_serialIds.Count > 0)
                     {
-                        subjects[pair.Key] = [.. pair.Value];
+                        serialIds = [.. _serialIds];
+                    }
+
+                    if (_subjects.Count > 0)
+                    {
+                        subjects = new Dictionary<string, long[]>(_subjects.Count);
+                        foreach (var pair in _subjects)
+                        {
+                            subjects[pair.Key] = [.. pair.Value];
+                        }
+                    }
+
+                    if (_defaults.Count > 0)
+                    {
+                        defaults = new Dictionary<string, string>(_defaults);
                     }
                 }
 
-                if (_defaults.Count > 0)
+                string? flagsEnc = null;
+                if (serialIds is not null)
                 {
-                    defaults = new Dictionary<string, string>(_defaults);
-                }
-            }
-
-            if (serialIds is not null)
-            {
-                var enc = ULeb128Encoder.EncodeDeltaVarint(serialIds);
-                if (!string.IsNullOrEmpty(enc))
-                {
-                    tags.Add(new KeyValuePair<string, string>(TagFlagsEnc, enc));
-                }
-            }
-
-            if (subjects is not null)
-            {
-                var encoded = new Dictionary<string, string>(subjects.Count);
-                foreach (var pair in subjects)
-                {
-                    encoded[pair.Key] = ULeb128Encoder.EncodeDeltaVarint(pair.Value);
+                    var enc = ULeb128Encoder.EncodeDeltaVarint(serialIds);
+                    if (!StringUtil.IsNullOrEmpty(enc))
+                    {
+                        flagsEnc = enc;
+                    }
                 }
 
-                tags.Add(new KeyValuePair<string, string>(TagSubjectsEnc, JsonHelper.SerializeObject(encoded)));
-            }
+                string? subjectsEnc = null;
+                if (subjects is not null)
+                {
+                    // Hash the raw targeting keys here (serializer thread), not at accumulation time.
+                    var encoded = new Dictionary<string, string>(subjects.Count);
+                    foreach (var pair in subjects)
+                    {
+                        encoded[HashTargetingKey(pair.Key)] = ULeb128Encoder.EncodeDeltaVarint(pair.Value);
+                    }
 
-            if (defaults is not null)
+                    subjectsEnc = JsonHelper.SerializeObject(encoded);
+                }
+
+                string? runtimeDefaults = defaults is not null ? JsonHelper.SerializeObject(defaults) : null;
+
+                return new FeatureFlagSpanTags(flagsEnc, subjectsEnc, runtimeDefaults);
+            }
+            catch (Exception ex)
             {
-                tags.Add(new KeyValuePair<string, string>(TagRuntimeDefaults, JsonHelper.SerializeObject(defaults)));
+                // Enrichment must never break span serialization.
+                Log.Debug(ex, "SpanEnrichmentState.BuildSpanTags failed");
+                return default;
             }
-
-            return tags;
         }
 
         // Object default -> JSON; scalars -> their string form. A bare string is emitted as-is.

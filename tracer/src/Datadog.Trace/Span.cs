@@ -505,24 +505,9 @@ namespace Datadog.Trace
                 {
                     DebuggerManager.Instance.ExceptionReplay?.EndRequest();
 
-                    var enrichmentState = Context.TraceContext?.FeatureFlagEnrichment;
-                    if (enrichmentState is not null && enrichmentState.HasData())
-                    {
-                        try
-                        {
-                            foreach (var tag in enrichmentState.ToSpanTags())
-                            {
-                                if (!StringUtil.IsNullOrEmpty(tag.Value))
-                                {
-                                    Tags.SetTag(tag.Key, tag.Value);
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Debug(ex, "FFE span enrichment failed for root span {SpanId}", SpanId);
-                        }
-                    }
+                    // Feature-flag span enrichment (ffe_* tags) is written on the serializer thread
+                    // in SpanMessagePackFormatter, reading Context.TraceContext.FeatureFlagEnrichment,
+                    // so encoding/serialization stays off this (customer) Finish path.
                 }
 
                 Duration = duration;

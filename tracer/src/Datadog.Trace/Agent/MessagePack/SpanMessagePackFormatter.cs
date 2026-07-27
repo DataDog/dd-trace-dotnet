@@ -96,6 +96,10 @@ namespace Datadog.Trace.Agent.MessagePack
         private static ReadOnlySpan<byte> AppSecEnabledBytes => "_dd.appsec.enabled"u8; // Metrics.AppSecEnabled
         private static ReadOnlySpan<byte> WafRuleFileVersionBytes => "_dd.appsec.event_rules.version"u8; // Tags.AppSecRuleFileVersion
         private static ReadOnlySpan<byte> RuntimeFamilyBytes => "_dd.runtime_family"u8; // Tags.RuntimeFamily
+        // Feature-flag span enrichment tag names (frozen cross-SDK contract; bare names, never _dd.-prefixed)
+        private static ReadOnlySpan<byte> FfeFlagsEncNameBytes => "ffe_flags_enc"u8; // SpanEnrichmentState.TagFlagsEnc
+        private static ReadOnlySpan<byte> FfeSubjectsEncNameBytes => "ffe_subjects_enc"u8; // SpanEnrichmentState.TagSubjectsEnc
+        private static ReadOnlySpan<byte> FfeRuntimeDefaultsNameBytes => "ffe_runtime_defaults"u8; // SpanEnrichmentState.TagRuntimeDefaults
         // Azure App Service tag names
         private static ReadOnlySpan<byte> AasSiteNameTagNameBytes => "aas.site.name"u8; // Tags.AzureAppServicesSiteName
         private static ReadOnlySpan<byte> AasSiteKindTagNameBytes => "aas.site.kind"u8; // Tags.AzureAppServicesSiteKind
@@ -661,6 +665,37 @@ namespace Datadog.Trace.Agent.MessagePack
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, WafRuleFileVersionBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, GetAppSecRulesetVersion(Security.Instance.WafRuleFileVersion));
+            }
+
+            // Feature-flag span enrichment (ffe_* tags), local root only. Building the values
+            // (encode / JSON serialize / hash targeting keys) happens here, on the serializer
+            // thread, so it stays off the customer's Span.Finish() path. BuildSpanTags() never throws.
+            if (model.IsLocalRoot &&
+                span.Context.TraceContext?.FeatureFlagEnrichment is { } featureFlagEnrichment &&
+                featureFlagEnrichment.HasData())
+            {
+                var ffeTags = featureFlagEnrichment.BuildSpanTags();
+
+                if (!StringUtil.IsNullOrEmpty(ffeTags.FlagsEnc))
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FfeFlagsEncNameBytes);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, ffeTags.FlagsEnc);
+                }
+
+                if (!StringUtil.IsNullOrEmpty(ffeTags.SubjectsEnc))
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FfeSubjectsEncNameBytes);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, ffeTags.SubjectsEnc);
+                }
+
+                if (!StringUtil.IsNullOrEmpty(ffeTags.RuntimeDefaults))
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FfeRuntimeDefaultsNameBytes);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, ffeTags.RuntimeDefaults);
+                }
             }
 
             // AAS tags need to be set on any span for the backend to properly handle the billing.

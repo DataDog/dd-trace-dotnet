@@ -5,10 +5,12 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Sampling;
@@ -22,10 +24,11 @@ using Xunit;
 namespace Datadog.Trace.Tests.FeatureFlags;
 
 /// <summary>
-/// Unit tests for the .NET FFE APM span-enrichment accumulator + Span.Finish write path. Covers:
-/// the accumulator caps/dedupe, the accumulate branch logic, and the Span.Finish write path
-/// (gate-on positive control, gate-off negative control, and per-trace state isolation). The codec
-/// itself is covered by <see cref="ULeb128EncoderTests"/>.
+/// Unit tests for the .NET FFE APM span-enrichment accumulator + serializer-thread write path. Covers:
+/// the accumulator caps/dedupe, the accumulate branch logic, and the SpanMessagePackFormatter write
+/// path (gate-on positive control, gate-off negative control, and per-trace state isolation) — the
+/// ffe_* tags are produced at serialization, not at Span.Finish(). The codec itself is covered by
+/// <see cref="ULeb128EncoderTests"/>.
 /// </summary>
 [TracerRestorer]
 public class SpanEnrichmentTests
@@ -268,20 +271,21 @@ public class SpanEnrichmentTests
 
         rootSpan.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!.AccumulateEvaluation(evaluation, "user-123");
 
-        rootScope.Dispose(); // finishes the span, which writes the ffe_* tags
+        rootScope.Dispose(); // finishes the span
+        var serialized = Serialize(rootSpan).Single();
 
-        DecodeDeltaVarint(rootSpan.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(new long[] { 100 });
-        var subjects = JsonConvert.DeserializeObject<Dictionary<string, string>>(rootSpan.GetTag(SpanEnrichmentState.TagSubjectsEnc)!)!;
+        DecodeDeltaVarint(serialized.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(new long[] { 100 });
+        var subjects = JsonConvert.DeserializeObject<Dictionary<string, string>>(serialized.GetTag(SpanEnrichmentState.TagSubjectsEnc)!)!;
         subjects.Should().ContainKey(User123Sha256);
         DecodeDeltaVarint(subjects[User123Sha256]).Should().Equal(new long[] { 100 });
     }
 
     // ---------------------------------------------------------------------
-    // Span.Finish write path: gate-on positive control + gate-off negative control
+    // Serializer write path: gate-on positive control + gate-off negative control
     // ---------------------------------------------------------------------
 
     [Fact]
-    public async Task SpanFinish_GateOn_WritesFfeTagsFromAccumulatedState()
+    public async Task Serialize_GateOn_WritesFfeTagsFromAccumulatedState()
     {
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
         await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
@@ -295,14 +299,15 @@ public class SpanEnrichmentTests
         enrichment.Accumulate(serialId: 108, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag2", value: "off");
 
         span.Finish();
+        var serialized = Serialize(span).Single();
 
-        span.GetTag(SpanEnrichmentState.TagFlagsEnc).Should().NotBeNullOrEmpty();
-        DecodeDeltaVarint(span.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(new long[] { 100, 108 });
-        span.GetTag(SpanEnrichmentState.TagSubjectsEnc).Should().NotBeNullOrEmpty();
+        serialized.GetTag(SpanEnrichmentState.TagFlagsEnc).Should().NotBeNullOrEmpty();
+        DecodeDeltaVarint(serialized.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(new long[] { 100, 108 });
+        serialized.GetTag(SpanEnrichmentState.TagSubjectsEnc).Should().NotBeNullOrEmpty();
     }
 
     [Fact]
-    public async Task SpanFinish_GateOff_NegativeControl_NoTags_NoStateAllocated()
+    public async Task Serialize_GateOff_NegativeControl_NoTags_NoStateAllocated()
     {
         var settings = TracerSettings.Create(new());
         settings.IsSpanEnrichmentEnabled.Should().BeFalse("the gate is off by default");
@@ -316,14 +321,15 @@ public class SpanEnrichmentTests
         span.Context.TraceContext!.FeatureFlagEnrichment.Should().BeNull("no state is allocated when the gate is off");
 
         span.Finish();
+        var serialized = Serialize(span).Single();
 
-        span.GetTag(SpanEnrichmentState.TagFlagsEnc).Should().BeNull();
-        span.GetTag(SpanEnrichmentState.TagSubjectsEnc).Should().BeNull();
-        span.GetTag(SpanEnrichmentState.TagRuntimeDefaults).Should().BeNull();
+        serialized.GetTag(SpanEnrichmentState.TagFlagsEnc).Should().BeNull();
+        serialized.GetTag(SpanEnrichmentState.TagSubjectsEnc).Should().BeNull();
+        serialized.GetTag(SpanEnrichmentState.TagRuntimeDefaults).Should().BeNull();
     }
 
     [Fact]
-    public async Task SpanFinish_GateOn_NoAccumulatedState_WritesNoTags()
+    public async Task Serialize_GateOn_NoAccumulatedState_WritesNoTags()
     {
         // no-data case: gate on but nothing accumulated for this root => no ffe_* tags and no state.
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
@@ -334,17 +340,18 @@ public class SpanEnrichmentTests
         span.Context.TraceContext!.FeatureFlagEnrichment.Should().BeNull("state is created lazily on first eval");
 
         span.Finish();
+        var serialized = Serialize(span).Single();
 
-        span.GetTag(SpanEnrichmentState.TagFlagsEnc).Should().BeNull();
-        span.GetTag(SpanEnrichmentState.TagRuntimeDefaults).Should().BeNull();
+        serialized.GetTag(SpanEnrichmentState.TagFlagsEnc).Should().BeNull();
+        serialized.GetTag(SpanEnrichmentState.TagRuntimeDefaults).Should().BeNull();
     }
 
     [Fact]
-    public async Task SpanFinish_EnrichmentThrows_DoesNotBreakSpanFinish()
+    public async Task Serialize_EnrichmentThrows_DoesNotBreakSerialization()
     {
-        // Span.Finish() is core span lifecycle: a throw in the enrichment write path (encode/SetTag)
-        // must never propagate out and break span closing. Force a deterministic throw from
-        // ToSpanTags and assert Finish still completes.
+        // Span serialization must never be broken by enrichment: a throw while building the ffe_*
+        // values is caught inside BuildSpanTags (returns default), so serialization completes and the
+        // span simply carries no ffe_* tags. Force a deterministic throw and assert both.
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
         await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
 
@@ -353,12 +360,15 @@ public class SpanEnrichmentTests
         span.IsRootSpan.Should().BeTrue();
 
         var enrichment = span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!;
-        enrichment.AddSerialId(100); // give it data so Finish reaches ToSpanTags
-        enrichment.OnToSpanTagsForTesting = static () => throw new System.InvalidOperationException("boom: simulated enrichment failure");
+        enrichment.AddSerialId(100); // give it data so serialization reaches BuildSpanTags
+        enrichment.OnBuildSpanTagsForTesting = static () => throw new InvalidOperationException("boom: simulated enrichment failure");
 
-        var finish = () => span.Finish();
-        finish.Should().NotThrow("enrichment must never break span finish");
-        span.IsFinished.Should().BeTrue("the span must still finish even when enrichment throws");
+        span.Finish();
+
+        MockSpan[] serialized = null!;
+        var serialize = () => serialized = Serialize(span);
+        serialize.Should().NotThrow("enrichment must never break span serialization");
+        serialized.Single().GetTag(SpanEnrichmentState.TagFlagsEnc).Should().BeNull("a build failure yields no ffe_* tags, not a crash");
     }
 
     // ---------------------------------------------------------------------
@@ -433,19 +443,19 @@ public class SpanEnrichmentTests
     }
 
     [Fact]
-    public async Task State_ConcurrentAddRacingToSpanTags_NoCollectionModifiedException()
+    public async Task State_ConcurrentAddRacingBuildSpanTags_NoCollectionModifiedException()
     {
-        // A straggler Accumulate can Add while Span.Finish enumerates ToSpanTags. Pre-fix, the
-        // foreach ran over the live set during that Add => InvalidOperationException: "Collection was
-        // modified". Post-fix, ToSpanTags snapshots under the lock, so a concurrent Add can never tear
-        // the enumeration.
+        // A straggler Accumulate can Add while the serializer thread builds the tags. Pre-fix, the
+        // encode ran over the live set during that Add => InvalidOperationException: "Collection was
+        // modified". Post-fix, BuildSpanTags snapshots under the lock, so a concurrent Add can never
+        // tear the encoding.
         _raceFailed = false;
 
         for (var round = 0; round < 200 && !_raceFailed; round++)
         {
             var live = new SpanEnrichmentState();
 
-            // Seed so the state exists and ToSpanTags has something to enumerate.
+            // Seed so the state exists and BuildSpanTags has something to encode.
             for (var i = 1; i <= 30; i++)
             {
                 live.AddSerialId(i);
@@ -461,32 +471,27 @@ public class SpanEnrichmentTests
 
             var reader = Task.Run(() =>
             {
-                try
+                for (var i = 0; i < 400 && !_raceFailed; i++)
                 {
-                    for (var i = 0; i < 400; i++)
+                    // Build + decode the produced tags fully — pre-fix, a concurrent Add tore the
+                    // encode and BuildSpanTags caught the "Collection was modified" internally,
+                    // returning empty tags. Since ≥30 ids are always seeded, an empty FlagsEnc here
+                    // is that swallowed race (the fail-before signal); post-fix it never happens.
+                    var built = live.BuildSpanTags();
+                    if (string.IsNullOrEmpty(built.FlagsEnc))
                     {
-                        // Enumerate the produced tags fully (decode) — pre-fix this tears mid-enumeration.
-                        foreach (var tag in live.ToSpanTags())
-                        {
-                            if (tag.Key == SpanEnrichmentState.TagFlagsEnc)
-                            {
-                                DecodeDeltaVarint(tag.Value);
-                            }
-                        }
+                        _raceFailed = true;
+                        return;
                     }
-                }
-                catch (System.InvalidOperationException)
-                {
-                    // "Collection was modified; enumeration operation may not execute" — the
-                    // concurrency failure. Record it so the assertion reports cleanly (fail-before signal).
-                    _raceFailed = true;
+
+                    DecodeDeltaVarint(built.FlagsEnc!);
                 }
             });
 
             await Task.WhenAll(adder, reader);
         }
 
-        _raceFailed.Should().BeFalse("ToSpanTags must snapshot under the lock so a concurrent Add never throws");
+        _raceFailed.Should().BeFalse("BuildSpanTags must snapshot under the lock so a concurrent Add never tears the encode");
     }
 
     // ---------------------------------------------------------------------
@@ -545,22 +550,26 @@ public class SpanEnrichmentTests
         spanA.Finish();
         spanB.Finish();
 
-        DecodeDeltaVarint(spanA.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(idsA);
-        DecodeDeltaVarint(spanB.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(idsB);
+        var serializedA = Serialize(spanA).Single();
+        var serializedB = Serialize(spanB).Single();
+
+        DecodeDeltaVarint(serializedA.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(idsA);
+        DecodeDeltaVarint(serializedB.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(idsB);
     }
 
     [Fact]
-    public async Task SpanFinish_TagsLandOnRootOnly_NotChildSpans()
+    public async Task Serialize_TagsLandOnRootOnly_NotChildSpans()
     {
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
         await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
 
-        using var rootScope = (Scope)tracer.StartActive("root-op");
+        var rootScope = (Scope)tracer.StartActive("root-op");
         var root = rootScope.Span;
+        Span child;
 
         using (var childScope = (Scope)tracer.StartActive("child-op"))
         {
-            var child = childScope.Span;
+            child = childScope.Span;
             child.IsRootSpan.Should().BeFalse();
 
             // The eval happens on the child, but enrichment is keyed to the shared trace context.
@@ -568,19 +577,58 @@ public class SpanEnrichmentTests
                 .Accumulate(serialId: 100, doLog: false, targetingKey: null, hasVariant: true, flagKey: "flag", value: "on");
 
             child.Finish();
-            child.GetTag(SpanEnrichmentState.TagFlagsEnc).Should().BeNull("a non-root span must never carry ffe tags");
         }
 
         root.Finish();
-        DecodeDeltaVarint(root.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(new long[] { 100 });
+
+        // Serialize root + child together in one chunk so the formatter's local-root detection is
+        // exercised: only the local root (root) may carry ffe_* tags.
+        var serialized = Serialize(root, child);
+        var serializedRoot = serialized.Single(s => s.Name == "root-op");
+        var serializedChild = serialized.Single(s => s.Name == "child-op");
+
+        serializedChild.GetTag(SpanEnrichmentState.TagFlagsEnc).Should().BeNull("a non-root span must never carry ffe tags");
+        DecodeDeltaVarint(serializedRoot.GetTag(SpanEnrichmentState.TagFlagsEnc)!).Should().Equal(new long[] { 100 });
     }
 
     // ---------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------
 
+    // Projects BuildSpanTags() (the serializer-thread build path) into a name->value dictionary,
+    // mirroring what SpanMessagePackFormatter writes to the "meta" map for the root span.
     private static Dictionary<string, string> TagDict(SpanEnrichmentState state)
-        => state.ToSpanTags().ToDictionary(p => p.Key, p => p.Value);
+    {
+        var built = state.BuildSpanTags();
+        var dict = new Dictionary<string, string>();
+        if (!string.IsNullOrEmpty(built.FlagsEnc))
+        {
+            dict[SpanEnrichmentState.TagFlagsEnc] = built.FlagsEnc!;
+        }
+
+        if (!string.IsNullOrEmpty(built.SubjectsEnc))
+        {
+            dict[SpanEnrichmentState.TagSubjectsEnc] = built.SubjectsEnc!;
+        }
+
+        if (!string.IsNullOrEmpty(built.RuntimeDefaults))
+        {
+            dict[SpanEnrichmentState.TagRuntimeDefaults] = built.RuntimeDefaults!;
+        }
+
+        return dict;
+    }
+
+    // Serializes the given spans through SpanMessagePackFormatter (the real write path) and returns
+    // the deserialized spans, so tests can assert on the ffe_* tags exactly as they land on the wire.
+    private static MockSpan[] Serialize(params Span[] spans)
+    {
+        var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
+        var traceChunk = new TraceChunkModel(new SpanCollection(spans));
+        byte[] bytes = [];
+        var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
+        return global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
+    }
 
     // Decode side mirrors the cross-SDK codec (system-tests test_ffe/utils.py) — the round-trip oracle.
     private static List<long> DecodeDeltaVarint(string base64)
