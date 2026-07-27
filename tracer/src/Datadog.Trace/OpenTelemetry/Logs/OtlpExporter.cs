@@ -32,9 +32,9 @@ internal sealed class OtlpExporter : IOtlpExporter
     // Initial size of the buffer rented per export; grows on demand for larger batches.
     private const int InitialBufferSize = 64 * 1024;
 
-    // Upper bound for a serialized batch. The buffer grows up to this cap; a batch that still
-    // doesn't fit is dropped rather than allocating without bound. Matches the 3MB payload cap
-    // used by our own direct log submission (DirectSubmissionLogSink.MaxTotalSizeBytes).
+    // Upper bound for a serialized batch. ArrayPool may rent a larger buffer, so the serialized
+    // length is checked separately before sending. Matches the 3MB payload cap used by our own
+    // direct log submission (DirectSubmissionLogSink.MaxTotalSizeBytes).
     private const int MaxBufferSize = 3 * 1024 * 1024;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtlpExporter));
@@ -215,6 +215,15 @@ internal sealed class OtlpExporter : IOtlpExporter
                 var newBuffer = ArrayPool<byte>.Shared.Rent(Math.Min(buffer.Length * 2, MaxBufferSize));
                 ArrayPool<byte>.Shared.Return(buffer);
                 buffer = newBuffer;
+            }
+
+            // ArrayPool only guarantees that the rented buffer is at least the requested size.
+            // For example, renting 3MB may return a 4MB buffer, so enforce the logical payload
+            // limit using the serialized length rather than the physical buffer length.
+            if (bytesWritten > MaxBufferSize)
+            {
+                Log.Warning<int>("Dropping OTLP log batch of {Count} logs: serialized payload exceeds the maximum size.", logs.Count);
+                return true;
             }
 
             return _protocol switch
