@@ -73,52 +73,71 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             }
         }
 
+        // With OTel semantics enabled the error status codes default to 500-599 for server
+        // spans and 400-599 for client spans; otherwise client spans default to 400-499.
+        // Under OTel semantics the error is described by error.type rather than error.msg.
         [Theory]
-        [InlineData(true, 500, "500")]
-        [InlineData(true, 200, null)]
-        [InlineData(false, 500, null)]
-        [InlineData(false, 200, null)]
-        public void SetHttpStatusCode_SetsErrorTypeWhenOtelSemanticsEnabledForErrorStatusCode(
+        // Server spans: the 500-599 default is the same either way
+        [InlineData(true, true, 500, true, "500", null)]
+        [InlineData(false, true, 500, true, null, "The HTTP response has status code 500.")]
+        [InlineData(true, true, 404, false, null, null)]
+        [InlineData(false, true, 404, false, null, null)]
+        // Client spans: 5xx is only an error under OTel semantics
+        [InlineData(true, false, 500, true, "500", null)]
+        [InlineData(false, false, 500, false, null, null)]
+        [InlineData(true, false, 404, true, "404", null)]
+        [InlineData(false, false, 404, true, null, "The HTTP response has status code 404.")]
+        // Success status codes are never errors
+        [InlineData(true, true, 200, false, null, null)]
+        [InlineData(false, true, 200, false, null, null)]
+        public void SetHttpStatusCode_SetsErrorTagsForErrorStatusCodes(
             bool otelSemanticsEnabled,
+            bool isServer,
             int statusCode,
-            string expectedErrorType)
+            bool expectedError,
+            string expectedErrorType,
+            string expectedErrorMsg)
         {
             var span = CreateSpan(openTelemetrySemanticsEnabled: otelSemanticsEnabled);
-            var settings = CreateMutableSettings();
+            var settings = CreateMutableSettings(otelSemanticsEnabled);
 
-            span.SetHttpStatusCode(statusCode, isServer: true, settings);
+            span.SetHttpStatusCode(statusCode, isServer, settings);
 
+            span.Error.Should().Be(expectedError);
             span.GetTag(Tags.ErrorType).Should().Be(expectedErrorType);
+            span.GetTag(Tags.ErrorMsg).Should().Be(expectedErrorMsg);
         }
 
-        [Fact]
-        public void SetHttpStatusCode_ForServerSpan_DoesNotOverwriteExistingErrorType()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void SetHttpStatusCode_DoesNotOverwriteExistingErrorType(bool isServer)
         {
             const string existingErrorType = "System.InvalidOperationException";
             var span = CreateSpan(openTelemetrySemanticsEnabled: true);
-            var settings = CreateMutableSettings();
+            var settings = CreateMutableSettings(otelSemanticsEnabled: true);
             span.SetTag(Tags.ErrorType, existingErrorType);
 
-            span.SetHttpStatusCode(500, isServer: true, settings);
+            span.SetHttpStatusCode(500, isServer, settings);
 
+            // Guards against the assertion below passing only because the status code was
+            // never treated as an error in the first place.
+            span.Error.Should().BeTrue();
             span.GetTag(Tags.ErrorType).Should().Be(existingErrorType);
         }
 
-        [Fact]
-        public void SetHttpStatusCode_ForClientSpan_DoesNotOverwriteExistingErrorType()
+        private static MutableSettings CreateMutableSettings(bool otelSemanticsEnabled = false)
         {
-            const string existingErrorType = "System.InvalidOperationException";
-            var span = CreateSpan(openTelemetrySemanticsEnabled: true);
-            var settings = CreateMutableSettings();
-            span.SetTag(Tags.ErrorType, existingErrorType);
+            // Keep the settings in lockstep with the span's own flag: Tracer always passes
+            // TracerSettings.OtelSemanticsEnabled into the Span constructor, so the two can
+            // never disagree in production.
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false" },
+            });
 
-            span.SetHttpStatusCode(500, isServer: false, settings);
-
-            span.GetTag(Tags.ErrorType).Should().Be(existingErrorType);
+            return new TracerSettings(source).Manager.InitialMutableSettings;
         }
-
-        private static MutableSettings CreateMutableSettings()
-            => new TracerSettings().Manager.InitialMutableSettings;
 
         private static Span CreateSpan(bool openTelemetrySemanticsEnabled = false)
             => new(

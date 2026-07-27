@@ -600,13 +600,11 @@ namespace Datadog.Trace.Tests.Configuration
                 (httpServerErrorStatusCodes, newServerErrorKeyValue),
                 (deprecatedHttpServerErrorStatusCodes, deprecatedServerErrorKeyValue));
 
-            var errorLog = new OverrideErrorLog();
-            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
             var tracerSettings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, tracerSettings);
             var result = mutable.HttpServerErrorStatusCodes;
 
-            ValidateErrorStatusCodes(result, newServerErrorKeyValue, deprecatedServerErrorKeyValue, expectedServerErrorCodes);
+            ValidateErrorStatusCodes(result, expectedServerErrorCodes);
         }
 
         [Theory]
@@ -629,13 +627,11 @@ namespace Datadog.Trace.Tests.Configuration
                 (deprecatedHttpClientErrorStatusCodes, deprecatedClientErrorKeyValue),
                 (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled));
 
-            var errorLog = new OverrideErrorLog();
-            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
             var tracerSettings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, tracerSettings);
             var result = mutable.HttpClientErrorStatusCodes;
 
-            ValidateErrorStatusCodes(result, newClientErrorKeyValue, deprecatedClientErrorKeyValue, expectedClientErrorCodes);
+            ValidateErrorStatusCodes(result, expectedClientErrorCodes);
         }
 
         [Fact]
@@ -770,19 +766,26 @@ namespace Datadog.Trace.Tests.Configuration
                 new OverrideErrorLog(),
                 tracerSettings);
 
-        private static void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)
+        /// <summary>
+        /// Asserts that <paramref name="result"/> marks exactly the status codes in
+        /// <paramref name="expectedErrorRange"/> as errors, and no others. Asserting the whole
+        /// array matters here: only checking the expected codes would still pass if a wider
+        /// default (such as the OTel client default of 400-599) leaked in.
+        /// </summary>
+        /// <param name="result">The parsed error status code array under test.</param>
+        /// <param name="expectedErrorRange">A single status code ("500") or an inclusive range ("400-499").</param>
+        private static void ValidateErrorStatusCodes(bool[] result, string expectedErrorRange)
         {
-            if (newErrorKeyValue is not null || deprecatedErrorKeyValue is not null)
+            var statusCodeLimitsRange = expectedErrorRange.Split('-');
+            var lowerBound = int.Parse(statusCodeLimitsRange[0]);
+            var upperBound = statusCodeLimitsRange.Length > 1 ? int.Parse(statusCodeLimitsRange[1]) : lowerBound;
+
+            for (var statusCode = 0; statusCode < result.Length; statusCode++)
             {
-                Assert.True(result[int.Parse(expectedErrorRange)]);
-            }
-            else
-            {
-                var statusCodeLimitsRange = expectedErrorRange.Split('-');
-                for (var i = int.Parse(statusCodeLimitsRange[0]); i <= int.Parse(statusCodeLimitsRange[1]); i++)
-                {
-                    Assert.True(result[i]);
-                }
+                var isExpectedToBeAnError = statusCode >= lowerBound && statusCode <= upperBound;
+                result[statusCode]
+                   .Should()
+                   .Be(isExpectedToBeAnError, "status code {0} should{1} be treated as an error for the range '{2}'", statusCode, isExpectedToBeAnError ? string.Empty : " not", expectedErrorRange);
             }
         }
     }
