@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 
 namespace Datadog.Trace.FeatureFlags
 {
@@ -15,13 +14,17 @@ namespace Datadog.Trace.FeatureFlags
     /// Ported verbatim from the frozen Node reference (dd-trace-js#8343): dedupe → sort
     /// ascending → delta-from-previous → unsigned LEB128 (7 bits/byte, MSB = continuation)
     /// → base64. The empty set encodes to the empty string (the tag is then omitted).
-    /// Allocation-conscious: no LINQ, varint bytes are written straight into the payload buffer.
-    /// Runs on the root-span-finish hot path.
     /// </summary>
     internal static class ULeb128Encoder
     {
         // A 64-bit value needs at most ceil(64/7) = 10 ULEB128 bytes.
         private const int MaxVarintBytes = 10;
+
+#if NET6_0_OR_GREATER
+        // Each id costs 8 bytes (sort copy) + 10 bytes (max varint), so 28 ids caps stack use at
+        // ~512 bytes; larger sets use the heap fallback.
+        private const int StackAllocMaxIds = 28;
+#endif
 
         /// <summary>
         /// Encodes a collection of serial ids (possibly unsorted, with duplicates) into a
@@ -30,49 +33,70 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         /// <param name="serialIds">The serial ids to encode.</param>
         /// <returns>The base64-encoded string, or <see cref="string.Empty"/> when there are no ids.</returns>
-        public static string EncodeDeltaVarint(IReadOnlyCollection<long> serialIds)
+        public static string EncodeDeltaVarint(ReadOnlySpan<long> serialIds)
         {
-            if (serialIds is null || serialIds.Count == 0)
+            if (serialIds.Length == 0)
             {
                 return string.Empty;
             }
 
-            // Dedupe + sort ascending (structural, matching the Node Set semantics): copy into an
-            // array and sort in place, then skip adjacent duplicates while encoding. This avoids
-            // allocating a SortedSet just to order the ids.
-            var ids = new long[serialIds.Count];
-            var index = 0;
-            foreach (var id in serialIds)
+            var count = serialIds.Length;
+
+#if NET6_0_OR_GREATER
+            if (count <= StackAllocMaxIds)
             {
-                ids[index++] = id;
+                Span<long> ids = stackalloc long[count];
+                serialIds.CopyTo(ids);
+                ids.Sort();
+
+                Span<byte> payload = stackalloc byte[count * MaxVarintBytes];
+                var writtenOnStack = EncodeSorted(ids, payload);
+                return Convert.ToBase64String(payload.Slice(0, writtenOnStack));
             }
+#endif
 
-            Array.Sort(ids);
+            var idBuffer = ArrayPool<long>.Shared.Rent(count);
+            var payloadBuffer = ArrayPool<byte>.Shared.Rent(count * MaxVarintBytes);
+            try
+            {
+                serialIds.CopyTo(idBuffer);
+                Array.Sort(idBuffer, 0, count);
 
-            // Worst case is MaxVarintBytes per id; this single buffer holds the whole payload and
-            // is written into directly (no per-id scratch buffer).
-            var buffer = new byte[ids.Length * MaxVarintBytes];
+                var written = EncodeSorted(new ReadOnlySpan<long>(idBuffer, 0, count), payloadBuffer);
+                return Convert.ToBase64String(payloadBuffer, 0, written);
+            }
+            finally
+            {
+                ArrayPool<long>.Shared.Return(idBuffer);
+                ArrayPool<byte>.Shared.Return(payloadBuffer);
+            }
+        }
+
+        // Encodes an ascending-sorted span, skipping adjacent duplicates (structural dedupe matching
+        // the Node Set semantics), as delta-from-previous ULEB128 varints. Returns the byte count.
+        private static int EncodeSorted(ReadOnlySpan<long> sortedIds, Span<byte> destination)
+        {
             var written = 0;
             long prev = 0;
 
-            for (var i = 0; i < ids.Length; i++)
+            for (var i = 0; i < sortedIds.Length; i++)
             {
-                if (i > 0 && ids[i] == ids[i - 1])
+                if (i > 0 && sortedIds[i] == sortedIds[i - 1])
                 {
                     continue; // dedupe: adjacent equal ids collapse to nothing
                 }
 
-                var delta = ids[i] - prev;
-                prev = ids[i];
-                written += EncodeVarint((ulong)delta, buffer, written);
+                var delta = sortedIds[i] - prev;
+                prev = sortedIds[i];
+                written += EncodeVarint((ulong)delta, destination, written);
             }
 
-            return Convert.ToBase64String(buffer, 0, written);
+            return written;
         }
 
         // ULEB128: emit 7 low bits per byte, set the MSB while more bits remain. Writes into
         // destination starting at offset and returns the number of bytes written.
-        private static int EncodeVarint(ulong value, byte[] destination, int offset)
+        private static int EncodeVarint(ulong value, Span<byte> destination, int offset)
         {
             var start = offset;
             while (value > 0x7F)
