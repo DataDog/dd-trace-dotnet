@@ -408,7 +408,11 @@ namespace Datadog.Trace.TestHelpers
             if (!isAspNetCore)
             {
                 aspNetCoreProcessToProfile = null;
-                return configTemplate;
+
+                return configTemplate
+                      .Replace("[PROCESS_PATH]", "dotnet")
+                      .Replace("[ARGUMENTS_ATTRIBUTE]", string.Empty)
+                      .Replace("[HOSTING_MODEL]", "inprocess");
             }
 
             string processPath;
@@ -424,7 +428,9 @@ namespace Datadog.Trace.TestHelpers
             else
             {
                 processPath = dotnetExecutable;
-                aspNetCoreProcessToProfile = "dotnet.exe";
+
+                // In-process hosting runs inside IIS Express, so profile that (null => caller falls back to iisExpress).
+                aspNetCoreProcessToProfile = appType == IisAppType.AspNetCoreInProcess ? null : "dotnet.exe";
                 argumentsAttribute = $"""
                                        arguments=".\{sampleApplicationFileName}"
                                       """;
