@@ -299,7 +299,14 @@ partial class Build
                         o.SetPackagesDirectory(NugetPackageDirectory))
                     .SetProcessCustomLogger((type, text) =>
                     {
-                        if (!text.StartsWith("Installed ", StringComparison.Ordinal))
+                        var trimmedText = text.TrimStart();
+                        if (!trimmedText.StartsWith("Installed ", StringComparison.Ordinal) &&
+                            !trimmedText.StartsWith("Restoring NuGet package ", StringComparison.Ordinal) &&
+                            !trimmedText.StartsWith("Adding package '", StringComparison.Ordinal) &&
+                            !trimmedText.StartsWith("Added package '", StringComparison.Ordinal) &&
+                            !trimmedText.StartsWith("GET ", StringComparison.Ordinal) &&
+                            !trimmedText.StartsWith("OK ", StringComparison.Ordinal) &&
+                            !trimmedText.StartsWith("NotFound ", StringComparison.Ordinal))
                         {
                             NuGetTasks.NuGetLogger(type, text);
                         }
