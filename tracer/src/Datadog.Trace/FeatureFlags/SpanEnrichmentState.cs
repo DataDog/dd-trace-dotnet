@@ -41,9 +41,13 @@ namespace Datadog.Trace.FeatureFlags
 
         private readonly HashSet<long> _serialIds = new();
 
-        // SHA256-hex(targeting key) -> set of serial ids. The raw targeting key (often a customer
-        // identifier, and unbounded in length) is hashed at accumulation time and never retained on
-        // the trace, so we don't pin user-controlled data for the trace/writer-queue lifetime.
+        // Raw targeting key -> set of serial ids. The key (often a customer identifier) is stored
+        // as-is and hashed lazily in BuildSpanTags() on the serializer thread; this is a deliberate
+        // choice, not an oversight — it keeps SHA-256 off the flag-evaluation path and hashes once
+        // per unique subject instead of once per accumulation. Retention is bounded (at most
+        // MaxSubjects keys) and short-lived (only until the root span is serialized), and the key
+        // already lives in the caller's own memory. Only the digest is ever emitted; the raw key
+        // never leaves the process.
         private readonly Dictionary<string, HashSet<long>> _subjects = new();
 
         // flagKey -> value string (first-wins).
@@ -179,13 +183,11 @@ namespace Datadog.Trace.FeatureFlags
 
         internal void AddSubject(string targetingKey, long id)
         {
-            // Hash the raw targeting key immediately so only the fixed-size digest is retained on the
-            // trace (never the raw, potentially user-identifying value). Hashing here (evaluation path)
-            // rather than in BuildSpanTags() keeps customer-controlled data off the trace/writer queue.
-            var hashed = HashTargetingKey(targetingKey);
+            // Store the raw targeting key; it is hashed lazily in BuildSpanTags() (see the _subjects
+            // field comment) so SHA-256 stays off the flag-evaluation path.
             lock (_gate)
             {
-                if (_subjects.TryGetValue(hashed, out var ids))
+                if (_subjects.TryGetValue(targetingKey, out var ids))
                 {
                     if (ids.Count >= MaxExperimentsPerSubject && !ids.Contains(id))
                     {
@@ -203,7 +205,7 @@ namespace Datadog.Trace.FeatureFlags
                     return;
                 }
 
-                _subjects[hashed] = [id];
+                _subjects[targetingKey] = [id];
             }
         }
 
@@ -290,11 +292,12 @@ namespace Datadog.Trace.FeatureFlags
                 string? subjectsEnc = null;
                 if (subjects is not null)
                 {
-                    // Keys are already SHA256-hex digests (hashed at accumulation time in AddSubject).
+                    // Hash the raw targeting key here (serializer thread), not at accumulation time,
+                    // so SHA-256 stays off the flag-evaluation path. Only the digest is emitted.
                     var encoded = new Dictionary<string, string>(subjects.Count);
                     foreach (var pair in subjects)
                     {
-                        encoded[pair.Key] = ULeb128Encoder.EncodeDeltaVarint(pair.Value);
+                        encoded[HashTargetingKey(pair.Key)] = ULeb128Encoder.EncodeDeltaVarint(pair.Value);
                     }
 
                     subjectsEnc = JsonHelper.SerializeObject(encoded);
