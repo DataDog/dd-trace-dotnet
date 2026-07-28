@@ -91,80 +91,88 @@ namespace MyTests.TestListNameSpace
         [Fact]
         public void CanGenerateTagsListWithNullableIntTag()
         {
-            const string input = @"using Datadog.Trace.SourceGenerators;
-namespace MyTests.TestListNameSpace
-{
-    public class TestList
-    {
-        [Tag(""TestPort"")]
-    	public int? Id { get; set; }
-    }
-}";
-            const string expected = Constants.FileHeader + @"using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
-using System;
-
-namespace MyTests.TestListNameSpace
-{
-    partial class TestList
-    {
-        // IdBytes = MessagePack.Serialize(""TestPort"");
-        private static ReadOnlySpan<byte> IdBytes => [168, 84, 101, 115, 116, 80, 111, 114, 116];
-
-        public override string? GetTag(string key)
-        {
-            return key switch
-            {
-                ""TestPort"" => Id is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(Id.Value),
-                _ => base.GetTag(key),
-            };
-        }
-
-        public override void SetTag(string key, string? value)
-        {
-            switch(key)
-            {
-                case ""TestPort"": 
-                    if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedId))
+            // language=csharp
+            const string input =
+                """
+                using Datadog.Trace.SourceGenerators;
+                namespace MyTests.TestListNameSpace
+                {
+                    public class TestList
                     {
-                        Id = parsedId;
+                        [Tag("TestPort")]
+                        public int? Id { get; set; }
                     }
-                    else
+                }
+                """;
+            // language=csharp
+            const string expected = Constants.FileHeader +
+                """
+                using Datadog.Trace.Processors;
+                using Datadog.Trace.Tagging;
+                using System;
+
+                namespace MyTests.TestListNameSpace
+                {
+                    partial class TestList
                     {
-                        Id = null;
+                        // IdBytes = MessagePack.Serialize("TestPort");
+                        private static ReadOnlySpan<byte> IdBytes => [168, 84, 101, 115, 116, 80, 111, 114, 116];
+
+                        public override string? GetTag(string key)
+                        {
+                            return key switch
+                            {
+                                "TestPort" => Id is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(Id.Value),
+                                _ => base.GetTag(key),
+                            };
+                        }
+
+                        public override void SetTag(string key, string? value)
+                        {
+                            switch(key)
+                            {
+                                case "TestPort": 
+                                    if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedId))
+                                    {
+                                        Id = parsedId;
+                                    }
+                                    else
+                                    {
+                                        Id = null;
+                                    }
+
+                                    break;
+                                default: 
+                                    base.SetTag(key, value);
+                                    break;
+                            }
+                        }
+
+                        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+                        {
+                            if (Id is not null)
+                            {
+                                processor.Process(new TagItem<int>("TestPort", Id.Value, IdBytes));
+                            }
+
+                            base.EnumerateTags(ref processor);
+                        }
+
+                        protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
+                        {
+                            if (Id is not null)
+                            {
+                                sb.Append("TestPort (tag):")
+                                  .Append(Id.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                                  .Append(',');
+                            }
+
+                            base.WriteAdditionalTags(sb);
+                        }
                     }
+                }
 
-                    break;
-                default: 
-                    base.SetTag(key, value);
-                    break;
-            }
-        }
-
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
-        {
-            if (Id is not null)
-            {
-                processor.Process(new TagItem<int>(""TestPort"", Id.Value, IdBytes));
-            }
-
-            base.EnumerateTags(ref processor);
-        }
-
-        protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
-        {
-            if (Id is not null)
-            {
-                sb.Append(""TestPort (tag):"")
-                  .Append(Id.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
-                  .Append(',');
-            }
-
-            base.WriteAdditionalTags(sb);
-        }
-    }
-}
-";
+                """;
 
             var (diagnostics, output) = TestHelpers.GetGeneratedOutput<TagListGenerator>(input);
             Assert.Equal(expected, output);
