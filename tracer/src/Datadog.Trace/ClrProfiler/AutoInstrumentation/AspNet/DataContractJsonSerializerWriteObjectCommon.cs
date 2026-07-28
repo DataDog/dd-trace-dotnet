@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         internal static bool TryGetCaptureContext<TTarget>(
             TTarget instance,
-            object? graph,
+            [NotNullWhen(true)] object? graph,
             [NotNullWhen(true)] out HttpContext? httpContext,
             [NotNullWhen(true)] out HttpResponse? response,
             [NotNullWhen(true)] out Scope? scope,

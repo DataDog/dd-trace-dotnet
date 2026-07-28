@@ -11,7 +11,9 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+#if NETFRAMEWORK
 using System.Runtime.Serialization;
+#endif
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -25,12 +27,16 @@ namespace Datadog.Trace.AppSec
         private static readonly IReadOnlyDictionary<string, object?> EmptyDictionary = new ReadOnlyDictionary<string, object?>(new Dictionary<string, object?>(0));
 
         private static readonly ConcurrentDictionary<Type, MemberExtractor?[]> TypeToExtractorMap = new();
+
+        // Cached factory delegate for the default (non-DataContract) extractor.
+        private static readonly Func<Type, MemberExtractor?[]> DefaultExtractorFactory = CreateDefaultExtractors;
+#if NETFRAMEWORK
         private static readonly ConcurrentDictionary<Type, MemberExtractor?[]> DataContractTypeToExtractorMap = new();
 
-        // Cached factory delegates so the DataContract path can be identified by reference downstream
+        // Cached factory delegate so the DataContract path can be identified by reference downstream
         // (e.g. to apply DataContractJsonSerializer-specific scalar shapes like DateTimeOffset-as-object).
-        private static readonly Func<Type, MemberExtractor?[]> DefaultExtractorFactory = CreateDefaultExtractors;
         private static readonly Func<Type, MemberExtractor?[]> DataContractExtractorFactory = CreateDataContractAwareExtractors;
+#endif
 
         private static readonly HashSet<Type> WafProcessableTypes =
         [
@@ -50,8 +56,10 @@ namespace Datadog.Trace.AppSec
         internal static object? Extract(object? body)
             => Extract(body, TypeToExtractorMap, DefaultExtractorFactory, useSimpleDictionaryFormat: true);
 
+#if NETFRAMEWORK
         internal static object? ExtractDataContract(object? body, bool useSimpleDictionaryFormat = false)
             => Extract(body, DataContractTypeToExtractorMap, DataContractExtractorFactory, useSimpleDictionaryFormat);
+#endif
 
         private static object? Extract(
             object? body,
@@ -176,6 +184,7 @@ namespace Datadog.Trace.AppSec
             return fieldExtractors;
         }
 
+#if NETFRAMEWORK
         private static MemberExtractor?[] CreateDataContractAwareExtractors(Type bodyType)
         {
             return bodyType.GetCustomAttribute<DataContractAttribute>() is not null
@@ -336,6 +345,7 @@ namespace Datadog.Trace.AppSec
         // except string (which is scalar). Used to decide whether a get-only property is serialized.
         private static bool IsCollectionType(Type type)
             => type != typeof(string) && typeof(IEnumerable).IsAssignableFrom(type);
+#endif
 
         private static Func<object, object?> CreateFieldAccessor(Type bodyType, FieldInfo field)
         {
@@ -366,6 +376,7 @@ namespace Datadog.Trace.AppSec
             return (Func<object, object?>)dynMethod.CreateDelegate(typeof(Func<object, object?>));
         }
 
+#if NETFRAMEWORK
         private static Func<object, object?> CreatePropertyAccessor(Type bodyType, MethodInfo getter, Type propertyType)
         {
             var dynMethod = new DynamicMethod(
@@ -395,6 +406,7 @@ namespace Datadog.Trace.AppSec
             ilGen.Emit(OpCodes.Ret);
             return (Func<object, object?>)dynMethod.CreateDelegate(typeof(Func<object, object?>));
         }
+#endif
 
         private static string? GetPropertyName(string fieldName)
         {
@@ -457,9 +469,13 @@ namespace Datadog.Trace.AppSec
                     : GetGenericDictionaryInterface(itemType);
                 if (dictionaryType is not null)
                 {
+#if NETFRAMEWORK
                     return useSimpleDictionaryFormat
                         ? ExtractDictionary(value, dictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat)
                         : ExtractDictionaryAsKeyValuePairs(value, dictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
+#else
+                    return ExtractDictionary(value, dictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
+#endif
                 }
             }
 
@@ -467,9 +483,13 @@ namespace Datadog.Trace.AppSec
             var iDictionaryType = typeof(IDictionary<string, object>);
             if (iDictionaryType.IsAssignableFrom(itemType))
             {
+#if NETFRAMEWORK
                 return useSimpleDictionaryFormat
                     ? ExtractDictionary(value, iDictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat)
                     : ExtractDictionaryAsKeyValuePairs(value, iDictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
+#else
+                return ExtractDictionary(value, iDictionaryType, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
+#endif
             }
 
             // Old-style non-generic dictionaries (e.g. Hashtable): DataContractJsonSerializer writes them as
@@ -506,6 +526,7 @@ namespace Datadog.Trace.AppSec
                     : (object)Convert.ToInt64(value);
             }
 
+#if NETFRAMEWORK
             // DataContractJsonSerializer writes DateTimeOffset as an object {"DateTime": "...", "OffsetMinutes": N},
             // not a scalar string. Mirror that shape on the DataContract path so the API Security schema matches.
             if (itemType == typeof(DateTimeOffset) && ReferenceEquals(createExtractors, DataContractExtractorFactory))
@@ -517,6 +538,7 @@ namespace Datadog.Trace.AppSec
                     ["OffsetMinutes"] = (long)dto.Offset.TotalMinutes,
                 };
             }
+#endif
 
             // Uri is emitted as a JSON string by DataContractJsonSerializer (Uri.ToString() is the URI text),
             // so treat it as a scalar rather than recursing into its properties (which would yield an object).
@@ -596,6 +618,7 @@ namespace Datadog.Trace.AppSec
             return items;
         }
 
+#if NETFRAMEWORK
         // DataContractJsonSerializer with UseSimpleDictionaryFormat=false serializes Dictionary<K,V>
         // as [{Key:k, Value:v}] arrays rather than {k:v} objects. Mirror that structure.
         private static List<object?> ExtractDictionaryAsKeyValuePairs(
@@ -645,6 +668,7 @@ namespace Datadog.Trace.AppSec
 
             return items;
         }
+#endif
 
         // Non-generic IDictionary (e.g. Hashtable): map form ({k:v}) when useSimpleDictionaryFormat is true,
         // key/value entry arrays ([{Key,Value}]) otherwise — mirroring DataContractJsonSerializer.

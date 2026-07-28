@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 #if NETFRAMEWORK
+using System.Runtime.Serialization;
 using System.Web.Routing;
 #endif
 using Datadog.Trace.AppSec;
@@ -147,6 +147,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             target.Id.Should().Be((int)result[nameof(target.Id)]);
         }
 
+#if NETFRAMEWORK
         [Fact]
         public void TestDataMemberNames()
         {
@@ -180,6 +181,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.Should().ContainKey("value");
             result!["value"].Should().BeOneOf("first", "second");
         }
+#endif
 
         [Fact]
         public void TestAnonymousTypeEmpty()
@@ -462,6 +464,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.Should().NotBeNull();
         }
 
+#if NETFRAMEWORK
         [Fact]
         public void TestEmitDefaultValueFalse_OmitsNullAndDefaultMembers()
         {
@@ -572,6 +575,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             data.Should().NotBeNull();
             data!["a"].Should().Be("1");
         }
+#endif
 
         [Fact]
         public void TestEnumMember_ExtractedAsNumeric_DefaultPath()
@@ -583,6 +587,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             result![nameof(TestEnumPoco.Status)].Should().Be(2L);
         }
 
+#if NETFRAMEWORK
         [Fact]
         public void TestEnumMember_ExtractedAsNumeric_DataContractPath()
         {
@@ -593,6 +598,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.Should().NotBeNull();
             result!["status"].Should().Be(2L);
         }
+#endif
 
         [Fact]
         public void TestByteBackedEnum_ExtractedAsULong_PreservesLargeValues()
@@ -645,6 +651,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             items.Should().Contain(1).And.Contain(2).And.Contain(3);
         }
 
+#if NETFRAMEWORK
         [Fact]
         public void TestDataContractCollectionOfTPoco_ExtractedAsArray()
         {
@@ -894,6 +901,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             map.Should().NotBeNull();
             map!["a"].Should().Be("1");
         }
+#endif
 
         [Fact]
         public void TestSelfReferentialCollectionDoesNotStackOverflow()
@@ -907,6 +915,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             act.Should().NotThrow();
         }
 
+#if NETFRAMEWORK
         [Fact]
         public void TestDateTimeOffsetExtractedAsObject_DataContractPath()
         {
@@ -921,6 +930,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             ts.Should().ContainKey("DateTime");
             ts!["OffsetMinutes"].Should().Be(120L);
         }
+#endif
 
         private static void PopulateNestedTarget(TestNestedPropertiesPoco target, int count)
         {
@@ -1041,6 +1051,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public string StringValue { get; set; }
     }
 
+#if NETFRAMEWORK
     [DataContract]
     public class TestDataContractPoco
     {
@@ -1065,6 +1076,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [DataMember(Name = "value")]
         public string Second { get; set; }
     }
+#endif
 
     public class TestNestedPropertiesPoco
     {
@@ -1103,6 +1115,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
     }
 
+#if NETFRAMEWORK
     [DataContract]
     public class TestEmitDefaultValuePoco
     {
@@ -1155,6 +1168,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [DataMember(Name = "data")]
         public Dictionary<string, string> Data { get; set; }
     }
+#endif
 
     public class TestCollectionPoco
     {
@@ -1171,6 +1185,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public HashSet<int> Items { get; set; }
     }
 
+#if NETFRAMEWORK
     [DataContract]
     public class TestDataContractCollectionPoco
     {
@@ -1323,6 +1338,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [DataMember(Name = "ts")]
         public DateTimeOffset Ts { get; set; }
     }
+#endif
 
     public enum TestStatusEnum
     {
@@ -1339,12 +1355,14 @@ namespace Datadog.Trace.Security.Unit.Tests
         public TestStatusEnum Status { get; set; }
     }
 
+#if NETFRAMEWORK
     [DataContract]
     public class TestDataContractEnumPoco
     {
         [DataMember(Name = "status")]
         public TestStatusEnum Status { get; set; }
     }
+#endif
 
     public enum TestByteEnum : byte
     {

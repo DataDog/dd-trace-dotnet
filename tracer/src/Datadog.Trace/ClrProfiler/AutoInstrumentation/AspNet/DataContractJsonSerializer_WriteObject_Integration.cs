@@ -37,13 +37,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             try
             {
-                if (!DataContractJsonSerializerWriteObjectCommon.TryGetCaptureContext(instance, graph, out var httpContext, out var response, out var scope, out var useSimpleDictionaryFormat)
-                 || !DataContractJsonSerializerWriteObjectCommon.IsResponseOutputStream(stream, response))
+                if (DataContractJsonSerializerWriteObjectCommon.TryGetCaptureContext(instance, graph, out var httpContext, out var response, out var scope, out var useSimpleDictionaryFormat)
+                 && DataContractJsonSerializerWriteObjectCommon.IsResponseOutputStream(stream, response))
                 {
-                    return CallTargetState.GetDefault();
+                    return DataContractJsonSerializerWriteObjectCommon.CreateState(graph, httpContext, scope, useSimpleDictionaryFormat);
                 }
 
-                return DataContractJsonSerializerWriteObjectCommon.CreateState(graph!, httpContext, scope, useSimpleDictionaryFormat);
+                return CallTargetState.GetDefault();
             }
             catch (Exception ex)
             {
