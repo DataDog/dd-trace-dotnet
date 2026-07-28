@@ -375,7 +375,7 @@ public class AspNetCore5IastTestsStackTraces : AspNetCore5IastTests
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing();
         var hashRegex = (new Regex(@"""hash"": -?\d+"), @"""hash"": XXX");
-        var pathRegex = (new Regex(@"""path"": ""AspNetCore.*\."), @"""path"": ""AspNetCore.");
+        var pathRegex = (new Regex(@"""class"": ""AspNetCore.*\."), @"""class"": ""AspNetCore.");
 
         settings.AddRegexScrubber(hashRegex);
         settings.AddRegexScrubber(pathRegex);
@@ -658,8 +658,8 @@ public class AspNetCore5IastTestsRestartedSampleIastEnabled : AspNetCore5IastTes
         (Regex RegexPattern, string Replacement) sessionIdleTimeoutRegex = (new Regex(@"Session idle timeout is configured with: options.IdleTimeout, with a value of \d+ minutes"), "Session idle timeout is configured with: options.IdleTimeout, with a value of XXX minutes");
         (Regex RegexPattern, string Replacement) hashRegex = (new Regex(@"""hash"": -?\d+"), @"""hash"": XXX");
 
-        // Only for net5.0: path and method are different
-        (Regex RegexPattern, string Replacement) pathRegex = (new Regex(@"""path"": ""Samples.Security.AspNetCore5.Program"""), @"""path"": ""Samples.Security.AspNetCore5.Startup+<>c__DisplayClass4_0""");
+        // Only for net5.0: class and method are different
+        (Regex RegexPattern, string Replacement) pathRegex = (new Regex(@"""class"": ""Samples.Security.AspNetCore5.Program"""), @"""class"": ""Samples.Security.AspNetCore5.Startup+<>c__DisplayClass4_0""");
         (Regex RegexPattern, string Replacement) methodRegex = (new Regex(@"""method"": ""Main"""), @"""method"": ""<ConfigureServices>b__0""");
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
@@ -895,7 +895,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddIastScrubbing()
-            .AddRegexScrubber((new Regex("\"path\": \"Samples.Security.AspNetCore5.Controllers.IastController\\+.*"), "\"path\": \"Samples.Security.AspNetCore5.Controllers.IastController+\""))
+            .AddRegexScrubber((new Regex("\"class\": \"Samples.Security.AspNetCore5.Controllers.IastController\\+.*"), "\"class\": \"Samples.Security.AspNetCore5.Controllers.IastController+\""))
             .AddRegexScrubber((new Regex("\"hash\": .*"), "\"hash\": 9515978"))
             .AddRegexScrubber((new Regex("\"method\": \"<Ldap>g__PerformLdapQuery\\|.\""), "\"method\": \"<Ldap>g__PerformLdapQuery|0\""));
         await VerifySpans(spansFiltered, settings, fileNameOverride: filename);
@@ -1208,7 +1208,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
 #pragma warning disable SA1311 // Static readonly fields should begin with upper-case letter
-    protected static readonly (Regex RegexPattern, string Replacement) aspNetCorePathScrubber = (new Regex("\"path\": \"AspNetCore[^\\.]+\\."), "\"path\": \"AspNetCore.");
+    protected static readonly (Regex RegexPattern, string Replacement) aspNetCorePathScrubber = (new Regex("\"class\": \"AspNetCore[^\\.]+\\."), "\"class\": \"AspNetCore.");
     protected static readonly (Regex RegexPattern, string Replacement) hashScrubber = (new Regex("\"hash\": .+,"), "\"hash\": XXX,");
 #pragma warning restore SA1311 // Static readonly fields should begin with upper-case letter
 

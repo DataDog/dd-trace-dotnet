@@ -16,6 +16,9 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct Location
 {
+    // Both Windows ('\') and Unix ('/') separators, because PDBs produced on one OS may be read on another.
+    private static readonly char[] PathSeparators = ['/', '\\'];
+
     internal readonly StackTrace? _stack = null;
 
     public Location(string method)
@@ -42,8 +45,7 @@ internal readonly struct Location
         Method = method?.Name;
         var line = stackFrame?.GetFileLineNumber();
         Line = line > 0 ? line : null;
-        var fileName = stackFrame?.GetFileName();
-        Path = string.IsNullOrEmpty(fileName) ? null : System.IO.Path.GetFileName(fileName);
+        Path = GetFileName(stackFrame?.GetFileName());
 
         SpanId = spanId == 0 ? null : spanId;
 
@@ -76,6 +78,20 @@ internal readonly struct Location
     {
         // We do not calculate the hash including the spanId nor the line
         return IastUtils.GetHashCode(Class, Method);
+    }
+
+    // Extracts the file name from a path, handling both Windows ('\') and Unix ('/') separators.
+    // We can't rely on System.IO.Path.GetFileName here because it only recognizes the current OS
+    // separator, so a Windows path read on Unix (from a Windows-built PDB) would leak the full path.
+    private static string? GetFileName(string? filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+        {
+            return null;
+        }
+
+        var separatorIndex = filePath!.LastIndexOfAny(PathSeparators);
+        return separatorIndex >= 0 ? filePath.Substring(separatorIndex + 1) : filePath;
     }
 
     internal void ReportStack(Span? span)
