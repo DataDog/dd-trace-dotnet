@@ -139,6 +139,7 @@ public class TagListGenerator : IIncrementalGenerator
         List<DiagnosticInfo>? diagnostics = null;
         bool hasMisconfiguredInput = false;
         string? key = null;
+        string? otelKey = null;
 
         foreach (AttributeData attributeData in propertySymbol!.GetAttributes())
         {
@@ -191,6 +192,48 @@ public class TagListGenerator : IIncrementalGenerator
                     hasMisconfiguredInput = true;
                     break;
                 }
+
+                if (isTag)
+                {
+                    foreach (var namedArgument in attributeData.NamedArguments)
+                    {
+                        if (namedArgument.Key != "OTelName")
+                        {
+                            continue;
+                        }
+
+                        if (namedArgument.Value.Kind == TypedConstantKind.Error)
+                        {
+                            hasMisconfiguredInput = true;
+                            break;
+                        }
+
+                        otelKey = (string?)namedArgument.Value.Value;
+                        if (string.IsNullOrEmpty(otelKey))
+                        {
+                            diagnostics ??= new List<DiagnosticInfo>();
+                            diagnostics.Add(InvalidKeyDiagnostic.CreateInfo(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                            hasMisconfiguredInput = true;
+                            break;
+                        }
+
+                        if (otelKey == "_dd.origin")
+                        {
+                            diagnostics ??= new List<DiagnosticInfo>();
+                            diagnostics.Add(InvalidUseOfOriginDiagnostic.CreateInfo(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                            hasMisconfiguredInput = true;
+                            break;
+                        }
+
+                        if (otelKey == "language")
+                        {
+                            diagnostics ??= new List<DiagnosticInfo>();
+                            diagnostics.Add(InvalidUseOfLanguageDiagnostic.CreateInfo(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                            hasMisconfiguredInput = true;
+                            break;
+                        }
+                    }
+                }
             }
         }
 
@@ -242,6 +285,7 @@ public class TagListGenerator : IIncrementalGenerator
             isReadOnly: propertySymbol!.IsReadOnly,
             propertyName: propertySymbol.Name,
             tagValue: key!,
+            otelTagValue: otelKey,
             isTag: isTag,
             propertyType: propertyType);
 
@@ -304,14 +348,16 @@ public class TagListGenerator : IIncrementalGenerator
         public readonly bool IsReadOnly;
         public readonly string PropertyName;
         public readonly string TagValue;
+        public readonly string? OTelTagValue;
         public readonly bool IsTag;
         public readonly PropertyType PropertyType;
 
-        public PropertyTag(string nameSpace, string className, bool isReadOnly, string propertyName, string tagValue, bool isTag, PropertyType propertyType)
+        public PropertyTag(string nameSpace, string className, bool isReadOnly, string propertyName, string tagValue, string? otelTagValue, bool isTag, PropertyType propertyType)
         {
             IsReadOnly = isReadOnly;
             PropertyName = propertyName;
             TagValue = tagValue;
+            OTelTagValue = otelTagValue;
             IsTag = isTag;
             Namespace = nameSpace;
             ClassName = className;

@@ -251,7 +251,7 @@ internal static class OtlpMapper
         }
 
         var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
-        spanModel.Span.Tags.EnumerateTags(ref tagWriter);
+        spanModel.Span.Tags.EnumerateTags(ref tagWriter, spanModel.Span.OpenTelemetrySemanticsEnabled);
         count = tagWriter.Count;
         droppedAttributesCount += tagWriter.DroppedCount;
         state = tagWriter.State;

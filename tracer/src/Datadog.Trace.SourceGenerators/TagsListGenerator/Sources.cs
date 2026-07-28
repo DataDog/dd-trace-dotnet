@@ -32,6 +32,11 @@ internal sealed class TagAttribute : System.Attribute
     /// Gets the name of the datadog tag the property corresponds to
     /// </summary>
     public string TagName { get; }
+
+    /// <summary>
+    /// Gets or sets the OpenTelemetry semantic convention name that aliases <see cref=""TagName""/>.
+    /// </summary>
+    public string? OTelName { get; set; }
 }
 
 /// <summary>
@@ -118,6 +123,27 @@ namespace ");
                       .Append(@"Bytes => [")
                       .Append(tagByteArray)
                       .AppendLine(@"];");
+
+                    if (property.OTelTagValue is not null)
+                    {
+                        var oTelTagByteArray = string.Join(", ", MessagePackHelper.GetValueInRawMessagePackIEnumerable(property.OTelTagValue));
+
+                        sb.Append(
+                               @"
+        // ")
+                          .Append(property.PropertyName)
+                          .Append(@"OTelBytes = MessagePack.Serialize(""")
+                          .Append(property.OTelTagValue)
+                          .Append(@""");");
+
+                        sb.Append(
+                               @"
+        private static ReadOnlySpan<byte> ")
+                          .Append(property.PropertyName)
+                          .Append(@"OTelBytes => [")
+                          .Append(oTelTagByteArray)
+                          .AppendLine(@"];");
+                    }
                 }
 
                 sb.Append(
@@ -148,6 +174,27 @@ namespace ");
                     sb.Append(
                            @",
                 ");
+
+                    if (property.OTelTagValue is not null)
+                    {
+                        sb.Append('"')
+                          .Append(property.OTelTagValue)
+                          .Append(@""" => ")
+                          .Append(property.PropertyName);
+
+                        switch (property.PropertyType)
+                        {
+                            case TagListGenerator.PropertyType.NullableInt:
+                                sb.Append(" is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(")
+                                  .Append(property.PropertyName)
+                                  .Append(".Value)");
+                                break;
+                        }
+
+                        sb.Append(
+                               @",
+                ");
+                    }
                 }
 
                 sb.Append(
@@ -169,11 +216,26 @@ namespace ");
                         continue;
                     }
 
-                    sb.Append(@"case """)
-                      .Append(property.TagValue)
-                      .Append(
-                           @""": 
+                    if (property.OTelTagValue is not null)
+                    {
+                        sb.Append(@"case """)
+                          .Append(property.TagValue)
+                          .Append(@""":")
+                          .Append(@"
+                case """)
+                          .Append(property.OTelTagValue)
+                          .Append(
+                               @""":")
+                          .Append("\n                    ");
+                    }
+                    else
+                    {
+                        sb.Append(@"case """)
+                          .Append(property.TagValue)
+                          .Append(
+                               @""": 
                     ");
+                    }
 
                     if (property.PropertyType is TagListGenerator.PropertyType.NullableInt)
                     {
@@ -223,6 +285,15 @@ namespace ");
                           .Append(
                                @""": 
                 ");
+
+                        if (property.OTelTagValue is not null)
+                        {
+                            sb.Append(@"case """)
+                              .Append(property.OTelTagValue)
+                              .Append(
+                                   @""":")
+                              .Append("\n                ");
+                        }
                     }
                 }
 
@@ -244,7 +315,7 @@ namespace ");
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             ");
                 foreach (var property in tagList.TagProperties)
@@ -256,13 +327,40 @@ namespace ");
                               .Append(property.PropertyName)
                               .Append(@" is not null)
             {
-                processor.Process(new TagItem<int>(""")
+                ");
+
+                            if (property.OTelTagValue is not null)
+                            {
+                                sb.Append(@"if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<int>(""")
+                                  .Append(property.OTelTagValue)
+                                  .Append(@""", ")
+                                  .Append(property.PropertyName)
+                                  .Append(@".Value, ")
+                                  .Append(property.PropertyName)
+                                  .Append(@"OTelBytes));
+                }
+                else
+                {
+                    ");
+                            }
+
+                            sb.Append(@"processor.Process(new TagItem<int>(""")
                               .Append(property.TagValue)
                               .Append(@""", ")
                               .Append(property.PropertyName)
                               .Append(@".Value, ")
                               .Append(property.PropertyName)
-                              .Append(@"Bytes));
+                              .Append(@"Bytes));");
+
+                            if (property.OTelTagValue is not null)
+                            {
+                                sb.Append(@"
+                }");
+                            }
+
+                            sb.Append(@"
             }
 
             ");
@@ -272,13 +370,40 @@ namespace ");
                               .Append(property.PropertyName)
                               .Append(@" is not null)
             {
-                processor.Process(new TagItem<string>(""")
+                ");
+
+                            if (property.OTelTagValue is not null)
+                            {
+                                sb.Append(@"if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<string>(""")
+                                  .Append(property.OTelTagValue)
+                                  .Append(@""", ")
+                                  .Append(property.PropertyName)
+                                  .Append(@", ")
+                                  .Append(property.PropertyName)
+                                  .Append(@"OTelBytes));
+                }
+                else
+                {
+                    ");
+                            }
+
+                            sb.Append(@"processor.Process(new TagItem<string>(""")
                               .Append(property.TagValue)
                               .Append(@""", ")
                               .Append(property.PropertyName)
                               .Append(@", ")
                               .Append(property.PropertyName)
-                              .Append(@"Bytes));
+                              .Append(@"Bytes));");
+
+                            if (property.OTelTagValue is not null)
+                            {
+                                sb.Append(@"
+                }");
+                            }
+
+                            sb.Append(@"
             }
 
             ");
@@ -287,7 +412,7 @@ namespace ");
                 }
 
                 sb.Append(
-                    @"base.EnumerateTags(ref processor);
+                    @"base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

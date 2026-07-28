@@ -159,7 +159,7 @@ internal sealed class TraceFilter
     private static bool MatchesRegexTagFilter(Span span, RegexTagFilter filter)
     {
         var processor = new RegexTagFilterProcessor(filter);
-        span.Tags.EnumerateTags(ref processor);
+        span.Tags.EnumerateTags(ref processor, span.OpenTelemetrySemanticsEnabled);
         return processor.Matched;
     }
 

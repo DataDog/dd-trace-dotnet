@@ -58,14 +58,14 @@ namespace MyTests.TestListNameSpace
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (Id is not null)
             {
                 processor.Process(new TagItem<string>(""TestId"", Id, IdBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -82,6 +82,196 @@ namespace MyTests.TestListNameSpace
     }
 }
 ";
+
+            var (diagnostics, output) = TestHelpers.GetGeneratedOutput<TagListGenerator>(input);
+            Assert.Equal(expected, output);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public void CanGenerateTagsListWithOTelAlias()
+        {
+            const string input = @"using Datadog.Trace.SourceGenerators;
+namespace MyTests.TestListNameSpace
+{
+    public class TestList
+    {
+        [Tag(""dd.k"", OTelName = ""otel.k"")]
+        public string Id { get; set; }
+    }
+}";
+            const string expected = Constants.FileHeader + @"using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
+using System;
+
+namespace MyTests.TestListNameSpace
+{
+    partial class TestList
+    {
+        // IdBytes = MessagePack.Serialize(""dd.k"");
+        private static ReadOnlySpan<byte> IdBytes => [164, 100, 100, 46, 107];
+
+        // IdOTelBytes = MessagePack.Serialize(""otel.k"");
+        private static ReadOnlySpan<byte> IdOTelBytes => [166, 111, 116, 101, 108, 46, 107];
+
+        public override string? GetTag(string key)
+        {
+            return key switch
+            {
+                ""dd.k"" => Id,
+                ""otel.k"" => Id,
+                _ => base.GetTag(key),
+            };
+        }
+
+        public override void SetTag(string key, string? value)
+        {
+            switch(key)
+            {
+                case ""dd.k"":
+                case ""otel.k"":
+                    Id = value;
+                    break;
+                default: 
+                    base.SetTag(key, value);
+                    break;
+            }
+        }
+
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
+        {
+            if (Id is not null)
+            {
+                if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<string>(""otel.k"", Id, IdOTelBytes));
+                }
+                else
+                {
+                    processor.Process(new TagItem<string>(""dd.k"", Id, IdBytes));
+                }
+            }
+
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
+        }
+
+        protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
+        {
+            if (Id is not null)
+            {
+                sb.Append(""dd.k (tag):"")
+                  .Append(Id)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalTags(sb);
+        }
+    }
+}
+";
+
+            var (diagnostics, output) = TestHelpers.GetGeneratedOutput<TagListGenerator>(input);
+            Assert.Equal(expected, output);
+            Assert.Empty(diagnostics);
+        }
+
+        [Fact]
+        public void CanGenerateTagsListWithOTelAliasForNullableIntTag()
+        {
+            // language=csharp
+            const string input =
+                """
+                using Datadog.Trace.SourceGenerators;
+                namespace MyTests.TestListNameSpace
+                {
+                    public class TestList
+                    {
+                        [Tag("dd.status", OTelName = "otel.status")]
+                        public int? StatusCode { get; set; }
+                    }
+                }
+                """;
+            // language=csharp
+            const string expected = Constants.FileHeader +
+                """
+                using Datadog.Trace.Processors;
+                using Datadog.Trace.Tagging;
+                using System;
+
+                namespace MyTests.TestListNameSpace
+                {
+                    partial class TestList
+                    {
+                        // StatusCodeBytes = MessagePack.Serialize("dd.status");
+                        private static ReadOnlySpan<byte> StatusCodeBytes => [169, 100, 100, 46, 115, 116, 97, 116, 117, 115];
+
+                        // StatusCodeOTelBytes = MessagePack.Serialize("otel.status");
+                        private static ReadOnlySpan<byte> StatusCodeOTelBytes => [171, 111, 116, 101, 108, 46, 115, 116, 97, 116, 117, 115];
+
+                        public override string? GetTag(string key)
+                        {
+                            return key switch
+                            {
+                                "dd.status" => StatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(StatusCode.Value),
+                                "otel.status" => StatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(StatusCode.Value),
+                                _ => base.GetTag(key),
+                            };
+                        }
+
+                        public override void SetTag(string key, string? value)
+                        {
+                            switch(key)
+                            {
+                                case "dd.status":
+                                case "otel.status":
+                                    if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedStatusCode))
+                                    {
+                                        StatusCode = parsedStatusCode;
+                                    }
+                                    else
+                                    {
+                                        StatusCode = null;
+                                    }
+
+                                    break;
+                                default: 
+                                    base.SetTag(key, value);
+                                    break;
+                            }
+                        }
+
+                        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
+                        {
+                            if (StatusCode is not null)
+                            {
+                                if (openTelemetrySemanticsEnabled)
+                                {
+                                    processor.Process(new TagItem<int>("otel.status", StatusCode.Value, StatusCodeOTelBytes));
+                                }
+                                else
+                                {
+                                    processor.Process(new TagItem<int>("dd.status", StatusCode.Value, StatusCodeBytes));
+                                }
+                            }
+
+                            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
+                        }
+
+                        protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
+                        {
+                            if (StatusCode is not null)
+                            {
+                                sb.Append("dd.status (tag):")
+                                  .Append(StatusCode.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                                  .Append(',');
+                            }
+
+                            base.WriteAdditionalTags(sb);
+                        }
+                    }
+                }
+
+                """;
 
             var (diagnostics, output) = TestHelpers.GetGeneratedOutput<TagListGenerator>(input);
             Assert.Equal(expected, output);
@@ -148,14 +338,14 @@ namespace MyTests.TestListNameSpace
                             }
                         }
 
-                        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+                        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
                         {
                             if (Id is not null)
                             {
                                 processor.Process(new TagItem<int>("TestPort", Id.Value, IdBytes));
                             }
 
-                            base.EnumerateTags(ref processor);
+                            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
                         }
 
                         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -242,7 +432,7 @@ namespace MyTests.TestListNameSpace
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (Name is not null)
             {
@@ -254,7 +444,7 @@ namespace MyTests.TestListNameSpace
                 processor.Process(new TagItem<int>(""PortTag"", Port.Value, PortBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -414,7 +604,7 @@ namespace MyTests.TestListNameSpace
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (Id is not null)
             {
@@ -426,7 +616,7 @@ namespace MyTests.TestListNameSpace
                 processor.Process(new TagItem<string>(""NameTag"", Name, NameBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -614,7 +804,7 @@ namespace MyTests.TestListNameSpace
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (Id is not null)
             {
@@ -631,7 +821,7 @@ namespace MyTests.TestListNameSpace
                 processor.Process(new TagItem<string>(""NameTag"", Name, NameBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
