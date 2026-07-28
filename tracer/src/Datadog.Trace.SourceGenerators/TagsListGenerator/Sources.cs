@@ -175,6 +175,7 @@ namespace ");
 
                     if (property.PropertyType is TagListGenerator.PropertyType.NullableInt)
                     {
+                        // Invalid values (null and anything that isn't a valid integer) remove the tag
                         sb.Append("if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsed")
                           .Append(property.PropertyName)
                           .Append(
@@ -186,6 +187,13 @@ namespace ");
                           .Append(property.PropertyName)
                           .Append(
                                @";
+                    }
+                    else
+                    {
+                        ")
+                          .Append(property.PropertyName)
+                          .Append(
+                               @" = null;
                     }
 
                     break;

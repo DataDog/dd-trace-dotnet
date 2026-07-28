@@ -129,6 +129,10 @@ namespace MyTests.TestListNameSpace
                     {
                         Id = parsedId;
                     }
+                    else
+                    {
+                        Id = null;
+                    }
 
                     break;
                 default: 
@@ -179,10 +183,7 @@ namespace MyTests.TestListNameSpace
     	public string Name { get; set; }
 
         [Tag(""PortTag"")]
-    	public int Port { get; set; }
-
-        [Tag(""OptionalPortTag"")]
-    	public int? OptionalPort { get; set; }
+    	public int? Port { get; set; }
     }
 }";
             const string expected = Constants.FileHeader + @"using Datadog.Trace.Processors;
@@ -199,16 +200,12 @@ namespace MyTests.TestListNameSpace
         // PortBytes = MessagePack.Serialize(""PortTag"");
         private static ReadOnlySpan<byte> PortBytes => [167, 80, 111, 114, 116, 84, 97, 103];
 
-        // OptionalPortBytes = MessagePack.Serialize(""OptionalPortTag"");
-        private static ReadOnlySpan<byte> OptionalPortBytes => [175, 79, 112, 116, 105, 111, 110, 97, 108, 80, 111, 114, 116, 84, 97, 103];
-
         public override string? GetTag(string key)
         {
             return key switch
             {
                 ""NameTag"" => Name,
-                ""PortTag"" => Port.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                ""OptionalPortTag"" => OptionalPort?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                ""PortTag"" => Port?.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 _ => base.GetTag(key),
             };
         }
@@ -225,12 +222,9 @@ namespace MyTests.TestListNameSpace
                     {
                         Port = parsedPort;
                     }
-
-                    break;
-                case ""OptionalPortTag"": 
-                    if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedOptionalPort))
+                    else
                     {
-                        OptionalPort = parsedOptionalPort;
+                        Port = null;
                     }
 
                     break;
@@ -247,11 +241,9 @@ namespace MyTests.TestListNameSpace
                 processor.Process(new TagItem<string>(""NameTag"", Name, NameBytes));
             }
 
-            processor.Process(new TagItem<int>(""PortTag"", Port, PortBytes));
-
-            if (OptionalPort is not null)
+            if (Port is not null)
             {
-                processor.Process(new TagItem<int>(""OptionalPortTag"", OptionalPort.Value, OptionalPortBytes));
+                processor.Process(new TagItem<int>(""PortTag"", Port.Value, PortBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -266,14 +258,10 @@ namespace MyTests.TestListNameSpace
                   .Append(',');
             }
 
-            sb.Append(""PortTag (tag):"")
-              .Append(Port.ToString(System.Globalization.CultureInfo.InvariantCulture))
-              .Append(',');
-
-            if (OptionalPort is not null)
+            if (Port is not null)
             {
-                sb.Append(""OptionalPortTag (tag):"")
-                  .Append(OptionalPort.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                sb.Append(""PortTag (tag):"")
+                  .Append(Port.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
                   .Append(',');
             }
 
@@ -881,6 +869,7 @@ namespace MyTests.TestListNameSpace
         [Theory]
         [InlineData("double")]
         [InlineData("double?")]
+        [InlineData("int")] // only int? is supported
         [InlineData("SomeOtherType")]
         public void CantUseWrongTypeForTagProperty(string returnType)
         {
