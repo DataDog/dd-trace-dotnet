@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
@@ -16,6 +17,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
     internal struct DdwafObjectStruct
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DdwafObjectStruct>();
+        private static int _duplicateKeyWarningLogged;
 
         [FieldOffset(0)]
         public IntPtr ParameterName;
@@ -107,7 +109,18 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                             var array = (DdwafObjectStruct*)arrayPtr;
                             var key = Marshal.PtrToStringAnsi(array->ParameterName, (int)array->ParameterNameLength);
                             var value = array->Decode();
-                            res.Add(key, value);
+#if NETCOREAPP
+                            if (!res.TryAdd(key, value) && Interlocked.Exchange(ref _duplicateKeyWarningLogged, 1) == 0)
+#else
+                            if (!res.ContainsKey(key))
+                            {
+                                res.Add(key, value);
+                            }
+                            else if (Interlocked.Exchange(ref _duplicateKeyWarningLogged, 1) == 0)
+#endif
+                            {
+                                Log.Warning("Unexpected duplicate key {Key} while decoding a WAF map, ignoring entry", key);
+                            }
                         }
                     }
                 }
