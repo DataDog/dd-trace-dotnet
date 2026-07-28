@@ -14,6 +14,7 @@ using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -22,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.FeatureFlags;
 #if NETFRAMEWORK
 [Collection(nameof(ManualInstrumentationTests))]
 #endif
+[UsesVerify]
 public class SpanEnrichmentIntegrationTests : TestHelper
 {
     // Frozen cross-SDK contract tag names (dd-trace-js#8343) — bare names, never _dd.-prefixed.
@@ -127,6 +129,38 @@ public class SpanEnrichmentIntegrationTests : TestHelper
             span.Tags.Should().NotContainKey(TagSubjectsEnc, "no ffe_* tags when the gate is off");
             span.Tags.Should().NotContainKey(TagRuntimeDefaults, "no ffe_* tags when the gate is off");
         }
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task SpanEnrichment_GateOn_MatchesSnapshot()
+    {
+        using var agent = EnvironmentHelper.GetMockAgent();
+        agent.SetupRcm(
+            Output,
+            [
+                ((object)new ServerConfiguration
+                {
+                    Flags = FeatureFlagsHelpers.CreateAllFlags(),
+                },
+                RcmProducts.FfeFlags,
+                nameof(SpanEnrichmentIntegrationTests))
+            ]);
+
+        var output = await RunTest(agent, spanEnrichmentEnabled: true);
+        output.Should().Contain("<INSTRUMENTED>");
+        output.Should().Contain("Exit. OK");
+
+        // Root "ffe.root" + child "ffe.child"; don't filter by operation name (see the sibling tests).
+        var spans = await agent.WaitForSpansAsync(2, returnAllOperations: true);
+
+        // End-to-end snapshot of the serialized spans as they reach the agent. The ffe_* values are
+        // deterministic — the flag fixtures use fixed serial ids (100, 108) and a fixed targeting key,
+        // so the encoded flags/subjects tags are stable across runs. The snapshot captures them on
+        // ffe.root and their absence on ffe.child.
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(nameof(SpanEnrichmentIntegrationTests));
     }
 
     // Decode side mirrors the cross-SDK codec (system-tests test_ffe/utils.py): base64 -> ULEB128
