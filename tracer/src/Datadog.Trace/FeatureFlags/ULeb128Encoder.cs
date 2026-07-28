@@ -6,11 +6,6 @@
 #nullable enable
 
 using System;
-#if NETFRAMEWORK
-using Buffers = Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
-#else
-using Buffers = System.Buffers;
-#endif
 
 namespace Datadog.Trace.FeatureFlags
 {
@@ -60,8 +55,8 @@ namespace Datadog.Trace.FeatureFlags
             }
 #endif
 
-            var idBuffer = Buffers.ArrayPool<long>.Shared.Rent(count);
-            var payloadBuffer = Buffers.ArrayPool<byte>.Shared.Rent(count * MaxVarintBytes);
+            var idBuffer = ArrayPool<long>.Shared.Rent(count);
+            var payloadBuffer = ArrayPool<byte>.Shared.Rent(count * MaxVarintBytes);
             try
             {
                 serialIds.CopyTo(idBuffer);
@@ -72,8 +67,8 @@ namespace Datadog.Trace.FeatureFlags
             }
             finally
             {
-                Buffers.ArrayPool<long>.Shared.Return(idBuffer);
-                Buffers.ArrayPool<byte>.Shared.Return(payloadBuffer);
+                ArrayPool<long>.Shared.Return(idBuffer);
+                ArrayPool<byte>.Shared.Return(payloadBuffer);
             }
         }
 
