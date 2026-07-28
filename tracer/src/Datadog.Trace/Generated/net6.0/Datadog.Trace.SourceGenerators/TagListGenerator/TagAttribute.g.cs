@@ -27,6 +27,11 @@ internal sealed class TagAttribute : System.Attribute
     /// Gets the name of the datadog tag the property corresponds to
     /// </summary>
     public string TagName { get; }
+
+    /// <summary>
+    /// Gets or sets the OpenTelemetry semantic convention name that aliases <see cref="TagName"/>.
+    /// </summary>
+    public string? OTelName { get; set; }
 }
 
 /// <summary>
