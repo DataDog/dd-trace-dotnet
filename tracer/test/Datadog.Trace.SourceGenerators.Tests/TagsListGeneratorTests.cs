@@ -115,7 +115,7 @@ namespace MyTests.TestListNameSpace
         {
             return key switch
             {
-                ""TestPort"" => Id?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                ""TestPort"" => Id is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(Id.Value),
                 _ => base.GetTag(key),
             };
         }
@@ -205,7 +205,7 @@ namespace MyTests.TestListNameSpace
             return key switch
             {
                 ""NameTag"" => Name,
-                ""PortTag"" => Port?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                ""PortTag"" => Port is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(Port.Value),
                 _ => base.GetTag(key),
             };
         }

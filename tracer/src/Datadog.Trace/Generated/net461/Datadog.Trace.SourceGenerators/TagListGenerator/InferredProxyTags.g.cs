@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tagging
                 "http.method" => HttpMethod,
                 "http.url" => HttpUrl,
                 "http.route" => HttpRoute,
-                "http.status_code" => HttpStatusCode?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                "http.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
                 "stage" => Stage,
                 "region" => Region,
                 _ => base.GetTag(key),
@@ -77,6 +77,10 @@ namespace Datadog.Trace.Tagging
                     if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedHttpStatusCode))
                     {
                         HttpStatusCode = parsedHttpStatusCode;
+                    }
+                    else
+                    {
+                        HttpStatusCode = null;
                     }
 
                     break;

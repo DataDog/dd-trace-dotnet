@@ -449,13 +449,16 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Process(TagItem<int> item)
         {
+            // int-backed tags are serialized as strings; IntStringCache keeps this allocation-free
+            var value = IntStringCache.ToInvariantString(item.Value);
+
             if (item.SerializedKey.IsEmpty)
             {
-                _formatter.WriteTag(ref Bytes, ref Offset, item.Key, item.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), _tagProcessors);
+                _formatter.WriteTag(ref Bytes, ref Offset, item.Key, value, _tagProcessors);
             }
             else
             {
-                _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, item.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), _tagProcessors);
+                _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, value, _tagProcessors);
             }
 
             Count++;

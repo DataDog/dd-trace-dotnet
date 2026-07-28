@@ -139,7 +139,9 @@ namespace ");
                     switch (property.PropertyType)
                     {
                         case TagListGenerator.PropertyType.NullableInt:
-                            sb.Append("?.ToString(System.Globalization.CultureInfo.InvariantCulture)");
+                            sb.Append(" is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(")
+                              .Append(property.PropertyName)
+                              .Append(".Value)");
                             break;
                     }
 
