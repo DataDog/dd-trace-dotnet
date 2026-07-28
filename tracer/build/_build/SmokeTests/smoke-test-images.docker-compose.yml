@@ -8,12 +8,6 @@
 
 services:
 
-  # ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent
-  # The Linux test agent used to receive and validate traces during smoke tests.
-  # Should be kept in sync with the test-agent service in docker-compose.yml.
-  ddapm-test-agent:
-    image: ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest@sha256:8165e1f1f7c891261ea5af9d7bf24413f75351a6fffbdf5e9277c9ac7c9029be
-
   # mcr.microsoft.com/dotnet/aspnet
   aspnet-2_1-alpine3_12:
     image: mcr.microsoft.com/dotnet/aspnet:2.1-alpine3.12@sha256:43ff07984ceab149bf5a4ce71610fbfc72e6ccbf0b9e55f66b9609bb575e2d31

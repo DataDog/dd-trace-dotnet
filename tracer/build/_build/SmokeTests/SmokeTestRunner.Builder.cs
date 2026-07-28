@@ -14,8 +14,10 @@ public static partial class SmokeTestRunner
 {
     class Builder
     {
-        // The digest for this image is pinned in smoke-test-images.docker-compose.yml (resolved via ImageDigests)
-        const string LinuxTestAgentImage = "ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest";
+        // Pinned by digest so we control exactly which test-agent version smoke tests run against
+        // We don't track this in smoke-test-images.docker-compose.yml, because we don't want auto-bumps.
+        // Keep this digest in sync with the test-agent service in docker-compose.yml.
+        const string LinuxTestAgentImage = "ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest@sha256:8165e1f1f7c891261ea5af9d7bf24413f75351a6fffbdf5e9277c9ac7c9029be";
         const string WindowsTestAgentImage = "dd-trace-dotnet/ddapm-test-agent-windows";
         const string WindowsTestAgentDockerfile = "build/_build/docker/test-agent.windows.dockerfile";
         readonly SmokeTestImageDigests ImageDigests;
@@ -356,7 +358,7 @@ public static partial class SmokeTestRunner
         /// <summary>
         /// Builds or pulls the required test agent, and returns the name of the image created.
         /// </summary>
-        public async Task<string> BuildTestAgentImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir)
+        public static async Task<string> BuildTestAgentImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir)
         {
             if (scenario.IsWindows)
             {
@@ -365,9 +367,8 @@ public static partial class SmokeTestRunner
             }
             else
             {
-                var image = ImageDigests.GetImageWithDigest(LinuxTestAgentImage);
-                await DockerService.PullImageAsync(image, skipIfImageExists: true);
-                return image;
+                await DockerService.PullImageAsync(LinuxTestAgentImage, skipIfImageExists: true);
+                return LinuxTestAgentImage;
             }
             static async Task BuildWindowsTestAgentImageAsync(AbsolutePath tracerDir)
             {
