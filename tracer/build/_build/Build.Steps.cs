@@ -297,20 +297,21 @@ partial class Build
                     .SetProcessLogOutput(true)
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackagesDirectory(NugetPackageDirectory))
-                    .SetProcessCustomLogger((type, text) =>
-                    {
-                        var trimmedText = text.TrimStart();
-                        if (!trimmedText.StartsWith("Installed ", StringComparison.Ordinal) &&
-                            !trimmedText.StartsWith("Restoring NuGet package ", StringComparison.Ordinal) &&
-                            !trimmedText.StartsWith("Adding package '", StringComparison.Ordinal) &&
-                            !trimmedText.StartsWith("Added package '", StringComparison.Ordinal) &&
-                            !trimmedText.StartsWith("GET ", StringComparison.Ordinal) &&
-                            !trimmedText.StartsWith("OK ", StringComparison.Ordinal) &&
-                            !trimmedText.StartsWith("NotFound ", StringComparison.Ordinal))
+                    .When(IsServerBuild || IsGitlab, o =>
+                        o.SetProcessCustomLogger((type, text) =>
                         {
-                            NuGetTasks.NuGetLogger(type, text);
-                        }
-                    }));
+                            var trimmedText = text.TrimStart();
+                            if (!trimmedText.StartsWith("Installed ", StringComparison.Ordinal) &&
+                                !trimmedText.StartsWith("Restoring NuGet package ", StringComparison.Ordinal) &&
+                                !trimmedText.StartsWith("Adding package '", StringComparison.Ordinal) &&
+                                !trimmedText.StartsWith("Added package '", StringComparison.Ordinal) &&
+                                !trimmedText.StartsWith("GET ", StringComparison.Ordinal) &&
+                                !trimmedText.StartsWith("OK ", StringComparison.Ordinal) &&
+                                !trimmedText.StartsWith("NotFound ", StringComparison.Ordinal))
+                            {
+                                NuGetTasks.NuGetLogger(type, text);
+                            }
+                        })));
             }
             else
             {
