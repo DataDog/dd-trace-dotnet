@@ -1,6 +1,5 @@
 using System;
 using System.Data.Common;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
@@ -11,6 +10,20 @@ namespace Samples.Microsoft.Data.SqlClient
     internal static class Program
     {
         private static async Task<int> Main()
+        {
+            try
+            {
+                return await RunAsync();
+            }
+            catch (SqlException ex) when (IsRetryableConnectionError(ex))
+            {
+                Console.WriteLine("Transport-level SQL error, skipping test");
+                Console.WriteLine(ex.ToString());
+                return 13;
+            }
+        }
+
+        private static async Task<int> RunAsync()
         {
             var commandFactory = new DbCommandFactory($"[Microsoft-Data-SqlClient-Test-{Guid.NewGuid():N}]");
             var commandExecutor = new MicrosoftSqlCommandExecutor();
@@ -123,8 +136,9 @@ namespace Samples.Microsoft.Data.SqlClient
                 return true;
             }
 
-            // Number=0 with SocketException indicates network issue
-            if (ex.Number == 0 && ex.InnerException is SocketException)
+            // Number=0 indicates a driver-level transport error. Microsoft.Data.SqlClient does not
+            // always include the underlying SocketException when the connection is lost mid-command.
+            if (ex.Number == 0)
             {
                 return true;
             }
