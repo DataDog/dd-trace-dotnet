@@ -53,6 +53,9 @@ namespace Datadog.Trace.Tagging
         // HttpStatusCodeBytes = MessagePack.Serialize("http.status_code");
         private static ReadOnlySpan<byte> HttpStatusCodeBytes => [176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
 
+        // HttpStatusCodeOTelBytes = MessagePack.Serialize("http.response.status_code");
+        private static ReadOnlySpan<byte> HttpStatusCodeOTelBytes => [185, 104, 116, 116, 112, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -70,6 +73,7 @@ namespace Datadog.Trace.Tagging
                 "http.method" => HttpMethod,
                 "http.url" => HttpUrl,
                 "http.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
+                "http.response.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
                 _ => base.GetTag(key),
             };
         }
@@ -102,7 +106,8 @@ namespace Datadog.Trace.Tagging
                 case "http.url": 
                     HttpUrl = value;
                     break;
-                case "http.status_code": 
+                case "http.status_code":
+                case "http.response.status_code":
                     if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedHttpStatusCode))
                     {
                         HttpStatusCode = parsedHttpStatusCode;
@@ -189,7 +194,14 @@ namespace Datadog.Trace.Tagging
 
             if (HttpStatusCode is not null)
             {
-                processor.Process(new TagItem<int>("http.status_code", HttpStatusCode.Value, HttpStatusCodeBytes));
+                if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<int>("http.response.status_code", HttpStatusCode.Value, HttpStatusCodeOTelBytes));
+                }
+                else
+                {
+                    processor.Process(new TagItem<int>("http.status_code", HttpStatusCode.Value, HttpStatusCodeBytes));
+                }
             }
 
             base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);

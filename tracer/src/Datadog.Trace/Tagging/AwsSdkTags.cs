@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.HttpUrl)]
         public string? HttpUrl { get; set; }
 
-        [Tag(Trace.Tags.HttpStatusCode)]
+        [Tag(Trace.Tags.HttpStatusCode, OTelName = Trace.Tags.HttpResponseStatusCode)]
         public int? HttpStatusCode { get; set; }
     }
 }
