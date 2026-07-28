@@ -156,7 +156,7 @@ namespace Datadog.Trace.IntegrationTests
             durationStartBuckets.Single().Hits.Should().Be(3);
             durationStartBuckets.Single().Duration.Should().Be(beforeY2KDuration.ToNanoseconds());
 
-            var durationStartSpans = spans.Where(s => s.Name == "default_operation" && s.Resource == "default-resource" && s.Service == "default-service" && s.GetTag(Tags.Origin) != "synthetics" && s.Type == "default-type" && s.GetTag(Tags.HttpStatusCode) == "200");
+            var durationStartSpans = spans.Where(s => s.Name == "default_operation" && s.Resource == "default-resource" && s.Service == "default-service" && s.GetTag(Tags.Origin) != "synthetics" && s.Type == "default-type" && s.GetHttpStatusCode() == "200");
             durationStartSpans.Should().HaveCount(3);
             durationStartSpans.Sum(s => s.Duration).Should().Be(beforeY2KDuration.ToNanoseconds());
 

@@ -106,8 +106,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    // TODO: This lookup may also need to lookup the OTel http.response.status_code
-                    if (span.Tags[Tags.HttpStatusCode] == "502")
+                    if (span.GetHttpStatusCode() == "502")
                     {
                         span.Error.Should().Be(1);
                     }
