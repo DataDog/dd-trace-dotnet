@@ -6,6 +6,11 @@
 #nullable enable
 
 using System;
+#if NETFRAMEWORK
+using Buffers = Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+#else
+using Buffers = System.Buffers;
+#endif
 
 namespace Datadog.Trace.FeatureFlags
 {
@@ -21,11 +26,9 @@ namespace Datadog.Trace.FeatureFlags
         private const int MaxVarintBytes = 10;
 
 #if NET6_0_OR_GREATER
-        // Sets at or below this many ids are encoded entirely on the stack (modern runtimes only):
-        // 128 longs (1 KiB) for the sort copy + 128*10 bytes (~1.25 KiB) for the payload. Serial-id
-        // sets are bounded by SpanEnrichmentState.MaxSerialIds (200), so the common case stays on
-        // the stack; larger sets fall back to the array pool.
-        private const int StackAllocMaxIds = 128;
+        // Each id costs 8 bytes (sort copy) + 10 bytes (max varint), so 28 ids caps stack use at
+        // ~512 bytes; larger sets use the heap fallback.
+        private const int StackAllocMaxIds = 28;
 #endif
 
         /// <summary>
@@ -57,13 +60,21 @@ namespace Datadog.Trace.FeatureFlags
             }
 #endif
 
-            var idBuffer = new long[count];
-            serialIds.CopyTo(idBuffer);
-            Array.Sort(idBuffer, 0, count);
+            var idBuffer = Buffers.ArrayPool<long>.Shared.Rent(count);
+            var payloadBuffer = Buffers.ArrayPool<byte>.Shared.Rent(count * MaxVarintBytes);
+            try
+            {
+                serialIds.CopyTo(idBuffer);
+                Array.Sort(idBuffer, 0, count);
 
-            var payloadBuffer = new byte[count * MaxVarintBytes];
-            var written = EncodeSorted(new ReadOnlySpan<long>(idBuffer, 0, count), payloadBuffer);
-            return Convert.ToBase64String(payloadBuffer, 0, written);
+                var written = EncodeSorted(new ReadOnlySpan<long>(idBuffer, 0, count), payloadBuffer);
+                return Convert.ToBase64String(payloadBuffer, 0, written);
+            }
+            finally
+            {
+                Buffers.ArrayPool<long>.Shared.Return(idBuffer);
+                Buffers.ArrayPool<byte>.Shared.Return(payloadBuffer);
+            }
         }
 
         // Encodes an ascending-sorted span, skipping adjacent duplicates (structural dedupe matching
