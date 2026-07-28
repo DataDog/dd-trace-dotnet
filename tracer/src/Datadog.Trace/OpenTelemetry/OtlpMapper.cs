@@ -188,12 +188,6 @@ internal static class OtlpMapper
             }
         }
 
-        // Feature-flag span enrichment (ffe_* attributes), local-root only. Mirrors the block in
-        // SpanMessagePackFormatter.WriteTags: these values are produced on the serializer thread from
-        // Context.TraceContext.FeatureFlagEnrichment, not stored on span.Tags, so they must be emitted
-        // here too or OTLP-exported traces would omit them entirely. Emitted before the arbitrary
-        // customer span tags (like the other Datadog-internal attributes above) so a heavily-tagged
-        // span that hits the attribute limit does not silently drop enrichment.
         if (spanModel.IsLocalRoot &&
             spanModel.Span.Context.TraceContext?.FeatureFlagEnrichment is { } featureFlagEnrichment &&
             featureFlagEnrichment.HasData())

@@ -14,9 +14,6 @@ namespace Datadog.Trace.FeatureFlags
     /// Ported verbatim from the frozen Node reference (dd-trace-js#8343): dedupe → sort
     /// ascending → delta-from-previous → unsigned LEB128 (7 bits/byte, MSB = continuation)
     /// → base64. The empty set encodes to the empty string (the tag is then omitted).
-    /// Runs on the serializer thread (from <c>SpanMessagePackFormatter</c>).
-    /// Allocation-conscious: on modern runtimes small sets encode entirely on the stack, so only
-    /// the base64 result allocates; older runtimes and large sets fall back to plain heap buffers.
     /// </summary>
     internal static class ULeb128Encoder
     {
@@ -48,9 +45,6 @@ namespace Datadog.Trace.FeatureFlags
             var count = serialIds.Length;
 
 #if NET6_0_OR_GREATER
-            // Fast path: dedupe + sort + encode entirely on the stack, no pooling, no copy to a
-            // heap array. Span.Sort (MemoryExtensions.Sort, .NET 5+) and the ReadOnlySpan base64
-            // overload are both BCL on modern .NET.
             if (count <= StackAllocMaxIds)
             {
                 Span<long> ids = stackalloc long[count];
@@ -63,10 +57,6 @@ namespace Datadog.Trace.FeatureFlags
             }
 #endif
 
-            // Fallback (large sets, or .NET Framework / netstandard2.0 / netcoreapp3.1, which lack
-            // Span.Sort): plain heap arrays. ArrayPool is unavailable uniformly across these TFMs
-            // (net461 has no BCL System.Buffers; the vendored copy is not compiled for net6.0), and
-            // this is the cold path — the allocation-free stack fast path above covers the common case.
             var idBuffer = new long[count];
             serialIds.CopyTo(idBuffer);
             Array.Sort(idBuffer, 0, count);

@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 
@@ -52,6 +53,7 @@ namespace Datadog.Trace.FeatureFlags
         /// Gets or sets a fault-injection hook invoked at the start of <see cref="BuildSpanTags"/>. Test-only,
         /// used to verify the serializer-thread write path never lets enrichment break span serialization.
         /// </summary>
+        [TestingAndPrivateOnly]
         internal Action? OnBuildSpanTagsForTesting { get; set; }
 
         internal static string HashTargetingKey(string targetingKey) => Sha256Helper.ComputeHashAsHexString(targetingKey);
@@ -240,10 +242,8 @@ namespace Datadog.Trace.FeatureFlags
         }
 
         /// <summary>
-        /// Builds the encoded <c>ffe_*</c> tag values for the root span. Runs on the serializer
-        /// thread (from <c>SpanMessagePackFormatter</c>), so encoding, JSON serialization and
-        /// subject hashing stay off the customer's <c>Span.Finish()</c> path. Never throws; on
-        /// failure it returns <see langword="default"/> so serialization is never broken.
+        /// Builds the encoded <c>ffe_*</c> tag values for the root span.  Never throws; on
+        /// failure it returns <see langword="default"/>.
         /// </summary>
         internal FeatureFlagSpanTags BuildSpanTags()
         {

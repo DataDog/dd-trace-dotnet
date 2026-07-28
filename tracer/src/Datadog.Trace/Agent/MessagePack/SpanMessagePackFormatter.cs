@@ -667,9 +667,6 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, GetAppSecRulesetVersion(Security.Instance.WafRuleFileVersion));
             }
 
-            // Feature-flag span enrichment (ffe_* tags), local root only. Building the values
-            // (encode / JSON serialize / hash targeting keys) happens here, on the serializer
-            // thread, so it stays off the customer's Span.Finish() path. BuildSpanTags() never throws.
             if (model.IsLocalRoot &&
                 span.Context.TraceContext?.FeatureFlagEnrichment is { } featureFlagEnrichment &&
                 featureFlagEnrichment.HasData())
