@@ -65,11 +65,12 @@ public static partial class SmokeTestRunner
 
         foreach (var imageTag in imageTags)
         {
-            await RunSmokeTestAsync(scenario, tracerDir, imageTag, debugSnapshotsDir, logsDir, dumpsDir);
+            await RunSmokeTestAsync(builder, scenario, tracerDir, imageTag, debugSnapshotsDir, logsDir, dumpsDir);
         }
     }
 
     static async Task RunSmokeTestAsync(
+        Builder builder,
         SmokeTestScenario scenario,
         AbsolutePath tracerDir,
         string imageTag,
@@ -98,7 +99,7 @@ public static partial class SmokeTestRunner
             // 3. Pull/build + start test-agent container
             LogSection("Starting test agent");
             var sourceSnapshotsDir = tracerDir / "build" / "smoke_test_snapshots";
-            var testAgentImage = await Builder.BuildTestAgentImageAsync(scenario, tracerDir);
+            var testAgentImage = await builder.BuildTestAgentImageAsync(scenario, tracerDir);
             testAgentContainerId = await DockerService.CreateAndStartContainerWithRetryAsync(
                 TestAgentAlias, BuildTestAgentContainerParams(
                     testAgentImage: testAgentImage,

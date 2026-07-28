@@ -14,6 +14,7 @@ public static partial class SmokeTestRunner
 {
     class Builder
     {
+        // The digest for this image is pinned in smoke-test-images.docker-compose.yml (resolved via ImageDigests)
         const string LinuxTestAgentImage = "ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest";
         const string WindowsTestAgentImage = "dd-trace-dotnet/ddapm-test-agent-windows";
         const string WindowsTestAgentDockerfile = "build/_build/docker/test-agent.windows.dockerfile";
@@ -355,7 +356,7 @@ public static partial class SmokeTestRunner
         /// <summary>
         /// Builds or pulls the required test agent, and returns the name of the image created.
         /// </summary>
-        public static async Task<string> BuildTestAgentImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir)
+        public async Task<string> BuildTestAgentImageAsync(SmokeTestScenario scenario, AbsolutePath tracerDir)
         {
             if (scenario.IsWindows)
             {
@@ -364,8 +365,9 @@ public static partial class SmokeTestRunner
             }
             else
             {
-                await DockerService.PullImageAsync(LinuxTestAgentImage, skipIfImageExists: true);
-                return LinuxTestAgentImage;
+                var image = ImageDigests.GetImageWithDigest(LinuxTestAgentImage);
+                await DockerService.PullImageAsync(image, skipIfImageExists: true);
+                return image;
             }
             static async Task BuildWindowsTestAgentImageAsync(AbsolutePath tracerDir)
             {
