@@ -23,9 +23,9 @@ namespace Samples.Couchbase3
         private static async Task<int> Main()
         {
             var options = new ClusterOptions() 
-                      .WithConnectionString("couchbase://" + Host())
-                      .WithCredentials(username: "default", password: "password")
-                      .WithBuckets("default");
+                      .WithConnectionString("couchbase://" + ConnectionString())
+                      .WithCredentials(username: Username(), password: Password())
+                      .WithBuckets(BucketName());
 
 
             ICluster cluster = null;
@@ -43,15 +43,10 @@ namespace Samples.Couchbase3
             }
 
             // get a bucket reference
-            var bucket = await cluster.BucketAsync("default");
+            var bucket = await cluster.BucketAsync(BucketName());
 
-            // get a user-defined collection reference
-#if COUCHBASE_3_0
+            // get the default collection reference
             var collection = bucket.DefaultCollection();
-#else
-            var scope = await bucket.ScopeAsync("tenant_agent_00");
-            var collection = await scope.CollectionAsync("users");
-#endif
 
             // Upsert Document
             var upsertResult = await collection.UpsertAsync("my-document-key", new { Name = "Ted", Age = 31 });
@@ -83,9 +78,12 @@ namespace Samples.Couchbase3
             return 0;
         }
 
-        private static string Host()
-        {
-            return Environment.GetEnvironmentVariable("COUCHBASE_HOST") ?? "localhost";
-        }
+        private static string ConnectionString() => Environment.GetEnvironmentVariable("COUCHBASE_CONNECTION_STRING") ?? "localhost";
+
+        private static string Username() => Environment.GetEnvironmentVariable("COUCHBASE_USERNAME") ?? "default";
+
+        private static string Password() => Environment.GetEnvironmentVariable("COUCHBASE_PASSWORD") ?? "password";
+
+        private static string BucketName() => Environment.GetEnvironmentVariable("COUCHBASE_BUCKET") ?? "default";
     }
 }

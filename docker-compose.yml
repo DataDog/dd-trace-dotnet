@@ -87,11 +87,7 @@ services:
     command: mongod
 
   couchbase:
-    image: bentonam/couchbase-docker:community-5.0.1@sha256:847440848c80b95d82b12c8834856a14b1bfde854bd03b6acd0f9d0ac3484c63
-    profiles: ["group1"]
-    ports:
-      - "8091-8094:8091-8094"
-      - "11210:11210"
+    image: couchbase:community-6.6.0@sha256:43103efdd4b562366c7a48afa977c4ad148e09c877da28a83a86b2c5ee2daa97
 
   elasticsearch7:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1@sha256:2dcd2f31e246a8b13995ba24922da2edc3d88e65532ff301d0b92cb1be358af5
@@ -511,11 +507,10 @@ services:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
     profiles: ["group1"]
     depends_on:
-      - couchbase
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
+    command: test-agent:8126 test-agent:4317 test-agent:4318
 
   StartDependencies.Group2:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
