@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tagging
         [Tag(HttpClientHandlerTypeKey)]
         public string HttpClientHandlerType { get; set; }
 
-        [Tag(Trace.Tags.HttpStatusCode, OTelName = Trace.Tags.HttpResponseStatusCode)]
+        [Tag(Trace.Tags.HttpStatusCode, OtelName = Trace.Tags.HttpResponseStatusCode)]
         public int? HttpStatusCode { get; set; }
 
         [Tag(Trace.Tags.OutHost)]

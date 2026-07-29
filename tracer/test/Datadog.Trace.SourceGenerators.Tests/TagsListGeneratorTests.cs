@@ -96,7 +96,7 @@ namespace MyTests.TestListNameSpace
 {
     public class TestList
     {
-        [Tag(""dd.k"", OTelName = ""otel.k"")]
+        [Tag(""dd.k"", OtelName = ""otel.k"")]
         public string Id { get; set; }
     }
 }";
@@ -111,8 +111,8 @@ namespace MyTests.TestListNameSpace
         // IdBytes = MessagePack.Serialize(""dd.k"");
         private static ReadOnlySpan<byte> IdBytes => [164, 100, 100, 46, 107];
 
-        // IdOTelBytes = MessagePack.Serialize(""otel.k"");
-        private static ReadOnlySpan<byte> IdOTelBytes => [166, 111, 116, 101, 108, 46, 107];
+        // IdOtelBytes = MessagePack.Serialize(""otel.k"");
+        private static ReadOnlySpan<byte> IdOtelBytes => [166, 111, 116, 101, 108, 46, 107];
 
         public override string? GetTag(string key)
         {
@@ -186,7 +186,7 @@ namespace MyTests.TestListNameSpace
                 {
                     public class TestList
                     {
-                        [Tag("dd.status", OTelName = "otel.status")]
+                        [Tag("dd.status", OtelName = "otel.status")]
                         public int? StatusCode { get; set; }
                     }
                 }
@@ -205,8 +205,8 @@ namespace MyTests.TestListNameSpace
                         // StatusCodeBytes = MessagePack.Serialize("dd.status");
                         private static ReadOnlySpan<byte> StatusCodeBytes => [169, 100, 100, 46, 115, 116, 97, 116, 117, 115];
 
-                        // StatusCodeOTelBytes = MessagePack.Serialize("otel.status");
-                        private static ReadOnlySpan<byte> StatusCodeOTelBytes => [171, 111, 116, 101, 108, 46, 115, 116, 97, 116, 117, 115];
+                        // StatusCodeOtelBytes = MessagePack.Serialize("otel.status");
+                        private static ReadOnlySpan<byte> StatusCodeOtelBytes => [171, 111, 116, 101, 108, 46, 115, 116, 97, 116, 117, 115];
 
                         public override string? GetTag(string key)
                         {

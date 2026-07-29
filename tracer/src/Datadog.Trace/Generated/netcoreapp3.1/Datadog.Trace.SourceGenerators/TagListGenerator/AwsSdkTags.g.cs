@@ -53,8 +53,8 @@ namespace Datadog.Trace.Tagging
         // HttpStatusCodeBytes = MessagePack.Serialize("http.status_code");
         private static ReadOnlySpan<byte> HttpStatusCodeBytes => [176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
 
-        // HttpStatusCodeOTelBytes = MessagePack.Serialize("http.response.status_code");
-        private static ReadOnlySpan<byte> HttpStatusCodeOTelBytes => [185, 104, 116, 116, 112, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
+        // HttpStatusCodeOtelBytes = MessagePack.Serialize("http.response.status_code");
+        private static ReadOnlySpan<byte> HttpStatusCodeOtelBytes => [185, 104, 116, 116, 112, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
 
         public override string? GetTag(string key)
         {

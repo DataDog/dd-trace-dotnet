@@ -31,7 +31,7 @@ internal sealed class TagAttribute : System.Attribute
     /// <summary>
     /// Gets or sets the OpenTelemetry semantic convention name that aliases <see cref="TagName"/>.
     /// </summary>
-    public string? OTelName { get; set; }
+    public string? OtelName { get; set; }
 }
 
 /// <summary>

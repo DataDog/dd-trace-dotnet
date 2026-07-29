@@ -197,7 +197,7 @@ public class TagListGenerator : IIncrementalGenerator
                 {
                     foreach (var namedArgument in attributeData.NamedArguments)
                     {
-                        if (namedArgument.Key != "OTelName")
+                        if (namedArgument.Key != "OtelName")
                         {
                             continue;
                         }
@@ -348,7 +348,7 @@ public class TagListGenerator : IIncrementalGenerator
         public readonly bool IsReadOnly;
         public readonly string PropertyName;
         public readonly string TagValue;
-        public readonly string? OTelTagValue;
+        public readonly string? OtelTagValue;
         public readonly bool IsTag;
         public readonly PropertyType PropertyType;
 
@@ -357,7 +357,7 @@ public class TagListGenerator : IIncrementalGenerator
             IsReadOnly = isReadOnly;
             PropertyName = propertyName;
             TagValue = tagValue;
-            OTelTagValue = otelTagValue;
+            OtelTagValue = otelTagValue;
             IsTag = isTag;
             Namespace = nameSpace;
             ClassName = className;
