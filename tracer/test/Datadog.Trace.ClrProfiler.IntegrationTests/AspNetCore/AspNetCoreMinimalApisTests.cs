@@ -10,7 +10,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -38,6 +40,59 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public AspNetCoreMinimalApisTestsCallTargetSingleSpan(AspNetCoreTestFixture fixture, ITestOutputHelper output)
             : base(fixture, output, AspNetCoreFeatureFlags.SingleSpan)
         {
+        }
+    }
+
+    /// <summary>
+    /// Asserts the ASP.NET Core span shape when <c>DD_TRACE_OTEL_SEMANTICS_ENABLED=true</c>, i.e.
+    /// when the OpenTelemetry HTTP semantic convention attributes replace the Datadog ones.
+    /// </summary>
+    public class AspNetCoreMinimalApisOTelTests : AspNetCoreMvcTestBase
+    {
+        private readonly string _testName;
+
+        public AspNetCoreMinimalApisOTelTests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
+            : base("AspNetCoreMinimalApis", fixture, output, AspNetCoreFeatureFlags.RouteTemplateResourceNames)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, "true");
+
+            // The base class widens the server error statuses to "400-403, 500-503", but the
+            // OpenTelemetry specification requires 4xx server responses not to be errors, so use
+            // the product default instead.
+            SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "500-599");
+
+            _testName = nameof(AspNetCoreMinimalApisOTelTests);
+        }
+
+        // The base rows, plus a query string so url.query is covered
+        public static TheoryData<string, int> OTelData()
+        {
+            var data = Data();
+            data.Add("/?query=test", 200);
+            return data;
+        }
+
+        [SkippableTheory]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [MemberData(nameof(OTelData))]
+        public async Task MeetsAllAspNetCoreMvcOTelExpectations(string path, int statusCode)
+        {
+            await Fixture.TryStartApp(this);
+
+            var spans = await Fixture.WaitForSpans(path);
+
+            // OpenTelemetry's ASP.NET Core instrumentation produces a single server span
+            spans.Should().NotContain(s => s.Name == "aspnet_core_mvc.request");
+
+            ValidateIntegrationSpans(spans, metadataSchemaVersion: "otel", expectedServiceName: "Samples.AspNetCoreMinimalApis", isExternalSpan: false);
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
+
+            await Verifier.Verify(spans, settings)
+                          .UseMethodName("_")
+                          .UseTypeName(_testName);
         }
     }
 
