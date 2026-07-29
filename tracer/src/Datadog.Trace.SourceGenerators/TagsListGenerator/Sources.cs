@@ -339,7 +339,7 @@ namespace ");
                                   .Append(property.PropertyName)
                                   .Append(@".Value, ")
                                   .Append(property.PropertyName)
-                                  .Append(@"OTelBytes));
+                                  .Append(@"OtelBytes));
                 }
                 else
                 {
@@ -382,7 +382,7 @@ namespace ");
                                   .Append(property.PropertyName)
                                   .Append(@", ")
                                   .Append(property.PropertyName)
-                                  .Append(@"OTelBytes));
+                                  .Append(@"OtelBytes));
                 }
                 else
                 {

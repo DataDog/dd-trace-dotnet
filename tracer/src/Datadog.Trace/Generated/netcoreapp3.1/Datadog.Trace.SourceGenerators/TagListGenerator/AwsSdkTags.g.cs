@@ -196,7 +196,7 @@ namespace Datadog.Trace.Tagging
             {
                 if (openTelemetrySemanticsEnabled)
                 {
-                    processor.Process(new TagItem<int>("http.response.status_code", HttpStatusCode.Value, HttpStatusCodeOTelBytes));
+                    processor.Process(new TagItem<int>("http.response.status_code", HttpStatusCode.Value, HttpStatusCodeOtelBytes));
                 }
                 else
                 {
