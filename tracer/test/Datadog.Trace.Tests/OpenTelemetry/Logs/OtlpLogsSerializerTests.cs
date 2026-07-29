@@ -53,11 +53,8 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
             var logs = CreateLogs(count: 200, messageSize: 2048);
             var buffer = new byte[64];
 
-            var result = false;
             var bytesWritten = -1;
-            var act = () => result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out bytesWritten);
-
-            act.Should().NotThrow();
+            var result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out bytesWritten);
             result.Should().BeFalse();
             bytesWritten.Should().Be(0);
         }
