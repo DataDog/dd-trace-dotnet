@@ -9,11 +9,18 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 {
-    [CollectionDefinition(Name)]
-
+    // Container-backed collections must set DisableParallelization = true. CustomTestFramework only auto-serializes
+    // collections whose display name contains the assembly namespace, which named [CollectionDefinition]s lose.
+    [CollectionDefinition(Name, DisableParallelization = true)]
     public class AerospikeCollection : ICollectionFixture<AerospikeFixture>
     {
         public const string Name = "Aerospike";
+    }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class ServiceStackRedisCollection : ICollectionFixture<ServiceStackRedisFixture>
+    {
+        public const string Name = "ServiceStackRedis";
     }
 }
 
