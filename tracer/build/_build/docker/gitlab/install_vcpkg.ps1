@@ -40,7 +40,7 @@ if ($LASTEXITCODE -ne 0) { throw "bootstrap-vcpkg.bat failed with exit code $LAS
 # Pre-fetch the helper tools vcpkg would otherwise download on first use. These land under
 # $InstallRoot\downloads\tools, which is the default downloads root the build uses now that it no
 # longer overrides --downloads-root.
-foreach ($tool in @('cmake', '7zip', 'powershell-core', 'ninja')) {
+foreach ($tool in @('git', 'cmake', '7zip', 'powershell-core', 'ninja')) {
     Write-Host -ForegroundColor Green "Pre-fetching vcpkg tool: $tool"
     & "$InstallRoot\vcpkg.exe" fetch $tool
     if ($LASTEXITCODE -ne 0) { throw "vcpkg fetch $tool failed with exit code $LASTEXITCODE" }

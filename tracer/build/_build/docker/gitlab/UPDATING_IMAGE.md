@@ -43,7 +43,7 @@ Once `build-windows-ci-image` is green, re-run the `build:` job (or any other Wi
 
 ### vcpkg toolchain
 
-`install_vcpkg.ps1` installs vcpkg into `C:\vcpkg` and pre-fetches the helper tools vcpkg would otherwise download on every build (`cmake`, `7zip`, `powershell-core`, `ninja`). 
+`install_vcpkg.ps1` installs vcpkg into `C:\vcpkg` and pre-fetches the helper tools vcpkg would otherwise download on every build (e.g, `cmake`, `7zip` etc). 
 
 - Keep `VCPKG_VERSION` in `gitlab.windows.dockerfile` in sync with the `vcpkgVersion` constant in `tracer/build/_build/Build.Steps.cs`, so the pre-fetched tool versions match what the build's vcpkg expects.
 

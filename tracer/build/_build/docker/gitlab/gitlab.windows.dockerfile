@@ -54,10 +54,8 @@ RUN powershell -Command .\install_java.ps1
 # Install Windows Code Signer
 COPY --from=registry.ddbuild.io/windows-code-signer/go:v0.7.0 c:/windows-code-signer/windows-code-signer.exe c:/devtools/windows-code-signer.exe
 
-# Install vcpkg and pre-fetch its helper toolchain (cmake, 7zip, powershell-core, ninja) so the build
-# does not download vcpkg or its tools on every run. GetVcpkg() in Build.Steps.cs finds vcpkg.exe on
-# PATH, and the build no longer relocates vcpkg's downloads root, so the pre-fetched tools under
-# C:\vcpkg\downloads are reused. Keep VCPKG_VERSION in sync with the vcpkgVersion constant in
+# Install vcpkg and pre-fetch its helper toolchain. 
+# Keep VCPKG_VERSION in sync with the vcpkgVersion constant in
 # Build.Steps.cs. See UPDATING_IMAGE.md.
 ENV VCPKG_VERSION="2024.11.16" \
     VCPKG_ROOT="C:\vcpkg"
