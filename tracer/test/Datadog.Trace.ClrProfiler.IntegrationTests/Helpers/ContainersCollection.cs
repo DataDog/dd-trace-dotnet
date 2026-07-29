@@ -34,6 +34,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     {
         public const string Name = "Postgres";
     }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class MySqlCollection : ICollectionFixture<MySql8Fixture>
+    {
+        public const string Name = "MySql";
+    }
 }
 
 #pragma warning restore SA1649 // File name should match first type name

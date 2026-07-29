@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -22,12 +23,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
     [UsesVerify]
+    [Collection(MySqlCollection.Name)]
     public class MySqlCommandTests : TracingIntegrationTest
     {
-        public MySqlCommandTests(ITestOutputHelper output)
+        private readonly MySql8Fixture _mySqlFixture;
+
+        public MySqlCommandTests(ITestOutputHelper output, MySql8Fixture mySqlFixture)
             : base("MySql", output)
         {
+            _mySqlFixture = mySqlFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(mySqlFixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMySql(metadataSchemaVersion);
@@ -121,6 +127,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("MySql-Test-[a-zA-Z0-9]{32}"), "MySql-Test-GUID");
+            settings.AddSimpleScrubber($"out.host: {_mySqlFixture.Host}", "out.host: mysql");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: mysql");
             settings.AddSimpleScrubber("out.host: mysql57", "out.host: mysql");
             settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: mysql");
