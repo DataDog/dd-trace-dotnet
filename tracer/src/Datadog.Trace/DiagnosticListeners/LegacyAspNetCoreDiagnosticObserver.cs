@@ -41,8 +41,7 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
     private static readonly LegacyAspNetCoreHttpRequestHandler RequestHandler = new(Log);
 
     private readonly Tracer _tracer;
-    private int _templateResolved;
-    private ITemplateParserProxy? _templateParser;
+    private TemplateParserProxyHolder? _templateParser;
 
     internal LegacyAspNetCoreDiagnosticObserver(Tracer tracer)
     {
@@ -199,8 +198,8 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
         {
             try
             {
-                var parser = _templateParser ?? GetTemplateParser(eventData.RouteData?.Routers);
-                routeTemplate = parser?.Parse(rawRouteTemplate);
+                var parser = Volatile.Read(ref _templateParser) ?? GetTemplateParser(eventData.RouteData?.Routers);
+                routeTemplate = parser.Parser?.Parse(rawRouteTemplate);
             }
             catch
             {
@@ -239,29 +238,24 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
                                      ? LegacyAspNetCoreHttpRequestHandler.GetDefaultResourceName(httpContext.Request)
                                      : rootSpan.ResourceName);
 
-        ITemplateParserProxy? GetTemplateParser(IEnumerable? routers)
+        TemplateParserProxyHolder GetTemplateParser(IEnumerable? routers)
         {
-            if (Interlocked.Exchange(ref _templateResolved, 1) != 0)
-            {
-                // Only try this path once as kind of expensive
-                return null;
-            }
-
+            TemplateParserProxyHolder? holder = null;
             var templateParserType = TryResolveTemplateParserType(routers);
-            if (templateParserType is null)
+            if (templateParserType is not null)
             {
-                return null;
+                var proxyResult = DuckType.GetOrCreateProxyType(typeof(ITemplateParserProxy), templateParserType);
+                if (proxyResult.Success)
+                {
+                    var parserProxy = (ITemplateParserProxy)proxyResult.CreateInstance(null!);
+                    holder = new TemplateParserProxyHolder(parserProxy);
+                }
             }
 
-            var proxyResult = DuckType.GetOrCreateProxyType(typeof(ITemplateParserProxy), templateParserType);
-            if (!proxyResult.Success)
-            {
-                // oh no
-                return null;
-            }
+            // If we couldn't create a parser, use the null version
+            holder ??= new(parser: null);
 
-            var proxy = (ITemplateParserProxy)proxyResult.CreateInstance(null!);
-            return Interlocked.Exchange(ref _templateParser, proxy) ?? proxy;
+            return Interlocked.Exchange(ref _templateParser, holder) ?? holder;
 
             static Type? TryResolveTemplateParserType(IEnumerable? routers)
             {
@@ -442,6 +436,11 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
         public bool IsOptional;
         public string? Name;
         public string? Text;
+    }
+
+    internal sealed class TemplateParserProxyHolder(ITemplateParserProxy? parser)
+    {
+        public ITemplateParserProxy? Parser { get; } = parser;
     }
 }
 
