@@ -74,6 +74,10 @@ internal sealed class TraceFilter
     /// <summary>
     /// Returns true if the trace should be kept, false if it should be rejected.
     /// Evaluation is based on the root span only.
+    /// Note: When a tag has both a DD and OTel name and is strongly typed in our ITags implementations,
+    /// there are two diverging behaviors:
+    /// - When applying a filter tag, the search checks both DD and OTel tag keys (and the singular tag value)
+    /// - When applying a filter tag regex, the search only checks one tag key (DD or Otel) based on the span's configured semantics setting.
     /// </summary>
     public bool ShouldKeepTrace(Span rootSpan)
     {
@@ -95,6 +99,7 @@ internal sealed class TraceFilter
         }
 
         // 2a. Reject filtering: reject if any tag matches reject filters
+        // With DD vs OTel semantics: Simple tag names check both key names and the (singular) value.
         foreach (var filter in _filterTagKeysReject)
         {
             // Key-only filter: matches if tag key exists with any value
