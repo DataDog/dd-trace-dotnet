@@ -549,8 +549,8 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task Otlp_UnmeasuredChildSpan_ExcludedFromStats()
         {
-            // SEMCON-1093: only service-entry (top-level), span-kind-eligible, or Measured=1 spans
-            // should generate OTLP trace metrics — unmeasured child spans must be excluded.
+// SEMCON-1093 FR04: only service-entry (top-level) or explicitly measured (_dd.measured=1) spans
+// should generate OTLP trace metrics — unmeasured child spans must be excluded.
             var start = DateTimeOffset.UtcNow;
             await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
 
