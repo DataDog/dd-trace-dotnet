@@ -213,7 +213,7 @@ internal sealed class OtlpExporter : IOtlpExporter
                 // Rent the larger buffer before returning the old one so a failed rent can't leave
                 // us returning the same array twice via the finally block.
                 var newBuffer = ArrayPool<byte>.Shared.Rent(Math.Min(buffer.Length * 2, MaxBufferSize));
-                ArrayPool<byte>.Shared.Return(buffer, clearArray: true);
+                ArrayPool<byte>.Shared.Return(buffer);
                 buffer = newBuffer;
             }
 
