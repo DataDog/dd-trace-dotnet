@@ -459,11 +459,13 @@ public class ConfigurationKeysGeneratorTests
                                            supportedConfigurations:
                                              OTEL_EXPORTER_OTLP_HEADERS:
                                              - implementation: A
+                                               scope: managed
                                                product: OpenTelemetry
                                                sensitive: true
                                                documentation: Sensitive OTLP headers.
                                              OTEL_EXPORTER_OTLP_TRACES_HEADERS:
                                              - implementation: A
+                                               scope: managed
                                                product: OpenTelemetry
                                                aliases:
                                                - OTEL_EXPORTER_OTLP_HEADERS
@@ -471,6 +473,7 @@ public class ConfigurationKeysGeneratorTests
                                                documentation: Sensitive OTLP traces headers.
                                              DD_TRACE_ENABLED:
                                              - implementation: A
+                                               scope: managed
                                                product: Tracer
                                                documentation: Enables the tracer.
                                            """;

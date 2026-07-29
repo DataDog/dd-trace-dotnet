@@ -468,9 +468,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult(bool allowOptionalMappings, char separator)
             => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(allowOptionalMappings, separator));
 
-        public ClassConfigurationResultWithKey<IDictionary<string, string>> AsRedactedDictionaryResult(char separator)
-            => new(Telemetry, Key, recordValue: false, configurationResult: GetDictionaryResult(allowOptionalMappings: false, separator, recordValue: false));
-
         public ClassConfigurationResultWithKey<IDictionary<string, string>> AsDictionaryResult(Func<string, IDictionary<string, string>> parser)
             => new(Telemetry, Key, recordValue: true, configurationResult: GetDictionaryResult(parser));
 
@@ -517,11 +514,11 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             return GetResultWithFallback(key => source.GetAs(key, telemetry, converter, validator, recordValue: true));
         }
 
-        private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(bool allowOptionalMappings, char separator, bool recordValue = true)
+        private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(bool allowOptionalMappings, char separator)
         {
             var source = Source;
             var telemetry = Telemetry;
-            return GetResultWithFallback(key => source.GetDictionary(key, telemetry, validator: null, allowOptionalMappings, separator, recordValue));
+            return GetResultWithFallback(key => source.GetDictionary(key, telemetry, validator: null, allowOptionalMappings, separator));
         }
 
         private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(Func<string, IDictionary<string, string>> parser)

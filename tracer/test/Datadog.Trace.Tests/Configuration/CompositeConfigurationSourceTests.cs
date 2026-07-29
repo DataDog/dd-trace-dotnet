@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -119,6 +120,24 @@ public class CompositeConfigurationSourceTests
                 { "dict4", "source4_a:value4,source4_b:value4" },
             }),
         };
+    }
+
+    [Fact]
+    public void PublicDictionaryApiRetainsFiveArgumentOverload()
+    {
+        var parameterTypes = new[]
+        {
+            typeof(string),
+            typeof(IConfigurationTelemetry),
+            typeof(Func<IDictionary<string, string>, bool>),
+            typeof(bool),
+            typeof(char),
+        };
+
+        typeof(IConfigurationSource)
+           .GetMethod(nameof(IConfigurationSource.GetDictionary), parameterTypes)
+           .Should()
+           .NotBeNull();
     }
 
     [Theory]
