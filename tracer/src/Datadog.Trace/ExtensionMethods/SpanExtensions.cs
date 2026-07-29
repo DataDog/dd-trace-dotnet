@@ -50,7 +50,8 @@ namespace Datadog.Trace.ExtensionMethods
             string host,
             string httpUrl,
             string userAgent,
-            WebTags tags)
+            WebTags tags,
+            bool otelSemanticsEnabled = false)
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
@@ -58,9 +59,15 @@ namespace Datadog.Trace.ExtensionMethods
             if (tags is not null)
             {
                 tags.HttpMethod = method;
-                tags.HttpRequestHeadersHost = host;
-                tags.HttpUrl = httpUrl;
                 tags.HttpUserAgent = userAgent;
+
+                // OpenTelemetry has no equivalent of the following attributes: it splits the same information
+                // into url.scheme/url.path/url.query and server.address/server.port, which the caller sets.
+                if (!otelSemanticsEnabled)
+                {
+                    tags.HttpRequestHeadersHost = host;
+                    tags.HttpUrl = httpUrl;
+                }
             }
         }
 
