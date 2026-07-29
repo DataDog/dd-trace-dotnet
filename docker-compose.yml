@@ -33,10 +33,6 @@ services:
 
   rabbitmq_arm64:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
-    command: rabbitmq-server
-    ports:
-      - "5672"
-      - "15672"
 
   servicestackredis_arm64:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
@@ -70,11 +66,6 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
-    profiles: ["group1"]
-    command: rabbitmq-server
-    ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
 
   servicestackredis:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
@@ -355,7 +346,6 @@ services:
       - ELASTICSEARCH7_HOST=elasticsearch7:9200
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
-      - RABBITMQ_HOST=rabbitmq
       - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SDK_HOST=localstack:4566
       - ORACLE_HOST=oracle
@@ -560,14 +550,13 @@ services:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
     profiles: ["group1"]
     depends_on:
-      - rabbitmq
       - kafka-broker
       - kafka-zookeeper
       - couchbase
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
+    command: kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
 
   StartDependencies.Group2:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
@@ -621,7 +610,6 @@ services:
       - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
-      - RABBITMQ_HOST=rabbitmq_arm64
       - AWS_SDK_HOST=localstack_arm64:4566
       - COSMOSDB_ENDPOINT=https://cosmosdb-emulator_arm64:8081
       - DD_LOGGER_DD_API_KEY
@@ -655,7 +643,6 @@ services:
     depends_on:
       - elasticsearch7_arm64
       - mongo_arm64
-      - rabbitmq_arm64
       - localstack_arm64
       - test-agent
       - cosmosdb-emulator_arm64
@@ -665,13 +652,12 @@ services:
     depends_on:
       - elasticsearch7_arm64
       - mongo_arm64
-      - rabbitmq_arm64
       - localstack_arm64
       - test-agent
       - cosmosdb-emulator_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch7_arm64:9200 mongo_arm64:27017 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
+    command: elasticsearch7_arm64:9200 mongo_arm64:27017 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
 
   IntegrationTests.ARM64.Debugger:
     build:
@@ -746,11 +732,10 @@ services:
     depends_on:
       - elasticsearch7_osx_arm64
       - mongo_osx_arm64
-      - rabbitmq_osx_arm64
       - localstack_osx_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch7_osx_arm64:9200 mongo_osx_arm64:27017 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
+    command: elasticsearch7_osx_arm64:9200 mongo_osx_arm64:27017 localstack_osx_arm64:4566
 
   # OSX ARM64 dependencies
 
@@ -789,10 +774,6 @@ services:
 
   rabbitmq_osx_arm64:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
-    command: rabbitmq-server
-    ports:
-      - "5672:5672"
-      - "15672:15672"
 
   servicestackredis_osx_arm64:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20

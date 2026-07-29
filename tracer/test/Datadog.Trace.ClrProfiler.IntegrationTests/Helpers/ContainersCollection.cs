@@ -46,6 +46,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     {
         public const string Name = "MySqlConnector";
     }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class RabbitMqCollection : ICollectionFixture<RabbitMqFixture>
+    {
+        public const string Name = "RabbitMq";
+    }
 }
 
 #pragma warning restore SA1649 // File name should match first type name
