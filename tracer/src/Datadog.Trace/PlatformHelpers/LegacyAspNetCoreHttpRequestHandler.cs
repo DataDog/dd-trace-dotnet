@@ -32,7 +32,7 @@ internal sealed class LegacyAspNetCoreHttpRequestHandler
 
     public static string GetDefaultResourceName(string httpMethod, string pathBase, string requestPath)
     {
-        var absolutePath = string.IsNullOrEmpty(pathBase) ? requestPath : pathBase + requestPath;
+        var absolutePath = StringUtil.IsNullOrEmpty(pathBase) ? requestPath : pathBase + requestPath;
         var resourceUrl = UriHelpers.GetCleanUriPath(absolutePath).ToLowerInvariant();
         return $"{httpMethod} {resourceUrl}";
     }
