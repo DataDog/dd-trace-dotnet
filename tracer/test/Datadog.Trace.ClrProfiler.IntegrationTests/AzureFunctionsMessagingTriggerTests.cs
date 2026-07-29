@@ -55,7 +55,6 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         SetEnvironmentVariable("EVENTHUBS_CONNECTION_STRING", GetEventHubsConnectionString());
         SetEnvironmentVariable("EVENTGRID_TOPIC_ENDPOINT", GetEventGridTopicEndpoint());
         SetEnvironmentVariable("EVENTGRID_TOPIC_KEY", "test-key");
-        SetEnvironmentVariable("DD_TRACE_AZUREEVENTGRID_ENABLED", "true");
         SetEnvironmentVariable("AzureWebJobsStorage", GetAzuriteConnectionString());
         // Exclude the Event Grid emulator endpoint from HTTP client tracing to avoid an extra http.request span.
         SetEnvironmentVariable(
