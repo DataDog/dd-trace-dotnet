@@ -22,6 +22,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     {
         public const string Name = "ServiceStackRedis";
     }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class SqlServerCollection : ICollectionFixture<SqlServerFixture>
+    {
+        public const string Name = "SqlServer";
+    }
 }
 
 #pragma warning restore SA1649 // File name should match first type name
