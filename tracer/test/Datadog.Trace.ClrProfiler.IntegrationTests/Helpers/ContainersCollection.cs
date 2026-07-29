@@ -28,6 +28,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     {
         public const string Name = "SqlServer";
     }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class PostgresCollection : ICollectionFixture<PostgresFixture>
+    {
+        public const string Name = "Postgres";
+    }
 }
 
 #pragma warning restore SA1649 // File name should match first type name

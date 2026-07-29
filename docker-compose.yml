@@ -37,12 +37,6 @@ services:
 
   postgres_arm64:
     image: postgres:10.5-alpine@sha256:295a08ddd9efa1612c46033f0b96c3976f80f49c7ce29e05916b0af557806117
-    environment:
-    - POSTGRES_PASSWORD=postgres
-    - POSTGRES_USER=postgres
-    - POSTGRES_DB=postgres
-    ports:
-    - "5432"
 
   rabbitmq_arm64:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
@@ -147,13 +141,6 @@ services:
 
   postgres:
     image: postgres:10.5-alpine@sha256:295a08ddd9efa1612c46033f0b96c3976f80f49c7ce29e05916b0af557806117
-    profiles: ["group1"]
-    environment:
-    - POSTGRES_PASSWORD=postgres
-    - POSTGRES_USER=postgres
-    - POSTGRES_DB=postgres
-    ports:
-    - "127.0.0.1:5432:5432"
 
   mysql:
     image: mysql/mysql-server:8.0@sha256:d6c8301b7834c5b9c2b733b10b7e630f441af7bc917c74dba379f24eeeb6a313
@@ -391,7 +378,6 @@ services:
       - ELASTICSEARCH7_HOST=elasticsearch7:9200
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
-      - POSTGRES_HOST=postgres
       - MYSQL_HOST=mysql
       - MYSQL_PORT=3306
       - MYSQL57_HOST=mysql57
@@ -601,7 +587,6 @@ services:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
     profiles: ["group1"]
     depends_on:
-      - postgres
       - mysql
       - mysql57
       - rabbitmq
@@ -611,7 +596,7 @@ services:
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
+    command: mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
 
   StartDependencies.Group2:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
@@ -665,7 +650,6 @@ services:
       - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
-      - POSTGRES_HOST=postgres_arm64
       - MYSQL_HOST=mysql_arm64
       - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq_arm64
@@ -702,7 +686,6 @@ services:
     depends_on:
       - elasticsearch7_arm64
       - mongo_arm64
-      - postgres_arm64
       - mysql_arm64
       - rabbitmq_arm64
       - localstack_arm64
@@ -714,7 +697,6 @@ services:
     depends_on:
       - elasticsearch7_arm64
       - mongo_arm64
-      - postgres_arm64
       - mysql_arm64
       - rabbitmq_arm64
       - localstack_arm64
@@ -722,7 +704,7 @@ services:
       - cosmosdb-emulator_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch7_arm64:9200 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
+    command: elasticsearch7_arm64:9200 mongo_arm64:27017 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
 
   IntegrationTests.ARM64.Debugger:
     build:
@@ -797,13 +779,12 @@ services:
     depends_on:
       - elasticsearch7_osx_arm64
       - mongo_osx_arm64
-      - postgres_osx_arm64
       - mysql_osx_arm64
       - rabbitmq_osx_arm64
       - localstack_osx_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch7_osx_arm64:9200 mongo_osx_arm64:27017 postgres_osx_arm64:5432 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
+    command: elasticsearch7_osx_arm64:9200 mongo_osx_arm64:27017 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
 
   # OSX ARM64 dependencies
 
@@ -846,12 +827,6 @@ services:
 
   postgres_osx_arm64:
     image: postgres:10.5-alpine@sha256:295a08ddd9efa1612c46033f0b96c3976f80f49c7ce29e05916b0af557806117
-    environment:
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=postgres
-    ports:
-      - "5432:5432"
 
   rabbitmq_osx_arm64:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69

@@ -275,7 +275,6 @@ internal static partial class DotNetSettingsExtensions
               .SetProcessEnvironmentVariable("ELASTICSEARCH7_HOST", "localhost:9200")
               .SetProcessEnvironmentVariable("ELASTICSEARCH6_HOST", "localhost:9200")
               .SetProcessEnvironmentVariable("ELASTICSEARCH5_HOST", "localhost:9200")
-              .SetProcessEnvironmentVariable("POSTGRES_HOST", "localhost")
               .SetProcessEnvironmentVariable("MYSQL_HOST", "localhost")
               .SetProcessEnvironmentVariable("MYSQL_PORT", "3306")
               .SetProcessEnvironmentVariable("RABBITMQ_HOST", "localhost")
