@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
-    [Collection(MySqlCollection.Name)]
+    [Collection(MySqlConnectorCollection.Name)]
     public class MySqlConnectorTests : TracingIntegrationTest
     {
         public MySqlConnectorTests(ITestOutputHelper output, MySql8Fixture mySqlFixture)

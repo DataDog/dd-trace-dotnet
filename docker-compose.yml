@@ -140,14 +140,6 @@ services:
 
   mysql57:
     image: mysql/mysql-server:5.7@sha256:1178cdd375f758968cd834ac4057bae41307e64b7c69a9e145896e7b11f48064
-    profiles: ["group1"]
-    environment:
-    - MYSQL_DATABASE=world
-    - MYSQL_ROOT_PASSWORD=mysqldb
-    - MYSQL_USER=mysqldb
-    - MYSQL_PASSWORD=mysqldb
-    ports:
-    - "127.0.0.1:3407:3306"
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:latest@sha256:2cd0aec4a3bfc3cf9205bed3f7922f4c6208f7c767dc62edcee308d0fd7d56d0
@@ -363,8 +355,6 @@ services:
       - ELASTICSEARCH7_HOST=elasticsearch7:9200
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
-      - MYSQL57_HOST=mysql57
-      - MYSQL57_PORT=3306
       - RABBITMQ_HOST=rabbitmq
       - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SDK_HOST=localstack:4566
@@ -570,7 +560,6 @@ services:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
     profiles: ["group1"]
     depends_on:
-      - mysql57
       - rabbitmq
       - kafka-broker
       - kafka-zookeeper
@@ -578,7 +567,7 @@ services:
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
+    command: rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
 
   StartDependencies.Group2:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e

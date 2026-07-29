@@ -36,9 +36,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     }
 
     [CollectionDefinition(Name, DisableParallelization = true)]
-    public class MySqlCollection : ICollectionFixture<MySql8Fixture>
+    public class MySqlCollection : ICollectionFixture<MySql8Fixture>, ICollectionFixture<MySql57Fixture>
     {
         public const string Name = "MySql";
+    }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class MySqlConnectorCollection : ICollectionFixture<MySql8Fixture>
+    {
+        public const string Name = "MySqlConnector";
     }
 }
 
