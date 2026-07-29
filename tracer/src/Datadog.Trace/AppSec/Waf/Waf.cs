@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -67,32 +66,18 @@ namespace Datadog.Trace.AppSec.Waf
             // set the log level and setup the logger
             wafLibraryInvoker.SetupLogging(wafDebugEnabled);
             IEncoder encoder = useUnsafeEncoder ? new Encoder() : new EncoderLegacy(wafLibraryInvoker);
-            DdwafConfigStruct configWafStruct = default;
-            var keyRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterKeyRegex);
-            var valueRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterValueRegex);
-            configWafStruct.KeyRegex = keyRegex;
-            configWafStruct.ValueRegex = valueRegex;
 
-            var diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
+            // starts out invalid so that destroying it is a no-op if the WAF never writes any diagnostics
+            var diagnostics = default(DdwafObjectStruct);
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
             try
             {
-                var result = wafConfigurator.Configure(configurationStatus, encoder, ref configWafStruct, ref diagnostics, configurationStatus.RuleSetTitle);
+                var result = wafConfigurator.Configure(configurationStatus, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex, ref diagnostics, configurationStatus.RuleSetTitle);
                 return InitResult.From(ref result);
             }
             finally
             {
-                if (keyRegex != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(keyRegex);
-                }
-
-                if (valueRegex != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(valueRegex);
-                }
-
-                wafLibraryInvoker.ObjectFree(ref diagnostics);
+                wafLibraryInvoker.ObjectDestroy(ref diagnostics);
             }
         }
 
@@ -104,7 +89,8 @@ namespace Datadog.Trace.AppSec.Waf
                 return UpdateResult.FromFailed("Waf is already disposed and can't be updated");
             }
 
-            var diagnostics = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
+            // starts out invalid so that destroying it is a no-op if the WAF never writes any diagnostics
+            var diagnostics = default(DdwafObjectStruct);
             var wafConfigurator = new WafConfigurator(_wafLibraryInvoker);
             try
             {
@@ -158,7 +144,7 @@ namespace Datadog.Trace.AppSec.Waf
             }
             finally
             {
-                _wafLibraryInvoker.ObjectFree(ref diagnostics);
+                _wafLibraryInvoker.ObjectDestroy(ref diagnostics);
             }
         }
 
@@ -257,8 +243,13 @@ namespace Datadog.Trace.AppSec.Waf
         }
 
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)
-        public unsafe WafReturnCode Run(IntPtr contextHandle, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafObjectStruct retNative, ulong timeoutMicroSeconds)
-            => _wafLibraryInvoker.Run(contextHandle, rawPersistentData, rawEphemeralData, ref retNative, timeoutMicroSeconds);
+        public unsafe WafReturnCode ContextEval(IntPtr contextHandle, DdwafObjectStruct* rawData, ref DdwafObjectStruct retNative, ulong timeoutMicroSeconds)
+            => _wafLibraryInvoker.ContextEval(contextHandle, rawData, ref retNative, timeoutMicroSeconds);
+
+        public IntPtr SubcontextInit(IntPtr contextHandle) => _wafLibraryInvoker.SubcontextInit(contextHandle);
+
+        public unsafe WafReturnCode SubcontextEval(IntPtr subcontextHandle, DdwafObjectStruct* rawData, ref DdwafObjectStruct retNative, ulong timeoutMicroSeconds)
+            => _wafLibraryInvoker.SubcontextEval(subcontextHandle, rawData, ref retNative, timeoutMicroSeconds);
 
         public void Dispose()
         {

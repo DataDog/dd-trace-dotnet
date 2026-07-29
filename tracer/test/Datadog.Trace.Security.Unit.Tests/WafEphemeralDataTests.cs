@@ -130,7 +130,11 @@ namespace Datadog.Trace.Security.Unit.Tests
                 }
                 else
                 {
-                    result.ReturnCode.Should().Be(WafReturnCode.Ok);
+                    // since libddwaf 2.x deriving attributes (here the endpoint fingerprint, which every
+                    // one of these runs recomputes in its own subcontext) is enough to return Match, so
+                    // only the absence of events tells a benign run from an attack
+                    result.ShouldReportSecurityResult.Should().BeFalse();
+                    result.Data.Should().BeNull();
                 }
             }
         }

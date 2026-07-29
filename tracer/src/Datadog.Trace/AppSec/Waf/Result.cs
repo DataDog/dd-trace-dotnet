@@ -30,7 +30,12 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             Actions = (Dictionary<string, object?>?)actionsObj;
-            ShouldReportSecurityResult = returnCode >= WafReturnCode.Match;
+
+            // Since libddwaf 2.x a run that only produces attributes or actions also returns DDWAF_MATCH,
+            // so the return code alone is no longer enough: requiring events keeps this to actual rule
+            // matches and stops API Security runs from being reported as security results.
+            var events = eventsObj as IReadOnlyCollection<object>;
+            ShouldReportSecurityResult = returnCode >= WafReturnCode.Match && events is { Count: > 0 };
 
             if (keepObj is bool keepValue)
             {
@@ -48,9 +53,9 @@ namespace Datadog.Trace.AppSec.Waf
                 BuildDerivatives(attributesValue);
             }
 
-            if (ShouldReportSecurityResult && eventsObj is IReadOnlyCollection<object> eventsValue)
+            if (ShouldReportSecurityResult)
             {
-                Data = eventsValue;
+                Data = events;
             }
 
             if (Actions is { Count: > 0 })

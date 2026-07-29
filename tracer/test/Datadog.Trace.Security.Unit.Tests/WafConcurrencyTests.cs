@@ -117,13 +117,17 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
                         }
 
                         var result = context.Run(args, WafRunTimeoutMicroSeconds);
-                        result.ReturnCode.Should().Be(WafReturnCode.Ok);
+
+                        // since libddwaf 2.x a run that only derives attributes (here the fingerprints)
+                        // also returns Match, so the return code no longer tells attacks apart from
+                        // benign runs: ShouldReportSecurityResult does
+                        result.ShouldReportSecurityResult.Should().BeFalse();
                         args.Clear();
 
                         args.Add(AddressesConstants.RequestBody, new List<string> { "dog1", "dog2", "dog3", "dog4" });
                         result = context.Run(args, WafRunTimeoutMicroSeconds);
                         result.Timeout.Should().BeFalse("Timeout should be false");
-                        result.ReturnCode.Should().Be(WafReturnCode.Ok);
+                        result.ShouldReportSecurityResult.Should().BeFalse();
                         args.Clear();
 
                         args.Add(AddressesConstants.RequestCookies, new Dictionary<string, object> { { $"appscan_fingerprint{{j}}", "[$slice]" }, { "dog3", $"[$slice]{next}" } });
@@ -151,7 +155,7 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
                         args.Add(AddressesConstants.ResponseStatus, "200");
                         result = context.Run(args, WafRunTimeoutMicroSeconds);
                         result.Timeout.Should().BeFalse("Timeout should be false");
-                        result.ReturnCode.Should().Be(WafReturnCode.Ok);
+                        result.ShouldReportSecurityResult.Should().BeFalse();
                         args.Clear();
                     }
                 });

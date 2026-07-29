@@ -24,6 +24,12 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 {
     internal sealed class WafConfigurator
     {
+        /// <summary>
+        /// Path of the builder configuration holding the obfuscation regexes. It is namespaced so it
+        /// can't collide with the RCM paths handled by <see cref="ConfigurationState"/>.
+        /// </summary>
+        private const string ObfuscatorConfigPath = "obfuscator/config";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafConfigurator));
         private readonly WafLibraryInvoker _wafLibraryInvoker;
 
@@ -117,9 +123,61 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return root;
         }
 
-        internal UpdateResult Configure(ConfigurationState configurationState, IEncoder encoder, ref DdwafConfigStruct configStruct, ref DdwafObjectStruct diagnostics, string? rulesFile)
+        internal UpdateResult Configure(ConfigurationState configurationState, IEncoder encoder, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, ref DdwafObjectStruct diagnostics, string? rulesFile)
         {
-            return Update(_wafLibraryInvoker.InitBuilder(ref configStruct), configurationState, encoder, ref diagnostics, rulesFile, false);
+            var wafBuilderHandle = _wafLibraryInvoker.InitBuilder();
+            if (wafBuilderHandle != IntPtr.Zero)
+            {
+                // since libddwaf 2.x the obfuscator is no longer part of a global ddwaf_config, it is a
+                // configuration of the builder like any other, and it persists across builds
+                ApplyObfuscatorConfig(wafBuilderHandle, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            }
+
+            return Update(wafBuilderHandle, configurationState, encoder, ref diagnostics, rulesFile, false);
+        }
+
+        /// <summary>
+        /// Registers the obfuscation regexes as a dedicated builder configuration. Both keys are
+        /// optional: when one is missing the WAF falls back on its own default regex.
+        /// </summary>
+        private void ApplyObfuscatorConfig(IntPtr wafBuilderHandle, IEncoder encoder, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
+        {
+            var obfuscator = new Dictionary<string, object>();
+            if (!StringUtil.IsNullOrEmpty(obfuscationParameterKeyRegex))
+            {
+                obfuscator["key_regex"] = obfuscationParameterKeyRegex;
+            }
+
+            if (!StringUtil.IsNullOrEmpty(obfuscationParameterValueRegex))
+            {
+                obfuscator["value_regex"] = obfuscationParameterValueRegex;
+            }
+
+            if (obfuscator.Count == 0)
+            {
+                return;
+            }
+
+            // this diagnostics object is local: it must not pollute the diagnostics reported for the ruleset
+            var diagnostics = default(DdwafObjectStruct);
+            try
+            {
+                using var encoded = encoder.Encode(new Dictionary<string, object> { { "obfuscator", obfuscator } }, applySafetyLimits: false);
+                var configObj = encoded.ResultDdwafObject;
+                if (!_wafLibraryInvoker.BuilderAddOrUpdateConfig(wafBuilderHandle, ObfuscatorConfigPath, ref configObj, ref diagnostics))
+                {
+                    Log.Warning("WAF builder: the obfuscator configuration failed to load, the WAF will use its default obfuscation regexes");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "WAF builder: the obfuscator configuration could not be applied, the WAF will use its default obfuscation regexes");
+            }
+            finally
+            {
+                // diagnostics are always allocated by the WAF with the default allocator
+                _wafLibraryInvoker.ObjectDestroy(ref diagnostics);
+            }
         }
 
         internal UpdateResult Update(IntPtr wafBuilderHandle, ConfigurationState configurationState, IEncoder encoder, ref DdwafObjectStruct diagnostics, string? rulesFile = null, bool updating = true)
