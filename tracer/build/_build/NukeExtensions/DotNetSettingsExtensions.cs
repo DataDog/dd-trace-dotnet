@@ -269,9 +269,6 @@ internal static partial class DotNetSettingsExtensions
     {
         return toolSettings
               .SetProcessEnvironmentVariable("MONGO_HOST", "localhost")
-              .SetProcessEnvironmentVariable("SERVICESTACK_REDIS_HOST", "localhost:6379")
-              .SetProcessEnvironmentVariable("STACKEXCHANGE_REDIS_HOST", "localhost:6392,127.0.0.1:6390")
-              .SetProcessEnvironmentVariable("STACKEXCHANGE_REDIS_SINGLE_HOST", "localhost:6391")
               .SetProcessEnvironmentVariable("ELASTICSEARCH7_HOST", "localhost:9200")
               .SetProcessEnvironmentVariable("ELASTICSEARCH6_HOST", "localhost:9200")
               .SetProcessEnvironmentVariable("ELASTICSEARCH5_HOST", "localhost:9200")
