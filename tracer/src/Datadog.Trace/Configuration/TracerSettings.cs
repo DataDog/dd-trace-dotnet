@@ -373,7 +373,11 @@ namespace Datadog.Trace.Configuration
                                     .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled)
                                     .AsBool(defaultValue: false);
 
+#if NETCOREAPP3_1_OR_GREATER
             OpenTelemetryLogsEnabled = OpenTelemetryLogsEnabled && OtelLogsExporterEnabled;
+#else
+            OpenTelemetryLogsEnabled = false;
+#endif
 
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
@@ -801,11 +805,11 @@ namespace Datadog.Trace.Configuration
                                     .AsInt32(2000, value => value > 0).Value;
 
 #if NET6_0_OR_GREATER
-            OtlpRuntimeMetricsEnabled = OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled && RuntimeMetricsEnabled;
+            OtlpMetricsExportEnabled = OpenTelemetryMetricsEnabled && OtelMetricsExporterEnabled;
 #else
-            // Default to false on unsupported TFMs so the StatsD RuntimeMetricsWriter runs as expected.
-            OtlpRuntimeMetricsEnabled = false;
+            OtlpMetricsExportEnabled = false;
 #endif
+            OtlpRuntimeMetricsEnabled = OtlpMetricsExportEnabled && RuntimeMetricsEnabled;
 
             // OTEL_TRACES_SPAN_METRICS_ENABLED is a tri-state: explicit true/false overrides auto-detection.
             // When unset, span metrics are auto-enabled iff OTEL_TRACES_EXPORTER=otlp AND DD_METRICS_OTEL_ENABLED=true.
@@ -1270,6 +1274,11 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled"/>
         internal bool RuntimeMetricsDiagnosticsMetricsApiEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the OTLP metrics pipeline is enabled on this target framework.
+        /// </summary>
+        internal bool OtlpMetricsExportEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether runtime metrics should be collected in OTEL format and exported via OTLP.

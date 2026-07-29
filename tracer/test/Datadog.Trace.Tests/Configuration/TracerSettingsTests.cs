@@ -1055,6 +1055,36 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData("true", null, true)]
+        [InlineData("true", "otlp", true)]
+        [InlineData("true", "none", false)]
+        [InlineData("false", "otlp", false)]
+        public void OtlpMetricsExportEnabled(string metricsEnabled, string exporter, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, metricsEnabled),
+                (ConfigurationKeys.OpenTelemetry.MetricsExporter, exporter));
+            var settings = new TracerSettings(source);
+
+            settings.OtlpMetricsExportEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("true", null, true)]
+        [InlineData("true", "otlp", true)]
+        [InlineData("true", "none", false)]
+        [InlineData("false", "otlp", false)]
+        public void OpenTelemetryLogsEnabled(string logsEnabled, string exporter, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled, logsEnabled),
+                (ConfigurationKeys.OpenTelemetry.LogsExporter, exporter));
+            var settings = new TracerSettings(source);
+
+            settings.OpenTelemetryLogsEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [InlineData("otlp", true, true)] // OTLP export: explicit true is honored
         [InlineData(null, true, false)] // non-OTLP export: explicit true is forced back to false
         [InlineData(null, false, false)] // non-OTLP export: explicit false stays false
