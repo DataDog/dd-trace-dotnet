@@ -191,6 +191,9 @@ internal sealed class Context : IContext
                 {
                     Log.Error("WAF ddwaf_subcontext_init failed, the ephemeral run was skipped");
                     args.Dispose();
+
+                    // nothing ran, so don't let this call's wall clock leak into the aggregated runtime
+                    _stopwatch.Stop();
                     return null;
                 }
 
