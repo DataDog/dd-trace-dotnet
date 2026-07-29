@@ -240,10 +240,6 @@ internal sealed class OtlpExporter : IOtlpExporter
         }
         finally
         {
-            // Log payloads may contain sensitive customer data. On successful serialization,
-            // only the written portion needs clearing. If serialization failed, bytesWritten is
-            // zero and the partial write length is unknown, so clear the entire rented buffer.
-            Array.Clear(buffer, 0, bytesWritten > 0 ? bytesWritten : buffer.Length);
             ArrayPool<byte>.Shared.Return(buffer);
         }
     }
