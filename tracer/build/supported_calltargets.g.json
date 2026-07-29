@@ -859,6 +859,81 @@
   },
   {
     "IntegrationName": "AspNet",
+    "AssemblyName": "System.Runtime.Serialization",
+    "TargetTypeName": "System.Runtime.Serialization.Json.DataContractJsonSerializer",
+    "TargetMethodName": "WriteObject",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Xml.XmlDictionaryWriter",
+      "System.Object"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_XmlDictionaryWriter_Integration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 2
+  },
+  {
+    "IntegrationName": "AspNet",
+    "AssemblyName": "System.Runtime.Serialization",
+    "TargetTypeName": "System.Runtime.Serialization.XmlObjectSerializer",
+    "TargetMethodName": "WriteObject",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.IO.Stream",
+      "System.Object"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_Integration",
+    "IntegrationKind": 1,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 2
+  },
+  {
+    "IntegrationName": "AspNet",
+    "AssemblyName": "System.Runtime.Serialization",
+    "TargetTypeName": "System.Runtime.Serialization.XmlObjectSerializer",
+    "TargetMethodName": "WriteObject",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.Xml.XmlWriter",
+      "System.Object"
+    ],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet.DataContractJsonSerializer_WriteObject_XmlWriter_Integration",
+    "IntegrationKind": 1,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 2
+  },
+  {
+    "IntegrationName": "AspNet",
     "AssemblyName": "System.Web",
     "TargetTypeName": "System.Web.Compilation.BuildManager",
     "TargetMethodName": "InvokePreStartInitMethodsCore",
