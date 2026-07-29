@@ -66,6 +66,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("network.peer.address")
                 .IsOptional("server.address")
                 .IsOptional("user_agent.original")
+                // In OTel semantics mode exceptions are recorded as span events instead of error.* tags
+                .IsOptional("events")
                 // Datadog-only attributes with no OpenTelemetry equivalent, which the RFC retains
                 .IsOptional("aspnet_core.endpoint")
                 .IsOptional("aspnet_core.route")

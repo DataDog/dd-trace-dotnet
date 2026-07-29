@@ -90,6 +90,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
 
+            // With OTel semantics, exceptions are recorded as span events rather than error.* tags
+            VerifyHelper.AddSpanEventScrubbers(settings);
+
             await Verifier.Verify(spans, settings)
                           .UseMethodName("_")
                           .UseTypeName(_testName);

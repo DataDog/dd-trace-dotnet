@@ -53,6 +53,24 @@ namespace Datadog.Trace.TestHelpers
 
         private static readonly Regex CodeOriginFilePathRegex = new(@"(?<prefix>_dd\.code_origin\.frames\.\d+\.file:\s*)(?<path>[^,\r\n]+)", RegOptions);
 
+        private static readonly Regex SpanEventTimeRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)", RegOptions);
+
+        private static readonly Regex SpanEventStackTraceRegex = new(@"""exception\.stacktrace"":""(?:\\.|[^""\\])*""", RegOptions);
+
+        /// <summary>
+        /// Scrubs the non-deterministic parts of span events: the event timestamp and, for
+        /// <c>exception</c> events, the stack trace. This is opt-in rather than part of
+        /// <see cref="SpanScrubbers"/> because existing snapshots record the real stack trace under
+        /// <c>error.stack</c>. Needed by tests that record exceptions as span events, i.e. with
+        /// <c>DD_TRACE_OTEL_SEMANTICS_ENABLED=true</c>.
+        /// </summary>
+        /// <param name="settings">The verifier settings to add the scrubbers to.</param>
+        public static void AddSpanEventScrubbers(VerifySettings settings)
+        {
+            settings.AddRegexScrubber(SpanEventTimeRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
+            settings.AddRegexScrubber(SpanEventStackTraceRegex, @"""exception.stacktrace"":""<stacktrace>""");
+        }
+
         /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
         /// This method produces a "sanitised" version to remove problematic values
