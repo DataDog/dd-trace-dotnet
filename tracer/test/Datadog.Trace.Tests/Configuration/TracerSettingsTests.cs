@@ -1061,6 +1061,9 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("false", "otlp", false)]
         public void OtlpMetricsExportEnabled(string metricsEnabled, string exporter, bool expected)
         {
+#if !NET6_0_OR_GREATER
+            expected = false;
+#endif
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsEnabled, metricsEnabled),
                 (ConfigurationKeys.OpenTelemetry.MetricsExporter, exporter));
@@ -1076,6 +1079,9 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("false", "otlp", false)]
         public void OpenTelemetryLogsEnabled(string logsEnabled, string exporter, bool expected)
         {
+#if !NETCOREAPP3_1_OR_GREATER
+            expected = false;
+#endif
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled, logsEnabled),
                 (ConfigurationKeys.OpenTelemetry.LogsExporter, exporter));
