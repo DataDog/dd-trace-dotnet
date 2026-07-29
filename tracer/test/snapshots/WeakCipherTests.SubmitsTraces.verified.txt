@@ -19,7 +19,7 @@
       "type": "WEAK_CIPHER",
       "hash": 1966097305,
       "location": {
-        "path": "Samples.WeakCipher.Program",
+        "class": "Samples.WeakCipher.Program",
         "method": "VulnerableSection"
       },
       "evidence": {
@@ -56,7 +56,7 @@
       "type": "WEAK_CIPHER",
       "hash": 1966097305,
       "location": {
-        "path": "Samples.WeakCipher.Program",
+        "class": "Samples.WeakCipher.Program",
         "method": "VulnerableSection"
       },
       "evidence": {
@@ -93,7 +93,7 @@
       "type": "WEAK_CIPHER",
       "hash": 1966097305,
       "location": {
-        "path": "Samples.WeakCipher.Program",
+        "class": "Samples.WeakCipher.Program",
         "method": "VulnerableSection"
       },
       "evidence": {
@@ -130,7 +130,7 @@
       "type": "WEAK_CIPHER",
       "hash": 1966097305,
       "location": {
-        "path": "Samples.WeakCipher.Program",
+        "class": "Samples.WeakCipher.Program",
         "method": "VulnerableSection"
       },
       "evidence": {
@@ -167,7 +167,7 @@
       "type": "WEAK_CIPHER",
       "hash": 1966097305,
       "location": {
-        "path": "Samples.WeakCipher.Program",
+        "class": "Samples.WeakCipher.Program",
         "method": "VulnerableSection"
       },
       "evidence": {
@@ -204,7 +204,7 @@
       "type": "WEAK_CIPHER",
       "hash": 1966097305,
       "location": {
-        "path": "Samples.WeakCipher.Program",
+        "class": "Samples.WeakCipher.Program",
         "method": "VulnerableSection"
       },
       "evidence": {
