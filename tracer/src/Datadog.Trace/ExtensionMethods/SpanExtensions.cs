@@ -88,9 +88,12 @@ namespace Datadog.Trace.ExtensionMethods
             }
             else
             {
-                return span.GetTag(Tags.HttpStatusCode) is not null;
+                return span.GetTag(Tags.HttpStatusCode) is not null || span.GetTag(Tags.HttpResponseStatusCode) is not null;
             }
         }
+
+        internal static string GetHttpStatusCodeString(this Span span)
+            => span.GetTag(Tags.HttpStatusCode) ?? span.GetTag(Tags.HttpResponseStatusCode);
 
         internal static int? GetHttpStatusCode(this Span span)
         {
@@ -100,7 +103,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
             else
             {
-                var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
+                var rawHttpStatusCode = span.GetHttpStatusCodeString();
                 if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
                 {
                     return null;

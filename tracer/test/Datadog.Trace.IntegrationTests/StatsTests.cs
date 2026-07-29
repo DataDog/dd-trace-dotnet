@@ -156,7 +156,7 @@ namespace Datadog.Trace.IntegrationTests
             durationStartBuckets.Single().Hits.Should().Be(3);
             durationStartBuckets.Single().Duration.Should().Be(beforeY2KDuration.ToNanoseconds());
 
-            var durationStartSpans = spans.Where(s => s.Name == "default_operation" && s.Resource == "default-resource" && s.Service == "default-service" && s.GetTag(Tags.Origin) != "synthetics" && s.Type == "default-type" && s.GetHttpStatusCode() == "200");
+            var durationStartSpans = spans.Where(s => s.Name == "default_operation" && s.Resource == "default-resource" && s.Service == "default-service" && s.GetTag(Tags.Origin) != "synthetics" && s.Type == "default-type" && s.GetHttpStatusCodeString() == "200");
             durationStartSpans.Should().HaveCount(3);
             durationStartSpans.Sum(s => s.Duration).Should().Be(beforeY2KDuration.ToNanoseconds());
 
@@ -171,8 +171,8 @@ namespace Datadog.Trace.IntegrationTests
             stats.Where(s => s.HttpStatusCode == 0).Sum(s => s.Hits).Should().Be(3, "http.status_code key is deleted if it's an invalid numeric value smaller than 100 or bigger than 600");
             stats.Where(s => s.HttpStatusCode != 0).Should().OnlyContain(s => s.HttpStatusCode == 200);
 
-            spans.Where(s => s.GetTag(Tags.HttpStatusCode) is null).Should().HaveCount(3, "http.status_code key is deleted if it's an invalid numeric value smaller than 100 or bigger than 600");
-            spans.Where(s => s.GetTag(Tags.HttpStatusCode) is not null).Should().OnlyContain(s => s.GetTag(Tags.HttpStatusCode) == "200");
+            spans.Where(s => s.GetHttpStatusCodeString() is null).Should().HaveCount(3, "http.status_code key is deleted if it's an invalid numeric value smaller than 100 or bigger than 600");
+            spans.Where(s => s.GetHttpStatusCodeString() is not null).Should().OnlyContain(s => s.GetHttpStatusCodeString() == "200");
 
             Span CreateDefaultSpan(string serviceName = null, string operationName = null, string resourceName = null, string type = null, string httpStatusCode = null, bool finishOnClose = true)
             {
@@ -603,7 +603,7 @@ namespace Datadog.Trace.IntegrationTests
                 group.Errors.Should().Be(2);
                 group.ErrorSummary.Should().NotBeEmpty();
                 group.Hits.Should().Be(tracesCount);
-                group.HttpStatusCode.Should().Be(span.GetHttpStatusCode());
+                group.HttpStatusCode.Should().Be(span.GetHttpStatusCodeString());
                 group.Name.Should().Be(span.OperationName);
                 group.OkSummary.Should().NotBeEmpty();
                 group.Synthetics.Should().Be(false);
