@@ -50,17 +50,28 @@ namespace Datadog.Trace.ExtensionMethods
             string host,
             string httpUrl,
             string userAgent,
-            WebTags tags)
+            WebTags tags,
+            bool otelSemanticsEnabled = false)
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
 
-            if (tags is not null)
+            if (tags is null)
             {
-                tags.HttpMethod = method;
+                return;
+            }
+
+            // These properties are declared with both a Datadog and an OpenTelemetry tag name,
+            // so the wire name is chosen at serialization time.
+            tags.HttpMethod = method;
+            tags.HttpUserAgent = userAgent;
+
+            if (!otelSemanticsEnabled)
+            {
+                // OpenTelemetry has no equivalent of these attributes: it splits the same information
+                // into url.scheme/url.path/url.query and server.address/server.port, which the caller sets.
                 tags.HttpRequestHeadersHost = host;
                 tags.HttpUrl = httpUrl;
-                tags.HttpUserAgent = userAgent;
             }
         }
 

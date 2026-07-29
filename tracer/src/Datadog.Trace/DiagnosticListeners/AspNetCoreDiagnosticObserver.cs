@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
@@ -303,12 +304,7 @@ namespace Datadog.Trace.DiagnosticListeners
             HttpContext httpContext,
             HttpRequest request)
         {
-            // Create a child span for the MVC action
-            var mvcSpanTags = new AspNetCoreMvcTags();
-            var mvcScope = tracer.StartActiveInternal(MvcOperationName, tags: mvcSpanTags);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            var span = mvcScope.Span;
-            span.Type = SpanTypes.Web;
+            var otelSemanticsEnabled = tracer.Settings.OtelSemanticsEnabled;
 
             // StartMvcCoreSpan is only called with new route names, so parent tags are always AspNetCoreEndpointTags
             var rootSpan = trackingFeature.RootScope.Span;
@@ -372,41 +368,64 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (routeTemplate is not null)
                 {
-                    // If we have a route, overwrite the existing resource name
-                    var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRouteTemplate(
-                        routeTemplate,
-                        typedArg.RouteData.Values,
-                        areaName: areaName,
-                        controllerName: controllerName,
-                        actionName: actionName,
-                        expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
+                    aspNetRoute = routeTemplate.TemplateText.ToLowerInvariant();
 
-                    resourceName = $"{rootSpanTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    if (otelSemanticsEnabled)
+                    {
+                        // The OTel span name must be "{method} {http.route}", so use the route verbatim
+                        resourceName = $"{HttpOtelHelper.GetSpanNameMethod(rootSpanTags.HttpMethod)} {aspNetRoute}";
+                    }
+                    else
+                    {
+                        // If we have a route, overwrite the existing resource name
+                        var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRouteTemplate(
+                            routeTemplate,
+                            typedArg.RouteData.Values,
+                            areaName: areaName,
+                            controllerName: controllerName,
+                            actionName: actionName,
+                            expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
 
-                    aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
+                        resourceName = $"{rootSpanTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    }
                 }
             }
 
             // mirror the parent if we couldn't extract a route for some reason
             // (and the parent is not using the placeholder resource name)
-            span.ResourceName = resourceName
-                             ?? (string.IsNullOrEmpty(rootSpan.ResourceName)
-                                     ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request)
-                                     : rootSpan.ResourceName);
-
-            mvcSpanTags.AspNetCoreAction = actionName;
-            mvcSpanTags.AspNetCoreController = controllerName;
-            mvcSpanTags.AspNetCoreArea = areaName;
-            mvcSpanTags.AspNetCorePage = pagePath;
-            mvcSpanTags.AspNetCoreRoute = aspNetRoute;
+            var effectiveResourceName = resourceName
+                                     ?? (string.IsNullOrEmpty(rootSpan.ResourceName)
+                                             ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request, otelSemanticsEnabled)
+                                             : rootSpan.ResourceName);
 
             if (!isUsingEndpointRouting && isFirstExecution)
             {
                 // If we're using endpoint routing or this is a pipeline re-execution,
                 // these will already be set correctly
                 rootSpanTags.AspNetCoreRoute = aspNetRoute;
-                rootSpan.ResourceName = span.ResourceName;
+                rootSpan.ResourceName = effectiveResourceName;
             }
+
+            if (otelSemanticsEnabled)
+            {
+                // The OpenTelemetry ASP.NET Core instrumentation generates a single server span,
+                // so don't create the aspnet_core_mvc.request child span.
+                return null;
+            }
+
+            // Create a child span for the MVC action
+            var mvcSpanTags = new AspNetCoreMvcTags();
+            var mvcScope = tracer.StartActiveInternal(MvcOperationName, tags: mvcSpanTags);
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            var span = mvcScope.Span;
+            span.Type = SpanTypes.Web;
+            span.ResourceName = effectiveResourceName;
+
+            mvcSpanTags.AspNetCoreAction = actionName;
+            mvcSpanTags.AspNetCoreController = controllerName;
+            mvcSpanTags.AspNetCoreArea = areaName;
+            mvcSpanTags.AspNetCorePage = pagePath;
+            mvcSpanTags.AspNetCoreRoute = aspNetRoute;
 
             return span;
         }
@@ -453,7 +472,8 @@ namespace Datadog.Trace.DiagnosticListeners
              && typedArg.HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
-                var routeTemplateResourceNamesEnabled = _tracer.Settings.RouteTemplateResourceNamesEnabled;
+                var otelSemanticsEnabled = _tracer.Settings.OtelSemanticsEnabled;
+                var routeTemplateResourceNamesEnabled = _tracer.Settings.RouteTemplateResourceNamesEnabled || otelSemanticsEnabled;
                 var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
                 // Only modify tracking feature if _not_ using legacy feature names
                 if (isFirstExecution && routeTemplateResourceNamesEnabled)
@@ -557,15 +577,25 @@ namespace Datadog.Trace.DiagnosticListeners
                                       ? raw as string
                                       : null;
 
-                var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
-                    routePattern,
-                    routeValues,
-                    areaName: areaName,
-                    controllerName: controllerName,
-                    actionName: actionName,
-                    _tracer.Settings.ExpandRouteTemplatesEnabled);
+                string resourceName;
+                if (otelSemanticsEnabled)
+                {
+                    // The OTel span name must be "{method} {http.route}", so use the route verbatim
+                    // instead of the Datadog simplified route pattern.
+                    resourceName = $"{HttpOtelHelper.GetSpanNameMethod(tags.HttpMethod)} {normalizedRoute}";
+                }
+                else
+                {
+                    var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+                        routePattern,
+                        routeValues,
+                        areaName: areaName,
+                        controllerName: controllerName,
+                        actionName: actionName,
+                        _tracer.Settings.ExpandRouteTemplatesEnabled);
 
-                var resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                }
 
                 // NOTE: We could set the controller/action/area tags on the parent span
                 // But instead we re-extract them in the MVC endpoint as these are MVC
@@ -612,13 +642,14 @@ namespace Datadog.Trace.DiagnosticListeners
                 Span span = null;
                 if (integrationEnabled)
                 {
-                    if (!_tracer.Settings.RouteTemplateResourceNamesEnabled)
+                    if (!_tracer.Settings.RouteTemplateResourceNamesEnabled && !_tracer.Settings.OtelSemanticsEnabled)
                     {
                         // override the parent's resource name with the simplified MVC route template
                         rootSpan.ResourceName = GetLegacyResourceName(typedArg);
                     }
                     else
                     {
+                        // Returns null when OTel semantics are enabled: a single server span is generated
                         span = StartMvcCoreSpan(_tracer, trackingFeature, typedArg, httpContext, request);
                     }
                 }
@@ -638,6 +669,12 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (span is not null)
                 {
                     _security.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+                }
+                else if (_tracer.Settings.OtelSemanticsEnabled)
+                {
+                    // With OTel semantics there is no MVC child span, so report against the root span
+                    // (this is what SingleSpanAspNetCoreDiagnosticObserver already does)
+                    _security.CheckPathParamsFromAction(httpContext, rootSpan, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
                 }
 
                 if (iastEnabled)
