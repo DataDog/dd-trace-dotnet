@@ -19,7 +19,8 @@ internal static partial class ConfigurationKeys
     {
         /// <summary>
         /// Experimental feature flag that enables ASP.NET Core request tracing in .NET Framework processes.
-        /// Default value is <c>false</c>. This setting has no effect on modern .NET runtimes. This feature is considered a
+        /// Default value is <c>false</c>. In addition to setting this flag, the feature must also be enabled by including it in
+        /// <c>DD_TRACE_EXPERIMENTAL_FEATURES_ENABLED</c>. This setting has no effect on modern .NET runtimes. This feature is considered a
         /// temporary compatibility layer, and will be removed <a href="https://devblogs.microsoft.com/dotnet/aspnet-core-2-3-end-of-support/">
         /// when the feature is no longer supported by Microsoft</a>. It supports tracing only, and does not support additional
         /// products such as ASM, Code Origins, IAST, or DSM. ASP.NET Core on .NET Framework is not supported in Azure Functions.
