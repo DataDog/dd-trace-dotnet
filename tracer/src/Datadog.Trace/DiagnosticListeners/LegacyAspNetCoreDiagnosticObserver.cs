@@ -214,6 +214,7 @@ internal sealed class LegacyAspNetCoreDiagnosticObserver : DiagnosticObserver
                 if (router.TryDuckCast<IRouteBaseProxy>(out var routeBase) && routeBase.ParsedTemplate is { } conventionalTemplate)
                 {
                     routeTemplate = conventionalTemplate;
+                    break;
                 }
             }
         }
