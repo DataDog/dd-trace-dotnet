@@ -104,7 +104,6 @@ public class ConfigurationKeysGeneratorTests
         using var s = new AssertionScope();
         diagnostics.Should().BeEmpty();
 
-        // 3 product partial classes + the always-emitted SensitiveKeys partial class
         outputs.Should().HaveCount(4);
         var appSecOutput = outputs.First(o => o.Contains("AppSec"));
         var tracerOutput = outputs.First(o => o.Contains("Tracer"));
@@ -489,13 +488,12 @@ public class ConfigurationKeysGeneratorTests
 
         var sensitiveOutput = outputs.FirstOrDefault(o => o.Contains("SensitiveKeys"));
         sensitiveOutput.Should().NotBeNullOrEmpty();
-        sensitiveOutput.Should().Contain("public static readonly HashSet<string> SensitiveKeys = new()");
+        sensitiveOutput.Should().Contain("private static readonly HashSet<string> SensitiveKeys = new()");
+        sensitiveOutput.Should().Contain("public static bool IsSensitive(string key) => SensitiveKeys.Contains(key);");
 
-        // Both sensitive keys and the alias are included
         sensitiveOutput.Should().Contain("\"OTEL_EXPORTER_OTLP_HEADERS\",");
         sensitiveOutput.Should().Contain("\"OTEL_EXPORTER_OTLP_TRACES_HEADERS\",");
 
-        // Non-sensitive key is not in the set
         sensitiveOutput.Should().NotContain("\"DD_TRACE_ENABLED\",");
     }
 

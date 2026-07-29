@@ -1272,10 +1272,8 @@ namespace Datadog.Trace.Tests.Configuration
             var telemetry = new ConfigurationTelemetry();
             var settings = new TracerSettings(source, telemetry, new());
 
-            // The values are still parsed and applied (functional behavior is unchanged)
             settings.OtlpLogsHeaders.Should().Contain(new KeyValuePair<string, string>("dd-api-key", logsSentinel));
 
-            // ... but none of the configured header values appear in any telemetry configuration value
             var recordedValues = telemetry.GetQueueForTesting()
                                           .Select(e => e.StringValue)
                                           .Where(v => v is not null)
@@ -1288,7 +1286,6 @@ namespace Datadog.Trace.Tests.Configuration
                                    .Where(e => e.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
                                    .ToList();
 
-            // Guard against a vacuous assertion: the key must actually be recorded by TracerSettings
             entries.Should().NotBeEmpty($"'{ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders}' should be recorded by TracerSettings");
             entries.Should().OnlyContain(
                 e => e.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted && e.StringValue == null,

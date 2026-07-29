@@ -21,11 +21,13 @@ internal static partial class ConfigurationKeys
     /// The set of configuration keys (including aliases) marked <c>sensitive</c> in
     /// supported-configurations.yaml. Telemetry redacts the value of any key in this set.
     /// </summary>
-    public static readonly HashSet<string> SensitiveKeys = new()
+    private static readonly HashSet<string> SensitiveKeys = new()
     {
         "OTEL_EXPORTER_OTLP_HEADERS",
         "OTEL_EXPORTER_OTLP_LOGS_HEADERS",
         "OTEL_EXPORTER_OTLP_METRICS_HEADERS",
         "OTEL_EXPORTER_OTLP_TRACES_HEADERS",
     };
+
+    public static bool IsSensitive(string key) => SensitiveKeys.Contains(key);
 }

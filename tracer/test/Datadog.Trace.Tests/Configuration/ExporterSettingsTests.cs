@@ -365,7 +365,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             using var scope = new AssertionScope();
 
-            // Each header key is recorded as a redacted entry with no source value
             foreach (var key in new[]
                      {
                          ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders,
@@ -378,7 +377,6 @@ namespace Datadog.Trace.Tests.Configuration
                 entry.StringValue.Should().BeNull();
             }
 
-            // None of the configured header values appear in any recorded telemetry value
             foreach (var sentinel in new[] { baseSentinel, metricsSentinel, tracesSentinel })
             {
                 entries.Select(e => e.StringValue)
@@ -386,7 +384,6 @@ namespace Datadog.Trace.Tests.Configuration
                        .NotContain(v => v != null && v.Contains(sentinel), $"sentinel '{sentinel}' must not appear in configuration telemetry");
             }
 
-            // A non-sensitive exporter config is still recorded with its real value
             var endpointEntry = entries.Should().ContainSingle(e => e.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint).Subject;
             endpointEntry.Type.Should().Be(ConfigurationTelemetry.ConfigurationTelemetryEntryType.String);
             endpointEntry.StringValue.Should().Be(endpoint);

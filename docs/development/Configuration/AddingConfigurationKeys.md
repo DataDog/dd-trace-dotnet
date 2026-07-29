@@ -29,6 +29,7 @@ Two source generators read this file at build time:
 1. **`ConfigurationKeysGenerator`** - Generates the configuration key constants:
    - `ConfigurationKeys.g.cs` - Main configuration keys class with all constants
    - `ConfigurationKeys.<Product>.g.cs` - Product-specific partial classes (e.g., `ConfigurationKeys.OpenTelemetry.g.cs`)
+   - `ConfigurationKeys.Sensitive.g.cs` - Registry used to redact sensitive configuration values from telemetry
 
 2. **`ConfigurationKeyMatcherGenerator`** - Generates the fallback/alias resolution logic:
    - `ConfigurationKeyMatcher.g.cs` - Handles key lookups with fallback chain support
@@ -57,6 +58,7 @@ ConfigurationKeys.ProductName.cs. Without a product name, the keys will go in th
 - `product`: Groups the key into a product-specific partial class (e.g., `OpenTelemetry`)
 - `aliases`: A list of fallback environment variable names checked in order when the primary key is not found
 - `const_name`: Overrides the auto-generated constant name (useful for backward compatibility). For `managed`, the default is PascalCase.
+- `sensitive`: Set to `true` to redact the value from configuration telemetry. Defaults to `false`; aliases of a sensitive key are also treated as sensitive.
 
 These fields are mandatory to keep the configuration registry complete and to ensure consistent behavior and documentation across products.
 
@@ -158,6 +160,7 @@ The generator will create/update files in:
 **Generated files:**
 - `ConfigurationKeys.g.cs` - Main file with all keys
 - `ConfigurationKeys.<Product>.g.cs` - Product-specific partial classes (if using `product` field)
+- `ConfigurationKeys.Sensitive.g.cs` - Sensitive-key and alias registry used by configuration telemetry
 
 ### 5. Use the Generated Key
 

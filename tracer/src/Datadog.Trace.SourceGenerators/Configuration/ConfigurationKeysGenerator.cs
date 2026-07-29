@@ -84,8 +84,6 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
             context.AddSource(fileName, SourceText.From(productSource, Encoding.UTF8));
         }
 
-        // Emit the set of sensitive keys (plus their aliases) once on the main class.
-        // Skip when there are no configurations so empty input produces no output.
         if (configData.Configurations.Count > 0)
         {
             var sensitiveSource = GenerateSensitiveKeysPartialClass(configData.Configurations);
@@ -95,8 +93,6 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
 
     private static string GenerateSensitiveKeysPartialClass(Dictionary<string, ConfigEntry> configurations)
     {
-        // Collect the key (and aliases) of every entry flagged sensitive, so a read via
-        // either the primary key or an alias is gated. Sorted for deterministic output.
         var sensitiveKeys = new SortedSet<string>(StringComparer.Ordinal);
         foreach (var entry in configurations.Values)
         {
@@ -106,14 +102,11 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
             }
 
             sensitiveKeys.Add(entry.Key);
-            if (entry.Aliases is not null)
+            foreach (var alias in entry.Aliases.AsSpan())
             {
-                foreach (var alias in entry.Aliases)
+                if (!string.IsNullOrEmpty(alias))
                 {
-                    if (!string.IsNullOrEmpty(alias))
-                    {
-                        sensitiveKeys.Add(alias);
-                    }
+                    sensitiveKeys.Add(alias);
                 }
             }
         }
@@ -135,7 +128,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         sb.AppendLine("    /// The set of configuration keys (including aliases) marked <c>sensitive</c> in");
         sb.AppendLine("    /// supported-configurations.yaml. Telemetry redacts the value of any key in this set.");
         sb.AppendLine("    /// </summary>");
-        sb.AppendLine("    public static readonly HashSet<string> SensitiveKeys = new()");
+        sb.AppendLine("    private static readonly HashSet<string> SensitiveKeys = new()");
         sb.AppendLine("    {");
         foreach (var key in sensitiveKeys)
         {
@@ -143,6 +136,8 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
         }
 
         sb.AppendLine("    };");
+        sb.AppendLine();
+        sb.AppendLine("    public static bool IsSensitive(string key) => SensitiveKeys.Contains(key);");
         sb.AppendLine("}");
 
         return sb.ToString();
@@ -229,7 +224,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
                 deprecationMessage,
                 entry.ConstName,
                 entry.Sensitive,
-                entry.Aliases.AsArray());
+                entry.Aliases);
         }
 
         return new Result<ConfigurationData>(new ConfigurationData(configurations), new EquatableArray<DiagnosticInfo>(diagnostics.ToArray()));
@@ -430,7 +425,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
 
     private readonly struct ConfigEntry : IEquatable<ConfigEntry>
     {
-        public ConfigEntry(string key, string documentation, string product, string? deprecationMessage = null, string? constName = null, bool sensitive = false, string[]? aliases = null)
+        public ConfigEntry(string key, string documentation, string product, string? deprecationMessage = null, string? constName = null, bool sensitive = false, EquatableArray<string> aliases = default)
         {
             Key = key;
             Documentation = documentation;
@@ -453,51 +448,20 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
 
         public bool Sensitive { get; }
 
-        public string[]? Aliases { get; }
+        public EquatableArray<string> Aliases { get; }
 
         public bool Equals(ConfigEntry other)
-        {
-            if (Key != other.Key || Documentation != other.Documentation || Product != other.Product || DeprecationMessage != other.DeprecationMessage || ConstName != other.ConstName || Sensitive != other.Sensitive)
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(Aliases, other.Aliases))
-            {
-                return true;
-            }
-
-            if (Aliases is null || other.Aliases is null || Aliases.Length != other.Aliases.Length)
-            {
-                return Aliases is null && other.Aliases is null;
-            }
-
-            for (var i = 0; i < Aliases.Length; i++)
-            {
-                if (Aliases[i] != other.Aliases[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
+            => Key == other.Key
+            && Documentation == other.Documentation
+            && Product == other.Product
+            && DeprecationMessage == other.DeprecationMessage
+            && ConstName == other.ConstName
+            && Sensitive == other.Sensitive
+            && Aliases == other.Aliases;
 
         public override bool Equals(object? obj) => obj is ConfigEntry other && Equals(other);
 
-        public override int GetHashCode()
-        {
-            var hash = HashCode.Combine(Key, Documentation, Product, DeprecationMessage, ConstName, Sensitive);
-            if (Aliases is not null)
-            {
-                foreach (var alias in Aliases)
-                {
-                    hash = HashCode.Combine(hash, alias);
-                }
-            }
-
-            return hash;
-        }
+        public override int GetHashCode() => HashCode.Combine(Key, Documentation, Product, DeprecationMessage, ConstName, Sensitive, Aliases);
     }
 
     private sealed class ConfigurationData : IEquatable<ConfigurationData>
