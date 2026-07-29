@@ -845,6 +845,8 @@ services:
       - RANDOM_SEED
 
   test-agent:
+    # If you bump this digest, also update the hardcoded copy in
+    # tracer/build/_build/SmokeTests/SmokeTestRunner.Builder.cs (LinuxTestAgentImage).
     image: ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest@sha256:8165e1f1f7c891261ea5af9d7bf24413f75351a6fffbdf5e9277c9ac7c9029be
     volumes:
     - ./tracer/build/smoke_test_snapshots:/snapshots

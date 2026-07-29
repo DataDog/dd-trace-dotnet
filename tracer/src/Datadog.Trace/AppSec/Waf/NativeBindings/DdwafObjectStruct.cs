@@ -107,7 +107,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                             var array = (DdwafObjectStruct*)arrayPtr;
                             var key = Marshal.PtrToStringAnsi(array->ParameterName, (int)array->ParameterNameLength);
                             var value = array->Decode();
-                            res.Add(key, value);
+                            res[key] = value;
                         }
                     }
                 }

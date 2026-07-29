@@ -247,6 +247,14 @@ public static partial class SmokeTestRunner
             $"DD_TRACE_AGENT_URL=http://{TestAgentAlias}:8126",
             $"dockerTag={imageTag}",
         };
+
+        if (isWindowsScenario)
+        {
+            AddIfNotConfigured("COMPlus_DbgEnableMiniDump", "1");
+            AddIfNotConfigured("COMPlus_DbgMiniDumpType", "4");
+            AddIfNotConfigured("DOTNET_DbgMiniDumpName", @"C:\dumps\coredump.%t.%p.dmp");
+        }
+
         env.AddRange(environment.Select(kvp => $"{kvp.Key}={kvp.Value}"));
 
         return new CreateContainerParameters
@@ -262,6 +270,7 @@ public static partial class SmokeTestRunner
                     ? new List<string>
                     {
                         $"{logsDir}:c:/logs",
+                        $"{dumpsDir}:c:/dumps",
                     }
                     : new List<string>
                     {
@@ -277,6 +286,14 @@ public static partial class SmokeTestRunner
                 },
             },
         };
+
+        void AddIfNotConfigured(string key, string value)
+        {
+            if (!environment.ContainsKey(key))
+            {
+                env.Add($"{key}={value}");
+            }
+        }
     }
 
     // ──────────────────────────────────────────────────────────────
