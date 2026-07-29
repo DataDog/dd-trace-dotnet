@@ -52,6 +52,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     {
         public const string Name = "RabbitMq";
     }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class KafkaCollection : ICollectionFixture<KafkaFixture>
+    {
+        public const string Name = "Kafka";
+    }
 }
 
 #pragma warning restore SA1649 // File name should match first type name
