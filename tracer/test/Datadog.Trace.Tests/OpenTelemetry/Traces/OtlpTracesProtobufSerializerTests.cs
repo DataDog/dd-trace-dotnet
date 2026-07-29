@@ -622,7 +622,7 @@ public class OtlpTracesProtobufSerializerTests
 
     private static OtlpSpan SerializeAndParse(TraceChunkModel chunk, bool openTelemetrySemanticsEnabled = false)
     {
-        var serializer = new OtlpTracesProtobufSerializer(openTelemetrySemanticsEnabled);
+        var serializer = new OtlpTracesProtobufSerializer();
         var buffer = new byte[64 * 1024];
         var written = serializer.SerializeSpans(ref buffer, 0, chunk, spanBufferOffset: 0, maxSize: buffer.Length);
         serializer.FinishBody(ref buffer, written, maxSize: buffer.Length);
