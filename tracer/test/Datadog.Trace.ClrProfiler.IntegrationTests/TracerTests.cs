@@ -49,12 +49,9 @@ public class TracerTests : TestHelper
     [InlineData(true)]
     public async Task ReportsOtlpExportStateInStartupLog(bool enabled)
     {
-        if (enabled)
-        {
-            SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "otlp");
-            SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
-            SetEnvironmentVariable("DD_LOGS_OTEL_ENABLED", "true");
-        }
+        SetEnvironmentVariable("OTEL_TRACES_EXPORTER", enabled ? "otlp" : "none");
+        SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", enabled ? "true" : "false");
+        SetEnvironmentVariable("DD_LOGS_OTEL_ENABLED", enabled ? "true" : "false");
 
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
         var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
