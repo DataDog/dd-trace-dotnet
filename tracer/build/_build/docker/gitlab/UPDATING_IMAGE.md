@@ -41,6 +41,12 @@ Once `build-windows-ci-image` is green, re-run the `build:` job (or any other Wi
 - The `:latest` tag is **only** used to seed the Docker build cache on the next rebuild. Nothing in the pipeline consumes `:latest` as an input at runtime; the consumer always pins to the content hash.
 - Changes to `compute-image-hash.ps1` itself also invalidate the hash, because the script hashes its own directory.
 
+### vcpkg toolchain
+
+`install_vcpkg.ps1` installs vcpkg into `C:\vcpkg` and pre-fetches the helper tools vcpkg would otherwise download on every build (`cmake`, `7zip`, `powershell-core`, `ninja`). 
+
+- Keep `VCPKG_VERSION` in `gitlab.windows.dockerfile` in sync with the `vcpkgVersion` constant in `tracer/build/_build/Build.Steps.cs`, so the pre-fetched tool versions match what the build's vcpkg expects.
+
 ### Example PR
 
 - [dd-trace-dotnet#7492](https://github.com/DataDog/dd-trace-dotnet/pull/7492) (earlier, local-build flow — for structural reference)
