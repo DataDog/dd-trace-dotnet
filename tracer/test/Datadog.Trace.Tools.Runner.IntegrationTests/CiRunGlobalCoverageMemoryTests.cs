@@ -101,8 +101,8 @@ public sealed class CiRunGlobalCoverageMemoryTests
         int runCount = 1)
     {
         var environmentHelper = new EnvironmentHelper(SampleName, typeof(CiRunGlobalCoverageMemoryTests), _output);
-        var sampleAssembly = environmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, "net8.0");
-        Skip.IfNot(File.Exists(sampleAssembly), $"The versioned sample was not built: {sampleAssembly}");
+        var sampleAssembly = environmentHelper.GetTestCommandForSampleApplicationPath(useDotnetTest ? string.Empty : packageVersion, "net8.0");
+        File.Exists(sampleAssembly).Should().BeTrue($"the required sample output must be present at {sampleAssembly}");
 
         var collectorAssembly = Path.Combine(AppContext.BaseDirectory, "Datadog.Trace.Coverage.collector.dll");
         File.Exists(collectorAssembly).Should().BeTrue("the runner output must contain the Datadog VSTest collector");
@@ -232,8 +232,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
             "--configuration",
             EnvironmentTools.GetBuildConfiguration(),
             "--framework",
-            "net8.0",
-            "-p:ApiVersion=6.0.0"
+            "net8.0"
         ];
 
         if (useTestingPlatformCoverage)
