@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections;
+using System.Reflection;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
@@ -22,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
     internal static class LogsInjectionHelper<TTarget>
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogsInjectionHelper<TTarget>));
+        private const BindingFlags LayoutPropertyBindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy;
         private static readonly Type? _jsonAttributeType;
         private static readonly Type? _simpleLayoutType;
 
@@ -91,7 +93,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                     continue;
                 }
 
-                if (target.TryDuckCast<ITargetWithLayoutProxy>(out var targetWithLayout))
+                // Avoid first-chance exceptions for wrappers without Layout.
+                if (target is not null &&
+                    target.GetType().GetProperty("Layout", LayoutPropertyBindingFlags) is not null &&
+                    target.TryDuckCast<ITargetWithLayoutProxy>(out var targetWithLayout))
                 {
                     var layout = targetWithLayout.Layout;
 

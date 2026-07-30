@@ -2,9 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
@@ -45,7 +47,12 @@ namespace LogsInjection.NLog
             /// <summary>
             /// Configuration file contains targets that are and aren't pre-configured with logs injection related elements.
             /// </summary>
-            Both
+            Both,
+
+            /// <summary>
+            /// Reproduces a first-chance exception handler logging with an AsyncTargetWrapper.
+            /// </summary>
+            FirstChanceExceptionRepro
         }
 
         private enum DirectLogSubmission
@@ -171,6 +178,23 @@ namespace LogsInjection.NLog
 
             Console.WriteLine($"Using pre NLOG_4_0: Configuration type is: {configType}");
 #endif
+
+            if (configType == ConfigurationType.FirstChanceExceptionRepro)
+            {
+                LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.FirstChanceExceptionRepro.config"));
+                AppDomain.CurrentDomain.FirstChanceException += LogFirstChanceException;
+                try
+                {
+                    // .invalid is reserved and must not resolve.
+                    Dns.GetHostEntry("dd-log-injection-repro.invalid");
+                }
+                catch (Exception)
+                {
+                    // Expected DNS failure.
+                }
+
+                return 0;
+            }
 #if NETCOREAPP
             // Hacks for the fact the NLog on Linux just can't do anything right
             // When on ConfigurationType.None LogManager.Configuration is going to be null - so need to skip
@@ -207,6 +231,11 @@ namespace LogsInjection.NLog
 #endif
 
             return LoggingMethods.RunLoggingProcedure(message => AddToContextAndLog(message, contextProperty));
+        }
+
+        private static void LogFirstChanceException(object sender, FirstChanceExceptionEventArgs eventArgs)
+        {
+            LogManager.GetLogger("FirstChanceExceptionRepro").Info(eventArgs.Exception.Message);
         }
 
         private static void AddToContextAndLog(string message, ContextProperty contextProperty)

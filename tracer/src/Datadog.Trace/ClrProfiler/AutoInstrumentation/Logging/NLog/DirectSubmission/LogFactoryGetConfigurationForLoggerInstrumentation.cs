@@ -43,6 +43,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogFactoryGetConfigurationForLoggerInstrumentation));
 
+        [ThreadStatic]
+        private static bool _isConfiguringLogger;
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -53,6 +56,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         /// <param name="configuration">The logging configuration</param>
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TLoggingConfiguration>(TTarget instance, string name, ref TLoggingConfiguration configuration)
+        {
+            // Avoid re-entering instrumentation when FirstChanceException handlers log with NLog.
+            if (_isConfiguringLogger)
+            {
+                return CallTargetState.GetDefault();
+            }
+
+            _isConfiguringLogger = true;
+            try
+            {
+                return OnMethodBeginInternal(instance, name, ref configuration);
+            }
+            finally
+            {
+                _isConfiguringLogger = false;
+            }
+        }
+
+        private static CallTargetState OnMethodBeginInternal<TTarget, TLoggingConfiguration>(TTarget instance, string name, ref TLoggingConfiguration configuration)
         {
             var tracerManager = TracerManager.Instance;
 
