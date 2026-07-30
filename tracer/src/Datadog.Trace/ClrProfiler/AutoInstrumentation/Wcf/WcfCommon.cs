@@ -190,7 +190,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     host,
                     httpUrl: requestHeadersTo?.AbsoluteUri,
                     userAgent,
-                    tags);
+                    tags,
+                    otelSemanticsEnabled: tracer.Settings.OtelSemanticsEnabled);
 
                 if (headers is not null)
                 {

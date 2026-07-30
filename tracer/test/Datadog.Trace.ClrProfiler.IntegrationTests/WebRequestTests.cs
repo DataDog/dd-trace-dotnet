@@ -46,6 +46,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
+        public Task SubmitsTracesOTel() => RunTestOTel();
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public async Task TracingDisabled_DoesNotSubmitsTraces()
         {
             SetInstrumentationVerification();
@@ -69,6 +75,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await telemetry.AssertIntegrationDisabledAsync(IntegrationId.WebRequest);
                 VerifyInstrumentation(processResult.Process);
             }
+        }
+
+        private async Task RunTestOTel()
+        {
+            SetInstrumentationVerification();
+
+            var expectedAllSpansCount = 134;
+
+            int httpPort = TcpPortProvider.GetOpenPort();
+            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+
+            SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", "true");
+            var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-http-client";
+
+            using var telemetry = this.ConfigureTelemetry();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
+
+            var allSpans = (await agent.WaitForSpansAsync(expectedAllSpansCount, assertExpectedCount: false)).OrderBy(s => s.Start).ToList();
+
+            allSpans.Should().OnlyHaveUniqueItems(s => new { s.SpanId, s.TraceId });
+            var httpSpans = allSpans.Where(s => s.Type == SpanTypes.Http).ToList();
+            ValidateIntegrationSpans(httpSpans, "otel", expectedServiceName: clientSpanServiceName, isExternalSpan: true);
+            VerifyInstrumentation(processResult.Process);
         }
 
         private async Task RunTest(string metadataSchemaVersion)

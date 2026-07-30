@@ -70,6 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public static TheoryData<string, int> Data() => new()
         {
             { "/", 200 },
+            { "/?query=test", 200 },
             { "/delay/0", 200 },
             { "/api/delay/0", 200 },
             { "/not-found", 404 },

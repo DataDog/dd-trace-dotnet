@@ -224,7 +224,7 @@ namespace Datadog.Trace.Tests
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span, openTelemetrySemanticsEnabled: true);
 
             span.GetTag(Tags.HttpStatusCode).Should().BeNull();
-            span.GetMetric(key).Should().Be((double)statusCode);
+            span.GetTag(key).Should().Be(statusCode.ToString());
         }
     }
 }

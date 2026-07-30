@@ -102,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                 if (responseContext.Instance is not null && responseContext.Response is { } response)
                 {
                     tags.RequestId = response.ResponseMetadata?.RequestId;
-                    state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                    state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings, Tracer.Instance.Settings.OtelSemanticsEnabled);
                 }
             }
 

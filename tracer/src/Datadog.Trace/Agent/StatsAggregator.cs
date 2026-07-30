@@ -368,6 +368,15 @@ namespace Datadog.Trace.Agent
                 httpStatusCode = 0;
             }
 
+            if (httpStatusCode == 0)
+            {
+                var tagStatusCode = span.GetTag("http.response.status_code");
+                if (tagStatusCode is not null && int.TryParse(tagStatusCode, out var httpStatusCodeValue))
+                {
+                    httpStatusCode = httpStatusCodeValue;
+                }
+            }
+
             // Check gRPC status code tags in priority order per CSS v1.2.0 spec.
             // Stored as string to match the Go agent's wire format (GRPCStatusCode is a string field).
             // This preserves the distinction between "0" (gRPC OK) and "" (no gRPC status).

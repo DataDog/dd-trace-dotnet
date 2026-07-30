@@ -94,12 +94,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 else
                 {
                     HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
+                    scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings, Tracer.Instance.Settings.OtelSemanticsEnabled);
 
                     if (proxyScope?.Span != null)
                     {
                         HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
-                        proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
+                        proxyScope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings, Tracer.Instance.Settings.OtelSemanticsEnabled);
                     }
 
                     scope.Dispose();
@@ -129,12 +129,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 if (proxyScope?.Span != null)
                 {
                     HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, proxyScope);
-                    proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
+                    proxyScope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings, Tracer.Instance.Settings.OtelSemanticsEnabled);
                     proxyScope.Span.Finish(finishTime);
                 }
 
                 HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-                scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings);
+                scope.Span.SetHttpStatusCode(statusCode, isServer: true, Tracer.Instance.CurrentTraceSettings.Settings, Tracer.Instance.Settings.OtelSemanticsEnabled);
                 scope.Span.Finish(finishTime);
             }
             catch (Exception ex)

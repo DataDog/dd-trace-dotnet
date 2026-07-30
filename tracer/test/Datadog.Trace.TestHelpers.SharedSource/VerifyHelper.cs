@@ -40,7 +40,9 @@ namespace Datadog.Trace.TestHelpers
             (new(@"_dd\.p\.tid: [0-9a-f]{16}", RegOptions), "_dd.p.tid: 1234567890abcdef"),
             (new(@"(_dd\.code_origin\.frames\.\d+\.line:\s*)\d+", RegOptions), "${1}0"),
             (new(@"(_dd\.code_origin\.frames\.\d+\.column:\s*)\d+", RegOptions), "${1}0"),
-            (new("x-datadog-trace-id\":\\[\\[\\[8,({\"category\":\"pii\",\"type\":\"vin\"})\\]\\]", RegOptions), "x-datadog-trace-id\":[[[8]]") // api security, sometimes we can get "x-datadog-trace-id":[[[8,{"category":"pii","type":"vin"}]], and not everytime depending on the number, should be removed with waf 1.15.1, bug is fixed
+            (new("x-datadog-trace-id\":\\[\\[\\[8,({\"category\":\"pii\",\"type\":\"vin\"})\\]\\]", RegOptions), "x-datadog-trace-id\":[[[8]]"), // api security, sometimes we can get "x-datadog-trace-id":[[[8,{"category":"pii","type":"vin"}]], and not everytime depending on the number, should be removed with waf 1.15.1, bug is fixed
+            // OpenTelemetry span attributes
+            (new(@"server.port: [0-9]+", RegOptions), "server.port: 00000"),
         };
 
         private static readonly Regex CodeOriginFilePathRegex = new(@"(?<prefix>_dd\.code_origin\.frames\.\d+\.file:\s*)(?<path>[^,\r\n]+)", RegOptions);

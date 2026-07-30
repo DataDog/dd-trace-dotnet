@@ -180,6 +180,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
         [CombinatorialOrPairwiseData]
+        public async Task HttpClient_SubmitsTracesOTel(
+            [CombinatorialMemberData(nameof(GetInstrumentationOptions))] InstrumentationOptions instrumentation,
+            bool socketsHandlerEnabled)
+        {
+            SetInstrumentationVerification();
+            ConfigureInstrumentation(instrumentation, socketsHandlerEnabled);
+            SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", "true");
+
+            const string metadataSchemaVersion = "otel";
+            var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation);
+            var expectedSyncCount = CalculateExpectedSyncSpans(instrumentation);
+            var expectedSpanCount = expectedAsyncCount + expectedSyncCount;
+
+            int httpPort = TcpPortProvider.GetOpenPort();
+            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+
+            using var telemetry = this.ConfigureTelemetry();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
+
+            agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+            spans.Should().HaveCount(expectedSpanCount);
+
+            // OTel mode: service name still follows v0 external span convention
+            var clientSpanServiceName = $"{EnvironmentHelper.FullSampleName}-http-client";
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: true);
+            VerifyInstrumentation(processResult.Process);
+        }
+
+        [SkippableTheory]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        [CombinatorialOrPairwiseData]
         public async Task TracingDisabled_DoesNotSubmitsTraces(
             [CombinatorialMemberData(nameof(GetInstrumentationOptions))] InstrumentationOptions instrumentation,
             bool enableSocketsHandler)
