@@ -63,7 +63,7 @@ Instead, push through the GitHub API, which signs the commit server-side. Two op
       title: "[My Bot] Update things"
       base: master
   ```
-  It commits the working tree, pushes the commit signed, and creates or updates the PR. It replaces `peter-evans/create-pull-request`, which pushes over git and so cannot sign.
+  It wraps `peter-evans/create-pull-request` with `sign-commits: true` always set, so the commit is created through the GitHub API and signed. Use the action rather than calling `peter-evans/create-pull-request` directly — that way the signing cannot be left off by mistake.
 
 - **Pushing to a branch without a pull request** — stage the changes with `git add`, then use [`DataDog/commit-headless`](https://github.com/DataDog/commit-headless) directly with `command: commit`. It builds the commit from the index, so no local `git commit` is needed. See `create_hotfix_branch.yml` and `generate_package_versions.yml`.
 
