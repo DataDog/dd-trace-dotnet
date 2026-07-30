@@ -122,7 +122,7 @@ public class CouchbaseFixture : ContainerFixture
         await WaitForSuccessAsync(
              client,
              "/pools/default/buckets/default",
-             content => content.Contains(@"""status"":""healthy""", StringComparison.OrdinalIgnoreCase)).ConfigureAwait(false);
+             content => content.IndexOf(@"""status"":""healthy""", StringComparison.OrdinalIgnoreCase) >= 0).ConfigureAwait(false);
 
         using var queryClient = new HttpClient
         {
@@ -134,7 +134,7 @@ public class CouchbaseFixture : ContainerFixture
         await WaitForSuccessAsync(
              client,
              "/pools/default/nodeServices",
-             content => content.Contains(@"""n1ql"":8093", StringComparison.OrdinalIgnoreCase)).ConfigureAwait(false);
+             content => content.IndexOf(@"""n1ql"":8093", StringComparison.OrdinalIgnoreCase) >= 0).ConfigureAwait(false);
     }
 
     private static Task PostFormAsync(HttpClient client, string path, Dictionary<string, string> form)
