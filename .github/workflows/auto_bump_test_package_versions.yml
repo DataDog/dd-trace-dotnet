@@ -29,6 +29,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -53,15 +55,13 @@ jobs:
 
       - name: Create Pull Request
         id: pr
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        uses: ./.github/actions/create-signed-pull-request
         with:
           token: ${{ steps.octo-sts.outputs.token }}
           branch: "bot/test-package-versions-bump"
           commit-message: "[Test Package Versions Bump]"
-          delete-branch: true
           base: master
           title: "[Test Package Versions Bump] Updating package versions "
-          milestone: "${{steps.rename.outputs.milestone}}"
           labels: "area:dependabot,area:test-apps,dependencies"
           body: |
             Updates the package versions for integration tests. See below for a summary of the changes.
