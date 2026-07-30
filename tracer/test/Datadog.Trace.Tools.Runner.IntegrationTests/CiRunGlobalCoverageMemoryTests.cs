@@ -104,8 +104,15 @@ public sealed class CiRunGlobalCoverageMemoryTests
         var sampleAssembly = environmentHelper.GetTestCommandForSampleApplicationPath(useDotnetTest ? string.Empty : packageVersion, "net8.0");
         File.Exists(sampleAssembly).Should().BeTrue($"the required sample output must be present at {sampleAssembly}");
 
-        var collectorAssembly = Path.Combine(AppContext.BaseDirectory, "Datadog.Trace.Coverage.collector.dll");
-        File.Exists(collectorAssembly).Should().BeTrue("the runner output must contain the Datadog VSTest collector");
+        var runnerDirectory = GetRunnerDirectory();
+        var runnerAssembly = Path.Combine(runnerDirectory, "Datadog.Trace.Tools.Runner.dll");
+        File.Exists(runnerAssembly).Should().BeTrue("the runner tool output must contain the runner assembly");
+        File.Exists(Path.Combine(runnerDirectory, "Datadog.Trace.Coverage.collector.dll"))
+            .Should()
+            .BeTrue("the runner tool output must contain the Datadog VSTest collector");
+        File.Exists(Path.Combine(runnerDirectory, "Datadog.collector.dll"))
+            .Should()
+            .BeFalse("the production runner layout must not contain the test suite's legacy collector with the same VSTest friendly name");
 
         using var root = new TemporaryDirectory("dd-global-coverage-memory-");
         var coverageDirectory = Directory.CreateDirectory(Path.Combine(root.RootPath, "coverage")).FullName;
@@ -127,10 +134,10 @@ public sealed class CiRunGlobalCoverageMemoryTests
                 expectedCaseCount,
                 targetCommand);
 
-            var result = RunRunner(environmentHelper.GetDotnetExe(), arguments, logDirectory);
+            var result = RunRunner(environmentHelper.GetDotnetExe(), runnerAssembly, arguments, logDirectory);
             result.ExitCode.Should().Be(0, result.Error);
 
-            AssertLaunch(result.Output, useDotnetTest, useTestingPlatformCoverage);
+            AssertLaunch(result.Output, runnerDirectory, useDotnetTest, useTestingPlatformCoverage);
             var testhostProcessId = AssertProgress(progressPath, expectedCaseCount);
             var publishedCoverage = AssertPublishedCoverage(coverageDirectory, expectedCaseCount);
             File.Move(publishedCoverage, Path.Combine(root.RootPath, $"session-coverage-{runIndex}.json"));
@@ -140,12 +147,23 @@ public sealed class CiRunGlobalCoverageMemoryTests
                 AssertOuterCommandReconciliation(logDirectory);
             }
         }
+
+        static string GetRunnerDirectory()
+        {
+            // The integration-test output also contains Datadog.collector.dll from DatadogTestCollector.
+            // Use the tool output so VSTest resolves the same collector and directory layout shipped to customers.
+            var pivot = $"{EnvironmentTools.GetBuildConfiguration().ToLowerInvariant()}_net8.0";
+            return Path.Combine(
+                EnvironmentTools.GetSolutionDirectory(),
+                "artifacts",
+                "bin",
+                "Datadog.Trace.Tools.Runner.Tool",
+                pivot);
+        }
     }
 
-    private ProcessResult RunRunner(string dotnetExecutable, string[] arguments, string logDirectory)
+    private ProcessResult RunRunner(string dotnetExecutable, string runnerAssembly, string[] arguments, string logDirectory)
     {
-        var runnerAssembly = typeof(Program).Assembly.Location;
-        File.Exists(runnerAssembly).Should().BeTrue();
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
@@ -299,7 +317,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
         return arguments.ToArray();
     }
 
-    private void AssertLaunch(string output, bool useDotnetTest, bool useTestingPlatformCoverage)
+    private void AssertLaunch(string output, string runnerDirectory, bool useDotnetTest, bool useTestingPlatformCoverage)
     {
         var launchLine = output.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries)
                                .Should()
@@ -319,11 +337,11 @@ public sealed class CiRunGlobalCoverageMemoryTests
         if (useDotnetTest && !useTestingPlatformCoverage)
         {
             Regex.Matches(launchLine, @"(?<!\w)--test-adapter-path(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count.Should().Be(1);
-            launchLine.Should().Contain(AppContext.BaseDirectory);
+            launchLine.Should().Contain(runnerDirectory);
         }
         else if (!useDotnetTest)
         {
-            Regex.Matches(launchLine, Regex.Escape($"/TestAdapterPath:{AppContext.BaseDirectory}"), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count.Should().Be(1);
+            Regex.Matches(launchLine, Regex.Escape($"/TestAdapterPath:{runnerDirectory}"), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count.Should().Be(1);
         }
     }
 
