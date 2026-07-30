@@ -569,8 +569,6 @@ namespace Datadog.Trace.AppSec
                 return EmptyDictionary;
             }
 
-            // Mirrors ExtractProperties: once the incremented depth reaches the limit, stop recursing
-            // into children instead of descending unbounded (which previously risked a stack overflow).
             depth++;
             if (depth >= WafConstants.MaxContainerDepth)
             {
