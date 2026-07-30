@@ -11,7 +11,6 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
-using DotNet.Testcontainers.Networks;
 
 namespace Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 
@@ -86,25 +85,19 @@ public class StackExchangeRedisFixture : ContainerFixture
                              .WithPortBinding(RedisPort, true)
                              .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(RedisPort))
                              .Build();
-        var resources = new Resources(primaryContainer, replicaContainer, singleContainer, network);
 
-        try
-        {
-            await network.CreateAsync().ConfigureAwait(false);
-            await primaryContainer.StartAsync().ConfigureAwait(false);
-            await Task.WhenAll(replicaContainer.StartAsync(), singleContainer.StartAsync()).ConfigureAwait(false);
-        }
-        catch
-        {
-            await resources.DisposeAsync().ConfigureAwait(false);
-            throw;
-        }
+        registerResource("network", network);
+        registerResource("primary", primaryContainer);
+        registerResource("replica", replicaContainer);
+        registerResource("single", singleContainer);
+        await network.CreateAsync().ConfigureAwait(false);
+        await primaryContainer.StartAsync().ConfigureAwait(false);
+        await Task.WhenAll(replicaContainer.StartAsync(), singleContainer.StartAsync()).ConfigureAwait(false);
 
         _primaryEndpoint = new Endpoint(primaryContainer.Hostname, primaryContainer.GetMappedPublicPort(RedisPort));
         _replicaEndpoint = new Endpoint(replicaContainer.Hostname, replicaContainer.GetMappedPublicPort(RedisPort));
         _hostConfiguration = $"{_primaryEndpoint},{_replicaEndpoint}";
         _singleHostConfiguration = $"{singleContainer.Hostname}:{singleContainer.GetMappedPublicPort(RedisPort)}";
-        registerResource("resources", resources);
     }
 
     private static List<Endpoint> ParseEndpoints(string configuration)
@@ -170,32 +163,5 @@ public class StackExchangeRedisFixture : ContainerFixture
         public override string ToString() => Host.IndexOf(':') >= 0 ? $"[{Host}]:{Port}" : $"{Host}:{Port}";
 
         private static ushort ParsePort(string value) => ushort.TryParse(value, out var port) ? port : (ushort)RedisPort;
-    }
-
-    private sealed class Resources : IAsyncDisposable
-    {
-        public Resources(IContainer primaryContainer, IContainer replicaContainer, IContainer singleContainer, INetwork network)
-        {
-            PrimaryContainer = primaryContainer;
-            ReplicaContainer = replicaContainer;
-            SingleContainer = singleContainer;
-            Network = network;
-        }
-
-        public IContainer PrimaryContainer { get; }
-
-        public IContainer ReplicaContainer { get; }
-
-        public IContainer SingleContainer { get; }
-
-        private INetwork Network { get; }
-
-        public async ValueTask DisposeAsync()
-        {
-            await SingleContainer.DisposeAsync().ConfigureAwait(false);
-            await ReplicaContainer.DisposeAsync().ConfigureAwait(false);
-            await PrimaryContainer.DisposeAsync().ConfigureAwait(false);
-            await Network.DisposeAsync().ConfigureAwait(false);
-        }
     }
 }

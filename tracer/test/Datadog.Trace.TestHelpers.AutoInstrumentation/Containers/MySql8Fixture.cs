@@ -49,8 +49,7 @@ public class MySql8Fixture : ContainerFixture
                                 .UntilCommandIsCompleted("mysqladmin", "ping", "--silent", "-h", "localhost", "-u", "root", $"-p{Password}"))
                        .Build();
 
-        await container.StartAsync().ConfigureAwait(false);
-
         registerResource("container", container);
+        await container.StartAsync().ConfigureAwait(false);
     }
 }

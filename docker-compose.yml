@@ -1,4 +1,6 @@
 services:
+  # Migrated Testcontainers services use the testcontainers profile so their pinned digests can be maintained
+  # without starting them during normal Compose workflows.
   # ARM64 dependencies
   localstack_arm64:
     image: localstack/localstack:4.14.0@sha256:3ebc37595918b8accb852f8048fef2aff047d465167edd655528065b07bc364a
@@ -27,15 +29,19 @@ services:
 
   mysql_arm64:
     image: mysql/mysql-server:8.0@sha256:d6c8301b7834c5b9c2b733b10b7e630f441af7bc917c74dba379f24eeeb6a313
+    profiles: ["testcontainers"]
 
   postgres_arm64:
     image: postgres:10.5-alpine@sha256:295a08ddd9efa1612c46033f0b96c3976f80f49c7ce29e05916b0af557806117
+    profiles: ["testcontainers"]
 
   rabbitmq_arm64:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
+    profiles: ["testcontainers"]
 
   servicestackredis_arm64:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    profiles: ["testcontainers"]
 
   cosmosdb-emulator_arm64:
     image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview@sha256:54d7bc334494c50cea867c270880671a7db080626a9732832b34c0d69342f9b0
@@ -43,12 +49,15 @@ services:
 
   stackexchangeredis_arm64:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    profiles: ["testcontainers"]
 
   stackexchangeredis_arm64-replica:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    profiles: ["testcontainers"]
 
   stackexchangeredis_arm64-single:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    profiles: ["testcontainers"]
 
 # Dependencies
   localstack:
@@ -66,18 +75,23 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
+    profiles: ["testcontainers"]
 
   servicestackredis:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    profiles: ["testcontainers"]
 
   stackexchangeredis:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    profiles: ["testcontainers"]
 
   stackexchangeredis-replica:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    profiles: ["testcontainers"]
 
   stackexchangeredis-single:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    profiles: ["testcontainers"]
 
   mongo:
     image: mongo:5.0.31@sha256:54bcd8da3ea5eec561b68c605046c55c6b304387dc4c2bf5b3a5f5064fbb7495
@@ -88,6 +102,7 @@ services:
 
   couchbase:
     image: couchbase:community-6.6.0@sha256:43103efdd4b562366c7a48afa977c4ad148e09c877da28a83a86b2c5ee2daa97
+    profiles: ["testcontainers"]
 
   elasticsearch7:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1@sha256:2dcd2f31e246a8b13995ba24922da2edc3d88e65532ff301d0b92cb1be358af5
@@ -121,15 +136,19 @@ services:
 
   postgres:
     image: postgres:10.5-alpine@sha256:295a08ddd9efa1612c46033f0b96c3976f80f49c7ce29e05916b0af557806117
+    profiles: ["testcontainers"]
 
   mysql:
     image: mysql/mysql-server:8.0@sha256:d6c8301b7834c5b9c2b733b10b7e630f441af7bc917c74dba379f24eeeb6a313
+    profiles: ["testcontainers"]
 
   mysql57:
     image: mysql/mysql-server:5.7@sha256:1178cdd375f758968cd834ac4057bae41307e64b7c69a9e145896e7b11f48064
+    profiles: ["testcontainers"]
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:latest@sha256:2cd0aec4a3bfc3cf9205bed3f7922f4c6208f7c767dc62edcee308d0fd7d56d0
+    profiles: ["testcontainers"]
 
   sqledge:
     image: mcr.microsoft.com/azure-sql-edge:latest@sha256:902628a8be89e35dfb7895ca31d602974c7bafde4d583a0d0873844feb1c42cf
@@ -196,9 +215,11 @@ services:
 
   kafka-zookeeper:
     image: confluentinc/cp-zookeeper:6.1.1@sha256:a7c0a20dce46a705300cd464e511e9c70ac55ec7e62c024867470a19ce210563
+    profiles: ["testcontainers"]
 
   kafka-broker:
     image: confluentinc/cp-server:6.1.1@sha256:4a1ff92bd03e361759ba339c97b4c4b7dbb52d7cea478dda22d034261a8991e4
+    profiles: ["testcontainers"]
 
   openldap:
     image: osixia/openldap:latest@sha256:3f68751292b43564a2586fc29fb7337573e2dad692b92d4e78e49ad5c22e567b
@@ -719,24 +740,31 @@ services:
 
   mysql_osx_arm64:
     image: mysql/mysql-server:8.0@sha256:d6c8301b7834c5b9c2b733b10b7e630f441af7bc917c74dba379f24eeeb6a313
+    profiles: ["testcontainers"]
 
   postgres_osx_arm64:
     image: postgres:10.5-alpine@sha256:295a08ddd9efa1612c46033f0b96c3976f80f49c7ce29e05916b0af557806117
+    profiles: ["testcontainers"]
 
   rabbitmq_osx_arm64:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
+    profiles: ["testcontainers"]
 
   servicestackredis_osx_arm64:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    profiles: ["testcontainers"]
 
   stackexchangeredis_osx_arm64:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    profiles: ["testcontainers"]
 
   stackexchangeredis_osx_arm64-replica:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    profiles: ["testcontainers"]
 
   stackexchangeredis_osx_arm64-single:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
+    profiles: ["testcontainers"]
 
   # keep syncronized image version with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\AerospikeFixture.cs
   aerospike:

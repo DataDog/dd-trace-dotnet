@@ -59,9 +59,9 @@ public class MySql57Fixture : ContainerFixture
                                 .UntilCommandIsCompleted("mysqladmin", "ping", "--silent", "-h", "localhost", "-u", "root", $"-p{Password}"))
                        .Build();
 
+        registerResource("container", container);
         await container.StartAsync().ConfigureAwait(false);
 
         _container = container;
-        registerResource("container", container);
     }
 }

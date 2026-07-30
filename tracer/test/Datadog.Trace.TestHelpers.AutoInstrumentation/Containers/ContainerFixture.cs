@@ -15,45 +15,59 @@ namespace Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 
 public abstract class ContainerFixture : IAsyncLifetime
 {
-    private IReadOnlyDictionary<string, object>? _resources;
+    private readonly Dictionary<string, object> _resources = new();
+    private readonly List<object> _resourcesForDisposal = [];
 
     public async Task InitializeAsync()
     {
-        _resources = await InitializeResources().ConfigureAwait(false);
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (_resources is null)
+        try
         {
-            return;
+            await InitializeResources(RegisterResource).ConfigureAwait(false);
         }
-
-        foreach (var resource in _resources.Values)
+        catch
         {
-            if (resource is IAsyncDisposable asyncDisposable)
-            {
-                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
-            }
-            else if (resource is IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
+            await DisposeResourcesAsync().ConfigureAwait(false);
+            throw;
         }
     }
+
+    public Task DisposeAsync() => DisposeResourcesAsync();
 
     public virtual IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables() => Enumerable.Empty<KeyValuePair<string, string>>();
 
     protected abstract Task InitializeResources(Action<string, object> registerResource);
 
-    protected T GetResource<T>(string key) => (T)_resources![key];
+    protected T GetResource<T>(string key) => (T)_resources[key];
 
-    private async Task<IReadOnlyDictionary<string, object>> InitializeResources()
+    private void RegisterResource(string key, object resource)
     {
-        var resources = new Dictionary<string, object>();
+        _resources.Add(key, resource);
+        _resourcesForDisposal.Add(resource);
+    }
 
-        await InitializeResources(resources.Add).ConfigureAwait(false);
+    private async Task DisposeResourcesAsync()
+    {
+        for (var i = _resourcesForDisposal.Count - 1; i >= 0; i--)
+        {
+            try
+            {
+                var resource = _resourcesForDisposal[i];
+                if (resource is IAsyncDisposable asyncDisposable)
+                {
+                    await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                }
+                else if (resource is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
+            catch
+            {
+                // Continue disposing the remaining resources.
+            }
+        }
 
-        return resources;
+        _resources.Clear();
+        _resourcesForDisposal.Clear();
     }
 }

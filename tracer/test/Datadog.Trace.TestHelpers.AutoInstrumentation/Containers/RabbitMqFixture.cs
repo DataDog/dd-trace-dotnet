@@ -38,8 +38,7 @@ public class RabbitMqFixture : ContainerFixture
                        .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(RabbitMqPort))
                        .Build();
 
-        await container.StartAsync().ConfigureAwait(false);
-
         registerResource("container", container);
+        await container.StartAsync().ConfigureAwait(false);
     }
 }

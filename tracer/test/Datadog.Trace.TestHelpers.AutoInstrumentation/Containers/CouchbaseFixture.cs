@@ -89,26 +89,17 @@ public class CouchbaseFixture : ContainerFixture
 
         var container = builder.Build();
 
-        try
-        {
-            await container.StartAsync().ConfigureAwait(false);
-            var host = dockerHost ?? container.Hostname;
-            var managementPort = useHostNetwork ? ManagementPort : container.GetMappedPublicPort(ManagementPort);
-            var keyValuePort = useHostNetwork ? KeyValuePort : container.GetMappedPublicPort(KeyValuePort);
-
-            await ConfigureCouchbaseAsync(container, host, useHostNetwork).ConfigureAwait(false);
-
-            _host = host;
-            _managementPort = managementPort;
-            _keyValuePort = keyValuePort;
-        }
-        catch
-        {
-            await container.DisposeAsync().ConfigureAwait(false);
-            throw;
-        }
-
         registerResource("container", container);
+        await container.StartAsync().ConfigureAwait(false);
+        var host = dockerHost ?? container.Hostname;
+        var managementPort = useHostNetwork ? ManagementPort : container.GetMappedPublicPort(ManagementPort);
+        var keyValuePort = useHostNetwork ? KeyValuePort : container.GetMappedPublicPort(KeyValuePort);
+
+        await ConfigureCouchbaseAsync(container, host, useHostNetwork).ConfigureAwait(false);
+
+        _host = host;
+        _managementPort = managementPort;
+        _keyValuePort = keyValuePort;
     }
 
     private static string GetDockerHost()

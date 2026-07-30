@@ -39,11 +39,10 @@ public class PostgresFixture : ContainerFixture
                        .WithEnvironment("POSTGRES_USER", Username)
                        .WithEnvironment("POSTGRES_PASSWORD", Password)
                        .WithEnvironment("POSTGRES_DB", Database)
-                       .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("pg_isready", "-U", Username))
+                       .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("pg_isready", "-h", "localhost", "-U", Username))
                        .Build();
 
-        await container.StartAsync().ConfigureAwait(false);
-
         registerResource("container", container);
+        await container.StartAsync().ConfigureAwait(false);
     }
 }

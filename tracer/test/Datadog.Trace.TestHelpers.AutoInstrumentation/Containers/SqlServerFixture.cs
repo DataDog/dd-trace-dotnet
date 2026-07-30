@@ -11,6 +11,7 @@ using System.Data.Common;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using Testcontainers.MsSql;
 
@@ -60,7 +61,7 @@ public class SqlServerFixture : ContainerFixture
                        .WithPortBinding(SqlServerPort, true)
                        .WithEnvironment("ACCEPT_EULA", "Y")
                        .WithEnvironment("MSSQL_SA_PASSWORD", Password)
-                       .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("SQL Server is now ready for client connections"))
+                       .WithWaitStrategy(Wait.ForUnixContainer().AddCustomWaitStrategy(new UntilFinalSqlServerIsReady()))
                        .Build();
         }
         else
@@ -70,11 +71,11 @@ public class SqlServerFixture : ContainerFixture
                        .Build();
         }
 
+        registerResource("container", container);
         await container.StartAsync().ConfigureAwait(false);
 
         HostAndPort = $"{container.Hostname},{container.GetMappedPublicPort(SqlServerPort)}";
         _connectionString = $"Server={HostAndPort};User=sa;Password={Password};TrustServerCertificate=True";
-        registerResource("container", container);
     }
 
     private static string? GetHost(string connectionString)
@@ -89,5 +90,30 @@ public class SqlServerFixture : ContainerFixture
         }
 
         return null;
+    }
+
+    private sealed class UntilFinalSqlServerIsReady : IWaitUntil
+    {
+        private const string ReadyMessage = "SQL Server is now ready for client connections";
+
+        public async Task<bool> UntilAsync(IContainer container)
+        {
+            // Azure SQL Edge logs this message for its internal setup server and again for the final server.
+            var (stdout, stderr) = await container.GetLogsAsync(timestampsEnabled: false).ConfigureAwait(false);
+            return CountOccurrences(stdout) + CountOccurrences(stderr) >= 2;
+        }
+
+        private static int CountOccurrences(string value)
+        {
+            var count = 0;
+            var startIndex = 0;
+            while ((startIndex = value.IndexOf(ReadyMessage, startIndex, StringComparison.Ordinal)) >= 0)
+            {
+                count++;
+                startIndex += ReadyMessage.Length;
+            }
+
+            return count;
+        }
     }
 }
