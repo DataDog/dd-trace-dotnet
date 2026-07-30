@@ -555,14 +555,7 @@ namespace Datadog.Trace
                     writer.WritePropertyName("activity_listener_enabled");
                     writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
 
-                    writer.WritePropertyName("otlp_traces_export_enabled");
-                    writer.WriteValue(exporterSettings.IsOtlpTraceExport);
-
-                    writer.WritePropertyName("otlp_metrics_export_enabled");
-                    writer.WriteValue(instanceSettings.OtlpMetricsExportEnabled);
-
-                    writer.WritePropertyName("otlp_logs_export_enabled");
-                    writer.WriteValue(instanceSettings.OpenTelemetryLogsEnabled);
+                    WriteOtlpExportSettings(writer, instanceSettings, exporterSettings);
 
                     writer.WritePropertyName("profiler_enabled");
                     writer.WriteValue(Profiler.Instance.Status.IsProfilerReady);
@@ -645,6 +638,19 @@ namespace Datadog.Trace
             {
                 Log.Warning(ex, "DATADOG TRACER DIAGNOSTICS - Error fetching configuration");
             }
+        }
+
+        [TestingAndPrivateOnly]
+        internal static void WriteOtlpExportSettings(JsonTextWriter writer, TracerSettings instanceSettings, ExporterSettings exporterSettings)
+        {
+            writer.WritePropertyName("otlp_traces_export_enabled");
+            writer.WriteValue(exporterSettings.IsOtlpTraceExport);
+
+            writer.WritePropertyName("otlp_metrics_export_enabled");
+            writer.WriteValue(instanceSettings.OtlpMetricsExportEnabled);
+
+            writer.WritePropertyName("otlp_logs_export_enabled");
+            writer.WriteValue(instanceSettings.OpenTelemetryLogsEnabled);
         }
 
         private static void WriteAsmInfo(JsonTextWriter writer)
