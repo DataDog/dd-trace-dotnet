@@ -579,8 +579,15 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.AspNetCoreRoute = normalizedRoute;
                 }
 
-                _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
+                if (controllerName is null)
+                {
+                    // Non-MVC endpoint (minimal API, Razor Pages, etc.) — run the consolidated request scan now.
+                    // MVC controller endpoints defer to ActionResponseFilter.OnActionExecuting so the bound body
+                    // is available and the scan runs immediately before the action executes.
+                    _security.RunRequestScan(httpContext, rootSpan, routeValues, requestBody: null);
+                }
 
+                // else: MVC controller — request scan is handled in ActionResponseFilter.OnActionExecuting
                 if (_iast.Settings.Enabled)
                 {
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(httpContext.Request, routeValues);
@@ -591,12 +598,11 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnMvcBeforeAction(object arg)
         {
             var integrationEnabled = _tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
-            var appsecEnabled = _security.AppsecEnabled;
             var iastEnabled = _iast.Settings.Enabled;
             var codeOrigin = CurrentCodeOrigin;
             var isCodeOriginEnabled = codeOrigin is { Settings.CodeOriginForSpansEnabled: true };
 
-            if (!integrationEnabled && !appsecEnabled && !iastEnabled && !isCodeOriginEnabled)
+            if (!integrationEnabled && !iastEnabled && !isCodeOriginEnabled)
             {
                 return;
             }
@@ -609,7 +615,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
-                Span span = null;
                 if (integrationEnabled)
                 {
                     if (!_tracer.Settings.RouteTemplateResourceNamesEnabled)
@@ -619,7 +624,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                     else
                     {
-                        span = StartMvcCoreSpan(_tracer, trackingFeature, typedArg, httpContext, request);
+                        StartMvcCoreSpan(_tracer, trackingFeature, typedArg, httpContext, request);
                     }
                 }
 
@@ -633,11 +638,6 @@ namespace Datadog.Trace.DiagnosticListeners
                     {
                         Log.Debug("Could not extract type and method from {ActionDescriptor}", typedArg.ActionDescriptor?.DisplayName);
                     }
-                }
-
-                if (span is not null)
-                {
-                    _security.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
                 }
 
                 if (iastEnabled)
