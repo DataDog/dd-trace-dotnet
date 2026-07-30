@@ -1,0 +1,143 @@
+name: 'Create Signed Pull Request'
+description: 'Commits the working tree as a GitHub-signed commit, and opens or updates a pull request'
+
+# Replacement for peter-evans/create-pull-request, which commits over git and so cannot produce
+# signed commits. This action stages the working tree and hands it to DataDog/commit-headless,
+# which creates the commit through the GitHub API so that GitHub signs it server-side.
+# See https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/5580588264
+
+inputs:
+  token:
+    description: 'GitHub token used to push the commit and manage the pull request. Needs contents:write and pull_requests:write.'
+    required: true
+  branch:
+    description: 'Head branch to create or update'
+    required: true
+  commit-message:
+    description: 'Message for the commit'
+    required: true
+  title:
+    description: 'Pull request title'
+    required: true
+  base:
+    description: 'Base branch for the pull request. Defaults to the repository default branch.'
+    required: false
+  body:
+    description: 'Pull request body'
+    required: false
+  labels:
+    description: 'Comma-separated labels to apply'
+    required: false
+  reviewers:
+    description: 'Comma-separated reviewers to request. Accepts org/team slugs.'
+    required: false
+
+outputs:
+  pull-request-number:
+    description: 'Number of the created or updated pull request'
+    value: ${{ steps.pr.outputs.pull-request-number }}
+  pull-request-url:
+    description: 'URL of the created or updated pull request'
+    value: ${{ steps.pr.outputs.pull-request-url }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Stage changes
+      id: prep
+      shell: bash
+      env:
+        # Token for calling the github API
+        GH_TOKEN: ${{ inputs.token }}
+        BRANCH: ${{ inputs.branch }}
+      run: |
+        # Record the commit we branch from before adding anything of our own.
+        echo "base-sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+        git add -A
+        if git diff --cached --quiet; then
+          echo "No changes to commit."
+          echo "changes=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        echo "changes=true" >> "$GITHUB_OUTPUT"
+
+        # matching-refs returns an empty array rather than 404, so a missing branch is not an error.
+        # It matches by prefix, hence the exact whole-line comparison. Keeping the gh call out of the
+        # `if` means a genuine API failure still aborts the step rather than reading as "no branch".
+        refs=$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/heads/$BRANCH" --jq '.[].ref')
+
+        if printf '%s\n' "$refs" | grep -qxF "refs/heads/$BRANCH"; then
+          exists=true
+        else
+          exists=false
+        fi
+        echo "Remote branch $BRANCH exists: $exists"
+
+        # create-branch and force are mutually exclusive: the former creates the ref (and fails if
+        # it exists), the latter updates it (and fails if it does not).
+        if [ "$exists" = true ]; then
+          create_branch=false
+          force=true
+        else
+          create_branch=true
+          force=false
+        fi
+
+        {
+          echo "create-branch=$create_branch"
+          echo "force=$force"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Create signed commit
+      id: push
+      if: steps.prep.outputs.changes == 'true'
+      uses: DataDog/commit-headless@2801f6e08acb3a69b6c4d7b0d5deef27c1a15bc7 # action/v3.3.1
+      with:
+        token: ${{ inputs.token }}
+        command: commit
+        branch: ${{ inputs.branch }}
+        message: ${{ inputs.commit-message }}
+        # The committer is already the token owner, so an empty author suppresses co-author byline
+        author: ''
+        head-sha: ${{ steps.prep.outputs.base-sha }}
+        create-branch: ${{ steps.prep.outputs.create-branch }}
+        force: ${{ steps.prep.outputs.force }}
+
+    - name: Create or update pull request
+      id: pr
+      if: steps.prep.outputs.changes == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        BRANCH: ${{ inputs.branch }}
+        BASE: ${{ inputs.base }}
+        TITLE: ${{ inputs.title }}
+        BODY: ${{ inputs.body }}
+        LABELS: ${{ inputs.labels }}
+        REVIEWERS: ${{ inputs.reviewers }}
+      run: |
+        existing=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+
+        if [ -z "$existing" ]; then
+          args=(pr create --head "$BRANCH" --title "$TITLE" --body-file -)
+          if [ -n "$BASE" ]; then args+=(--base "$BASE"); fi
+          if [ -n "$LABELS" ]; then args+=(--label "$LABELS"); fi
+          if [ -n "$REVIEWERS" ]; then args+=(--reviewer "$REVIEWERS"); fi
+          verb=Created
+        else
+          args=(pr edit "$existing" --title "$TITLE" --body-file -)
+          if [ -n "$LABELS" ]; then args+=(--add-label "$LABELS"); fi
+          verb=Updated
+        fi
+
+        # Bodies are multi-line, so pass them on stdin. --body-file - avoids handing a
+        # shell-built path to gh, which is a Windows executable on the Windows runners.
+        url=$(printf '%s' "$BODY" | gh "${args[@]}")
+        echo "$verb $url"
+
+        {
+          echo "pull-request-number=$(gh pr view "$BRANCH" --json number --jq '.number')"
+          echo "pull-request-url=$url"
+        } >> "$GITHUB_OUTPUT"
