@@ -117,10 +117,20 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 span.Error = true;
 
-                // if an error message already exists (e.g. from a previous exception), don't replace it
-                if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
+                if (span.OpenTelemetrySemanticsEnabled)
                 {
-                    span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {statusCodeString}.");
+                    if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorType)))
+                    {
+                        span.SetTag(Tags.ErrorType, statusCodeString);
+                    }
+                }
+                else
+                {
+                    // if an error message already exists (e.g. from a previous exception), don't replace it
+                    if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
+                    {
+                        span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {statusCodeString}.");
+                    }
                 }
             }
         }
