@@ -22,8 +22,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
     /// </summary>
     internal static class LogsInjectionHelper<TTarget>
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogsInjectionHelper<TTarget>));
         private const BindingFlags LayoutPropertyBindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy;
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogsInjectionHelper<TTarget>));
         private static readonly Type? _jsonAttributeType;
         private static readonly Type? _simpleLayoutType;
 
