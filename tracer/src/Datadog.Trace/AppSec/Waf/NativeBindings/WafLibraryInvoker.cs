@@ -108,58 +108,89 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
         }
 
+        // Every delegate below binds a C export of libddwaf, which is cdecl. The default convention
+        // is Winapi, i.e. stdcall on Windows, so on win-x86 the callee wouldn't clean up the stack the
+        // way the caller expects. It makes no difference on x64/arm64, where there is a single
+        // convention, but it has to be spelled out for the 32-bit targets we still ship.
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate IntPtr GetVersionDelegate();
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate IntPtr BuilderInitDelegate();
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate bool BuilderAddOrUpdateConfigDelegate(IntPtr builder, byte[] path, uint pathLen, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate bool BuilderRemoveConfigDelegate(IntPtr builder, byte[] path, uint pathLen);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate IntPtr BuilderBuildInstanceDelegate(IntPtr builder);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void BuilderDestroyDelegate(IntPtr builder);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate IntPtr InitContextDelegate(IntPtr wafHandle, IntPtr outputAlloc);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private unsafe delegate WafReturnCode ContextEvalDelegate(IntPtr context, DdwafObjectStruct* data, IntPtr alloc, ref DdwafObjectStruct result, ulong timeLeftInUs);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void ContextDestroyDelegate(IntPtr context);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate IntPtr SubcontextInitDelegate(IntPtr context);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private unsafe delegate WafReturnCode SubcontextEvalDelegate(IntPtr subcontext, DdwafObjectStruct* data, IntPtr alloc, ref DdwafObjectStruct result, ulong timeLeftInUs);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void SubcontextDestroyDelegate(IntPtr subcontext);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void DestroyDelegate(IntPtr handle);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate IntPtr GetDefaultAllocatorDelegate();
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void ObjectDestroyDelegate(ref DdwafObjectStruct obj, IntPtr alloc);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private unsafe delegate DdwafObjectStruct* ObjectSetInvalidDelegate(DdwafObjectStruct* obj);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private unsafe delegate DdwafObjectStruct* ObjectSetNullDelegate(DdwafObjectStruct* obj);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private unsafe delegate DdwafObjectStruct* ObjectSetStringDelegate(DdwafObjectStruct* obj, byte[] str, uint length, IntPtr alloc);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private unsafe delegate DdwafObjectStruct* ObjectSetBoolDelegate(DdwafObjectStruct* obj, bool value);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private unsafe delegate DdwafObjectStruct* ObjectSetSignedDelegate(DdwafObjectStruct* obj, long value);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private unsafe delegate DdwafObjectStruct* ObjectSetUnsignedDelegate(DdwafObjectStruct* obj, ulong value);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private unsafe delegate DdwafObjectStruct* ObjectSetFloatDelegate(DdwafObjectStruct* obj, double value);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private unsafe delegate DdwafObjectStruct* ObjectSetArrayDelegate(DdwafObjectStruct* obj, ushort capacity, IntPtr alloc);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private unsafe delegate DdwafObjectStruct* ObjectSetMapDelegate(DdwafObjectStruct* obj, ushort capacity, IntPtr alloc);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private unsafe delegate DdwafObjectStruct* ObjectInsertDelegate(DdwafObjectStruct* array, IntPtr alloc);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private unsafe delegate DdwafObjectStruct* ObjectInsertKeyDelegate(DdwafObjectStruct* map, byte[] key, uint length, IntPtr alloc);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate IntPtr GetKnownAddressesDelegate(IntPtr wafHandle, ref uint size);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -171,6 +202,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             string message,
             ulong message_len);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate bool SetupLoggingDelegate(SetupLogCallbackDelegate cb, DDWAF_LOG_LEVEL min_level);
 
         private enum DDWAF_LOG_LEVEL

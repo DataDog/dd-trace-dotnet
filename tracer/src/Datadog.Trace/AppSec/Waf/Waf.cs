@@ -49,6 +49,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         private IntPtr _wafBuilderHandle;
         private IntPtr _wafHandle;
+        private int _disposeRequested;
         private bool? _isKnowAddressesSuported;
 
         internal Waf(IntPtr wafBuilderHandle, IntPtr wafHandle, WafLibraryInvoker wafLibraryInvoker, IEncoder encoder)
@@ -59,7 +60,19 @@ namespace Datadog.Trace.AppSec.Waf
             _encoder = encoder;
         }
 
-        public bool Disposed { get; private set; }
+        /// <summary>
+        /// Gets a value indicating whether disposal has been requested. It is set before the native
+        /// handles are released, so every operation bails out from that point on, and it stays set even
+        /// if a lock timeout prevented the release: the handles are then freed by whichever operation
+        /// releases the lock next, or by a later <see cref="Dispose"/>.
+        /// </summary>
+        public bool Disposed => Volatile.Read(ref _disposeRequested) != 0;
+
+        /// <summary>
+        /// Gets a value indicating whether there is still something for <see cref="ReleaseNativeHandles"/>
+        /// to free. Lets the retry paths skip the locks once everything has been released.
+        /// </summary>
+        private bool HasNativeHandles => Volatile.Read(ref _wafHandle) != IntPtr.Zero || Volatile.Read(ref _wafBuilderHandle) != IntPtr.Zero;
 
         public string Version => _wafLibraryInvoker.GetVersion();
 
@@ -91,25 +104,33 @@ namespace Datadog.Trace.AppSec.Waf
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
             try
             {
+                // Configure owns whatever it allocates until it hands it back here, so an exception
+                // inside it can't strand a handle: it frees them itself and reports the failure.
                 var result = wafConfigurator.Configure(configurationStatus, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex, ref diagnostics, configurationStatus.RuleSetTitle);
-                var initResult = InitResult.From(ref result);
-                if (initResult.Waf is null)
+                InitResult? initResult = null;
+                try
                 {
-                    // ownership of the native handles is transferred to the Waf instance, so when there
-                    // is none (the build failed, or the ruleset had no usable rules) nothing else will
-                    // ever release them and they have to be freed here
-                    if (result.WafHandle != IntPtr.Zero)
+                    initResult = InitResult.From(ref result);
+                    return initResult;
+                }
+                finally
+                {
+                    // Ownership of the native handles is transferred to the Waf instance. When no Waf
+                    // came out of it, either because the build failed, the ruleset had no usable rules,
+                    // or InitResult.From threw, nothing else will ever release them.
+                    if (initResult?.Waf is null)
                     {
-                        wafLibraryInvoker.Destroy(result.WafHandle);
-                    }
+                        if (result.WafHandle != IntPtr.Zero)
+                        {
+                            wafLibraryInvoker.Destroy(result.WafHandle);
+                        }
 
-                    if (result.WafBuilderHandle != IntPtr.Zero)
-                    {
-                        wafLibraryInvoker.DestroyBuilder(result.WafBuilderHandle);
+                        if (result.WafBuilderHandle != IntPtr.Zero)
+                        {
+                            wafLibraryInvoker.DestroyBuilder(result.WafBuilderHandle);
+                        }
                     }
                 }
-
-                return initResult;
             }
             finally
             {
@@ -208,6 +229,13 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 _wafLibraryInvoker.ObjectDestroy(ref diagnostics);
                 Monitor.Exit(_builderLock);
+
+                // A Dispose that ran while this update held the builder lock may have had to give up
+                // on releasing the native handles. Now that the lock is free, finish the job for it.
+                if (Disposed && HasNativeHandles)
+                {
+                    ReleaseNativeHandles(BuilderLockTimeoutInMs);
+                }
             }
         }
 
@@ -235,6 +263,12 @@ namespace Datadog.Trace.AppSec.Waf
                 if (_wafLocker.EnterWriteLock())
                 {
                     lockAcquired = true;
+
+                    if (_wafHandle == IntPtr.Zero)
+                    {
+                        // the instance has already been released by a dispose
+                        return Array.Empty<string>();
+                    }
 
                     var result = _wafLibraryInvoker.GetKnownAddresses(_wafHandle);
                     return result;
@@ -316,43 +350,56 @@ namespace Datadog.Trace.AppSec.Waf
 
         public void Dispose()
         {
-            if (Disposed)
-            {
-                return;
-            }
+            // Flag the disposal first so every other operation bails out, then release. Disposing twice
+            // is not a no-op on purpose: if the first call couldn't take a lock it left a handle behind,
+            // and this is one of the two places that retries (the other being Update, on its way out).
+            Volatile.Write(ref _disposeRequested, 1);
 
-            // Take the builder lock first, in the same order as Update does, so that an update which is
-            // already building an instance finishes before the builder is destroyed under it.
-            var builderLockTaken = Monitor.TryEnter(_builderLock, DisposeTimeoutInMs);
+            if (HasNativeHandles)
+            {
+                ReleaseNativeHandles(DisposeTimeoutInMs);
+            }
+        }
+
+        /// <summary>
+        /// Releases the native handles this instance owns, as far as the locks allow. Each handle is
+        /// zeroed under the lock that guards it before being destroyed, so exactly one caller ever frees
+        /// it however many callers race here. A handle whose lock couldn't be acquired is left in place
+        /// rather than freed unsafely, and the next caller picks it up: a lock timeout must not turn into
+        /// a permanent leak. Only meaningful once <see cref="Disposed"/> is set.
+        /// </summary>
+        /// <param name="timeoutInMs">how long to wait for each of the two locks</param>
+        private void ReleaseNativeHandles(int timeoutInMs)
+        {
+            // Same lock order as Update: builder first, then the WAF write lock.
+            var builderLockTaken = Monitor.TryEnter(_builderLock, timeoutInMs);
             try
             {
                 // we really need to enter here so longer timeout, otherwise waf handle might not be disposed
-                if (_wafLocker.EnterWriteLock(DisposeTimeoutInMs))
+                if (_wafLocker.EnterWriteLock(timeoutInMs))
                 {
-                    // Set Disposed and Destroy the handle atomically under the write lock. A plain
-                    // "Disposed = true" before the lock would let two concurrent Dispose() calls both
-                    // pass the outer guard and both reach Destroy(_wafHandle), which is a double free:
+                    // Zeroing under the write lock is what makes this safe to call more than once:
                     // ddwaf_destroy does `delete handle` unconditionally (no native refcount on the
-                    // handle itself), so a second call corrupts the heap. The inner re-check ensures
-                    // exactly one caller destroys the handle.
-                    if (!Disposed)
+                    // handle itself), so a second destroy would corrupt the heap. The write lock is also
+                    // mutually exclusive with the read lock CreateContext holds, so no ddwaf_context_init
+                    // can be reading the handle as it goes away.
+                    var wafHandle = _wafHandle;
+                    _wafHandle = IntPtr.Zero;
+
+                    if (wafHandle != IntPtr.Zero)
                     {
-                        Disposed = true;
-                        _wafLibraryInvoker.Destroy(_wafHandle);
+                        _wafLibraryInvoker.Destroy(wafHandle);
                     }
 
                     _wafLocker.ExitWriteLock();
                 }
                 else
                 {
-                    // Couldn't acquire the write lock; mark disposed so other operations bail out,
-                    // even though the WAF instance leaks in this (rare) timeout case.
-                    Disposed = true;
+                    Log.Warning<int>("Couldn't acquire the waf write lock in {Timeout} ms to release the waf instance, it will be released by the next operation that can", timeoutInMs);
                 }
 
                 // The builder is guarded by the builder lock alone, so it can be released whether or not
-                // the write lock was acquired. Zeroing it makes a later Update bail out, and a second
-                // Dispose a no-op, instead of handing a destroyed builder to libddwaf.
+                // the write lock was acquired.
                 if (builderLockTaken)
                 {
                     var builderHandle = _wafBuilderHandle;
@@ -365,7 +412,7 @@ namespace Datadog.Trace.AppSec.Waf
                 }
                 else
                 {
-                    Log.Warning<int>("Couldn't acquire the waf builder lock in {Timeout} ms, the builder will leak as an update is still using it", DisposeTimeoutInMs);
+                    Log.Warning<int>("Couldn't acquire the waf builder lock in {Timeout} ms to release the builder, it will be released by the update that is holding it", timeoutInMs);
                 }
             }
             finally

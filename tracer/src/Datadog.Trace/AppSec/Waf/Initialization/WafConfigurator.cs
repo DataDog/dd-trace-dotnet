@@ -123,17 +123,48 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return root;
         }
 
+        /// <summary>
+        /// Renders a WAF diagnostics object as JSON for logging. Only used on paths where the object is
+        /// dropped right after, so its content would otherwise be lost.
+        /// </summary>
+        private static string DescribeDiagnostics(ref DdwafObjectStruct diagnostics)
+        {
+            try
+            {
+                var decoded = diagnostics.Decode();
+                return decoded is null ? "none" : JsonHelper.SerializeObject(decoded);
+            }
+            catch (Exception ex)
+            {
+                return $"could not be read: {ex.Message}";
+            }
+        }
+
         internal UpdateResult Configure(ConfigurationState configurationState, IEncoder encoder, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, ref DdwafObjectStruct diagnostics, string? rulesFile)
         {
             var wafBuilderHandle = _wafLibraryInvoker.InitBuilder();
-            if (wafBuilderHandle != IntPtr.Zero)
+            if (wafBuilderHandle == IntPtr.Zero)
+            {
+                // Update logs and reports the failure for us, there is nothing to release
+                return Update(IntPtr.Zero, configurationState, encoder, ref diagnostics, rulesFile, false);
+            }
+
+            try
             {
                 // since libddwaf 2.x the obfuscator is no longer part of a global ddwaf_config, it is a
                 // configuration of the builder like any other, and it persists across builds
                 ApplyObfuscatorConfig(wafBuilderHandle, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
-            }
 
-            return Update(wafBuilderHandle, configurationState, encoder, ref diagnostics, rulesFile, false);
+                return Update(wafBuilderHandle, configurationState, encoder, ref diagnostics, rulesFile, false);
+            }
+            catch (Exception ex)
+            {
+                // nothing has taken ownership of the builder yet, so an exception on the way out would
+                // strand it: it has to be released here. Update does the same for the instance it builds.
+                _wafLibraryInvoker.DestroyBuilder(wafBuilderHandle);
+                Log.Error(ex, "DDAS-0005-00: WAF initialization failed.");
+                return UpdateResult.FromException(ex);
+            }
         }
 
         /// <summary>
@@ -166,7 +197,9 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 var configObj = encoded.ResultDdwafObject;
                 if (!_wafLibraryInvoker.BuilderAddOrUpdateConfig(wafBuilderHandle, ObfuscatorConfigPath, ref configObj, ref diagnostics))
                 {
-                    Log.Warning("WAF builder: the obfuscator configuration failed to load, the WAF will use its default obfuscation regexes");
+                    // these diagnostics are never reported anywhere else, so say what the WAF complained
+                    // about rather than just that it complained
+                    Log.Warning("WAF builder: the obfuscator configuration failed to load, the WAF will use its default obfuscation regexes. WAF diagnostics: {Diagnostics}", DescribeDiagnostics(ref diagnostics));
                 }
             }
             catch (Exception ex)
@@ -230,67 +263,81 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 }
             }
 
-            UpdateResult result;
-
-            if (wafHandle == IntPtr.Zero)
+            try
             {
-                Log.Error("rc::asm_dd::diagnostic Error: Failed to build WAF instance: no valid rules or processors available");
-                result = UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.", diagnostics, wafBuilderHandle, _wafLibraryInvoker, encoder);
-            }
-            else
-            {
-                result = UpdateResult.FromSuccess(diagnostics, wafBuilderHandle, wafHandle, _wafLibraryInvoker, encoder);
-            }
+                UpdateResult result;
 
-            if (result.ReportedDiagnostics.Rules.Errors is { Count: > 0 } ||
-                result.ReportedDiagnostics.Rules.Warnings is { Count: > 0 } ||
-                result.ReportedDiagnostics.Rest.Errors is { Count: > 0 } ||
-                result.ReportedDiagnostics.Rest.Warnings is { Count: > 0 })
-            {
-                var diags = result.ReportedDiagnostics;
-                DumpStatsMessages(ref diags.Rules);
-                DumpStatsMessages(ref diags.Rest);
-
-                if (diags.HasErrors)
+                if (wafHandle == IntPtr.Zero)
                 {
-#pragma warning disable DDLOG004 // Message templates should be constant
-                    Log.Error($"Some errors were found while applying waf configuration (RulesFile: {rulesFile})");
-#pragma warning restore DDLOG004 // Message templates should be constant
+                    Log.Error("rc::asm_dd::diagnostic Error: Failed to build WAF instance: no valid rules or processors available");
+                    result = UpdateResult.FromFailed("DDAS-0005-00: WAF initialization failed. No valid rules found.", diagnostics, wafBuilderHandle, _wafLibraryInvoker, encoder);
                 }
                 else
                 {
-                    Log.Debug("Some warnings were found while applying waf configuration (RulesFile: {RulesFile})", rulesFile);
+                    result = UpdateResult.FromSuccess(diagnostics, wafBuilderHandle, wafHandle, _wafLibraryInvoker, encoder);
                 }
 
-                void DumpStatsMessages(ref WafStats stats)
+                if (result.ReportedDiagnostics.Rules.Errors is { Count: > 0 } ||
+                    result.ReportedDiagnostics.Rules.Warnings is { Count: > 0 } ||
+                    result.ReportedDiagnostics.Rest.Errors is { Count: > 0 } ||
+                    result.ReportedDiagnostics.Rest.Warnings is { Count: > 0 })
                 {
-                    DumpMessages(stats.Errors, true);
-                    DumpMessages(stats.Warnings, false);
-                }
+                    var diags = result.ReportedDiagnostics;
+                    DumpStatsMessages(ref diags.Rules);
+                    DumpStatsMessages(ref diags.Rest);
 
-                void DumpMessages(IReadOnlyDictionary<string, object>? messages, bool isError)
-                {
-                    if (messages is { Count: > 0 })
+                    if (diags.HasErrors)
                     {
-                        foreach (var item in messages)
-                        {
-                            var message = $"{item.Key}: [{string.Join(", ", item.Value)}]";
-                            var severity = isError ? "Error" : "Warning";
 #pragma warning disable DDLOG004 // Message templates should be constant
-                            Log.Error($"rc::asm_dd::diagnostic {severity}: {message}");
+                        Log.Error($"Some errors were found while applying waf configuration (RulesFile: {rulesFile})");
 #pragma warning restore DDLOG004 // Message templates should be constant
+                    }
+                    else
+                    {
+                        Log.Debug("Some warnings were found while applying waf configuration (RulesFile: {RulesFile})", rulesFile);
+                    }
+
+                    void DumpStatsMessages(ref WafStats stats)
+                    {
+                        DumpMessages(stats.Errors, true);
+                        DumpMessages(stats.Warnings, false);
+                    }
+
+                    void DumpMessages(IReadOnlyDictionary<string, object>? messages, bool isError)
+                    {
+                        if (messages is { Count: > 0 })
+                        {
+                            foreach (var item in messages)
+                            {
+                                var message = $"{item.Key}: [{string.Join(", ", item.Value)}]";
+                                var severity = isError ? "Error" : "Warning";
+#pragma warning disable DDLOG004 // Message templates should be constant
+                                Log.Error($"rc::asm_dd::diagnostic {severity}: {message}");
+#pragma warning restore DDLOG004 // Message templates should be constant
+                            }
                         }
                     }
                 }
-            }
 
-            if (result.Success && !updating)
+                if (result.Success && !updating)
+                {
+                    Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", result.ReportedDiagnostics.Rules.Loaded, rulesFile ?? "Embedded rules file");
+                    Log.Debug("                          WAF config stats: {LoadedRules} loaded, {SkippedRules} skipped, {FailedRules} failed items", result.ReportedDiagnostics.Rest.Loaded, result.ReportedDiagnostics.Rest.Skipped, result.ReportedDiagnostics.Rest.Failed);
+                }
+
+                return result;
+            }
+            catch
             {
-                Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", result.ReportedDiagnostics.Rules.Loaded, rulesFile ?? "Embedded rules file");
-                Log.Debug("                          WAF config stats: {LoadedRules} loaded, {SkippedRules} skipped, {FailedRules} failed items", result.ReportedDiagnostics.Rest.Loaded, result.ReportedDiagnostics.Rest.Skipped, result.ReportedDiagnostics.Rest.Failed);
-            }
+                // the instance was just built and nobody owns it yet: the caller only takes it over
+                // once this method returns, so an exception here would strand it
+                if (wafHandle != IntPtr.Zero)
+                {
+                    _wafLibraryInvoker.Destroy(wafHandle);
+                }
 
-            return result;
+                throw;
+            }
         }
     }
 }
