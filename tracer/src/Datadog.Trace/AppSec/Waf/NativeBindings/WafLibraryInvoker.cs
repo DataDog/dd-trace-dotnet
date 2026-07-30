@@ -6,6 +6,7 @@
 using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Logging;
 
@@ -29,6 +30,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly BuilderAddOrUpdateConfigDelegate _builderAddOrUpdateConfigField;
         private readonly BuilderRemoveConfigDelegate _builderRemoveConfigDelegate;
         private readonly BuilderBuildInstanceDelegate _builderBuildInstanceDelegate;
+        private readonly BuilderDestroyDelegate _builderDestroyDelegate;
 
         private readonly InitContextDelegate _initContextField;
         private readonly ContextEvalDelegate _contextEvalField;
@@ -68,6 +70,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _builderAddOrUpdateConfigField = GetDelegateForNativeFunction<BuilderAddOrUpdateConfigDelegate>(libraryHandle, "ddwaf_builder_add_or_update_config");
             _builderRemoveConfigDelegate = GetDelegateForNativeFunction<BuilderRemoveConfigDelegate>(libraryHandle, "ddwaf_builder_remove_config");
             _builderBuildInstanceDelegate = GetDelegateForNativeFunction<BuilderBuildInstanceDelegate>(libraryHandle, "ddwaf_builder_build_instance");
+            _builderDestroyDelegate = GetDelegateForNativeFunction<BuilderDestroyDelegate>(libraryHandle, "ddwaf_builder_destroy");
 
             _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(libraryHandle, "ddwaf_context_init");
             _contextEvalField = GetDelegateForNativeFunction<ContextEvalDelegate>(libraryHandle, "ddwaf_context_eval");
@@ -109,11 +112,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate IntPtr BuilderInitDelegate();
 
-        private delegate bool BuilderAddOrUpdateConfigDelegate(IntPtr builder, string path, uint pathLen, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics);
+        private delegate bool BuilderAddOrUpdateConfigDelegate(IntPtr builder, byte[] path, uint pathLen, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics);
 
-        private delegate bool BuilderRemoveConfigDelegate(IntPtr builder, string path, uint pathLen);
+        private delegate bool BuilderRemoveConfigDelegate(IntPtr builder, byte[] path, uint pathLen);
 
         private delegate IntPtr BuilderBuildInstanceDelegate(IntPtr builder);
+
+        private delegate void BuilderDestroyDelegate(IntPtr builder);
 
         private delegate IntPtr InitContextDelegate(IntPtr wafHandle, IntPtr outputAlloc);
 
@@ -353,11 +358,39 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal IntPtr InitBuilder() => _builderInitField();
 
-        internal bool BuilderAddOrUpdateConfig(IntPtr builder, string path, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics) => _builderAddOrUpdateConfigField(builder, path, (uint)path.Length, ref config, ref diagnostics);
+        internal bool BuilderAddOrUpdateConfig(IntPtr builder, string path, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics)
+        {
+            var pathBytes = GetConfigPathBytes(path, out var pathLen);
+            return _builderAddOrUpdateConfigField(builder, pathBytes, pathLen, ref config, ref diagnostics);
+        }
 
-        internal bool BuilderRemoveConfig(IntPtr builder, string path) => _builderRemoveConfigDelegate(builder, path, (uint)path.Length);
+        internal bool BuilderRemoveConfig(IntPtr builder, string path)
+        {
+            var pathBytes = GetConfigPathBytes(path, out var pathLen);
+            return _builderRemoveConfigDelegate(builder, pathBytes, pathLen);
+        }
 
         internal IntPtr BuilderBuildInstance(IntPtr builder) => _builderBuildInstanceDelegate(builder);
+
+        /// <summary>
+        /// Releases a builder and every configuration it holds. Any WAF instance already built from it
+        /// stays valid, as instances own their own copy of the ruleset.
+        /// </summary>
+        internal void DestroyBuilder(IntPtr builder) => _builderDestroyDelegate(builder);
+
+        /// <summary>
+        /// Converts a builder configuration path to the bytes libddwaf expects. The native side takes
+        /// the path as a length delimited byte string (<c>std::string_view{path, path_len}</c>), so the
+        /// length has to be a byte count: a character count would truncate, or overrun, any path that
+        /// isn't pure ASCII. Encoding it ourselves also keeps the bytes identical on every platform,
+        /// which matters because paths are compared byte for byte when a configuration is removed.
+        /// </summary>
+        private static byte[] GetConfigPathBytes(string path, out uint length)
+        {
+            var bytes = Encoding.UTF8.GetBytes(path);
+            length = (uint)bytes.Length;
+            return bytes;
+        }
 
         /// <summary>
         /// Creates an evaluation context. The output allocator given here is the one libddwaf uses to

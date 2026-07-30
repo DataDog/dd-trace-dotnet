@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Threading;
 using Datadog.Trace.AppSec.Rcm;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -22,13 +23,31 @@ namespace Datadog.Trace.AppSec.Waf
     internal sealed class Waf : IWaf
     {
         private const string InitContextError = "WAF ddwaf_init_context failed.";
+        private const int BuilderLockTimeoutInMs = 4000;
+        private const int DisposeTimeoutInMs = 15000;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Waf));
 
         private readonly WafLibraryInvoker _wafLibraryInvoker;
         private readonly Concurrency.ReaderWriterLock _wafLocker = new();
         private readonly IEncoder _encoder;
-        private readonly IntPtr _wafBuilderHandle;
+
+        /// <summary>
+        /// Guards <see cref="_wafBuilderHandle"/>. The native builder isn't thread safe and, unlike the
+        /// WAF instance, it is mutated by <see cref="Update"/> and freed by <see cref="Dispose"/>, so
+        /// both have to hold this lock for as long as they touch it. It is deliberately separate from
+        /// <see cref="_wafLocker"/>: building an instance can take a while and must not block context
+        /// creation. Whoever takes both always takes this one first.
+        /// </summary>
+        private readonly object _builderLock = new();
+
+        /// <summary>
+        /// The builder that produced <see cref="_wafHandle"/>. It holds every configuration applied so
+        /// far and outlives each built instance, because an RCM update rebuilds from it. This instance
+        /// owns it and releases it on <see cref="Dispose"/>. Only ever read or written under
+        /// <see cref="_builderLock"/>.
+        /// </summary>
+        private IntPtr _wafBuilderHandle;
         private IntPtr _wafHandle;
         private bool? _isKnowAddressesSuported;
 
@@ -73,7 +92,24 @@ namespace Datadog.Trace.AppSec.Waf
             try
             {
                 var result = wafConfigurator.Configure(configurationStatus, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex, ref diagnostics, configurationStatus.RuleSetTitle);
-                return InitResult.From(ref result);
+                var initResult = InitResult.From(ref result);
+                if (initResult.Waf is null)
+                {
+                    // ownership of the native handles is transferred to the Waf instance, so when there
+                    // is none (the build failed, or the ruleset had no usable rules) nothing else will
+                    // ever release them and they have to be freed here
+                    if (result.WafHandle != IntPtr.Zero)
+                    {
+                        wafLibraryInvoker.Destroy(result.WafHandle);
+                    }
+
+                    if (result.WafBuilderHandle != IntPtr.Zero)
+                    {
+                        wafLibraryInvoker.DestroyBuilder(result.WafBuilderHandle);
+                    }
+                }
+
+                return initResult;
             }
             finally
             {
@@ -89,11 +125,27 @@ namespace Datadog.Trace.AppSec.Waf
                 return UpdateResult.FromFailed("Waf is already disposed and can't be updated");
             }
 
+            // Hold the builder lock for the whole build: the builder isn't thread safe, and without it
+            // Dispose could run ddwaf_builder_destroy while a ddwaf_builder_* call is still in flight.
+            if (!Monitor.TryEnter(_builderLock, BuilderLockTimeoutInMs))
+            {
+                Log.Error<int>("Couldn't acquire lock to update waf in {Timeout} ms", BuilderLockTimeoutInMs);
+                TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Error);
+                return UpdateResult.FromFailed("Couldn't acquire lock to update waf");
+            }
+
             // starts out invalid so that destroying it is a no-op if the WAF never writes any diagnostics
             var diagnostics = default(DdwafObjectStruct);
             var wafConfigurator = new WafConfigurator(_wafLibraryInvoker);
             try
             {
+                // dispose may have won the race for the builder lock, in which case the builder is gone
+                if (Disposed || _wafBuilderHandle == IntPtr.Zero)
+                {
+                    TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Error);
+                    return UpdateResult.FromFailed("Waf is already disposed and can't be updated");
+                }
+
                 var updateResult = wafConfigurator.Update(_wafBuilderHandle, configurationStatus, _encoder, ref diagnostics, configurationStatus.RuleSetTitle);
                 if (!updateResult.Success || updateResult.WafHandle == _wafHandle || updateResult.WafHandle == IntPtr.Zero)
                 {
@@ -101,12 +153,14 @@ namespace Datadog.Trace.AppSec.Waf
                 }
                 else
                 {
+                    // the instance was built outside the lock, so until it is installed below this method
+                    // is its only owner: every path that doesn't install it has to destroy it
+                    var newHandle = updateResult.WafHandle;
                     if (_wafLocker.EnterWriteLock())
                     {
                         if (!Disposed)
                         {
                             // update within the lock as iis can recycle and cause dispose to happen at the same time
-                            var newHandle = updateResult.WafHandle;
                             var oldHandle = _wafHandle;
                             _wafHandle = newHandle;
                             _wafLocker.ExitWriteLock();
@@ -121,8 +175,16 @@ namespace Datadog.Trace.AppSec.Waf
                         else
                         {
                             _wafLocker.ExitWriteLock();
+                            _wafLibraryInvoker.Destroy(newHandle);
+                            TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Error);
                             return UpdateResult.FromFailed("Waf is already disposed and can't be updated");
                         }
+                    }
+                    else
+                    {
+                        _wafLibraryInvoker.Destroy(newHandle);
+                        TelemetryFactory.Metrics.RecordCountWafUpdates(Telemetry.Metrics.MetricTags.WafStatus.Error);
+                        return UpdateResult.FromFailed("Couldn't acquire lock to update waf: the new instance couldn't be installed");
                     }
                 }
 
@@ -145,6 +207,7 @@ namespace Datadog.Trace.AppSec.Waf
             finally
             {
                 _wafLibraryInvoker.ObjectDestroy(ref diagnostics);
+                Monitor.Exit(_builderLock);
             }
         }
 
@@ -258,28 +321,59 @@ namespace Datadog.Trace.AppSec.Waf
                 return;
             }
 
-            // we really need to enter here so longer timeout, otherwise waf handle might not be disposed
-            if (_wafLocker.EnterWriteLock(15000))
+            // Take the builder lock first, in the same order as Update does, so that an update which is
+            // already building an instance finishes before the builder is destroyed under it.
+            var builderLockTaken = Monitor.TryEnter(_builderLock, DisposeTimeoutInMs);
+            try
             {
-                // Set Disposed and Destroy the handle atomically under the write lock. A plain
-                // "Disposed = true" before the lock would let two concurrent Dispose() calls both
-                // pass the outer guard and both reach Destroy(_wafHandle), which is a double free:
-                // ddwaf_destroy does `delete handle` unconditionally (no native refcount on the
-                // handle itself), so a second call corrupts the heap. The inner re-check ensures
-                // exactly one caller destroys the handle.
-                if (!Disposed)
+                // we really need to enter here so longer timeout, otherwise waf handle might not be disposed
+                if (_wafLocker.EnterWriteLock(DisposeTimeoutInMs))
                 {
+                    // Set Disposed and Destroy the handle atomically under the write lock. A plain
+                    // "Disposed = true" before the lock would let two concurrent Dispose() calls both
+                    // pass the outer guard and both reach Destroy(_wafHandle), which is a double free:
+                    // ddwaf_destroy does `delete handle` unconditionally (no native refcount on the
+                    // handle itself), so a second call corrupts the heap. The inner re-check ensures
+                    // exactly one caller destroys the handle.
+                    if (!Disposed)
+                    {
+                        Disposed = true;
+                        _wafLibraryInvoker.Destroy(_wafHandle);
+                    }
+
+                    _wafLocker.ExitWriteLock();
+                }
+                else
+                {
+                    // Couldn't acquire the write lock; mark disposed so other operations bail out,
+                    // even though the WAF instance leaks in this (rare) timeout case.
                     Disposed = true;
-                    _wafLibraryInvoker.Destroy(_wafHandle);
                 }
 
-                _wafLocker.ExitWriteLock();
+                // The builder is guarded by the builder lock alone, so it can be released whether or not
+                // the write lock was acquired. Zeroing it makes a later Update bail out, and a second
+                // Dispose a no-op, instead of handing a destroyed builder to libddwaf.
+                if (builderLockTaken)
+                {
+                    var builderHandle = _wafBuilderHandle;
+                    _wafBuilderHandle = IntPtr.Zero;
+
+                    if (builderHandle != IntPtr.Zero)
+                    {
+                        _wafLibraryInvoker.DestroyBuilder(builderHandle);
+                    }
+                }
+                else
+                {
+                    Log.Warning<int>("Couldn't acquire the waf builder lock in {Timeout} ms, the builder will leak as an update is still using it", DisposeTimeoutInMs);
+                }
             }
-            else
+            finally
             {
-                // Couldn't acquire the write lock; mark disposed so other operations bail out,
-                // even though the native handle may leak in this (rare) timeout case.
-                Disposed = true;
+                if (builderLockTaken)
+                {
+                    Monitor.Exit(_builderLock);
+                }
             }
         }
     }
