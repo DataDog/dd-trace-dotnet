@@ -184,7 +184,9 @@ build:
         -e CI_PROJECT_NAME `
         -e CI_JOB_NAME_SLUG `
         $env:WINDOWS_BUILD_IMAGE `
-        Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
+        Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet `
+        CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests CompileProfilerNativeTests RunProfilerNativeTests `
+        PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
       $buildExitCode = $LASTEXITCODE
 
       Wait-Job $statsJob -Timeout 15 | Out-Null
