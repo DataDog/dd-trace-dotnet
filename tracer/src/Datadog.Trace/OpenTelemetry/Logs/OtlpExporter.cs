@@ -196,10 +196,10 @@ internal sealed class OtlpExporter : IOtlpExporter
         // doesn't fit. The send path consumes the buffer synchronously, so it is safe to return it
         // to the pool once the request completes.
         var buffer = ArrayPool<byte>.Shared.Rent(InitialBufferSize);
-        var bytesWritten = 0;
+        var contentLength = 0;
         try
         {
-            while (!OtlpLogsSerializer.TrySerializeLogs(logs, buffer, _resourceTags, out bytesWritten, startPosition))
+            while (!OtlpLogsSerializer.TrySerializeLogs(logs, buffer, _resourceTags, out contentLength, startPosition))
             {
                 if (buffer.Length >= MaxBufferSize)
                 {
@@ -220,7 +220,7 @@ internal sealed class OtlpExporter : IOtlpExporter
             // ArrayPool only guarantees that the rented buffer is at least the requested size.
             // For example, renting 3MB may return a 4MB buffer, so enforce the logical payload
             // limit using the serialized length rather than the physical buffer length.
-            if (bytesWritten > MaxBufferSize)
+            if (contentLength > MaxBufferSize)
             {
                 Log.Warning<int>("Dropping OTLP log batch of {Count} logs: serialized payload exceeds the maximum size.", logs.Count);
                 return true;
@@ -228,9 +228,9 @@ internal sealed class OtlpExporter : IOtlpExporter
 
             return _protocol switch
             {
-                OtlpProtocol.HttpProtobuf => await SendHttpProtobufRequest(buffer, bytesWritten).ConfigureAwait(false),
-                OtlpProtocol.Grpc => await SendGrpcRequest(buffer, bytesWritten).ConfigureAwait(false),
-                _ => await SendHttpProtobufRequest(buffer, bytesWritten).ConfigureAwait(false)
+                OtlpProtocol.HttpProtobuf => await SendHttpProtobufRequest(buffer, contentLength).ConfigureAwait(false),
+                OtlpProtocol.Grpc => await SendGrpcRequest(buffer, contentLength).ConfigureAwait(false),
+                _ => await SendHttpProtobufRequest(buffer, contentLength).ConfigureAwait(false)
             };
         }
         catch (Exception ex)

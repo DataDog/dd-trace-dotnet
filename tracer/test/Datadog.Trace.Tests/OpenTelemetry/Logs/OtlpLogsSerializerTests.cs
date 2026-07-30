@@ -27,10 +27,10 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
             };
             var buffer = new byte[InitialBufferSize];
 
-            var result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out var bytesWritten);
+            var result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out var contentLength);
 
             result.Should().BeTrue();
-            bytesWritten.Should().BeGreaterThan(0);
+            contentLength.Should().BeGreaterThan(0);
         }
 
         [Fact]
@@ -38,10 +38,10 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
         {
             var buffer = new byte[InitialBufferSize];
 
-            var result = OtlpLogsSerializer.TrySerializeLogs(new List<LogPoint>(), buffer, CreateResourceTags(), out var bytesWritten);
+            var result = OtlpLogsSerializer.TrySerializeLogs(new List<LogPoint>(), buffer, CreateResourceTags(), out var contentLength);
 
             result.Should().BeTrue();
-            bytesWritten.Should().Be(0);
+            contentLength.Should().Be(0);
         }
 
         [Fact]
@@ -53,10 +53,10 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
             var logs = CreateLogs(count: 200, messageSize: 2048);
             var buffer = new byte[64];
 
-            var bytesWritten = -1;
-            var result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out bytesWritten);
+            var contentLength = -1;
+            var result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out contentLength);
             result.Should().BeFalse();
-            bytesWritten.Should().Be(0);
+            contentLength.Should().Be(0);
         }
 
         [Fact]
@@ -66,10 +66,10 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
             var logs = CreateLogs(count: 200, messageSize: 2048);
             var buffer = new byte[1024 * 1024];
 
-            var result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out var bytesWritten);
+            var result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out var contentLength);
 
             result.Should().BeTrue();
-            bytesWritten.Should().BeGreaterThan(InitialBufferSize);
+            contentLength.Should().BeGreaterThan(InitialBufferSize);
         }
 
         [Fact]
@@ -83,10 +83,14 @@ namespace Datadog.Trace.Tests.OpenTelemetry.Logs
 
             // gRPC reserves 5 bytes at the start for the frame header.
             const int startPosition = 5;
-            var result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out var bytesWritten, startPosition);
+            buffer.Should().OnlyContain(b => b == 0);
+
+            var result = OtlpLogsSerializer.TrySerializeLogs(logs, buffer, CreateResourceTags(), out var contentLength, startPosition);
 
             result.Should().BeTrue();
-            bytesWritten.Should().BeGreaterThan(startPosition);
+            contentLength.Should().BeGreaterThan(startPosition);
+            buffer.AsSpan(0, startPosition).ToArray().Should().OnlyContain(b => b == 0);
+            buffer.AsSpan(contentLength).ToArray().Should().OnlyContain(b => b == 0);
         }
 
         [Theory]

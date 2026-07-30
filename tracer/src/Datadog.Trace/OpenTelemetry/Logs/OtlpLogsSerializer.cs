@@ -37,12 +37,12 @@ internal static class OtlpLogsSerializer
     /// <param name="logs">The batch of logs to serialize.</param>
     /// <param name="buffer">The destination buffer to serialize into.</param>
     /// <param name="settings">Resource-level tags applied to the payload.</param>
-    /// <param name="bytesWritten">The number of bytes written (the payload length), or 0 if the batch didn't fit.</param>
+    /// <param name="contentLength">The total content length, including any reserved prefix, or 0 if the batch didn't fit.</param>
     /// <param name="startPosition">Offset at which to start writing (e.g. a reserved gRPC frame header).</param>
     /// <returns><c>true</c> if the batch was serialized into <paramref name="buffer"/>; <c>false</c> if it didn't fit.</returns>
-    public static bool TrySerializeLogs(IReadOnlyList<LogPoint> logs, byte[] buffer, ResourceTags settings, out int bytesWritten, int startPosition = 0)
+    public static bool TrySerializeLogs(IReadOnlyList<LogPoint> logs, byte[] buffer, ResourceTags settings, out int contentLength, int startPosition = 0)
     {
-        bytesWritten = 0;
+        contentLength = 0;
 
         if (logs.Count == 0)
         {
@@ -51,14 +51,14 @@ internal static class OtlpLogsSerializer
 
         try
         {
-            bytesWritten = SerializeLogs(buffer, logs, settings, startPosition);
+            contentLength = SerializeLogs(buffer, logs, settings, startPosition);
             return true;
         }
         catch (Exception ex) when (ex is ArgumentException or IndexOutOfRangeException)
         {
             // A span/array write ran past the end of the buffer: it was too small for this batch.
             // Signal the caller to retry with a larger buffer rather than surfacing the exception.
-            bytesWritten = 0;
+            contentLength = 0;
             return false;
         }
     }
