@@ -31,7 +31,17 @@ namespace Datadog.Trace.AppSec.WafEncoding;
 /// </summary>
 internal sealed class EncoderLegacy : IEncoder
 {
+    /// <summary>
+    /// Worst case UTF-8 size of a string that abides by the safety limits, which is the size the
+    /// per-thread conversion buffer is kept at.
+    /// </summary>
+    private const int MaxBytesForMaxStringLength = (WafConstants.MaxStringLength * 4) + 1;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EncoderLegacy));
+
+    [ThreadStatic]
+    private static byte[]? _utf8Buffer;
+
     private readonly WafLibraryInvoker _wafLibraryInvoker;
 
     public EncoderLegacy(WafLibraryInvoker wafLibraryInvoker)
@@ -292,8 +302,8 @@ internal sealed class EncoderLegacy : IEncoder
             var name = o.Key;
             if (!StringUtil.IsNullOrEmpty(name))
             {
-                var keyBytes = StringEncoding.UTF8.GetBytes(name);
-                var slot = wafLibraryInvoker.ObjectInsertKey(dest, keyBytes, (uint)keyBytes.Length);
+                var keyBytes = ToUtf8(name, out var keyLength);
+                var slot = wafLibraryInvoker.ObjectInsertKey(dest, keyBytes, keyLength);
                 if (slot == null)
                 {
                     Log.Warning("EncodeDictionary: couldn't insert a key in the WAF map, the map will be incomplete");
@@ -322,8 +332,34 @@ internal sealed class EncoderLegacy : IEncoder
         // libddwaf takes an explicit byte count, so the string has to be converted to UTF-8 here
         // rather than left to the default (ANSI) marshalling, whose byte count wouldn't match the
         // character count we'd be passing along with it.
-        var bytes = StringEncoding.UTF8.GetBytes(encodeString);
-        wafLibraryInvoker.ObjectSetString(dest, bytes, (uint)bytes.Length);
+        var bytes = ToUtf8(encodeString, out var length);
+        wafLibraryInvoker.ObjectSetString(dest, bytes, length);
+    }
+
+    /// <summary>
+    /// Converts <paramref name="s"/> to UTF-8 into a buffer that is only valid until the next call on
+    /// the same thread. libddwaf copies the bytes of the keys and strings it is handed, so nothing has
+    /// to outlive the native call that consumes them and one buffer per thread is enough. Encoding a
+    /// whole tree therefore costs no managed allocation, which matters because every string and every
+    /// map key of every request goes through here.
+    /// </summary>
+    /// <param name="s">the string to convert</param>
+    /// <param name="length">the number of bytes written, which is what libddwaf expects as the length</param>
+    /// <returns>the buffer holding the bytes, of which only the first <paramref name="length"/> are meaningful</returns>
+    private static byte[] ToUtf8(string s, out uint length)
+    {
+        if (StringEncoding.UTF8.GetMaxByteCount(s.Length) > MaxBytesForMaxStringLength)
+        {
+            // only reachable with the safety limits off, i.e. when encoding a ruleset at initialisation:
+            // convert it on its own rather than keeping an arbitrarily large buffer alive per thread
+            var oneOff = StringEncoding.UTF8.GetBytes(s);
+            length = (uint)oneOff.Length;
+            return oneOff;
+        }
+
+        var buffer = _utf8Buffer ??= new byte[MaxBytesForMaxStringLength];
+        length = (uint)StringEncoding.UTF8.GetBytes(s, 0, s.Length, buffer, 0);
+        return buffer;
     }
 
     public static string FormatArgs(object o)
