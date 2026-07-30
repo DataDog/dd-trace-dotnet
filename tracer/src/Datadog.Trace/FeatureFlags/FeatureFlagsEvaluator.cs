@@ -70,7 +70,20 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
-                if (config.Flags is null || !config.Flags.TryGetValue(flagKey, out var flag) || flag is null)
+                if (config.Flags is null || !config.Flags.TryGetValue(flagKey, out var flag))
+                {
+                    return new Evaluation(
+                        flagKey,
+                        defaultValue,
+                        EvaluationReason.Error,
+                        error: "FLAG_NOT_FOUND",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "FLAG_NOT_FOUND"
+                        });
+                }
+
+                if (flag is null)
                 {
                     return new Evaluation(
                         flagKey,
@@ -154,9 +167,16 @@ namespace Datadog.Trace.FeatureFlags
                             {
                                 // Determine reason based on how the flag was resolved.
                                 // - TargetingMatch: Allocation had targeting rules that matched
+                                // - Default: A temporal allocation with one unsharded split matched
                                 // - Split: Resolved via percentage split without targeting rules
                                 // - Static: No rules, no shards - simple static value
+                                var isTemporalDefault = !hadRules &&
+                                                        !hadShards &&
+                                                        allocation.Splits.Count == 1 &&
+                                                        (!StringUtil.IsNullOrEmpty(allocation.StartAt) ||
+                                                         !StringUtil.IsNullOrEmpty(allocation.EndAt));
                                 var reason = hadRules ? EvaluationReason.TargetingMatch
+                                           : isTemporalDefault ? EvaluationReason.Default
                                            : hadShards ? EvaluationReason.Split
                                            : EvaluationReason.Static;
 

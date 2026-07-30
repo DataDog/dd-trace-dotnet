@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
@@ -18,6 +19,7 @@ internal sealed class ServerConfiguration
 
     public Environment? Environment { get; set; }
 
+    [JsonConverter(typeof(FlagDictionaryJsonConverter))]
     public Dictionary<string, Flag>? Flags { get; set; }
 
     internal void Merge(ServerConfiguration other)

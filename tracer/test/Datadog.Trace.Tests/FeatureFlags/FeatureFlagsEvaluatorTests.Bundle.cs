@@ -120,13 +120,13 @@ public partial class FeatureFlagsEvaluatorTests
         // Read config
         var configContent = ResourceHelper.ReadAllText<FeatureFlagsEvaluatorTests>("ffe_system_test_data.ufc-config.json");
         var fullObject = JObject.Parse(configContent);
-        var dataToken = fullObject.SelectToken("flags");
-        var flags = dataToken?.ToObject<Dictionary<string, Flag>>();
-        Assert.NotNull(flags);
+        var config = fullObject.ToObject<ServerConfiguration>();
+        Assert.NotNull(config);
+        Assert.NotNull(config.Flags);
 
-        foreach (var flag in flags)
+        foreach (var flag in config.Flags)
         {
-            if (flag.Value.Allocations is null) { continue; }
+            if (flag.Value?.Allocations is null) { continue; }
             foreach (var allocation in flag.Value.Allocations)
             {
                 allocation.StartAt = FixDateString(allocation.StartAt);
@@ -162,8 +162,6 @@ public partial class FeatureFlagsEvaluatorTests
 
             return dateString;
         }
-
-        var config = new ServerConfiguration { Flags = flags };
 
         return config;
     }

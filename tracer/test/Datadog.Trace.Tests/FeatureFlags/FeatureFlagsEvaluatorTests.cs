@@ -241,7 +241,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         // The allocation is active (2020-2099 dates), so it should match
         Assert.Equal("time-limited", result.Value);
-        Assert.Equal(EvaluationReason.Static, result.Reason); // No rules, no shards → Static
+        Assert.Equal(EvaluationReason.Default, result.Reason); // Temporal allocation with one unsharded split → Default
         Assert.Equal("time-limited", result.Variant);
     }
 
@@ -283,7 +283,7 @@ public partial class FeatureFlagsEvaluatorTests
 
         // The allocation is active (2020-2099 dates), so it should match
         Assert.Equal("time-limited", result.Value);
-        Assert.Equal(EvaluationReason.Static, result.Reason); // No rules, no shards → Static
+        Assert.Equal(EvaluationReason.Default, result.Reason); // Temporal allocation with one unsharded split → Default
         Assert.Equal("time-limited", result.Variant);
     }
 
