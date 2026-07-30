@@ -51,7 +51,12 @@ public class MySql57Fixture : ContainerFixture
                        .WithEnvironment("MYSQL_ROOT_PASSWORD", Password)
                        .WithEnvironment("MYSQL_USER", Username)
                        .WithEnvironment("MYSQL_PASSWORD", Password)
-                       .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("mysqladmin", "ping", "--silent", "-h", "localhost", "-u", "root", $"-p{Password}"))
+                       .WithWaitStrategy(
+                            Wait.ForUnixContainer()
+                                // mysqladmin can reach the temporary server used by the image's initialization script.
+                                // Wait for that phase to finish before probing the final server.
+                                .UntilMessageIsLogged("MySQL init process done. Ready for start up.")
+                                .UntilCommandIsCompleted("mysqladmin", "ping", "--silent", "-h", "localhost", "-u", "root", $"-p{Password}"))
                        .Build();
 
         await container.StartAsync().ConfigureAwait(false);

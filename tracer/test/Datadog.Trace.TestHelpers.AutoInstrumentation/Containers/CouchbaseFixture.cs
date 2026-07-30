@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
@@ -19,30 +20,32 @@ namespace Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 
 public class CouchbaseFixture : ContainerFixture
 {
-    private const int ManagementPort = 8091;
-    private const int ManagementSslPort = 18091;
-    private const int ViewPort = 8092;
-    private const int ViewSslPort = 18092;
-    private const int QueryPort = 8093;
-    private const int QuerySslPort = 18093;
-    private const int KeyValuePort = 11210;
-    private const int KeyValueSslPort = 11207;
+    private const ushort ManagementPort = 8091;
+    private const ushort ManagementSslPort = 18091;
+    private const ushort ViewPort = 8092;
+    private const ushort ViewSslPort = 18092;
+    private const ushort QueryPort = 8093;
+    private const ushort QuerySslPort = 18093;
+    private const ushort KeyValuePort = 11210;
+    private const ushort KeyValueSslPort = 11207;
     private const string Image = "couchbase:community-6.6.0@sha256:43103efdd4b562366c7a48afa977c4ad148e09c877da28a83a86b2c5ee2daa97";
     private const string AdministratorUsername = "Administrator";
     private const string Username = "default";
     private const string Password = "password";
 
-    public string Host => Container.Hostname;
+    private string? _host;
+    private ushort _managementPort;
+    private ushort _keyValuePort;
+
+    public string Host => _host!;
 
     public string BucketName => "default";
-
-    private IContainer Container => GetResource<IContainer>("container");
 
     public override IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables()
     {
         yield return new("COUCHBASE_HOST", Host);
-        yield return new("COUCHBASE_PORT", Container.GetMappedPublicPort(ManagementPort).ToString());
-        yield return new("COUCHBASE_CONNECTION_STRING", $"{Host}:{Container.GetMappedPublicPort(KeyValuePort)}");
+        yield return new("COUCHBASE_PORT", _managementPort.ToString());
+        yield return new("COUCHBASE_CONNECTION_STRING", $"{Host}:{_keyValuePort}");
         yield return new("COUCHBASE_USERNAME", Username);
         yield return new("COUCHBASE_PASSWORD", Password);
         yield return new("COUCHBASE_BUCKET", BucketName);
@@ -50,23 +53,45 @@ public class CouchbaseFixture : ContainerFixture
 
     protected override async Task InitializeResources(Action<string, object> registerResource)
     {
-        var container = new ContainerBuilder(Image)
-                       // SDK 2.4 predates Couchbase's external-network selection, so it requires the advertised standard ports.
-                       .WithPortBinding(ManagementPort, false)
-                       .WithPortBinding(ManagementSslPort, false)
-                       .WithPortBinding(ViewPort, false)
-                       .WithPortBinding(ViewSslPort, false)
-                       .WithPortBinding(QueryPort, false)
-                       .WithPortBinding(QuerySslPort, false)
-                       .WithPortBinding(KeyValuePort, false)
-                       .WithPortBinding(KeyValueSslPort, false)
-                       .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(ManagementPort))
-                       .Build();
+        // When these tests run in the outer Compose container, Testcontainers reaches published ports through the
+        // Docker host. Couchbase also binds its configured node hostname, so it must share the host network in that
+        // scenario. Otherwise, trying to configure the Docker host address as the node hostname fails with eaddrnotavail.
+        var useHostNetwork = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                          && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CONTAINER_HOSTNAME"));
+        var builder = new ContainerBuilder(Image)
+                     .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(ManagementPort));
+
+        if (useHostNetwork)
+        {
+            builder = builder.WithNetwork("host");
+        }
+        else
+        {
+            // SDK 2.4 predates Couchbase's external-network selection, so it requires the advertised standard ports.
+            builder = builder.WithPortBinding(ManagementPort, false)
+                             .WithPortBinding(ManagementSslPort, false)
+                             .WithPortBinding(ViewPort, false)
+                             .WithPortBinding(ViewSslPort, false)
+                             .WithPortBinding(QueryPort, false)
+                             .WithPortBinding(QuerySslPort, false)
+                             .WithPortBinding(KeyValuePort, false)
+                             .WithPortBinding(KeyValueSslPort, false);
+        }
+
+        var container = builder.Build();
 
         try
         {
             await container.StartAsync().ConfigureAwait(false);
-            await ConfigureCouchbaseAsync(container).ConfigureAwait(false);
+            var host = container.Hostname;
+            var managementPort = useHostNetwork ? ManagementPort : container.GetMappedPublicPort(ManagementPort);
+            var keyValuePort = useHostNetwork ? KeyValuePort : container.GetMappedPublicPort(KeyValuePort);
+
+            await ConfigureCouchbaseAsync(container, host, useHostNetwork).ConfigureAwait(false);
+
+            _host = host;
+            _managementPort = managementPort;
+            _keyValuePort = keyValuePort;
         }
         catch
         {
@@ -77,16 +102,25 @@ public class CouchbaseFixture : ContainerFixture
         registerResource("container", container);
     }
 
-    private static async Task ConfigureCouchbaseAsync(IContainer container)
+    private static async Task ConfigureCouchbaseAsync(IContainer container, string host, bool useHostNetwork)
     {
+        var managementPort = useHostNetwork ? ManagementPort : container.GetMappedPublicPort(ManagementPort);
+        var managementSslPort = useHostNetwork ? ManagementSslPort : container.GetMappedPublicPort(ManagementSslPort);
+        var viewPort = useHostNetwork ? ViewPort : container.GetMappedPublicPort(ViewPort);
+        var viewSslPort = useHostNetwork ? ViewSslPort : container.GetMappedPublicPort(ViewSslPort);
+        var queryPort = useHostNetwork ? QueryPort : container.GetMappedPublicPort(QueryPort);
+        var querySslPort = useHostNetwork ? QuerySslPort : container.GetMappedPublicPort(QuerySslPort);
+        var keyValuePort = useHostNetwork ? KeyValuePort : container.GetMappedPublicPort(KeyValuePort);
+        var keyValueSslPort = useHostNetwork ? KeyValueSslPort : container.GetMappedPublicPort(KeyValueSslPort);
+
         using var client = new HttpClient
         {
-            BaseAddress = new UriBuilder(Uri.UriSchemeHttp, container.Hostname, container.GetMappedPublicPort(ManagementPort)).Uri,
+            BaseAddress = new UriBuilder(Uri.UriSchemeHttp, host, managementPort).Uri,
             Timeout = TimeSpan.FromSeconds(5),
         };
 
         await WaitForSuccessAsync(client, "/pools").ConfigureAwait(false);
-        await PostFormAsync(client, "/node/controller/rename", new() { ["hostname"] = container.Hostname }).ConfigureAwait(false);
+        await PostFormAsync(client, "/node/controller/rename", new() { ["hostname"] = host }).ConfigureAwait(false);
         await PostFormAsync(client, "/node/controller/setupServices", new() { ["services"] = "kv,index,n1ql" }).ConfigureAwait(false);
         await PostFormAsync(client, "/pools/default", new() { ["memoryQuota"] = "256", ["indexMemoryQuota"] = "256" }).ConfigureAwait(false);
         await PutFormAsync(
@@ -94,15 +128,15 @@ public class CouchbaseFixture : ContainerFixture
              "/node/controller/setupAlternateAddresses/external",
              new()
              {
-                 ["hostname"] = container.Hostname,
-                 ["mgmt"] = container.GetMappedPublicPort(ManagementPort).ToString(),
-                 ["mgmtSSL"] = container.GetMappedPublicPort(ManagementSslPort).ToString(),
-                 ["kv"] = container.GetMappedPublicPort(KeyValuePort).ToString(),
-                 ["kvSSL"] = container.GetMappedPublicPort(KeyValueSslPort).ToString(),
-                 ["capi"] = container.GetMappedPublicPort(ViewPort).ToString(),
-                 ["capiSSL"] = container.GetMappedPublicPort(ViewSslPort).ToString(),
-                 ["n1ql"] = container.GetMappedPublicPort(QueryPort).ToString(),
-                 ["n1qlSSL"] = container.GetMappedPublicPort(QuerySslPort).ToString(),
+                 ["hostname"] = host,
+                 ["mgmt"] = managementPort.ToString(),
+                 ["mgmtSSL"] = managementSslPort.ToString(),
+                 ["kv"] = keyValuePort.ToString(),
+                 ["kvSSL"] = keyValueSslPort.ToString(),
+                 ["capi"] = viewPort.ToString(),
+                 ["capiSSL"] = viewSslPort.ToString(),
+                 ["n1ql"] = queryPort.ToString(),
+                 ["n1qlSSL"] = querySslPort.ToString(),
              }).ConfigureAwait(false);
         await PostFormAsync(
              client,
@@ -126,7 +160,7 @@ public class CouchbaseFixture : ContainerFixture
 
         using var queryClient = new HttpClient
         {
-            BaseAddress = new UriBuilder(Uri.UriSchemeHttp, container.Hostname, container.GetMappedPublicPort(QueryPort)).Uri,
+            BaseAddress = new UriBuilder(Uri.UriSchemeHttp, host, queryPort).Uri,
             Timeout = TimeSpan.FromSeconds(5),
         };
         queryClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);

@@ -169,7 +169,7 @@ public class StackExchangeRedisFixture : ContainerFixture
 
         public override string ToString() => Host.IndexOf(':') >= 0 ? $"[{Host}]:{Port}" : $"{Host}:{Port}";
 
-        private static ushort ParsePort(string value) => ushort.TryParse(value, out var port) ? port : RedisPort;
+        private static ushort ParsePort(string value) => ushort.TryParse(value, out var port) ? port : (ushort)RedisPort;
     }
 
     private sealed class Resources : IAsyncDisposable
