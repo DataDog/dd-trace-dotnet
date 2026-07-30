@@ -19,16 +19,19 @@ namespace Datadog.Trace.Coverage.Collector;
 internal sealed class StandaloneCoverageReconciliation : IDisposable
 {
     private readonly string _directory;
+    private readonly string _runToken;
     private FileStream? _activityStream;
     private GlobalCoverageReconciliationAuthority? _authority;
     private int _publicationStarted;
 
     private StandaloneCoverageReconciliation(
         string directory,
+        string runToken,
         FileStream activityStream,
         GlobalCoverageReconciliationAuthority? authority)
     {
         _directory = directory;
+        _runToken = runToken;
         _activityStream = activityStream;
         _authority = authority;
     }
@@ -39,17 +42,18 @@ internal sealed class StandaloneCoverageReconciliation : IDisposable
         try
         {
             var canonicalDirectory = Path.GetFullPath(directory);
+            var runToken = GlobalCoverageProtocol.GetRunToken(runId);
             activityStream = new FileStream(
-                Path.Combine(canonicalDirectory, GlobalCoverageProtocol.ReconciliationLockFileName),
+                Path.Combine(canonicalDirectory, GlobalCoverageProtocol.GetRunActivityLockFileName(runToken)),
                 FileMode.OpenOrCreate,
                 FileAccess.Read,
                 FileShare.Read);
             var authority = GlobalCoverageReconciliationAuthority.TryCreate(
                 canonicalDirectory,
-                GlobalCoverageProtocol.GetRunToken(runId),
+                runToken,
                 GlobalCoverageProtocol.CollectorClaimKind);
 
-            var reconciliation = new StandaloneCoverageReconciliation(canonicalDirectory, activityStream, authority);
+            var reconciliation = new StandaloneCoverageReconciliation(canonicalDirectory, runToken, activityStream, authority);
             activityStream = null;
             return reconciliation;
         }
@@ -80,7 +84,7 @@ internal sealed class StandaloneCoverageReconciliation : IDisposable
             var outputPath = Path.Combine(
                 _directory,
                 $"session-coverage-{DateTime.UtcNow:yyyy-MM-dd_HH_mm_ss_fffffff}-{Guid.NewGuid():N}.json");
-            if (!global::CoverageUtils.TryReadAndCombine(_directory, outputPath, authority, out var coverage, out lease) ||
+            if (!global::CoverageUtils.TryReadAndCombine(_directory, outputPath, authority, _runToken, out var coverage, out lease) ||
                 coverage is null)
             {
                 return false;

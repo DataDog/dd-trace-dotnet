@@ -21,13 +21,14 @@ internal static class GlobalCoverageFileCombiner
     public static bool TryAcquireInputFiles(
         string inputFolder,
         GlobalCoverageReconciliationAuthority? authority,
+        string? expectedRunToken,
         out string[] inputFiles,
         out GlobalCoverageReconciliationLease? reconciliationLease)
     {
         inputFiles = [];
         reconciliationLease = null;
 
-        if (!GlobalCoverageReconciliation.TryAcquire(inputFolder, authority, out reconciliationLease, out _) ||
+        if (!GlobalCoverageReconciliation.TryAcquire(inputFolder, authority, expectedRunToken, out reconciliationLease, out _) ||
             (reconciliationLease is null && HasProtocolMarkers(inputFolder)))
         {
             return false;

@@ -96,7 +96,7 @@ internal static class CoverageUtils
         var jsonFiles = Array.Empty<string>();
         try
         {
-            if (!GlobalCoverageFileCombiner.TryAcquireInputFiles(inputFolder, authority: null, out jsonFiles, out reconciliationLease))
+            if (!GlobalCoverageFileCombiner.TryAcquireInputFiles(inputFolder, authority: null, expectedRunToken: null, out jsonFiles, out reconciliationLease))
             {
                 return false;
             }

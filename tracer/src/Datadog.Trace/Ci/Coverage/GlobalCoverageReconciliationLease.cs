@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using Datadog.Trace.Util;
@@ -15,13 +16,17 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal sealed class GlobalCoverageReconciliationLease : IDisposable
 {
+    private const int PublicationLockRetryDelayMilliseconds = 10;
+    private static readonly TimeSpan PublicationLockTimeout = TimeSpan.FromMinutes(1);
     private readonly Dictionary<string, GlobalCoverageCertifiedInput> _selectedByPath;
-    private FileStream? _lockStream;
+    private readonly string _publicationLockPath;
+    private FileStream? _activityLockStream;
     private GlobalCoverageReconciliationAuthority? _authority;
     private int _completed;
 
     public GlobalCoverageReconciliationLease(
-        FileStream lockStream,
+        FileStream activityLockStream,
+        string publicationLockPath,
         GlobalCoverageReconciliationAuthority authority,
         string runToken,
         IReadOnlyList<GlobalCoverageCertifiedInput> selectedInputs,
@@ -30,7 +35,8 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
         IReadOnlyList<string> pendingMarkers,
         IReadOnlyList<string> directories)
     {
-        _lockStream = lockStream;
+        _activityLockStream = activityLockStream;
+        _publicationLockPath = publicationLockPath;
         _authority = authority;
         RunToken = runToken;
         SelectedInputs = selectedInputs;
@@ -139,6 +145,10 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
         }
 
         var rawEnd = sources.Count;
+        // Different runs can combine and certify concurrently, but their archive and final-output
+        // commits share a directory. Serialize only that short publication transaction.
+        using var publicationLock = AcquirePublicationLock();
+
         // Closing the authority claim is the point at which it can join the same reversible
         // archival transaction as markers and raw coverage files.
         authority.ReleaseForArchival();
@@ -162,6 +172,7 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
             // The final output becomes visible only after every certified protocol artifact has
             // been archived. A failed commit rolls the protocol set back for a safe retry.
             publish?.Invoke();
+            ReleaseActivityLock(deleteFile: true);
         }
         catch (Exception archivalException)
         {
@@ -214,6 +225,51 @@ internal sealed class GlobalCoverageReconciliationLease : IDisposable
     public void Dispose()
     {
         Interlocked.Exchange(ref _authority, null)?.Dispose();
-        Interlocked.Exchange(ref _lockStream, null)?.Dispose();
+        ReleaseActivityLock(deleteFile: false);
+    }
+
+    private FileStream AcquirePublicationLock()
+    {
+        var stopwatch = Stopwatch.StartNew();
+        while (true)
+        {
+            try
+            {
+                return new FileStream(
+                    _publicationLockPath,
+                    FileMode.OpenOrCreate,
+                    FileAccess.ReadWrite,
+                    FileShare.None);
+            }
+            catch (IOException) when (stopwatch.Elapsed < PublicationLockTimeout)
+            {
+                Thread.Sleep(PublicationLockRetryDelayMilliseconds);
+            }
+        }
+    }
+
+    private void ReleaseActivityLock(bool deleteFile)
+    {
+        var activityLock = Interlocked.Exchange(ref _activityLockStream, null);
+        if (activityLock is null)
+        {
+            return;
+        }
+
+        var path = activityLock.Name;
+        activityLock.Dispose();
+        if (!deleteFile)
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(path);
+        }
+        catch
+        {
+            // The lock no longer owns resources or gates another run. A leftover empty lock file is harmless.
+        }
     }
 }

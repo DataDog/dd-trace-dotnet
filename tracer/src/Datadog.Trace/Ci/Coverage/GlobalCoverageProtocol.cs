@@ -21,7 +21,9 @@ internal static class GlobalCoverageProtocol
     public const string ReadyMarkerPrefix = ".dd-coverage-process-ready-";
     public const string CommandOwnerClaimPrefix = ".dd-coverage-command-owner-";
     public const string ClaimExtension = ".claim";
-    public const string ReconciliationLockFileName = ".dd-coverage-process-reconcile.lock";
+    public const string PublicationLockFileName = ".dd-coverage-process-reconcile.lock";
+    public const string RunActivityLockPrefix = ".dd-coverage-run-activity-";
+    public const string LockExtension = ".lock";
     public const string CoverageFilePrefix = "coverage-";
     public const string JsonExtension = ".json";
     public const string PendingMarkerPattern = PendingMarkerPrefix + "*";
@@ -66,6 +68,9 @@ internal static class GlobalCoverageProtocol
 
     public static string GetCommandOwnerClaimFileName(string runToken)
         => CommandOwnerClaimPrefix + runToken + ClaimExtension;
+
+    public static string GetRunActivityLockFileName(string runToken)
+        => RunActivityLockPrefix + runToken + LockExtension;
 
     public static string GetCoverageGenerationPrefix(string processIdentity)
         => $"{CoverageFilePrefix}{processIdentity}-";

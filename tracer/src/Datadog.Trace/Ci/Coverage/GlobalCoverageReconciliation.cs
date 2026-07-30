@@ -31,10 +31,18 @@ internal static class GlobalCoverageReconciliation
         GlobalCoverageReconciliationAuthority? authority,
         out GlobalCoverageReconciliationLease? lease,
         out bool protocolPresent)
+        => TryAcquire(inputDirectory, authority, expectedRunToken: null, out lease, out protocolPresent);
+
+    public static bool TryAcquire(
+        string inputDirectory,
+        GlobalCoverageReconciliationAuthority? authority,
+        string? expectedRunToken,
+        out GlobalCoverageReconciliationLease? lease,
+        out bool protocolPresent)
     {
         lease = null;
         protocolPresent = false;
-        FileStream? lockStream = null;
+        FileStream? activityLockStream = null;
         GlobalCoverageReconciliationAuthority? reconciliationAuthority = authority;
         var authorityTransferred = false;
         var takeoverAuthority = false;
@@ -42,9 +50,17 @@ internal static class GlobalCoverageReconciliation
         {
             var canonicalInput = CanonicalizeDirectory(inputDirectory);
             var authorityRunToken = reconciliationAuthority is null ? null : GetClaimRunToken(reconciliationAuthority.ClaimPath);
-            var pendingInInput = GetFilesBounded(canonicalInput, GetPendingMarkerPattern(authorityRunToken));
-            var readyInInput = GetFilesBounded(canonicalInput, GetReadyMarkerPattern(authorityRunToken));
-            var claimsInInput = GetFilesBounded(canonicalInput, GetClaimPattern(authorityRunToken));
+            if (expectedRunToken is not null &&
+                (!IsLowerHex(expectedRunToken, 64) ||
+                 (authorityRunToken is not null && !string.Equals(authorityRunToken, expectedRunToken, StringComparison.Ordinal))))
+            {
+                return false;
+            }
+
+            var scopedRunToken = authorityRunToken ?? expectedRunToken;
+            var pendingInInput = GetFilesBounded(canonicalInput, GetPendingMarkerPattern(scopedRunToken));
+            var readyInInput = GetFilesBounded(canonicalInput, GetReadyMarkerPattern(scopedRunToken));
+            var claimsInInput = GetFilesBounded(canonicalInput, GetClaimPattern(scopedRunToken));
             protocolPresent = pendingInInput.Length > 0 || readyInInput.Length > 0 || claimsInInput.Length > 0;
             if (!protocolPresent)
             {
@@ -58,17 +74,17 @@ internal static class GlobalCoverageReconciliation
                 return false;
             }
 
-            lockStream = new FileStream(
-                Path.Combine(canonicalInput, GlobalCoverageProtocol.ReconciliationLockFileName),
-                FileMode.OpenOrCreate,
-                FileAccess.ReadWrite,
-                FileShare.None);
-
             var claimPath = claimsInInput[0];
             var claimRunToken = GetClaimRunToken(claimPath);
+            if (scopedRunToken is not null && !string.Equals(scopedRunToken, claimRunToken, StringComparison.Ordinal))
+            {
+                return false;
+            }
 
             if (reconciliationAuthority is null)
             {
+                // A non-owner takes the claim before closing the run activity gate. If the owner
+                // is finalizing concurrently, this leaves the gate available for the owner to win.
                 var claimStream = new FileStream(claimPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
                 reconciliationAuthority = new GlobalCoverageReconciliationAuthority(claimPath, claimStream);
                 takeoverAuthority = true;
@@ -78,19 +94,26 @@ internal static class GlobalCoverageReconciliation
                 return false;
             }
 
+            activityLockStream = new FileStream(
+                Path.Combine(canonicalInput, GlobalCoverageProtocol.GetRunActivityLockFileName(claimRunToken)),
+                FileMode.OpenOrCreate,
+                FileAccess.ReadWrite,
+                FileShare.None);
+
             ValidateClaim(reconciliationAuthority.ClaimStream, claimRunToken);
             var metadataBudget = new ProtocolMetadataBudget();
             metadataBudget.AddFile(claimPath);
 
             if (pendingInInput.Length == 0)
             {
-                if (GetFilesBounded(canonicalInput, GetCoverageFilePattern(authorityRunToken)).Length != 0)
+                if (GetFilesBounded(canonicalInput, GetCoverageFilePattern(scopedRunToken)).Length != 0)
                 {
                     return false;
                 }
 
                 lease = new GlobalCoverageReconciliationLease(
-                    lockStream,
+                    activityLockStream,
+                    Path.Combine(canonicalInput, GlobalCoverageProtocol.PublicationLockFileName),
                     reconciliationAuthority,
                     claimRunToken,
                     [],
@@ -98,7 +121,7 @@ internal static class GlobalCoverageReconciliation
                     [],
                     [],
                     []);
-                lockStream = null;
+                activityLockStream = null;
                 authorityTransferred = true;
                 return true;
             }
@@ -224,7 +247,7 @@ internal static class GlobalCoverageReconciliation
 
             foreach (var directory in allDirectories)
             {
-                var claims = GetFilesBounded(directory, GetClaimPattern(authorityRunToken));
+                var claims = GetFilesBounded(directory, GetClaimPattern(scopedRunToken));
                 if (PathComparer.Equals(directory, canonicalInput))
                 {
                     var expectedClaim = Path.Combine(directory, GlobalCoverageProtocol.GetCommandOwnerClaimFileName(claimRunToken));
@@ -238,7 +261,7 @@ internal static class GlobalCoverageReconciliation
                     return false;
                 }
 
-                foreach (var pendingMarker in GetFilesBounded(directory, GetPendingMarkerPattern(authorityRunToken)))
+                foreach (var pendingMarker in GetFilesBounded(directory, GetPendingMarkerPattern(scopedRunToken)))
                 {
                     if (!allPending.Contains(pendingMarker))
                     {
@@ -246,7 +269,7 @@ internal static class GlobalCoverageReconciliation
                     }
                 }
 
-                foreach (var readyMarker in GetFilesBounded(directory, GetReadyMarkerPattern(authorityRunToken)))
+                foreach (var readyMarker in GetFilesBounded(directory, GetReadyMarkerPattern(scopedRunToken)))
                 {
                     if (!allReady.Contains(readyMarker))
                     {
@@ -254,7 +277,7 @@ internal static class GlobalCoverageReconciliation
                     }
                 }
 
-                foreach (var coverageFile in GetFilesBounded(directory, GetCoverageFilePattern(authorityRunToken)))
+                foreach (var coverageFile in GetFilesBounded(directory, GetCoverageFilePattern(scopedRunToken)))
                 {
                     if (!allRawFiles.Contains(coverageFile))
                     {
@@ -264,7 +287,8 @@ internal static class GlobalCoverageReconciliation
             }
 
             lease = new GlobalCoverageReconciliationLease(
-                lockStream,
+                activityLockStream,
+                Path.Combine(canonicalInput, GlobalCoverageProtocol.PublicationLockFileName),
                 reconciliationAuthority,
                 claimRunToken,
                 selectedInputs,
@@ -272,7 +296,7 @@ internal static class GlobalCoverageReconciliation
                 allReady.ToArray(),
                 allPending.ToArray(),
                 allDirectories.ToArray());
-            lockStream = null;
+            activityLockStream = null;
             authorityTransferred = true;
             return true;
         }
@@ -287,7 +311,7 @@ internal static class GlobalCoverageReconciliation
                 reconciliationAuthority?.Dispose();
             }
 
-            lockStream?.Dispose();
+            activityLockStream?.Dispose();
         }
     }
 

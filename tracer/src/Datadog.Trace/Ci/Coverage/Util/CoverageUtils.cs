@@ -1,4 +1,4 @@
-﻿// <copyright file="CoverageUtils.cs" company="Datadog">
+// <copyright file="CoverageUtils.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -70,6 +70,15 @@ internal static class CoverageUtils
         GlobalCoverageReconciliationAuthority? authority,
         out GlobalCoverageInfo? globalCoverageInfo,
         out GlobalCoverageReconciliationLease? reconciliationLease)
+        => TryReadAndCombine(inputFolder, outputFile, authority, expectedRunToken: null, out globalCoverageInfo, out reconciliationLease);
+
+    public static bool TryReadAndCombine(
+        string? inputFolder,
+        string? outputFile,
+        GlobalCoverageReconciliationAuthority? authority,
+        string? expectedRunToken,
+        out GlobalCoverageInfo? globalCoverageInfo,
+        out GlobalCoverageReconciliationLease? reconciliationLease)
     {
         globalCoverageInfo = default;
         reconciliationLease = null;
@@ -87,7 +96,7 @@ internal static class CoverageUtils
                 return false;
             }
 
-            if (!GlobalCoverageFileCombiner.TryAcquireInputFiles(inputFolder!, authority, out var jsonFiles, out reconciliationLease))
+            if (!GlobalCoverageFileCombiner.TryAcquireInputFiles(inputFolder!, authority, expectedRunToken, out var jsonFiles, out reconciliationLease))
             {
                 return false;
             }

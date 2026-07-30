@@ -40,6 +40,7 @@ internal sealed class DotnetTestRunState : IDisposable
         DotnetTestReconciliationRole reconciliationRole,
         string? coverageDirectory,
         string? claimPath,
+        string? runToken,
         FileStream? activityStream,
         GlobalCoverageReconciliationAuthority? authority)
     {
@@ -48,6 +49,7 @@ internal sealed class DotnetTestRunState : IDisposable
         ReconciliationRole = reconciliationRole;
         CoverageDirectory = coverageDirectory;
         ClaimPath = claimPath;
+        RunToken = runToken;
         _activityStream = activityStream;
         _authority = authority;
     }
@@ -62,10 +64,12 @@ internal sealed class DotnetTestRunState : IDisposable
 
     public string? ClaimPath { get; }
 
+    public string? RunToken { get; }
+
     public bool IsReconciliationOwner => ReconciliationRole == DotnetTestReconciliationRole.ReconciliationOwner;
 
     public static DotnetTestRunState CreateNotApplicable(DotnetTestCommandKind commandKind, TestSession? session)
-        => new(commandKind, session, DotnetTestReconciliationRole.NotApplicable, null, null, null, null);
+        => new(commandKind, session, DotnetTestReconciliationRole.NotApplicable, null, null, null, null, null);
 
     public static DotnetTestRunState TryCreate(DotnetTestCommandKind commandKind, TestSession? session, string coverageDirectory, string runId)
     {
@@ -83,7 +87,7 @@ internal sealed class DotnetTestRunState : IDisposable
 
             var runToken = GlobalCoverageProtocol.GetRunToken(runId);
             activityStream = new FileStream(
-                Path.Combine(canonicalDirectory, GlobalCoverageProtocol.ReconciliationLockFileName),
+                Path.Combine(canonicalDirectory, GlobalCoverageProtocol.GetRunActivityLockFileName(runToken)),
                 FileMode.OpenOrCreate,
                 FileAccess.Read,
                 FileShare.Read);
@@ -106,6 +110,7 @@ internal sealed class DotnetTestRunState : IDisposable
                     DotnetTestReconciliationRole.NonOwnerParticipant,
                     canonicalDirectory,
                     claimPath,
+                    runToken,
                     activityStream,
                     null);
             }
@@ -116,6 +121,7 @@ internal sealed class DotnetTestRunState : IDisposable
                 DotnetTestReconciliationRole.ReconciliationOwner,
                 canonicalDirectory,
                 claimPath,
+                runToken,
                 activityStream,
                 authority);
         }
@@ -134,6 +140,7 @@ internal sealed class DotnetTestRunState : IDisposable
                 DotnetTestReconciliationRole.SuppressedAuthorityFailure,
                 canonicalDirectory,
                 claimPath,
+                null,
                 null,
                 null);
         }

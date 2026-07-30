@@ -7,6 +7,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Metadata;
@@ -35,7 +36,7 @@ public class DotnetTestRunStateTests
 
             owner.ReleaseActivity();
             var exclusiveOpen = () => new FileStream(
-                Path.Combine(directory, ".dd-coverage-process-reconcile.lock"),
+                Path.Combine(directory, GlobalCoverageProtocol.GetRunActivityLockFileName(owner.RunToken!)),
                 FileMode.Open,
                 FileAccess.ReadWrite,
                 FileShare.None);
@@ -47,6 +48,67 @@ public class DotnetTestRunStateTests
             using var authority = owner.TakeReconciliationAuthority();
             authority!.Complete();
             File.Exists(owner.ClaimPath!).Should().BeFalse();
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [Fact]
+    public unsafe void DifferentRunsInSameDirectoryFinalizeIndependently()
+    {
+        var directory = CreateDirectory();
+        try
+        {
+            using var firstOwner = DotnetTestRunState.TryCreate(DotnetTestCommandKind.DotnetTestCommand, null, directory, "first-run");
+            using var firstParticipant = DotnetTestRunState.TryCreate(DotnetTestCommandKind.VSTestExecutor, null, directory, "first-run");
+            using var secondRun = DotnetTestRunState.TryCreate(DotnetTestCommandKind.DotnetTestCommand, null, directory, "second-run");
+            var firstClaim = firstOwner.ClaimPath!;
+            var secondClaim = secondRun.ClaimPath!;
+            firstParticipant.ReconciliationRole.Should().Be(DotnetTestReconciliationRole.NonOwnerParticipant);
+
+            ProduceFinalSnapshot(directory, "first-run", "/src/first-run.cs", executedOffset: 0);
+            ProduceFinalSnapshot(directory, "second-run", "/src/second-run.cs", executedOffset: 7);
+
+            DotnetCommon.FinalizeRunState(firstOwner, exitCode: 0, exception: null);
+
+            Directory.GetFiles(directory, "session-coverage-*.json").Should().BeEmpty();
+            File.Exists(firstClaim).Should().BeTrue("the first run still has an active participant");
+
+            DotnetCommon.FinalizeRunState(firstParticipant, exitCode: 0, exception: null);
+
+            Directory.GetFiles(directory, "session-coverage-*.json").Should().ContainSingle();
+            File.Exists(firstClaim).Should().BeFalse();
+            File.Exists(secondClaim).Should().BeTrue("the second run is still active");
+            Directory.GetFiles(directory, "coverage-*.json").Should().ContainSingle("only the second run remains pending");
+
+            DotnetCommon.FinalizeRunState(secondRun, exitCode: 0, exception: null);
+
+            var reader = new GlobalCoverageInputReader();
+            var files = Directory.GetFiles(directory, "session-coverage-*.json")
+                                 .Should()
+                                 .HaveCount(2)
+                                 .And.Subject
+                                 .Select(
+                                      path =>
+                                      {
+                                          reader.TryRead(path, out var coverage).Should().BeTrue();
+                                          return coverage!.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject;
+                                      })
+                                 .ToDictionary(file => file.Path!);
+            files["/src/first-run.cs"].ExecutableBitmap.Should().Equal(0xff);
+            files["/src/first-run.cs"].ExecutedBitmap.Should().Equal(0x80);
+            files["/src/first-run.cs"].Data.Should().Equal(12.5, 8, 1);
+            files["/src/second-run.cs"].ExecutableBitmap.Should().Equal(0xff);
+            files["/src/second-run.cs"].ExecutedBitmap.Should().Equal(0x01);
+            files["/src/second-run.cs"].Data.Should().Equal(12.5, 8, 1);
+            File.Exists(secondClaim).Should().BeFalse();
+            Directory.GetFiles(directory, "coverage-*.json").Should().BeEmpty();
+            Directory.GetFiles(directory, ".dd-coverage-process-ready-*").Should().BeEmpty();
+            Directory.GetFiles(directory, ".dd-coverage-process-incomplete-*").Should().BeEmpty();
+            Directory.GetFiles(directory, GlobalCoverageProtocol.RunActivityLockPrefix + "*" + GlobalCoverageProtocol.LockExtension).Should().BeEmpty();
+            Directory.GetFiles(Path.Combine(directory, ".dd-coverage-completed"), "coverage-*.json", SearchOption.AllDirectories).Should().HaveCount(2);
         }
         finally
         {
@@ -160,4 +222,24 @@ public class DotnetTestRunStateTests
 
     private static string CreateDirectory()
         => Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"))).FullName;
+
+    private static unsafe void ProduceFinalSnapshot(string directory, string runId, string filePath, int executedOffset)
+    {
+        var handler = new DefaultWithGlobalCoverageEventHandler(configuredOutputDirectory: directory, runIdProvider: () => runId);
+        var metadata = new TestModuleCoverageMetadata(
+            8,
+            0,
+            [new FileCoverageMetadata(filePath, 0, 8, [0xff])]);
+        var handle = handler.StartSession("xunit");
+        handler.Container!.TryGetOrAddModuleValue(
+                               metadata,
+                               typeof(DotnetTestRunStateTests).Module,
+                               CoverageMetadataValidator.ValidateAndGetRawByteLength(metadata),
+                               out var module)
+                           .Should()
+                           .BeTrue();
+        ((byte*)module!.FilesLines)[executedOffset] = 1;
+        handler.EndSession(handle);
+        handler.FinalizeAndSeal().Should().BeTrue();
+    }
 }

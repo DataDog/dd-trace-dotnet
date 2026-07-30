@@ -413,8 +413,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             try
             {
                 reconciliationAuthority = runState?.TakeReconciliationAuthority();
-                var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}.json");
-                if (!CoverageUtils.TryReadAndCombine(codeCoveragePath, outputPath, reconciliationAuthority, out var globalCoverage, out reconciliationLease) ||
+                var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.UtcNow:yyyy-MM-dd_HH_mm_ss_fffffff}-{Guid.NewGuid():N}.json");
+                if (!CoverageUtils.TryReadAndCombine(codeCoveragePath, outputPath, reconciliationAuthority, runState?.RunToken, out var globalCoverage, out reconciliationLease) ||
                     globalCoverage is null)
                 {
                     return;
@@ -2449,7 +2449,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
             var isCollectIndex = -1;
             var isTestAdapterPathIndex = -1;
-            var msbuildArgsList = msbuildArgs as List<string> ?? [..msbuildArgs];
+            var msbuildArgsList = msbuildArgs as List<string> ?? [.. msbuildArgs];
             for (var i = 0; i < msbuildArgsList.Count; i++)
             {
                 var arg = msbuildArgsList[i];
