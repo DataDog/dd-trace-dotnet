@@ -41,7 +41,8 @@
     <RootNamespace>DatadogTraceClrProfilerNativeDLL</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <LIB_PATH>..\..\..\shared\src\native-lib\</LIB_PATH>
-    <LIB_INCLUDES>$(LIB_PATH)spdlog\include;$(LIB_PATH)coreclr\src\pal\prebuilt\inc</LIB_INCLUDES>
+    <LIB_INCLUDES>$(LIB_PATH)coreclr\src\pal\prebuilt\inc</LIB_INCLUDES>
+    <ExternalIncludePath>$(LIB_PATH)spdlog\include;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -142,6 +143,8 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
+      <!-- Suppress warnings from vendored headers without suppressing warnings in Datadog code. -->
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <!-- spdlog 1.17 (and the bundled fmt 11+) need two build flags:
            - FMT_UNICODE=0: fmt 11+ static_asserts that narrow string literals are UTF-8.
              We don't compile with /utf-8 (would change the encoding of every narrow string in
