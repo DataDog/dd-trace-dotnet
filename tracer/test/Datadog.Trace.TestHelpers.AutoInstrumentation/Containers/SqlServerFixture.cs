@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
 using Testcontainers.MsSql;
 
 namespace Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
@@ -49,11 +51,24 @@ public class SqlServerFixture : ContainerFixture
             return;
         }
 
-        // mssql/server has no native arm64 image, so use Azure SQL Edge on arm64.
-        var image = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? AzureSqlEdgeImage : SqlServerImage;
-        var container = new MsSqlBuilder(image)
+        IContainer container;
+        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        {
+            // mssql/server has no native arm64 image. Azure SQL Edge does not include the sqlcmd binary
+            // used by MsSqlBuilder's readiness check, so wait for its ready message instead.
+            container = new ContainerBuilder(AzureSqlEdgeImage)
+                       .WithPortBinding(SqlServerPort, true)
+                       .WithEnvironment("ACCEPT_EULA", "Y")
+                       .WithEnvironment("MSSQL_SA_PASSWORD", Password)
+                       .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("SQL Server is now ready for client connections"))
+                       .Build();
+        }
+        else
+        {
+            container = new MsSqlBuilder(SqlServerImage)
                        .WithPassword(Password)
                        .Build();
+        }
 
         await container.StartAsync().ConfigureAwait(false);
 
