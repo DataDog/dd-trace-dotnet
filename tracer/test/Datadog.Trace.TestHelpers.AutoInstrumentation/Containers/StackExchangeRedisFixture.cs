@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
@@ -42,6 +43,13 @@ public class StackExchangeRedisFixture : ContainerFixture
 
     protected override async Task InitializeResources(Action<string, object> registerResource)
     {
+        // The Redis smoke tests in this collection are skipped on Windows, where CI does not provide Docker.
+        // Collection fixtures are initialized before test-level skips are evaluated, so avoid starting containers here.
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return;
+        }
+
         // Keep synchronized with the image version in docker-compose.yml.
         const string image = "redis:4-alpine";
 
