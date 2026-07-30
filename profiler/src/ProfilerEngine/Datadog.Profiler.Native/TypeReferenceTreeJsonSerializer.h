@@ -20,12 +20,23 @@ public:
     static std::string Serialize(const TypeReferenceTree& tree, IFrameStore* pFrameStore);
 
 private:
+    // Returns the type table index for the given type, appending its fully qualified
+    // name to the already escaped type table entries on first encounter.
+    static uint32_t RegisterType(
+        ClassID typeID,
+        std::unordered_map<ClassID, uint32_t>& typeToIndex,
+        std::string& typeTableJson,
+        uint32_t& typeCount,
+        std::string& scratch,
+        IFrameStore* pFrameStore);
+
     // Single-pass tree walk: collects types lazily and emits JSON in one traversal.
     static void OutputNode(
         const TypeTreeNode& node,
         std::unordered_map<ClassID, uint32_t>& typeToIndex,
-        std::vector<std::string_view>& typeTable,
-        uint32_t& nextIndex,
+        std::string& typeTableJson,
+        uint32_t& typeCount,
+        std::string& scratch,
         IFrameStore* pFrameStore,
         std::string& out);
 
