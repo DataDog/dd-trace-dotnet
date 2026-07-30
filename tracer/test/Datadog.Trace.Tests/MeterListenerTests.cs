@@ -11,24 +11,25 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.OpenTelemetry.Metrics;
-using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 
 namespace Datadog.Trace.Tests
 {
+    // MeterListener is process-global: a started MetricReader enables every instrument whose meter
+    // name is not System.*/Microsoft.*, so a concurrently-created Meter anywhere in the process would
+    // be captured here and break the exact metric-point counts these tests assert. Serialize the
+    // collection so nothing else can publish instruments while a pipeline is live.
+    [CollectionDefinition(nameof(MeterListenerTests), DisableParallelization = true)]
+    [Collection(nameof(MeterListenerTests))]
     [UsesVerify]
-    [TracerRestorer]
     public class MeterListenerTests
     {
         [Fact]
         public async Task CreatesSeparateMetricPointsForDifferentTagSets()
         {
             var settings = TracerSettings.Create(new());
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
 
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
@@ -147,9 +148,6 @@ namespace Datadog.Trace.Tests
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "3" },
                 });
 
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
-
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
             pipeline.Start();
@@ -201,9 +199,6 @@ namespace Datadog.Trace.Tests
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "3" },
                 });
 
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
-
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
             pipeline.Start();
@@ -231,9 +226,6 @@ namespace Datadog.Trace.Tests
                 {
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "3" },
                 });
-
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
 
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
@@ -288,9 +280,6 @@ namespace Datadog.Trace.Tests
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "2" },
                 });
 
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
-
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
             pipeline.Start();
@@ -333,9 +322,6 @@ namespace Datadog.Trace.Tests
                 {
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, limit.ToString() },
                 });
-
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
 
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
@@ -380,9 +366,6 @@ namespace Datadog.Trace.Tests
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "1" },
                 });
 
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
-
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
             pipeline.Start();
@@ -417,9 +400,6 @@ namespace Datadog.Trace.Tests
                 {
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "1" },
                 });
-
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
 
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
@@ -462,9 +442,6 @@ namespace Datadog.Trace.Tests
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "1" },
                     { ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, "cumulative" },
                 });
-
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
 
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
@@ -525,9 +502,6 @@ namespace Datadog.Trace.Tests
                 {
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "1" },
                 });
-
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
 
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
@@ -590,9 +564,6 @@ namespace Datadog.Trace.Tests
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "1" },
                 });
 
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
-
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
             pipeline.Start();
@@ -642,9 +613,6 @@ namespace Datadog.Trace.Tests
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "1" },
                 });
 
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
-
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
             pipeline.Start();
@@ -677,9 +645,6 @@ namespace Datadog.Trace.Tests
                 {
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "1" },
                 });
-
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
 
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
@@ -719,9 +684,6 @@ namespace Datadog.Trace.Tests
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "1" },
                 });
 
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
-
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
             pipeline.Start();
@@ -754,9 +716,6 @@ namespace Datadog.Trace.Tests
                     { ConfigurationKeys.FeatureFlags.OpenTelemetryMetricsCardinalityLimit, "1" },
                 });
 
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
-
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
             pipeline.Start();
@@ -782,8 +741,6 @@ namespace Datadog.Trace.Tests
         {
             // Arrange
             var settings = TracerSettings.Create(new());
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
 
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
@@ -878,9 +835,6 @@ namespace Datadog.Trace.Tests
                 {
                     { ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTemporalityPreference, temporalityPreference },
                 });
-
-            var tracer = TracerHelper.CreateWithFakeAgent(settings);
-            Tracer.UnsafeSetTracerInstance(tracer);
 
             var testExporter = new InMemoryExporter();
             await using var pipeline = new OtelMetricsPipeline(settings, testExporter);
