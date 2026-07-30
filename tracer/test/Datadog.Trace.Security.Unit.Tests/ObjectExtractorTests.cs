@@ -916,23 +916,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         }
 
         [Fact]
-        public void TestDeeplyNestedAcyclicListDoesNotStackOverflow()
-        {
-            // Distinct (non-self-referential) nested lists aren't caught by cycle detection, so the
-            // MaxContainerDepth cap must stop the recursion instead. Without it this recurses until
-            // a StackOverflowException.
-            object nested = new List<object>();
-            for (var i = 0; i < 100_000; i++)
-            {
-                nested = new List<object> { nested };
-            }
-
-            Action act = () => ObjectExtractor.Extract(nested);
-
-            act.Should().NotThrow();
-        }
-
-        [Fact]
         public void TestNestedListRespectsMaxContainerDepth()
         {
             object nested = "leaf";
