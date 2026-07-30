@@ -8,6 +8,7 @@
     Type: db,
     Tags: {
       component: Couchbase,
+      couchbase.operation.bucket: default,
       couchbase.operation.code: Delete,
       couchbase.operation.key: my-document-key,
       db.couchbase.seed.nodes: couchbase,
@@ -35,6 +36,7 @@
     Error: 1,
     Tags: {
       component: Couchbase,
+      couchbase.operation.bucket: default,
       couchbase.operation.code: Delete,
       couchbase.operation.key: does-not-exist,
       db.couchbase.seed.nodes: couchbase,
@@ -62,6 +64,7 @@
     Type: db,
     Tags: {
       component: Couchbase,
+      couchbase.operation.bucket: default,
       couchbase.operation.code: Get,
       couchbase.operation.key: my-document-key,
       db.couchbase.seed.nodes: couchbase,
@@ -187,13 +190,13 @@
     TraceId: Id_15,
     SpanId: Id_16,
     Name: couchbase.query,
-    Resource: Hello,
+    Resource: NoOp,
     Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
-      couchbase.operation.code: Hello,
-      couchbase.operation.key: obfuscated,
+      couchbase.operation.code: NoOp,
+      couchbase.operation.key: ,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
@@ -213,13 +216,13 @@
     TraceId: Id_17,
     SpanId: Id_18,
     Name: couchbase.query,
-    Resource: Hello,
+    Resource: NoOp,
     Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
-      couchbase.operation.code: Hello,
-      couchbase.operation.key: obfuscated,
+      couchbase.operation.code: NoOp,
+      couchbase.operation.key: ,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
@@ -239,13 +242,13 @@
     TraceId: Id_19,
     SpanId: Id_20,
     Name: couchbase.query,
-    Resource: SelectBucket,
+    Resource: SaslList,
     Service: Samples.Couchbase3-couchbase,
     Type: db,
     Tags: {
       component: Couchbase,
-      couchbase.operation.code: SelectBucket,
-      couchbase.operation.key: default,
+      couchbase.operation.code: SaslList,
+      couchbase.operation.key: ,
       db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       language: dotnet,
@@ -264,6 +267,32 @@
   {
     TraceId: Id_21,
     SpanId: Id_22,
+    Name: couchbase.query,
+    Resource: SaslList,
+    Service: Samples.Couchbase3-couchbase,
+    Type: db,
+    Tags: {
+      component: Couchbase,
+      couchbase.operation.code: SaslList,
+      couchbase.operation.key: ,
+      db.couchbase.seed.nodes: couchbase,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_24,
     Name: couchbase.query,
     Resource: SelectBucket,
     Service: Samples.Couchbase3-couchbase,
@@ -288,8 +317,34 @@
     }
   },
   {
-    TraceId: Id_23,
-    SpanId: Id_24,
+    TraceId: Id_25,
+    SpanId: Id_26,
+    Name: couchbase.query,
+    Resource: SelectBucket,
+    Service: Samples.Couchbase3-couchbase,
+    Type: db,
+    Tags: {
+      component: Couchbase,
+      couchbase.operation.code: SelectBucket,
+      couchbase.operation.key: default,
+      db.couchbase.seed.nodes: couchbase,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_27,
+    SpanId: Id_28,
     Name: couchbase.query,
     Resource: Set,
     Service: Samples.Couchbase3-couchbase,

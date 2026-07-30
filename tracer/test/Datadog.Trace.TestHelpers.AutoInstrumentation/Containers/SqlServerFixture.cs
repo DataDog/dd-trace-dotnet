@@ -10,8 +10,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Containers;
+using Testcontainers.MsSql;
 
 namespace Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 
@@ -52,11 +51,8 @@ public class SqlServerFixture : ContainerFixture
 
         // mssql/server has no native arm64 image, so use Azure SQL Edge on arm64.
         var image = RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? AzureSqlEdgeImage : SqlServerImage;
-        var container = new ContainerBuilder(image)
-                       .WithPortBinding(SqlServerPort, true)
-                       .WithEnvironment("ACCEPT_EULA", "Y")
-                       .WithEnvironment("MSSQL_SA_PASSWORD", Password)
-                       .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("SQL Server is now ready for client connections"))
+        var container = new MsSqlBuilder(image)
+                       .WithPassword(Password)
                        .Build();
 
         await container.StartAsync().ConfigureAwait(false);

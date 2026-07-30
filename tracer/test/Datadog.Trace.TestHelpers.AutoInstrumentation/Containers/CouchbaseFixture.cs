@@ -8,11 +8,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Docker.DotNet.Models;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 
@@ -58,12 +62,17 @@ public class CouchbaseFixture : ContainerFixture
         // scenario. Otherwise, trying to configure the Docker host address as the node hostname fails with eaddrnotavail.
         var useHostNetwork = RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
                           && !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CONTAINER_HOSTNAME"));
+        var dockerHost = useHostNetwork ? GetDockerHost() : null;
         var builder = new ContainerBuilder(Image)
                      .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(ManagementPort));
 
         if (useHostNetwork)
         {
-            builder = builder.WithNetwork("host");
+            builder = builder.WithCreateParameterModifier(p =>
+            {
+                p.HostConfig ??= new HostConfig();
+                p.HostConfig.NetworkMode = "host";
+            });
         }
         else
         {
@@ -83,7 +92,7 @@ public class CouchbaseFixture : ContainerFixture
         try
         {
             await container.StartAsync().ConfigureAwait(false);
-            var host = container.Hostname;
+            var host = dockerHost ?? container.Hostname;
             var managementPort = useHostNetwork ? ManagementPort : container.GetMappedPublicPort(ManagementPort);
             var keyValuePort = useHostNetwork ? KeyValuePort : container.GetMappedPublicPort(KeyValuePort);
 
@@ -101,6 +110,14 @@ public class CouchbaseFixture : ContainerFixture
 
         registerResource("container", container);
     }
+
+    private static string GetDockerHost()
+        => NetworkInterface.GetAllNetworkInterfaces()
+                           .SelectMany(networkInterface => networkInterface.GetIPProperties().GatewayAddresses)
+                           .Select(gateway => gateway.Address)
+                           .FirstOrDefault(address => address.AddressFamily == AddressFamily.InterNetwork
+                                                   && !IPAddress.IsLoopback(address))?.ToString()
+        ?? throw new InvalidOperationException("Unable to determine the Docker host from the container's default gateway.");
 
     private static async Task ConfigureCouchbaseAsync(IContainer container, string host, bool useHostNetwork)
     {
@@ -183,7 +200,7 @@ public class CouchbaseFixture : ContainerFixture
         {
             Content = new FormUrlEncodedContent(form.Select(static pair => new KeyValuePair<string?, string?>(pair.Key, pair.Value))),
         };
-        using var response = await client.SendAsync(request).ConfigureAwait(false);
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
         {

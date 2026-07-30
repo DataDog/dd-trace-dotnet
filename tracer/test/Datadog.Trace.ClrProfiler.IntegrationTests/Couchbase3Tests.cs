@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: couchbase");
                 settings.AddRegexScrubber(new Regex($@"db.couchbase.seed.nodes: {Regex.Escape(_couchbaseFixture.Host)}(?::[0-9]+)?"), "db.couchbase.seed.nodes: couchbase");
                 settings.AddSimpleScrubber($"out.host: {_couchbaseFixture.Host}", "out.host: couchbase");
-                settings.AddSimpleScrubber($"peer.service: {_couchbaseFixture.Host}", "peer.service: couchbase");
+                settings.AddRegexScrubber(new Regex($@"peer.service: {Regex.Escape(_couchbaseFixture.Host)}(?::[0-9]+)?"), "peer.service: couchbase");
                 settings.AddSimpleScrubber($"couchbase.operation.bucket: {_couchbaseFixture.BucketName}", "couchbase.operation.bucket: default");
 
                 // theres' a fair amount less in 3.0.7 - fewer spans, different terminology etc
