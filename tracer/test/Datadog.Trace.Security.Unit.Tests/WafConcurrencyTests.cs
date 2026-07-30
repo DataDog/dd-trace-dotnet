@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading;
 
 #if NETFRAMEWORK
@@ -67,6 +68,55 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
                 acceptableError.Should().BeTrue();
             }
         }
+    }
+
+    [Fact]
+    public void DisposeInterruptedByALockIsFinishedByTheNextOperation()
+    {
+        var initResult = CreateWaf();
+        var waf = initResult.Waf;
+        waf.Should().NotBeNull();
+
+        var locker = (AppSec.Concurrency.ReaderWriterLock)typeof(Waf).GetField("_wafLocker", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(waf)!;
+
+        // we want the dispose to give up on the write lock, not to wait out its real timeout
+        waf!.DisposeLockTimeoutInMs = 200;
+
+        // hold the read lock on another thread, the way an in flight CreateContext would
+        using var readLockTaken = new ManualResetEventSlim(false);
+        using var releaseReadLock = new ManualResetEventSlim(false);
+        var reader = new Thread(
+            () =>
+            {
+                locker.EnterReadLock();
+                readLockTaken.Set();
+                releaseReadLock.Wait();
+                locker.ExitReadLock();
+            })
+        {
+            IsBackground = true
+        };
+
+        reader.Start();
+        readLockTaken.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+
+        waf.Dispose();
+
+        // the write lock timed out, so the waf instance couldn't be released. It has to stay owned:
+        // giving up on it would leak the ruleset for the lifetime of the process
+        waf.Disposed.Should().BeTrue();
+        waf.HasNativeHandles.Should().BeTrue();
+
+        releaseReadLock.Set();
+        reader.Join(TimeSpan.FromSeconds(10)).Should().BeTrue();
+
+        // the next operation to get the lock finishes the disposal on its way out
+        waf.GetKnownAddresses();
+        waf.HasNativeHandles.Should().BeFalse();
+
+        // and disposing again is harmless once there is nothing left to release
+        waf.Dispose();
+        waf.HasNativeHandles.Should().BeFalse();
     }
 
     [Theory]

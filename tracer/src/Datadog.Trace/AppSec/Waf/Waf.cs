@@ -26,6 +26,12 @@ namespace Datadog.Trace.AppSec.Waf
         private const int BuilderLockTimeoutInMs = 4000;
         private const int DisposeTimeoutInMs = 15000;
 
+        /// <summary>
+        /// How long the operations that finish an interrupted disposal wait for the locks. Kept short
+        /// because some of them run on the request path: if the lock isn't free, the next one tries.
+        /// </summary>
+        private const int PendingReleaseTimeoutInMs = 1000;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Waf));
 
         private readonly WafLibraryInvoker _wafLibraryInvoker;
@@ -72,7 +78,13 @@ namespace Datadog.Trace.AppSec.Waf
         /// Gets a value indicating whether there is still something for <see cref="ReleaseNativeHandles"/>
         /// to free. Lets the retry paths skip the locks once everything has been released.
         /// </summary>
-        private bool HasNativeHandles => Volatile.Read(ref _wafHandle) != IntPtr.Zero || Volatile.Read(ref _wafBuilderHandle) != IntPtr.Zero;
+        internal bool HasNativeHandles => Volatile.Read(ref _wafHandle) != IntPtr.Zero || Volatile.Read(ref _wafBuilderHandle) != IntPtr.Zero;
+
+        /// <summary>
+        /// Gets or sets how long <see cref="Dispose"/> waits for each of the locks it needs. Only the
+        /// tests change it, to exercise the timeout path without waiting out the real timeout.
+        /// </summary>
+        internal int DisposeLockTimeoutInMs { get; set; } = DisposeTimeoutInMs;
 
         public string Version => _wafLibraryInvoker.GetVersion();
 
@@ -232,10 +244,7 @@ namespace Datadog.Trace.AppSec.Waf
 
                 // A Dispose that ran while this update held the builder lock may have had to give up
                 // on releasing the native handles. Now that the lock is free, finish the job for it.
-                if (Disposed && HasNativeHandles)
-                {
-                    ReleaseNativeHandles(BuilderLockTimeoutInMs);
-                }
+                ReleasePendingHandles();
             }
         }
 
@@ -288,6 +297,9 @@ namespace Datadog.Trace.AppSec.Waf
                 if (lockAcquired)
                 {
                     _wafLocker.ExitWriteLock();
+
+                    // same as in CreateContext: a dispose blocked by this lock left the release to us
+                    ReleasePendingHandles();
                 }
             }
         }
@@ -317,12 +329,18 @@ namespace Datadog.Trace.AppSec.Waf
                 if (Disposed)
                 {
                     _wafLocker.ExitReadLock();
+                    ReleasePendingHandles();
                     Log.Warning("Context can't be created as waf instance has been disposed.");
                     return null;
                 }
 
                 contextHandle = _wafLibraryInvoker.InitContext(_wafHandle);
                 _wafLocker.ExitReadLock();
+
+                // A dispose that started while this read lock was held couldn't take the write lock, so
+                // it left the instance behind for whoever was in its way: that's us. Do it here, before
+                // the context is handed out, so Context.GetContext sees the disposal and drops it.
+                ReleasePendingHandles();
             }
             else
             {
@@ -357,7 +375,20 @@ namespace Datadog.Trace.AppSec.Waf
 
             if (HasNativeHandles)
             {
-                ReleaseNativeHandles(DisposeTimeoutInMs);
+                ReleaseNativeHandles(DisposeLockTimeoutInMs);
+            }
+        }
+
+        /// <summary>
+        /// Finishes a disposal that couldn't release everything because this operation was holding one of
+        /// the locks it needed. Call it right after releasing a lock, never while still holding one: the
+        /// operation that got in the way of the disposal is the one best placed to complete it.
+        /// </summary>
+        private void ReleasePendingHandles()
+        {
+            if (Disposed && HasNativeHandles)
+            {
+                ReleaseNativeHandles(PendingReleaseTimeoutInMs);
             }
         }
 
