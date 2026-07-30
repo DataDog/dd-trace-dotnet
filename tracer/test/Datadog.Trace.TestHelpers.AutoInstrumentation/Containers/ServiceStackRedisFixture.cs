@@ -27,7 +27,7 @@ public class ServiceStackRedisFixture : ContainerFixture
     protected override async Task InitializeResources(Action<string, object> registerResource)
     {
         // Keep synchronized with the image version in docker-compose.yml.
-        var container = new ContainerBuilder("redis:4-alpine")
+        var container = new ContainerBuilder("redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20")
                        .WithCommand("redis-server", "--bind", "0.0.0.0")
                        .WithPortBinding(RedisPort, true)
                        .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(RedisPort))

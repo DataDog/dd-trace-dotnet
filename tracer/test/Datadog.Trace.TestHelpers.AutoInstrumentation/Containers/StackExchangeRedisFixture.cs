@@ -61,7 +61,7 @@ public class StackExchangeRedisFixture : ContainerFixture
         }
 
         // Keep synchronized with the image version in docker-compose.yml.
-        const string image = "redis:4-alpine";
+        const string image = "redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20";
 
         var network = new NetworkBuilder().Build();
         var primaryContainer = new ContainerBuilder(image)
