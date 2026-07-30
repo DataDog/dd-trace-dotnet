@@ -915,6 +915,31 @@ namespace Datadog.Trace.Security.Unit.Tests
             act.Should().NotThrow();
         }
 
+        [Fact]
+        public void TestNestedListRespectsMaxContainerDepth()
+        {
+            object nested = "leaf";
+            for (var i = 0; i < WafConstants.MaxContainerDepth + 5; i++)
+            {
+                nested = new List<object> { nested };
+            }
+
+            var result = ObjectExtractor.Extract(nested) as List<object>;
+
+            var current = result;
+            for (var i = 0; i < WafConstants.MaxContainerDepth - 1; i++)
+            {
+                current.Should().NotBeNull();
+                current.Should().HaveCount(1);
+                current = current![0] as List<object>;
+            }
+
+            // The list at the depth limit must be cut off empty, matching ExtractProperties' behavior
+            // for objects at the same depth (see TestNestedObjectsAboveLimit).
+            current.Should().NotBeNull();
+            current.Should().BeEmpty();
+        }
+
 #if NETFRAMEWORK
         [Fact]
         public void TestDateTimeOffsetExtractedAsObject_DataContractPath()
