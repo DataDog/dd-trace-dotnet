@@ -10,17 +10,25 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Security.IntegrationTests.Iast;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.IAST;
 
 [Trait("RequiresDockerDependency", "true")]
+[Collection(AspNetCore5IastDbTestsCollection.Name)]
 public class AspNetCore5IastDbTests : AspNetCore5IastTests
 {
-    public AspNetCore5IastDbTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
+    public AspNetCore5IastDbTests(
+        AspNetCoreTestFixture fixture,
+        ITestOutputHelper outputHelper,
+        SqlServerFixture sqlServerFixture,
+        PostgresFixture postgresFixture,
+        MySql8Fixture mySqlFixture)
         : base(fixture, outputHelper, enableIast: true, testName: "AspNetCore5IastDbTestsIastEnabled", samplingRate: 100, vulnerabilitiesPerRequest: 200, isIastDeduplicationEnabled: false, sampleName: "AspNetCore5")
     {
+        ConfigureContainers(sqlServerFixture, postgresFixture, mySqlFixture);
     }
 
     [SkippableTheory]
