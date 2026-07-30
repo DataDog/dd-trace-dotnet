@@ -32,9 +32,10 @@ public class RabbitMqFixture : ContainerFixture
 
     protected override async Task InitializeResources(Action<string, object> registerResource)
     {
+        // rabbitmq-diagnostics can race startup and create a root-owned Erlang cookie.
         var container = new ContainerBuilder(Image)
                        .WithPortBinding(RabbitMqPort, true)
-                       .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("rabbitmq-diagnostics", "-q", "ping"))
+                       .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(RabbitMqPort))
                        .Build();
 
         await container.StartAsync().ConfigureAwait(false);
