@@ -19,34 +19,44 @@ public class StackExchangeRedisFixture : ContainerFixture
 {
     private const int RedisPort = 6379;
     private const string PrimaryAlias = "stackexchangeredis";
+    private const string DefaultHostConfiguration = "localhost:6379,localhost:6380";
 
-    private Resources? _resources;
+    private Endpoint? _primaryEndpoint;
+    private Endpoint? _replicaEndpoint;
+    private string? _hostConfiguration;
+    private string? _singleHostConfiguration;
 
-    public string PrimaryHost => _resources!.PrimaryContainer.Hostname;
+    public string PrimaryHost => _primaryEndpoint!.Host;
 
-    public ushort PrimaryPort => _resources!.PrimaryContainer.GetMappedPublicPort(RedisPort);
+    public ushort PrimaryPort => _primaryEndpoint!.Port;
 
-    public string ReplicaHost => _resources!.ReplicaContainer.Hostname;
+    public string ReplicaHost => _replicaEndpoint!.Host;
 
-    public ushort ReplicaPort => _resources!.ReplicaContainer.GetMappedPublicPort(RedisPort);
+    public ushort ReplicaPort => _replicaEndpoint!.Port;
 
     public override IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables()
     {
-        if (_resources is null)
+        if (_hostConfiguration is null || _singleHostConfiguration is null)
         {
             yield break;
         }
 
-        yield return new("STACKEXCHANGE_REDIS_HOST", $"{PrimaryHost}:{PrimaryPort},{ReplicaHost}:{ReplicaPort}");
-        yield return new("STACKEXCHANGE_REDIS_SINGLE_HOST", $"{_resources.SingleContainer.Hostname}:{_resources.SingleContainer.GetMappedPublicPort(RedisPort)}");
+        yield return new("STACKEXCHANGE_REDIS_HOST", _hostConfiguration);
+        yield return new("STACKEXCHANGE_REDIS_SINGLE_HOST", _singleHostConfiguration);
     }
 
     protected override async Task InitializeResources(Action<string, object> registerResource)
     {
-        // The Redis smoke tests in this collection are skipped on Windows, where CI does not provide Docker.
-        // Collection fixtures are initialized before test-level skips are evaluated, so avoid starting containers here.
+        // Windows tests use an existing Redis instance because CI does not provide Docker.
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
+            var hostConfiguration = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST");
+            _hostConfiguration = string.IsNullOrEmpty(hostConfiguration) ? DefaultHostConfiguration : hostConfiguration;
+            var endpoints = ParseEndpoints(_hostConfiguration);
+            _primaryEndpoint = endpoints[0];
+            _replicaEndpoint = endpoints.Count > 1 ? endpoints[1] : endpoints[0];
+            var singleHostConfiguration = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_SINGLE_HOST");
+            _singleHostConfiguration = string.IsNullOrEmpty(singleHostConfiguration) ? endpoints[0].ToString() : singleHostConfiguration;
             return;
         }
 
@@ -90,8 +100,76 @@ public class StackExchangeRedisFixture : ContainerFixture
             throw;
         }
 
-        _resources = resources;
+        _primaryEndpoint = new Endpoint(primaryContainer.Hostname, primaryContainer.GetMappedPublicPort(RedisPort));
+        _replicaEndpoint = new Endpoint(replicaContainer.Hostname, replicaContainer.GetMappedPublicPort(RedisPort));
+        _hostConfiguration = $"{_primaryEndpoint},{_replicaEndpoint}";
+        _singleHostConfiguration = $"{singleContainer.Hostname}:{singleContainer.GetMappedPublicPort(RedisPort)}";
         registerResource("resources", resources);
+    }
+
+    private static List<Endpoint> ParseEndpoints(string configuration)
+    {
+        var endpoints = new List<Endpoint>();
+        foreach (var value in configuration.Split(','))
+        {
+            var trimmedValue = value.Trim();
+            if (trimmedValue.Length == 0 || trimmedValue.Contains("="))
+            {
+                continue;
+            }
+
+            endpoints.Add(Endpoint.Parse(trimmedValue));
+            if (endpoints.Count == 2)
+            {
+                break;
+            }
+        }
+
+        if (endpoints.Count == 0)
+        {
+            throw new InvalidOperationException("STACKEXCHANGE_REDIS_HOST must contain at least one Redis endpoint.");
+        }
+
+        return endpoints;
+    }
+
+    private sealed class Endpoint
+    {
+        public Endpoint(string host, ushort port)
+        {
+            Host = host;
+            Port = port;
+        }
+
+        public string Host { get; }
+
+        public ushort Port { get; }
+
+        public static Endpoint Parse(string value)
+        {
+            if (value[0] == '[')
+            {
+                var closingBracketIndex = value.IndexOf(']');
+                if (closingBracketIndex > 0)
+                {
+                    var host = value.Substring(1, closingBracketIndex - 1);
+                    var portValue = value.Substring(closingBracketIndex + 1).TrimStart(':');
+                    return new Endpoint(host, ParsePort(portValue));
+                }
+            }
+
+            var separatorIndex = value.LastIndexOf(':');
+            if (separatorIndex > 0 && ushort.TryParse(value.Substring(separatorIndex + 1), out var port))
+            {
+                return new Endpoint(value.Substring(0, separatorIndex), port);
+            }
+
+            return new Endpoint(value, RedisPort);
+        }
+
+        public override string ToString() => Host.IndexOf(':') >= 0 ? $"[{Host}]:{Port}" : $"{Host}:{Port}";
+
+        private static ushort ParsePort(string value) => ushort.TryParse(value, out var port) ? port : RedisPort;
     }
 
     private sealed class Resources : IAsyncDisposable
