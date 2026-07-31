@@ -6,9 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
@@ -74,39 +74,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "faas.trigger",
             "graphql.operation.type",
             "network.protocol.name"
-        };
-
-        // Single source of truth for translating an OTLP http/protobuf payload (rendered as JSON
-        // by the test agent with snake_case field names and string-form enum values) to the
-        // OTLP http/json shape (camelCase field names, integer enum values). When a new OTLP
-        // field or enum reaches the serializer, add the mapping here.
-        private static readonly (string From, string To)[] ProtobufToJsonFieldNameMappings =
-        {
-            ("\"resource_spans\"",        "\"resourceSpans\""),
-            ("\"scope_spans\"",           "\"scopeSpans\""),
-            ("\"trace_id\"",              "\"traceId\""),
-            ("\"span_id\"",               "\"spanId\""),
-            ("\"parent_span_id\"",        "\"parentSpanId\""),
-            ("\"start_time_unix_nano\"",  "\"startTimeUnixNano\""),
-            ("\"end_time_unix_nano\"",    "\"endTimeUnixNano\""),
-            ("\"time_unix_nano\"",        "\"timeUnixNano\""),
-            ("\"string_value\"",          "\"stringValue\""),
-            ("\"double_value\"",          "\"doubleValue\""),
-            ("\"int_value\"",             "\"intValue\""),
-            ("\"bool_value\"",            "\"boolValue\""),
-            ("\"array_value\"",           "\"arrayValue\""),
-        };
-
-        private static readonly (string From, string To)[] ProtobufToJsonEnumMappings =
-        {
-            ("\"kind\": \"SPAN_KIND_INTERNAL\"", "\"kind\": 1"),
-            ("\"kind\": \"SPAN_KIND_SERVER\"",   "\"kind\": 2"),
-            ("\"kind\": \"SPAN_KIND_CLIENT\"",   "\"kind\": 3"),
-            ("\"kind\": \"SPAN_KIND_PRODUCER\"", "\"kind\": 4"),
-            ("\"kind\": \"SPAN_KIND_CONSUMER\"", "\"kind\": 5"),
-            ("\"code\": \"STATUS_CODE_UNSET\"",  "\"code\": 0"),
-            ("\"code\": \"STATUS_CODE_OK\"",     "\"code\": 1"),
-            ("\"code\": \"STATUS_CODE_ERROR\"",  "\"code\": 2"),
         };
 
         private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
@@ -294,7 +261,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "127.0.0.1";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
 
-            await ClearTestAgentSession(testAgentHost);
+            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
 
             // This is the key configuration that is set differently from previous test cases:
             // OTEL_TRACES_EXPORTER=otlp enables the DD SDK to emit traces (and trace stats) via OTLP
@@ -334,7 +301,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // between process exit and the data appearing in the test-agent. Poll with
                 // retries to avoid a race, matching the pattern used by SubmitsOtlpMetrics
                 // and SubmitsOtlpLogs.
-                var tracesRequests = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/traces");
+                var tracesRequests = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/traces");
 
                 tracesRequests.Should().NotBeNullOrEmpty();
 
@@ -541,7 +508,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Add scrubbers only for http/protobuf
                 if (protocol == "http/protobuf")
                 {
-                    AddProtobufToJsonScrubbers(settings);
+                    OtlpSnapshotHelper.AddProtobufToJsonScrubbers(settings);
                 }
 
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpTraces{snapshotName}";
@@ -574,7 +541,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
 
-            await ClearTestAgentSession(testAgentHost);
+            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
 
             SetEnvironmentVariable("DD_ENV", string.Empty);
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
@@ -608,7 +575,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
-                var metricsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/metrics");
+                var metricsData = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/metrics");
                 metricsData.Should().NotBeNullOrEmpty();
 
                 foreach (var attribute in metricsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
@@ -654,7 +621,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
 
-            await ClearTestAgentSession(testAgentHost);
+            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
 
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "true");
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
@@ -667,7 +634,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
             using (await RunSampleAndWaitForExit(agent))
             {
-                var metricsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/metrics");
+                var metricsData = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/metrics");
                 metricsData.Should().NotBeNullOrEmpty();
 
                 // Deduplicate metrics across multiple export intervals, keeping one per metric name
@@ -741,7 +708,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
 
-            await ClearTestAgentSession(testAgentHost);
+            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
 
             SetEnvironmentVariable("DD_ENV", "testing");
             SetEnvironmentVariable("DD_SERVICE", "OtlpLogsService");
@@ -778,7 +745,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var endTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
-                var logsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/logs");
+                var logsData = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/logs");
                 logsData.Should().NotBeNullOrEmpty();
                 logsData.SelectTokens("$..log_records[*]").Should().AllSatisfy(logRecord =>
                 {
@@ -885,69 +852,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 #endif
 
-        /// <summary>
-        /// Clears the test-agent session, retrying if the agent is not yet ready.
-        /// Ensures the OTLP HTTP endpoint is accepting connections before tests proceed.
-        /// </summary>
-        private static async Task ClearTestAgentSession(string testAgentHost, int maxRetries = 5, int delayMs = 1000)
-        {
-            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-            var url = $"http://{testAgentHost}:4318/test/session/clear";
-
-            for (var attempt = 1; attempt <= maxRetries; attempt++)
-            {
-                try
-                {
-                    var response = await httpClient.GetAsync(url);
-                    response.EnsureSuccessStatusCode();
-                    return;
-                }
-                catch (Exception) when (attempt < maxRetries)
-                {
-                    await Task.Delay(delayMs);
-                }
-            }
-
-            // Final attempt -- let it throw if it fails
-            var finalResponse = await httpClient.GetAsync(url);
-            finalResponse.EnsureSuccessStatusCode();
-        }
-
-        /// <summary>
-        /// Polls the test-agent for data until non-empty results are returned or timeout is reached.
-        /// The sample app exports data during shutdown, so there can be a brief delay
-        /// between process exit and data appearing in the test-agent. The timeout is generous
-        /// because first-time gRPC connections (TCP+HTTP/2+TLS handshake) plus tracer shutdown
-        /// flushing can stack up on slower CI runners.
-        /// </summary>
-        private static async Task<JToken> WaitForTestAgentData(string url, int timeoutSeconds = 60, int pollIntervalMs = 500)
-        {
-            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-            var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
-
-            while (DateTime.UtcNow < deadline)
-            {
-                var response = await httpClient.GetAsync(url);
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                var data = JToken.Parse(json);
-
-                if (data.HasValues)
-                {
-                    return data;
-                }
-
-                await Task.Delay(pollIntervalMs);
-            }
-
-            // Final attempt -- return whatever we get so the caller's assertion shows the actual value
-            var finalResponse = await httpClient.GetAsync(url);
-            finalResponse.EnsureSuccessStatusCode();
-            var finalJson = await finalResponse.Content.ReadAsStringAsync();
-            return JToken.Parse(finalJson);
-        }
-
         private static string GetSuffix(string packageVersion)
         {
             // The snapshots are only different in .NET Core 2.1 - .NET 5 with package version 1.0.1
@@ -974,19 +878,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             return string.Empty;
-        }
-
-        private static void AddProtobufToJsonScrubbers(VerifyTests.VerifySettings settings)
-        {
-            foreach (var (from, to) in ProtobufToJsonFieldNameMappings)
-            {
-                settings.AddSimpleScrubber(from, to);
-            }
-
-            foreach (var (from, to) in ProtobufToJsonEnumMappings)
-            {
-                settings.AddSimpleScrubber(from, to);
-            }
         }
     }
 }
