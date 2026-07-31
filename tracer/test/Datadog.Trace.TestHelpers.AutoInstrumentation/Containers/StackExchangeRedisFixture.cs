@@ -91,8 +91,8 @@ public class StackExchangeRedisFixture : ContainerFixture
         registerResource("replica", replicaContainer);
         registerResource("single", singleContainer);
         await network.CreateAsync().ConfigureAwait(false);
-        await primaryContainer.StartAsync().ConfigureAwait(false);
-        await Task.WhenAll(replicaContainer.StartAsync(), singleContainer.StartAsync()).ConfigureAwait(false);
+        await StartContainerAsync(primaryContainer).ConfigureAwait(false);
+        await Task.WhenAll(StartContainerAsync(replicaContainer), StartContainerAsync(singleContainer)).ConfigureAwait(false);
 
         _primaryEndpoint = new Endpoint(primaryContainer.Hostname, primaryContainer.GetMappedPublicPort(RedisPort));
         _replicaEndpoint = new Endpoint(replicaContainer.Hostname, replicaContainer.GetMappedPublicPort(RedisPort));

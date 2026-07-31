@@ -46,6 +46,6 @@ public class AerospikeFixture : ContainerFixture
                        .Build();
 
         registerResource("container", container);
-        await container.StartAsync();
+        await StartContainerAsync(container).ConfigureAwait(false);
     }
 }

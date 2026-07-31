@@ -40,6 +40,6 @@ public class RabbitMqFixture : ContainerFixture
                        .Build();
 
         registerResource("container", container);
-        await container.StartAsync().ConfigureAwait(false);
+        await StartContainerAsync(container).ConfigureAwait(false);
     }
 }

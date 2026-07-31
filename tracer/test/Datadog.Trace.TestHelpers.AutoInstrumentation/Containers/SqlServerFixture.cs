@@ -76,7 +76,7 @@ public class SqlServerFixture : ContainerFixture
         }
 
         registerResource("container", container);
-        await container.StartAsync().ConfigureAwait(false);
+        await StartContainerAsync(container).ConfigureAwait(false);
 
         HostAndPort = $"{container.Hostname},{container.GetMappedPublicPort(SqlServerPort)}";
         _connectionString = $"Server={HostAndPort};User=sa;Password={Password};TrustServerCertificate=True";

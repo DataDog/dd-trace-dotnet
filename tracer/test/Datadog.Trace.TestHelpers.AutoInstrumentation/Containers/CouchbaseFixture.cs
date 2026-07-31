@@ -90,7 +90,7 @@ public class CouchbaseFixture : ContainerFixture
         var container = builder.Build();
 
         registerResource("container", container);
-        await container.StartAsync().ConfigureAwait(false);
+        await StartContainerAsync(container).ConfigureAwait(false);
         var host = dockerHost ?? container.Hostname;
         var managementPort = useHostNetwork ? ManagementPort : container.GetMappedPublicPort(ManagementPort);
         var keyValuePort = useHostNetwork ? KeyValuePort : container.GetMappedPublicPort(KeyValuePort);

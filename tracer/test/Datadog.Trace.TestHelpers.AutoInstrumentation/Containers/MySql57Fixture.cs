@@ -60,7 +60,7 @@ public class MySql57Fixture : ContainerFixture
                        .Build();
 
         registerResource("container", container);
-        await container.StartAsync().ConfigureAwait(false);
+        await StartContainerAsync(container).ConfigureAwait(false);
 
         _container = container;
     }

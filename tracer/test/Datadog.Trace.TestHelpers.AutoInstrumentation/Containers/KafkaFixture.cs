@@ -49,7 +49,7 @@ public class KafkaFixture : ContainerFixture
         registerResource("zookeeper", zooKeeperContainer);
         registerResource("container", kafkaContainer);
         await network.CreateAsync().ConfigureAwait(false);
-        await zooKeeperContainer.StartAsync().ConfigureAwait(false);
-        await kafkaContainer.StartAsync().ConfigureAwait(false);
+        await StartContainerAsync(zooKeeperContainer).ConfigureAwait(false);
+        await StartContainerAsync(kafkaContainer).ConfigureAwait(false);
     }
 }

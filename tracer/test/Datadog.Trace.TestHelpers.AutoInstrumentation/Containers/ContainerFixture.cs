@@ -8,13 +8,20 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
+using Docker.DotNet;
+using DotNet.Testcontainers.Containers;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 
 public abstract class ContainerFixture : IAsyncLifetime
 {
+    private const int MaxContainerStartAttempts = 3;
+    private static readonly TimeSpan ContainerStartRetryDelay = TimeSpan.FromSeconds(10);
+
     private readonly Dictionary<string, object> _resources = new();
     private readonly List<object> _resourcesForDisposal = [];
 
@@ -38,6 +45,40 @@ public abstract class ContainerFixture : IAsyncLifetime
     protected abstract Task InitializeResources(Action<string, object> registerResource);
 
     protected T GetResource<T>(string key) => (T)_resources[key];
+
+    protected static async Task StartContainerAsync(IContainer container)
+    {
+        var attempt = 1;
+        while (true)
+        {
+            try
+            {
+                await container.StartAsync().ConfigureAwait(false);
+                return;
+            }
+            catch (DockerApiException exception) when (attempt < MaxContainerStartAttempts && IsTransientSystemdCgroupFailure(exception))
+            {
+                container.Logger.LogWarning(
+                    "Docker failed to start container {ContainerId} because its systemd cgroup request was interrupted. Retrying in {RetryDelaySeconds} seconds (attempt {NextAttempt}/{MaxAttempts}).",
+                    container.Id,
+                    ContainerStartRetryDelay.TotalSeconds,
+                    attempt + 1,
+                    MaxContainerStartAttempts);
+
+                attempt++;
+                await Task.Delay(ContainerStartRetryDelay).ConfigureAwait(false);
+            }
+        }
+    }
+
+    private static bool IsTransientSystemdCgroupFailure(DockerApiException exception)
+    {
+        var responseBody = exception.ResponseBody;
+        return exception.StatusCode == HttpStatusCode.InternalServerError
+            && responseBody is not null
+            && responseBody.IndexOf("unable to apply cgroup configuration", StringComparison.Ordinal) >= 0
+            && responseBody.IndexOf("Message recipient disconnected from message bus without replying", StringComparison.Ordinal) >= 0;
+    }
 
     private void RegisterResource(string key, object resource)
     {

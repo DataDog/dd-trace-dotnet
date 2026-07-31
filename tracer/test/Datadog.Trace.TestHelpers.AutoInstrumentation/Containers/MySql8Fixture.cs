@@ -50,6 +50,6 @@ public class MySql8Fixture : ContainerFixture
                        .Build();
 
         registerResource("container", container);
-        await container.StartAsync().ConfigureAwait(false);
+        await StartContainerAsync(container).ConfigureAwait(false);
     }
 }
