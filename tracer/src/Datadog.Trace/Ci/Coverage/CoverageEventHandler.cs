@@ -20,13 +20,11 @@ internal abstract class CoverageEventHandler
 {
     private readonly AsyncLocal<CoverageContextContainer?> _asyncContext = new();
     private readonly CoverageContextContainer _globalContainer = new(bufferKind: ModuleValue.BufferKind.GlobalFallback);
-    private readonly CoverageContextDiagnostics _contextDiagnostics = new();
+    private readonly ContextDiagnostics _contextDiagnostics = new();
 
     public CoverageContextContainer? Container => _asyncContext.Value;
 
     public CoverageContextContainer GlobalContainer => _globalContainer;
-
-    public CoverageContextDiagnosticSnapshot ContextDiagnostics => _contextDiagnostics.GetSnapshot();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public CoverageSessionHandle StartSession(string? testingFramework = null)
@@ -184,7 +182,34 @@ internal abstract class CoverageEventHandler
     {
     }
 
+    protected void LogContextDiagnostics(long merged)
+        => _contextDiagnostics.Log(merged);
+
     protected abstract void OnSessionStart(CoverageContextContainer context);
 
     protected abstract object? OnSessionFinished(CoverageContextContainer context, IReadOnlyList<ModuleValue> modules);
+
+    private sealed class ContextDiagnostics
+    {
+        private long _started;
+        private long _closed;
+        private long _disposed;
+
+        public void RecordStarted() => _started++;
+
+        public void RecordClosed() => _closed++;
+
+        public void RecordDisposed() => _disposed++;
+
+        public void Log(long merged)
+        {
+            TestOptimization.Instance.Log.Debug<int, long, long, long, long>(
+                "Global coverage context diagnostics: pid={ProcessId}, started={Started}, closed={Closed}, disposed={Disposed}, merged={Merged}.",
+                DomainMetadata.Instance.ProcessId,
+                _started,
+                _closed,
+                _disposed,
+                merged);
+        }
+    }
 }

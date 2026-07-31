@@ -19,12 +19,11 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
     private readonly GlobalCoverageOutputManager _outputManager;
     private int _inFlightStarts;
     private int _activeContexts;
-    private int _inFlightFinalizers;
-    private LifecycleState _lifecycleState;
+    private int _inFlightSnapshots;
+    private LifecycleState _state;
     private Action<bool>? _sealCompleted;
-    private bool _sealCompletionStarted;
+    private bool _sealStarted;
     private bool _sealRequested;
-    private bool _publishFinalSnapshotOnSeal;
     private bool _sealedComplete;
 
     public DefaultWithGlobalCoverageEventHandler(
@@ -46,182 +45,45 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         Released,
     }
 
-    public enum LifecycleState
+    private enum LifecycleState
     {
         Running,
         Completing,
         Sealed,
     }
 
-    public GlobalCoverageAccumulatorSnapshot AccumulatorDiagnostics => _accumulator.GetDiagnostics();
-
-    public int ActiveContexts
-    {
-        get
-        {
-            lock (_lifecycleGate)
-            {
-                return _activeContexts;
-            }
-        }
-    }
-
-    public LifecycleState State
-    {
-        get
-        {
-            lock (_lifecycleGate)
-            {
-                return _lifecycleState;
-            }
-        }
-    }
-
-    public int InFlightStarts
-    {
-        get
-        {
-            lock (_lifecycleGate)
-            {
-                return _inFlightStarts;
-            }
-        }
-    }
-
-    public int InFlightFinalizers
-    {
-        get
-        {
-            lock (_lifecycleGate)
-            {
-                return _inFlightFinalizers;
-            }
-        }
-    }
-
-    public bool SealedComplete
-    {
-        get
-        {
-            lock (_lifecycleGate)
-            {
-                return _lifecycleState == LifecycleState.Sealed && _sealedComplete;
-            }
-        }
-    }
-
-    public IReadOnlyList<GlobalCoverageOutputRegistration> OutputRegistrations => _outputManager.GetRegistrations();
-
-    public void MarkIncomplete(GlobalCoverageFailureReason reason)
-        => _accumulator.Suppress(reason);
-
     public GlobalCoverageSnapshotResult AcquireGlobalCoverageSnapshot()
     {
-        if (!_outputManager.EnsureConfiguredAndFreeze())
-        {
-            _accumulator.Suppress(GlobalCoverageFailureReason.OutputCommitFailed);
-        }
-
-        var finalizerAdmission = new FinalizerAdmission(this);
-        var admitted = false;
-        var suppress = false;
+        var admission = new SnapshotAdmission(this);
         lock (_lifecycleGate)
         {
-            if (_lifecycleState == LifecycleState.Running)
+            if (_state != LifecycleState.Running)
             {
-                _inFlightFinalizers++;
-                admitted = true;
-            }
-            else
-            {
-                suppress = _lifecycleState == LifecycleState.Completing;
-            }
-        }
-
-        if (!admitted)
-        {
-            if (suppress)
-            {
-                _accumulator.Suppress(GlobalCoverageFailureReason.SnapshotFailed);
+                return GlobalCoverageSnapshotResult.Suppressed(_accumulator.FailureReason);
             }
 
-            return GlobalCoverageSnapshotResult.Suppressed(_accumulator.FailureReason);
+            _inFlightSnapshots++;
         }
 
         try
         {
-            var result = _accumulator.AcquireSnapshot(GlobalContainer, finalizerAdmission.Release);
-            if (result.Status == GlobalCoverageSnapshotStatus.Success && result.Snapshot is { } snapshot)
+            var result = _accumulator.AcquireSnapshot(GlobalContainer, admission.Release);
+            if (result.Status != GlobalCoverageSnapshotStatus.Success)
             {
-                try
-                {
-                    InitializeSnapshotOutput(snapshot);
-                }
-                catch
-                {
-                    snapshot.Dispose();
-                    throw;
-                }
-            }
-            else
-            {
-                finalizerAdmission.Release();
+                admission.Release();
             }
 
             return result;
         }
         catch
         {
-            finalizerAdmission.Release();
+            admission.Release();
             throw;
         }
     }
 
     public bool TryCommit(GlobalCoverageSnapshot snapshot, Action action)
         => _accumulator.TryCommit(snapshot, action);
-
-    public bool TryPublishRequiredFiles(GlobalCoverageSnapshot snapshot)
-    {
-        var stagedArtifacts = new List<StagedOutput>();
-        try
-        {
-            var writer = new GlobalCoverageArtifactWriter();
-            foreach (var registration in _outputManager.GetRegistrations())
-            {
-                if ((snapshot.RequiredOutputMask & registration.Bit) == 0)
-                {
-                    continue;
-                }
-
-                var outputPath = _outputManager.GetCoveragePath(registration, snapshot.GenerationId);
-                stagedArtifacts.Add(new StagedOutput(registration.Bit, writer.StageNoReplace(outputPath, snapshot.Model)));
-            }
-
-            return TryCommit(
-                       snapshot,
-                       () =>
-                       {
-                           foreach (var staged in stagedArtifacts)
-                           {
-                               staged.Artifact.Commit();
-                               snapshot.RecordOutputCommit(staged.Bit);
-                           }
-                       }) &&
-                   snapshot.RequiredOutputMask == snapshot.CommittedOutputMask;
-        }
-        catch
-        {
-            _accumulator.Suppress(GlobalCoverageFailureReason.OutputCommitFailed);
-            throw;
-        }
-        finally
-        {
-            foreach (var staged in stagedArtifacts)
-            {
-                staged.Artifact.Dispose();
-            }
-        }
-    }
 
     public bool RegisterCollectorOutputDirectory(string directory)
     {
@@ -234,17 +96,13 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         return registered;
     }
 
-    public bool FinalizeAndSeal(Action<bool>? onCompleted = null) => RequestSeal(publishFinalSnapshot: true, onCompleted);
-
-    public bool RequestSeal() => RequestSeal(publishFinalSnapshot: false, onCompleted: null);
-
-    private bool RequestSeal(bool publishFinalSnapshot, Action<bool>? onCompleted)
+    public bool FinalizeAndSeal(Action<bool>? onCompleted = null)
     {
-        var audit = false;
+        var completeNow = false;
         bool? completed = null;
         lock (_lifecycleGate)
         {
-            if (_lifecycleState == LifecycleState.Sealed)
+            if (_state == LifecycleState.Sealed)
             {
                 completed = _sealedComplete;
             }
@@ -256,9 +114,8 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
                 }
 
                 _sealRequested = true;
-                _publishFinalSnapshotOnSeal |= publishFinalSnapshot;
-                _lifecycleState = LifecycleState.Completing;
-                audit = HasNoAdmissionsUnderLock();
+                _state = LifecycleState.Completing;
+                completeNow = HasNoAdmissionsUnderLock();
             }
         }
 
@@ -268,19 +125,16 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
             return completedValue;
         }
 
-        if (audit)
+        if (completeNow)
         {
             CompleteSeal();
         }
 
         lock (_lifecycleGate)
         {
-            return _lifecycleState == LifecycleState.Sealed && _sealedComplete;
+            return _state == LifecycleState.Sealed && _sealedComplete;
         }
     }
-
-    private void InitializeSnapshotOutput(GlobalCoverageSnapshot snapshot)
-        => snapshot.InitializeOutput(_outputManager.FrozenMask, OnSnapshotDisposed);
 
     protected override object? OnSessionFinished(CoverageContextContainer context, IReadOnlyList<ModuleValue> modules)
     {
@@ -288,8 +142,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         try
         {
             var testCoverage = ProcessSessionFinished(modules, out var moduleCoverage);
-            var mergeResult = _accumulator.TryMerge(moduleCoverage);
-            merged = mergeResult != GlobalCoverageMergeResult.BecameSuppressedIncomplete;
+            merged = _accumulator.TryMerge(moduleCoverage) != GlobalCoverageMergeResult.BecameSuppressedIncomplete;
             return testCoverage;
         }
         catch
@@ -308,12 +161,12 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         var rejected = false;
         lock (_lifecycleGate)
         {
-            if (_lifecycleState == LifecycleState.Sealed)
+            if (_state == LifecycleState.Sealed)
             {
                 ThrowHelper.ThrowInvalidOperationException("A coverage session cannot start after the test session has ended.");
             }
 
-            if (_lifecycleState == LifecycleState.Completing)
+            if (_state == LifecycleState.Completing)
             {
                 rejected = true;
             }
@@ -346,27 +199,25 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
     {
         lock (_lifecycleGate)
         {
-            if (!admission.TryTransition(AdmissionState.Starting, AdmissionState.Active))
+            if (admission.TryTransition(AdmissionState.Starting, AdmissionState.Active))
             {
-                return;
+                _inFlightStarts--;
+                _activeContexts++;
             }
-
-            _inFlightStarts--;
-            _activeContexts++;
         }
     }
 
     private void FailAdmission(GlobalCoverageAdmission admission, GlobalCoverageFailureReason reason)
     {
-        var audit = false;
+        var completeNow = false;
         lock (_lifecycleGate)
         {
-            var priorState = admission.ReleaseState();
-            if (priorState == AdmissionState.Starting)
+            var previous = admission.ReleaseState();
+            if (previous == AdmissionState.Starting)
             {
                 _inFlightStarts--;
             }
-            else if (priorState == AdmissionState.Active)
+            else if (previous == AdmissionState.Active)
             {
                 _activeContexts--;
             }
@@ -375,11 +226,11 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
                 return;
             }
 
-            audit = _sealRequested && HasNoAdmissionsUnderLock();
+            completeNow = _sealRequested && HasNoAdmissionsUnderLock();
         }
 
         _accumulator.Suppress(reason);
-        if (audit)
+        if (completeNow)
         {
             CompleteSeal();
         }
@@ -387,134 +238,99 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
 
     private void ReleaseAdmission(GlobalCoverageAdmission admission)
     {
-        var audit = false;
+        var completeNow = false;
         lock (_lifecycleGate)
         {
             if (admission.ReleaseState() == AdmissionState.Active)
             {
                 _activeContexts--;
-                audit = _sealRequested && HasNoAdmissionsUnderLock();
+                completeNow = _sealRequested && HasNoAdmissionsUnderLock();
             }
         }
 
-        if (audit)
+        if (completeNow)
         {
             CompleteSeal();
         }
     }
 
-    private void ReleaseFinalizerAdmission()
+    private void ReleaseSnapshotAdmission()
     {
-        var audit = false;
+        var completeNow = false;
         lock (_lifecycleGate)
         {
-            if (_inFlightFinalizers > 0)
+            if (_inFlightSnapshots > 0)
             {
-                _inFlightFinalizers--;
-                audit = _sealRequested && HasNoAdmissionsUnderLock();
+                _inFlightSnapshots--;
+                completeNow = _sealRequested && HasNoAdmissionsUnderLock();
             }
         }
 
-        if (audit)
+        if (completeNow)
         {
             CompleteSeal();
         }
     }
 
     private bool HasNoAdmissionsUnderLock()
-        => _inFlightStarts == 0 && _activeContexts == 0 && _inFlightFinalizers == 0;
+        => _inFlightStarts == 0 && _activeContexts == 0 && _inFlightSnapshots == 0;
 
     private void CompleteSeal()
     {
-        var diagnostics = ContextDiagnostics;
-        var balanced = diagnostics.Started == diagnostics.Closed &&
-                       diagnostics.Closed == diagnostics.Disposed;
-        bool publishFinalSnapshot;
         lock (_lifecycleGate)
         {
-            if (_lifecycleState != LifecycleState.Completing ||
-                _sealCompletionStarted ||
-                !HasNoAdmissionsUnderLock())
+            if (_state != LifecycleState.Completing || _sealStarted || !HasNoAdmissionsUnderLock())
             {
                 return;
             }
 
-            _sealCompletionStarted = true;
-            publishFinalSnapshot = _publishFinalSnapshotOnSeal;
+            _sealStarted = true;
         }
 
-        // Admissions must be closed before capturing the terminal generation. Otherwise, a context
-        // that closes during finalization can merge into the replacement generation after the
-        // published snapshot and be omitted from the ready protocol set.
-        var finalSnapshotPublished = !publishFinalSnapshot || TryPublishFinalSnapshot();
-        using var stagedReadyMarkers = balanced && finalSnapshotPublished ? _outputManager.TryStageReadyMarkers(diagnostics) : null;
-        var complete = stagedReadyMarkers is not null &&
-                       _accumulator.TryFinalizeCompleteness(stagedReadyMarkers.Commit);
-        Action<bool>? sealCompleted;
+        LogContextDiagnostics(_accumulator.AcceptedContextCount);
+        var published = TryPublishFinalSnapshot();
+        var complete = published && _accumulator.TryFinalizeCompleteness(static () => { });
+
+        Action<bool>? callback;
         lock (_lifecycleGate)
         {
             _sealedComplete = complete;
-            _lifecycleState = LifecycleState.Sealed;
-            sealCompleted = _sealCompleted;
+            _state = LifecycleState.Sealed;
+            callback = _sealCompleted;
             _sealCompleted = null;
         }
 
-        InvokeSealCompleted(sealCompleted, complete);
+        InvokeSealCompleted(callback, complete);
 
-        var accumulatorDiagnostics = _accumulator.GetDiagnostics();
-        var processId = DomainMetadata.Instance.ProcessId;
-        TestOptimization.Instance.Log.Debug<int, long, long, long, long>(
-            "Global coverage context diagnostics: pid={ProcessId}, started={Started}, closed={Closed}, disposed={Disposed}, merged={Merged}.",
-            processId,
-            diagnostics.Started,
-            diagnostics.Closed,
-            diagnostics.Disposed,
-            accumulatorDiagnostics.AcceptedContextCount);
-        ModuleValue.LogNativeMemoryDiagnostics(processId);
+        ModuleValue.LogNativeMemoryDiagnostics(DomainMetadata.Instance.ProcessId);
     }
 
     private bool TryPublishFinalSnapshot()
     {
-        GlobalCoverageSnapshot? snapshot = null;
         try
         {
-            if (!_outputManager.EnsureConfiguredAndFreeze())
-            {
-                _accumulator.Suppress(GlobalCoverageFailureReason.OutputCommitFailed);
-                return false;
-            }
-
-            // Per-test buffers have already been compacted and released. The process-wide fallback
-            // is bounded by the instrumented modules, so capture it without changing probe lifetime.
             var result = _accumulator.AcquireSnapshot(GlobalContainer);
-            if (result.Status != GlobalCoverageSnapshotStatus.Success || result.Snapshot is not { } acquiredSnapshot)
+            if (result.Status != GlobalCoverageSnapshotStatus.Success || result.Snapshot is not { } snapshot)
             {
                 return false;
             }
 
-            snapshot = acquiredSnapshot;
-            InitializeSnapshotOutput(snapshot);
-            return TryPublishRequiredFiles(snapshot);
+            using (snapshot)
+            {
+                var published = false;
+                if (!_accumulator.TryCommit(snapshot, () => published = _outputManager.TryPublish(snapshot.Model)) || !published)
+                {
+                    _accumulator.Suppress(GlobalCoverageFailureReason.OutputCommitFailed);
+                    return false;
+                }
+
+                return true;
+            }
         }
         catch
         {
-            // CompleteSeal can run while a coverage context is unwinding. Keep cleanup non-throwing
-            // while leaving the process pending so reconciliation fails closed.
             _accumulator.Suppress(GlobalCoverageFailureReason.SnapshotFailed);
             return false;
-        }
-        finally
-        {
-            snapshot?.Dispose();
-        }
-    }
-
-    private void OnSnapshotDisposed(GlobalCoverageSnapshot snapshot)
-    {
-        _outputManager.RecordGenerationCommit(snapshot.RequiredOutputMask, snapshot.CommittedOutputMask);
-        if (snapshot.RequiredOutputMask != snapshot.CommittedOutputMask)
-        {
-            _accumulator.Suppress(GlobalCoverageFailureReason.OutputCommitFailed);
         }
     }
 
@@ -535,10 +351,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         private readonly DefaultWithGlobalCoverageEventHandler _owner;
         private int _state;
 
-        public GlobalCoverageAdmission(DefaultWithGlobalCoverageEventHandler owner)
-        {
-            _owner = owner;
-        }
+        public GlobalCoverageAdmission(DefaultWithGlobalCoverageEventHandler owner) => _owner = owner;
 
         public override void CommitInstalled() => _owner.CommitAdmission(this);
 
@@ -553,35 +366,19 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
             => (AdmissionState)Interlocked.Exchange(ref _state, (int)AdmissionState.Released);
     }
 
-    private sealed class FinalizerAdmission
+    private sealed class SnapshotAdmission
     {
         private readonly DefaultWithGlobalCoverageEventHandler _owner;
         private int _released;
 
-        public FinalizerAdmission(DefaultWithGlobalCoverageEventHandler owner)
-        {
-            _owner = owner;
-        }
+        public SnapshotAdmission(DefaultWithGlobalCoverageEventHandler owner) => _owner = owner;
 
         public void Release()
         {
             if (Interlocked.CompareExchange(ref _released, 1, 0) == 0)
             {
-                _owner.ReleaseFinalizerAdmission();
+                _owner.ReleaseSnapshotAdmission();
             }
         }
-    }
-
-    private sealed class StagedOutput
-    {
-        public StagedOutput(byte bit, GlobalCoverageStagedArtifact artifact)
-        {
-            Bit = bit;
-            Artifact = artifact;
-        }
-
-        public byte Bit { get; }
-
-        public GlobalCoverageStagedArtifact Artifact { get; }
     }
 }

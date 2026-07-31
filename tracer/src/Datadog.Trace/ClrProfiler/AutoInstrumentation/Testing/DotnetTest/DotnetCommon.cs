@@ -228,53 +228,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             return null;
         }
 
-        public static DotnetTestRunState CreateRunState(DotnetTestCommandKind commandKind)
-        {
-            var session = CreateSession();
-            if (IsDataCollectorDomain || IsVSTestArtifactsPostprocessCommand(Environment.CommandLine))
-            {
-                return DotnetTestRunState.CreateNotApplicable(commandKind, session);
-            }
-
-            var coveragePath = EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath);
-            if (StringUtil.IsNullOrWhiteSpace(coveragePath))
-            {
-                return DotnetTestRunState.CreateNotApplicable(commandKind, session);
-            }
-
-            try
-            {
-                var workingDirectory = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory);
-                if (StringUtil.IsNullOrWhiteSpace(workingDirectory))
-                {
-                    workingDirectory = Environment.CurrentDirectory;
-                }
-
-                var resolvedCoveragePath = Path.IsPathRooted(coveragePath)
-                                               ? Path.GetFullPath(coveragePath)
-                                               : Path.GetFullPath(Path.Combine(workingDirectory!, coveragePath));
-                EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoveragePath, resolvedCoveragePath);
-                var runId = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId) ?? TestOptimization.Instance.RunId;
-                var state = DotnetTestRunState.TryCreate(commandKind, session, resolvedCoveragePath, runId);
-                Log.Debug<DotnetTestCommandKind, DotnetTestReconciliationRole>(
-                    "RunCiCommand: Global coverage command {CommandKind} acquired reconciliation role {ReconciliationRole}.",
-                    commandKind,
-                    state.ReconciliationRole);
-                if (state.ReconciliationRole == DotnetTestReconciliationRole.SuppressedAuthorityFailure)
-                {
-                    MarkGlobalCoverageAuthorityFailure(resolvedCoveragePath);
-                }
-
-                return state;
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "RunCiCommand: Global coverage reconciliation authority could not be established.");
-                MarkGlobalCoverageAuthorityFailure(coveragePath!);
-                return DotnetTestRunState.CreateNotApplicable(commandKind, session);
-            }
-        }
-
         /// <summary>
         /// Detects the VSTest artifacts postprocess invocation started after the real test run when artifact collection is enabled.
         /// </summary>
@@ -310,40 +263,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
         }
 
         internal static void FinalizeSession(TestSession? session, int exitCode, Exception? exception)
-            => FinalizeSessionCore(session, exitCode, exception, allowInternalCoverage: true, runState: null);
-
-        public static void FinalizeRunState(DotnetTestRunState? runState, int exitCode, Exception? exception)
-        {
-            if (runState is null || !runState.TryBeginFinalization())
-            {
-                return;
-            }
-
-            runState.ReleaseActivity();
-            try
-            {
-                var canReconcile = runState.ReconciliationRole is DotnetTestReconciliationRole.ReconciliationOwner or
-                                                                  DotnetTestReconciliationRole.NonOwnerParticipant;
-                FinalizeSessionCore(runState.Session, exitCode, exception, canReconcile, runState);
-            }
-            finally
-            {
-                runState.Dispose();
-            }
-        }
-
-        private static void FinalizeSessionCore(TestSession? session, int exitCode, Exception? exception, bool allowInternalCoverage, DotnetTestRunState? runState)
         {
             if (session is null)
             {
                 if (TryConsumeInjectedSessionCoverletXmlFallbackEnabled())
                 {
                     TryProcessInjectedSessionCoverletCollectorXmlReports(recordIpcFailureOnFailure: true);
-                }
-
-                if (allowInternalCoverage && runState?.CoverageDirectory is { } ownerCoverageDirectory)
-                {
-                    TryFinalizeDatadogInternalCoverage(null, ownerCoverageDirectory, runState);
                 }
 
                 return;
@@ -361,9 +286,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             // If the code coverage path is set we try to read all json files created, merge them into a single one and extract the
             // global code coverage percentage.
             // Note: we also write the total global code coverage to the `session-coverage-{date}.json` file
-            if (allowInternalCoverage && !StringUtil.IsNullOrEmpty(codeCoveragePath))
+            if (!StringUtil.IsNullOrEmpty(codeCoveragePath))
             {
-                TryFinalizeDatadogInternalCoverage(session, codeCoveragePath!, runState);
+                TryFinalizeDatadogInternalCoverage(session, codeCoveragePath!);
             }
 
             try
@@ -406,15 +331,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
         }
 
-        private static void TryFinalizeDatadogInternalCoverage(TestSession? session, string codeCoveragePath, DotnetTestRunState? runState)
+        private static void TryFinalizeDatadogInternalCoverage(TestSession? session, string codeCoveragePath)
         {
-            GlobalCoverageReconciliationLease? reconciliationLease = null;
-            GlobalCoverageReconciliationAuthority? reconciliationAuthority = null;
             try
             {
-                reconciliationAuthority = runState?.TakeReconciliationAuthority();
                 var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.UtcNow:yyyy-MM-dd_HH_mm_ss_fffffff}-{Guid.NewGuid():N}.json");
-                if (!CoverageUtils.TryReadAndCombine(codeCoveragePath, outputPath, reconciliationAuthority, runState?.RunToken, out var globalCoverage, out reconciliationLease) ||
+                var runId = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId) ?? TestOptimization.Instance.RunId;
+                var runToken = GlobalCoverageProtocol.GetRunToken(runId);
+                if (!CoverageUtils.TryReadAndCombine(codeCoveragePath, outputPath, runToken, out var globalCoverage) ||
                     globalCoverage is null)
                 {
                     return;
@@ -438,14 +362,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
                 var writer = new GlobalCoverageArtifactWriter();
                 using var stagedOutput = writer.StageReplace(outputPath, globalCoverage);
-                if (reconciliationLease is null)
-                {
-                    stagedOutput.Commit();
-                }
-                else
-                {
-                    reconciliationLease.Complete(stagedOutput.Commit);
-                }
+                stagedOutput.Commit();
 
                 // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
                 if (session is not null &&
@@ -459,39 +376,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
                         executableLines: data[1],
                         coveredLines: data[2]);
                 }
-
-                if (reconciliationLease is not null && runState is not null)
-                {
-                    Log.Debug<DotnetTestCommandKind>(
-                        "RunCiCommand: Global coverage reconciliation completed by {CommandKind}.",
-                        runState.CommandKind);
-                }
             }
             catch (Exception ex)
             {
                 Log.Warning(ex, "RunCiCommand: Error while reading or backfilling Datadog internal code coverage.");
                 TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
-            }
-            finally
-            {
-                reconciliationLease?.Dispose();
-                reconciliationAuthority?.Dispose();
-            }
-        }
-
-        private static void MarkGlobalCoverageAuthorityFailure(string coveragePath)
-        {
-            try
-            {
-                if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler handler)
-                {
-                    handler.RegisterCollectorOutputDirectory(coveragePath);
-                    handler.MarkIncomplete(GlobalCoverageFailureReason.ReconciliationAuthorityFailed);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "RunCiCommand: Global coverage reconciliation failure could not create its pending blocker.");
             }
         }
 

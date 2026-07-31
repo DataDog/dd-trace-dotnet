@@ -58,21 +58,15 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
 
         action.Should().Throw<InvalidOperationException>().WithMessage("Injected coverage-end failure.");
         test.IsClosed.Should().BeTrue();
-        Test.ActiveTests.Should().NotContain(test);
-        handler.ContextDiagnostics.Started.Should().Be(1);
-        handler.ContextDiagnostics.Closed.Should().Be(1);
-        handler.ContextDiagnostics.Disposed.Should().Be(1);
         handler.Container.Should().BeNull();
     }
 
     private static void AssertBalancedSuppressedCoverage(DefaultWithGlobalCoverageEventHandler handler, GlobalCoverageFailureReason reason)
     {
-        handler.ActiveContexts.Should().Be(0);
-        handler.ContextDiagnostics.Started.Should().Be(1);
-        handler.ContextDiagnostics.Closed.Should().Be(1);
-        handler.ContextDiagnostics.Disposed.Should().Be(1);
-        handler.AccumulatorDiagnostics.IsValid.Should().BeFalse();
-        handler.AccumulatorDiagnostics.FailureReason.Should().Be(reason);
+        handler.Container.Should().BeNull();
+        var snapshotResult = handler.AcquireGlobalCoverageSnapshot();
+        snapshotResult.Status.Should().Be(GlobalCoverageSnapshotStatus.SuppressedIncomplete);
+        snapshotResult.FailureReason.Should().Be(reason);
     }
 
     private sealed class TestHarness : IDisposable

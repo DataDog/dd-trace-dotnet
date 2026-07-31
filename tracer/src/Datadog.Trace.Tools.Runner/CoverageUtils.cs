@@ -31,47 +31,29 @@ internal static class CoverageUtils
             return false;
         }
 
-        GlobalCoverageReconciliationLease reconciliationLease = null;
-        try
+        if (!TryLoadAndCombine(inputFolder, outputFile, out globalCoverageInfo, useStdOut))
         {
-            if (!TryLoadAndCombine(inputFolder, outputFile, out globalCoverageInfo, out reconciliationLease, useStdOut))
-            {
-                return false;
-            }
-
-            if (useStdOut)
-            {
-                Utils.WriteSuccess($"Writing {outputFile}");
-            }
-
-            var writer = new GlobalCoverageArtifactWriter();
-            using var stagedOutput = writer.StageReplace(outputFile, globalCoverageInfo);
-            if (reconciliationLease is null)
-            {
-                stagedOutput.Commit();
-            }
-            else
-            {
-                reconciliationLease.Complete(stagedOutput.Commit);
-            }
-
-            return true;
+            return false;
         }
-        finally
+
+        if (useStdOut)
         {
-            reconciliationLease?.Dispose();
+            Utils.WriteSuccess($"Writing {outputFile}");
         }
+
+        var writer = new GlobalCoverageArtifactWriter();
+        using var stagedOutput = writer.StageReplace(outputFile, globalCoverageInfo);
+        stagedOutput.Commit();
+        return true;
     }
 
     private static bool TryLoadAndCombine(
         string inputFolder,
         string outputFile,
         out GlobalCoverageInfo globalCoverageInfo,
-        out GlobalCoverageReconciliationLease reconciliationLease,
         bool useStdOut)
     {
         globalCoverageInfo = default;
-        reconciliationLease = null;
 
         if (string.IsNullOrEmpty(inputFolder))
         {
@@ -96,14 +78,13 @@ internal static class CoverageUtils
         var jsonFiles = Array.Empty<string>();
         try
         {
-            if (!GlobalCoverageFileCombiner.TryAcquireInputFiles(inputFolder, authority: null, expectedRunToken: null, out jsonFiles, out reconciliationLease))
+            if (!GlobalCoverageFileCombiner.TryAcquireInputFiles(inputFolder, expectedRunToken: null, out jsonFiles))
             {
                 return false;
             }
 
             if (jsonFiles.Length == 0)
             {
-                reconciliationLease?.Complete();
                 if (useStdOut)
                 {
                     Utils.WriteError($"'{inputFolder}' doesn't contain any json file.");
@@ -122,8 +103,8 @@ internal static class CoverageUtils
         if (!GlobalCoverageFileCombiner.TryCombine(
                 jsonFiles,
                 outputFile,
-                reconciliationLease,
-                onFileProcessed,
+                requireAllInputs: false,
+                onFileProcessed: onFileProcessed,
                 out globalCoverageInfo,
                 out var rejectedInput))
         {

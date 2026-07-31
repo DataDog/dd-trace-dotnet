@@ -35,8 +35,7 @@ internal sealed class GlobalCoverageAccumulator
     private readonly object _completenessGate = new();
     private readonly SemaphoreSlim _snapshotGate = new(1, 1);
     private readonly GlobalCoverageAccumulatorLimits _limits;
-    private Generation? _activeGeneration;
-    private long _nextGenerationId;
+    private CoverageState? _coverage;
     private int _suppressed;
     private int _failureReason;
     private long _completenessEpoch;
@@ -46,27 +45,22 @@ internal sealed class GlobalCoverageAccumulator
     public GlobalCoverageAccumulator(GlobalCoverageAccumulatorLimits? limits = null)
     {
         _limits = limits ?? GlobalCoverageAccumulatorLimits.Default;
-        _activeGeneration = CreateGeneration();
-    }
-
-    private enum SnapshotOwnership
-    {
-        PreSwap,
-        SwapMayHaveOccurred,
-        DetachedOwned,
+        _coverage = new CoverageState();
     }
 
     public bool IsSuppressed => Volatile.Read(ref _suppressed) != 0;
 
     public GlobalCoverageFailureReason FailureReason => (GlobalCoverageFailureReason)Volatile.Read(ref _failureReason);
 
+    public long AcceptedContextCount => Volatile.Read(ref _acceptedContextCount);
+
     private static bool IsRecoverable(Exception exception)
         => exception is OutOfMemoryException or OverflowException or GlobalCoverageLimitException or GlobalCoverageMetadataException;
 
-    private static GlobalCoverageInfo Materialize(Generation generation)
+    private static GlobalCoverageInfo Materialize(CoverageState coverage)
     {
         var globalCoverage = new GlobalCoverageInfo();
-        foreach (var pair in generation.Modules)
+        foreach (var pair in coverage.Modules)
         {
             var component = new ComponentCoverageInfo(pair.Key.Name);
             var metadata = pair.Value.Metadata;
@@ -77,7 +71,8 @@ internal sealed class GlobalCoverageAccumulator
                     new FileCoverageInfo(fileMetadata.Path)
                     {
                         ExecutableBitmap = fileMetadata.Bitmap,
-                        ExecutedBitmap = pair.Value.ExecutedBitmaps[i]
+                        // A snapshot outlives the merge lock, so it must not expose mutable accumulator storage.
+                        ExecutedBitmap = pair.Value.ExecutedBitmaps[i] is { } bitmap ? (byte[])bitmap.Clone() : null
                     });
             }
 
@@ -98,13 +93,13 @@ internal sealed class GlobalCoverageAccumulator
         {
             lock (_mergeGate)
             {
-                if (IsSuppressed || _activeGeneration is null)
+                if (IsSuppressed || _coverage is null)
                 {
                     return GlobalCoverageMergeResult.AlreadySuppressed;
                 }
 
-                MergeIntoGeneration(_activeGeneration, modules);
-                _activeGeneration.AcceptedContextCount++;
+                MergeIntoCoverage(_coverage, modules);
+                _coverage.AcceptedContextCount++;
                 _acceptedContextCount++;
 
                 return GlobalCoverageMergeResult.Merged;
@@ -124,7 +119,7 @@ internal sealed class GlobalCoverageAccumulator
             SuppressUnderCompletenessGate(reason);
         }
 
-        ClearActiveGeneration();
+        ClearCoverage();
     }
 
     public bool TryCommit(GlobalCoverageSnapshot snapshot, Action action)
@@ -150,7 +145,7 @@ internal sealed class GlobalCoverageAccumulator
 
         if (exception is not null)
         {
-            ClearActiveGeneration();
+            ClearCoverage();
             exception.Throw();
         }
 
@@ -182,17 +177,17 @@ internal sealed class GlobalCoverageAccumulator
 
         if (failed)
         {
-            ClearActiveGeneration();
+            ClearCoverage();
         }
 
         return false;
     }
 
-    private void ClearActiveGeneration()
+    private void ClearCoverage()
     {
         lock (_mergeGate)
         {
-            _activeGeneration = null;
+            _coverage = null;
         }
     }
 
@@ -214,8 +209,6 @@ internal sealed class GlobalCoverageAccumulator
     {
         _snapshotGate.Wait();
         var releaseSnapshotGate = true;
-        var ownership = SnapshotOwnership.PreSwap;
-        Generation? detached = null;
         try
         {
             if (IsSuppressed)
@@ -223,35 +216,31 @@ internal sealed class GlobalCoverageAccumulator
                 return GlobalCoverageSnapshotResult.Suppressed(FailureReason);
             }
 
-            var replacement = CreateGeneration();
+            GlobalCoverageInfo model;
+            long acceptedContextCount;
             lock (_mergeGate)
             {
-                if (IsSuppressed || _activeGeneration is null)
+                if (IsSuppressed || _coverage is null)
                 {
                     return GlobalCoverageSnapshotResult.Suppressed(FailureReason);
                 }
 
-                var captured = _activeGeneration;
-                ownership = SnapshotOwnership.SwapMayHaveOccurred;
-                _activeGeneration = replacement;
-                detached = captured;
-                ownership = SnapshotOwnership.DetachedOwned;
-            }
-
-            if (globalContainer is not null)
-            {
-                var globalModules = globalContainer.SnapshotModules(_limits.MaximumModules);
-                var globalCoverage = new ModuleCoverageData[globalModules.Length];
-                for (var i = 0; i < globalModules.Length; i++)
+                if (globalContainer is not null)
                 {
-                    globalCoverage[i] = ModuleCoverageData.Capture(globalModules[i]);
+                    var globalModules = globalContainer.SnapshotModules(_limits.MaximumModules);
+                    var globalCoverage = new ModuleCoverageData[globalModules.Length];
+                    for (var i = 0; i < globalModules.Length; i++)
+                    {
+                        globalCoverage[i] = ModuleCoverageData.Capture(globalModules[i]);
+                    }
+
+                    MergeIntoCoverage(_coverage, globalCoverage);
                 }
 
-                MergeIntoGeneration(detached, globalCoverage);
+                model = Materialize(_coverage);
+                _ = model.GetTotalPercentage();
+                acceptedContextCount = _coverage.AcceptedContextCount;
             }
-
-            var model = Materialize(detached);
-            _ = model.GetTotalPercentage();
 
             lock (_completenessGate)
             {
@@ -260,7 +249,7 @@ internal sealed class GlobalCoverageAccumulator
                     return GlobalCoverageSnapshotResult.Suppressed(FailureReason);
                 }
 
-                var snapshot = new GlobalCoverageSnapshot(model, detached.Id, detached.AcceptedContextCount, _completenessEpoch, _snapshotGate, releaseAdmission);
+                var snapshot = new GlobalCoverageSnapshot(model, acceptedContextCount, _completenessEpoch, _snapshotGate, releaseAdmission);
                 releaseSnapshotGate = false;
                 return GlobalCoverageSnapshotResult.Success(snapshot);
             }
@@ -272,11 +261,7 @@ internal sealed class GlobalCoverageAccumulator
         }
         catch
         {
-            if (ownership != SnapshotOwnership.PreSwap)
-            {
-                Suppress(GlobalCoverageFailureReason.SnapshotFailed);
-            }
-
+            Suppress(GlobalCoverageFailureReason.SnapshotFailed);
             throw;
         }
         finally
@@ -288,46 +273,28 @@ internal sealed class GlobalCoverageAccumulator
         }
     }
 
-    public GlobalCoverageAccumulatorSnapshot GetDiagnostics()
-    {
-        lock (_mergeGate)
-        {
-            var generation = _activeGeneration;
-            return new GlobalCoverageAccumulatorSnapshot(
-                generation?.Id ?? 0,
-                generation?.RetainedBitmapBytes ?? 0,
-                generation?.Modules.Count ?? 0,
-                generation?.FileSlotCount ?? 0,
-                _acceptedContextCount,
-                !IsSuppressed,
-                FailureReason);
-        }
-    }
-
-    private Generation CreateGeneration() => new(Interlocked.Increment(ref _nextGenerationId));
-
-    private void MergeIntoGeneration(Generation generation, IReadOnlyList<ModuleCoverageData> modules)
+    private void MergeIntoCoverage(CoverageState coverage, IReadOnlyList<ModuleCoverageData> modules)
     {
         foreach (var moduleCoverage in modules)
         {
             var metadata = moduleCoverage.Metadata;
 
-            if (!generation.Modules.TryGetValue(moduleCoverage.Module, out var moduleEntry))
+            if (!coverage.Modules.TryGetValue(moduleCoverage.Module, out var moduleEntry))
             {
-                if (generation.Modules.Count >= _limits.MaximumModules)
+                if (coverage.Modules.Count >= _limits.MaximumModules)
                 {
                     throw new GlobalCoverageLimitException("The global coverage module limit was exceeded.");
                 }
 
-                var newFileSlotCount = checked(generation.FileSlotCount + metadata.Files.Length);
+                var newFileSlotCount = checked(coverage.FileSlotCount + metadata.Files.Length);
                 if (newFileSlotCount > _limits.MaximumFileSlots)
                 {
                     throw new GlobalCoverageLimitException("The global coverage file-slot limit was exceeded.");
                 }
 
                 moduleEntry = new ModuleEntry(metadata);
-                generation.Modules.Add(moduleCoverage.Module, moduleEntry);
-                generation.FileSlotCount = newFileSlotCount;
+                coverage.Modules.Add(moduleCoverage.Module, moduleEntry);
+                coverage.FileSlotCount = newFileSlotCount;
             }
             else if (!ReferenceEquals(moduleEntry.Metadata, metadata))
             {
@@ -350,7 +317,7 @@ internal sealed class GlobalCoverageAccumulator
                 }
 
                 var executedBitmap = moduleEntry.ExecutedBitmaps[fileIndex];
-                executedBitmap ??= AllocateBitmap(generation, file.LastExecutableLine);
+                executedBitmap ??= AllocateBitmap(coverage, file.LastExecutableLine);
                 for (var byteIndex = 0; byteIndex < sourceBitmap.Length; byteIndex++)
                 {
                     executedBitmap[byteIndex] |= sourceBitmap[byteIndex];
@@ -361,7 +328,7 @@ internal sealed class GlobalCoverageAccumulator
         }
     }
 
-    private byte[] AllocateBitmap(Generation generation, int lineCount)
+    private byte[] AllocateBitmap(CoverageState coverage, int lineCount)
     {
         var byteLength = FileBitmap.GetSize(lineCount);
         if (byteLength > _limits.MaximumSingleBitmapBytes)
@@ -369,26 +336,19 @@ internal sealed class GlobalCoverageAccumulator
             throw new GlobalCoverageLimitException("A global coverage bitmap exceeds the per-file limit.");
         }
 
-        var retainedBytes = checked(generation.RetainedBitmapBytes + byteLength);
-        if (retainedBytes > _limits.MaximumBitmapBytesPerGeneration)
+        var retainedBytes = checked(coverage.RetainedBitmapBytes + byteLength);
+        if (retainedBytes > _limits.MaximumRetainedBitmapBytes)
         {
             throw new GlobalCoverageLimitException("The global coverage bitmap budget was exceeded.");
         }
 
         var bitmap = new byte[byteLength];
-        generation.RetainedBitmapBytes = retainedBytes;
+        coverage.RetainedBitmapBytes = retainedBytes;
         return bitmap;
     }
 
-    private sealed class Generation
+    private sealed class CoverageState
     {
-        public Generation(long id)
-        {
-            Id = id;
-        }
-
-        public long Id { get; }
-
         public Dictionary<Module, ModuleEntry> Modules { get; } = new();
 
         public int RetainedBitmapBytes { get; set; }

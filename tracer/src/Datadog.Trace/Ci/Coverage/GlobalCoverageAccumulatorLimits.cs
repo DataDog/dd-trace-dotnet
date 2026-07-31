@@ -11,17 +11,17 @@ internal sealed class GlobalCoverageAccumulatorLimits
 {
     public static readonly GlobalCoverageAccumulatorLimits Default = new(8 * 1024 * 1024, 64 * 1024 * 1024, 10_000, 100_000);
 
-    public GlobalCoverageAccumulatorLimits(int maximumSingleBitmapBytes, int maximumBitmapBytesPerGeneration, int maximumModules, int maximumFileSlots)
+    public GlobalCoverageAccumulatorLimits(int maximumSingleBitmapBytes, int maximumRetainedBitmapBytes, int maximumModules, int maximumFileSlots)
     {
         MaximumSingleBitmapBytes = maximumSingleBitmapBytes;
-        MaximumBitmapBytesPerGeneration = maximumBitmapBytesPerGeneration;
+        MaximumRetainedBitmapBytes = maximumRetainedBitmapBytes;
         MaximumModules = maximumModules;
         MaximumFileSlots = maximumFileSlots;
     }
 
     public int MaximumSingleBitmapBytes { get; }
 
-    public int MaximumBitmapBytesPerGeneration { get; }
+    public int MaximumRetainedBitmapBytes { get; }
 
     public int MaximumModules { get; }
 

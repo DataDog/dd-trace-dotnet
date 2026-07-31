@@ -40,12 +40,8 @@ public class CoverageEventHandlerTests
 
         await closeTask;
 
-        var contextDiagnostics = handler.ContextDiagnostics;
-        contextDiagnostics.Started.Should().Be(2);
-        contextDiagnostics.Closed.Should().Be(2);
-        contextDiagnostics.Disposed.Should().Be(2);
-        handler.ActiveContexts.Should().Be(0);
-        handler.AccumulatorDiagnostics.AcceptedContextCount.Should().Be(2);
+        using var snapshot = handler.AcquireGlobalCoverageSnapshot().Snapshot!;
+        snapshot.MergedContextCount.Should().Be(2);
         firstHandle.Context!.SnapshotModules().Should().BeEmpty();
         secondHandle.Context!.SnapshotModules().Should().BeEmpty();
     }
@@ -218,18 +214,6 @@ public class CoverageEventHandlerTests
             module.FilesLines.Should().Be(IntPtr.Zero, "closed contexts must release native buffers immediately");
             module.AllocatedByteLength.Should().Be(0);
         }
-
-        var contextDiagnostics = handler.ContextDiagnostics;
-        contextDiagnostics.Started.Should().Be(contextCount);
-        contextDiagnostics.Closed.Should().Be(contextCount);
-        contextDiagnostics.Disposed.Should().Be(contextCount);
-
-        var accumulator = handler.AccumulatorDiagnostics;
-        accumulator.RetainedBitmapBytes.Should().Be(expectedExecutedBitmap.Length);
-        accumulator.ModuleCount.Should().Be(1);
-        accumulator.FileSlotCount.Should().Be(1);
-        accumulator.AcceptedContextCount.Should().Be(contextCount);
-        accumulator.IsValid.Should().BeTrue();
 
         using var snapshot = handler.AcquireGlobalCoverageSnapshot().Snapshot!;
         snapshot.MergedContextCount.Should().Be(contextCount);

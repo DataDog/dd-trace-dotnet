@@ -63,7 +63,7 @@ public class GlobalCoverageAccumulatorTests
     public unsafe void ExceedingBitmapBudgetSuppressesGlobalCoverageButFreesNativeContext()
     {
         var handler = new DefaultWithGlobalCoverageEventHandler(
-            new GlobalCoverageAccumulatorLimits(maximumSingleBitmapBytes: 0, maximumBitmapBytesPerGeneration: 0, maximumModules: 1, maximumFileSlots: 1));
+            new GlobalCoverageAccumulatorLimits(maximumSingleBitmapBytes: 0, maximumRetainedBitmapBytes: 0, maximumModules: 1, maximumFileSlots: 1));
         var metadata = new TestModuleCoverageMetadata(8, 0, [new FileCoverageMetadata("/src/limit.cs", 0, 8, [0xff])]);
         var handle = handler.StartSession("xunit");
         handler.Container!.TryGetOrAddModuleValue(
@@ -79,8 +79,9 @@ public class GlobalCoverageAccumulatorTests
 
         module.FilesLines.Should().Be(IntPtr.Zero);
         module.AllocatedByteLength.Should().Be(0);
-        handler.AccumulatorDiagnostics.IsValid.Should().BeFalse();
-        handler.AcquireGlobalCoverageSnapshot().Status.Should().Be(GlobalCoverageSnapshotStatus.SuppressedIncomplete);
+        var snapshotResult = handler.AcquireGlobalCoverageSnapshot();
+        snapshotResult.Status.Should().Be(GlobalCoverageSnapshotStatus.SuppressedIncomplete);
+        snapshotResult.FailureReason.Should().Be(GlobalCoverageFailureReason.MergeFailed);
     }
 
     [Fact]
@@ -110,10 +111,10 @@ public class GlobalCoverageAccumulatorTests
         var action = () => handler.TryCommit(snapshot, () => throw expected);
 
         action.Should().Throw<InvalidOperationException>().Which.Should().BeSameAs(expected);
-        handler.AccumulatorDiagnostics.IsValid.Should().BeFalse();
-        handler.AccumulatorDiagnostics.FailureReason.Should().Be(GlobalCoverageFailureReason.OutputCommitFailed);
         snapshot.Dispose();
-        handler.AcquireGlobalCoverageSnapshot().Status.Should().Be(GlobalCoverageSnapshotStatus.SuppressedIncomplete);
+        var suppressed = handler.AcquireGlobalCoverageSnapshot();
+        suppressed.Status.Should().Be(GlobalCoverageSnapshotStatus.SuppressedIncomplete);
+        suppressed.FailureReason.Should().Be(GlobalCoverageFailureReason.OutputCommitFailed);
     }
 
     [Fact]
@@ -135,16 +136,14 @@ public class GlobalCoverageAccumulatorTests
         var handler = new DefaultWithGlobalCoverageEventHandler();
         var result = handler.AcquireGlobalCoverageSnapshot();
         var snapshot = result.Snapshot!;
+        var completed = false;
 
-        handler.RequestSeal().Should().BeFalse();
-        handler.State.Should().Be(DefaultWithGlobalCoverageEventHandler.LifecycleState.Completing);
-        handler.InFlightFinalizers.Should().Be(1);
+        handler.FinalizeAndSeal(value => completed = value).Should().BeFalse();
+        completed.Should().BeFalse();
 
         snapshot.Dispose();
 
-        handler.State.Should().Be(DefaultWithGlobalCoverageEventHandler.LifecycleState.Sealed);
-        handler.SealedComplete.Should().BeTrue();
-        handler.InFlightFinalizers.Should().Be(0);
+        completed.Should().BeTrue();
         handler.AcquireGlobalCoverageSnapshot().Status.Should().Be(GlobalCoverageSnapshotStatus.SuppressedIncomplete);
     }
 
@@ -154,27 +153,25 @@ public class GlobalCoverageAccumulatorTests
         var handler = new DefaultWithGlobalCoverageEventHandler();
         var handle = handler.StartSession("xunit");
 
-        handler.RequestSeal().Should().BeFalse();
+        var completed = false;
+        handler.FinalizeAndSeal(value => completed = value).Should().BeFalse();
         handler.StartSession("xunit").IsValid.Should().BeFalse();
         handler.EndSession(handle);
 
-        handler.State.Should().Be(DefaultWithGlobalCoverageEventHandler.LifecycleState.Sealed);
-        handler.SealedComplete.Should().BeFalse();
-        handler.ActiveContexts.Should().Be(0);
-        handler.InFlightStarts.Should().Be(0);
+        completed.Should().BeFalse();
+        handler.AcquireGlobalCoverageSnapshot().Status.Should().Be(GlobalCoverageSnapshotStatus.SuppressedIncomplete);
     }
 
     [Fact]
     public void StartAfterSealThrowsBeforeCreatingAContext()
     {
         var handler = new DefaultWithGlobalCoverageEventHandler();
-        handler.RequestSeal().Should().BeTrue();
+        handler.FinalizeAndSeal().Should().BeTrue();
 
         var action = () => handler.StartSession("xunit");
 
         action.Should().Throw<InvalidOperationException>();
         handler.Container.Should().BeNull();
-        handler.ContextDiagnostics.Started.Should().Be(0);
     }
 
     [Fact]
@@ -200,12 +197,11 @@ public class GlobalCoverageAccumulatorTests
         snapshot.Model.Data[0].Should().Be(20.83);
         snapshot.Model.Data[1].Should().Be(24);
         snapshot.Model.Data[2].Should().Be(5);
-        handler.AccumulatorDiagnostics.AcceptedContextCount.Should().Be(3, "diagnostics report the process total across detached generations");
         snapshot.MergedContextCount.Should().Be(3);
     }
 
     [Fact]
-    public unsafe void ContextClosedAfterGenerationSwapAppearsOnlyInNextSnapshot()
+    public unsafe void ContextClosedAfterSnapshotAppearsInTheNextSnapshot()
     {
         var handler = new DefaultWithGlobalCoverageEventHandler();
         var metadata = new TestModuleCoverageMetadata(8, 0, [new FileCoverageMetadata("/src/late.cs", 0, 8, [0xff])]);

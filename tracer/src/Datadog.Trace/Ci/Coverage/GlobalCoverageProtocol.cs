@@ -11,28 +11,14 @@ using System.Text;
 
 namespace Datadog.Trace.Ci.Coverage;
 
-// Keep the on-disk vocabulary and identity hashing shared by producers and consumers. Directory
-// resolution stays with each caller because producers resolve against a captured base directory,
-// while reconciliation intentionally resolves the directory supplied at consumption time.
+// Keep the small on-disk vocabulary and run identity hashing shared by producers and consumers.
 internal static class GlobalCoverageProtocol
 {
-    public const int MarkerMaximumBytes = 128 * 1024;
     public const string PendingMarkerPrefix = ".dd-coverage-process-incomplete-";
-    public const string ReadyMarkerPrefix = ".dd-coverage-process-ready-";
-    public const string CommandOwnerClaimPrefix = ".dd-coverage-command-owner-";
-    public const string ClaimExtension = ".claim";
-    public const string PublicationLockFileName = ".dd-coverage-process-reconcile.lock";
-    public const string RunActivityLockPrefix = ".dd-coverage-run-activity-";
-    public const string LockExtension = ".lock";
     public const string CoverageFilePrefix = "coverage-";
     public const string JsonExtension = ".json";
     public const string PendingMarkerPattern = PendingMarkerPrefix + "*";
-    public const string ReadyMarkerPattern = ReadyMarkerPrefix + "*";
-    public const string CommandOwnerClaimPattern = CommandOwnerClaimPrefix + "*" + ClaimExtension;
     public const string CoverageFilePattern = CoverageFilePrefix + "*" + JsonExtension;
-    public const string DotnetTestClaimKind = "dotnet-test";
-    public const string VSTestExecutorClaimKind = "vstest-executor";
-    public const string CollectorClaimKind = "collector";
 
     private static readonly Encoding Utf8WithoutBom = new UTF8Encoding(false, true);
 
@@ -63,18 +49,6 @@ internal static class GlobalCoverageProtocol
     public static string GetPendingMarkerFileName(string processIdentity)
         => PendingMarkerPrefix + processIdentity;
 
-    public static string GetReadyMarkerFileName(string processIdentity)
-        => ReadyMarkerPrefix + processIdentity;
-
-    public static string GetCommandOwnerClaimFileName(string runToken)
-        => CommandOwnerClaimPrefix + runToken + ClaimExtension;
-
-    public static string GetRunActivityLockFileName(string runToken)
-        => RunActivityLockPrefix + runToken + LockExtension;
-
-    public static string GetCoverageGenerationPrefix(string processIdentity)
-        => $"{CoverageFilePrefix}{processIdentity}-";
-
-    public static string GetCoverageFileName(string processIdentity, long generationId)
-        => $"{GetCoverageGenerationPrefix(processIdentity)}{generationId.ToString(CultureInfo.InvariantCulture)}{JsonExtension}";
+    public static string GetCoverageFileName(string processIdentity)
+        => $"{CoverageFilePrefix}{processIdentity}{JsonExtension}";
 }

@@ -161,6 +161,31 @@ public class GlobalCoverageConsumerTests
     }
 
     [Fact]
+    public void RunScopedCombinerRejectsMalformedProcessArtifact()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "{not-json", new UTF8Encoding(false));
+
+            GlobalCoverageFileCombiner.TryCombine(
+                [path],
+                outputFile: null,
+                requireAllInputs: true,
+                onFileProcessed: null,
+                out var coverage,
+                out var rejectedInput).Should().BeFalse();
+
+            coverage.Should().BeNull();
+            rejectedInput.Should().Be(path);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void ArtifactWriterPublishesUtf8WithoutBomAndReaderAcceptsIt()
     {
         var directory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"))).FullName;

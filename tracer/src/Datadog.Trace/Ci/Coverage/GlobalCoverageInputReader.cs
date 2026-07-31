@@ -40,9 +40,6 @@ internal sealed class GlobalCoverageInputReader
     }
 
     public bool TryRead(string path, out GlobalCoverageInfo? model)
-        => TryRead(path, expectedInput: null, out model);
-
-    public bool TryRead(string path, GlobalCoverageCertifiedInput? expectedInput, out GlobalCoverageInfo? model)
     {
         model = null;
         try
@@ -54,14 +51,8 @@ internal sealed class GlobalCoverageInputReader
                 return false;
             }
 
-            if (expectedInput is not null && expectedInput.Length != expectedLength)
-            {
-                return false;
-            }
-
             var preflightHash = RunPreflight(stream);
-            if (stream.Length != expectedLength ||
-                (expectedInput is not null && !HashesMatch(expectedInput.Hash, preflightHash)))
+            if (stream.Length != expectedLength)
             {
                 return false;
             }

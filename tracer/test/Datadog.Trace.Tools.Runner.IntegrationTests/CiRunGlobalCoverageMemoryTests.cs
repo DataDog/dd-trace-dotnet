@@ -40,22 +40,6 @@ public sealed class CiRunGlobalCoverageMemoryTests
         _output = output;
     }
 
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    [Trait("Category", "EndToEnd")]
-    [Trait("Category", "TestIntegrations")]
-    public void DotnetTestSdk10OuterCommandHook()
-    {
-        Skip.IfNot(FrameworkDescription.Instance.IsWindows());
-        AssertSdk10();
-
-        RunStress(
-            packageVersion: "6.0.0",
-            expectedCaseCount: 1,
-            includeCoverlet: false,
-            useDotnetTest: true);
-    }
-
     [SkippableTheory]
     [InlineData("3.2.0")]
     [InlineData("6.0.0")]
@@ -69,28 +53,17 @@ public sealed class CiRunGlobalCoverageMemoryTests
         RunStress(
             packageVersion: coverletVersion,
             expectedCaseCount: 6_000,
-            includeCoverlet: true,
-            useDotnetTest: false);
+            includeCoverlet: true);
     }
 
     private void RunStress(
         string packageVersion,
         int expectedCaseCount,
-        bool includeCoverlet,
-        bool useDotnetTest)
+        bool includeCoverlet)
     {
         var environmentHelper = new EnvironmentHelper(SampleName, typeof(CiRunGlobalCoverageMemoryTests), _output);
-        var sampleAssembly = environmentHelper.GetTestCommandForSampleApplicationPath(useDotnetTest ? string.Empty : packageVersion, "net8.0");
+        var sampleAssembly = environmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, "net8.0");
         File.Exists(sampleAssembly).Should().BeTrue($"the required sample output must be present at {sampleAssembly}");
-        var sampleProject = useDotnetTest ? Path.Combine(environmentHelper.GetSampleProjectDirectory(), $"Samples.{SampleName}.csproj") : null;
-        if (sampleProject is not null)
-        {
-            File.Exists(sampleProject).Should().BeTrue($"the required sample project must be present at {sampleProject}");
-
-            // The Windows integration-test stage downloads the sample's published bin output, but not its obj directory.
-            // Restore without overriding ApiVersion so this command and the subsequent build use the same intermediate path.
-            RestoreSampleProject(environmentHelper.GetDotnetExe(), sampleProject);
-        }
 
         var runnerDirectory = GetRunnerDirectory();
         var runnerAssembly = Path.Combine(runnerDirectory, "Datadog.Trace.Tools.Runner.dll");
@@ -108,9 +81,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
         using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
         var logDirectory = Directory.CreateDirectory(Path.Combine(root.RootPath, "logs")).FullName;
         var progressPath = Path.Combine(root.RootPath, "progress.jsonl");
-        var targetCommand = useDotnetTest
-                                ? CreateDotnetTestCommand(environmentHelper, sampleProject!)
-                                : CreateVstestCommand(environmentHelper.GetDotnetExe(), sampleAssembly, includeCoverlet);
+        var targetCommand = CreateVstestCommand(environmentHelper.GetDotnetExe(), sampleAssembly, includeCoverlet);
         var arguments = CreateCiRunArguments(
             environmentHelper.MonitoringHome,
             agent.Port,
@@ -123,14 +94,10 @@ public sealed class CiRunGlobalCoverageMemoryTests
         var result = RunRunner(environmentHelper.GetDotnetExe(), runnerAssembly, arguments, logDirectory);
         result.ExitCode.Should().Be(0, result.Error);
 
-        AssertLaunch(result.Output, runnerDirectory, sampleProject);
+        AssertLaunch(result.Output, runnerDirectory);
         var testhostProcessId = AssertProgress(progressPath, expectedCaseCount);
         AssertPublishedCoverage(coverageDirectory, expectedCaseCount);
         AssertCoverageDiagnostics(logDirectory, testhostProcessId, expectedCaseCount);
-        if (useDotnetTest)
-        {
-            AssertOuterCommandReconciliation(logDirectory);
-        }
 
         static string GetRunnerDirectory()
         {
@@ -191,92 +158,6 @@ public sealed class CiRunGlobalCoverageMemoryTests
         return new ProcessResult(process.ExitCode, output, error);
     }
 
-    private void RestoreSampleProject(string dotnetExecutable, string sampleProject)
-    {
-        using var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = dotnetExecutable,
-                WorkingDirectory = EnvironmentTools.GetSolutionDirectory(),
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-            }
-        };
-        process.StartInfo.ArgumentList.Add("restore");
-        process.StartInfo.ArgumentList.Add(sampleProject);
-
-        process.Start().Should().BeTrue();
-        var outputTask = process.StandardOutput.ReadToEndAsync();
-        var errorTask = process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit((int)TimeSpan.FromMinutes(5).TotalMilliseconds))
-        {
-            process.Kill(entireProcessTree: true);
-            process.WaitForExit();
-            throw new TimeoutException("Restoring the SDK 10 global coverage sample exceeded 5 minutes.");
-        }
-
-        var output = outputTask.GetAwaiter().GetResult();
-        var error = errorTask.GetAwaiter().GetResult();
-        _output.WriteLine(output);
-        if (!string.IsNullOrWhiteSpace(error))
-        {
-            _output.WriteLine(error);
-        }
-
-        process.ExitCode.Should().Be(0, error);
-    }
-
-    private void AssertSdk10()
-    {
-        using var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "dotnet",
-                Arguments = "--version",
-                WorkingDirectory = EnvironmentTools.GetSolutionDirectory(),
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true,
-            }
-        };
-
-        process.Start().Should().BeTrue();
-        if (!process.WaitForExit((int)TimeSpan.FromSeconds(30).TotalMilliseconds))
-        {
-            process.Kill(entireProcessTree: true);
-            process.WaitForExit();
-            throw new TimeoutException("The .NET SDK version preflight exceeded 30 seconds.");
-        }
-
-        var versionText = process.StandardOutput.ReadToEnd().Trim();
-        var error = process.StandardError.ReadToEnd();
-        process.ExitCode.Should().Be(0, error);
-        Version.TryParse(versionText, out var version).Should().BeTrue($"'{versionText}' must be a .NET SDK version");
-        version!.Major.Should().Be(10, "this smoke test must exercise the .NET SDK 10 TestCommand integration");
-    }
-
-    private string[] CreateDotnetTestCommand(EnvironmentHelper environmentHelper, string sampleProject)
-        =>
-        [
-            environmentHelper.GetDotnetExe(),
-            "test",
-            // Passing a test DLL selects VSTest directly and bypasses the .NET SDK 10 outer TestCommand hook that owns
-            // global coverage reconciliation. This path deliberately builds the project because the Windows integration-test
-            // artifact contains the published bin output but not the complete MSBuild state required by `dotnet test --no-build`.
-            sampleProject,
-            "--configuration",
-            EnvironmentTools.GetBuildConfiguration(),
-            "--no-restore",
-            // Roslyn's shared compiler outlives `dotnet test` and keeps its native-loader log open on Windows. Disable it for
-            // this isolated smoke test so the test-owned log directory can be removed deterministically after validation.
-            "/p:UseSharedCompilation=false"
-        ];
-
     private string[] CreateVstestCommand(
         string dotnetExecutable,
         string sampleAssembly,
@@ -333,7 +214,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
         return arguments.ToArray();
     }
 
-    private void AssertLaunch(string output, string runnerDirectory, string? sampleProject)
+    private void AssertLaunch(string output, string runnerDirectory)
     {
         var launchLine = output.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries)
                                .Should()
@@ -342,19 +223,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
         var datadogCollectorCount = Regex.Matches(launchLine, @"(?<!\w)(?:/Collect:)?DatadogCoverage(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count;
         datadogCollectorCount.Should().Be(1, "dd-trace ci run must inject exactly one Datadog coverage collector");
 
-        if (sampleProject is not null)
-        {
-            Regex.Matches(launchLine, @"(?<!\w)--test-adapter-path(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count.Should().Be(1);
-            launchLine.Should().Contain(runnerDirectory);
-            launchLine.Should().Contain(sampleProject);
-            launchLine.Should().Contain($"--configuration {EnvironmentTools.GetBuildConfiguration()}");
-            launchLine.Should().NotContain("--no-build");
-            launchLine.Should().Contain("--no-restore");
-        }
-        else
-        {
-            Regex.Matches(launchLine, Regex.Escape($"/TestAdapterPath:{runnerDirectory}"), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count.Should().Be(1);
-        }
+        Regex.Matches(launchLine, Regex.Escape($"/TestAdapterPath:{runnerDirectory}"), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count.Should().Be(1);
     }
 
     private int AssertProgress(string progressPath, int expectedCaseCount)
@@ -404,13 +273,8 @@ public sealed class CiRunGlobalCoverageMemoryTests
         AssertLine(sampleFile.ExecutableBitmap, LastCoverageSentinelLine, expected: true);
         AssertLine(sampleFile.ExecutedBitmap, LastCoverageSentinelLine, expected: expectedCaseCount > 1);
 
-        Directory.GetFiles(coverageDirectory, "coverage-*.json", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+        Directory.GetFiles(coverageDirectory, GlobalCoverageProtocol.CoverageFilePattern, SearchOption.TopDirectoryOnly).Should().NotBeEmpty();
         Directory.GetFiles(coverageDirectory, ".dd-coverage-process-incomplete-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
-        Directory.GetFiles(coverageDirectory, ".dd-coverage-process-ready-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
-        Directory.GetFiles(coverageDirectory, ".dd-coverage-command-owner-*.claim", SearchOption.TopDirectoryOnly).Should().BeEmpty();
-        var completedDirectory = Path.Combine(coverageDirectory, ".dd-coverage-completed");
-        Directory.Exists(completedDirectory).Should().BeTrue();
-        Directory.GetFiles(completedDirectory, "coverage-*.json", SearchOption.AllDirectories).Should().NotBeEmpty();
     }
 
     private void AssertLine(byte[]? bitmap, int line, bool expected)
@@ -421,19 +285,6 @@ public sealed class CiRunGlobalCoverageMemoryTests
         bitmap!.Length.Should().BeGreaterThan(byteIndex);
         var mask = (byte)(128 >> (zeroBasedLine & 7));
         ((bitmap[byteIndex] & mask) != 0).Should().Be(expected, $"line {line} should have the expected coverage state");
-    }
-
-    private void AssertOuterCommandReconciliation(string logDirectory)
-    {
-        var logFiles = Directory.GetFiles(logDirectory, "*.log", SearchOption.AllDirectories);
-        logFiles.Should().NotBeEmpty();
-        ContainsLine("Global coverage command \"DotnetTestCommand\" acquired reconciliation role \"ReconciliationOwner\".").Should()
-                                                                                                             .BeTrue("the .NET SDK 10 outer TestCommand hook must own reconciliation");
-        ContainsLine("Global coverage reconciliation completed by \"DotnetTestCommand\".").Should()
-                                                                                       .BeTrue("the outer TestCommand hook must complete publication");
-
-        bool ContainsLine(string text)
-            => logFiles.Any(file => File.ReadLines(file).Any(line => line.Contains(text, StringComparison.Ordinal)));
     }
 
     private void AssertCoverageDiagnostics(string logDirectory, int testhostProcessId, int expectedCaseCount)

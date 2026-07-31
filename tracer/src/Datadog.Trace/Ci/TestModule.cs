@@ -418,7 +418,6 @@ public sealed class TestModule
                     var globalCoverage = snapshot.Model;
                     try
                     {
-                        coverageHandler.TryPublishRequiredFiles(snapshot);
                         coverageHandler.TryCommit(
                             snapshot,
                             () =>

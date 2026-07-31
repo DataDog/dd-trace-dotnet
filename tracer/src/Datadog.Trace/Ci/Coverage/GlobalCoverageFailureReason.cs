@@ -17,8 +17,5 @@ internal enum GlobalCoverageFailureReason
     PerTestProcessingFailed,
     MergeFailed,
     SnapshotFailed,
-    AggregateLimitExceeded,
-    MetadataMismatch,
     OutputCommitFailed,
-    ReconciliationAuthorityFailed,
 }

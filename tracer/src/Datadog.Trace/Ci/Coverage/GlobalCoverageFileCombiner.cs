@@ -18,32 +18,28 @@ internal static class GlobalCoverageFileCombiner
 {
     private const int MaximumInputFiles = 65_536;
 
-    public static bool TryAcquireInputFiles(
-        string inputFolder,
-        GlobalCoverageReconciliationAuthority? authority,
-        string? expectedRunToken,
-        out string[] inputFiles,
-        out GlobalCoverageReconciliationLease? reconciliationLease)
+    public static bool TryAcquireInputFiles(string inputFolder, string? expectedRunToken, out string[] inputFiles)
     {
         inputFiles = [];
-        reconciliationLease = null;
-
-        if (!GlobalCoverageReconciliation.TryAcquire(inputFolder, authority, expectedRunToken, out reconciliationLease, out _) ||
-            (reconciliationLease is null && HasProtocolMarkers(inputFolder)))
+        var pendingPattern = expectedRunToken is null
+                                 ? GlobalCoverageProtocol.PendingMarkerPattern
+                                 : GlobalCoverageProtocol.PendingMarkerPrefix + expectedRunToken + "-*";
+        if (Directory.EnumerateFiles(inputFolder, pendingPattern, SearchOption.TopDirectoryOnly).Any())
         {
             return false;
         }
 
-        // The lease certifies a closed protocol generation. Without a protocol, retain the legacy
-        // behavior of combining every bounded JSON input in the directory.
-        inputFiles = reconciliationLease?.SelectedInputs.Select(static input => input.Path).ToArray() ?? GetInputFilesBounded(inputFolder);
+        var inputPattern = expectedRunToken is null
+                               ? "*.json"
+                               : GlobalCoverageProtocol.CoverageFilePrefix + expectedRunToken + "-*" + GlobalCoverageProtocol.JsonExtension;
+        inputFiles = GetInputFilesBounded(inputFolder, inputPattern);
         return true;
     }
 
     public static bool TryCombine(
         IReadOnlyList<string> inputFiles,
         string? outputFile,
-        GlobalCoverageReconciliationLease? reconciliationLease,
+        bool requireAllInputs,
         Action<string>? onFileProcessed,
         out GlobalCoverageInfo? globalCoverageInfo,
         out string? rejectedInput)
@@ -63,22 +59,19 @@ internal static class GlobalCoverageFileCombiner
                 continue;
             }
 
-            if (!inputReader.TryRead(file, reconciliationLease?.GetCertifiedInput(file), out var globalCoverage) || globalCoverage is null)
+            if (!inputReader.TryRead(file, out var globalCoverage) || globalCoverage is null)
             {
-                if (reconciliationLease is null)
+                // Legacy directories may contain unrelated JSON. Run-scoped callers require every
+                // selected process artifact to be valid so incomplete coverage cannot be published.
+                if (requireAllInputs)
                 {
-                    // Legacy directories were historically best-effort: unrelated or malformed JSON
-                    // files do not invalidate otherwise usable coverage. Certified protocol inputs
-                    // remain fail-closed because every selected artifact is part of the completeness proof.
-                    continue;
+                    rejectedInput = file;
+                    return false;
                 }
 
-                rejectedInput = file;
-                return false;
+                continue;
             }
 
-            // Reporting remains caller-owned so the tracer can stay silent while the CLI preserves
-            // its existing per-file progress messages.
             onFileProcessed?.Invoke(file);
             accumulator.Add(globalCoverage);
             processedFiles++;
@@ -93,14 +86,9 @@ internal static class GlobalCoverageFileCombiner
         return true;
     }
 
-    private static bool HasProtocolMarkers(string inputFolder)
-        => Directory.EnumerateFiles(inputFolder, GlobalCoverageProtocol.PendingMarkerPattern, SearchOption.TopDirectoryOnly).Any() ||
-           Directory.EnumerateFiles(inputFolder, GlobalCoverageProtocol.ReadyMarkerPattern, SearchOption.TopDirectoryOnly).Any() ||
-           Directory.EnumerateFiles(inputFolder, GlobalCoverageProtocol.CommandOwnerClaimPattern, SearchOption.TopDirectoryOnly).Any();
-
-    private static string[] GetInputFilesBounded(string inputFolder)
+    private static string[] GetInputFilesBounded(string inputFolder, string pattern)
     {
-        var files = Directory.EnumerateFiles(inputFolder, "*.json", SearchOption.TopDirectoryOnly)
+        var files = Directory.EnumerateFiles(inputFolder, pattern, SearchOption.TopDirectoryOnly)
                              .Take(MaximumInputFiles + 1)
                              .ToArray();
         if (files.Length > MaximumInputFiles)

@@ -58,7 +58,7 @@ public class CoverageMetadataValidatorTests
             var action = () => Probe<InvalidReporterMetadata>();
 
             action.Should().Throw<TypeInitializationException>();
-            handler.AccumulatorDiagnostics.IsValid.Should().BeFalse();
+            handler.AcquireGlobalCoverageSnapshot().Status.Should().Be(GlobalCoverageSnapshotStatus.SuppressedIncomplete);
         }
         finally
         {
