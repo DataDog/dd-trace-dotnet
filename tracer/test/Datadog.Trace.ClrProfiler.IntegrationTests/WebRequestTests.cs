@@ -18,8 +18,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [UsesVerify]
-    [CollectionDefinition(nameof(WebRequestTests), DisableParallelization = true)]
-    [Collection(nameof(WebRequestTests))]
+    [Collection(nameof(TestAgentOtlpCollection))]
     public class WebRequestTests : TracingIntegrationTest
     {
         public WebRequestTests(ITestOutputHelper output)
