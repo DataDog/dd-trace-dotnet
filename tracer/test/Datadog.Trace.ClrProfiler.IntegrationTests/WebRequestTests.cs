@@ -3,13 +3,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -54,6 +58,83 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("SupportsInstrumentationVerification", "True")]
         public Task SubmitsTracesV1WithOpenTelemetrySemantics() => RunTest(metadataSchemaVersion: "v1", openTelemetrySemanticsEnabled: true);
 
+        [SkippableTheory]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RequiresDockerDependency", "true")]
+        [Trait("DockerGroup", "1")]
+        [InlineData("http/json", false)]
+        [InlineData("http/json", true)]
+        [InlineData("http/protobuf", false)]
+        [InlineData("http/protobuf", true)]
+        public async Task SubmitsOtlpTraces(string protocol, bool openTelemetrySemanticsEnabled)
+        {
+            SetInstrumentationVerification();
+
+            var isJson = protocol == "http/json";
+            var names = OtlpFieldNames.For(isJson);
+            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "127.0.0.1";
+
+            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
+
+            int httpPort = TcpPortProvider.GetOpenPort();
+            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+
+            // OpenTelemetry semantics unilaterally force the v0 schema, so pin v0 for the
+            // semantics-off case too and keep the two snapshots directly comparable.
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", "v0");
+            SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
+
+            // OTEL_TRACES_EXPORTER=otlp is what makes the Datadog SDK emit OTLP instead of msgpack
+            SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "otlp");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:4318");
+
+            var applicationStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+
+            // Traces go to the test-agent over OTLP, but telemetry still goes to the mock agent
+            using var telemetry = this.ConfigureTelemetry();
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
+
+            var tracesRequests = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/traces");
+            tracesRequests.Should().NotBeNullOrEmpty();
+
+            OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
+            OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
+            NormalizeWebRequestSpans(tracesRequests, names);
+            OtlpSnapshotHelper.SortSpanAttributes(tracesRequests);
+
+            // Sort by name, then by the request URL, then by the span's own normalized JSON.
+            // Ids and timestamps are already normalized, so the last key is total: any two spans
+            // that still tie are byte-identical and their order cannot affect the snapshot.
+            var merged = OtlpSnapshotHelper.MergeDatadogRequests(
+                tracesRequests,
+                names,
+                spans => spans.OrderBy(s => s["name"]?.ToString() ?? string.Empty, StringComparer.Ordinal)
+                              .ThenBy(s => OtlpSnapshotHelper.GetAttributeStringValue(s, names, "url.full", "http.url") ?? string.Empty, StringComparer.Ordinal)
+                              .ThenBy(s => s.ToString(Formatting.None), StringComparer.Ordinal));
+
+            var finalJson = merged.ToString(Formatting.Indented);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+#if NETCOREAPP
+            // different TFMs use different underlying handlers, which we don't really care about for the snapshots
+            settings.AddSimpleScrubber("System.Net.Http.HttpClientHandler", "System.Net.Http.SocketsHttpHandler");
+#endif
+            if (!isJson)
+            {
+                OtlpSnapshotHelper.AddProtobufToJsonScrubbers(settings);
+            }
+
+            var suffix = openTelemetrySemanticsEnabled ? "_OtelSemantics" : string.Empty;
+            await Verifier.Verify(finalJson, settings)
+                          .UseFileName($"{nameof(WebRequestTests)}.{nameof(SubmitsOtlpTraces)}_DD{suffix}")
+                          .DisableRequireUniquePrefix();
+
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.WebRequest);
+            VerifyInstrumentation(processResult.Process);
+        }
+
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
@@ -81,6 +162,49 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await telemetry.AssertIntegrationDisabledAsync(IntegrationId.WebRequest);
                 VerifyInstrumentation(processResult.Process);
             }
+        }
+
+        /// <summary>
+        /// Normalizes the parts of the OTLP payload that are specific to this sample: the randomly
+        /// assigned listener port, and the one span whose shape changed on .NET 9.
+        /// </summary>
+        /// <param name="tracesRequests">The captured OTLP requests.</param>
+        /// <param name="names">The field-name casing to use.</param>
+        private void NormalizeWebRequestSpans(JToken tracesRequests, OtlpFieldNames names)
+        {
+            // The sample's HttpListener binds a random port each run. url.full is covered by
+            // VerifyHelper's localhost:<port> scrubber, but server.port carries the bare number.
+            foreach (var attribute in tracesRequests.SelectTokens("$..spans[*].attributes[?(@.key == 'server.port')]"))
+            {
+                if (attribute["value"] is JObject value)
+                {
+                    foreach (var property in value.Properties())
+                    {
+                        // Preserve the value kind (stringValue vs intValue) so http/json and
+                        // http/protobuf still render identically after scrubbing.
+                        property.Value = property.Value.Type == JTokenType.String ? (JToken)"8080" : (JToken)8080;
+                    }
+                }
+            }
+
+#if NET9_0_OR_GREATER
+            // .NET 9.0 changed the behaviour when AllowWriteStreamBuffering=false
+            // The net result is that we end up creating a "WebRequest" span instead
+            // of an "HttpClient" span in one of the cases. Rather than creating a whole
+            // separate set of snapshots for .NET 9+, just "fixing" that one span instead.
+            var rogueSpan = tracesRequests
+                           .SelectTokens("$..spans[*]")
+                           .SingleOrDefault(s => OtlpSnapshotHelper.GetAttributeStringValue(s, names, "url.full", "http.url")
+                                                                  ?.EndsWith("?BeginGetResponseAsync_NoBuffering") == true);
+
+            // it should never be null, but fall through to fail the snapshots for easier debuggability if it is
+            if (rogueSpan is not null)
+            {
+                Output.WriteLine("Updating span with HttpClient tags");
+                OtlpSnapshotHelper.SetAttributeStringValue(rogueSpan, names, "component", "HttpMessageHandler"); // previously "WebRequest"
+                OtlpSnapshotHelper.SetAttributeStringValue(rogueSpan, names, "http-client-handler-type", "System.Net.Http.SocketsHttpHandler"); // previously not set
+            }
+#endif
         }
 
         private async Task RunTest(string metadataSchemaVersion, bool openTelemetrySemanticsEnabled)
