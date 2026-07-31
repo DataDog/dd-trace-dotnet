@@ -1,6 +1,5 @@
 stages:
   - build
-  - test
   - publish
   - package
   - shared-pipeline-build
@@ -185,8 +184,7 @@ build:
         -e CI_PROJECT_NAME `
         -e CI_JOB_NAME_SLUG `
         $env:WINDOWS_BUILD_IMAGE `
-        Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet `
-        PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
+        Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet
       $buildExitCode = $LASTEXITCODE
 
       Wait-Job $statsJob -Timeout 15 | Out-Null
@@ -200,94 +198,22 @@ build:
       if ($buildExitCode -ne 0) {
         throw "Docker build container exited with code $buildExitCode"
       }
-    - mkdir artifacts-out
-    - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
-    - remove-item -recurse -force build-out\${CI_JOB_ID}
-    - get-childitem build-out
-    - get-childitem artifacts-out
-  artifacts:
-    expire_in: 2 weeks
-    paths:
-    - artifacts-out
-    - artifacts/native-bin/Datadog.Tracer.Native
-    - artifacts/native-obj/Datadog.Tracer.Native
-    - artifacts/native-bin/Datadog.Trace.ClrProfiler.Native
-    - artifacts/native-obj/Datadog.Trace.ClrProfiler.Native
-    - artifacts/profiler-build
-  id_tokens:
-    CI_IDENTITIES_GITLAB_ID_TOKEN:
-      aud: ci-identities
-
-test-native-windows:
-  except:
-    variables:
-      - $DEPLOY_TO_REL_ENV == "true"
-      - $CI_COMMIT_TAG # We don't need to build/test when building a release tag
-  stage: test
-  timeout: 1h
-  tags: ["windows-v2:2022"]
-  needs:
-    - job: build
-      artifacts: true
-  hooks:
-    pre_get_sources_script:
-      - git config --system core.longpaths true
-  script:
     - |
-      $nativeBuildPaths = @(
-        "artifacts/native-bin/Datadog.Tracer.Native",
-        "artifacts/native-obj/Datadog.Tracer.Native",
-        "artifacts/native-bin/Datadog.Trace.ClrProfiler.Native",
-        "artifacts/native-obj/Datadog.Trace.ClrProfiler.Native",
-        "artifacts/profiler-build"
-      )
-      $nativeBuildFiles = Get-ChildItem -Path $nativeBuildPaths -Recurse -File -ErrorAction SilentlyContinue
-      $nativeBuildBytes = ($nativeBuildFiles | Measure-Object -Property Length -Sum).Sum
-      Write-Output ("Downloaded native build state: {0:N0} files, {1:N2} GB" -f $nativeBuildFiles.Count, ($nativeBuildBytes / 1GB))
-
-      # A fresh checkout can make unchanged sources newer than downloaded outputs. The build
-      # artifact comes from this exact commit, so refresh timestamps to preserve MSBuild reuse.
-      $buildStateTimestamp = [DateTime]::UtcNow
-      foreach ($nativeBuildFile in $nativeBuildFiles) {
-        $nativeBuildFile.LastWriteTimeUtc = $buildStateTimestamp
-      }
-    - |
-      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
-      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
-        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
-      }
-      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
-      Write-Output "Expected Windows build image: $env:WINDOWS_BUILD_IMAGE"
-
-      docker manifest inspect $env:WINDOWS_BUILD_IMAGE
-      if ($LASTEXITCODE -ne 0) {
-        Write-Host "ERROR: Windows build image not found at $env:WINDOWS_BUILD_IMAGE."
-        Write-Host "Manually trigger the 'build-windows-ci-image' job in this pipeline, wait for it to finish, then re-run this job."
-        exit 1
-      }
-    - |
-      $dockerArguments = @(
-        "run", "--rm", "-m", "20480M",
-        "-v", "$(Get-Location):c:\mnt",
-        "-e", "CI_JOB_ID=${CI_JOB_ID}",
-        "-e", "ENABLE_MULTIPROCESSOR_COMPILATION=true",
-        "-e", "CL_MPCount=16",
-        "-e", "WINDOWS_BUILDER=true",
-        "-e", "AWS_NETWORKING=true",
-        "-e", "NUGET_CERT_REVOCATION_MODE=offline",
-        "-e", "CI_IDENTITIES_GITLAB_ID_TOKEN",
-        "-e", "CI_PROJECT_NAME",
-        "-e", "CI_JOB_NAME_SLUG",
-        $env:WINDOWS_BUILD_IMAGE
-      )
-
-      # The native test projects import GoogleTest/gMock from the repository-local packages directory.
-      & docker @dockerArguments Restore --NugetPackageDirectory c:\mnt\packages
-      if ($LASTEXITCODE -ne 0) {
-        throw "Native test NuGet restore container exited with code $LASTEXITCODE"
-      }
-
-      & docker @dockerArguments `
+      # Run the native tests against the outputs from the build above, matching the
+      # Azure pipeline's build-then-test flow in a shared working directory.
+      docker run --rm -m 20480M `
+        -v "$(Get-Location):c:\mnt" `
+        -e CI_JOB_ID=${CI_JOB_ID} `
+        -e ENABLE_MULTIPROCESSOR_COMPILATION=true `
+        -e CL_MPCount=16 `
+        -e WINDOWS_BUILDER=true `
+        -e AWS_NETWORKING=true `
+        -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e DD_LOGGER_DD_API_KEY `
+        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+        -e CI_PROJECT_NAME `
+        -e CI_JOB_NAME_SLUG `
+        $env:WINDOWS_BUILD_IMAGE `
         CompileTracerNativeTests RunTracerNativeTests `
         CompileNativeLoaderNativeTests RunNativeLoaderNativeTests `
         CompileProfilerNativeTests RunProfilerNativeTests `
@@ -295,12 +221,38 @@ test-native-windows:
       if ($LASTEXITCODE -ne 0) {
         throw "Native test container exited with code $LASTEXITCODE"
       }
+    - |
+      # Package and sign only after the native tests pass so the release outputs are
+      # produced from the successfully tested build state.
+      docker run --rm -m 20480M `
+        -v "$(Get-Location):c:\mnt" `
+        -e CI_JOB_ID=${CI_JOB_ID} `
+        -e ENABLE_MULTIPROCESSOR_COMPILATION=true `
+        -e CL_MPCount=16 `
+        -e WINDOWS_BUILDER=true `
+        -e AWS_NETWORKING=true `
+        -e SIGN_WINDOWS=true `
+        -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+        -e CI_PROJECT_NAME `
+        -e CI_JOB_NAME_SLUG `
+        $env:WINDOWS_BUILD_IMAGE `
+        PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
+      if ($LASTEXITCODE -ne 0) {
+        throw "Docker packaging container exited with code $LASTEXITCODE"
+      }
+    - mkdir artifacts-out
+    - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
+    - remove-item -recurse -force build-out\${CI_JOB_ID}
+    - get-childitem build-out
+    - get-childitem artifacts-out
   artifacts:
     when: always
     expire_in: 2 weeks
     paths:
-      - artifacts/build_data/tests
-      - profiler/build_data/tests
+    - artifacts-out
+    - artifacts/build_data/tests
+    - profiler/build_data/tests
     reports:
       junit:
         - artifacts/build_data/tests/*.xml
