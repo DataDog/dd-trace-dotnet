@@ -21,7 +21,8 @@ namespace Datadog.Trace.DuckTyping
             Type targetType,
             MemberInfo proxyMember,
             FieldInfo targetField,
-            FieldInfo? instanceField)
+            FieldInfo? instanceField,
+            ProxyBuildErrors errors)
         {
             string proxyMemberName = proxyMember.Name;
             Type proxyMemberReturnType = proxyMember is PropertyInfo pinfo ? pinfo.PropertyType : proxyMember is FieldInfo finfo ? finfo.FieldType : typeof(object);
@@ -40,7 +41,7 @@ namespace Datadog.Trace.DuckTyping
                 isValueWithType = true;
             }
 
-            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator());
+            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator(), errors);
             Type returnType = targetField.FieldType;
 
             // Load the field value to the stack
@@ -88,7 +89,7 @@ namespace Datadog.Trace.DuckTyping
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);
 
                 // Emit the dynamic method body
-                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
+                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator(), il.Errors);
 
                 if (!targetField.IsStatic)
                 {
@@ -154,7 +155,8 @@ namespace Datadog.Trace.DuckTyping
             Type targetType,
             MemberInfo proxyMember,
             FieldInfo targetField,
-            FieldInfo? instanceField)
+            FieldInfo? instanceField,
+            ProxyBuildErrors errors)
         {
             string proxyMemberName = proxyMember.Name;
             Type proxyMemberReturnType = proxyMember is PropertyInfo pinfo ? pinfo.PropertyType : proxyMember is FieldInfo finfo ? finfo.FieldType : typeof(object);
@@ -165,7 +167,7 @@ namespace Datadog.Trace.DuckTyping
                 typeof(void),
                 new[] { proxyMemberReturnType });
 
-            LazyILGenerator il = new LazyILGenerator(method?.GetILGenerator());
+            LazyILGenerator il = new LazyILGenerator(method?.GetILGenerator(), errors);
             Type currentValueType = proxyMemberReturnType;
 
             // Load instance
@@ -238,7 +240,7 @@ namespace Datadog.Trace.DuckTyping
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, proxyTypeBuilder.Module, true);
 
                 // Write the dynamic method body
-                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
+                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator(), il.Errors);
                 dynIL.Emit(OpCodes.Ldarg_0);
 
                 if (targetField.IsStatic)

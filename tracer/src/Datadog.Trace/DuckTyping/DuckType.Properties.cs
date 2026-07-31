@@ -24,6 +24,7 @@ namespace Datadog.Trace.DuckTyping
             MemberInfo proxyMember,
             PropertyInfo targetProperty,
             FieldInfo? instanceField,
+            ProxyBuildErrors errors,
             Func<LazyILGenerator, Type, Type, Type> duckCastInnerToOuterFunc,
             Func<Type, Type, bool> needsDuckChaining)
         {
@@ -71,7 +72,7 @@ namespace Datadog.Trace.DuckTyping
                 isValueWithType = true;
             }
 
-            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator());
+            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator(), errors);
             Type returnType = targetProperty.PropertyType;
 
             // Load the instance if needed
@@ -144,7 +145,7 @@ namespace Datadog.Trace.DuckTyping
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);
 
                 // Emit the dynamic method body
-                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
+                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator(), il.Errors);
 
                 if (!targetMethod.IsStatic)
                 {
@@ -218,6 +219,7 @@ namespace Datadog.Trace.DuckTyping
             MemberInfo proxyMember,
             PropertyInfo targetProperty,
             FieldInfo? instanceField,
+            ProxyBuildErrors errors,
             Func<LazyILGenerator, Type, Type, Type> duckCastOuterToInner,
             Func<Type, Type, bool> needsDuckChaining)
         {
@@ -256,7 +258,7 @@ namespace Datadog.Trace.DuckTyping
                 typeof(void),
                 proxyParameterTypes);
 
-            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator());
+            LazyILGenerator il = new LazyILGenerator(proxyMethod?.GetILGenerator(), errors);
 
             // Load the instance if needed
             if (!targetMethod.IsStatic)
@@ -342,7 +344,7 @@ namespace Datadog.Trace.DuckTyping
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, typeof(void), dynParameters, proxyTypeBuilder.Module, true);
 
                 // Emit the dynamic method body
-                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
+                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator(), il.Errors);
 
                 if (!targetMethod.IsStatic)
                 {
