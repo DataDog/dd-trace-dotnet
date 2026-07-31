@@ -379,15 +379,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
                     else
                     {
-                        // this is NOT the local root span, copy some tags to the root span
-                        AzureFunctionsTags.SetRootSpanTags(
-                            rootSpan.Tags,
-                            shortName: tags.ShortName,
-                            fullName: tags.FullName,
-                            bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                            triggerType: tags.TriggerType);
+                        // this is NOT the local root span, copy some tags to the root span,
+                        // unless the root is an inferred proxy span (e.g. azure.frontdoor, azure.apim)
+                        // that we must not overwrite. Check the actual root span here rather than
+                        // reusing isProxySpan, because the root can derive from aspNetCoreScope
+                        // rather than activeScope in this branch.
+                        var rootOp = rootSpan.OperationName;
+                        if (rootOp != AzureFrontDoor && rootOp != AzureApim)
+                        {
+                            AzureFunctionsTags.SetRootSpanTags(
+                                rootSpan.Tags,
+                                shortName: tags.ShortName,
+                                fullName: tags.FullName,
+                                bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
+                                triggerType: tags.TriggerType);
 
-                        rootSpan.Type = SpanType; // "serverless"
+                            rootSpan.Type = SpanType; // "serverless"
+                        }
                     }
 
                     span.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
