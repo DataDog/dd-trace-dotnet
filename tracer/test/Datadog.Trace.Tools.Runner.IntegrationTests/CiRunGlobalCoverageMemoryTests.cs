@@ -424,9 +424,9 @@ public sealed class CiRunGlobalCoverageMemoryTests
     {
         var logFiles = Directory.GetFiles(logDirectory, "*.log", SearchOption.AllDirectories);
         logFiles.Should().NotBeEmpty();
-        ContainsLine("Global coverage command DotnetTestCommand acquired reconciliation role ReconciliationOwner.").Should()
-                                                                                                            .BeTrue("the .NET SDK 10 outer TestCommand hook must own reconciliation");
-        ContainsLine("Global coverage reconciliation completed by DotnetTestCommand.").Should()
+        ContainsLine("Global coverage command \"DotnetTestCommand\" acquired reconciliation role \"ReconciliationOwner\".").Should()
+                                                                                                             .BeTrue("the .NET SDK 10 outer TestCommand hook must own reconciliation");
+        ContainsLine("Global coverage reconciliation completed by \"DotnetTestCommand\".").Should()
                                                                                        .BeTrue("the outer TestCommand hook must complete publication");
 
         bool ContainsLine(string text)
