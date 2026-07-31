@@ -92,6 +92,16 @@ build:
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
+  cache:
+    key: "windows-native-${CI_COMMIT_SHA}"
+    policy: push
+    paths:
+      - artifacts/native-bin/Datadog.Tracer.Native
+      - artifacts/native-obj/Datadog.Tracer.Native
+      - artifacts/native-bin/Datadog.Trace.ClrProfiler.Native
+      - artifacts/native-obj/Datadog.Trace.ClrProfiler.Native
+      - artifacts/profiler-build
+      - artifacts/obj/vcpkg
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
@@ -223,14 +233,40 @@ test-native-windows:
   tags: ["windows-v2:2022"]
   needs:
     - job: build
-      artifacts: true
+      artifacts: false
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
+  cache:
+    key: "windows-native-${CI_COMMIT_SHA}"
+    policy: pull
+    paths:
+      - artifacts/native-bin/Datadog.Tracer.Native
+      - artifacts/native-obj/Datadog.Tracer.Native
+      - artifacts/native-bin/Datadog.Trace.ClrProfiler.Native
+      - artifacts/native-obj/Datadog.Trace.ClrProfiler.Native
+      - artifacts/profiler-build
+      - artifacts/obj/vcpkg
   script:
-    - if (Test-Path build-out) { remove-item -recurse -force build-out }
-    - New-Item -ItemType Directory -Force -Path "build-out\${CI_JOB_ID}" | Out-Null
-    - Copy-Item -Recurse -Force artifacts-out\* "build-out\${CI_JOB_ID}"
+    - |
+      $nativeCachePaths = @(
+        "artifacts/native-bin/Datadog.Tracer.Native",
+        "artifacts/native-obj/Datadog.Tracer.Native",
+        "artifacts/native-bin/Datadog.Trace.ClrProfiler.Native",
+        "artifacts/native-obj/Datadog.Trace.ClrProfiler.Native",
+        "artifacts/profiler-build",
+        "artifacts/obj/vcpkg"
+      )
+      $cachedFiles = Get-ChildItem -Path $nativeCachePaths -Recurse -File -ErrorAction SilentlyContinue
+      $cachedBytes = ($cachedFiles | Measure-Object -Property Length -Sum).Sum
+      Write-Output ("Restored native build cache: {0:N0} files, {1:N2} GB" -f $cachedFiles.Count, ($cachedBytes / 1GB))
+
+      # A fresh checkout can make unchanged sources newer than cached outputs. The cache is
+      # scoped to this exact commit, so refresh output timestamps to preserve MSBuild reuse.
+      $cacheTimestamp = [DateTime]::UtcNow
+      foreach ($cachedFile in $cachedFiles) {
+        $cachedFile.LastWriteTimeUtc = $cacheTimestamp
+      }
     - |
       $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
       if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
@@ -279,10 +315,12 @@ test-native-windows:
     when: always
     expire_in: 2 weeks
     paths:
-      - build-out/${CI_JOB_ID}/build_data/tests
+      - artifacts/build_data/tests
+      - profiler/build_data/tests
     reports:
       junit:
-        - build-out/${CI_JOB_ID}/build_data/tests/*.xml
+        - artifacts/build_data/tests/*.xml
+        - profiler/build_data/tests/*.xml
   id_tokens:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
