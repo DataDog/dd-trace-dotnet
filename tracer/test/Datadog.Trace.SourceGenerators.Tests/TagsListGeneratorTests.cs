@@ -144,7 +144,7 @@ namespace MyTests.TestListNameSpace
             {
                 if (openTelemetrySemanticsEnabled)
                 {
-                    processor.Process(new TagItem<string>(""otel.k"", Id, IdOTelBytes));
+                    processor.Process(new TagItem<string>(""otel.k"", Id, IdOtelBytes));
                 }
                 else
                 {
@@ -246,7 +246,7 @@ namespace MyTests.TestListNameSpace
                             {
                                 if (openTelemetrySemanticsEnabled)
                                 {
-                                    processor.Process(new TagItem<int>("otel.status", StatusCode.Value, StatusCodeOTelBytes));
+                                    processor.Process(new TagItem<int>("otel.status", StatusCode.Value, StatusCodeOtelBytes));
                                 }
                                 else
                                 {

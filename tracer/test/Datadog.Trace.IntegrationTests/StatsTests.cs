@@ -603,7 +603,7 @@ namespace Datadog.Trace.IntegrationTests
                 group.Errors.Should().Be(2);
                 group.ErrorSummary.Should().NotBeEmpty();
                 group.Hits.Should().Be(tracesCount);
-                group.HttpStatusCode.Should().Be(span.GetHttpStatusCodeString());
+                group.HttpStatusCode.Should().Be(span.GetHttpStatusCode());
                 group.Name.Should().Be(span.OperationName);
                 group.OkSummary.Should().NotBeEmpty();
                 group.Synthetics.Should().Be(false);
