@@ -92,16 +92,6 @@ build:
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
-  cache:
-    key: "windows-native-${CI_COMMIT_SHA}"
-    policy: push
-    paths:
-      - artifacts/native-bin/Datadog.Tracer.Native
-      - artifacts/native-obj/Datadog.Tracer.Native
-      - artifacts/native-bin/Datadog.Trace.ClrProfiler.Native
-      - artifacts/native-obj/Datadog.Trace.ClrProfiler.Native
-      - artifacts/profiler-build
-      - artifacts/obj/vcpkg
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
@@ -219,6 +209,11 @@ build:
     expire_in: 2 weeks
     paths:
     - artifacts-out
+    - artifacts/native-bin/Datadog.Tracer.Native
+    - artifacts/native-obj/Datadog.Tracer.Native
+    - artifacts/native-bin/Datadog.Trace.ClrProfiler.Native
+    - artifacts/native-obj/Datadog.Trace.ClrProfiler.Native
+    - artifacts/profiler-build
   id_tokens:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
@@ -233,39 +228,28 @@ test-native-windows:
   tags: ["windows-v2:2022"]
   needs:
     - job: build
-      artifacts: false
+      artifacts: true
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
-  cache:
-    key: "windows-native-${CI_COMMIT_SHA}"
-    policy: pull
-    paths:
-      - artifacts/native-bin/Datadog.Tracer.Native
-      - artifacts/native-obj/Datadog.Tracer.Native
-      - artifacts/native-bin/Datadog.Trace.ClrProfiler.Native
-      - artifacts/native-obj/Datadog.Trace.ClrProfiler.Native
-      - artifacts/profiler-build
-      - artifacts/obj/vcpkg
   script:
     - |
-      $nativeCachePaths = @(
+      $nativeBuildPaths = @(
         "artifacts/native-bin/Datadog.Tracer.Native",
         "artifacts/native-obj/Datadog.Tracer.Native",
         "artifacts/native-bin/Datadog.Trace.ClrProfiler.Native",
         "artifacts/native-obj/Datadog.Trace.ClrProfiler.Native",
-        "artifacts/profiler-build",
-        "artifacts/obj/vcpkg"
+        "artifacts/profiler-build"
       )
-      $cachedFiles = Get-ChildItem -Path $nativeCachePaths -Recurse -File -ErrorAction SilentlyContinue
-      $cachedBytes = ($cachedFiles | Measure-Object -Property Length -Sum).Sum
-      Write-Output ("Restored native build cache: {0:N0} files, {1:N2} GB" -f $cachedFiles.Count, ($cachedBytes / 1GB))
+      $nativeBuildFiles = Get-ChildItem -Path $nativeBuildPaths -Recurse -File -ErrorAction SilentlyContinue
+      $nativeBuildBytes = ($nativeBuildFiles | Measure-Object -Property Length -Sum).Sum
+      Write-Output ("Downloaded native build state: {0:N0} files, {1:N2} GB" -f $nativeBuildFiles.Count, ($nativeBuildBytes / 1GB))
 
-      # A fresh checkout can make unchanged sources newer than cached outputs. The cache is
-      # scoped to this exact commit, so refresh output timestamps to preserve MSBuild reuse.
-      $cacheTimestamp = [DateTime]::UtcNow
-      foreach ($cachedFile in $cachedFiles) {
-        $cachedFile.LastWriteTimeUtc = $cacheTimestamp
+      # A fresh checkout can make unchanged sources newer than downloaded outputs. The build
+      # artifact comes from this exact commit, so refresh timestamps to preserve MSBuild reuse.
+      $buildStateTimestamp = [DateTime]::UtcNow
+      foreach ($nativeBuildFile in $nativeBuildFiles) {
+        $nativeBuildFile.LastWriteTimeUtc = $buildStateTimestamp
       }
     - |
       $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
