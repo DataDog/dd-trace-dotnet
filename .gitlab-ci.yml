@@ -1,5 +1,6 @@
 stages:
   - build
+  - test
   - publish
   - package
   - shared-pipeline-build
@@ -185,9 +186,7 @@ build:
         -e CI_JOB_NAME_SLUG `
         $env:WINDOWS_BUILD_IMAGE `
         Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet `
-        CompileTracerNativeTests RunTracerNativeTests CompileNativeLoaderNativeTests RunNativeLoaderNativeTests CompileProfilerNativeTests RunProfilerNativeTests `
-        PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder `
-        --NugetPackageDirectory c:\mnt\packages
+        PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
       $buildExitCode = $LASTEXITCODE
 
       Wait-Job $statsJob -Timeout 15 | Out-Null
@@ -210,6 +209,80 @@ build:
     expire_in: 2 weeks
     paths:
     - artifacts-out
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
+
+test-native-windows:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG # We don't need to build/test when building a release tag
+  stage: test
+  timeout: 1h
+  tags: ["windows-v2:2022"]
+  needs:
+    - job: build
+      artifacts: true
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  script:
+    - if (Test-Path build-out) { remove-item -recurse -force build-out }
+    - New-Item -ItemType Directory -Force -Path "build-out\${CI_JOB_ID}" | Out-Null
+    - Copy-Item -Recurse -Force artifacts-out\* "build-out\${CI_JOB_ID}"
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+      Write-Output "Expected Windows build image: $env:WINDOWS_BUILD_IMAGE"
+
+      docker manifest inspect $env:WINDOWS_BUILD_IMAGE
+      if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Windows build image not found at $env:WINDOWS_BUILD_IMAGE."
+        Write-Host "Manually trigger the 'build-windows-ci-image' job in this pipeline, wait for it to finish, then re-run this job."
+        exit 1
+      }
+    - |
+      $dockerArguments = @(
+        "run", "--rm", "-m", "20480M",
+        "-v", "$(Get-Location):c:\mnt",
+        "-e", "CI_JOB_ID=${CI_JOB_ID}",
+        "-e", "ENABLE_MULTIPROCESSOR_COMPILATION=true",
+        "-e", "CL_MPCount=16",
+        "-e", "WINDOWS_BUILDER=true",
+        "-e", "AWS_NETWORKING=true",
+        "-e", "NUGET_CERT_REVOCATION_MODE=offline",
+        "-e", "CI_IDENTITIES_GITLAB_ID_TOKEN",
+        "-e", "CI_PROJECT_NAME",
+        "-e", "CI_JOB_NAME_SLUG",
+        $env:WINDOWS_BUILD_IMAGE
+      )
+
+      # The native test projects import GoogleTest/gMock from the repository-local packages directory.
+      & docker @dockerArguments Restore --NugetPackageDirectory c:\mnt\packages
+      if ($LASTEXITCODE -ne 0) {
+        throw "Native test NuGet restore container exited with code $LASTEXITCODE"
+      }
+
+      & docker @dockerArguments `
+        CompileTracerNativeTests RunTracerNativeTests `
+        CompileNativeLoaderNativeTests RunNativeLoaderNativeTests `
+        CompileProfilerNativeTests RunProfilerNativeTests `
+        --NugetPackageDirectory c:\mnt\packages
+      if ($LASTEXITCODE -ne 0) {
+        throw "Native test container exited with code $LASTEXITCODE"
+      }
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths:
+      - build-out/${CI_JOB_ID}/build_data/tests
+    reports:
+      junit:
+        - build-out/${CI_JOB_ID}/build_data/tests/*.xml
   id_tokens:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
