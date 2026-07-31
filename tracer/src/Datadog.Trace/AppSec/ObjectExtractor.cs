@@ -569,6 +569,12 @@ namespace Datadog.Trace.AppSec
                 return EmptyDictionary;
             }
 
+            depth++;
+            if (depth >= WafConstants.MaxContainerDepth)
+            {
+                return EmptyDictionary;
+            }
+
             var gtkvp = typeof(KeyValuePair<,>);
             var tkvp = gtkvp.MakeGenericType(dictType.GetGenericArguments());
             var keyProp = tkvp.GetProperty("Key");
@@ -603,7 +609,7 @@ namespace Datadog.Trace.AppSec
                         }
                         else
                         {
-                            var extractedvalue = ExtractType(dictValue.GetType(), dictValue, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
+                            var extractedvalue = ExtractType(dictValue.GetType(), dictValue, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
                             items.Add(dictKey, extractedvalue);
                         }
 
@@ -635,6 +641,14 @@ namespace Datadog.Trace.AppSec
                 return [];
             }
 
+            // Mirrors ExtractProperties: once the incremented depth reaches the limit, stop recursing
+            // into children instead of descending unbounded (which previously risked a stack overflow).
+            depth++;
+            if (depth >= WafConstants.MaxContainerDepth)
+            {
+                return [];
+            }
+
             var gtkvp = typeof(KeyValuePair<,>);
             var tkvp = gtkvp.MakeGenericType(dictType.GetGenericArguments());
             var keyProp = tkvp.GetProperty("Key");
@@ -654,8 +668,8 @@ namespace Datadog.Trace.AppSec
 
                     var pair = new Dictionary<string, object?>(2)
                     {
-                        ["Key"] = dictKey is null ? null : ExtractType(dictKey.GetType(), dictKey, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
-                        ["Value"] = dictValue is null ? null : ExtractType(dictValue.GetType(), dictValue, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
+                        ["Key"] = dictKey is null ? null : ExtractType(dictKey.GetType(), dictKey, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
+                        ["Value"] = dictValue is null ? null : ExtractType(dictValue.GetType(), dictValue, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
                     };
                     items.Add(pair);
 
@@ -682,9 +696,14 @@ namespace Datadog.Trace.AppSec
         {
             var capacity = Math.Min(WafConstants.MaxContainerSize, source.Count);
 
+            // Mirrors ExtractProperties: once the incremented depth reaches the limit, stop recursing
+            // into children instead of descending unbounded (which previously risked a stack overflow).
+            depth++;
+            var depthExceeded = depth >= WafConstants.MaxContainerDepth;
+
             if (useSimpleDictionaryFormat)
             {
-                if (!visited.Add(source))
+                if (!visited.Add(source) || depthExceeded)
                 {
                     return EmptyDictionary;
                 }
@@ -700,7 +719,7 @@ namespace Datadog.Trace.AppSec
                         continue;
                     }
 
-                    map[key] = entry.Value is null ? null : ExtractType(entry.Value.GetType(), entry.Value, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
+                    map[key] = entry.Value is null ? null : ExtractType(entry.Value.GetType(), entry.Value, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
                     if (map.Count >= WafConstants.MaxContainerSize)
                     {
                         break;
@@ -710,7 +729,7 @@ namespace Datadog.Trace.AppSec
                 return map;
             }
 
-            if (!visited.Add(source))
+            if (!visited.Add(source) || depthExceeded)
             {
                 return new List<object?>();
             }
@@ -722,8 +741,8 @@ namespace Datadog.Trace.AppSec
                 var entry = enumerator.Entry;
                 items.Add(new Dictionary<string, object?>(2)
                 {
-                    ["Key"] = entry.Key is null ? null : ExtractType(entry.Key.GetType(), entry.Key, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
-                    ["Value"] = entry.Value is null ? null : ExtractType(entry.Value.GetType(), entry.Value, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
+                    ["Key"] = entry.Key is null ? null : ExtractType(entry.Key.GetType(), entry.Key, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
+                    ["Value"] = entry.Value is null ? null : ExtractType(entry.Value.GetType(), entry.Value, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat),
                 });
                 if (items.Count >= WafConstants.MaxContainerSize)
                 {
@@ -754,6 +773,12 @@ namespace Datadog.Trace.AppSec
                 return [];
             }
 
+            depth++;
+            if (depth >= WafConstants.MaxContainerDepth)
+            {
+                return [];
+            }
+
             // Use ICollection for pre-sizing when available. Some types (e.g. HashSet<T>) implement
             // ICollection<T> but not the non-generic ICollection, so fall back to default capacity.
             var items = value is ICollection sourceColl
@@ -768,7 +793,7 @@ namespace Datadog.Trace.AppSec
                 }
                 else
                 {
-                    var extractedvalue = ExtractType(item.GetType(), item, depth + 1, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
+                    var extractedvalue = ExtractType(item.GetType(), item, depth, visited, extractorCache, createExtractors, useSimpleDictionaryFormat);
                     items.Add(extractedvalue);
                 }
 

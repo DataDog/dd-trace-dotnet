@@ -30,7 +30,6 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 /// ffe_* tags are produced at serialization, not at Span.Finish(). The codec itself is covered by
 /// <see cref="ULeb128EncoderTests"/>.
 /// </summary>
-[TracerRestorer]
 public class SpanEnrichmentTests
 {
     private const string GoldenBase64 = "ZAgUAg==";
