@@ -566,7 +566,7 @@
     "integrationName": "DotnetTest",
     "assemblyName": "dotnet",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "9.65535.65535",
     "packages": []
   },
   {

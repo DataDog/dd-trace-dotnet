@@ -288,8 +288,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         }
 
         LogContextDiagnostics(_accumulator.AcceptedContextCount);
-        var published = TryPublishFinalSnapshot();
-        var complete = published && _accumulator.TryFinalizeCompleteness(static () => { });
+        var complete = TryPublishFinalSnapshot();
 
         Action<bool>? callback;
         lock (_lifecycleGate)
@@ -317,8 +316,7 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
 
             using (snapshot)
             {
-                var published = false;
-                if (!_accumulator.TryCommit(snapshot, () => published = _outputManager.TryPublish(snapshot.Model)) || !published)
+                if (!_accumulator.TryFinalizeSnapshot(snapshot, () => _outputManager.TryPublish(snapshot.Model)))
                 {
                     _accumulator.Suppress(GlobalCoverageFailureReason.OutputCommitFailed);
                     return false;

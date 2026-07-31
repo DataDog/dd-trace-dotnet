@@ -152,26 +152,37 @@ internal sealed class GlobalCoverageAccumulator
         return committed;
     }
 
-    public bool TryFinalizeCompleteness(Action commitReady)
+    // Keep artifact publication and the final completeness transition under one lock. Otherwise a
+    // concurrent failure could invalidate coverage after its pending marker has already been removed.
+    public bool TryFinalizeSnapshot(GlobalCoverageSnapshot snapshot, Func<bool> commit)
     {
         var failed = false;
+        ExceptionDispatchInfo? exception = null;
         lock (_completenessGate)
         {
-            if (IsSuppressed)
+            if (IsSuppressed || snapshot.IsDisposed || snapshot.CompletenessEpoch != _completenessEpoch)
             {
                 return false;
             }
 
             try
             {
-                commitReady();
-                _completenessFinalized = true;
-                return true;
+                if (!commit())
+                {
+                    SuppressUnderCompletenessGate(GlobalCoverageFailureReason.OutputCommitFailed);
+                    failed = true;
+                }
+                else
+                {
+                    _completenessFinalized = true;
+                    return true;
+                }
             }
-            catch
+            catch (Exception ex)
             {
                 SuppressUnderCompletenessGate(GlobalCoverageFailureReason.OutputCommitFailed);
                 failed = true;
+                exception = ExceptionDispatchInfo.Capture(ex);
             }
         }
 
@@ -179,6 +190,8 @@ internal sealed class GlobalCoverageAccumulator
         {
             ClearCoverage();
         }
+
+        exception?.Throw();
 
         return false;
     }

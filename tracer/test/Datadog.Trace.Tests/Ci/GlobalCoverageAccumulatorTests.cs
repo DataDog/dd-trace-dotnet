@@ -6,6 +6,8 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using FluentAssertions;
@@ -115,6 +117,46 @@ public class GlobalCoverageAccumulatorTests
         var suppressed = handler.AcquireGlobalCoverageSnapshot();
         suppressed.Status.Should().Be(GlobalCoverageSnapshotStatus.SuppressedIncomplete);
         suppressed.FailureReason.Should().Be(GlobalCoverageFailureReason.OutputCommitFailed);
+    }
+
+    [Fact]
+    public async Task FinalPublicationAndCompletenessAreCommittedAtomically()
+    {
+        var accumulator = new GlobalCoverageAccumulator();
+        using var snapshot = accumulator.AcquireSnapshot(globalContainer: null).Snapshot!;
+        using var suppressionStarted = new ManualResetEventSlim();
+        Task suppressionTask = null;
+
+        var finalized = accumulator.TryFinalizeSnapshot(
+            snapshot,
+            () =>
+            {
+                suppressionTask = Task.Run(
+                    () =>
+                    {
+                        suppressionStarted.Set();
+                        accumulator.Suppress(GlobalCoverageFailureReason.ProbeDataIncomplete);
+                    });
+                suppressionStarted.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
+                return true;
+            });
+
+        finalized.Should().BeTrue();
+        suppressionTask.Should().NotBeNull();
+        await suppressionTask;
+        accumulator.IsSuppressed.Should().BeFalse("a failure observed after the atomic final commit cannot invalidate published coverage");
+    }
+
+    [Fact]
+    public void FailedFinalPublicationSuppressesCoverage()
+    {
+        var accumulator = new GlobalCoverageAccumulator();
+        using var snapshot = accumulator.AcquireSnapshot(globalContainer: null).Snapshot!;
+
+        accumulator.TryFinalizeSnapshot(snapshot, static () => false).Should().BeFalse();
+
+        accumulator.IsSuppressed.Should().BeTrue();
+        accumulator.FailureReason.Should().Be(GlobalCoverageFailureReason.OutputCommitFailed);
     }
 
     [Fact]
