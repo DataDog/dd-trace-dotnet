@@ -88,8 +88,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
             File.Exists(sampleProject).Should().BeTrue($"the required sample project must be present at {sampleProject}");
 
             // The Windows integration-test stage downloads the sample's published bin output, but not its obj directory.
-            // Restore only this project so `dotnet test --no-build` can evaluate the SDK targets while still executing the
-            // exact sample assembly produced by the build stage.
+            // Restore only this project so the SDK 10 smoke test can build the MSBuild state required by `dotnet test`.
             RestoreSampleProject(environmentHelper.GetDotnetExe(), sampleProject, packageVersion);
         }
 
@@ -268,11 +267,11 @@ public sealed class CiRunGlobalCoverageMemoryTests
             environmentHelper.GetDotnetExe(),
             "test",
             // Passing a test DLL selects VSTest directly and bypasses the .NET SDK 10 outer TestCommand hook that owns
-            // global coverage reconciliation. Use the project while preventing rebuild or restore of the published sample.
+            // global coverage reconciliation. This path deliberately builds the project because the Windows integration-test
+            // artifact contains the published bin output but not the complete MSBuild state required by `dotnet test --no-build`.
             sampleProject,
             "--configuration",
             EnvironmentTools.GetBuildConfiguration(),
-            "--no-build",
             "--no-restore"
         ];
 
@@ -347,7 +346,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
             launchLine.Should().Contain(runnerDirectory);
             launchLine.Should().Contain(sampleProject);
             launchLine.Should().Contain($"--configuration {EnvironmentTools.GetBuildConfiguration()}");
-            launchLine.Should().Contain("--no-build");
+            launchLine.Should().NotContain("--no-build");
             launchLine.Should().Contain("--no-restore");
         }
         else
