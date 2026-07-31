@@ -11,7 +11,6 @@ using System.Data.Common;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Configurations;
 using DotNet.Testcontainers.Containers;
 using Testcontainers.MsSql;
 
@@ -56,12 +55,17 @@ public class SqlServerFixture : ContainerFixture
         if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
         {
             // mssql/server has no native arm64 image. Azure SQL Edge does not include the sqlcmd binary
-            // used by MsSqlBuilder's readiness check, so wait for its ready message instead.
+            // used by MsSqlBuilder's readiness check, so wait for its ready message instead. Explicitly
+            // bound the wait because Testcontainers defaults to one hour.
             container = new ContainerBuilder(AzureSqlEdgeImage)
                        .WithPortBinding(SqlServerPort, true)
                        .WithEnvironment("ACCEPT_EULA", "Y")
                        .WithEnvironment("MSSQL_SA_PASSWORD", Password)
-                       .WithWaitStrategy(Wait.ForUnixContainer().AddCustomWaitStrategy(new UntilFinalSqlServerIsReady()))
+                       .WithWaitStrategy(
+                            Wait.ForUnixContainer()
+                                .UntilMessageIsLogged(
+                                     "SQL Server is now ready for client connections",
+                                     strategy => strategy.WithTimeout(TimeSpan.FromMinutes(2))))
                        .Build();
         }
         else
@@ -90,30 +94,5 @@ public class SqlServerFixture : ContainerFixture
         }
 
         return null;
-    }
-
-    private sealed class UntilFinalSqlServerIsReady : IWaitUntil
-    {
-        private const string ReadyMessage = "SQL Server is now ready for client connections";
-
-        public async Task<bool> UntilAsync(IContainer container)
-        {
-            // Azure SQL Edge logs this message for its internal setup server and again for the final server.
-            var (stdout, stderr) = await container.GetLogsAsync(timestampsEnabled: false).ConfigureAwait(false);
-            return CountOccurrences(stdout) + CountOccurrences(stderr) >= 2;
-        }
-
-        private static int CountOccurrences(string value)
-        {
-            var count = 0;
-            var startIndex = 0;
-            while ((startIndex = value.IndexOf(ReadyMessage, startIndex, StringComparison.Ordinal)) >= 0)
-            {
-                count++;
-                startIndex += ReadyMessage.Length;
-            }
-
-            return count;
-        }
     }
 }
