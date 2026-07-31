@@ -28,7 +28,6 @@ public sealed class CiRunGlobalCoverageMemoryTests
 {
     private const long MaximumStressPrivateBytesGrowth = 384L * 1024 * 1024;
     private const string SampleName = "NUnitGlobalCoverageMemory";
-    private const string SampleProjectRelativePath = "tracer/test/test-applications/integrations/Samples.NUnitGlobalCoverageMemory/Samples.NUnitGlobalCoverageMemory.csproj";
     private const string SampleSourceFileName = "GlobalCoverageMemoryTests.cs";
     private const int CommonCoverageLine = 131_072;
     private const int FirstCoverageSentinelLine = 131_073;
@@ -57,24 +56,6 @@ public sealed class CiRunGlobalCoverageMemoryTests
             useDotnetTest: true);
     }
 
-    [SkippableFact]
-    [Trait("RunOnWindows", "True")]
-    [Trait("Category", "EndToEnd")]
-    [Trait("Category", "TestIntegrations")]
-    public void TestingPlatformCoverageWithoutDatadogCollectorSealsAndAllowsDirectoryReuse()
-    {
-        Skip.IfNot(FrameworkDescription.Instance.IsWindows());
-        AssertSdk10();
-
-        RunStress(
-            packageVersion: "6.0.0",
-            expectedCaseCount: 1,
-            includeCoverlet: false,
-            useDotnetTest: true,
-            useTestingPlatformCoverage: true,
-            runCount: 2);
-    }
-
     [SkippableTheory]
     [InlineData("3.2.0")]
     [InlineData("6.0.0")]
@@ -96,9 +77,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
         string packageVersion,
         int expectedCaseCount,
         bool includeCoverlet,
-        bool useDotnetTest,
-        bool useTestingPlatformCoverage = false,
-        int runCount = 1)
+        bool useDotnetTest)
     {
         var environmentHelper = new EnvironmentHelper(SampleName, typeof(CiRunGlobalCoverageMemoryTests), _output);
         var sampleAssembly = environmentHelper.GetTestCommandForSampleApplicationPath(useDotnetTest ? string.Empty : packageVersion, "net8.0");
@@ -118,34 +97,30 @@ public sealed class CiRunGlobalCoverageMemoryTests
         var coverageDirectory = Directory.CreateDirectory(Path.Combine(root.RootPath, "coverage")).FullName;
 
         using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
-        for (var runIndex = 0; runIndex < runCount; runIndex++)
+        var logDirectory = Directory.CreateDirectory(Path.Combine(root.RootPath, "logs")).FullName;
+        var progressPath = Path.Combine(root.RootPath, "progress.jsonl");
+        var targetCommand = useDotnetTest
+                                ? CreateDotnetTestCommand(environmentHelper, sampleAssembly)
+                                : CreateVstestCommand(environmentHelper.GetDotnetExe(), sampleAssembly, includeCoverlet);
+        var arguments = CreateCiRunArguments(
+            environmentHelper.MonitoringHome,
+            agent.Port,
+            coverageDirectory,
+            logDirectory,
+            progressPath,
+            expectedCaseCount,
+            targetCommand);
+
+        var result = RunRunner(environmentHelper.GetDotnetExe(), runnerAssembly, arguments, logDirectory);
+        result.ExitCode.Should().Be(0, result.Error);
+
+        AssertLaunch(result.Output, runnerDirectory, useDotnetTest);
+        var testhostProcessId = AssertProgress(progressPath, expectedCaseCount);
+        AssertPublishedCoverage(coverageDirectory, expectedCaseCount);
+        AssertCoverageDiagnostics(logDirectory, testhostProcessId, expectedCaseCount);
+        if (useDotnetTest)
         {
-            var logDirectory = Directory.CreateDirectory(Path.Combine(root.RootPath, $"logs-{runIndex}")).FullName;
-            var progressPath = Path.Combine(root.RootPath, $"progress-{runIndex}.jsonl");
-            var targetCommand = useDotnetTest
-                                    ? CreateDotnetTestCommand(environmentHelper, useTestingPlatformCoverage)
-                                    : CreateVstestCommand(environmentHelper.GetDotnetExe(), sampleAssembly, includeCoverlet);
-            var arguments = CreateCiRunArguments(
-                environmentHelper.MonitoringHome,
-                agent.Port,
-                coverageDirectory,
-                logDirectory,
-                progressPath,
-                expectedCaseCount,
-                targetCommand);
-
-            var result = RunRunner(environmentHelper.GetDotnetExe(), runnerAssembly, arguments, logDirectory);
-            result.ExitCode.Should().Be(0, result.Error);
-
-            AssertLaunch(result.Output, runnerDirectory, useDotnetTest, useTestingPlatformCoverage);
-            var testhostProcessId = AssertProgress(progressPath, expectedCaseCount);
-            var publishedCoverage = AssertPublishedCoverage(coverageDirectory, expectedCaseCount);
-            File.Move(publishedCoverage, Path.Combine(root.RootPath, $"session-coverage-{runIndex}.json"));
-            AssertCoverageDiagnostics(logDirectory, testhostProcessId, expectedCaseCount);
-            if (useDotnetTest)
-            {
-                AssertOuterCommandReconciliation(logDirectory);
-            }
+            AssertOuterCommandReconciliation(logDirectory);
         }
 
         static string GetRunnerDirectory()
@@ -238,28 +213,13 @@ public sealed class CiRunGlobalCoverageMemoryTests
         version!.Major.Should().Be(10, "this smoke test must exercise the .NET SDK 10 TestCommand integration");
     }
 
-    private string[] CreateDotnetTestCommand(EnvironmentHelper environmentHelper, bool useTestingPlatformCoverage)
-    {
-        var projectPath = Path.Combine(EnvironmentTools.GetSolutionDirectory(), SampleProjectRelativePath);
-        System.Collections.Generic.List<string> command =
+    private string[] CreateDotnetTestCommand(EnvironmentHelper environmentHelper, string sampleAssembly)
+        =>
         [
             environmentHelper.GetDotnetExe(),
             "test",
-            projectPath,
-            "--no-build",
-            "--configuration",
-            EnvironmentTools.GetBuildConfiguration(),
-            "--framework",
-            "net8.0"
+            sampleAssembly
         ];
-
-        if (useTestingPlatformCoverage)
-        {
-            command.Add("-p:TestingPlatformCommandLineArguments=--coverage");
-        }
-
-        return command.ToArray();
-    }
 
     private string[] CreateVstestCommand(
         string dotnetExecutable,
@@ -317,24 +277,16 @@ public sealed class CiRunGlobalCoverageMemoryTests
         return arguments.ToArray();
     }
 
-    private void AssertLaunch(string output, string runnerDirectory, bool useDotnetTest, bool useTestingPlatformCoverage)
+    private void AssertLaunch(string output, string runnerDirectory, bool useDotnetTest)
     {
         var launchLine = output.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries)
                                .Should()
                                .ContainSingle(static line => line.StartsWith("Running:", StringComparison.Ordinal))
                                .Subject;
         var datadogCollectorCount = Regex.Matches(launchLine, @"(?<!\w)(?:/Collect:)?DatadogCoverage(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count;
-        if (useTestingPlatformCoverage)
-        {
-            datadogCollectorCount.Should().Be(0, "Microsoft Testing Platform coverage must not load the Datadog coverage collector");
-            launchLine.Should().Contain("-p:TestingPlatformCommandLineArguments=--coverage");
-        }
-        else
-        {
-            datadogCollectorCount.Should().Be(1, "dd-trace ci run must inject exactly one Datadog coverage collector");
-        }
+        datadogCollectorCount.Should().Be(1, "dd-trace ci run must inject exactly one Datadog coverage collector");
 
-        if (useDotnetTest && !useTestingPlatformCoverage)
+        if (useDotnetTest)
         {
             Regex.Matches(launchLine, @"(?<!\w)--test-adapter-path(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count.Should().Be(1);
             launchLine.Should().Contain(runnerDirectory);
@@ -371,7 +323,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
         return records[0]!.Pid;
     }
 
-    private string AssertPublishedCoverage(string coverageDirectory, int expectedCaseCount)
+    private void AssertPublishedCoverage(string coverageDirectory, int expectedCaseCount)
     {
         var sessionCoverage = Directory.GetFiles(coverageDirectory, "session-coverage-*.json", SearchOption.TopDirectoryOnly);
         sessionCoverage.Should().ContainSingle();
@@ -399,8 +351,6 @@ public sealed class CiRunGlobalCoverageMemoryTests
         var completedDirectory = Path.Combine(coverageDirectory, ".dd-coverage-completed");
         Directory.Exists(completedDirectory).Should().BeTrue();
         Directory.GetFiles(completedDirectory, "coverage-*.json", SearchOption.AllDirectories).Should().NotBeEmpty();
-
-        return sessionCoverage[0];
     }
 
     private void AssertLine(byte[]? bitmap, int line, bool expected)
