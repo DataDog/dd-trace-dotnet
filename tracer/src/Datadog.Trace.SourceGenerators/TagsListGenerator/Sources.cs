@@ -225,8 +225,8 @@ namespace ");
                 case """)
                           .Append(property.OtelTagValue)
                           .Append(
-                               @""":")
-                          .Append("\n                    ");
+                               @""":
+                    ");
                     }
                     else
                     {
@@ -291,8 +291,8 @@ namespace ");
                             sb.Append(@"case """)
                               .Append(property.OtelTagValue)
                               .Append(
-                                   @""":")
-                              .Append("\n                ");
+                                   @""":
+                ");
                         }
                     }
                 }
