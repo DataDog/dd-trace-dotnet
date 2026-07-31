@@ -184,7 +184,8 @@ build:
         -e CI_PROJECT_NAME `
         -e CI_JOB_NAME_SLUG `
         $env:WINDOWS_BUILD_IMAGE `
-        Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet
+        Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet `
+        --NugetPackageDirectory c:\mnt\packages
       $buildExitCode = $LASTEXITCODE
 
       Wait-Job $statsJob -Timeout 15 | Out-Null
@@ -237,7 +238,8 @@ build:
         -e CI_PROJECT_NAME `
         -e CI_JOB_NAME_SLUG `
         $env:WINDOWS_BUILD_IMAGE `
-        PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
+        PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder `
+        --NugetPackageDirectory c:\mnt\packages
       if ($LASTEXITCODE -ne 0) {
         throw "Docker packaging container exited with code $LASTEXITCODE"
       }
