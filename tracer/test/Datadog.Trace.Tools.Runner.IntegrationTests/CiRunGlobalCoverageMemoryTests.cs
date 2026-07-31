@@ -88,8 +88,8 @@ public sealed class CiRunGlobalCoverageMemoryTests
             File.Exists(sampleProject).Should().BeTrue($"the required sample project must be present at {sampleProject}");
 
             // The Windows integration-test stage downloads the sample's published bin output, but not its obj directory.
-            // Restore only this project so the SDK 10 smoke test can build the MSBuild state required by `dotnet test`.
-            RestoreSampleProject(environmentHelper.GetDotnetExe(), sampleProject, packageVersion);
+            // Restore without overriding ApiVersion so this command and the subsequent build use the same intermediate path.
+            RestoreSampleProject(environmentHelper.GetDotnetExe(), sampleProject);
         }
 
         var runnerDirectory = GetRunnerDirectory();
@@ -191,7 +191,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
         return new ProcessResult(process.ExitCode, output, error);
     }
 
-    private void RestoreSampleProject(string dotnetExecutable, string sampleProject, string packageVersion)
+    private void RestoreSampleProject(string dotnetExecutable, string sampleProject)
     {
         using var process = new Process
         {
@@ -207,7 +207,6 @@ public sealed class CiRunGlobalCoverageMemoryTests
         };
         process.StartInfo.ArgumentList.Add("restore");
         process.StartInfo.ArgumentList.Add(sampleProject);
-        process.StartInfo.ArgumentList.Add($"-p:ApiVersion={packageVersion}");
 
         process.Start().Should().BeTrue();
         var outputTask = process.StandardOutput.ReadToEndAsync();
