@@ -28,7 +28,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public StackFrame(string rawStackFrame, string filename, long line)
         {
             // |lm:Datadog.Demos.ExceptionGenerator |ns:ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Throw1_2
-            var match = Regex.Match(rawStackFrame, @"^\|lm:(?<module>.*) \|ns:(?<namespace>.*) \|ct:(?<type>.*) \|cg:(?<typeAdorn>.*) \|fn:(?<function>.*) \|fg:(?<functionArdorn>.*) \|sg:(?<signature>.*)$");
+            var match = Regex.Match(rawStackFrame, @"^\|lm:(?<module>.*) \|ns:(?<namespace>.*) \|ct:(?<type>.*) \|cg:(?<typeAdorn>.*) \|fn:(?<function>.*) \|fg:(?<functionAdorn>.*) \|sg:(?<signature>.*)$");
 
             if (!match.Success)
             {
