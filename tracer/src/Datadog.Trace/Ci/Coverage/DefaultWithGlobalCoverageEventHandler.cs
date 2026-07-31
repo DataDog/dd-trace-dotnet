@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage;
@@ -288,7 +289,23 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         }
 
         LogContextDiagnostics(_accumulator.AcceptedContextCount);
-        var complete = TryPublishFinalSnapshot();
+        var complete = TryPublishFinalSnapshot(out var failureException);
+        if (!complete)
+        {
+            // Sealing is single-shot, so report the terminal failure here instead of logging each
+            // lower-level attempt and producing duplicate diagnostics for the same coverage run.
+            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+            failureException ??= _outputManager.FailureException;
+            var failureReason = _accumulator.FailureReason;
+            if (failureException is not null)
+            {
+                Log.Error<GlobalCoverageFailureReason>(failureException, "Global code coverage could not be finalized. Reason: {FailureReason}.", failureReason);
+            }
+            else
+            {
+                Log.Error<GlobalCoverageFailureReason>("Global code coverage could not be finalized. Reason: {FailureReason}.", failureReason);
+            }
+        }
 
         Action<bool>? callback;
         lock (_lifecycleGate)
@@ -304,8 +321,9 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         ModuleValue.LogNativeMemoryDiagnostics(DomainMetadata.Instance.ProcessId);
     }
 
-    private bool TryPublishFinalSnapshot()
+    private bool TryPublishFinalSnapshot(out Exception? failureException)
     {
+        failureException = null;
         try
         {
             var result = _accumulator.AcquireSnapshot(GlobalContainer);
@@ -325,8 +343,9 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
                 return true;
             }
         }
-        catch
+        catch (Exception ex)
         {
+            failureException = ex;
             _accumulator.Suppress(GlobalCoverageFailureReason.SnapshotFailed);
             return false;
         }

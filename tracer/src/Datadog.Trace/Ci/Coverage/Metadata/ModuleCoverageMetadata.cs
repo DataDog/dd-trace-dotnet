@@ -32,13 +32,6 @@ public abstract class ModuleCoverageMetadata
     protected internal readonly FileCoverageMetadata[] Files = Array.Empty<FileCoverageMetadata>();
 #pragma warning restore SA1401
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ModuleCoverageMetadata"/> class.
-    /// </summary>
-    protected ModuleCoverageMetadata()
-    {
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int GetOffset(int fileIndex)
     {

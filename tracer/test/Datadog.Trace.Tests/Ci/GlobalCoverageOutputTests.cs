@@ -7,8 +7,11 @@
 
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Metadata;
+using Datadog.Trace.Telemetry;
 using FluentAssertions;
 using Xunit;
 
@@ -87,6 +90,40 @@ public class GlobalCoverageOutputTests
         }
         finally
         {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task SealFailurePreservesTheOriginalExceptionAndRecordsCoverageTelemetry()
+    {
+        var directory = CreateTemporaryDirectory();
+        var invalidDirectory = Path.Combine(directory, "not-a-directory");
+        File.WriteAllText(invalidDirectory, string.Empty);
+
+        var collector = new CiVisibilityMetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var previousMetrics = TelemetryFactory.SetMetricsForTesting(collector);
+        try
+        {
+            var output = new GlobalCoverageOutputManager(invalidDirectory, directory, () => "failed-output");
+            output.EnsureConfiguredAndFreeze().Should().BeFalse();
+            output.FailureException.Should().BeAssignableTo<IOException>();
+
+            var handler = new DefaultWithGlobalCoverageEventHandler(configuredOutputDirectory: invalidDirectory);
+            handler.RegisterCollectorOutputDirectory(invalidDirectory).Should().BeFalse();
+            handler.FinalizeAndSeal().Should().BeFalse();
+            handler.FinalizeAndSeal().Should().BeFalse("failed sealing is idempotent");
+            collector.AggregateMetrics();
+
+            var metric = collector.GetMetrics().Metrics.Should()
+                                  .ContainSingle(metric => metric.Metric == "code_coverage.errors" && metric.Namespace == "civisibility")
+                                  .Subject;
+            metric.Points.Should().ContainSingle().Subject.Value.Should().Be(1);
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(previousMetrics);
+            await collector.DisposeAsync();
             Directory.Delete(directory, recursive: true);
         }
     }

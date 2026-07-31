@@ -29,12 +29,24 @@ internal sealed class GlobalCoverageOutputManager
     private bool _frozen;
     private bool _failed;
     private bool _published;
+    private Exception? _failureException;
 
     public GlobalCoverageOutputManager(string? configuredDirectory, string baseDirectory, Func<string> runIdProvider)
     {
         _configuredDirectory = configuredDirectory;
         _baseDirectory = baseDirectory;
         _runIdProvider = runIdProvider;
+    }
+
+    public Exception? FailureException
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _failureException;
+            }
+        }
     }
 
     public bool EnsureConfiguredAndFreeze()
@@ -98,8 +110,9 @@ internal sealed class GlobalCoverageOutputManager
                 _published = true;
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _failureException ??= ex;
                 _failed = true;
                 return false;
             }
@@ -124,8 +137,9 @@ internal sealed class GlobalCoverageOutputManager
             using var pending = new FileStream(_pendingPath, FileMode.CreateNew, FileAccess.Write, FileShare.Read);
             pending.Flush(true);
         }
-        catch
+        catch (Exception ex)
         {
+            _failureException ??= ex;
             _failed = true;
         }
     }
