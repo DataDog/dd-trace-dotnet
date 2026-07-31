@@ -23,8 +23,8 @@ namespace Datadog.Trace.Tagging
         // HttpMethodBytes = MessagePack.Serialize("http.method");
         private static ReadOnlySpan<byte> HttpMethodBytes => [171, 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100];
 
-        // HttpMethodOTelBytes = MessagePack.Serialize("http.request.method");
-        private static ReadOnlySpan<byte> HttpMethodOTelBytes => [179, 104, 116, 116, 112, 46, 114, 101, 113, 117, 101, 115, 116, 46, 109, 101, 116, 104, 111, 100];
+        // HttpMethodOtelBytes = MessagePack.Serialize("http.request.method");
+        private static ReadOnlySpan<byte> HttpMethodOtelBytes => [179, 104, 116, 116, 112, 46, 114, 101, 113, 117, 101, 115, 116, 46, 109, 101, 116, 104, 111, 100];
 
         // HttpRequestMethodOriginalBytes = MessagePack.Serialize("http.request.method_original");
         private static ReadOnlySpan<byte> HttpRequestMethodOriginalBytes => [188, 104, 116, 116, 112, 46, 114, 101, 113, 117, 101, 115, 116, 46, 109, 101, 116, 104, 111, 100, 95, 111, 114, 105, 103, 105, 110, 97, 108];
@@ -32,8 +32,8 @@ namespace Datadog.Trace.Tagging
         // HttpUrlBytes = MessagePack.Serialize("http.url");
         private static ReadOnlySpan<byte> HttpUrlBytes => [168, 104, 116, 116, 112, 46, 117, 114, 108];
 
-        // HttpUrlOTelBytes = MessagePack.Serialize("url.full");
-        private static ReadOnlySpan<byte> HttpUrlOTelBytes => [168, 117, 114, 108, 46, 102, 117, 108, 108];
+        // HttpUrlOtelBytes = MessagePack.Serialize("url.full");
+        private static ReadOnlySpan<byte> HttpUrlOtelBytes => [168, 117, 114, 108, 46, 102, 117, 108, 108];
 
         // HttpClientHandlerTypeBytes = MessagePack.Serialize("http-client-handler-type");
         private static ReadOnlySpan<byte> HttpClientHandlerTypeBytes => [184, 104, 116, 116, 112, 45, 99, 108, 105, 101, 110, 116, 45, 104, 97, 110, 100, 108, 101, 114, 45, 116, 121, 112, 101];
@@ -47,8 +47,8 @@ namespace Datadog.Trace.Tagging
         // HostBytes = MessagePack.Serialize("out.host");
         private static ReadOnlySpan<byte> HostBytes => [168, 111, 117, 116, 46, 104, 111, 115, 116];
 
-        // HostOTelBytes = MessagePack.Serialize("server.address");
-        private static ReadOnlySpan<byte> HostOTelBytes => [174, 115, 101, 114, 118, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115];
+        // HostOtelBytes = MessagePack.Serialize("server.address");
+        private static ReadOnlySpan<byte> HostOtelBytes => [174, 115, 101, 114, 118, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115];
 
         // ServerPortBytes = MessagePack.Serialize("server.port");
         private static ReadOnlySpan<byte> ServerPortBytes => [171, 115, 101, 114, 118, 101, 114, 46, 112, 111, 114, 116];
@@ -146,7 +146,7 @@ namespace Datadog.Trace.Tagging
             {
                 if (openTelemetrySemanticsEnabled)
                 {
-                    processor.Process(new TagItem<string>("http.request.method", HttpMethod, HttpMethodOTelBytes));
+                    processor.Process(new TagItem<string>("http.request.method", HttpMethod, HttpMethodOtelBytes));
                 }
                 else
                 {
@@ -163,7 +163,7 @@ namespace Datadog.Trace.Tagging
             {
                 if (openTelemetrySemanticsEnabled)
                 {
-                    processor.Process(new TagItem<string>("url.full", HttpUrl, HttpUrlOTelBytes));
+                    processor.Process(new TagItem<string>("url.full", HttpUrl, HttpUrlOtelBytes));
                 }
                 else
                 {
@@ -192,7 +192,7 @@ namespace Datadog.Trace.Tagging
             {
                 if (openTelemetrySemanticsEnabled)
                 {
-                    processor.Process(new TagItem<string>("server.address", Host, HostOTelBytes));
+                    processor.Process(new TagItem<string>("server.address", Host, HostOtelBytes));
                 }
                 else
                 {

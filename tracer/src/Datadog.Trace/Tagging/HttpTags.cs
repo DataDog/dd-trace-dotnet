@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; }
 
-        [Tag(Trace.Tags.HttpMethod, OTelName = Trace.Tags.HttpRequestMethod)]
+        [Tag(Trace.Tags.HttpMethod, OtelName = Trace.Tags.HttpRequestMethod)]
         public string HttpMethod { get; set; }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tagging
         /// Gets or sets the request URL. Serialized as "http.url" with Datadog semantics
         /// and as "url.full" with OpenTelemetry semantics.
         /// </summary>
-        [Tag(Trace.Tags.HttpUrl, OTelName = Trace.Tags.UrlFull)]
+        [Tag(Trace.Tags.HttpUrl, OtelName = Trace.Tags.UrlFull)]
         public string HttpUrl { get; set; }
 
         [Tag(HttpClientHandlerTypeKey)]
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.HttpStatusCode, OtelName = Trace.Tags.HttpResponseStatusCode)]
         public int? HttpStatusCode { get; set; }
 
-        [Tag(Trace.Tags.OutHost, OTelName = Trace.Tags.ServerAddress)]
+        [Tag(Trace.Tags.OutHost, OtelName = Trace.Tags.ServerAddress)]
         public string Host { get; set; }
 
         /// <summary>
