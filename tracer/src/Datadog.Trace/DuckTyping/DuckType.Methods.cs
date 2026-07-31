@@ -98,7 +98,8 @@ namespace Datadog.Trace.DuckTyping
             TypeBuilder? proxyTypeBuilder,
             Type proxyType,
             Type targetType,
-            FieldInfo? instanceField)
+            FieldInfo? instanceField,
+            ProxyBuildErrors errors)
         {
             var proxyMethodsDefinitions = GetMethods(proxyType);
 
@@ -180,7 +181,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // Create the proxy method implementation
                 MethodBuilder? proxyMethod = proxyTypeBuilder?.DefineMethod(proxyMethodDefinition.Name, proxyMethodAttributes, proxyMethodDefinition.ReturnType, proxyMethodDefinitionParametersTypes);
-                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, proxyMethodDefinitionParameters, proxyMethodDefinitionGenericArgumentsNames, targetMethod, instanceField);
+                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, proxyMethodDefinitionParameters, proxyMethodDefinitionGenericArgumentsNames, targetMethod, instanceField, errors);
 
                 // Load all the arguments / parameters
                 List<OutputAndRefParameterData>? outputAndRefParameters = MethodIlHelper.AddIlToLoadArguments(
@@ -239,7 +240,7 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static void CreateReverseProxyMethods(TypeBuilder? proxyTypeBuilder, Type typeToDeriveFrom, Type typeToDelegateTo, FieldInfo? instanceField)
+        private static void CreateReverseProxyMethods(TypeBuilder? proxyTypeBuilder, Type typeToDeriveFrom, Type typeToDelegateTo, FieldInfo? instanceField, ProxyBuildErrors errors)
         {
             // Gets all methods that _can_ be overriden/implemented
             List<MethodInfo> overriddenMethods = GetMethods(typeToDeriveFrom);
@@ -302,7 +303,7 @@ namespace Datadog.Trace.DuckTyping
 
                 // Create the proxy method implementation
                 MethodBuilder? proxyMethod = proxyTypeBuilder?.DefineMethod(overriddenMethod.Name, proxyMethodAttributes, overriddenMethod.ReturnType, overriddenMethodParametersTypes);
-                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, overriddenMethodParameters, implementationDefinitionGenericArgumentsNames, implementationMethod, instanceField);
+                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, overriddenMethodParameters, implementationDefinitionGenericArgumentsNames, implementationMethod, instanceField, errors);
 
                 // Load all the arguments / parameters
                 var outputAndRefParameters = MethodIlHelper.AddIlToLoadArguments(
@@ -657,11 +658,12 @@ namespace Datadog.Trace.DuckTyping
                 ParameterInfo[] proxyMethodDefinitionParameters,
                 string[] proxyMethodDefinitionGenericArgumentsNames,
                 MethodInfo targetMethod,
-                FieldInfo? instanceField)
+                FieldInfo? instanceField,
+                ProxyBuildErrors errors)
             {
                 if (proxyMethod is null)
                 {
-                    return new LazyILGenerator(null);
+                    return new LazyILGenerator(null, errors);
                 }
 
                 ParameterBuilder[] proxyMethodParametersBuilders = new ParameterBuilder[proxyMethodDefinitionParameters.Length];
@@ -683,7 +685,7 @@ namespace Datadog.Trace.DuckTyping
                     proxyMethodParametersBuilders[j] = pmImpParameter;
                 }
 
-                LazyILGenerator il = new LazyILGenerator(proxyMethod.GetILGenerator());
+                LazyILGenerator il = new LazyILGenerator(proxyMethod.GetILGenerator(), errors);
 
                 // Load the instance if needed
                 if (!targetMethod.IsStatic)
@@ -923,7 +925,7 @@ namespace Datadog.Trace.DuckTyping
                 DynamicMethod dynMethod = new DynamicMethod(dynMethodName, returnType, dynParameters, proxyTypeBuilder.Module, true);
 
                 // Emit the dynamic method body
-                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator());
+                LazyILGenerator dynIL = new LazyILGenerator(dynMethod.GetILGenerator(), il.Errors);
 
                 if (!targetMethod.IsStatic && targetMethod.DeclaringType is not null)
                 {
