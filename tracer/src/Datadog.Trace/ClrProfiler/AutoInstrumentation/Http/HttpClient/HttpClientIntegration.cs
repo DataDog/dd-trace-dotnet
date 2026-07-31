@@ -1,0 +1,56 @@
+// <copyright file="HttpClientIntegration.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using System.ComponentModel;
+using System.Threading;
+using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
+{
+    /// <summary>
+    /// Experimental System.Net.Http.HttpClient calltarget instrumentation.
+    /// </summary>
+    [InstrumentMethod(
+        AssemblyName = "System.Net.Http",
+        TypeName = "System.Net.Http.HttpClient",
+        MethodName = "SendAsync",
+        ReturnTypeName = ClrNames.HttpResponseMessageTask,
+        ParameterTypeNames = new[] { ClrNames.HttpRequestMessage, "System.Net.Http.HttpCompletionOption", ClrNames.CancellationToken },
+        MinimumVersion = "4.0.0",
+        MaximumVersion = SupportedVersions.LatestDotNet,
+        IntegrationName = IntegrationName)]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public sealed class HttpClientIntegration
+    {
+        private const string IntegrationName = nameof(Configuration.IntegrationId.HttpMessageHandler);
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.HttpMessageHandler;
+
+#if NETCOREAPP
+        internal static CallTargetState OnMethodBegin<TTarget, TRequest, TCompletionOption>(TTarget instance, in TRequest requestMessage, TCompletionOption completionOption, CancellationToken cancellationToken)
+#else
+        internal static CallTargetState OnMethodBegin<TTarget, TRequest, TCompletionOption>(TTarget instance, TRequest requestMessage, TCompletionOption completionOption, CancellationToken cancellationToken)
+            where TRequest : IHttpRequestMessage
+#endif
+        {
+            if (!Tracer.Instance.Settings.HttpClientFullDurationEnabled)
+            {
+                return CallTargetState.GetDefault();
+            }
+
+            return HttpMessageHandlerCommon.OnMethodBegin(instance, requestMessage, cancellationToken, IntegrationId, implementationIntegrationId: null);
+        }
+
+        internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse responseMessage, Exception exception, in CallTargetState state)
+#if !NETCOREAPP
+            where TResponse : IHttpResponseMessage
+#endif
+        {
+            return HttpMessageHandlerCommon.OnMethodEnd(instance, responseMessage, exception, in state);
+        }
+    }
+}

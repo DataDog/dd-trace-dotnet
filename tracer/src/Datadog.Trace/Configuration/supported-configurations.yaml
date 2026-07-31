@@ -3081,6 +3081,16 @@ supportedConfigurations:
       Configuration key for the application's client http statuses to set spans as errors by.
       When DD_TRACE_OTEL_SEMANTICS_ENABLED is true, the default is <c>400-599</c>.
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
+  DD_TRACE_HTTPCLIENT_FULL_DURATION_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'false'
+    product: FeatureFlags
+    const_name: HttpClientFullDurationEnabled
+    documentation: |-
+      Enables experimental HttpClient instrumentation that includes response-content buffering in the span duration.
+      <seealso cref="Datadog.Trace.Configuration.TracerSettings.HttpClientFullDurationEnabled"/>
   DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS:
   - implementation: A
     scope: managed

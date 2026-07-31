@@ -452,6 +452,10 @@ namespace Datadog.Trace.Configuration
                                         .WithKeys(ConfigurationKeys.AgentFeaturePollingEnabled)
                                         .AsBool(defaultValue: true);
 
+            HttpClientFullDurationEnabled = config
+                                           .WithKeys(ConfigurationKeys.FeatureFlags.HttpClientFullDurationEnabled)
+                                           .AsBool(defaultValue: false);
+
             DelayWcfInstrumentationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             .AsBool(defaultValue: true);
@@ -1148,6 +1152,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.AgentFeaturePollingEnabled"/>
         public bool AgentFeaturePollingEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether HttpClient spans should include response-content buffering.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.HttpClientFullDurationEnabled"/>
+        internal bool HttpClientFullDurationEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution

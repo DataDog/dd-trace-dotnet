@@ -101,6 +101,12 @@ internal static partial class ConfigurationKeys
         public const string HeaderTagsNormalizationFixEnabled = "DD_TRACE_HEADER_TAG_NORMALIZATION_FIX_ENABLED";
 
         /// <summary>
+        /// Enables experimental HttpClient instrumentation that includes response-content buffering in the span duration.
+        /// </summary>
+        /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.HttpClientFullDurationEnabled"/>
+        public const string HttpClientFullDurationEnabled = "DD_TRACE_HTTPCLIENT_FULL_DURATION_ENABLED";
+
+        /// <summary>
         /// Inferred proxy services: when enabled, registers the inferred-proxy propagator to extract `x-dd-proxy*` headers and start an inferred proxy span (currently supports `x-dd-proxy=aws-apigateway`) as a parent of the server span, using header values for service/resource/tags. Default: false
         /// </summary>
         public const string InferredProxySpansEnabled = "DD_TRACE_INFERRED_PROXY_SERVICES_ENABLED";

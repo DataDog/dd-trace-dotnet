@@ -491,6 +491,16 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void HttpClientFullDurationEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.FeatureFlags.HttpClientFullDurationEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.HttpClientFullDurationEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), true)]
         public void WcfWebHttpResourceNamesEnabled(string value, bool expected)
         {
