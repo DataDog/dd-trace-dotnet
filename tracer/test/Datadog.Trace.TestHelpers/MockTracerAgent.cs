@@ -196,10 +196,9 @@ namespace Datadog.Trace.TestHelpers
                 await Task.Delay(250);
             }
 
-            if (assertExpectedCount)
-            {
-                relevantSpans.Should().HaveCountGreaterThanOrEqualTo(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent");
-            }
+            relevantSpans.Count(s => operationName is null || s.Name == operationName)
+                         .Should()
+                         .Be(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent");
 
             foreach (var headers in TraceRequestHeaders)
             {
