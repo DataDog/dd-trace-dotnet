@@ -1275,7 +1275,73 @@ namespace Datadog.Trace.Tests.Configuration
             settings.OtlpLogsHeaders.Should().Contain(new KeyValuePair<string, string>("dd-api-key", logsSentinel));
             entries.Where(x => x.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
                    .Should()
-                   .OnlyContain(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted && x.StringValue == null);
+                   .ContainSingle(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted && x.StringValue == null);
+        }
+
+        [Fact]
+        public void OtlpLogsHeadersFromJsonObjectAreParsedAndRedactedInTelemetry()
+        {
+            const string sentinel = "json-object-secret";
+            var source = new JsonConfigurationSource(
+                $@"{{""{ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders}"":{{"" api-key "":"" {sentinel} "",""auth"":"" token ""}}}}",
+                ConfigurationOrigins.Code);
+            var telemetry = new ConfigurationTelemetry();
+
+            var settings = new TracerSettings(source, telemetry, new());
+
+            settings.OtlpLogsHeaders.Should().BeEquivalentTo(
+                new Dictionary<string, string>
+                {
+                    ["api-key"] = sentinel,
+                    ["auth"] = "token",
+                });
+            telemetry.GetQueueForTesting()
+                     .Where(x => x.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
+                     .Should()
+                     .ContainSingle(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted && x.StringValue == null);
+        }
+
+        [Theory]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders, 1)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders, 4)]
+        public void OtlpLogsHeadersFromJsonStringAreParsedAndRedactedInTelemetry(string configuredKey, int expectedTelemetryCount)
+        {
+            const string sentinel = "json-string-secret";
+            var source = new JsonConfigurationSource(
+                $@"{{""{configuredKey}"":"" api-key = {sentinel} , auth = token ""}}",
+                ConfigurationOrigins.Code);
+            var telemetry = new ConfigurationTelemetry();
+
+            var settings = new TracerSettings(source, telemetry, new());
+
+            settings.OtlpLogsHeaders.Should().BeEquivalentTo(
+                new Dictionary<string, string>
+                {
+                    ["api-key"] = sentinel,
+                    ["auth"] = "token",
+                });
+            telemetry.GetQueueForTesting()
+                     .Where(x => x.Key == configuredKey)
+                     .Should()
+                     .HaveCount(expectedTelemetryCount)
+                     .And.OnlyContain(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted && x.StringValue == null);
+        }
+
+        [Fact]
+        public void OtlpLogsHeadersWithUnexpectedObjectTypeDoNotLeakTelemetry()
+        {
+            var source = new DictionaryObjectConfigurationSource(
+                new Dictionary<string, object> { [ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders] = 42 });
+            var telemetry = new ConfigurationTelemetry();
+
+            var settings = new TracerSettings(source, telemetry, new());
+
+            settings.OtlpLogsHeaders.Should().BeEmpty();
+            telemetry.GetQueueForTesting()
+                     .Where(x => x.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
+                     .Should()
+                     .HaveCount(2)
+                     .And.OnlyContain(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted && x.StringValue == null);
         }
 
         [Theory]

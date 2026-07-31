@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.SourceGenerators.Helpers;
 using FluentAssertions;
 using Xunit;
@@ -18,11 +19,11 @@ public class YamlReaderTests
                                                                supportedConfigurations:
                                                                  DD_API_KEY:
                                                                  - implementation: A
-                                                                   sensitive: TRUE
+                                                                   sensitive: TrUe
                                                                    documentation: API key used to authenticate with Datadog.
                                                                  DD_TRACE_ENABLED:
                                                                  - implementation: A
-                                                                   sensitive: false
+                                                                   sensitive: FaLsE
                                                                    documentation: Enables the tracer.
                                                                  DD_SERVICE:
                                                                  - implementation: A
@@ -37,5 +38,25 @@ public class YamlReaderTests
         parsed.Configurations["DD_API_KEY"].Sensitive.Should().BeTrue();
         parsed.Configurations["DD_TRACE_ENABLED"].Sensitive.Should().BeFalse();
         parsed.Configurations["DD_SERVICE"].Sensitive.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("yes")]
+    [InlineData("1")]
+    [InlineData("")]
+    public void RejectsInvalidSensitiveMetadata(string value)
+    {
+        var yaml = $$"""
+                     version: '2'
+                     supportedConfigurations:
+                       DD_API_KEY:
+                       - implementation: A
+                         sensitive: {{value}}
+                         documentation: API key used to authenticate with Datadog.
+                     """;
+
+        var action = () => YamlReader.ParseSupportedConfigurations(yaml);
+
+        action.Should().Throw<InvalidOperationException>();
     }
 }

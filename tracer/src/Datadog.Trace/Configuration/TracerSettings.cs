@@ -325,14 +325,12 @@ namespace Datadog.Trace.Configuration
                     validator: null,
                     converter: uriString => new Uri(uriString));
 
-            var rawOtlpLogsHeaders = config
-                                   .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
-                                   .AsRedactedString();
-
-            OtlpLogsHeaders = (StringConfigurationSource.ParseCustomKeyValues(rawOtlpLogsHeaders, allowOptionalMappings: false, separator: '=')
-                            ?? new Dictionary<string, string>())
-                              .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
-                              .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
+            OtlpLogsHeaders = config
+                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
+                            .AsRedactedDictionaryResult(separator: '=')
+                            .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
+                            .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
+                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
 
             OtlpLogsTimeoutMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs)

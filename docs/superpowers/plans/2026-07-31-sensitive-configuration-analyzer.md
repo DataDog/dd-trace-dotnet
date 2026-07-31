@@ -4,13 +4,13 @@
 
 **Goal:** Enforce at compile time that configuration keys marked `sensitive: true` in `supported-configurations.yaml` are read only through telemetry-redacting accessors, and migrate OTLP headers to those accessors.
 
-**Architecture:** The existing shared YAML reader will expose a `Sensitive` flag. `ConfigurationBuilderWithKeysAnalyzer` will parse the YAML additional file once per compilation, resolve each `WithKeys()` constant, and reject sensitive keys unless the immediately chained accessor proves `recordValue` is false. Runtime configuration code will use existing redacted string accessors, so no startup-path sensitivity lookup is added.
+**Architecture:** The existing shared YAML reader will expose a `Sensitive` flag. `tracer/src/Directory.Build.props` will provide the registry to every analyzer consumer. `ConfigurationBuilderWithKeysAnalyzer` will require and parse that YAML additional file once per compilation, resolve each `WithKeys()` constant, and reject sensitive keys unless the immediately chained accessor proves `recordValue` is false. Runtime configuration code will use redacted string and dictionary accessors, so no startup-path sensitivity lookup is added.
 
 **Tech Stack:** C# 12, Roslyn analyzers, incremental source-generator support types, xUnit, FluentAssertions, .NET 10 test target.
 
 ## Global Constraints
 
-- All changes stay in the existing `brian.marks/sensitive-config-analyzer` worktree and branch.
+- All changes stay in the current task worktree and branch.
 - `supported-configurations.yaml` remains the single source of truth; do not generate runtime sensitivity metadata.
 - Preserve alias fallback, OTLP header parsing, and public APIs.
 - `DD_API_KEY` and the four `OTEL_EXPORTER_OTLP*_HEADERS` keys are sensitive.
@@ -67,11 +67,23 @@ In `YamlReader.ParseSupportedConfigurations`:
 var currentSensitive = false;
 ```
 
-Recognize `sensitive` as a property that terminates documentation, parse it case-insensitively, pass it into every `ConfigurationEntry` construction, and reset it when a new key begins:
+Recognize `sensitive` as a property that terminates documentation, accept only case-insensitive `true` and `false`, pass it into every `ConfigurationEntry` construction, and reset it when a new key begins. Other values throw so the source generator reports `DDSG0007`:
 
 ```csharp
 case "sensitive":
-    currentSensitive = propValue.Equals("true", StringComparison.OrdinalIgnoreCase);
+    if (propValue.Equals("true", StringComparison.OrdinalIgnoreCase))
+    {
+        currentSensitive = true;
+    }
+    else if (propValue.Equals("false", StringComparison.OrdinalIgnoreCase))
+    {
+        currentSensitive = false;
+    }
+    else
+    {
+        throw new InvalidOperationException(...);
+    }
+
     break;
 ```
 
@@ -87,7 +99,6 @@ public ConfigurationEntry(
     string[]? aliases = null,
     bool sensitive = false)
 {
-    // Existing assignments remain unchanged.
     Sensitive = sensitive;
 }
 
@@ -196,16 +207,17 @@ private static ImmutableHashSet<string> GetSensitiveKeys(AnalyzerOptions options
 }
 ```
 
-Add `DD0015` as an error diagnostic. After the existing constant validation, get the field's constant string value. For sensitive values, accept only a direct chain to:
+Add `DD0015` as an error diagnostic. After the existing constant validation, get the field's constant string value. Use `IInvocationOperation` and bound method symbols so parentheses and conversions around `WithKeys()` are transparent, while same-named extension methods remain rejected. For sensitive values, accept only an instance method on `ConfigurationBuilder.HasKeys` named:
 
 ```csharp
 AsRedactedString
 AsRedactedStringResult
+AsRedactedDictionaryResult
 ```
 
 For `AsStringResult`, obtain `IInvocationOperation`, find the argument whose bound parameter is named `recordValue`, and require `argument.Value.ConstantValue` to equal `false`. Reject all other accessors and non-chained/stored `HasKeys` values.
 
-Keep missing/malformed YAML silent because the source generator already owns registry diagnostics.
+Require exactly one readable and valid YAML additional file. Report `DD0016` at compilation end when metadata is missing, ambiguous, unreadable, or invalid. Propagate `OperationCanceledException` instead of converting cancellation into missing metadata.
 
 - [x] **Step 5: Run unsafe-read tests and verify GREEN**
 
@@ -223,7 +235,7 @@ builder.WithKeys(ConfigurationKeys.ApiKey).AsRedactedStringResult();
 builder.WithKeys(ConfigurationKeys.ApiKey).AsStringResult(null, null, recordValue: false);
 ```
 
-Also prove a malformed or missing YAML additional file does not create `DD0015`; source-generator diagnostics remain authoritative.
+Also prove malformed or missing YAML produces `DD0016`, and prove a non-`Datadog.Trace` consumer assembly still enforces `DD0015` when the shared additional file is present.
 
 - [x] **Step 7: Run the entire analyzer suite**
 
@@ -250,7 +262,7 @@ git commit -m "[Configuration] Enforce redaction for sensitive keys"
 - Modify: `tracer/test/Datadog.Trace.Tests/Configuration/TracerSettingsTests.cs`
 
 **Interfaces:**
-- Consumes: `AsRedactedString()`, `StringConfigurationSource.ParseCustomKeyValues(string?, bool, char)`, and existing configuration alias fallback.
+- Consumes: `AsRedactedString()`, `AsRedactedDictionaryResult(char)`, and existing configuration alias fallback.
 - Produces: redacted telemetry for `DD_API_KEY` and all OTLP header settings, while preserving parsed header values for exporters.
 
 - [x] **Step 1: Add failing telemetry regression tests**
@@ -284,15 +296,13 @@ In `ExporterSettings.RawSettings`, replace the three OTLP header `AsString()` ca
 
 Remove `TracerSettings.OtlpMetricsHeaders`, its duplicate parse block, and its now-redundant parsing test. `ExporterSettings` remains the metrics-header owner.
 
-For log headers, preserve the parsed dictionary while redacting the source read:
+For log headers, preserve `JsonConfigurationSource` object and array handling while redacting every telemetry path. Keep the public `IConfigurationSource` contract unchanged. Pass the existing separator-based dictionary overload an internal telemetry decorator that forces string-value records to use `recordValue: false` and forwards every other operation unchanged. Then retain the existing default, filter, and trim flow:
 
 ```csharp
-var rawOtlpLogsHeaders = config
-                        .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
-                        .AsRedactedString();
-
-OtlpLogsHeaders = (StringConfigurationSource.ParseCustomKeyValues(rawOtlpLogsHeaders, allowOptionalMappings: false, separator: '=')
-                ?? new Dictionary<string, string>())
+OtlpLogsHeaders = config
+                .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
+                .AsRedactedDictionaryResult(separator: '=')
+                .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
                   .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
                   .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
 ```
@@ -330,7 +340,7 @@ git commit -m "[Configuration] Redact sensitive configuration reads"
 
 - [x] **Step 1: Update contributor documentation**
 
-Document that `sensitive: true` marks credential-bearing values, that aliases inherit redaction through normal fallback, and that sensitive keys must use `AsRedactedString*` or an explicit compile-time `recordValue: false` path.
+Document that `sensitive: true` marks credential-bearing values, that aliases inherit redaction through normal fallback, and that sensitive keys must use a redacted string or dictionary accessor, or an explicit compile-time `recordValue: false` path.
 
 - [x] **Step 2: Run focused suites**
 
@@ -364,7 +374,7 @@ Invoke the repository's `pre-push-review` skill. Apply valid findings, amend the
 
 - [ ] **Step 6: Publish a draft PR**
 
-Read `.github/pull_request_template.md`, push with the `bm1549` public-repository account, and create a draft PR against `master` with the `AI Generated` label. The description must explain the compile-time design, lack of runtime lookup, and exact test evidence.
+Read `.github/pull_request_template.md`, push with an authorized public-repository account, and create a draft PR against `master` with the `AI Generated` label. The description must explain the compile-time design, lack of runtime lookup, and exact test evidence.
 
 - [ ] **Step 7: Babysit CI**
 

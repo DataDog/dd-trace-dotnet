@@ -113,9 +113,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="Configuration\supported-configurations.yaml">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
     <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
   </ItemGroup>
 

@@ -52,23 +52,30 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             isEnabledByDefault: true,
             description: "ConfigurationBuilder.WithKeys method calls should only accept string constants from PlatformKeys or ConfigurationKeys classes, not variables or computed values.");
 
-        /// <summary>
-        /// Diagnostic descriptor for when WithKeys is called with a sensitive configuration key without immediately using a redacted accessor.
-        /// </summary>
         private static readonly DiagnosticDescriptor RedactSensitiveConfigurationRule = new(
             id: "DD0015",
             title: "Redact sensitive configuration values",
-            messageFormat: "Sensitive configuration key '{0}' must be read with a redacted accessor",
+            messageFormat: "Sensitive configuration key '{0}' must be read with AsRedactedString, AsRedactedStringResult, AsRedactedDictionaryResult, or AsStringResult with compile-time recordValue: false",
             category: "Usage",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
             description: "Sensitive configuration values must not be recorded in configuration telemetry.");
 
+        private static readonly DiagnosticDescriptor SensitiveConfigurationMetadataRule = new(
+            id: "DD0016",
+            title: "Load sensitive configuration metadata",
+            messageFormat: "The analyzer requires exactly one readable and valid supported-configurations.yaml additional file",
+            category: "Usage",
+            defaultSeverity: DiagnosticSeverity.Error,
+            isEnabledByDefault: true,
+            description: "Sensitive configuration metadata must be available so configuration telemetry redaction can be enforced.",
+            customTags: WellKnownDiagnosticTags.CompilationEnd);
+
         /// <summary>
         /// Gets the supported diagnostics
         /// </summary>
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            [UseConfigurationConstantsRule, UseConfigurationConstantsNotVariablesRule, RedactSensitiveConfigurationRule, Diagnostics.MissingRequiredType];
+            [UseConfigurationConstantsRule, UseConfigurationConstantsNotVariablesRule, RedactSensitiveConfigurationRule, SensitiveConfigurationMetadataRule, Diagnostics.MissingRequiredType];
 
         /// <summary>
         /// Initialize the analyzer
@@ -80,7 +87,6 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             context.EnableConcurrentExecution();
             context.RegisterCompilationStartAction(compilationContext =>
             {
-                var sensitiveKeys = GetSensitiveKeys(compilationContext.Options, compilationContext.CancellationToken);
                 var wellKnownTypeProvider = WellKnownTypeProvider.GetOrCreate(compilationContext.Compilation);
 
                 var configurationBuilder = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.ConfigurationBuilder);
@@ -98,6 +104,13 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                 var platformKeys = wellKnownTypeProvider.GetOrCreateTypeByMetadataName(WellKnownTypeNames.PlatformKeys);
                 if (Diagnostics.IsTypeNullAndReportForDatadogTrace(compilationContext, platformKeys, nameof(ConfigurationBuilderWithKeysAnalyzer), WellKnownTypeNames.PlatformKeys))
                 {
+                    return;
+                }
+
+                if (!TryGetSensitiveKeys(compilationContext.Options, compilationContext.CancellationToken, out var sensitiveKeys))
+                {
+                    compilationContext.RegisterCompilationEndAction(
+                        c => c.ReportDiagnostic(Diagnostic.Create(SensitiveConfigurationMetadataRule, Location.None)));
                     return;
                 }
 
@@ -243,50 +256,79 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
 
         private static bool IsRedactedRead(InvocationExpressionSyntax withKeysInvocation, SemanticModel semanticModel, CancellationToken cancellationToken)
         {
-            if (withKeysInvocation.Parent is not MemberAccessExpressionSyntax accessorMember
-             || accessorMember.Expression != withKeysInvocation
-             || accessorMember.Parent is not InvocationExpressionSyntax accessorInvocation
-             || accessorInvocation.Expression != accessorMember)
+            if (semanticModel.GetOperation(withKeysInvocation, cancellationToken) is not IInvocationOperation withKeysOperation)
             {
                 return false;
             }
 
-            if (accessorMember.Name.Identifier.ValueText is "AsRedactedString" or "AsRedactedStringResult")
+            IOperation current = withKeysOperation;
+            while (current.Parent is IParenthesizedOperation or IConversionOperation)
+            {
+                current = current.Parent;
+            }
+
+            if (current.Parent is not IInvocationOperation accessorOperation
+             || accessorOperation.TargetMethod.IsStatic
+             || !SymbolEqualityComparer.Default.Equals(accessorOperation.TargetMethod.ContainingType, withKeysOperation.TargetMethod.ReturnType))
+            {
+                return false;
+            }
+
+            if (accessorOperation.TargetMethod.Name is "AsRedactedString" or "AsRedactedStringResult" or "AsRedactedDictionaryResult")
             {
                 return true;
             }
 
-            if (accessorMember.Name.Identifier.ValueText != "AsStringResult"
-             || semanticModel.GetOperation(accessorInvocation, cancellationToken) is not IInvocationOperation operation)
+            if (accessorOperation.TargetMethod.Name != "AsStringResult")
             {
                 return false;
             }
 
-            var recordValueArgument = operation.Arguments.FirstOrDefault(x => x.Parameter?.Name == "recordValue");
+            var recordValueArgument = accessorOperation.Arguments.FirstOrDefault(x => x.Parameter?.Name == "recordValue");
             return recordValueArgument?.Value.ConstantValue is { HasValue: true, Value: false };
         }
 
-        private static ImmutableHashSet<string> GetSensitiveKeys(AnalyzerOptions options, CancellationToken cancellationToken)
+        private static bool TryGetSensitiveKeys(AnalyzerOptions options, CancellationToken cancellationToken, out ImmutableHashSet<string> sensitiveKeys)
         {
-            var file = options.AdditionalFiles.FirstOrDefault(
-                x => Path.GetFileName(x.Path).Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase));
-            var content = file?.GetText(cancellationToken)?.ToString();
-            if (string.IsNullOrEmpty(content))
+            var files = options.AdditionalFiles
+                               .Where(x => Path.GetFileName(x.Path).Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
+                               .Take(2)
+                               .ToArray();
+            if (files.Length != 1)
             {
-                return ImmutableHashSet<string>.Empty;
+                sensitiveKeys = ImmutableHashSet<string>.Empty;
+                return false;
             }
 
             try
             {
-                return YamlReader.ParseSupportedConfigurations(content!)
-                                 .Configurations
-                                 .Where(x => x.Value.Sensitive)
-                                 .Select(x => x.Key)
-                                 .ToImmutableHashSet(StringComparer.Ordinal);
+                var content = files[0].GetText(cancellationToken)?.ToString();
+                if (string.IsNullOrEmpty(content))
+                {
+                    sensitiveKeys = ImmutableHashSet<string>.Empty;
+                    return false;
+                }
+
+                var configurations = YamlReader.ParseSupportedConfigurations(content!).Configurations;
+                if (configurations.Count == 0)
+                {
+                    sensitiveKeys = ImmutableHashSet<string>.Empty;
+                    return false;
+                }
+
+                sensitiveKeys = configurations.Where(x => x.Value.Sensitive)
+                                              .Select(x => x.Key)
+                                              .ToImmutableHashSet(StringComparer.Ordinal);
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch
             {
-                return ImmutableHashSet<string>.Empty;
+                sensitiveKeys = ImmutableHashSet<string>.Empty;
+                return false;
             }
         }
 

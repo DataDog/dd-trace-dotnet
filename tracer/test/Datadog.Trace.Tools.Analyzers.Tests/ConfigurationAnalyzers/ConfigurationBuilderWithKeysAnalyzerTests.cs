@@ -3,10 +3,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Collections.Immutable;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
+using Microsoft.CodeAnalysis.Text;
 using Xunit;
 using Verifier = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<
     Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers.ConfigurationBuilderWithKeysAnalyzer,
@@ -18,7 +25,8 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
 {
     private const string Dd0007 = "DD0007"; // Hardcoded string literal
     private const string Dd0008 = "DD0008"; // Variable or expression
-    private const string Dd0015 = "DD0015"; // Sensitive key without redaction
+    private const string Dd0015 = "DD0015";
+    private const string Dd0016 = "DD0016";
     private const string SensitiveConfigurationTypes = AnalyzerTestHelper.MinimalRequiredTypes + """
         namespace Datadog.Trace.Configuration
         {
@@ -30,14 +38,18 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
         }
         namespace Datadog.Trace.Configuration.Telemetry
         {
-            public struct ConfigurationBuilder { public HasKeys WithKeys(string key) => default; }
-            public struct HasKeys
+            public struct ConfigurationBuilder
             {
-                public string AsString() => null;
-                public object AsDictionaryResult() => null;
-                public object AsStringResult(object validator, object converter, bool recordValue) => null;
-                public string AsRedactedString() => null;
-                public object AsRedactedStringResult() => null;
+                public HasKeys WithKeys(string key) => default;
+
+                public struct HasKeys
+                {
+                    public string AsString() => null;
+                    public object AsDictionaryResult() => null;
+                    public object AsStringResult(object validator, object converter, bool recordValue) => null;
+                    public string AsRedactedString() => null;
+                    public object AsRedactedStringResult() => null;
+                }
             }
         }
         """;
@@ -60,9 +72,33 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                    }
                    """;
 
+        var expected = new DiagnosticResult(Dd0015, DiagnosticSeverity.Error)
+                      .WithLocation(0)
+                      .WithMessage("Sensitive configuration key 'DD_API_KEY' must be read with AsRedactedString, AsRedactedStringResult, AsRedactedDictionaryResult, or AsStringResult with compile-time recordValue: false");
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+    }
+
+    [Fact]
+    public async Task SensitiveKeyInConsumerAssembly_ShouldReportDD0015()
+    {
+        var code = SensitiveConfigurationTypes + """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new Telemetry.ConfigurationBuilder();
+                               builder.WithKeys({|#0:ConfigurationKeys.ApiKey|}).AsString();
+                           }
+                       }
+                   }
+                   """;
+
         var expected = new DiagnosticResult(Dd0015, DiagnosticSeverity.Error).WithLocation(0);
 
-        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+        await AnalyzerTestHelper.VerifyAnalyzerInAssemblyWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, "Datadog.Trace.Tools.Runner", expected);
     }
 
     [Fact]
@@ -84,7 +120,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
 
         var expected = new DiagnosticResult(Dd0015, DiagnosticSeverity.Error).WithLocation(0);
 
-        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
     }
 
     [Fact]
@@ -106,7 +142,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
 
         var expected = new DiagnosticResult(Dd0015, DiagnosticSeverity.Error).WithLocation(0);
 
-        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
     }
 
     [Fact]
@@ -129,7 +165,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
 
         var expected = new DiagnosticResult(Dd0015, DiagnosticSeverity.Error).WithLocation(0);
 
-        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
     }
 
     [Fact]
@@ -151,7 +187,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
 
         var expected = new DiagnosticResult(Dd0015, DiagnosticSeverity.Error).WithLocation(0);
 
-        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
     }
 
     [Fact]
@@ -171,7 +207,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                    }
                    """;
 
-        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code);
     }
 
     [Fact]
@@ -191,7 +227,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                    }
                    """;
 
-        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code);
     }
 
     [Fact]
@@ -211,11 +247,59 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                    }
                    """;
 
-        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code);
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code);
     }
 
     [Fact]
-    public async Task SensitiveKeyWithMalformedSupportedConfigurations_ShouldHaveNoDiagnostics()
+    public async Task SensitiveKeyWithParenthesesAndConversionAroundWithKeys_ShouldHaveNoDiagnostics()
+    {
+        var code = SensitiveConfigurationTypes + """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new Telemetry.ConfigurationBuilder();
+                               (builder.WithKeys(ConfigurationKeys.ApiKey)).AsRedactedString();
+                               ((Telemetry.ConfigurationBuilder.HasKeys)builder.WithKeys(ConfigurationKeys.ApiKey)).AsRedactedString();
+                           }
+                       }
+                   }
+                   """;
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code);
+    }
+
+    [Fact]
+    public async Task SensitiveKeyWithSameNamedExtensionAccessor_ShouldReportDD0015()
+    {
+        var code = SensitiveConfigurationTypes + """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public static class MaliciousExtensions
+                       {
+                           public static string AsRedactedString(this Telemetry.ConfigurationBuilder.HasKeys keys, string ignored) => null;
+                       }
+
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new Telemetry.ConfigurationBuilder();
+                               builder.WithKeys({|#0:ConfigurationKeys.ApiKey|}).AsRedactedString("record-value");
+                           }
+                       }
+                   }
+                   """;
+
+        var expected = new DiagnosticResult(Dd0015, DiagnosticSeverity.Error).WithLocation(0);
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+    }
+
+    [Fact]
+    public async Task SensitiveKeyWithMalformedSupportedConfigurations_ShouldReportDD0016()
     {
         var code = SensitiveConfigurationTypes + """
                    namespace Datadog.Trace.Configuration
@@ -236,11 +320,23 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                                          malformed property
                                      """;
 
-        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, malformedYaml);
+        var expected = new DiagnosticResult(Dd0016, DiagnosticSeverity.Error).WithNoLocation();
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, malformedYaml, expected);
+    }
+
+    [Theory]
+    [InlineData("version: '2'")]
+    [InlineData("supportedConfigurations:")]
+    public async Task EmptySupportedConfigurations_ShouldReportDD0016(string yaml)
+    {
+        var expected = new DiagnosticResult(Dd0016, DiagnosticSeverity.Error).WithNoLocation();
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(SensitiveConfigurationTypes, yaml, expected);
     }
 
     [Fact]
-    public async Task SensitiveKeyWithMissingSupportedConfigurations_ShouldHaveNoDiagnostics()
+    public async Task SensitiveKeyWithMissingSupportedConfigurations_ShouldReportDD0016()
     {
         var code = SensitiveConfigurationTypes + """
                    namespace Datadog.Trace.Configuration
@@ -256,7 +352,39 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                    }
                    """;
 
-        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code);
+        var expected = new DiagnosticResult(Dd0016, DiagnosticSeverity.Error).WithNoLocation();
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithoutSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+    }
+
+    [Fact]
+    public void CanceledSupportedConfigurationsRead_ShouldPropagateCancellation()
+    {
+        var options = new AnalyzerOptions(ImmutableArray.Create<AdditionalText>(new CanceledAdditionalText()));
+        var method = typeof(ConfigurationBuilderWithKeysAnalyzer).GetMethod("TryGetSensitiveKeys", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var exception = Assert.Throws<TargetInvocationException>(() => method.Invoke(null, [options, CancellationToken.None, null]));
+        Assert.IsType<OperationCanceledException>(exception.InnerException);
+    }
+
+    [Fact]
+    public async Task AmbiguousSupportedConfigurations_ShouldReportDD0016()
+    {
+        var diagnostics = await CreateAnalyzer(
+                              new LiteralAdditionalText("/first/supported-configurations.yaml", AnalyzerTestHelper.SupportedConfigurationsYaml),
+                              new LiteralAdditionalText("/second/supported-configurations.yaml", AnalyzerTestHelper.SupportedConfigurationsYaml))
+                             .GetAnalyzerDiagnosticsAsync();
+
+        Assert.Contains(diagnostics, x => x.Id == Dd0016);
+    }
+
+    [Fact]
+    public async Task UnreadableSupportedConfigurations_ShouldReportDD0016()
+    {
+        var diagnostics = await CreateAnalyzer(new UnreadableAdditionalText()).GetAnalyzerDiagnosticsAsync();
+
+        Assert.Contains(diagnostics, x => x.Id == Dd0016);
     }
 
     [Fact]
@@ -310,6 +438,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             }
         };
 
+        test.TestState.AdditionalFiles.Add(("supported-configurations.yaml", AnalyzerTestHelper.SupportedConfigurationsYaml));
         test.SolutionTransforms.Add((solution, projectId) =>
             solution.WithProjectAssemblyName(projectId, "Datadog.Trace"));
         await test.RunAsync();
@@ -366,6 +495,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             }
         };
 
+        test.TestState.AdditionalFiles.Add(("supported-configurations.yaml", AnalyzerTestHelper.SupportedConfigurationsYaml));
         test.SolutionTransforms.Add((solution, projectId) =>
             solution.WithProjectAssemblyName(projectId, "Datadog.Trace"));
         await test.RunAsync();
@@ -423,6 +553,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             }
         };
 
+        test.TestState.AdditionalFiles.Add(("supported-configurations.yaml", AnalyzerTestHelper.SupportedConfigurationsYaml));
         test.SolutionTransforms.Add((solution, projectId) =>
             solution.WithProjectAssemblyName(projectId, "Datadog.Trace"));
         await test.RunAsync();
@@ -595,6 +726,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             }
         };
 
+        test.TestState.AdditionalFiles.Add(("supported-configurations.yaml", AnalyzerTestHelper.SupportedConfigurationsYaml));
         test.SolutionTransforms.Add((solution, projectId) =>
             solution.WithProjectAssemblyName(projectId, "Datadog.Trace"));
         await test.RunAsync();
@@ -662,6 +794,7 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
             }
         };
 
+        test.TestState.AdditionalFiles.Add(("supported-configurations.yaml", AnalyzerTestHelper.SupportedConfigurationsYaml));
         test.SolutionTransforms.Add((solution, projectId) =>
             solution.WithProjectAssemblyName(projectId, "Datadog.Trace"));
         await test.RunAsync();
@@ -725,5 +858,41 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
                       .WithArguments("ConfigurationBuilderWithKeysAnalyzer", "Datadog.Trace.Configuration.ConfigurationKeys");
 
         await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+    }
+
+    private static CompilationWithAnalyzers CreateAnalyzer(params AdditionalText[] additionalFiles)
+    {
+        var compilation = CSharpCompilation.Create(
+            "Datadog.Trace",
+            [CSharpSyntaxTree.ParseText(SensitiveConfigurationTypes)],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        var options = new AnalyzerOptions(additionalFiles.ToImmutableArray());
+        var analyzers = ImmutableArray.Create<DiagnosticAnalyzer>(new ConfigurationBuilderWithKeysAnalyzer());
+        return compilation.WithAnalyzers(analyzers, options);
+    }
+
+    private sealed class CanceledAdditionalText : AdditionalText
+    {
+        public override string Path => "supported-configurations.yaml";
+
+        public override SourceText GetText(CancellationToken cancellationToken = default)
+            => throw new OperationCanceledException(cancellationToken);
+    }
+
+    private sealed class UnreadableAdditionalText : AdditionalText
+    {
+        public override string Path => "supported-configurations.yaml";
+
+        public override SourceText GetText(CancellationToken cancellationToken = default) => null;
+    }
+
+    private sealed class LiteralAdditionalText(string path, string text) : AdditionalText
+    {
+        private readonly SourceText _text = SourceText.From(text);
+
+        public override string Path { get; } = path;
+
+        public override SourceText GetText(CancellationToken cancellationToken = default) => _text;
     }
 }

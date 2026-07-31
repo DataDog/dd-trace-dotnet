@@ -65,23 +65,25 @@ internal static class AnalyzerTestHelper
     /// </summary>
     public static async Task VerifyDatadogAnalyzerAsync<TAnalyzer>(string source, params DiagnosticResult[] expected)
         where TAnalyzer : DiagnosticAnalyzer, new()
-        => await VerifyDatadogAnalyzerAsync<TAnalyzer>(source, supportedConfigurationsYaml: null, expected);
-
-    /// <summary>
-    /// Verifies analyzer with a literal supported-configurations.yaml additional file.
-    /// </summary>
-    public static async Task VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<TAnalyzer>(string source, params DiagnosticResult[] expected)
-        where TAnalyzer : DiagnosticAnalyzer, new()
         => await VerifyDatadogAnalyzerAsync<TAnalyzer>(source, SupportedConfigurationsYaml, expected);
 
-    /// <summary>
-    /// Verifies analyzer with the provided supported-configurations.yaml additional file.
-    /// </summary>
+    public static async Task VerifyDatadogAnalyzerWithoutSupportedConfigurationsAsync<TAnalyzer>(string source, params DiagnosticResult[] expected)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        => await VerifyDatadogAnalyzerAsync<TAnalyzer>(source, supportedConfigurationsYaml: null, expected);
+
     public static async Task VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<TAnalyzer>(string source, string supportedConfigurationsYaml, params DiagnosticResult[] expected)
         where TAnalyzer : DiagnosticAnalyzer, new()
         => await VerifyDatadogAnalyzerAsync<TAnalyzer>(source, supportedConfigurationsYaml, expected);
 
+    public static async Task VerifyAnalyzerInAssemblyWithSupportedConfigurationsAsync<TAnalyzer>(string source, string assemblyName, params DiagnosticResult[] expected)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        => await VerifyAnalyzerAsync<TAnalyzer>(source, SupportedConfigurationsYaml, assemblyName, expected);
+
     private static async Task VerifyDatadogAnalyzerAsync<TAnalyzer>(string source, string? supportedConfigurationsYaml, params DiagnosticResult[] expected)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        => await VerifyAnalyzerAsync<TAnalyzer>(source, supportedConfigurationsYaml, "Datadog.Trace", expected);
+
+    private static async Task VerifyAnalyzerAsync<TAnalyzer>(string source, string? supportedConfigurationsYaml, string assemblyName, params DiagnosticResult[] expected)
         where TAnalyzer : DiagnosticAnalyzer, new()
     {
         var test = new CSharpAnalyzerTest<TAnalyzer, DefaultVerifier>
@@ -98,7 +100,7 @@ internal static class AnalyzerTestHelper
         }
 
         test.TestState.ExpectedDiagnostics.AddRange(expected);
-        test.SolutionTransforms.Add((solution, projectId) => solution.WithProjectAssemblyName(projectId, "Datadog.Trace"));
+        test.SolutionTransforms.Add((solution, projectId) => solution.WithProjectAssemblyName(projectId, assemblyName));
         await test.RunAsync();
     }
 }

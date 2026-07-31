@@ -344,10 +344,10 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders, "general-header-secret")]
-        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, "metrics-header-secret")]
-        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders, "traces-header-secret")]
-        public void OtlpHeaderIsParsedAndRedactedInTelemetry(string headerKey, string sentinel)
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders, "general-header-secret", 3)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, "metrics-header-secret", 1)]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders, "traces-header-secret", 1)]
+        public void OtlpHeaderIsParsedAndRedactedInTelemetry(string headerKey, string sentinel, int expectedTelemetryCount)
         {
             var source = BuildSource($"{headerKey}:dd-api-key={sentinel}");
             var telemetry = new ConfigurationTelemetry();
@@ -367,7 +367,8 @@ namespace Datadog.Trace.Tests.Configuration
 
             entries.Where(x => x.Key == headerKey)
                    .Should()
-                   .OnlyContain(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted && x.StringValue == null);
+                   .HaveCount(expectedTelemetryCount)
+                   .And.OnlyContain(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted && x.StringValue == null);
         }
 
         [Fact]
@@ -382,7 +383,7 @@ namespace Datadog.Trace.Tests.Configuration
             telemetry.GetQueueForTesting()
                    .Where(x => x.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
                    .Should()
-                   .OnlyContain(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.String && x.StringValue == endpoint);
+                   .ContainSingle(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.String && x.StringValue == endpoint);
         }
 
         private static ExporterSettings Setup(IConfigurationSource source, Func<string, bool> fileExists)

@@ -263,7 +263,19 @@ namespace Datadog.Trace.SourceGenerators.Helpers
                                     inAliases = true;
                                     break;
                                 case "sensitive":
-                                    currentSensitive = propValue.Equals("true", StringComparison.OrdinalIgnoreCase);
+                                    if (propValue.Equals("true", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        currentSensitive = true;
+                                    }
+                                    else if (propValue.Equals("false", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        currentSensitive = false;
+                                    }
+                                    else
+                                    {
+                                        throw new InvalidOperationException($"Invalid sensitive value on line {lineNumber}: '{propValue}'. Expected true or false.");
+                                    }
+
                                     break;
                                 case "documentation":
                                     if (propValue == "|-" || propValue == "|")
