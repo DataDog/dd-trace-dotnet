@@ -1,6 +1,5 @@
 using System;
 using System.Data.Common;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
@@ -11,6 +10,20 @@ namespace Samples.Microsoft.Data.SqlClient
     internal static class Program
     {
         private static async Task<int> Main()
+        {
+            try
+            {
+                return await RunAsync();
+            }
+            catch (Exception ex) when (IsTransportError(ex))
+            {
+                Console.WriteLine("Transport-level SQL error, skipping test");
+                Console.WriteLine(ex.ToString());
+                return 13;
+            }
+        }
+
+        private static async Task<int> RunAsync()
         {
             var commandFactory = new DbCommandFactory($"[Microsoft-Data-SqlClient-Test-{Guid.NewGuid():N}]");
             var commandExecutor = new MicrosoftSqlCommandExecutor();
@@ -109,27 +122,27 @@ namespace Samples.Microsoft.Data.SqlClient
         }
 
         static bool IsRetryableConnectionError(SqlException ex)
+            => IsTransportError(ex) ||
+               ex.Number == -2 ||  // Connection timeout
+               ex.Number == 258;   // Connection timeout
+
+        static bool IsTransportError(Exception ex)
         {
-            // Known retryable error codes
-            if (ex.Number == -1 ||      // Generic network error
-                ex.Number == -2 ||      // Connection timeout
-                ex.Number == 53 ||      // SQL Server not found
-                ex.Number == 258 ||     // Connection timeout
-                ex.Number == 10053 ||   // Connection aborted
-                ex.Number == 10054 ||   // Connection reset
-                ex.Number == 10060 ||   // Connection timeout
-                ex.Number == 11001)     // DNS failure
+            // Assembly.LoadFile creates a distinct SqlException type identity, so use the full name
+            // and reflection instead of casting to the compile-time Microsoft.Data.SqlClient type.
+            if (ex.GetType().FullName != typeof(SqlException).FullName ||
+                ex.GetType().GetProperty(nameof(SqlException.Number))?.GetValue(ex) is not int errorNumber)
             {
-                return true;
+                return false;
             }
 
-            // Number=0 with SocketException indicates network issue
-            if (ex.Number == 0 && ex.InnerException is SocketException)
-            {
-                return true;
-            }
-
-            return false;
+            return errorNumber == -1 ||      // Generic network error
+                   errorNumber == 0 ||       // Driver-level transport error
+                   errorNumber == 53 ||      // SQL Server not found
+                   errorNumber == 10053 ||   // Connection aborted
+                   errorNumber == 10054 ||   // Connection reset
+                   errorNumber == 10060 ||   // Connection timeout
+                   errorNumber == 11001;     // DNS failure
         }
     }
 }

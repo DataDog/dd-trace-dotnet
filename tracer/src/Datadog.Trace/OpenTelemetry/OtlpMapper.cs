@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.OpenTelemetry.Common;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
@@ -184,6 +185,52 @@ internal static class OtlpMapper
             else
             {
                 droppedAttributesCount++;
+            }
+        }
+
+        if (spanModel.IsLocalRoot &&
+            spanModel.Span.Context.TraceContext?.FeatureFlagEnrichment is { } featureFlagEnrichment &&
+            featureFlagEnrichment.HasData())
+        {
+            var ffeTags = featureFlagEnrichment.BuildSpanTags();
+
+            if (!StringUtil.IsNullOrEmpty(ffeTags.FlagsEnc))
+            {
+                if (count < limit)
+                {
+                    writeKeyValue(ref state, new KeyValue(SpanEnrichmentState.TagFlagsEnc, ffeTags.FlagsEnc!));
+                    count++;
+                }
+                else
+                {
+                    droppedAttributesCount++;
+                }
+            }
+
+            if (!StringUtil.IsNullOrEmpty(ffeTags.SubjectsEnc))
+            {
+                if (count < limit)
+                {
+                    writeKeyValue(ref state, new KeyValue(SpanEnrichmentState.TagSubjectsEnc, ffeTags.SubjectsEnc!));
+                    count++;
+                }
+                else
+                {
+                    droppedAttributesCount++;
+                }
+            }
+
+            if (!StringUtil.IsNullOrEmpty(ffeTags.RuntimeDefaults))
+            {
+                if (count < limit)
+                {
+                    writeKeyValue(ref state, new KeyValue(SpanEnrichmentState.TagRuntimeDefaults, ffeTags.RuntimeDefaults!));
+                    count++;
+                }
+                else
+                {
+                    droppedAttributesCount++;
+                }
             }
         }
 

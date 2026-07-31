@@ -14,7 +14,10 @@ public static partial class SmokeTestRunner
 {
     class Builder
     {
-        const string LinuxTestAgentImage = "ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest";
+        // Pinned by digest so we control exactly which test-agent version smoke tests run against
+        // We don't track this in smoke-test-images.docker-compose.yml, because we don't want auto-bumps.
+        // Keep this digest in sync with the test-agent service in docker-compose.yml.
+        const string LinuxTestAgentImage = "ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest@sha256:8165e1f1f7c891261ea5af9d7bf24413f75351a6fffbdf5e9277c9ac7c9029be";
         const string WindowsTestAgentImage = "dd-trace-dotnet/ddapm-test-agent-windows";
         const string WindowsTestAgentDockerfile = "build/_build/docker/test-agent.windows.dockerfile";
         readonly SmokeTestImageDigests ImageDigests;
