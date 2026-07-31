@@ -18,6 +18,246 @@ public class ConfigurationBuilderWithKeysAnalyzerTests
 {
     private const string Dd0007 = "DD0007"; // Hardcoded string literal
     private const string Dd0008 = "DD0008"; // Variable or expression
+    private const string Dd0015 = "DD0015"; // Sensitive key without redaction
+    private const string SensitiveConfigurationTypes = AnalyzerTestHelper.MinimalRequiredTypes + """
+        namespace Datadog.Trace.Configuration
+        {
+            public static partial class ConfigurationKeys
+            {
+                public const string ApiKey = "DD_API_KEY";
+                public const string ServiceName = "DD_SERVICE";
+            }
+        }
+        namespace Datadog.Trace.Configuration.Telemetry
+        {
+            public struct ConfigurationBuilder { public HasKeys WithKeys(string key) => default; }
+            public struct HasKeys
+            {
+                public string AsString() => null;
+                public object AsDictionaryResult() => null;
+                public object AsStringResult(object validator, object converter, bool recordValue) => null;
+                public string AsRedactedString() => null;
+                public object AsRedactedStringResult() => null;
+            }
+        }
+        """;
+
+    [Fact]
+    public async Task SensitiveKeyWithAsString_ShouldReportDD0015ButNonSensitiveDoesNot()
+    {
+        var code = SensitiveConfigurationTypes + """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new Telemetry.ConfigurationBuilder();
+                               builder.WithKeys({|#0:ConfigurationKeys.ApiKey|}).AsString();
+                               builder.WithKeys(ConfigurationKeys.ServiceName).AsString();
+                           }
+                       }
+                   }
+                   """;
+
+        var expected = new DiagnosticResult(Dd0015, DiagnosticSeverity.Error).WithLocation(0);
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+    }
+
+    [Fact]
+    public async Task SensitiveKeyWithAsDictionaryResult_ShouldReportDD0015()
+    {
+        var code = SensitiveConfigurationTypes + """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new Telemetry.ConfigurationBuilder();
+                               builder.WithKeys({|#0:ConfigurationKeys.ApiKey|}).AsDictionaryResult();
+                           }
+                       }
+                   }
+                   """;
+
+        var expected = new DiagnosticResult(Dd0015, DiagnosticSeverity.Error).WithLocation(0);
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+    }
+
+    [Fact]
+    public async Task SensitiveKeyWithRecordingAsStringResult_ShouldReportDD0015()
+    {
+        var code = SensitiveConfigurationTypes + """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new Telemetry.ConfigurationBuilder();
+                               builder.WithKeys({|#0:ConfigurationKeys.ApiKey|}).AsStringResult(null, null, recordValue: true);
+                           }
+                       }
+                   }
+                   """;
+
+        var expected = new DiagnosticResult(Dd0015, DiagnosticSeverity.Error).WithLocation(0);
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+    }
+
+    [Fact]
+    public async Task SensitiveKeyWithNonConstantRecordValue_ShouldReportDD0015()
+    {
+        var code = SensitiveConfigurationTypes + """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new Telemetry.ConfigurationBuilder();
+                               bool recordValue = false;
+                               builder.WithKeys({|#0:ConfigurationKeys.ApiKey|}).AsStringResult(null, null, recordValue);
+                           }
+                       }
+                   }
+                   """;
+
+        var expected = new DiagnosticResult(Dd0015, DiagnosticSeverity.Error).WithLocation(0);
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+    }
+
+    [Fact]
+    public async Task SensitiveKeyStoredWithoutAccessor_ShouldReportDD0015()
+    {
+        var code = SensitiveConfigurationTypes + """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new Telemetry.ConfigurationBuilder();
+                               var sensitive = builder.WithKeys({|#0:ConfigurationKeys.ApiKey|});
+                           }
+                       }
+                   }
+                   """;
+
+        var expected = new DiagnosticResult(Dd0015, DiagnosticSeverity.Error).WithLocation(0);
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, expected);
+    }
+
+    [Fact]
+    public async Task SensitiveKeyWithAsRedactedString_ShouldHaveNoDiagnostics()
+    {
+        var code = SensitiveConfigurationTypes + """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new Telemetry.ConfigurationBuilder();
+                               builder.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+                           }
+                       }
+                   }
+                   """;
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code);
+    }
+
+    [Fact]
+    public async Task SensitiveKeyWithAsRedactedStringResult_ShouldHaveNoDiagnostics()
+    {
+        var code = SensitiveConfigurationTypes + """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new Telemetry.ConfigurationBuilder();
+                               builder.WithKeys(ConfigurationKeys.ApiKey).AsRedactedStringResult();
+                           }
+                       }
+                   }
+                   """;
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code);
+    }
+
+    [Fact]
+    public async Task SensitiveKeyWithNonRecordingAsStringResult_ShouldHaveNoDiagnostics()
+    {
+        var code = SensitiveConfigurationTypes + """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new Telemetry.ConfigurationBuilder();
+                               builder.WithKeys(ConfigurationKeys.ApiKey).AsStringResult(null, null, recordValue: false);
+                           }
+                       }
+                   }
+                   """;
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code);
+    }
+
+    [Fact]
+    public async Task SensitiveKeyWithMalformedSupportedConfigurations_ShouldHaveNoDiagnostics()
+    {
+        var code = SensitiveConfigurationTypes + """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new Telemetry.ConfigurationBuilder();
+                               builder.WithKeys(ConfigurationKeys.ApiKey).AsString();
+                           }
+                       }
+                   }
+                   """;
+        const string malformedYaml = """
+                                     supportedConfigurations:
+                                       DD_API_KEY:
+                                         malformed property
+                                     """;
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<ConfigurationBuilderWithKeysAnalyzer>(code, malformedYaml);
+    }
+
+    [Fact]
+    public async Task SensitiveKeyWithMissingSupportedConfigurations_ShouldHaveNoDiagnostics()
+    {
+        var code = SensitiveConfigurationTypes + """
+                   namespace Datadog.Trace.Configuration
+                   {
+                       public class TestClass
+                       {
+                           public void TestMethod()
+                           {
+                               var builder = new Telemetry.ConfigurationBuilder();
+                               builder.WithKeys(ConfigurationKeys.ApiKey).AsString();
+                           }
+                       }
+                   }
+                   """;
+
+        await AnalyzerTestHelper.VerifyDatadogAnalyzerAsync<ConfigurationBuilderWithKeysAnalyzer>(code);
+    }
 
     [Fact]
     public async Task ValidWithKeysUsingConfigurationKeys_ShouldHaveNoDiagnostics()

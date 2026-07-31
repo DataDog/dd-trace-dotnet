@@ -13,6 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\build\_build\NativeValidation\YamlReader.cs" Link="ConfigurationAnalyzers\YamlReader.cs" />
+    <Compile Include="..\..\build\_build\NativeValidation\EquatableArray.cs" Link="ConfigurationAnalyzers\EquatableArray.cs" />
+    <Compile Include="..\Datadog.Trace.SourceGenerators\Helpers\HashCode.cs" Link="ConfigurationAnalyzers\HashCode.cs" />
     <Compile Include="..\Datadog.Trace\Util\System.Diagnostics.CodeAnalysis.Attributes.cs">
       <Link>Helpers\System.Diagnostics.CodeAnalysis.Attributes.cs</Link>
     </Compile>

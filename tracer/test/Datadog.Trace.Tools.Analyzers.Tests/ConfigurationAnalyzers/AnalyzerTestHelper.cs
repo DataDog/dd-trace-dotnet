@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers;
 using Microsoft.CodeAnalysis;
@@ -14,6 +16,17 @@ namespace Datadog.Trace.Tools.Analyzers.Tests.ConfigurationAnalyzers;
 
 internal static class AnalyzerTestHelper
 {
+    public const string SupportedConfigurationsYaml = """
+                                                        version: '2'
+                                                        supportedConfigurations:
+                                                          DD_API_KEY:
+                                                          - implementation: A
+                                                            sensitive: true
+                                                          DD_SERVICE:
+                                                          - implementation: A
+                                                            sensitive: false
+                                                        """;
+
     /// <summary>
     /// Minimal required type definitions to prevent DD0009 errors in tests.
     /// Does not include ConfigurationBuilder/HasKeys for tests that define these themselves.
@@ -52,6 +65,24 @@ internal static class AnalyzerTestHelper
     /// </summary>
     public static async Task VerifyDatadogAnalyzerAsync<TAnalyzer>(string source, params DiagnosticResult[] expected)
         where TAnalyzer : DiagnosticAnalyzer, new()
+        => await VerifyDatadogAnalyzerAsync<TAnalyzer>(source, supportedConfigurationsYaml: null, expected);
+
+    /// <summary>
+    /// Verifies analyzer with a literal supported-configurations.yaml additional file.
+    /// </summary>
+    public static async Task VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<TAnalyzer>(string source, params DiagnosticResult[] expected)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        => await VerifyDatadogAnalyzerAsync<TAnalyzer>(source, SupportedConfigurationsYaml, expected);
+
+    /// <summary>
+    /// Verifies analyzer with the provided supported-configurations.yaml additional file.
+    /// </summary>
+    public static async Task VerifyDatadogAnalyzerWithSupportedConfigurationsAsync<TAnalyzer>(string source, string supportedConfigurationsYaml, params DiagnosticResult[] expected)
+        where TAnalyzer : DiagnosticAnalyzer, new()
+        => await VerifyDatadogAnalyzerAsync<TAnalyzer>(source, supportedConfigurationsYaml, expected);
+
+    private static async Task VerifyDatadogAnalyzerAsync<TAnalyzer>(string source, string? supportedConfigurationsYaml, params DiagnosticResult[] expected)
+        where TAnalyzer : DiagnosticAnalyzer, new()
     {
         var test = new CSharpAnalyzerTest<TAnalyzer, DefaultVerifier>
         {
@@ -60,6 +91,11 @@ internal static class AnalyzerTestHelper
                 Sources = { source }
             }
         };
+
+        if (supportedConfigurationsYaml is not null)
+        {
+            test.TestState.AdditionalFiles.Add(("supported-configurations.yaml", supportedConfigurationsYaml));
+        }
 
         test.TestState.ExpectedDiagnostics.AddRange(expected);
         test.SolutionTransforms.Add((solution, projectId) => solution.WithProjectAssemblyName(projectId, "Datadog.Trace"));
