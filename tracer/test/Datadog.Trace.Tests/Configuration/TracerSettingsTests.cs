@@ -1180,20 +1180,6 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("api-key=secret,auth=token", null, new[] { "api-key=secret", "auth=token" })]
-        [InlineData(null, "key1 = value1 , key2 = value2 ", new[] { "key1=value1", "key2=value2" })]
-        [InlineData("valid=value,invalid-no-equals,another=valid", "fallback-key=fallback-value", new[] { "valid=value", "another=valid" })]
-        public void OtlpHeadersParsing(string primaryValue, string fallbackValue, string[] expected)
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, primaryValue),
-                (ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders, fallbackValue));
-            var settings = new TracerSettings(source);
-
-            settings.OtlpMetricsHeaders.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split('=').First(), v => v.Split('=').Last()));
-        }
-
-        [Theory]
         [MemberData(nameof(BooleanTestCases), false)]
         public void PartialFlushEnabled(string value, bool expected)
         {
@@ -1274,6 +1260,22 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             settings.OtlpLogsHeaders.Should().BeEquivalentTo(expected.ToDictionary(v => v.Split('=').First(), v => v.Split('=').Last()));
+        }
+
+        [Fact]
+        public void OtlpLogsHeadersAreParsedAndRedactedInTelemetry()
+        {
+            const string logsSentinel = "logs-header-secret";
+            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders, $"dd-api-key={logsSentinel}"));
+            var telemetry = new ConfigurationTelemetry();
+
+            var settings = new TracerSettings(source, telemetry, new());
+            var entries = telemetry.GetQueueForTesting();
+
+            settings.OtlpLogsHeaders.Should().Contain(new KeyValuePair<string, string>("dd-api-key", logsSentinel));
+            entries.Where(x => x.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
+                   .Should()
+                   .OnlyContain(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted && x.StringValue == null);
         }
 
         [Theory]

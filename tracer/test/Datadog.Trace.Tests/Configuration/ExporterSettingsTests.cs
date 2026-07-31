@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -340,6 +341,48 @@ namespace Datadog.Trace.Tests.Configuration
 
             settings.TracesTransport.Should().Be(TracesTransportType.WindowsNamedPipe);
             settings.TraceAgentUriBase.Should().Be(@"\\.\pipe\" + pipeName);
+        }
+
+        [Theory]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders, "general-header-secret")]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, "metrics-header-secret")]
+        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders, "traces-header-secret")]
+        public void OtlpHeaderIsParsedAndRedactedInTelemetry(string headerKey, string sentinel)
+        {
+            var source = BuildSource($"{headerKey}:dd-api-key={sentinel}");
+            var telemetry = new ConfigurationTelemetry();
+
+            var settings = new ExporterSettings(source, NoFile(), telemetry);
+            var entries = telemetry.GetQueueForTesting();
+
+            if (headerKey != ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders)
+            {
+                settings.OtlpMetricsHeaders.Should().Contain(new KeyValuePair<string, string>("dd-api-key", sentinel));
+            }
+
+            if (headerKey != ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders)
+            {
+                settings.OtlpTracesHeaders.Should().Contain(new KeyValuePair<string, string>("dd-api-key", sentinel));
+            }
+
+            entries.Where(x => x.Key == headerKey)
+                   .Should()
+                   .OnlyContain(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted && x.StringValue == null);
+        }
+
+        [Fact]
+        public void OtlpEndpointIsRecordedAsStringTelemetry()
+        {
+            const string endpoint = "http://example.com:4318/";
+            var source = BuildSource($"{ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint}:{endpoint}");
+            var telemetry = new ConfigurationTelemetry();
+
+            _ = new ExporterSettings(source, NoFile(), telemetry);
+
+            telemetry.GetQueueForTesting()
+                   .Where(x => x.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint)
+                   .Should()
+                   .OnlyContain(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.String && x.StringValue == endpoint);
         }
 
         private static ExporterSettings Setup(IConfigurationSource source, Func<string, bool> fileExists)

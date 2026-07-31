@@ -54,6 +54,7 @@ supportedConfigurations:
   - implementation: A
     scope: managed, native
     type: string
+    sensitive: true
     default: null
     const_name: ApiKey
     documentation: Configuration key for setting the API key, used by the Agent.
@@ -3663,6 +3664,7 @@ supportedConfigurations:
   - implementation: A
     scope: managed
     type: map
+    sensitive: true
     default: ''
     product: OpenTelemetry
     const_name: ExporterOtlpHeaders
@@ -3723,6 +3725,7 @@ supportedConfigurations:
   - implementation: C
     scope: managed
     type: map
+    sensitive: true
     default: null
     product: OpenTelemetry
     aliases:
@@ -3736,6 +3739,7 @@ supportedConfigurations:
   - implementation: B
     scope: managed
     type: map
+    sensitive: true
     default: null
     product: OpenTelemetry
     aliases:
@@ -3822,6 +3826,7 @@ supportedConfigurations:
   - implementation: B
     scope: managed
     type: map
+    sensitive: true
     default: null
     product: OpenTelemetry
     aliases:
