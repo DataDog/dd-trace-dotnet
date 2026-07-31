@@ -1042,15 +1042,28 @@ partial class Build
                 {
                     Logger.Information("Artifact not yet available (attempt {Attempt}/5)", attempt + 1);
                 }
+                catch (VssServiceException ex)
+                {
+                    Logger.Information(ex, "Error looking up artifact (attempt {Attempt}/5)", attempt + 1);
+                }
             }
 
+            string reportLink;
             if (reportUrl is null)
             {
-                throw new Exception("Could not resolve single-file report URL");
+                // Fall back to the build's artifacts page: not a direct link to the report, but it's
+                // deterministic, so we can always give people _some_ way to get to the full report.
+                var artifactsPageUrl = $"{AzureDevopsOrganisation}/{GitHubRepositoryName}/_build/results?buildId={AzureDevopsBuildId.Value}&view=artifacts&pathAsName=false&type=publishedArtifacts";
+                Logger.Warning("Could not resolve single-file report URL, linking to the build artifacts page instead");
+                reportLink = $"📄 **[Download the full report from the build artifacts →]({artifactsPageUrl})**";
+            }
+            else
+            {
+                var viewerUrl = $"https://andrewlock.github.io/merview/?zen=1&url={Uri.EscapeDataString(reportUrl)}";
+                reportLink = $"📄 **[View the full report (charts + all metrics) →]({viewerUrl})**";
             }
 
-            var viewerUrl = $"https://andrewlock.github.io/merview/?zen=1&url={Uri.EscapeDataString(reportUrl)}";
-            var fullMarkdown = summaryMarkdown + $"\n\n📄 **[View the full report (charts + all metrics) →]({viewerUrl})**";
+            var fullMarkdown = summaryMarkdown + "\n\n" + reportLink;
 
             Logger.Information("Updating PR comment on GitHub");
             await ReplaceCommentInPullRequest(prNumber, "## Execution-Time Benchmarks Report", fullMarkdown);
