@@ -450,7 +450,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 using (processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
                 {
-                    var spans = (await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 500)).Where(s => s.Type == "grpc.request").ToList();
+                    var spans = (await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 500, assertExpectedCount: false)).Where(s => s.Type == "grpc.request").ToList();
 
                     Assert.Empty(spans);
                     await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Grpc);
