@@ -81,8 +81,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
         private readonly Regex _exceptionStacktraceOtlpRegex = new(@"string_value"": ""System.ArgumentException: Example argument exception.*""");
         private readonly Regex _exceptionStacktraceOtlpJsonRegex = new(@"stringValue"": ""System.ArgumentException: Example argument exception.*""");
-        private readonly Regex _traceIdRegex = new(@"^([a-fA-F0-9]{32})$");
-        private readonly Regex _spanIdRegex = new(@"^([a-fA-F0-9]{16})$");
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
             : base("OpenTelemetrySdk", output)
@@ -306,198 +304,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 tracesRequests.Should().NotBeNullOrEmpty();
 
                 // Normalize the data in resource attributes and spans
-                var resourceSpansKey = isJson ? "resourceSpans" : "resource_spans";
-                var scopeSpansKey = isJson ? "scopeSpans" : "scope_spans";
-                var stringValueKey = isJson ? "stringValue" : "string_value";
-                var traceIdKey = isJson ? "traceId" : "trace_id";
-                var spanIdKey = isJson ? "spanId" : "span_id";
-                var parentSpanIdKey = isJson ? "parentSpanId" : "parent_span_id";
-                var startTimeUnixNanoKey = isJson ? "startTimeUnixNano" : "start_time_unix_nano";
-                var endTimeUnixNanoKey = isJson ? "endTimeUnixNano" : "end_time_unix_nano";
-                var timeUnixNanoKey = isJson ? "timeUnixNano" : "time_unix_nano";
-
-                foreach (var attribute in tracesRequests.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
-                {
-                    attribute["value"]![stringValueKey] = "sdk-version";
-                }
-
-                foreach (var attribute in tracesRequests.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.name')]"))
-                {
-                    attribute["value"]![stringValueKey] = "sdk-name";
-                }
-
-                foreach (var attribute in tracesRequests.SelectTokens("$..resource.attributes[?(@.key == 'git.commit.sha')]"))
-                {
-                    attribute["value"]![stringValueKey] = "normalized-git-commit-sha";
-                }
-
-                foreach (var span in tracesRequests.SelectTokens("$..spans[*]"))
-                {
-                    static string ToHexString(byte[] bytes, int length)
-                    {
-                        bytes.Length.Should().Be(length);
-
-                        var traceId = new byte[length * 2];
-                        for (int i = 0; i < length; i++)
-                        {
-                            traceId[2 * i] = (byte)(bytes[i] >> 4);         // high 4 bits
-                            traceId[(2 * i) + 1] = (byte)(bytes[i] & 0x0F); // low 4 bits
-                        }
-
-                        // Convert each nibble (0-15) to its hex character
-                        var result = new char[length * 2];
-                        for (int i = 0; i < length * 2; i++)
-                        {
-                            result[i] = (char)(traceId[i] < 10 ? '0' + traceId[i] : 'a' + traceId[i] - 10);
-                        }
-
-                        return new string(result);
-                    }
-
-                    static string ToTraceId(byte[] bytes) => ToHexString(bytes, 16);
-
-                    static string ToSpanId(byte[] bytes) => ToHexString(bytes, 8);
-
-                    // Parse unstable information from the span
-                    string traceIdData = isJson ? span[traceIdKey].ToString()
-                                                : ToTraceId(Convert.FromBase64String(span[traceIdKey].ToString()));
-                    string spanIdData = isJson ? span[spanIdKey].ToString()
-                                                : ToSpanId(Convert.FromBase64String(span[spanIdKey].ToString()));
-                    var spanStartTimeUnixNano = long.Parse(span[startTimeUnixNanoKey].ToString());
-                    var spanEndTimeUnixNano = long.Parse(span[endTimeUnixNanoKey].ToString());
-
-                    // Add strong assertions on unstable span information
-                    spanStartTimeUnixNano.Should().BeGreaterThanOrEqualTo(applicationStartTimeUnixNano);
-                    spanEndTimeUnixNano.Should().BeGreaterThanOrEqualTo(spanStartTimeUnixNano);
-                    traceIdData.Should().MatchRegex(_traceIdRegex);
-                    spanIdData.Should().MatchRegex(_spanIdRegex);
-                    if (span[parentSpanIdKey] != null)
-                    {
-                        string parentSpanIdData = isJson ? span[parentSpanIdKey]?.ToString()
-                                                        : ToSpanId(Convert.FromBase64String(span[parentSpanIdKey].ToString()));
-                        parentSpanIdData.Should().MatchRegex(_spanIdRegex);
-                    }
-
-                    // Normalize the unstable span information for our snapshots
-                    span[startTimeUnixNanoKey] = "0";
-                    span[endTimeUnixNanoKey] = "0";
-                    span[traceIdKey] = "normalized-trace-id";
-                    span[spanIdKey] = "normalized-span-id";
-                    if (span[parentSpanIdKey] != null)
-                    {
-                        span[parentSpanIdKey] = "normalized-parent-span-id";
-                    }
-
-                    // Our JSON and Protobuf OTLP exporters differ in serialization behavior when there are no attributes.
-                    // Standardize them here by removing an empty array
-                    if (span["attributes"] is JArray attributes && attributes.Count == 0)
-                    {
-                        ((JObject)span).Remove("attributes");
-                    }
-                }
-
-                foreach (var attribute in tracesRequests.SelectTokens("$..spans[*].attributes[?(@.key == 'otel.trace_id')]"))
-                {
-                    attribute["value"]![stringValueKey] = "normalized-otel-trace-id";
-                }
-
-                foreach (var link in tracesRequests.SelectTokens("$..links[*]"))
-                {
-                    if (isJson)
-                    {
-                        link[traceIdKey].ToString().Should().MatchRegex(_traceIdRegex);
-                        link[spanIdKey].ToString().Should().MatchRegex(_spanIdRegex);
-                    }
-                    else
-                    {
-                        // We need to emit each byte as a character, so use ASCII encoding
-                        // var decodedTraceId = System.Text.Encoding.ASCII.GetString(Convert.FromBase64String(link[traceIdKey].ToString()));
-                        // var decodedSpanId = System.Text.Encoding.ASCII.GetString(Convert.FromBase64String(link[spanIdKey].ToString()));
-                        // decodedTraceId.Should().MatchRegex(_traceIdRegex);
-                        // decodedSpanId.Should().MatchRegex(_spanIdRegex);
-                    }
-
-                    link[traceIdKey] = "normalized-trace-id";
-                    link[spanIdKey] = "normalized-span-id";
-                }
-
-                foreach (var @event in tracesRequests.SelectTokens("$..events[*]"))
-                {
-                    ((JObject)@event).Remove(timeUnixNanoKey);
-                    ((JObject)@event).AddFirst(new JProperty(timeUnixNanoKey, "0"));
-                }
+                var names = OtlpFieldNames.For(isJson);
+                OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
+                OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
 
                 // For the Datadog SDK, perform more sanitization
                 string finalJson;
                 if (datadogTracesEnabled.Equals("true"))
                 {
-                    // First, for the DD SDK, assert that the resource attributes for all requests are identical
-                    // This is analogous to DD_SERVICE, DD_VERSION, DD_ENV, etc. that define
-                    // metadata for the telemetry at an application and host level.
-                    // This is different for OTel SDK application since the in-app code uses the SDK to create a
-                    // 2nd, completely distinct, Traces SDK instance
-
-                    JToken previousResourceAttributes = null;
-                    foreach (var tracesRequest in tracesRequests)
-                    {
-                        tracesRequest[resourceSpansKey].Should().HaveCount(1);
-                        var resourceAttributes = tracesRequest[resourceSpansKey][0]["resource"]["attributes"];
-
-                        if (previousResourceAttributes == null)
-                        {
-                            previousResourceAttributes = resourceAttributes;
-                        }
-                        else
-                        {
-                            JToken.DeepEquals(previousResourceAttributes, resourceAttributes).Should().BeTrue();
-                            previousResourceAttributes = resourceAttributes;
-                        }
-                    }
-
-                    // Next, assert that we only have a singular InstrumentationScope in each request.
-                    // In OpenTelemetry, an InstrumentationScope is a way to group spans by the library that produced them.
-                    // We should be respecting this for each library/ActivitySource, but right now the DD SDK doesn't
-                    // keep track of that information, so consolidate them into one single, empty InstrumentationScope.
-                    // TODO: Properly track spans per instrumentation scope.
-                    JArray firstSpans = null;
-                    foreach (var tracesRequest in tracesRequests)
-                    {
-                        tracesRequest[resourceSpansKey][0][scopeSpansKey].Should().HaveCount(1);
-                        var spans = tracesRequest[resourceSpansKey][0][scopeSpansKey][0]["spans"] as JArray;
-
-                        if (firstSpans == null)
-                        {
-                            firstSpans = spans;
-                        }
-                        else
-                        {
-                            foreach (var span in spans)
-                            {
-                                firstSpans.Add(span);
-                            }
-                        }
-                    }
-
-                    // Now re-order and trim down to one single request
-                    // This means the output is not a true 1:1 mapping of the input spans, but it's good enough for now
-                    // and will make the results stable.
-                    // Also, sort the spans by name to stabilize
-                    var sortedSpans = new JArray(firstSpans.OrderBy(s => s["name"]!.ToString()));
-                    tracesRequests[0][resourceSpansKey][0][scopeSpansKey][0]["spans"] = sortedSpans;
-                    finalJson = tracesRequests[0].ToString(Formatting.Indented);
+                    finalJson = OtlpSnapshotHelper.MergeDatadogRequests(tracesRequests, names)
+                                                  .ToString(Formatting.Indented);
                 }
                 else
                 {
-                    // Sort the spans by name to stabilize
-                    foreach (var scopeSpan in tracesRequests.SelectTokens($"$..{scopeSpansKey}[*]"))
-                    {
-                        if (scopeSpan["spans"] is JArray spansArray)
-                        {
-                            var sorted = new JArray(spansArray.OrderBy(s => s["name"]?.ToString()));
-                            scopeSpan["spans"] = sorted;
-                        }
-                    }
-
+                    OtlpSnapshotHelper.SortSpansPerScope(tracesRequests, names);
                     finalJson = tracesRequests.ToString(Formatting.Indented);
                 }
 
