@@ -287,13 +287,13 @@
     "SampleProjectName": "Samples.HotChocolate",
     "NugetPackageSearchName": "HotChocolate.AspNetCore",
     "MinVersion": "11.0.0",
-    "MaxVersionExclusive": "16.0.0",
+    "MaxVersionExclusive": "17.0.0",
     "SpecificVersions": [
       "11.*.*",
-      "12.*.*",
       "13.*.*",
       "14.*.*",
-      "15.*.*"
+      "15.*.*",
+      "16.*.*"
     ],
     "VersionConditions": [{
       "MinVersion": "12.22.0",
@@ -420,7 +420,7 @@
     "SampleProjectName": "Samples.StackExchange.Redis",
     "NugetPackageSearchName": "StackExchange.Redis",
     "MinVersion": "1.0.187",
-    "MaxVersionExclusive": "3.0.0",
+    "MaxVersionExclusive": "4.0.0",
     "VersionConditions": [{
       "MaxVersionExclusive": "1.1.700",
       "IncludeOnlyTargetFrameworks": ["net48"]
@@ -434,7 +434,8 @@
     "SpecificVersions": [
       "1.0.*",
       "1.2.*",
-      "2.*.*"
+      "2.*.*",
+      "3.*.*"
     ]
   },
   {

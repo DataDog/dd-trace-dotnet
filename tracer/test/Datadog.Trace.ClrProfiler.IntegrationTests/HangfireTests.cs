@@ -32,6 +32,25 @@ public class HangfireTests : TracingIntegrationTest
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    public async Task BaggageDoesNotAccumulateAcrossSequentialJobs()
+    {
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using var process = await RunSampleAndWaitForExit(agent, arguments: "baggage");
+
+        var workerThreadIds = Regex.Matches(process.StandardOutput, @"Worker thread for job-(?:one|two): (\d+)")
+                                   .Cast<Match>()
+                                   .Select(x => x.Groups[1].Value)
+                                   .ToArray();
+
+        workerThreadIds.Should().HaveCount(2);
+        workerThreadIds.Distinct().Should().ContainSingle();
+        process.StandardOutput.Should().Contain("Baggage for job-one: [job-one=one]");
+        process.StandardOutput.Should().Contain("Baggage for job-two: [job-two=two]");
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
     public async Task SubmitsTraces()
     {
         using (var telemetry = this.ConfigureTelemetry())

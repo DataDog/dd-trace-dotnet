@@ -94,10 +94,11 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 - Implement `OnMethodBegin` and `OnMethodEnd`/`OnAsyncMethodEnd` handlers
 - Use duck typing constraints (`where TReq : IMyShape, IDuckType`) or `obj.DuckCast<IMyShape>()` for third-party types
 - Tests: Add under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` with samples in `tracer/test/test-applications/integrations`
-- Generate boilerplate: `./tracer/build.ps1 RunInstrumentationGenerator`
+- Generate boilerplate (GUI): `./tracer/build.ps1 RunInstrumentationGenerator`
+- Generate boilerplate (CLI): `./tracer/build.ps1 RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method>`
 
 - **`docs/development/AutomaticInstrumentation.md`** — Complete guide to creating integrations, CallTarget wiring, testing strategies, package version configuration, and CI testing
-
+- **`docs/development/InstrumentationGenerator.md`** — GUI and CLI instrumentation generator tools, Nuke integration, duck typing flags, JSON output, and two-tool workflow with dotnet-inspect
 - **`docs/development/DuckTyping.md`** — Duck typing patterns, proxy types, binding attributes, best practices, and performance benchmarks
 
 ## Azure Functions & Serverless
@@ -229,6 +230,12 @@ The tracer runs in-process with customer applications and must have minimal perf
 - **Avoid Allocation in Logging**: Use format strings (`Log("value: {0}", x)`) instead of interpolation (`Log($"value: {x}")`)
 - **Avoid params Array Allocations**: Provide overloads for common cases (0, 1, 2 args)
 
+## Debugger / Dynamic Instrumentation Safety
+
+Debugger code runs inside customer processes while inspecting live customer objects. Before changing debugger capture, expression evaluation, Exception Replay, Code Origin, or symbol-resolution paths, check:
+
+- **`docs/development/DebuggerSafetyBoundaries.md`** — guidance for reflection paths that may resolve customer assemblies/types/members early, trigger type initializers, instantiate attributes, or execute customer code such as getters, enumerators, exception overrides, or `ToString()`.
+
 ## Testing
 
 **Frameworks:** xUnit (managed), GoogleTest (native)
@@ -258,13 +265,17 @@ The tracer runs in-process with customer applications and must have minimal perf
 
 **Development guides:**
 - `docs/development/AutomaticInstrumentation.md` — Creating integrations
+- `docs/development/InstrumentationGenerator.md` — GUI and CLI instrumentation generator tools
+- `docs/development/for-ai/InstrumentationGenerator-CLI.md` — LLM reference for the CLI (commands, JSON schemas, error handling)
 - `docs/development/DuckTyping.md` — Duck typing guide
 - `docs/development/TracerDebugging.md` — Local debugging, IDE configuration, path issues, and troubleshooting
 - `docs/development/AzureFunctions.md` — Azure Functions integration
 - `docs/development/for-ai/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
 - `docs/development/AwsLambdaIntegrationTests.md` — AWS Lambda integration tests
+- `docs/development/DebuggerSafetyBoundaries.md` — Debugger reflection/type-loading and customer-code execution safety guide
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)
+- `docs/development/GitHubActionsSecurity.md` — GitHub Actions SHA-pinning policy, action allowlist, and reviewer checklist
 
 **CI & Testing:**
 - `docs/development/CI/TroubleshootingCIFailures.md` — Investigating build/test failures in Azure DevOps

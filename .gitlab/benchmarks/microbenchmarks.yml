@@ -27,7 +27,7 @@ build-dd-trace-dotnet-microbenchmarks-ami:
   timeout: 3h
   allow_failure: true
   when: manual
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:newest
   variables:
     # Adding managed-by:bp-infra lets us filter CI runner metrics to monitor bp-infra-managed jobs.
     # See https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/2889355451/Gitlab+Runner+fork#Metrics
@@ -66,7 +66,7 @@ run-benchmarks:
   stage: benchmarks
   tags: ["arch:amd64"]
   timeout: 2h
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:newest
   id_tokens:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
@@ -148,7 +148,7 @@ run-benchmarks:
 check-big-regressions:
   stage: gate
   tags: ["arch:amd64"]
-  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:latest
+  image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:newest
   needs: ["run-benchmarks"]
   # TODO: Remove "allow_failure: true" when tooling updates allow excluding flaky metrics from check-big-regressions
   allow_failure: true

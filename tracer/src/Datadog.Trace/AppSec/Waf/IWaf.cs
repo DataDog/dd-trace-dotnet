@@ -19,7 +19,21 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IContext? CreateContext();
 
-        internal unsafe WafReturnCode Run(IntPtr contextHandle, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafObjectStruct retNative, ulong timeoutMicroSeconds);
+        /// <summary>
+        /// Evaluates persistent data, whose side effects live for the whole context.
+        /// </summary>
+        internal unsafe WafReturnCode ContextEval(IntPtr contextHandle, DdwafObjectStruct* rawData, ref DdwafObjectStruct retNative, ulong timeoutMicroSeconds);
+
+        /// <summary>
+        /// Creates a subcontext, whose side effects are discarded when it is destroyed. This replaces
+        /// the ephemeral data of libddwaf 1.x.
+        /// </summary>
+        internal IntPtr SubcontextInit(IntPtr contextHandle);
+
+        /// <summary>
+        /// Evaluates data within a subcontext, so that its side effects don't leak into the context.
+        /// </summary>
+        internal unsafe WafReturnCode SubcontextEval(IntPtr subcontextHandle, DdwafObjectStruct* rawData, ref DdwafObjectStruct retNative, ulong timeoutMicroSeconds);
 
         UpdateResult Update(ConfigurationState configurationStatus);
 

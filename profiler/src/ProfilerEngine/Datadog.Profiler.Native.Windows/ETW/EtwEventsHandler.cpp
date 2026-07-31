@@ -101,13 +101,20 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
         else
         if (message->CommandId == Commands::ClrEvents)
         {
-            if (message->Size > readSize)
+            // The bytes received might come from an untrusted client (any local process can connect to
+            // the inbound pipe), so the embedded length fields must be validated against the bytes
+            // actually read before they are used to index into the receive buffer.
+            //
+            // Bytes required before the variable-length ETW payload:
+            // IpcHeader + EVENT_HEADER + the EtwUserDataLength field.
+            const DWORD clrEventsHeaderSize = sizeof(IpcHeader) + sizeof(EVENT_HEADER) + sizeof(uint16_t);
+            if (readSize < clrEventsHeaderSize)
             {
                 std::stringstream builder;
-                builder << "Invalid format: read size " << readSize << " bytes is smaller than supposed message size " << message->Size + sizeof(IpcHeader);
+                builder << "Invalid format: read size " << readSize << " bytes is smaller than the minimum ClrEvents message size " << clrEventsHeaderSize;
                 _logger->Error(builder.str());
 
-                // TODO: maybe we should stop the communication???
+                // malformed message: skip it but keep listening
                 continue;
             }
 
@@ -124,6 +131,18 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
             ClrEventPayload* pPayload = (ClrEventPayload*)(&(message->Payload));
             uint16_t userDataLength = pPayload->EtwUserDataLength;
             uint8_t* pUserData = (uint8_t*)((byte*)&(pPayload->EtwPayload));
+
+            // The payload length is attacker-controllable: make sure it does not exceed the bytes
+            // actually received so downstream parsing cannot read past the end of the receive buffer.
+            const DWORD availablePayload = readSize - clrEventsHeaderSize;
+            if (userDataLength > availablePayload)
+            {
+                std::stringstream builder;
+                builder << "Invalid format: ETW payload length " << userDataLength << " exceeds received bytes " << availablePayload;
+                _logger->Error(builder.str());
+
+                continue;
+            }
 
             if ((keyword == KEYWORD_GC) && (id == EVENT_ALLOCATION_TICK))
             {
@@ -203,6 +222,13 @@ bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSi
         }
         else
         {
+            // the message must at least contain a full IPC header before its fields are inspected
+            if (readSize < sizeof(IpcHeader))
+            {
+                _logger->Error("Message smaller than the IPC header...");
+                return false;
+            }
+
             if (!IsMessageValid(pMessage))
             {
                 _logger->Error("Invalid Magic signature in message from Agent...");

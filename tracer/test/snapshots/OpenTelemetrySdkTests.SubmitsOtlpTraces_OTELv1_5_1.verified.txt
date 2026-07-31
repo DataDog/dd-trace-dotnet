@@ -1,128 +1,128 @@
 ﻿[
   {
-    "resource_spans": [
+    "resourceSpans": [
       {
         "resource": {
           "attributes": [
             {
               "key": "service.name",
               "value": {
-                "string_value": "MyServiceName"
+                "stringValue": "MyServiceName"
               }
             },
             {
               "key": "service.version",
               "value": {
-                "string_value": "1.0.x"
+                "stringValue": "1.0.x"
               }
             },
             {
               "key": "service.instance.id",
               "value": {
-                "string_value": "Guid_1"
+                "stringValue": "Guid_1"
               }
             },
             {
               "key": "telemetry.sdk.name",
               "value": {
-                "string_value": "sdk-name"
+                "stringValue": "sdk-name"
               }
             },
             {
               "key": "telemetry.sdk.language",
               "value": {
-                "string_value": "dotnet"
+                "stringValue": "dotnet"
               }
             },
             {
               "key": "telemetry.sdk.version",
               "value": {
-                "string_value": "sdk-version"
+                "stringValue": "sdk-version"
               }
             }
           ]
         },
-        "scope_spans": [
+        "scopeSpans": [
           {
             "scope": {
               "name": "MyServiceName"
             },
             "spans": [
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "trace_state": "app=hello",
-                "parent_span_id": "normalized-parent-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "DeprecatedHttpStatusTagName",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "http.status_code",
                     "value": {
-                      "int_value": "404"
+                      "intValue": "404"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "trace_state": "app=hello",
-                "parent_span_id": "normalized-parent-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "InnerSpanError",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "status": {
                   "message": "Something went wrong",
-                  "code": "STATUS_CODE_ERROR"
+                  "code": 2
                 }
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "trace_state": "app=hello",
-                "parent_span_id": "normalized-parent-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "InnerSpanOk",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "status": {
-                  "code": "STATUS_CODE_OK"
+                  "code": 1
                 }
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "trace_state": "app=hello",
-                "parent_span_id": "normalized-parent-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "InnerSpanUpdated",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "events": [
                   {
-                    "time_unix_nano": "0",
+                    "timeUnixNano": "0",
                     "name": "exception",
                     "attributes": [
                       {
                         "key": "exception.type",
                         "value": {
-                          "string_value": "ArgumentException"
+                          "stringValue": "ArgumentException"
                         }
                       },
                       {
                         "key": "exception.stacktrace",
                         "value": {
-                          "string_value": "System.ArgumentException: Example argument exception"
+                          "stringValue": "System.ArgumentException: Example argument exception"
                         }
                       },
                       {
                         "key": "exception.message",
                         "value": {
-                          "string_value": "Example argument exception"
+                          "stringValue": "Example argument exception"
                         }
                       }
                     ]
@@ -130,422 +130,422 @@
                 ],
                 "status": {
                   "message": "Example argument exception",
-                  "code": "STATUS_CODE_ERROR"
+                  "code": 2
                 }
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "name": "OperationNameRootSpan",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0"
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0"
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_SERVER",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "http.request.method",
                     "value": {
-                      "string_value": "GET"
+                      "stringValue": "GET"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_CLIENT",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "http.request.method",
                     "value": {
-                      "string_value": "GET"
+                      "stringValue": "GET"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_CLIENT",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "db.system",
                     "value": {
-                      "string_value": "Redis"
+                      "stringValue": "Redis"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_CLIENT",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "messaging.system",
                     "value": {
-                      "string_value": "Kafka"
+                      "stringValue": "Kafka"
                     }
                   },
                   {
                     "key": "messaging.operation",
                     "value": {
-                      "string_value": "Receive"
+                      "stringValue": "Receive"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_SERVER",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "messaging.system",
                     "value": {
-                      "string_value": "Kafka"
+                      "stringValue": "Kafka"
                     }
                   },
                   {
                     "key": "messaging.operation",
                     "value": {
-                      "string_value": "Receive"
+                      "stringValue": "Receive"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_PRODUCER",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 4,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "messaging.system",
                     "value": {
-                      "string_value": "Kafka"
+                      "stringValue": "Kafka"
                     }
                   },
                   {
                     "key": "messaging.operation",
                     "value": {
-                      "string_value": "Receive"
+                      "stringValue": "Receive"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_CONSUMER",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 5,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "messaging.system",
                     "value": {
-                      "string_value": "Kafka"
+                      "stringValue": "Kafka"
                     }
                   },
                   {
                     "key": "messaging.operation",
                     "value": {
-                      "string_value": "Receive"
+                      "stringValue": "Receive"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_CLIENT",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "rpc.system",
                     "value": {
-                      "string_value": "aws-api"
+                      "stringValue": "aws-api"
                     }
                   },
                   {
                     "key": "rpc.service",
                     "value": {
-                      "string_value": "S3"
+                      "stringValue": "S3"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_CLIENT",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "rpc.system",
                     "value": {
-                      "string_value": "aws-api"
+                      "stringValue": "aws-api"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_CLIENT",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "rpc.system",
                     "value": {
-                      "string_value": "GRPC"
+                      "stringValue": "GRPC"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_SERVER",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "rpc.system",
                     "value": {
-                      "string_value": "GRPC"
+                      "stringValue": "GRPC"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_CLIENT",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "faas.invoked_provider",
                     "value": {
-                      "string_value": "aws"
+                      "stringValue": "aws"
                     }
                   },
                   {
                     "key": "faas.invoked_name",
                     "value": {
-                      "string_value": "My-Function"
+                      "stringValue": "My-Function"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_SERVER",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "faas.trigger",
                     "value": {
-                      "string_value": "Datasource"
+                      "stringValue": "Datasource"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_SERVER",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "graphql.operation.type",
                     "value": {
-                      "string_value": "query"
+                      "stringValue": "query"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_SERVER",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "network.protocol.name",
                     "value": {
-                      "string_value": "Amqp"
+                      "stringValue": "Amqp"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_SERVER",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0"
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0"
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_CLIENT",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "network.protocol.name",
                     "value": {
-                      "string_value": "Amqp"
+                      "stringValue": "Amqp"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_CLIENT",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0"
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0"
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0"
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0"
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_CONSUMER",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0"
+                "kind": 5,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0"
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "ResourceName",
-                "kind": "SPAN_KIND_PRODUCER",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0"
+                "kind": 4,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0"
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "trace_state": "app=hello",
                 "name": "SayHello",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "operation.name",
                     "value": {
-                      "string_value": "Saying hello!"
+                      "stringValue": "Saying hello!"
                     }
                   },
                   {
                     "key": "attribute-string",
                     "value": {
-                      "string_value": "\"str"
+                      "stringValue": "\"str"
                     }
                   },
                   {
                     "key": "attribute-int",
                     "value": {
-                      "int_value": "1"
+                      "intValue": "1"
                     }
                   },
                   {
                     "key": "attribute-bool",
                     "value": {
-                      "bool_value": true
+                      "boolValue": true
                     }
                   },
                   {
                     "key": "attribute-double",
                     "value": {
-                      "double_value": 2.0
+                      "doubleValue": 2.0
                     }
                   },
                   {
                     "key": "attribute-stringArray",
                     "value": {
-                      "array_value": {
+                      "arrayValue": {
                         "values": [
                           {
-                            "string_value": "\"str1\""
+                            "stringValue": "\"str1\""
                           },
                           {
-                            "string_value": "str2"
+                            "stringValue": "str2"
                           },
                           {
-                            "string_value": "str3"
+                            "stringValue": "str3"
                           }
                         ]
                       }
@@ -554,22 +554,22 @@
                   {
                     "key": "attribute-stringArrayEmpty",
                     "value": {
-                      "array_value": {}
+                      "arrayValue": {}
                     }
                   },
                   {
                     "key": "attribute-intArray",
                     "value": {
-                      "array_value": {
+                      "arrayValue": {
                         "values": [
                           {
-                            "int_value": "1"
+                            "intValue": "1"
                           },
                           {
-                            "int_value": "2"
+                            "intValue": "2"
                           },
                           {
-                            "int_value": "3"
+                            "intValue": "3"
                           }
                         ]
                       }
@@ -578,22 +578,22 @@
                   {
                     "key": "attribute-intArrayEmpty",
                     "value": {
-                      "array_value": {}
+                      "arrayValue": {}
                     }
                   },
                   {
                     "key": "attribute-boolArray",
                     "value": {
-                      "array_value": {
+                      "arrayValue": {
                         "values": [
                           {
-                            "bool_value": false
+                            "boolValue": false
                           },
                           {
-                            "bool_value": true
+                            "boolValue": true
                           },
                           {
-                            "bool_value": false
+                            "boolValue": false
                           }
                         ]
                       }
@@ -602,22 +602,22 @@
                   {
                     "key": "attribute-boolArrayEmpty",
                     "value": {
-                      "array_value": {}
+                      "arrayValue": {}
                     }
                   },
                   {
                     "key": "attribute-doubleArray",
                     "value": {
-                      "array_value": {
+                      "arrayValue": {
                         "values": [
                           {
-                            "double_value": 4.1
+                            "doubleValue": 4.1
                           },
                           {
-                            "double_value": 5.0
+                            "doubleValue": 5.0
                           },
                           {
-                            "double_value": 6.0
+                            "doubleValue": 6.0
                           }
                         ]
                       }
@@ -626,47 +626,48 @@
                   {
                     "key": "attribute-doubleArrayEmpty",
                     "value": {
-                      "array_value": {}
+                      "arrayValue": {}
                     }
                   }
                 ],
                 "events": [
                   {
-                    "time_unix_nano": "0",
+                    "timeUnixNano": "0",
                     "name": "event-message"
                   },
                   {
+                    "timeUnixNano": "0",
                     "name": "event-messageWithDateTime"
                   },
                   {
-                    "time_unix_nano": "0",
+                    "timeUnixNano": "0",
                     "name": "event-messageWithAttributes",
                     "attributes": [
                       {
                         "key": "foo",
                         "value": {
-                          "int_value": "1"
+                          "intValue": "1"
                         }
                       },
                       {
                         "key": "bar",
                         "value": {
-                          "string_value": "Hello, World!"
+                          "stringValue": "Hello, World!"
                         }
                       },
                       {
                         "key": "baz",
                         "value": {
-                          "array_value": {
+                          "arrayValue": {
                             "values": [
                               {
-                                "int_value": "1"
+                                "intValue": "1"
                               },
                               {
-                                "int_value": "2"
+                                "intValue": "2"
                               },
                               {
-                                "int_value": "3"
+                                "intValue": "3"
                               }
                             ]
                           }
@@ -675,13 +676,13 @@
                       {
                         "key": "strings",
                         "value": {
-                          "array_value": {
+                          "arrayValue": {
                             "values": [
                               {
-                                "string_value": "str"
+                                "stringValue": "str"
                               },
                               {
-                                "string_value": "1"
+                                "stringValue": "1"
                               }
                             ]
                           }
@@ -690,13 +691,13 @@
                       {
                         "key": "ignored_array_of_object",
                         "value": {
-                          "array_value": {
+                          "arrayValue": {
                             "values": [
                               {
-                                "string_value": "str"
+                                "stringValue": "str"
                               },
                               {
-                                "string_value": "2"
+                                "stringValue": "2"
                               }
                             ]
                           }
@@ -705,13 +706,13 @@
                       {
                         "key": "ignored_array_of_arrays",
                         "value": {
-                          "array_value": {
+                          "arrayValue": {
                             "values": [
                               {
-                                "string_value": "System.String[]"
+                                "stringValue": "System.String[]"
                               },
                               {
-                                "string_value": "System.String[]"
+                                "stringValue": "System.String[]"
                               }
                             ]
                           }
@@ -720,40 +721,40 @@
                       {
                         "key": "ignored_dict",
                         "value": {
-                          "string_value": "System.Collections.Generic.Dictionary`2[System.String,System.String]"
+                          "stringValue": "System.Collections.Generic.Dictionary`2[System.String,System.String]"
                         }
                       }
                     ]
                   },
                   {
-                    "time_unix_nano": "0",
+                    "timeUnixNano": "0",
                     "name": "event-messageWithDateTimeAndAttributes",
                     "attributes": [
                       {
                         "key": "foo",
                         "value": {
-                          "int_value": "1"
+                          "intValue": "1"
                         }
                       },
                       {
                         "key": "bar",
                         "value": {
-                          "string_value": "Hello, World!"
+                          "stringValue": "Hello, World!"
                         }
                       },
                       {
                         "key": "baz",
                         "value": {
-                          "array_value": {
+                          "arrayValue": {
                             "values": [
                               {
-                                "int_value": "1"
+                                "intValue": "1"
                               },
                               {
-                                "int_value": "2"
+                                "intValue": "2"
                               },
                               {
-                                "int_value": "3"
+                                "intValue": "3"
                               }
                             ]
                           }
@@ -762,13 +763,13 @@
                       {
                         "key": "strings",
                         "value": {
-                          "array_value": {
+                          "arrayValue": {
                             "values": [
                               {
-                                "string_value": "str"
+                                "stringValue": "str"
                               },
                               {
-                                "string_value": "1"
+                                "stringValue": "1"
                               }
                             ]
                           }
@@ -777,13 +778,13 @@
                       {
                         "key": "ignored_array_of_object",
                         "value": {
-                          "array_value": {
+                          "arrayValue": {
                             "values": [
                               {
-                                "string_value": "str"
+                                "stringValue": "str"
                               },
                               {
-                                "string_value": "2"
+                                "stringValue": "2"
                               }
                             ]
                           }
@@ -792,13 +793,13 @@
                       {
                         "key": "ignored_array_of_arrays",
                         "value": {
-                          "array_value": {
+                          "arrayValue": {
                             "values": [
                               {
-                                "string_value": "System.String[]"
+                                "stringValue": "System.String[]"
                               },
                               {
-                                "string_value": "System.String[]"
+                                "stringValue": "System.String[]"
                               }
                             ]
                           }
@@ -807,7 +808,7 @@
                       {
                         "key": "ignored_dict",
                         "value": {
-                          "string_value": "System.Collections.Generic.Dictionary`2[System.String,System.String]"
+                          "stringValue": "System.Collections.Generic.Dictionary`2[System.String,System.String]"
                         }
                       }
                     ]
@@ -815,138 +816,139 @@
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "name": "SayHello2",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "links": [
                   {
-                    "trace_id": "normalized-trace-id",
-                    "span_id": "normalized-span-id"
+                    "traceId": "normalized-trace-id",
+                    "spanId": "normalized-span-id"
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "SayHello3",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "links": [
                   {
-                    "trace_id": "normalized-trace-id",
-                    "span_id": "normalized-span-id"
+                    "traceId": "normalized-trace-id",
+                    "spanId": "normalized-span-id"
                   },
                   {
-                    "trace_id": "normalized-trace-id",
-                    "span_id": "normalized-span-id"
+                    "traceId": "normalized-trace-id",
+                    "spanId": "normalized-span-id"
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "trace_state": "app=hello",
-                "parent_span_id": "normalized-parent-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "SomeHttpSpan",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "http.response.status_code",
                     "value": {
-                      "int_value": "404"
+                      "intValue": "404"
                     }
                   }
                 ]
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "trace_state": "app=hello",
-                "parent_span_id": "normalized-parent-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "StartActiveSpan.Child",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0"
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0"
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "trace_state": "app=hello",
-                "parent_span_id": "normalized-parent-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "StartRootSpan",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0"
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0"
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "trace_state": "app=hello",
-                "parent_span_id": "normalized-parent-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "StartSpan",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0"
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0"
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "trace_state": "app=hello",
-                "parent_span_id": "normalized-parent-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "StartSpan2",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0"
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0"
               },
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
-                "parent_span_id": "normalized-parent-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "This name should not be in the snapshot",
-                "kind": "SPAN_KIND_SERVER",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
                 "attributes": [
                   {
                     "key": "http.request.method",
                     "value": {
-                      "string_value": "GET"
+                      "stringValue": "GET"
                     }
                   },
                   {
                     "key": "resource.name",
                     "value": {
-                      "string_value": "ResourceNameOverride"
+                      "stringValue": "ResourceNameOverride"
                     }
                   },
                   {
                     "key": "operation.name",
                     "value": {
-                      "string_value": "OperationNameOverride"
+                      "stringValue": "OperationNameOverride"
                     }
                   },
                   {
                     "key": "service.name",
                     "value": {
-                      "string_value": "ServiceNameOverride"
+                      "stringValue": "ServiceNameOverride"
                     }
                   },
                   {
                     "key": "span.type",
                     "value": {
-                      "string_value": "SpanTypeOverride"
+                      "stringValue": "SpanTypeOverride"
                     }
                   },
                   {
                     "key": "analytics.event",
                     "value": {
-                      "string_value": "true"
+                      "stringValue": "true"
                     }
                   }
                 ]
@@ -960,14 +962,14 @@
             },
             "spans": [
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "trace_state": "app=hello",
-                "parent_span_id": "normalized-parent-span-id",
+                "parentSpanId": "normalized-parent-span-id",
                 "name": "Response",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0"
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0"
               }
             ]
           }
@@ -976,49 +978,49 @@
     ]
   },
   {
-    "resource_spans": [
+    "resourceSpans": [
       {
         "resource": {
           "attributes": [
             {
               "key": "telemetry.sdk.name",
               "value": {
-                "string_value": "sdk-name"
+                "stringValue": "sdk-name"
               }
             },
             {
               "key": "telemetry.sdk.language",
               "value": {
-                "string_value": "dotnet"
+                "stringValue": "dotnet"
               }
             },
             {
               "key": "telemetry.sdk.version",
               "value": {
-                "string_value": "sdk-version"
+                "stringValue": "sdk-version"
               }
             },
             {
               "key": "service.name",
               "value": {
-                "string_value": "unknown_service:dotnet"
+                "stringValue": "unknown_service:dotnet"
               }
             }
           ]
         },
-        "scope_spans": [
+        "scopeSpans": [
           {
             "scope": {
               "name": "MissingServiceName"
             },
             "spans": [
               {
-                "trace_id": "normalized-trace-id",
-                "span_id": "normalized-span-id",
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
                 "name": "service.name should be the DefaultServiceName value",
-                "kind": "SPAN_KIND_INTERNAL",
-                "start_time_unix_nano": "0",
-                "end_time_unix_nano": "0"
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0"
               }
             ]
           }

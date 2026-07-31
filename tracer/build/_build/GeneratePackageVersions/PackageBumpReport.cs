@@ -21,17 +21,20 @@ public class PackageBumpReport
     private readonly int _cooldownDays;
     private readonly List<BumpEntry> _bumpedEntries = new();
     private readonly List<CooldownEntry> _cooldownEntries = new();
+    private readonly List<MajorAvailableEntry> _majorAvailableEntries = new();
 
     public PackageBumpReport(int cooldownDays)
     {
         _cooldownDays = cooldownDays;
     }
 
-    public bool HasEntries => _bumpedEntries.Count > 0 || _cooldownEntries.Count > 0;
+    public bool HasEntries => _bumpedEntries.Count > 0 || _cooldownEntries.Count > 0 || _majorAvailableEntries.Count > 0;
 
     public IReadOnlyList<BumpEntry> BumpedEntries => _bumpedEntries;
 
     public IReadOnlyList<CooldownEntry> CooldownEntries => _cooldownEntries;
+
+    public IReadOnlyList<MajorAvailableEntry> MajorAvailableEntries => _majorAvailableEntries;
 
     public void AddBump(BumpEntry entry)
     {
@@ -41,6 +44,11 @@ public class PackageBumpReport
     public void AddCooldown(CooldownEntry entry)
     {
         _cooldownEntries.Add(entry);
+    }
+
+    public void AddMajorAvailable(MajorAvailableEntry entry)
+    {
+        _majorAvailableEntries.Add(entry);
     }
 
     public string ToMarkdown()
@@ -55,8 +63,6 @@ public class PackageBumpReport
         if (_bumpedEntries.Count > 0)
         {
             sb.AppendLine("## Package Version Updates");
-            sb.AppendLine();
-            sb.AppendLine("Bold entries indicate **major**-version bumps. `(new)` means no previous version existed.");
             sb.AppendLine();
             sb.AppendLine("| Package | Integration | Previous | New | Published |");
             sb.AppendLine("|---------|-------------|----------|-----|-----------|");
@@ -73,15 +79,27 @@ public class PackageBumpReport
             sb.AppendLine();
         }
 
+        if (_majorAvailableEntries.Count > 0)
+        {
+            sb.AppendLine("## New Major Versions Available");
+            sb.AppendLine();
+            sb.AppendLine("These have a new major outside our supported range. Review whether to widen the");
+            sb.AppendLine("integration's `MaximumVersion` and the definition's `MaxVersionExclusive`/`SpecificVersions`,");
+            sb.AppendLine("or add a new split entry, to adopt.");
+            sb.AppendLine();
+            AppendMajorAvailableTable(sb, _majorAvailableEntries);
+            sb.AppendLine();
+        }
+
         if (_cooldownEntries.Count > 0)
         {
             sb.AppendLine("## Package Version Cooldown Report");
             sb.AppendLine();
-            sb.AppendLine($"The following versions were published less than **{_cooldownDays} days** ago and have been overridden.");
+            sb.AppendLine($"The following versions were published less than **{_cooldownDays} days** ago and have been ignored.");
             sb.AppendLine("These require manual review before inclusion.");
             sb.AppendLine();
-            sb.AppendLine("| Package | Integration | Overridden Version | Published | Age (days) |");
-            sb.AppendLine("|---------|-------------|--------------------|-----------|------------|");
+            sb.AppendLine("| Package | Integration | Version Kept | Ignored Version | Published | Age (days) |");
+            sb.AppendLine("|---------|-------------|--------------|-----------------|-----------|------------|");
 
             foreach (var entry in _cooldownEntries)
             {
@@ -89,8 +107,9 @@ public class PackageBumpReport
                 var age = entry.PublishedDate.HasValue
                     ? ((int)(DateTimeOffset.UtcNow - entry.PublishedDate.Value).TotalDays).ToString()
                     : "?";
+                var kept = entry.KeptVersion ?? "(none)";
 
-                sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {entry.OverriddenVersion} | {published} | {age} |");
+                sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {kept} | {entry.IgnoredVersion} | {published} | {age} |");
             }
         }
 
@@ -107,6 +126,17 @@ public class PackageBumpReport
         }
     }
 
+    private static void AppendMajorAvailableTable(StringBuilder sb, IEnumerable<MajorAvailableEntry> entries)
+    {
+        sb.AppendLine("| Package | Integration | Current cap | Latest available |");
+        sb.AppendLine("|---------|-------------|-------------|------------------|");
+
+        foreach (var entry in entries)
+        {
+            sb.AppendLine($"| {entry.PackageName} | {entry.IntegrationName} | {entry.CurrentCap} | {entry.LatestAvailable} |");
+        }
+    }
+
     public record BumpEntry(
         string PackageName,
         string IntegrationName,
@@ -120,6 +150,13 @@ public class PackageBumpReport
     public record CooldownEntry(
         string PackageName,
         string IntegrationName,
-        string OverriddenVersion,
+        string KeptVersion,
+        string IgnoredVersion,
         DateTimeOffset? PublishedDate);
+
+    public record MajorAvailableEntry(
+        string PackageName,
+        string IntegrationName,
+        string CurrentCap,
+        string LatestAvailable);
 }

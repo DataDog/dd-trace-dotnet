@@ -206,33 +206,13 @@ The codebase includes Roslyn analyzers that enforce the use of configuration key
 
 These analyzers help prevent typos and ensure consistency across the codebase by enforcing compile-time validation of configuration keys.
 
-### 6. Add to Telemetry Normalization Rules
-
-Configuration keys are reported in telemetry with normalized names. Add your key to the normalization rules:
-
-**File:** `tracer/test/Datadog.Trace.Tests/Telemetry/config_norm_rules.json`
-
-```json
-{
-  "YOUR_ENV_VAR_NAME": "normalized_telemetry_name"
-}
-```
-
-**Example:**
-```json
-{
-  "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT": "otel_exporter_otlp_logs_timeout"
-}
-```
-
-**Important:** The `config_norm_rules.json` file is a copy from the [dd-go repository](https://github.com/DataDog/dd-go). After updating this file locally, you must also submit a PR to update the canonical version in the dd-go repository to keep the normalization rules synchronized across all Datadog tracers.
-
-### 7. Test Your Changes
+### 6. Test Your Changes
 
 1. **Verify generation:** Check that your key appears in the generated files
-2. **Telemetry tests:** Ensure telemetry normalization tests pass in `tracer/test/Datadog.Trace.Tests/Telemetry/`
-3. **Integration tests:** Test the configuration key in real scenarios where it's used
-4. **Documentation:** Verify the `documentation` field renders correctly in the generated XML docs
+2. **Integration tests:** Test the configuration key in real scenarios where it's used
+3. **Documentation:** Verify the `documentation` field renders correctly in the generated XML docs
+
+> **Note:** Configuration keys are reported in telemetry with their raw names; the Datadog backend handles normalization, so there is no local normalization rules file to update.
 
 ## Configuration Key Organization
 
@@ -366,13 +346,6 @@ dotnet build tracer/src/Datadog.Trace/Datadog.Trace.csproj
 3. Build succeeded without errors
 4. Looking in the correct namespace/product class
 
-### Telemetry tests failing
-
-**Check:**
-1. Added key to `config_norm_rules.json`
-2. Normalized name matches `telemetry_name` in JSON
-3. All tests in `tracer/test/Datadog.Trace.Tests/Telemetry/` pass
-
 ### Documentation not appearing
 
 **Check:**
@@ -394,5 +367,4 @@ dotnet build tracer/src/Datadog.Trace/Datadog.Trace.csproj
   - `tracer/src/Datadog.Trace.SourceGenerators/Configuration/ConfigurationKeysGenerator.cs` - Generates configuration key constants
   - `tracer/src/Datadog.Trace.SourceGenerators/Configuration/ConfigKeyAliasesSwitcherGenerator.cs` - Generates alias resolution logic
 - **Configuration source:** `tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml` - Single source of truth for all configuration keys, aliases, constant name overrides, and documentation
-- **Telemetry rules:** `tracer/test/Datadog.Trace.Tests/Telemetry/config_norm_rules.json`
 - **Generated output:** `tracer/src/Datadog.Trace/Generated/<tfm>/Datadog.Trace.SourceGenerators/`

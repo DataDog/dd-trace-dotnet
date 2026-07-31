@@ -13,6 +13,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
@@ -241,8 +242,13 @@ namespace Datadog.Trace.Debugger.Snapshots
                     break;
                 }
 
-                if (!TryGetValue(field, source, out var value, out var type))
+                if (!TryGetValue(field, source, out var value, out var type, out var notCapturedReason))
                 {
+                    if (notCapturedReason.HasValue)
+                    {
+                        WriteNotCapturedMember(jsonWriter, fieldOrPropertyName, type, notCapturedReason.Value, ref index, fieldsObjectName);
+                    }
+
                     continue;
                 }
 
@@ -279,6 +285,23 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 WriteNotCapturedReason(jsonWriter, NotCapturedReason.fieldCount);
             }
+        }
+
+        private static void WriteNotCapturedMember(JsonWriter jsonWriter, string memberName, Type type, NotCapturedReason notCapturedReason, ref int index, string fieldsObjectName)
+        {
+            if (index == 0)
+            {
+                jsonWriter.WritePropertyName(fieldsObjectName);
+                jsonWriter.WriteStartObject();
+            }
+
+            index++;
+            jsonWriter.WritePropertyName(memberName);
+            jsonWriter.WriteStartObject();
+            jsonWriter.WritePropertyName("type");
+            jsonWriter.WriteValue(type.Name);
+            WriteNotCapturedReason(jsonWriter, notCapturedReason);
+            jsonWriter.WriteEndObject();
         }
 
         private static void SerializeEnumerable(
@@ -529,8 +552,14 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal static bool TryGetValue(MemberInfo fieldOrProp, object source, out object value, [NotNullWhen(true)] out Type type)
         {
+            return TryGetValue(fieldOrProp, source, out value, out type, out _);
+        }
+
+        private static bool TryGetValue(MemberInfo fieldOrProp, object source, out object value, [NotNullWhen(true)] out Type type, out NotCapturedReason? notCapturedReason)
+        {
             value = null;
             type = null;
+            notCapturedReason = null;
             try
             {
                 switch (fieldOrProp)
@@ -555,8 +584,20 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                             if (field.IsStatic)
                             {
-                                value = field.GetValue(null);
-                                return true;
+                                if (field.IsLiteral)
+                                {
+                                    value = StaticMemberSafety.GetRawConstantValue(field);
+                                    return true;
+                                }
+
+                                if (StaticMemberSafety.CanReadStaticMember(field))
+                                {
+                                    value = field.GetValue(null);
+                                    return true;
+                                }
+
+                                notCapturedReason = NotCapturedReason.typeInitializer;
+                                return false;
                             }
 
                             if (field.DeclaringType == null || (source != null && !field.DeclaringType.IsInstanceOfType(source)))
@@ -593,8 +634,14 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                             if (getMethod.IsStatic)
                             {
-                                value = property.GetValue(null);
-                                return true;
+                                if (StaticMemberSafety.CanReadStaticMember(property))
+                                {
+                                    value = property.GetValue(null);
+                                    return true;
+                                }
+
+                                notCapturedReason = NotCapturedReason.typeInitializer;
+                                return false;
                             }
 
                             if (property.DeclaringType == null || (source != null && !property.DeclaringType.IsInstanceOfType(source)))

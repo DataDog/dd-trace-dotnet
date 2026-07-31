@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -14,6 +14,7 @@
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.response.headers.content-type: application/json; charset=utf-8,
       http.route: rasp/downstreamtoself,
       http.status_code: 200,
       http.url: http://localhost:00000/Rasp/DownstreamToSelf?body=%7B%22cookie%22:%22secret%22%7D,
@@ -73,6 +74,7 @@
       http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
+      http.response.headers.content-type: application/json; charset=utf-8,
       http.route: rasp/echo,
       http.status_code: 200,
       http.url: http://localhost:00000/Rasp/Echo,

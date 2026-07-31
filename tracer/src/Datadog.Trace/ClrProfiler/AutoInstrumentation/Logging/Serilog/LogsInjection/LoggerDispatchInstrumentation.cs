@@ -30,6 +30,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { "Serilog.Events.LogEvent" },
         MinimumVersion = "2.0.0",
+        MaximumVersion = "4.3.*",
+        IntegrationName = "Serilog")]
+    [InstrumentMethod(
+        AssemblyName = "Serilog",
+        TypeName = "Serilog.Core.Logger",
+        MethodName = "PostLevelCheckEmit",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { "Serilog.Events.LogEvent" },
+        MinimumVersion = "4.4.0",
         MaximumVersion = "4.*.*",
         IntegrationName = "Serilog")]
     [Browsable(false)]

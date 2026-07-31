@@ -88,7 +88,7 @@ internal sealed class MetricReaderHandler
             Log.Warning("Duplicate metric stream detected: {MetricStreamName}. Measurements from this instrument will still be exported but may result in conflicts.", identity.MetricStreamName);
         }
 
-        var state = new MetricState(identity, temporality);
+        var state = new MetricState(identity, temporality, _settings.OpenTelemetryMetricsCardinalityLimit);
 
         if (_streams.TryAdd(identity, state))
         {

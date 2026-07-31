@@ -8,8 +8,9 @@ using System;
 namespace GeneratePackageVersions;
 
 /// <summary>
-/// A NuGet package version paired with its publish date.
+/// A NuGet package version paired with its publish date and listing status.
 /// A null <see cref="Published"/> means the package predates NuGet tracking publish dates
 /// and is treated as old enough to pass any cooldown check.
+/// <see cref="IsListed"/> is false for unlisted/yanked versions (we query with includeUnlisted).
 /// </summary>
-public record VersionWithDate(string Version, DateTimeOffset? Published);
+public record VersionWithDate(string Version, DateTimeOffset? Published, bool IsListed);

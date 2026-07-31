@@ -44,6 +44,10 @@ public sealed class TestSession
     private readonly CodeCoverageResultAggregator _codeCoverageResults = new();
     private readonly object _coverageResultIdsLock = new();
     private readonly HashSet<string> _coverageResultIds = new(StringComparer.Ordinal);
+    // Tracks referenced persisted coverage results that failed immediate IPC resolution. The close-time persisted
+    // fallback removes entries it later recovers so stale read failures do not suppress publishable coverage.
+    private readonly object _coverageIpcReferenceLock = new();
+    private HashSet<string>? _unresolvedCoverageIpcReferences;
     private IpcServer? _ipcServer;
     private int _closing;
     private int _finished;
@@ -58,6 +62,8 @@ public sealed class TestSession
     /// Counts only coverage IPC messages so the finalization barrier does not unblock on unrelated session-tag messages.
     /// </summary>
     private int _coverageIpcMessageCount;
+
+    private int _coverageIpcReferenceReadFailed;
 
     private long _lastIpcMessageTicks;
 
@@ -647,6 +653,13 @@ public sealed class TestSession
     /// </summary>
     internal void PublishCodeCoverage()
     {
+        if (Volatile.Read(ref _coverageIpcReferenceReadFailed) == 1 &&
+            !CanPublishAfterCoverageIpcReferenceReadFailure())
+        {
+            _testOptimization.Log.Debug("TestSession.PublishCodeCoverage: skipped because a referenced coverage IPC result could not be read.");
+            return;
+        }
+
         if (!_codeCoverageResults.TryGetBestResult(out var result))
         {
             return;
@@ -685,6 +698,7 @@ public sealed class TestSession
         foreach (var result in results)
         {
             RecordCodeCoverageResult(result);
+            RecordResolvedCoverageIpcReference(result.Source, result.ResultId);
             recorded = true;
         }
 
@@ -697,6 +711,47 @@ public sealed class TestSession
         // Keep fail-closed behavior for those tool sources, but do not drop an already selected external XML report.
         return _codeCoverageResults.HasBestPublishableResult(CodeCoverageReportSource.ExternalXml);
     }
+
+    private bool CanPublishAfterCoverageIpcReferenceReadFailure()
+    {
+        // A reference can fail before the producer finishes flushing the persisted result, then be recovered by the
+        // close-time persisted fallback. Only fail closed while a referenced result is still unresolved.
+        if (!HasUnresolvedCoverageIpcReferences())
+        {
+            return true;
+        }
+
+        // A missing referenced IPC result means a selected coverage-tool result could not be loaded.
+        // Keep fail-closed behavior for tool sources, but do not drop an already selected external XML report.
+        return _codeCoverageResults.HasBestPublishableResult(CodeCoverageReportSource.ExternalXml);
+    }
+
+    private void RecordUnresolvedCoverageIpcReference(CodeCoverageReportSource source, string? resultId)
+    {
+        lock (_coverageIpcReferenceLock)
+        {
+            (_unresolvedCoverageIpcReferences ??= new HashSet<string>(StringComparer.Ordinal)).Add(GetCoverageIpcReferenceKey(source, resultId));
+        }
+    }
+
+    private void RecordResolvedCoverageIpcReference(CodeCoverageReportSource source, string? resultId)
+    {
+        lock (_coverageIpcReferenceLock)
+        {
+            _unresolvedCoverageIpcReferences?.Remove(GetCoverageIpcReferenceKey(source, resultId));
+        }
+    }
+
+    private bool HasUnresolvedCoverageIpcReferences()
+    {
+        lock (_coverageIpcReferenceLock)
+        {
+            return _unresolvedCoverageIpcReferences?.Count > 0;
+        }
+    }
+
+    private string GetCoverageIpcReferenceKey(CodeCoverageReportSource source, string? resultId)
+        => $"{source}:{resultId}";
 
     private void OnIpcMessageReceived(object message)
     {
@@ -726,6 +781,34 @@ public sealed class TestSession
                 {
                     _testOptimization.Log.Information("TestSession.ReceiveMessage (metric): {Name}={Value}", tagMessage.Name, tagMessage.NumberValue);
                     SetTag(tagMessage.Name, tagMessage.NumberValue);
+                }
+            }
+            else if (message is SessionCodeCoverageReferenceMessage codeCoverageReferenceMessage)
+            {
+                Interlocked.Increment(ref _coverageIpcMessageCount);
+                Interlocked.Exchange(ref _lastCoverageIpcMessageTicks, DateTime.UtcNow.Ticks);
+                _testOptimization.Log.Information<CodeCoverageReportSource>(
+                    "TestSession.ReceiveMessage (code coverage reference): Source={Source}",
+                    codeCoverageReferenceMessage.Source);
+
+                if (CoverageBackfillDataStore.TryReadCoverageIpcResult(
+                        _testOptimization,
+                        Tags.SessionId,
+                        codeCoverageReferenceMessage.Source,
+                        codeCoverageReferenceMessage.ResultId,
+                        out var codeCoverageResult))
+                {
+                    RecordResolvedCoverageIpcReference(codeCoverageReferenceMessage.Source, codeCoverageReferenceMessage.ResultId);
+                    RecordCodeCoverageResult(codeCoverageResult);
+                }
+                else
+                {
+                    RecordUnresolvedCoverageIpcReference(codeCoverageReferenceMessage.Source, codeCoverageReferenceMessage.ResultId);
+                    Interlocked.Exchange(ref _coverageIpcReferenceReadFailed, 1);
+                    _testOptimization.Log.Warning<CodeCoverageReportSource>(
+                        "TestSession.ReceiveMessage: Could not resolve persisted code coverage IPC result. Source={Source}",
+                        codeCoverageReferenceMessage.Source);
+                    CoverageBackfillDataStore.RecordCoverageIpcFailure(_testOptimization, Tags.SessionId, codeCoverageReferenceMessage.Source.ToString());
                 }
             }
             else if (message is SessionCodeCoverageMessage { Value: >= 0.0 } codeCoverageMessage)

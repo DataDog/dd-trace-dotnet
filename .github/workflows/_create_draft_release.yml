@@ -21,20 +21,6 @@ on:
         required: true
       NUGET_TRUSTED_PUBLISHING_USERNAME:
         required: true
-      DD_PUBLIC_SYMBOL_PREPROD_API_KEY:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_US1:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_US3:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_US5:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_EU1:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_AP1:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_AP2:
-        required: true
 
 jobs:
   create_draft_release:
@@ -54,7 +40,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
 
@@ -69,7 +55,7 @@ jobs:
           echo "Using sha $commitsha"
           echo "sha=${commitsha}" >> $GITHUB_OUTPUT
 
-      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           global-json-file: global.json
 
@@ -182,10 +168,3 @@ jobs:
         uses: ./.github/actions/publish-debug-symbols
         with:
           artifacts_path: ${{steps.assets.outputs.artifacts_path}}
-          preprod_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_PREPROD_API_KEY }}
-          us1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US1 }}
-          us3_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US3 }}
-          us5_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US5 }}
-          eu1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_EU1 }}
-          ap1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP1 }}
-          ap2_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP2 }}

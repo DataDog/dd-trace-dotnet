@@ -1250,6 +1250,189 @@ public class CoverageBackfillDataStoreTests
     }
 
     [Fact]
+    public void TryReadCoverageIpcResultReadsFullBackfillMetadata()
+    {
+        var workspacePath = CreateWorkspacePath();
+        try
+        {
+            var testOptimization = CreateTestOptimization(workspacePath);
+            var backfillValidation = CodeCoverageBackfillValidation.Create(
+                requiredBackendFilesWithCoverage: 1,
+                expectedCoveredLinesByBackendPath: new Dictionary<string, int>
+                {
+                    ["src/Calculator.cs"] = 2
+                },
+                representedBackendLinesByBackendPath: new Dictionary<string, HashSet<int>>
+                {
+                    ["src/Calculator.cs"] = [10, 11]
+                },
+                localCandidateByBackendPath: new Dictionary<string, string>
+                {
+                    ["src/Calculator.cs"] = "/repo/src/Calculator.cs"
+                },
+                requiredBackendPathsWithCoverage: ["src/Calculator.cs"],
+                requiredBackendLinesByBackendPath: new Dictionary<string, HashSet<int>>
+                {
+                    ["src/Calculator.cs"] = [10, 11]
+                });
+
+            var resultId = CoverageBackfillDataStore.RecordCoverageIpcResult(
+                testOptimization.Object,
+                sessionId: 123,
+                CodeCoverageReportSource.CoverletXmlFallback,
+                percentage: 75,
+                backfilled: true,
+                executableLines: 4,
+                coveredLines: 3,
+                diagnostic: "persisted-reference",
+                resultId: "merged-result",
+                backfillValidated: true,
+                backfillValidation: backfillValidation,
+                supersededResultIds: ["partial-a", "partial-b"]);
+
+            resultId.Should().Be("merged-result");
+
+            CoverageBackfillDataStore.TryReadCoverageIpcResult(
+                testOptimization.Object,
+                sessionId: 123,
+                CodeCoverageReportSource.CoverletXmlFallback,
+                resultId,
+                out var result).Should().BeTrue();
+
+            result.Source.Should().Be(CodeCoverageReportSource.CoverletXmlFallback);
+            result.ResultId.Should().Be("merged-result");
+            result.Percentage.Should().Be(75);
+            result.Backfilled.Should().BeTrue();
+            result.ExecutableLines.Should().Be(4);
+            result.CoveredLines.Should().Be(3);
+            result.Diagnostic.Should().Be("persisted-reference");
+            result.BackfillValidated.Should().BeTrue();
+            result.BackfillValidation.Should().NotBeNull();
+            result.BackfillValidation.CanPublish().Should().BeTrue();
+            result.BackfillValidation.LocalCandidateByBackendPath.Should().Contain("src/Calculator.cs", "/repo/src/Calculator.cs");
+            result.SupersededResultIds.Should().Equal("partial-a", "partial-b");
+        }
+        finally
+        {
+            DeleteWorkspacePath(workspacePath);
+        }
+    }
+
+    [Theory]
+    [InlineData(456, nameof(CodeCoverageReportSource.CoverletXmlFallback), "merged-result")]
+    [InlineData(123, nameof(CodeCoverageReportSource.Coverlet), "merged-result")]
+    [InlineData(123, nameof(CodeCoverageReportSource.CoverletXmlFallback), "missing-result")]
+    [InlineData(123, nameof(CodeCoverageReportSource.CoverletXmlFallback), "")]
+    [InlineData(123, nameof(CodeCoverageReportSource.CoverletXmlFallback), null)]
+    public void TryReadCoverageIpcResultRejectsWrongReference(ulong sessionId, string sourceName, string resultId)
+    {
+        var workspacePath = CreateWorkspacePath();
+        try
+        {
+            var testOptimization = CreateTestOptimization(workspacePath);
+            CoverageBackfillDataStore.RecordCoverageIpcResult(
+                testOptimization.Object,
+                sessionId: 123,
+                CodeCoverageReportSource.CoverletXmlFallback,
+                percentage: 75,
+                backfilled: true,
+                executableLines: 4,
+                coveredLines: 3,
+                diagnostic: "persisted-reference",
+                resultId: "merged-result");
+
+            var source = (CodeCoverageReportSource)Enum.Parse(typeof(CodeCoverageReportSource), sourceName);
+            CoverageBackfillDataStore.TryReadCoverageIpcResult(
+                testOptimization.Object,
+                sessionId,
+                source,
+                resultId,
+                out var result).Should().BeFalse();
+
+            result.Should().Be(default(CodeCoverageAggregationResult));
+        }
+        finally
+        {
+            DeleteWorkspacePath(workspacePath);
+        }
+    }
+
+    [Fact]
+    public void TryReadCoverageIpcResultRejectsInvalidJson()
+    {
+        var workspacePath = CreateWorkspacePath();
+        try
+        {
+            var testOptimization = CreateTestOptimization(workspacePath);
+            CoverageBackfillDataStore.RecordCoverageIpcResult(
+                testOptimization.Object,
+                sessionId: 123,
+                CodeCoverageReportSource.Coverlet,
+                percentage: 75,
+                backfilled: true,
+                executableLines: 4,
+                coveredLines: 3,
+                diagnostic: "persisted-reference",
+                resultId: "merged-result");
+            var resultFolder = GetIpcResultFolder(workspacePath, sessionId: 123);
+            var resultFile = Directory.GetFiles(resultFolder, "*.json", SearchOption.TopDirectoryOnly).Should().ContainSingle().Subject;
+            File.WriteAllText(resultFile, "{ invalid json");
+
+            CoverageBackfillDataStore.TryReadCoverageIpcResult(
+                testOptimization.Object,
+                sessionId: 123,
+                CodeCoverageReportSource.Coverlet,
+                "merged-result",
+                out var result).Should().BeFalse();
+
+            result.Should().Be(default(CodeCoverageAggregationResult));
+        }
+        finally
+        {
+            DeleteWorkspacePath(workspacePath);
+        }
+    }
+
+    [Theory]
+    [InlineData(nameof(CodeCoverageReportSource.MicrosoftCodeCoverage), "merged-result")]
+    [InlineData(nameof(CodeCoverageReportSource.Coverlet), "other-result")]
+    public void TryReadCoverageIpcResultRejectsTamperedResultPayload(string embeddedSourceName, string embeddedResultId)
+    {
+        var workspacePath = CreateWorkspacePath();
+        try
+        {
+            var testOptimization = CreateTestOptimization(workspacePath);
+            CoverageBackfillDataStore.RecordCoverageIpcResult(
+                testOptimization.Object,
+                sessionId: 123,
+                CodeCoverageReportSource.Coverlet,
+                percentage: 75,
+                backfilled: true,
+                executableLines: 4,
+                coveredLines: 3,
+                diagnostic: "persisted-reference",
+                resultId: "merged-result");
+            var resultFolder = GetIpcResultFolder(workspacePath, sessionId: 123);
+            var resultFile = Directory.GetFiles(resultFolder, "*.json", SearchOption.TopDirectoryOnly).Should().ContainSingle().Subject;
+            var embeddedSource = (CodeCoverageReportSource)Enum.Parse(typeof(CodeCoverageReportSource), embeddedSourceName);
+            File.WriteAllText(resultFile, CreateCoverageIpcResultJson(embeddedResultId, embeddedSource, 75, true, 4, 3, "tampered"));
+
+            CoverageBackfillDataStore.TryReadCoverageIpcResult(
+                testOptimization.Object,
+                sessionId: 123,
+                CodeCoverageReportSource.Coverlet,
+                "merged-result",
+                out var result).Should().BeFalse();
+
+            result.Should().Be(default(CodeCoverageAggregationResult));
+        }
+        finally
+        {
+            DeleteWorkspacePath(workspacePath);
+        }
+    }
+
+    [Fact]
     public void StableCoverageIpcResultIdIsEncodedForFileNameOnly()
     {
         var workspacePath = CreateWorkspacePath();

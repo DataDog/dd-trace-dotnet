@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 if (string.IsNullOrEmpty(packageVersion) ||
                     packageVersion == "2.2.10" ||
                     packageVersion == "3.11.1" ||
-                    packageVersion == "4.2.3")
+                    packageVersion == "4.3.2")
                 {
                     yield return version.Concat("evp_proxy/v4", false);
                 }

@@ -549,6 +549,20 @@ namespace UpdateVendors
                     "Task.Factory.StartNew(() => Dequeue(), CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)");
             }
 
+            if (normalizedPath.EndsWith("StatsdConfig.cs", StringComparison.OrdinalIgnoreCase))
+            {
+                // Upstream raised these defaults (512/2048) after 6.0.0 in dogstatsd-csharp-client#170,
+                // so bump to match them. 1432 keeps a UDP datagram inside a standard 1500-byte MTU, and
+                // 8192 matches the agent's dogstatsd_buffer_size default (its max packet size).
+                content = content.Replace(
+                    "public const int DefaultStatsdMaxUDPPacketSize = 512;",
+                    "public const int DefaultStatsdMaxUDPPacketSize = 1432;");
+
+                content = content.Replace(
+                    "public int StatsdMaxUnixDomainSocketPacketSize { get; set; } = 2048;",
+                    "public int StatsdMaxUnixDomainSocketPacketSize { get; set; } = 8192;");
+            }
+
             return content;
         }
 

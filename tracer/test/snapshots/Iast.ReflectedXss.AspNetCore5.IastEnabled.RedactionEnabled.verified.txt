@@ -33,7 +33,7 @@
       "hash": XXX,
       "location": {
         "spanId": XXX,
-        "path": "AspNetCore.Views_Iast_Xss+<<ExecuteAsync>b__8_1>d",
+        "class": "AspNetCore.Views_Iast_Xss+<<ExecuteAsync>b__8_1>d",
         "method": "MoveNext"
       },
       "evidence": {

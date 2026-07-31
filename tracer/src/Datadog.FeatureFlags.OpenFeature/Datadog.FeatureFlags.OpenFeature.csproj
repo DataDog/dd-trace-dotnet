@@ -35,6 +35,7 @@
 
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\FeatureFlags\EvaluationReason.cs" Link="Sdk\EvaluationReason.cs" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\FeatureFlagMetadataKeys.cs" Link="Sdk\FeatureFlagMetadataKeys.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\IEvaluation.cs" Link="Sdk\IEvaluation.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\ValueType.cs" Link="Sdk\ValueType.cs" />
   </ItemGroup>

@@ -172,7 +172,8 @@ namespace Datadog.Trace.Debugger.Helpers
             for (int i = 0; i < allMethods?.Length; i++)
             {
                 var currentMethod = allMethods[i];
-                if (currentMethod.GetCustomAttribute<AsyncStateMachineAttribute>()?.StateMachineType ==
+                if (StateMachineAttributeHelper.TryGetAsyncStateMachineType(currentMethod, out var candidateStateMachineType) &&
+                    candidateStateMachineType ==
                     (stateMachineType.IsGenericType ? stateMachineType.GetGenericTypeDefinition() : stateMachineType))
                 {
                     foundMethod = currentMethod;

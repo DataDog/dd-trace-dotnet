@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         // vnext emulator only supports queries on items
         public async Task SubmitTracesQuery(string packageVersion, string metadataSchemaVersion)
         {
-            var expectedSpanCount = 4;
+            var expectedSpanCount = 13;
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("TEST_MODE", "Query");

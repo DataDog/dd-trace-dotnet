@@ -7,9 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -18,7 +18,9 @@ namespace Datadog.Trace.Debugger.Expressions;
 
 internal partial class ProbeExpressionParser<T>
 {
-    private const BindingFlags GetMemberFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy;
+    private const BindingFlags InstanceMemberFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+    private const BindingFlags StaticMemberFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly;
+    private const BindingFlags AllMemberFlags = InstanceMemberFlags | StaticMemberFlags;
 
     // https://learn.microsoft.com/en-us/dotnet/standard/base-types/conversion-tables
     private static Type GetWiderNumericType(Type left, Type right)
@@ -242,6 +244,163 @@ internal partial class ProbeExpressionParser<T>
         return type.FullName ?? type.Name;
     }
 
+    private static bool TryResolveSafeMemberExpression(Expression source, string memberName, [NotNullWhen(true)] out Expression memberExpression, [NotNullWhen(false)] out string reason)
+    {
+        memberExpression = null;
+        reason = null;
+
+        var sourceType = source?.Type;
+        if (sourceType == null)
+        {
+            reason = "The source expression type is null.";
+            return false;
+        }
+
+        if (sourceType.ContainsGenericParameters)
+        {
+            reason = $"The property or field cannot be safely read because {sourceType} contains generic parameters.";
+            return false;
+        }
+
+        var currentType = sourceType;
+        while (currentType != null && currentType != typeof(object))
+        {
+            try
+            {
+                var field = currentType.GetField(memberName, AllMemberFlags);
+                if (field != null)
+                {
+                    return TryCreateFieldExpression(source, field, out memberExpression, out reason);
+                }
+            }
+            catch (Exception)
+            {
+                reason = "The property or field cannot be safely resolved.";
+                return false;
+            }
+
+            try
+            {
+                var property = currentType.GetProperty(memberName, AllMemberFlags);
+                if (property != null)
+                {
+                    return TryCreateAutoPropertyBackingFieldExpression(source, property, out memberExpression, out reason);
+                }
+            }
+            catch (Exception)
+            {
+                reason = "The property or field cannot be safely resolved.";
+                return false;
+            }
+
+            currentType = currentType.BaseType;
+        }
+
+        reason = $"The property or field does not exist in {sourceType}";
+        return false;
+    }
+
+    private static bool TryCreateAutoPropertyBackingFieldExpression(Expression source, PropertyInfo property, [NotNullWhen(true)] out Expression memberExpression, out string reason)
+    {
+        memberExpression = null;
+        reason = null;
+
+        MethodInfo getMethod;
+        Type declaringType;
+        try
+        {
+            getMethod = property.GetGetMethod(true);
+            declaringType = property.DeclaringType;
+        }
+        catch (Exception)
+        {
+            reason = "The property cannot be safely read without invoking its getter.";
+            return false;
+        }
+
+        if (getMethod == null || declaringType == null)
+        {
+            reason = "The property cannot be safely read without invoking its getter.";
+            return false;
+        }
+
+        if (property.PropertyType.ContainsGenericParameters ||
+            declaringType.ContainsGenericParameters ||
+            property.ReflectedType?.ContainsGenericParameters == true ||
+            property.PropertyType.IsGenericTypeDefinition)
+        {
+            reason = "The property cannot be safely read without invoking its getter.";
+            return false;
+        }
+
+        var backingFieldName = "<" + property.Name + ">k__BackingField";
+        FieldInfo backingField;
+        try
+        {
+            backingField = declaringType.GetField(backingFieldName, AllMemberFlags);
+        }
+        catch (Exception)
+        {
+            reason = "The property cannot be safely read without invoking its getter.";
+            return false;
+        }
+
+        if (backingField == null ||
+            backingField.DeclaringType != declaringType ||
+            backingField.FieldType != property.PropertyType ||
+            backingField.IsStatic != getMethod.IsStatic ||
+            !backingField.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false))
+        {
+            reason = "The property cannot be safely read without invoking its getter.";
+            return false;
+        }
+
+        return TryCreateFieldExpression(source, backingField, out memberExpression, out reason);
+    }
+
+    private static bool TryCreateFieldExpression(Expression source, FieldInfo field, [NotNullWhen(true)] out Expression memberExpression, out string reason)
+    {
+        memberExpression = null;
+        reason = null;
+
+        if (field.FieldType.ContainsGenericParameters ||
+            field.DeclaringType?.ContainsGenericParameters == true ||
+            field.ReflectedType?.ContainsGenericParameters == true ||
+            field.FieldType.IsGenericTypeDefinition)
+        {
+            reason = "The field cannot be safely read.";
+            return false;
+        }
+
+        if (field.IsStatic)
+        {
+            if (field.IsLiteral)
+            {
+                memberExpression = Expression.Constant(StaticMemberSafety.GetRawConstantValue(field), field.FieldType);
+                return true;
+            }
+
+            if (!StaticMemberSafety.CanReadStaticMember(field))
+            {
+                reason = "Static member access is skipped because it could trigger the declaring type initializer.";
+                return false;
+            }
+
+            memberExpression = Expression.Field(null, field);
+            return true;
+        }
+
+        var declaringType = field.DeclaringType;
+        if (declaringType == null || !declaringType.IsAssignableFrom(source.Type))
+        {
+            reason = "The field cannot be safely read.";
+            return false;
+        }
+
+        memberExpression = Expression.Field(source, field);
+        return true;
+    }
+
     private Expression IsInstanceOf(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var value = ParseTree(reader, parameters, itParameter);
@@ -316,10 +475,13 @@ internal partial class ProbeExpressionParser<T>
                 return RedactedValue();
             }
 
-            var argOrLocal = parameters.FirstOrDefault(p => p.Name == constantValue);
-            if (argOrLocal != null)
+            for (var i = 0; i < parameters.Count; i++)
             {
-                return argOrLocal;
+                var parameter = parameters[i];
+                if (parameter.Name == constantValue)
+                {
+                    return parameter;
+                }
             }
 
             // will return an instance field\property or an UndefinedValue
@@ -349,10 +511,9 @@ internal partial class ProbeExpressionParser<T>
                 return RedactedValue();
             }
 
-            if (propertyOrFieldValue == nameof(KeyValuePair<int, int>.Value) &&
-                TryRedactDictionaryValueMember(expression, out var redactedValue))
+            if (TryGetDictionaryEntryMember(expression, propertyOrFieldValue, out var dictionaryEntryMember))
             {
-                return redactedValue;
+                return dictionaryEntryMember;
             }
 
             if (TryGetRedactedDictionaryValue(expression, out var redactedDictionaryValue))
@@ -360,30 +521,13 @@ internal partial class ProbeExpressionParser<T>
                 return RedactedDictionaryValueMember(redactedDictionaryValue, propertyOrFieldValue);
             }
 
-            var memberInfo = expression.Type.GetMember(propertyOrFieldValue, GetMemberFlags).FirstOrDefault();
-
-            if (memberInfo == null)
+            if (!TryResolveSafeMemberExpression(expression, propertyOrFieldValue, out var memberExpression, out var reason))
             {
-                AddError($"{expression}.{propertyOrFieldValue}", $"The property or field does not exist in {expression.Type}");
+                AddError($"{expression}.{propertyOrFieldValue}", reason);
                 return UndefinedValue();
             }
 
-            bool isStatic = (memberInfo is PropertyInfo propertyInfo && propertyInfo.GetGetMethod(true)?.IsStatic == true) ||
-                            memberInfo is FieldInfo { IsStatic: true };
-
-            if (isStatic)
-            {
-                return memberInfo.MemberType switch
-                {
-                    MemberTypes.Field => Expression.Field(null, (FieldInfo)memberInfo),
-                    MemberTypes.Property => Expression.Property(null, (PropertyInfo)memberInfo),
-                    _ => throw new InvalidOperationException("Unsupported member type for static member access.")
-                };
-            }
-            else
-            {
-                return Expression.PropertyOrField(expression, propertyOrFieldValue);
-            }
+            return memberExpression;
         }
         catch (Exception e)
         {
