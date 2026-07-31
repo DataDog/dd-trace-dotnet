@@ -157,7 +157,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     }
                 }
 
-                var spans = (await agent.WaitForSpansAsync(expected.Count))
+                var spans = (await agent.WaitForSpansAsync(expected.Count, assertExpectedCount: false))
                                  .Where(s => s.Type == "elasticsearch")
                                  .OrderBy(s => s.Start)
                                  .ToList();
@@ -204,7 +204,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.ElasticsearchNet)}_ENABLED", "false");
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = (await agent.WaitForSpansAsync(1)).Where(s => s.Type == "elasticsearch").ToList();
+            var spans = (await agent.WaitForSpansAsync(1, assertExpectedCount: false)).Where(s => s.Type == "elasticsearch").ToList();
 
             Assert.Empty(spans);
             await telemetry.AssertIntegrationDisabledAsync(IntegrationId.ElasticsearchNet);

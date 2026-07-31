@@ -51,24 +51,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-mongodb" : EnvironmentHelper.FullSampleName;
+            var version = string.IsNullOrEmpty(packageVersion) ? null : new Version(packageVersion);
+            var snapshotSuffix = version switch
+            {
+                null => "2_7", // default is version 2.8.0
+                { Major: >= 3 } => "3_0", // The default JSON serialization changed in 3.0
+                { Major: 2, Minor: >= 15 } => "2_15", // A bunch of stuff was removed in 2.15.0
+                { Major: 2, Minor: >= 7 } => "2_7", // default is version 2.8.0
+                { Major: 2, Minor: >= 5 } => "2_5", // version 2.5 + 2.6 include additional info on queries compared to 2.2
+                { Major: 2, Minor: >= 2 } => "2_2",
+                _ => "PRE_2_2"
+            };
+            var expectedSpanCount = snapshotSuffix switch
+            {
+                "PRE_2_2" => 7,
+                "2_15" or "3_0" => 19,
+                _ => 23
+            };
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(3, 500);
-
-                var version = string.IsNullOrEmpty(packageVersion) ? null : new Version(packageVersion);
-                var snapshotSuffix = version switch
-                {
-                    null => "2_7", // default is version 2.8.0
-                    { Major: >= 3 } => "3_0", // The default JSON serialization changed in 3.0
-                    { Major: 2, Minor: >= 15 } => "2_15", // A bunch of stuff was removed in 2.15.0
-                    { Major: 2, Minor: >= 7 } => "2_7", // default is version 2.8.0
-                    { Major: 2, Minor: >= 5 } => "2_5", // version 2.5 + 2.6 include additional info on queries compared to 2.2
-                    { Major: 2, Minor: >= 2 } => "2_2",
-                    _ => "PRE_2_2"
-                };
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount, assertExpectedCount: false);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 // mongo stamps the current framework version, and OS so normalise those
