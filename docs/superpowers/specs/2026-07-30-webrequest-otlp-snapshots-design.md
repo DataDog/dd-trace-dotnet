@@ -140,6 +140,27 @@ sorts by `name` only. The helper therefore takes an **optional sort-key selector
 defaulting to name-only**, preserving current behavior, and `WebRequestTests`
 passes the composite key described below.
 
+## Test isolation
+
+`ClearTestAgentSession` clears the test-agent session **globally**. xUnit runs
+distinct collections in parallel and this project declares no
+`CollectionBehavior`, so once a second class starts clearing the session, a
+clear from one class can delete another class's in-flight traces.
+
+Today `OpenTelemetrySdkTests` is safe only by accident: all of its OTLP tests
+share one implicit per-class collection. Adding OTLP tests to `WebRequestTests`
+breaks that.
+
+Fix: a shared `TestAgentOtlpCollection` with `DisableParallelization = true`,
+applied to both classes. `WebRequestTests`' existing single-class
+`CollectionDefinition` is replaced by it — that collection existed only to
+disable parallelization, which the shared one also does.
+
+The CI cost is close to zero. The non-docker job filters `OpenTelemetrySdkTests`
+out entirely via `RequiresDockerDependency!=true`, and the docker job filters out
+`WebRequestTests`' msgpack tests, so the only work actually serialized is OTLP
+tests against each other — which is the point.
+
 ## Determinism
 
 Four sources of instability, each handled explicitly.
