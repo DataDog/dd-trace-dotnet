@@ -5,6 +5,7 @@
 
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
@@ -34,13 +35,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public Task SubmitsTracesV0() => RunTest("v0");
+        public Task SubmitsTracesV0() => RunTest(metadataSchemaVersion: "v0", openTelemetrySemanticsEnabled: false);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public Task SubmitsTracesV1() => RunTest("v1");
+        public Task SubmitsTracesV1() => RunTest(metadataSchemaVersion: "v1", openTelemetrySemanticsEnabled: false);
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public Task SubmitsTracesV0WithOpenTelemetrySemantics() => RunTest(metadataSchemaVersion: "v0", openTelemetrySemanticsEnabled: true);
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public Task SubmitsTracesV1WithOpenTelemetrySemantics() => RunTest(metadataSchemaVersion: "v1", openTelemetrySemanticsEnabled: true);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -71,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private async Task RunTest(string metadataSchemaVersion)
+        private async Task RunTest(string metadataSchemaVersion, bool openTelemetrySemanticsEnabled)
         {
             SetInstrumentationVerification();
 
@@ -81,7 +94,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-            var isExternalSpan = metadataSchemaVersion == "v0";
+            SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
+            var isExternalSpan = metadataSchemaVersion == "v0" || openTelemetrySemanticsEnabled; // For OpenTelemetry Semantics enabled, we are unilaterally setting the metadata schema to v0
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-http-client" : EnvironmentHelper.FullSampleName;
 
             using var telemetry = this.ConfigureTelemetry();
@@ -112,7 +126,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // different TFMs use different underlying handlers, which we don't really care about for the snapshots
             settings.AddSimpleScrubber("System.Net.Http.HttpClientHandler", "System.Net.Http.SocketsHttpHandler");
 #endif
+            settings.AddRegexScrubber(new Regex("\"time_unix_nano\":\\d+"), "\"time_unix_nano\":<DateTimeOffset.Now>");
+            settings.AddRegexScrubber(new Regex("server.port: \\d+"), "server.port: 8080");
             var suffix = EnvironmentHelper.IsCoreClr() ? string.Empty : "_netfx";
+            var schema = openTelemetrySemanticsEnabled ? "otel" : metadataSchemaVersion;
             await VerifyHelper.VerifySpans(
                                    allSpans,
                                    settings,
@@ -122,11 +139,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                             .ThenBy(x => x.Tags.TryGetValue("http.url", out var url) ? url : string.Empty)
                                             .ThenBy(x => x.Start)
                                             .ThenBy(x => x.Duration))
-                              .UseFileName($"{nameof(WebRequestTests)}{suffix}_{metadataSchemaVersion}");
+                              .DisableRequireUniquePrefix()
+                              .UseFileName($"{nameof(WebRequestTests)}{suffix}_{schema}");
 
             allSpans.Should().OnlyHaveUniqueItems(s => new { s.SpanId, s.TraceId });
             var httpSpans = allSpans.Where(s => s.Type == SpanTypes.Http).ToList();
-            ValidateIntegrationSpans(httpSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            ValidateIntegrationSpans(httpSpans, schema, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.WebRequest);
             VerifyInstrumentation(processResult.Process);
