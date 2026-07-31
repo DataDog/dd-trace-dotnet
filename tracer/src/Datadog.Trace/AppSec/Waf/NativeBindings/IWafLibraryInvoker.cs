@@ -12,5 +12,17 @@ internal interface IWafLibraryInvoker
 {
     void ContextDestroy(IntPtr handle);
 
-    void ObjectFree(ref DdwafObjectStruct output);
+    void SubcontextDestroy(IntPtr handle);
+
+    /// <summary>
+    /// Releases an object built with the given allocator. Passing a different allocator than the one
+    /// the object was created with corrupts the heap.
+    /// </summary>
+    void ObjectDestroy(ref DdwafObjectStruct input, IntPtr alloc);
+
+    /// <summary>
+    /// Releases an object built with the default allocator, which covers everything libddwaf
+    /// allocates on our behalf (eval results, diagnostics).
+    /// </summary>
+    void ObjectDestroy(ref DdwafObjectStruct input);
 }
