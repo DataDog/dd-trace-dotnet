@@ -8,19 +8,20 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
+using Testcontainers.RabbitMq;
 
 namespace Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 
 public class RabbitMqFixture : ContainerFixture
 {
-    private const int RabbitMqPort = 5672;
     private const string Image = "rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69";
+    private const string Username = "guest";
+    private const string Password = "guest";
 
     public string Host => Container.Hostname;
 
-    public ushort Port => Container.GetMappedPublicPort(RabbitMqPort);
+    public ushort Port => Container.GetMappedPublicPort(RabbitMqBuilder.RabbitMqPort);
 
     private IContainer Container => GetResource<IContainer>("container");
 
@@ -32,14 +33,10 @@ public class RabbitMqFixture : ContainerFixture
 
     protected override async Task InitializeResources(Action<string, object> registerResource)
     {
-        // rabbitmq-diagnostics can race startup and create a root-owned Erlang cookie.
-        // The samples connect through the mapped host port, so wait for that endpoint too.
-        var container = new ContainerBuilder(Image)
-                       .WithPortBinding(RabbitMqPort, true)
-                       .WithWaitStrategy(
-                            Wait.ForUnixContainer()
-                                .UntilInternalTcpPortIsAvailable(RabbitMqPort)
-                                .UntilExternalTcpPortIsAvailable(RabbitMqPort))
+        // Preserve the RabbitMQ.Client default credentials used by the samples.
+        var container = new RabbitMqBuilder(Image)
+                       .WithUsername(Username)
+                       .WithPassword(Password)
                        .Build();
 
         registerResource("container", container);
