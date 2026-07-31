@@ -82,6 +82,16 @@ public sealed class CiRunGlobalCoverageMemoryTests
         var environmentHelper = new EnvironmentHelper(SampleName, typeof(CiRunGlobalCoverageMemoryTests), _output);
         var sampleAssembly = environmentHelper.GetTestCommandForSampleApplicationPath(useDotnetTest ? string.Empty : packageVersion, "net8.0");
         File.Exists(sampleAssembly).Should().BeTrue($"the required sample output must be present at {sampleAssembly}");
+        var sampleProject = useDotnetTest ? Path.Combine(environmentHelper.GetSampleProjectDirectory(), $"Samples.{SampleName}.csproj") : null;
+        if (sampleProject is not null)
+        {
+            File.Exists(sampleProject).Should().BeTrue($"the required sample project must be present at {sampleProject}");
+
+            // The Windows integration-test stage downloads the sample's published bin output, but not its obj directory.
+            // Restore only this project so `dotnet test --no-build` can evaluate the SDK targets while still executing the
+            // exact sample assembly produced by the build stage.
+            RestoreSampleProject(environmentHelper.GetDotnetExe(), sampleProject, packageVersion);
+        }
 
         var runnerDirectory = GetRunnerDirectory();
         var runnerAssembly = Path.Combine(runnerDirectory, "Datadog.Trace.Tools.Runner.dll");
@@ -100,7 +110,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
         var logDirectory = Directory.CreateDirectory(Path.Combine(root.RootPath, "logs")).FullName;
         var progressPath = Path.Combine(root.RootPath, "progress.jsonl");
         var targetCommand = useDotnetTest
-                                ? CreateDotnetTestCommand(environmentHelper, sampleAssembly)
+                                ? CreateDotnetTestCommand(environmentHelper, sampleProject!)
                                 : CreateVstestCommand(environmentHelper.GetDotnetExe(), sampleAssembly, includeCoverlet);
         var arguments = CreateCiRunArguments(
             environmentHelper.MonitoringHome,
@@ -114,7 +124,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
         var result = RunRunner(environmentHelper.GetDotnetExe(), runnerAssembly, arguments, logDirectory);
         result.ExitCode.Should().Be(0, result.Error);
 
-        AssertLaunch(result.Output, runnerDirectory, useDotnetTest);
+        AssertLaunch(result.Output, runnerDirectory, sampleProject);
         var testhostProcessId = AssertProgress(progressPath, expectedCaseCount);
         AssertPublishedCoverage(coverageDirectory, expectedCaseCount);
         AssertCoverageDiagnostics(logDirectory, testhostProcessId, expectedCaseCount);
@@ -182,6 +192,45 @@ public sealed class CiRunGlobalCoverageMemoryTests
         return new ProcessResult(process.ExitCode, output, error);
     }
 
+    private void RestoreSampleProject(string dotnetExecutable, string sampleProject, string packageVersion)
+    {
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = dotnetExecutable,
+                WorkingDirectory = EnvironmentTools.GetSolutionDirectory(),
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+            }
+        };
+        process.StartInfo.ArgumentList.Add("restore");
+        process.StartInfo.ArgumentList.Add(sampleProject);
+        process.StartInfo.ArgumentList.Add($"-p:ApiVersion={packageVersion}");
+
+        process.Start().Should().BeTrue();
+        var outputTask = process.StandardOutput.ReadToEndAsync();
+        var errorTask = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit((int)TimeSpan.FromMinutes(5).TotalMilliseconds))
+        {
+            process.Kill(entireProcessTree: true);
+            process.WaitForExit();
+            throw new TimeoutException("Restoring the SDK 10 global coverage sample exceeded 5 minutes.");
+        }
+
+        var output = outputTask.GetAwaiter().GetResult();
+        var error = errorTask.GetAwaiter().GetResult();
+        _output.WriteLine(output);
+        if (!string.IsNullOrWhiteSpace(error))
+        {
+            _output.WriteLine(error);
+        }
+
+        process.ExitCode.Should().Be(0, error);
+    }
+
     private void AssertSdk10()
     {
         using var process = new Process
@@ -213,12 +262,18 @@ public sealed class CiRunGlobalCoverageMemoryTests
         version!.Major.Should().Be(10, "this smoke test must exercise the .NET SDK 10 TestCommand integration");
     }
 
-    private string[] CreateDotnetTestCommand(EnvironmentHelper environmentHelper, string sampleAssembly)
+    private string[] CreateDotnetTestCommand(EnvironmentHelper environmentHelper, string sampleProject)
         =>
         [
             environmentHelper.GetDotnetExe(),
             "test",
-            sampleAssembly
+            // Passing a test DLL selects VSTest directly and bypasses the .NET SDK 10 outer TestCommand hook that owns
+            // global coverage reconciliation. Use the project while preventing rebuild or restore of the published sample.
+            sampleProject,
+            "--configuration",
+            EnvironmentTools.GetBuildConfiguration(),
+            "--no-build",
+            "--no-restore"
         ];
 
     private string[] CreateVstestCommand(
@@ -277,7 +332,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
         return arguments.ToArray();
     }
 
-    private void AssertLaunch(string output, string runnerDirectory, bool useDotnetTest)
+    private void AssertLaunch(string output, string runnerDirectory, string? sampleProject)
     {
         var launchLine = output.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries)
                                .Should()
@@ -286,12 +341,16 @@ public sealed class CiRunGlobalCoverageMemoryTests
         var datadogCollectorCount = Regex.Matches(launchLine, @"(?<!\w)(?:/Collect:)?DatadogCoverage(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count;
         datadogCollectorCount.Should().Be(1, "dd-trace ci run must inject exactly one Datadog coverage collector");
 
-        if (useDotnetTest)
+        if (sampleProject is not null)
         {
             Regex.Matches(launchLine, @"(?<!\w)--test-adapter-path(?!\w)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count.Should().Be(1);
             launchLine.Should().Contain(runnerDirectory);
+            launchLine.Should().Contain(sampleProject);
+            launchLine.Should().Contain($"--configuration {EnvironmentTools.GetBuildConfiguration()}");
+            launchLine.Should().Contain("--no-build");
+            launchLine.Should().Contain("--no-restore");
         }
-        else if (!useDotnetTest)
+        else
         {
             Regex.Matches(launchLine, Regex.Escape($"/TestAdapterPath:{runnerDirectory}"), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count.Should().Be(1);
         }
