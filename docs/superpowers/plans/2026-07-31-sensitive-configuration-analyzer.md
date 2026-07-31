@@ -31,7 +31,7 @@
 - Consumes: `YamlReader.ParseSupportedConfigurations(string)` and `ConfigurationEntry`.
 - Produces: `ConfigurationEntry.Sensitive` as a `bool`, defaulting to `false` and reset for every new configuration entry.
 
-- [ ] **Step 1: Write failing parser tests**
+- [x] **Step 1: Write failing parser tests**
 
 Add three behavior assertions using a hand-written YAML fixture:
 
@@ -49,7 +49,7 @@ public void ParsesSensitiveMetadata()
 
 The fixture places an ordinary entry after a sensitive entry so the final assertion catches failure to reset parser state.
 
-- [ ] **Step 2: Run the parser test and verify RED**
+- [x] **Step 2: Run the parser test and verify RED**
 
 Run:
 
@@ -59,7 +59,7 @@ dotnet test tracer/test/Datadog.Trace.SourceGenerators.Tests/Datadog.Trace.Sourc
 
 Expected: compilation fails because `ConfigurationEntry` has no `Sensitive` property.
 
-- [ ] **Step 3: Implement minimal YAML parsing**
+- [x] **Step 3: Implement minimal YAML parsing**
 
 In `YamlReader.ParseSupportedConfigurations`:
 
@@ -96,7 +96,7 @@ public bool Sensitive { get; }
 
 Include `Sensitive` in `Equals()` and `GetHashCode()` so incremental-generator caching notices registry changes.
 
-- [ ] **Step 4: Run parser and source-generator suites and verify GREEN**
+- [x] **Step 4: Run parser and source-generator suites and verify GREEN**
 
 Run the filtered command from Step 2, followed by:
 
@@ -106,7 +106,7 @@ dotnet test tracer/test/Datadog.Trace.SourceGenerators.Tests/Datadog.Trace.Sourc
 
 Expected: all source-generator tests pass with no warnings.
 
-- [ ] **Step 5: Commit parser support**
+- [x] **Step 5: Commit parser support**
 
 ```bash
 git add tracer/build/_build/NativeValidation/YamlReader.cs tracer/test/Datadog.Trace.SourceGenerators.Tests/YamlReaderTests.cs
@@ -125,7 +125,7 @@ git commit -m "[Configuration] Parse sensitive config metadata"
 - Consumes: `ConfigurationEntry.Sensitive`, Roslyn `AdditionalText`, and direct `ConfigurationKeys` constants passed to `ConfigurationBuilder.WithKeys(string)`.
 - Produces: diagnostic `DD0015` when a sensitive key is not immediately consumed by a provably redacted accessor.
 
-- [ ] **Step 1: Link the shared parser into the analyzer project**
+- [x] **Step 1: Link the shared parser into the analyzer project**
 
 Add linked compile items for the shared parser and its dependencies:
 
@@ -137,7 +137,7 @@ Add linked compile items for the shared parser and its dependencies:
 
 Build the analyzer project once to prove the shared types compile under `netstandard2.0`.
 
-- [ ] **Step 2: Add failing analyzer tests for unsafe reads**
+- [x] **Step 2: Add failing analyzer tests for unsafe reads**
 
 Teach `AnalyzerTestHelper` to attach a literal `supported-configurations.yaml` additional file. Add focused tests where `DD_API_KEY` is marked sensitive and `DD_SERVICE` is not:
 
@@ -156,7 +156,7 @@ var sensitive = builder.WithKeys({|#0:ConfigurationKeys.ApiKey|});
 
 Each test names the unsafe branch it catches; do not combine unrelated failures into one assertion.
 
-- [ ] **Step 3: Run unsafe-read tests and verify RED**
+- [x] **Step 3: Run unsafe-read tests and verify RED**
 
 Run:
 
@@ -166,7 +166,7 @@ dotnet test tracer/test/Datadog.Trace.Tools.Analyzers.Tests/Datadog.Trace.Tools.
 
 Expected: the new tests fail because `DD0015` is not reported.
 
-- [ ] **Step 4: Implement YAML loading and the unsafe-read rule**
+- [x] **Step 4: Implement YAML loading and the unsafe-read rule**
 
 At compilation start, locate `supported-configurations.yaml`, parse it once, and collect canonical sensitive keys:
 
@@ -207,13 +207,13 @@ For `AsStringResult`, obtain `IInvocationOperation`, find the argument whose bou
 
 Keep missing/malformed YAML silent because the source generator already owns registry diagnostics.
 
-- [ ] **Step 5: Run unsafe-read tests and verify GREEN**
+- [x] **Step 5: Run unsafe-read tests and verify GREEN**
 
 Run the filtered analyzer command from Step 3.
 
 Expected: all `ConfigurationBuilderWithKeysAnalyzerTests` pass.
 
-- [ ] **Step 6: Add passing tests for allowed redacted reads**
+- [x] **Step 6: Add passing tests for allowed redacted reads**
 
 Add separate no-diagnostic tests for:
 
@@ -225,7 +225,7 @@ builder.WithKeys(ConfigurationKeys.ApiKey).AsStringResult(null, null, recordValu
 
 Also prove a malformed or missing YAML additional file does not create `DD0015`; source-generator diagnostics remain authoritative.
 
-- [ ] **Step 7: Run the entire analyzer suite**
+- [x] **Step 7: Run the entire analyzer suite**
 
 ```bash
 dotnet test tracer/test/Datadog.Trace.Tools.Analyzers.Tests/Datadog.Trace.Tools.Analyzers.Tests.csproj -c Release -f net10.0 --disable-build-servers -m:1
@@ -233,7 +233,7 @@ dotnet test tracer/test/Datadog.Trace.Tools.Analyzers.Tests/Datadog.Trace.Tools.
 
 Expected: 0 failures and no new warnings.
 
-- [ ] **Step 8: Commit analyzer enforcement**
+- [x] **Step 8: Commit analyzer enforcement**
 
 ```bash
 git add tracer/src/Datadog.Trace.Tools.Analyzers tracer/test/Datadog.Trace.Tools.Analyzers.Tests/ConfigurationAnalyzers
@@ -253,7 +253,7 @@ git commit -m "[Configuration] Enforce redaction for sensitive keys"
 - Consumes: `AsRedactedString()`, `StringConfigurationSource.ParseCustomKeyValues(string?, bool, char)`, and existing configuration alias fallback.
 - Produces: redacted telemetry for `DD_API_KEY` and all OTLP header settings, while preserving parsed header values for exporters.
 
-- [ ] **Step 1: Add failing telemetry regression tests**
+- [x] **Step 1: Add failing telemetry regression tests**
 
 In `ExporterSettingsTests`, configure distinct sentinel secrets for the general, metrics, and traces header keys. Construct `ExporterSettings` with a real `ConfigurationTelemetry` and assert each matching entry is `Redacted` with a null `StringValue`. Assert the endpoint entry remains a normal string entry.
 
@@ -266,7 +266,7 @@ entries.Where(x => x.Key == ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHead
        .OnlyContain(x => x.Type == ConfigurationTelemetryEntryType.Redacted && x.StringValue is null);
 ```
 
-- [ ] **Step 2: Run affected tracer tests and verify RED**
+- [x] **Step 2: Run affected tracer tests and verify RED**
 
 ```bash
 dotnet test tracer/test/Datadog.Trace.Tests/Datadog.Trace.Tests.csproj -c Release -f net10.0 --filter "FullyQualifiedName~ExporterSettingsTests|FullyQualifiedName~TracerSettingsTests" --disable-build-servers -m:1
@@ -274,11 +274,11 @@ dotnet test tracer/test/Datadog.Trace.Tests/Datadog.Trace.Tests.csproj -c Releas
 
 Expected: sentinel values are recorded as string telemetry, so the new assertions fail.
 
-- [ ] **Step 3: Mark sensitive YAML entries**
+- [x] **Step 3: Mark sensitive YAML entries**
 
 Add `sensitive: true` to `DD_API_KEY` and the four OTLP header entries. Do not add sensitivity metadata to other header-named settings.
 
-- [ ] **Step 4: Convert OTLP runtime reads to redacted accessors**
+- [x] **Step 4: Convert OTLP runtime reads to redacted accessors**
 
 In `ExporterSettings.RawSettings`, replace the three OTLP header `AsString()` calls with `AsRedactedString()`.
 
@@ -297,13 +297,13 @@ OtlpLogsHeaders = (StringConfigurationSource.ParseCustomKeyValues(rawOtlpLogsHea
                   .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
 ```
 
-- [ ] **Step 5: Run affected tracer tests and verify GREEN**
+- [x] **Step 5: Run affected tracer tests and verify GREEN**
 
 Run the filtered command from Step 2. Also run the existing OTLP parsing theories without filters broad enough to skip them.
 
 Expected: all affected tests pass, sentinels never appear in string telemetry, and parsing/fallback results are unchanged.
 
-- [ ] **Step 6: Build Datadog.Trace with the analyzer enabled**
+- [x] **Step 6: Build Datadog.Trace with the analyzer enabled**
 
 ```bash
 dotnet build tracer/src/Datadog.Trace/Datadog.Trace.csproj -c Release --disable-build-servers -m:1
@@ -311,7 +311,7 @@ dotnet build tracer/src/Datadog.Trace/Datadog.Trace.csproj -c Release --disable-
 
 Expected: all target frameworks compile with no `DD0015` violations. Existing `DD_API_KEY` reads already use redacted accessors.
 
-- [ ] **Step 7: Commit runtime migration**
+- [x] **Step 7: Commit runtime migration**
 
 ```bash
 git add tracer/src/Datadog.Trace/Configuration tracer/test/Datadog.Trace.Tests/Configuration
@@ -328,11 +328,11 @@ git commit -m "[Configuration] Redact sensitive configuration reads"
 - Consumes: the implemented YAML property and analyzer behavior.
 - Produces: contributor guidance and fresh verification evidence for publishing.
 
-- [ ] **Step 1: Update contributor documentation**
+- [x] **Step 1: Update contributor documentation**
 
 Document that `sensitive: true` marks credential-bearing values, that aliases inherit redaction through normal fallback, and that sensitive keys must use `AsRedactedString*` or an explicit compile-time `recordValue: false` path.
 
-- [ ] **Step 2: Run focused suites**
+- [x] **Step 2: Run focused suites**
 
 ```bash
 dotnet test tracer/test/Datadog.Trace.SourceGenerators.Tests/Datadog.Trace.SourceGenerators.Tests.csproj -c Release -f net10.0 --disable-build-servers -m:1
@@ -342,7 +342,7 @@ dotnet test tracer/test/Datadog.Trace.Tests/Datadog.Trace.Tests.csproj -c Releas
 
 Expected: 0 failures in all three commands.
 
-- [ ] **Step 3: Run the full tracer build and repository checks**
+- [x] **Step 3: Run the full tracer build and repository checks**
 
 ```bash
 dotnet build tracer/src/Datadog.Trace/Datadog.Trace.csproj -c Release --disable-build-servers -m:1
@@ -351,7 +351,7 @@ git diff --check master...HEAD
 
 Expected: build exit code 0 for every target framework and no whitespace errors.
 
-- [ ] **Step 4: Commit documentation and plan completion**
+- [x] **Step 4: Commit documentation and plan completion**
 
 ```bash
 git add docs/development/Configuration/AddingConfigurationKeys.md docs/superpowers/plans/2026-07-31-sensitive-configuration-analyzer.md
@@ -369,4 +369,3 @@ Read `.github/pull_request_template.md`, push with the `bm1549` public-repositor
 - [ ] **Step 7: Babysit CI**
 
 Invoke `dd:pr-babysit` and monitor until every real correctness check is green. Ignore `devflow/mergegate` and any aggregator blocked only by that gate.
-
