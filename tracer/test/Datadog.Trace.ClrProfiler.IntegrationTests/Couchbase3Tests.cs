@@ -137,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 return "_3_4";
             }
 
-            return string.Empty;
+            return version < new Version("3.8.0") ? string.Empty : "_3_8";
         }
 
         private static Version GetPackageVersion(string packageVersion)
