@@ -126,22 +126,23 @@ public class ScopeFactoryTests
         tags.HttpUrl.Should().Be("http://REDACTED:REDACTED@localhost/api");
     }
 
-    // peer.service is calculated from the same backing property as the host tag, so it keeps working
-    // when the tag is renamed to "server.address". The reported source stays "out.host" either way:
-    // it is a Datadog-only attribute, and OpenTelemetry semantics supersede the V1 schema.
+    // DD_TRACE_OTEL_SEMANTICS_ENABLED forces the effective metadata schema version to v0 (see
+    // TracerSettings), because OpenTelemetry semantics already fully replace Datadog attribute naming
+    // and values, so the V1 schema's Datadog-only attributes (e.g. peer.service) must not coexist with them.
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task CreateOutboundHttpScope_CalculatesPeerServiceFromTheHostTag(bool otelSemanticsEnabled)
+    [InlineData("v1")]
+    [InlineData("v0")]
+    [InlineData(null)]
+    public async Task CreateOutboundHttpScope_WithOpenTelemetrySemantics_NeverUsesV1SchemaTags(string requestedSchemaVersion)
     {
-        await using var tracer = CreateTracer(otelSemanticsEnabled, schemaVersion: "v1");
+        await using var tracer = CreateTracer(otelSemanticsEnabled: true, schemaVersion: requestedSchemaVersion);
         using var parent = StartParentScope(tracer);
 
         using var scope = ScopeFactory.CreateOutboundHttpScope(tracer, "GET", RequestUri, IntegrationId.HttpMessageHandler, out var tags);
 
-        tags.Should().BeOfType<HttpV1Tags>();
-        tags.GetTag(Tags.PeerService).Should().Be("localhost");
-        tags.GetTag(Tags.PeerServiceSource).Should().Be(Tags.OutHost);
+        tags.Should().BeOfType<HttpTags>();
+        tags.GetTag(Tags.PeerService).Should().BeNull();
+        tags.GetTag(Tags.PeerServiceSource).Should().BeNull();
     }
 
     private static Scope StartParentScope(Tracer tracer)
