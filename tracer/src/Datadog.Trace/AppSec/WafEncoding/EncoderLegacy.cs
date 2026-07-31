@@ -8,7 +8,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -16,14 +15,33 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.WafEncoding;
 
+/// <summary>
+/// Encoder that delegates the construction of every WAF object to libddwaf itself.
+///
+/// Since libddwaf 2.0 there are no standalone objects to assemble: a container is created with a
+/// capacity and then <c>ddwaf_object_insert</c> / <c>ddwaf_object_insert_key</c> hand back a pointer
+/// to the slot to fill in. Encoding is therefore a top down walk that writes into the destination
+/// slot given by the parent, rather than a bottom up one that returns objects by value.
+/// </summary>
 internal sealed class EncoderLegacy : IEncoder
 {
+    /// <summary>
+    /// Worst case UTF-8 size of a string that abides by the safety limits, which is the size the
+    /// per-thread conversion buffer is kept at.
+    /// </summary>
+    private const int MaxBytesForMaxStringLength = (WafConstants.MaxStringLength * 4) + 1;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(EncoderLegacy));
+
+    [ThreadStatic]
+    private static byte[]? _utf8Buffer;
+
     private readonly WafLibraryInvoker _wafLibraryInvoker;
 
     public EncoderLegacy(WafLibraryInvoker wafLibraryInvoker)
@@ -33,13 +51,34 @@ internal sealed class EncoderLegacy : IEncoder
 
     private static string TruncateLongString(string s) => s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
 
-    public IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
+    public unsafe IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, bool applySafetyLimits = true)
     {
-        var result = EncodeInternal(o, remainingDepth, applySafetyLimits, _wafLibraryInvoker, parentObj: true);
-        return new EncodeResult(result, _wafLibraryInvoker);
+        // The root is the only object we own outright: everything below it lives inside a container
+        // allocated by libddwaf. It starts out invalid so that disposing is safe even if encoding
+        // bails out before writing anything.
+        DdwafObjectStruct root = default;
+        EncodeInternal(o, &root, remainingDepth, applySafetyLimits, _wafLibraryInvoker);
+        return new EncodeResult(root, _wafLibraryInvoker);
     }
 
-    private static DdwafObjectStruct EncodeUnknownType(object? o, WafLibraryInvoker wafLibraryInvoker)
+    /// <summary>
+    /// Clamps a container's element count to what a WAF object can address. Both the size and the
+    /// capacity of arrays and maps are 16 bit, and libddwaf does not guard against overflowing them:
+    /// its grow helper saturates at 65535 and the following insert writes past the end of the buffer.
+    /// </summary>
+    private static ushort ClampCapacity(int count)
+    {
+        if (count <= DdwafObjectStruct.MaxContainerCapacity)
+        {
+            return (ushort)count;
+        }
+
+        TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+        Log.Warning<int, int>("Container holds {Count} entries, more than the {MaxContainerCapacity} a WAF object can address, it will be truncated", count, DdwafObjectStruct.MaxContainerCapacity);
+        return (ushort)DdwafObjectStruct.MaxContainerCapacity;
+    }
+
+    private static unsafe void EncodeUnknownType(object? o, DdwafObjectStruct* dest, WafLibraryInvoker wafLibraryInvoker)
     {
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
@@ -47,62 +86,133 @@ internal sealed class EncoderLegacy : IEncoder
         }
 
         var s = o?.ToString() ?? string.Empty;
-        return CreateNativeString(s, applyLimits: true, wafLibraryInvoker);
+        CreateNativeString(s, dest, applyLimits: true, wafLibraryInvoker);
     }
 
-    private static DdwafObjectStruct EncodeInternal<T>(T o, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker, bool parentObj = false)
+    private static unsafe void EncodeInternal<T>(T o, DdwafObjectStruct* dest, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
     {
-        object args = o!;
-        var value =
-            args switch
-            {
-                null => CreateNativeNull(wafLibraryInvoker),
-                string s => CreateNativeString(s, applyLimits, wafLibraryInvoker),
-                JValue jv => EncodeInternal(jv.Value, remainingDepth, applyLimits, wafLibraryInvoker),
-                int i => CreateNativeLong(i, wafLibraryInvoker),
-                uint i => CreateNativeUlong(i, wafLibraryInvoker),
-                long i => CreateNativeLong(i, wafLibraryInvoker),
-                ulong i => CreateNativeUlong(i, wafLibraryInvoker),
-                float i => CreateNativeDouble(i, wafLibraryInvoker),
-                double i => CreateNativeDouble(i, wafLibraryInvoker),
-                decimal i => CreateNativeDouble((double)i, wafLibraryInvoker),
-                bool b => CreateNativeBool(b, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, JToken>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, int>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, uint>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, long>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, float>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, double>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, decimal>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, string>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, bool>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, List<string>>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, ArrayList>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, string[]>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, List<double>>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IEnumerable<KeyValuePair<string, double[]>> objDict => EncodeDictionary(objDict, remainingDepth, applyLimits, wafLibraryInvoker),
-                IList<JToken> objs => EncodeList(objs, remainingDepth, applyLimits, wafLibraryInvoker),
-                IList<string> objs => EncodeList(objs, remainingDepth, applyLimits, wafLibraryInvoker),
-                IList<object> objs => EncodeList(objs, remainingDepth, applyLimits, wafLibraryInvoker),
-                IList<int> objs => EncodeList(objs, remainingDepth, applyLimits, wafLibraryInvoker),
-                IList<float> objs => EncodeList(objs, remainingDepth, applyLimits, wafLibraryInvoker),
-                IList<uint> objs => EncodeList(objs, remainingDepth, applyLimits, wafLibraryInvoker),
-                IList<long> objs => EncodeList(objs, remainingDepth, applyLimits, wafLibraryInvoker),
-                IList<ulong> objs => EncodeList(objs, remainingDepth, applyLimits, wafLibraryInvoker),
-                IList<double> objs => EncodeList(objs, remainingDepth, applyLimits, wafLibraryInvoker),
-                IList<decimal> objs => EncodeList(objs, remainingDepth, applyLimits, wafLibraryInvoker),
-                ArrayList objs => EncodeList(objs.ToArray(), remainingDepth, applyLimits, wafLibraryInvoker),
-                _ => EncodeUnknownType(args, wafLibraryInvoker)
-            };
-
-        return value;
+        object? args = o;
+        switch (args)
+        {
+            case null:
+                wafLibraryInvoker.ObjectSetNull(dest);
+                break;
+            case string s:
+                CreateNativeString(s, dest, applyLimits, wafLibraryInvoker);
+                break;
+            case JValue jv:
+                EncodeInternal(jv.Value, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case int i:
+                wafLibraryInvoker.ObjectSetSigned(dest, i);
+                break;
+            case uint i:
+                wafLibraryInvoker.ObjectSetUnsigned(dest, i);
+                break;
+            case long i:
+                wafLibraryInvoker.ObjectSetSigned(dest, i);
+                break;
+            case ulong i:
+                wafLibraryInvoker.ObjectSetUnsigned(dest, i);
+                break;
+            case float i:
+                wafLibraryInvoker.ObjectSetFloat(dest, i);
+                break;
+            case double i:
+                wafLibraryInvoker.ObjectSetFloat(dest, i);
+                break;
+            case decimal i:
+                wafLibraryInvoker.ObjectSetFloat(dest, (double)i);
+                break;
+            case bool b:
+                wafLibraryInvoker.ObjectSetBool(dest, b);
+                break;
+            case IEnumerable<KeyValuePair<string, JToken>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, int>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, uint>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, long>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, float>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, double>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, decimal>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, string>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, object>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, bool>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, List<string>>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, ArrayList>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, string[]>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, List<double>>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IEnumerable<KeyValuePair<string, double[]>> objDict:
+                EncodeDictionary(objDict, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IList<JToken> objs:
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IList<string> objs:
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IList<object> objs:
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IList<int> objs:
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IList<float> objs:
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IList<uint> objs:
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IList<long> objs:
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IList<ulong> objs:
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IList<double> objs:
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case IList<decimal> objs:
+                EncodeList(objs, dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            case ArrayList objs:
+                EncodeList(objs.ToArray(), dest, remainingDepth, applyLimits, wafLibraryInvoker);
+                break;
+            default:
+                EncodeUnknownType(args, dest, wafLibraryInvoker);
+                break;
+        }
     }
 
-    private static DdwafObjectStruct EncodeList<T>(IEnumerable<T> objEnumerator, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
+    private static unsafe void EncodeList<T>(IEnumerable<T> objEnumerator, DdwafObjectStruct* dest, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
     {
-        var arrNat = wafLibraryInvoker.ObjectArray();
-
         if (applyLimits && remainingDepth-- <= 0)
         {
             TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
@@ -111,10 +221,11 @@ internal sealed class EncoderLegacy : IEncoder
                 Log.Debug("EncodeList: object graph too deep, truncating nesting {Items}", string.Join(", ", objEnumerator));
             }
 
-            return arrNat;
+            wafLibraryInvoker.ObjectSetArray(dest, 0);
+            return;
         }
 
-        var count = objEnumerator is IList<object> objs ? objs.Count : objEnumerator.Count();
+        var count = objEnumerator is IList<T> objs ? objs.Count : objEnumerator.Count();
         if (applyLimits && count > WafConstants.MaxContainerSize)
         {
             TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
@@ -124,21 +235,34 @@ internal sealed class EncoderLegacy : IEncoder
             }
 
             objEnumerator = objEnumerator.Take(WafConstants.MaxContainerSize);
+            count = WafConstants.MaxContainerSize;
         }
+
+        // sizing the array up front means no insert ever has to grow it, which is both cheaper and
+        // the only way to stay clear of libddwaf's 16 bit overflow when growing
+        var capacity = ClampCapacity(count);
+        if (capacity < count)
+        {
+            objEnumerator = objEnumerator.Take(capacity);
+        }
+
+        wafLibraryInvoker.ObjectSetArray(dest, capacity);
 
         foreach (var o in objEnumerator)
         {
-            var value = EncodeInternal(o, remainingDepth, applyLimits, wafLibraryInvoker);
-            wafLibraryInvoker.ObjectArrayAdd(ref arrNat, ref value);
-        }
+            var slot = wafLibraryInvoker.ObjectInsert(dest);
+            if (slot == null)
+            {
+                Log.Warning("EncodeList: couldn't insert an element in the WAF array, the list will be incomplete");
+                break;
+            }
 
-        return arrNat;
+            EncodeInternal(o, slot, remainingDepth, applyLimits, wafLibraryInvoker);
+        }
     }
 
-    private static DdwafObjectStruct EncodeDictionary<T>(IEnumerable<KeyValuePair<string, T>> objDictEnumerator, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
+    private static unsafe void EncodeDictionary<T>(IEnumerable<KeyValuePair<string, T>> objDictEnumerator, DdwafObjectStruct* dest, int remainingDepth, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
     {
-        var mapNat = wafLibraryInvoker.ObjectMap();
-
         if (applyLimits && remainingDepth-- <= 0)
         {
             TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ObjectTooDeep);
@@ -147,10 +271,11 @@ internal sealed class EncoderLegacy : IEncoder
                 Log.Debug("EncodeDictionary: object graph too deep, truncating nesting {Items}", string.Join(", ", objDictEnumerator.Select(x => $"{x.Key}, {x.Value}")));
             }
 
-            return mapNat;
+            wafLibraryInvoker.ObjectSetMap(dest, 0);
+            return;
         }
 
-        var count = objDictEnumerator is IDictionary<string, object> objDict ? objDict.Count : objDictEnumerator.Count();
+        var count = objDictEnumerator is IDictionary<string, T> objDict ? objDict.Count : objDictEnumerator.Count();
 
         if (applyLimits && count > WafConstants.MaxContainerSize)
         {
@@ -161,15 +286,31 @@ internal sealed class EncoderLegacy : IEncoder
             }
 
             objDictEnumerator = objDictEnumerator.Take(WafConstants.MaxContainerSize);
+            count = WafConstants.MaxContainerSize;
         }
+
+        var capacity = ClampCapacity(count);
+        if (capacity < count)
+        {
+            objDictEnumerator = objDictEnumerator.Take(capacity);
+        }
+
+        wafLibraryInvoker.ObjectSetMap(dest, capacity);
 
         foreach (var o in objDictEnumerator)
         {
             var name = o.Key;
             if (!StringUtil.IsNullOrEmpty(name))
             {
-                var value = EncodeInternal(o.Value, remainingDepth, applyLimits, wafLibraryInvoker);
-                wafLibraryInvoker.ObjectMapAdd(ref mapNat, name, Convert.ToUInt64(name.Length), ref value);
+                var keyBytes = ToUtf8(name, out var keyLength);
+                var slot = wafLibraryInvoker.ObjectInsertKey(dest, keyBytes, keyLength);
+                if (slot == null)
+                {
+                    Log.Warning("EncodeDictionary: couldn't insert a key in the WAF map, the map will be incomplete");
+                    break;
+                }
+
+                EncodeInternal(o.Value, slot, remainingDepth, applyLimits, wafLibraryInvoker);
             }
             else
             {
@@ -179,48 +320,46 @@ internal sealed class EncoderLegacy : IEncoder
                 }
             }
         }
-
-        return mapNat;
     }
 
-    private static DdwafObjectStruct CreateNativeString(string s, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
+    private static unsafe void CreateNativeString(string s, DdwafObjectStruct* dest, bool applyLimits, WafLibraryInvoker wafLibraryInvoker)
     {
         var encodeString =
             applyLimits
                 ? TruncateLongString(s)
                 : s;
-        var objectStringLength = wafLibraryInvoker.ObjectStringLength(encodeString, Convert.ToUInt64(encodeString.Length));
-        return objectStringLength;
+
+        // libddwaf takes an explicit byte count, so the string has to be converted to UTF-8 here
+        // rather than left to the default (ANSI) marshalling, whose byte count wouldn't match the
+        // character count we'd be passing along with it.
+        var bytes = ToUtf8(encodeString, out var length);
+        wafLibraryInvoker.ObjectSetString(dest, bytes, length);
     }
 
-    private static DdwafObjectStruct CreateNativeBool(bool b, WafLibraryInvoker wafLibraryInvoker)
+    /// <summary>
+    /// Converts <paramref name="s"/> to UTF-8 into a buffer that is only valid until the next call on
+    /// the same thread. libddwaf copies the bytes of the keys and strings it is handed, so nothing has
+    /// to outlive the native call that consumes them and one buffer per thread is enough. Encoding a
+    /// whole tree therefore costs no managed allocation, which matters because every string and every
+    /// map key of every request goes through here.
+    /// </summary>
+    /// <param name="s">the string to convert</param>
+    /// <param name="length">the number of bytes written, which is what libddwaf expects as the length</param>
+    /// <returns>the buffer holding the bytes, of which only the first <paramref name="length"/> are meaningful</returns>
+    private static byte[] ToUtf8(string s, out uint length)
     {
-        var ddwafObjectStruct = wafLibraryInvoker.ObjectBool(b);
-        return ddwafObjectStruct;
-    }
+        if (StringEncoding.UTF8.GetMaxByteCount(s.Length) > MaxBytesForMaxStringLength)
+        {
+            // only reachable with the safety limits off, i.e. when encoding a ruleset at initialisation:
+            // convert it on its own rather than keeping an arbitrarily large buffer alive per thread
+            var oneOff = StringEncoding.UTF8.GetBytes(s);
+            length = (uint)oneOff.Length;
+            return oneOff;
+        }
 
-    private static DdwafObjectStruct CreateNativeLong(long value, WafLibraryInvoker wafLibraryInvoker)
-    {
-        var ddwafObjectStruct = wafLibraryInvoker.ObjectLong(value);
-        return ddwafObjectStruct;
-    }
-
-    private static DdwafObjectStruct CreateNativeNull(WafLibraryInvoker wafLibraryInvoker)
-    {
-        var ddwafObjectStruct = wafLibraryInvoker.ObjectNull();
-        return ddwafObjectStruct;
-    }
-
-    private static DdwafObjectStruct CreateNativeUlong(ulong value, WafLibraryInvoker wafLibraryInvoker)
-    {
-        var ddwafObjectStruct = wafLibraryInvoker.ObjectUlong(value);
-        return ddwafObjectStruct;
-    }
-
-    private static DdwafObjectStruct CreateNativeDouble(double value, WafLibraryInvoker wafLibraryInvoker)
-    {
-        var ddwafObjectStruct = wafLibraryInvoker.ObjectDouble(value);
-        return ddwafObjectStruct;
+        var buffer = _utf8Buffer ??= new byte[MaxBytesForMaxStringLength];
+        length = (uint)StringEncoding.UTF8.GetBytes(s, 0, s.Length, buffer, 0);
+        return buffer;
     }
 
     public static string FormatArgs(object o)
@@ -330,6 +469,7 @@ internal sealed class EncoderLegacy : IEncoder
 
         public bool Truncated => false;
 
-        public void Dispose() => _wafLibraryInvoker.ObjectFree(ref _resultDdwafObject);
+        // the whole tree was built with the default allocator, so that is the one that must free it
+        public void Dispose() => _wafLibraryInvoker.ObjectDestroy(ref _resultDdwafObject);
     }
 }
