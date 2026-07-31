@@ -271,7 +271,10 @@ public sealed class CiRunGlobalCoverageMemoryTests
             sampleProject,
             "--configuration",
             EnvironmentTools.GetBuildConfiguration(),
-            "--no-restore"
+            "--no-restore",
+            // Roslyn's shared compiler outlives `dotnet test` and keeps its native-loader log open on Windows. Disable it for
+            // this isolated smoke test so the test-owned log directory can be removed deterministically after validation.
+            "/p:UseSharedCompilation=false"
         ];
 
     private string[] CreateVstestCommand(
