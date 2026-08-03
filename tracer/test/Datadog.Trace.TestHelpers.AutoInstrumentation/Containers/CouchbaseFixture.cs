@@ -15,6 +15,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Docker.DotNet.Models;
 using DotNet.Testcontainers.Builders;
@@ -121,7 +122,7 @@ public class CouchbaseFixture : ContainerFixture
         var keyValuePort = useHostNetwork ? KeyValuePort : container.GetMappedPublicPort(KeyValuePort);
         var keyValueSslPort = useHostNetwork ? KeyValueSslPort : container.GetMappedPublicPort(KeyValueSslPort);
 
-        using var client = new HttpClient
+        using var client = new HttpClient(new RetryHandler())
         {
             BaseAddress = new UriBuilder(Uri.UriSchemeHttp, host, managementPort).Uri,
             Timeout = TimeSpan.FromSeconds(5),
@@ -229,5 +230,35 @@ public class CouchbaseFixture : ContainerFixture
         }
 
         throw new TimeoutException($"Couchbase endpoint '{path}' did not become ready.");
+    }
+
+    // Couchbase can reset a management API connection while the single-node cluster is being provisioned,
+    // particularly immediately after the administrator credentials are configured. Testcontainers' Couchbase
+    // module retries these transient failures when it runs the same configuration sequence.
+    private sealed class RetryHandler : DelegatingHandler
+    {
+        private const int MaxRetries = 5;
+
+        public RetryHandler()
+            : base(new HttpClientHandler())
+        {
+        }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            for (var attempt = 0; attempt < MaxRetries; attempt++)
+            {
+                try
+                {
+                    return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+                }
+                catch (HttpRequestException) when (attempt < MaxRetries - 1)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+                }
+            }
+
+            throw new HttpRequestException($"Unable to configure Couchbase. The HTTP request '{request.RequestUri}' did not complete successfully.");
+        }
     }
 }
