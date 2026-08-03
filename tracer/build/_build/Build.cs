@@ -463,7 +463,11 @@ partial class Build : NukeBuild
         {
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdTrace))
-                .EnableNoRestore()
+                // The runner project graph is not fully covered by the solution-level NuGet
+                // restore. When an explicit package directory is provided (for example by
+                // short-lived GitLab containers), restore the missing packages into it.
+                .When(string.IsNullOrEmpty(NugetPackageDirectory), o => o.EnableNoRestore())
+                .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
