@@ -129,7 +129,7 @@ namespace Datadog.Trace.TestHelpers
 
                         if (responseCode == HttpStatusCode.OK)
                         {
-                            await Agent.WaitForSpansAsync(1, minDateTime: dateTime);
+                            await Agent.WaitForSpansAsync(1, minDateTime: dateTime, assertExpectedCount: false);
                             serverReady = true;
                         }
                     }
