@@ -341,6 +341,7 @@ partial class Build
                 .SetProjectFile(Solution)
                 .SetVerbosity(DotNetVerbosity.Minimal)
                 .SetProperty("configuration", BuildConfiguration.ToString())
+                .SetProperty("Platform", "Any CPU")
                 .SetPackageDirectory(NugetPackageDirectory));
         });
 

@@ -16,11 +16,6 @@ This document combines:
 
 ## Help and documentation
 
-### Support thread
-
-- Slack thread: [request for help in `#ci-infa-support`](https://dd.slack.com/archives/C06TGQ49U1Z/p1777285094950679)
-- Help from Jorge Torres Martinez on 2026-04-27 at 14:30 UTC.
-
 ### Internal documentation
 
 - [Windows Runners V2](https://datadoghq.atlassian.net/wiki/spaces/DEVX/pages/5091983382/Windows+Runners+V2)
@@ -208,7 +203,7 @@ The next Windows PoC adds managed unit tests for `net8.0` and `net48` to the sam
 
 Managed test results use TRX rather than JUnit XML. Because each NUKE invocation cleans the shared results and logs directories, the job copies them into framework-specific directories under `artifacts/build_data/managed-unit-tests/<framework>` before starting the next framework. They are retained as ordinary job artifacts for the PoC. Converting TRX to JUnit, or otherwise surfacing the managed results directly in GitLab's test-report UI, remains pending before expanding the complete matrix.
 
-The first managed-test attempts exposed a broader restore boundary. The solution-level Windows `NuGet.exe restore` did not populate every SDK-style `PackageReference` dependency needed by the managed test graph in the shared directory. This first appeared as a missing `StyleCop.Analyzers.Unstable` package in `BuildRunnerTool`; after restoring that project directly, compilation reached another missing package, `Microsoft.NET.ILLink.Analyzers`, through `Datadog.Trace.Tools.dd_dotnet`. The project-specific workaround was replaced with one `RestoreManagedUnitTestPackages` prerequisite. When an explicit `NugetPackageDirectory` is provided, it uses `dotnet restore` on the solution before `BuildRunnerTool` and `CompileManagedUnitTests`. GitLab supplies `c:\mnt\packages`, so the complete SDK-style package graph survives the short-lived container boundary. Without that parameter the prerequisite is skipped, preserving Azure and local behavior.
+The first managed-test attempts exposed a broader restore boundary. The solution-level Windows `NuGet.exe restore` did not populate every SDK-style `PackageReference` dependency needed by the managed test graph in the shared directory. This first appeared as a missing `StyleCop.Analyzers.Unstable` package in `BuildRunnerTool`; after restoring that project directly, compilation reached another missing package, `Microsoft.NET.ILLink.Analyzers`, through `Datadog.Trace.Tools.dd_dotnet`. The project-specific workaround was replaced with one `RestoreManagedUnitTestPackages` prerequisite. When an explicit `NugetPackageDirectory` is provided, it uses `dotnet restore` on the solution before `BuildRunnerTool` and `CompileManagedUnitTests`. The restore explicitly selects `Release|Any CPU`; otherwise NUKE's Windows `x64` target platform produces an invalid generated-solution configuration. GitLab supplies `c:\mnt\packages`, so the complete SDK-style package graph survives the short-lived container boundary. Without that parameter the prerequisite is skipped, preserving Azure and local behavior.
 
 The first run also revealed that the configured JUnit paths pointed at `build-out`, while NUKE writes results to `artifacts/build_data/tests` and `profiler/build_data/tests`. The paths are corrected. Native-loader x64 and x86 previously wrote the same filename; the filename now uses the loop architecture so both reports are retained.
 
