@@ -19,17 +19,20 @@ internal sealed class TagAttribute : System.Attribute
     /// <summary>
     /// Initializes a new instance of the <see cref="TagAttribute"/> class.
     /// </summary>
-    /// <param name="tagName">The name of the datadog tag the property corresponds to</param>
+    /// <param name="tagName">The name of the datadog tag the property corresponds to.
+    /// For tags only present in OpenTelemetry semantics, this is the OpenTelemetry tag.</param>
     public TagAttribute(string tagName) =>
         this.TagName = tagName;
 
     /// <summary>
-    /// Gets the name of the datadog tag the property corresponds to
+    /// Gets the name of the datadog tag the property corresponds to.
+    /// For tags only present in OpenTelemetry semantics, this is the OpenTelemetry tag.
     /// </summary>
     public string TagName { get; }
 
     /// <summary>
     /// Gets or sets the OpenTelemetry semantic convention name that aliases <see cref="TagName"/>.
+    /// This is only used when a tag name is present in both Datadog and OpenTelemetry semantics.
     /// </summary>
     public string? OtelName { get; set; }
 }
