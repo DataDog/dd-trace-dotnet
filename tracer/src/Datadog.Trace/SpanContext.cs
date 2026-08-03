@@ -58,6 +58,9 @@ namespace Datadog.Trace
         private string _rawSpanId;
         private string _origin;
         private string _additionalW3CTraceState;
+#nullable enable
+        private string? _otelTraceState;
+#nullable restore
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
@@ -286,6 +289,27 @@ namespace Datadog.Trace
                 }
             }
         }
+
+        /// <summary>
+        /// Gets or sets the raw content of the inbound "ot=" W3C tracestate member
+        /// (OpenTelemetry consistent-probability-sampling sub-keys). Null if none was
+        /// present on extraction and nothing has derived one locally.
+        /// </summary>
+#nullable enable
+        internal string? OtelTraceState
+        {
+            get => TraceContext?.OtelTraceState ?? _otelTraceState;
+            set
+            {
+                _otelTraceState = value;
+
+                if (TraceContext is not null)
+                {
+                    TraceContext.OtelTraceState = value;
+                }
+            }
+        }
+#nullable restore
 
         /// <summary>
         /// Gets or sets the last span ID of the most recently seen Datadog span that will be propagated downstream
