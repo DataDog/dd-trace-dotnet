@@ -390,6 +390,9 @@ namespace Datadog.Trace
                     // double directly keeps its 32-bit mantissa noise in the low bits of the 56-bit threshold.
                     var th = (ulong)Math.Round((1.0 - (double)(decimal)samplingRate) * (1UL << 56), MidpointRounding.AwayFromZero);
 
+                    // clamp th into the valid 56-bit domain: rate=0.0f rounds up to 2^56, one bit out of range.
+                    th = Math.Min(th, (1UL << 56) - 1);
+
                     // 64<>56-bit imprecision clamp (design doc Decision 2 / RFC §7):
                     // force agreement between the (rv, th) pair and DD's actual keep/drop decision.
                     if (didSample && rv < th)
@@ -398,7 +401,7 @@ namespace Datadog.Trace
                     }
                     else if (!didSample && rv >= th)
                     {
-                        rv = th - 1;
+                        rv = th > 0 ? th - 1 : 0;
                     }
 
                     // overwrites any inherited rv/th outright; keeps unrecognized sub-keys.
