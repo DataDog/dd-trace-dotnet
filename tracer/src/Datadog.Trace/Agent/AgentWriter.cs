@@ -456,23 +456,21 @@ namespace Datadog.Trace.Agent
         private void SerializeTrace(in SpanCollection spans)
         {
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
-            SpanBuffer? SwapBuffers()
+            SpanBuffer? SwapBuffers(ref int lockedBufferCount)
             {
-                if (_activeBuffer == _frontBuffer)
+                var alternateBuffer = _activeBuffer == _frontBuffer ? _backBuffer : _frontBuffer;
+
+                if (!alternateBuffer.IsFull)
                 {
-                    if (!_backBuffer.IsFull)
-                    {
-                        Volatile.Write(ref _activeBuffer, _backBuffer);
-                        return _activeBuffer;
-                    }
+                    Volatile.Write(ref _activeBuffer, alternateBuffer);
+                    return alternateBuffer;
                 }
-                else
+
+                // A buffer remains full while it is being flushed, so account for the lock even though
+                // we won't try to write to it.
+                if (alternateBuffer.IsLocked)
                 {
-                    if (!_frontBuffer.IsFull)
-                    {
-                        Volatile.Write(ref _activeBuffer, _frontBuffer);
-                        return _activeBuffer;
-                    }
+                    lockedBufferCount++;
                 }
 
                 return null;
@@ -580,7 +578,7 @@ namespace Datadog.Trace.Agent
             }
 
             // Active buffer is full, swap them
-            buffer = SwapBuffers();
+            buffer = SwapBuffers(ref lockedBufferCount);
 
             if (buffer != null)
             {

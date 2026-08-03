@@ -67,8 +67,7 @@ namespace Datadog.Trace.Agent
 
         internal int MaxBufferSize => _maxBufferSize;
 
-        // For tests only
-        internal bool IsLocked => _locked;
+        internal bool IsLocked => Volatile.Read(ref _locked);
 
         // For tests only
         internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == _serializer.HeaderSize;

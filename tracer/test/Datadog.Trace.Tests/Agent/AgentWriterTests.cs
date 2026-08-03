@@ -462,6 +462,30 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void DropTraceWhenFullAlternateBufferIsLocked()
+        {
+            var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
+            var agent = new AgentWriter(
+                Mock.Of<IApi>(),
+                statsAggregator: null,
+                statsd: TestStatsdManager.NoOp,
+                automaticFlush: false,
+                maxBufferSize: (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1);
+
+            agent.WriteTrace(CreateTraceChunk(1));
+            agent.WriteTrace(CreateTraceChunk(1));
+            agent.FrontBuffer.IsFull.Should().BeTrue();
+            agent.FrontBuffer.Lock().Should().BeTrue();
+
+            agent.WriteTrace(CreateTraceChunk(2));
+
+            agent.DroppedTracesBufferFull.Should().Be(0);
+            agent.DroppedTracesBufferFullAndLocked.Should().Be(1);
+            agent.DroppedTracesBuffersLocked.Should().Be(0);
+            agent.DroppedTracesTooLarge.Should().Be(0);
+        }
+
+        [Fact]
         public async Task DropTraceThatExceedsBufferSize()
         {
             var statsd = new Mock<IDogStatsd>();
