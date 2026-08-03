@@ -415,6 +415,10 @@ namespace Datadog.Trace
                     }
                 }
             }
+            else if (mechanism is Sampling.SamplingMechanism.Manual or Sampling.SamplingMechanism.Asm)
+            {
+                OtelTraceState = OtelTraceStateHelpers.SetRvTh(OtelTraceState, OtelTraceStateHelpers.ExtractRv(OtelTraceState), th: null);
+            }
 
             if (notifyDistributedTracer)
             {
