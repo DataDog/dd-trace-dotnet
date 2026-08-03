@@ -118,8 +118,7 @@ namespace MyTests.TestListNameSpace
         {
             return key switch
             {
-                ""dd.k"" => Id,
-                ""otel.k"" => Id,
+                ""dd.k"" or ""otel.k"" => Id,
                 _ => base.GetTag(key),
             };
         }
@@ -212,8 +211,7 @@ namespace MyTests.TestListNameSpace
                         {
                             return key switch
                             {
-                                "dd.status" => StatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(StatusCode.Value),
-                                "otel.status" => StatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(StatusCode.Value),
+                                "dd.status" or "otel.status" => StatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(StatusCode.Value),
                                 _ => base.GetTag(key),
                             };
                         }

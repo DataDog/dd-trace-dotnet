@@ -47,8 +47,7 @@ namespace Datadog.Trace.Tagging
                 "http.method" => HttpMethod,
                 "http.url" => HttpUrl,
                 "http-client-handler-type" => HttpClientHandlerType,
-                "http.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
-                "http.response.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
+                "http.status_code" or "http.response.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
                 "out.host" => Host,
                 _ => base.GetTag(key),
             };

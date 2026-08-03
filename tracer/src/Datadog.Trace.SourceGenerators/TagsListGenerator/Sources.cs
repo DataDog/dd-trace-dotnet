@@ -159,7 +159,16 @@ namespace ");
                     var property = tagList.TagProperties[i];
                     sb.Append('"')
                       .Append(property.TagValue)
-                      .Append(@""" => ")
+                      .Append('"');
+
+                    if (property.OtelTagValue is not null)
+                    {
+                        sb.Append(@" or """)
+                          .Append(property.OtelTagValue)
+                          .Append('"');
+                    }
+
+                    sb.Append(" => ")
                       .Append(property.PropertyName);
 
                     switch (property.PropertyType)
@@ -174,27 +183,6 @@ namespace ");
                     sb.Append(
                            @",
                 ");
-
-                    if (property.OtelTagValue is not null)
-                    {
-                        sb.Append('"')
-                          .Append(property.OtelTagValue)
-                          .Append(@""" => ")
-                          .Append(property.PropertyName);
-
-                        switch (property.PropertyType)
-                        {
-                            case TagListGenerator.PropertyType.NullableInt:
-                                sb.Append(" is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(")
-                                  .Append(property.PropertyName)
-                                  .Append(".Value)");
-                                break;
-                        }
-
-                        sb.Append(
-                               @",
-                ");
-                    }
                 }
 
                 sb.Append(

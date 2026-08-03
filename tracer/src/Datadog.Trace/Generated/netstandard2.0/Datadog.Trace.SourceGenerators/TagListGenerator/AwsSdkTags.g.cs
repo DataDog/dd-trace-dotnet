@@ -72,8 +72,7 @@ namespace Datadog.Trace.Tagging
                 "_dd.peer.service.source" => PeerServiceSource,
                 "http.method" => HttpMethod,
                 "http.url" => HttpUrl,
-                "http.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
-                "http.response.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
+                "http.status_code" or "http.response.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
                 _ => base.GetTag(key),
             };
         }
