@@ -286,8 +286,7 @@ namespace Datadog.Trace.DuckTyping
                 // If the target method couldn't be found we throw.
                 if (overriddenMethod is null)
                 {
-                    DuckTypeTargetMethodNotFoundException.Throw(implementationMethod);
-                    continue;
+                    return DuckTypeTargetMethodNotFoundException.Create(implementationMethod);
                 }
 
                 overriddenMethods.Remove(overriddenMethod);
@@ -301,15 +300,14 @@ namespace Datadog.Trace.DuckTyping
                 if (overriddenMethodGenericArguments.Length > 0
                  && implementationDefinitionGenericArguments.Length != overriddenMethodGenericArguments.Length)
                 {
-                    DuckTypeReverseProxyMustImplementGenericMethodAsGenericException.Throw(implementationMethod, overriddenMethod);
-                    continue;
+                    return DuckTypeReverseProxyMustImplementGenericMethodAsGenericException.Create(implementationMethod, overriddenMethod);
                 }
 
                 // Gets target method parameters
                 ParameterInfo[] overriddenMethodParameters = overriddenMethod.GetParameters();
                 if (implementationMethodParameters.Length > overriddenMethodParameters.Length)
                 {
-                    DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Throw(implementationMethod, overriddenMethod);
+                    return DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Create(implementationMethod, overriddenMethod);
                 }
 
                 Type[] overriddenMethodParametersTypes = overriddenMethodParameters.Select(p => p.ParameterType).ToArray();
@@ -379,7 +377,7 @@ namespace Datadog.Trace.DuckTyping
 
             if (overriddenMethods.Any(x => x.IsAbstract))
             {
-                DuckTypeReverseProxyMissingMethodImplementationException.Throw(overriddenMethods.Where(x => x.IsAbstract));
+                return DuckTypeReverseProxyMissingMethodImplementationException.Create(overriddenMethods.Where(x => x.IsAbstract));
             }
 
             return null;

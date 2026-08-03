@@ -293,6 +293,83 @@ public class FirstChanceExceptionTests
         result.Should().BeFalse();
     }
 
+    [Fact]
+    public void SuccessfulTryDuckImplementRaisesNoFirstChanceException()
+    {
+        Warmup();
+
+        object instance = new ReverseSuccessImplementation();
+        using var counter = new FirstChanceExceptionCounter();
+
+        var result = instance.TryDuckImplement(typeof(IReverseSuccessTarget), out var proxy);
+
+        counter.Exceptions.Should().BeEmpty();
+        result.Should().BeTrue();
+        proxy.Should().BeAssignableTo<IReverseSuccessTarget>();
+    }
+
+    [Fact]
+    public void FailingTryDuckImplementForMissingMethodRaisesNoFirstChanceException()
+    {
+        Warmup();
+
+        object instance = new ReverseMissingMethodImplementation();
+        using var counter = new FirstChanceExceptionCounter();
+
+        var result = instance.TryDuckImplement(typeof(IReverseMissingMethodTarget), out var proxy);
+
+        counter.Exceptions.Should().BeEmpty();
+        result.Should().BeFalse();
+        proxy.Should().BeNull();
+    }
+
+    [Fact]
+    public void FailingTryDuckImplementForMissingPropertyRaisesNoFirstChanceException()
+    {
+        Warmup();
+
+        object instance = new ReverseMissingPropertyImplementation();
+        using var counter = new FirstChanceExceptionCounter();
+
+        var result = instance.TryDuckImplement(typeof(IReverseMissingPropertyTarget), out var proxy);
+
+        counter.Exceptions.Should().BeEmpty();
+        result.Should().BeFalse();
+        proxy.Should().BeNull();
+    }
+
+    [Fact]
+    public void FailingTryDuckImplementForStructBaseRaisesNoFirstChanceException()
+    {
+        Warmup();
+
+        // Hits the guard at the very top of CreateReverseProxyType, before any IL is written.
+        object instance = new ReverseSuccessImplementation();
+        using var counter = new FirstChanceExceptionCounter();
+
+        var result = instance.TryDuckImplement(typeof(ReverseStructTarget), out var proxy);
+
+        counter.Exceptions.Should().BeEmpty();
+        result.Should().BeFalse();
+        proxy.Should().BeNull();
+    }
+
+    [Fact]
+    public void FailingTryDuckImplementForNamedAttributeArgumentsRaisesNoFirstChanceException()
+    {
+        Warmup();
+
+        // Reaches AddCustomAttributes, which runs after both property and method creation.
+        object instance = new ReverseNamedArgumentsImplementation();
+        using var counter = new FirstChanceExceptionCounter();
+
+        var result = instance.TryDuckImplement(typeof(IReverseNamedArgumentsTarget), out var proxy);
+
+        counter.Exceptions.Should().BeEmpty();
+        result.Should().BeFalse();
+        proxy.Should().BeNull();
+    }
+
     /// <summary>
     /// The throwing entry points keep throwing, and must still raise exactly one first-chance exception -
     /// from the rethrow at the call site, outside the Lazy value factory, where it is safe.
@@ -422,6 +499,67 @@ public class FirstChanceExceptionTests
     public interface IAmbiguousMethodProxy
     {
         object Echo(object value);
+    }
+
+    public interface IReverseSuccessTarget
+    {
+        string Value { get; }
+
+        string Echo(string value);
+    }
+
+    public interface IReverseMissingMethodTarget
+    {
+        string Echo(string value);
+    }
+
+    public interface IReverseMissingPropertyTarget
+    {
+        string Value { get; set; }
+    }
+
+    public interface IReverseNamedArgumentsTarget
+    {
+        string Value { get; set; }
+    }
+
+    public struct ReverseStructTarget
+    {
+        public string Value;
+    }
+
+    [AttributeUsage(AttributeTargets.Class)]
+    public class ReverseNamedArgumentAttribute : Attribute
+    {
+        public string Alias { get; set; } = string.Empty;
+    }
+
+    public class ReverseSuccessImplementation
+    {
+        [DuckReverseMethod]
+        public string Value => "ok";
+
+        [DuckReverseMethod]
+        public string Echo(string value) => value;
+    }
+
+    public class ReverseMissingMethodImplementation
+    {
+        [DuckReverseMethod]
+        public string NotOnTheTarget(string value) => value;
+    }
+
+    public class ReverseMissingPropertyImplementation
+    {
+        [DuckReverseMethod]
+        public string NotOnTheTarget { get; set; } = "ok";
+    }
+
+    [ReverseNamedArgument(Alias = "datadog")]
+    public class ReverseNamedArgumentsImplementation
+    {
+        [DuckReverseMethod]
+        public string Value { get; set; } = "ok";
     }
 
     internal class MissingPropertyTarget
