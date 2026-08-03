@@ -370,6 +370,40 @@ public class FirstChanceExceptionTests
         proxy.Should().BeNull();
     }
 
+    [Fact]
+    public void FailingTryDuckCastForUnresolvableGenericParameterTypeNameRaisesNoFirstChanceException()
+    {
+        Warmup();
+
+        object target = new GenericTypeNameTarget();
+        using var counter = new FirstChanceExceptionCounter();
+
+        var result = target.TryDuckCast<IUnresolvableGenericTypeNameProxy>(out _);
+
+        counter.Exceptions.Should().NotContain(x => x is DuckTypeException);
+        result.Should().BeFalse();
+
+        // .NET Core 2.1 raises a FileNotFoundException from AssemblyLoadContext.ResolveUsingEvent while
+        // probing for the assembly, even though we now ask for throwOnError: false - so this path cannot be
+        // made completely first-chance-free there without changing type resolution semantics. Every other
+        // supported runtime is clean, so hold them to the stronger guarantee.
+#if !NETCOREAPP2_1
+        counter.Exceptions.Should().BeEmpty();
+#endif
+    }
+
+    [Fact]
+    public void UnresolvableGenericParameterTypeNameReportsWhichTypeWasMissing()
+    {
+        object target = new GenericTypeNameMessageTarget();
+
+        var cast = () => target.DuckCast<IUnresolvableGenericTypeNameMessageProxy>();
+
+        // Pins that the failure really is the type-resolution path, not some earlier mismatch.
+        cast.Should().Throw<DuckTypeException>()
+            .WithMessage("Type not found: Not.A.Real.Type, Not.A.Real.Assembly");
+    }
+
     /// <summary>
     /// The throwing entry points keep throwing, and must still raise exactly one first-chance exception -
     /// from the rethrow at the call site, outside the Lazy value factory, where it is safe.
@@ -501,6 +535,18 @@ public class FirstChanceExceptionTests
         object Echo(object value);
     }
 
+    public interface IUnresolvableGenericTypeNameProxy
+    {
+        [Duck(GenericParameterTypeNames = new[] { "Not.A.Real.Type, Not.A.Real.Assembly" })]
+        string Echo(string value);
+    }
+
+    public interface IUnresolvableGenericTypeNameMessageProxy
+    {
+        [Duck(GenericParameterTypeNames = new[] { "Not.A.Real.Type, Not.A.Real.Assembly" })]
+        string Echo(string value);
+    }
+
     public interface IReverseSuccessTarget
     {
         string Value { get; }
@@ -627,6 +673,16 @@ public class FirstChanceExceptionTests
         public int Echo(int value) => value;
     }
 
+    internal class GenericTypeNameTarget
+    {
+        public string Echo<T>(string value) => value;
+    }
+
+    internal class GenericTypeNameMessageTarget
+    {
+        public string Echo<T>(string value) => value;
+    }
+
     internal class ReadonlyFieldTarget
     {
 #pragma warning disable CS0414 // read by the duck type proxy via reflection, never by this class
@@ -669,49 +725,6 @@ public class FirstChanceExceptionTests
     internal class DuckCopySuccessTarget
     {
         public string Value => "ok";
-    }
-
-    internal sealed class FirstChanceExceptionCounter : IDisposable
-    {
-        private readonly int _threadId;
-        private readonly List<Exception> _exceptions = [];
-
-        public FirstChanceExceptionCounter()
-        {
-            _threadId = Environment.CurrentManagedThreadId;
-            AppDomain.CurrentDomain.FirstChanceException += OnFirstChanceException;
-        }
-
-        public List<Exception> Exceptions
-        {
-            get
-            {
-                lock (_exceptions)
-                {
-                    return [.._exceptions];
-                }
-            }
-        }
-
-        public void Dispose()
-        {
-            AppDomain.CurrentDomain.FirstChanceException -= OnFirstChanceException;
-        }
-
-        private void OnFirstChanceException(object sender, FirstChanceExceptionEventArgs e)
-        {
-            // Keep this handler as simple as possible: it runs during the first pass of SEH for every
-            // exception in the AppDomain, and anything that throws in here would be a nightmare to debug.
-            if (Environment.CurrentManagedThreadId != _threadId || e?.Exception is null)
-            {
-                return;
-            }
-
-            lock (_exceptions)
-            {
-                _exceptions.Add(e.Exception);
-            }
-        }
     }
 
     internal class HarnessSentinelException : Exception

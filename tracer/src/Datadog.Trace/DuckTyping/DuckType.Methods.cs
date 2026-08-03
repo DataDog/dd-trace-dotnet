@@ -170,7 +170,19 @@ namespace Datadog.Trace.DuckTyping
                         return DuckTypeTargetMethodNotFoundException.Create(proxyMethodDefinition);
                     }
 
-                    targetMethod = targetMethod.MakeGenericMethod(proxyDuckAttribute.GenericParameterTypeNames.Select(name => GetTypeFromPartialName(name, throwOnError: true)!).ToArray());
+                    var genericParameterTypes = new Type[proxyDuckAttribute.GenericParameterTypeNames.Length];
+                    for (var i = 0; i < genericParameterTypes.Length; i++)
+                    {
+                        var genericParameterTypeName = proxyDuckAttribute.GenericParameterTypeNames[i];
+                        if (GetTypeFromPartialName(genericParameterTypeName) is not { } genericParameterType)
+                        {
+                            return DuckTypeException.Create($"Type not found: {genericParameterTypeName}");
+                        }
+
+                        genericParameterTypes[i] = genericParameterType;
+                    }
+
+                    targetMethod = targetMethod.MakeGenericMethod(genericParameterTypes);
                 }
 
                 // Gets target method parameters
@@ -211,10 +223,12 @@ namespace Datadog.Trace.DuckTyping
                 }
                 else
                 {
-                    // A generic method call can't be made from a DynamicMethod
+                    // A generic method call can't be made from a DynamicMethod.
+                    // Currently unreachable: UseDirectAccessTo adds an [IgnoresAccessChecksTo] and then always
+                    // returns true, so this branch is never taken. Kept as a guard.
                     if (proxyMethodDefinitionGenericArguments.Length > 0)
                     {
-                        DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException.Throw(proxyMethodDefinition);
+                        return DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException.Create(proxyMethodDefinition);
                     }
 
                     if (MethodIlHelper.AddIlForDynamicMethodCall(proxyTypeBuilder, il, targetMethod, targetMethodParametersTypes, out returnType) is { } dynamicCallError)
