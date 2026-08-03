@@ -232,6 +232,32 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
+        public void CreateTraceStateHeader_EmitsOtRightAfterDd_WhenOtelTraceStateIsSet()
+        {
+            var traceContext = new TraceContext(new StubDatadogTracer());
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2)
+            {
+                OtelTraceState = "rv:ef284ace7a91e1;th:e6666666666668",
+                AdditionalW3CTraceState = "congo=t61rcWkgMzE"
+            };
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
+
+            tracestate.Should().Be("dd=s:1;p:0000000000000002,ot=rv:ef284ace7a91e1;th:e6666666666668,congo=t61rcWkgMzE");
+        }
+
+        [Fact]
+        public void CreateTraceStateHeader_OmitsOtMember_WhenOtelTraceStateIsNull()
+        {
+            var traceContext = new TraceContext(new StubDatadogTracer());
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
+
+            tracestate.Should().NotContain("ot=");
+        }
+
+        [Fact]
         public void Inject_IHeadersCollection()
         {
             var traceContext = new TraceContext(new StubDatadogTracer(), tags: null)
