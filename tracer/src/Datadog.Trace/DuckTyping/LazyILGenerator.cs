@@ -17,24 +17,13 @@ namespace Datadog.Trace.DuckTyping
     {
         private readonly ILGenerator? _generator;
         private readonly List<Action<ILGenerator>> _instructions;
-        private readonly ProxyBuildErrors _errors;
         private int _offset;
 
-        public LazyILGenerator(ILGenerator? generator, ProxyBuildErrors errors)
+        public LazyILGenerator(ILGenerator? generator)
         {
             _generator = generator;
-            _errors = errors;
             _instructions = new List<Action<ILGenerator>>(16);
         }
-
-        /// <summary>
-        /// Gets the failure sink for the proxy being built. Every generator created while building one proxy
-        /// shares a single instance, including the secondary generator used for a
-        /// <see cref="System.Reflection.Emit.DynamicMethod"/>.
-        /// </summary>
-        public ProxyBuildErrors Errors => _errors;
-
-        public bool HasError => _errors.HasError;
 
         public int Offset => _offset;
 
