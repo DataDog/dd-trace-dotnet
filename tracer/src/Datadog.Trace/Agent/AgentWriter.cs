@@ -583,24 +583,19 @@ namespace Datadog.Trace.Agent
                 }
             }
 
-            // All the buffers are full :( drop the trace
-            DropTrace(chunk.Count, MetricTags.DropReason.OverfullBuffer, bufferLocked);
+            // Both buffers are full or at least one is locked, so drop the trace
+            DropTrace(chunk.Count, bufferLocked ? MetricTags.DropReason.BufferLocked : MetricTags.DropReason.OverfullBuffer);
         }
 
-        private void DropTrace(int count, MetricTags.DropReason dropReason, bool bufferLocked = false)
+        private void DropTrace(int count, MetricTags.DropReason dropReason)
         {
             switch (dropReason)
             {
                 case MetricTags.DropReason.OverfullBuffer:
-                    if (bufferLocked)
-                    {
-                        Interlocked.Increment(ref _droppedTracesBufferLocked);
-                    }
-                    else
-                    {
-                        Interlocked.Increment(ref _droppedTracesBufferFull);
-                    }
-
+                    Interlocked.Increment(ref _droppedTracesBufferFull);
+                    break;
+                case MetricTags.DropReason.BufferLocked:
+                    Interlocked.Increment(ref _droppedTracesBufferLocked);
                     break;
                 case MetricTags.DropReason.TraceTooLarge:
                     Interlocked.Increment(ref _droppedTracesTooLarge);
