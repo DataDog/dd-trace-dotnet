@@ -324,6 +324,22 @@ partial class Build
             }
         });
 
+    Target RestoreManagedUnitTestPackages => _ => _
+        .Unlisted()
+        .Before(BuildRunnerTool, CompileManagedUnitTests)
+        .OnlyWhenDynamic(() => !string.IsNullOrEmpty(NugetPackageDirectory))
+        .Executes(() =>
+        {
+            // NuGet.exe restore does not fully populate all SDK-style PackageReference
+            // dependencies required by the managed test graph. GitLab runs the build and
+            // tests in separate containers, so restore them into the mounted package directory.
+            DotNetRestore(s => s
+                .SetProjectFile(Solution)
+                .SetVerbosity(DotNetVerbosity.Minimal)
+                .SetProperty("configuration", BuildConfiguration.ToString())
+                .SetPackageDirectory(NugetPackageDirectory));
+        });
+
     Target CompileTracerNativeSrcWindows => _ => _
         .Unlisted()
         .After(CompileManagedLoader)
