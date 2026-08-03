@@ -311,18 +311,18 @@ namespace Datadog.Trace.Propagators
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
             if (string.IsNullOrWhiteSpace(header))
             {
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null, otTraceState: null);
             }
 
-            SplitTraceStateValues(new StringSegment(header!).Trim(), out var ddValues, out var precedingMembers, out var succeedingMembers, out _);
-            var additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
+            SplitTraceStateValues(new StringSegment(header!).Trim(), out var ddValues, out _, out var otTraceState, out var hasOtTraceState, out var firstAdditionalMembers, out var secondAdditionalMembers, out var thirdAdditionalMembers);
+            var additionalValues = GetAdditionalValues(firstAdditionalMembers, secondAdditionalMembers, thirdAdditionalMembers);
 
             if (ddValues.Length < 3)
             {
                 // "dd" section not found or it is too short
                 // shortest valid length is 3 as in "a:b" ("dd=" prefix already stripped)
                 // note for this case the p will be viewed as 0 if added as a span tag
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues, otTraceState);
             }
 
             int? samplingPriority = null;
@@ -416,7 +416,7 @@ namespace Datadog.Trace.Propagators
                     propagatedTags = null;
                 }
 
-                return new W3CTraceState(samplingPriority, origin.IsEmpty ? null : origin.ToString(), lastParent.IsEmpty ? ZeroLastParent : lastParent.ToString(), propagatedTags, additionalValues);
+                return new W3CTraceState(samplingPriority, origin.IsEmpty ? null : origin.ToString(), lastParent.IsEmpty ? ZeroLastParent : lastParent.ToString(), propagatedTags, additionalValues, hasOtTraceState ? otTraceState.ToString() : null);
             }
             finally
             {
@@ -424,25 +424,44 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal static void SplitTraceStateValues(string header, out string? ddValues, out string? additionalValues)
+        internal static void SplitTraceStateValues(string header, out string? ddValues, out string? otValues, out string? additionalValues)
         {
-            // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
-
+            // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,ot=rv:...;th:...][,*]"
             if (string.IsNullOrWhiteSpace(header))
             {
                 ddValues = null;
+                otValues = null;
                 additionalValues = null;
                 return;
             }
 
-            SplitTraceStateValues(new StringSegment(header).Trim(), out var ddValueSegment, out var precedingMembers, out var succeedingMembers, out var hasDdValues);
+            SplitTraceStateValues(new StringSegment(header).Trim(), out var ddValueSegment, out var hasDdValues, out var otValueSegment, out var hasOtValues, out var firstAdditionalMembers, out var secondAdditionalMembers, out var thirdAdditionalMembers);
             ddValues = hasDdValues ? ddValueSegment.ToString() : null;
-            additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
+            otValues = hasOtValues ? otValueSegment.ToString() : null;
+            additionalValues = GetAdditionalValues(firstAdditionalMembers, secondAdditionalMembers, thirdAdditionalMembers);
         }
 
-        private static void SplitTraceStateValues(StringSegment header, out StringSegment ddValues, out StringSegment precedingMembers, out StringSegment succeedingMembers, out bool hasDdValues)
+        private static void SplitTraceStateValues(
+            StringSegment header,
+            out StringSegment ddValues,
+            out bool hasDdValues,
+            out StringSegment otValues,
+            out bool hasOtValues,
+            out StringSegment firstAdditionalMembers,
+            out StringSegment secondAdditionalMembers,
+            out StringSegment thirdAdditionalMembers)
         {
-            ExtractMember(header, "dd=", out ddValues, out precedingMembers, out succeedingMembers, out hasDdValues);
+            ExtractMember(header, "dd=", out ddValues, out var precedingMembers, out var succeedingMembers, out hasDdValues);
+            ExtractMember(precedingMembers, "ot=", out otValues, out firstAdditionalMembers, out secondAdditionalMembers, out hasOtValues);
+
+            if (hasOtValues)
+            {
+                thirdAdditionalMembers = succeedingMembers;
+                return;
+            }
+
+            ExtractMember(succeedingMembers, "ot=", out otValues, out secondAdditionalMembers, out thirdAdditionalMembers, out hasOtValues);
+            firstAdditionalMembers = precedingMembers;
         }
 
         private static void ExtractMember(StringSegment header, string prefix, out StringSegment value, out StringSegment precedingMembers, out StringSegment succeedingMembers, out bool found)
@@ -484,22 +503,43 @@ namespace Datadog.Trace.Propagators
             succeedingMembers = endIndex == header.Length ? default : header.Slice(endIndex + 1);
         }
 
-        private static string? GetAdditionalValues(StringSegment precedingMembers, StringSegment succeedingMembers)
+        private static string? GetAdditionalValues(StringSegment firstMembers, StringSegment secondMembers, StringSegment thirdMembers)
         {
-            if (precedingMembers.Value is null)
+            if (firstMembers.Value is null)
             {
-                return succeedingMembers.Value is null ? null : succeedingMembers.ToString();
+                if (secondMembers.Value is null)
+                {
+                    return thirdMembers.Value is null ? null : thirdMembers.ToString();
+                }
+
+                return thirdMembers.Value is null ? secondMembers.ToString() : CombineMembers(secondMembers, thirdMembers);
             }
 
-            if (succeedingMembers.Value is null)
+            if (secondMembers.Value is null)
             {
-                return precedingMembers.ToString();
+                return thirdMembers.Value is null ? firstMembers.ToString() : CombineMembers(firstMembers, thirdMembers);
             }
 
-            var sb = StringBuilderCache.Acquire(precedingMembers.Length + succeedingMembers.Length + 1);
-            sb.Append(precedingMembers.Value, precedingMembers.Offset, precedingMembers.Length)
+            if (thirdMembers.Value is null)
+            {
+                return CombineMembers(firstMembers, secondMembers);
+            }
+
+            var sb = StringBuilderCache.Acquire(firstMembers.Length + secondMembers.Length + thirdMembers.Length + 2);
+            sb.Append(firstMembers.Value, firstMembers.Offset, firstMembers.Length)
               .Append(TraceStateHeaderValuesSeparator)
-              .Append(succeedingMembers.Value, succeedingMembers.Offset, succeedingMembers.Length);
+              .Append(secondMembers.Value, secondMembers.Offset, secondMembers.Length)
+              .Append(TraceStateHeaderValuesSeparator)
+              .Append(thirdMembers.Value, thirdMembers.Offset, thirdMembers.Length);
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        private static string CombineMembers(StringSegment firstMembers, StringSegment secondMembers)
+        {
+            var sb = StringBuilderCache.Acquire(firstMembers.Length + secondMembers.Length + 1);
+            sb.Append(firstMembers.Value, firstMembers.Offset, firstMembers.Length)
+              .Append(TraceStateHeaderValuesSeparator)
+              .Append(secondMembers.Value, secondMembers.Offset, secondMembers.Length);
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 

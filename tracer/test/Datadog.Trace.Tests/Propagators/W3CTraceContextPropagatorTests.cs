@@ -404,6 +404,29 @@ namespace Datadog.Trace.Tests.Propagators
             traceState.Should().BeEquivalentTo(expected);
         }
 
+        [Theory]
+        [InlineData("dd=s:1;o:rum", null)]
+        [InlineData("dd=s:1,ot=rv:ef284ace7a91e1;th:e6666666666668", "rv:ef284ace7a91e1;th:e6666666666668")]
+        [InlineData("ot=th:e6666666666668,dd=s:1", "th:e6666666666668")]
+        [InlineData("foo=bar,dd=s:1,ot=rv:1,baz=qux", "rv:1")]
+        [InlineData("dd=s:1,ot=", "")]
+        public void ParseTraceState_CapturesRawOtelTraceState(string header, string expectedOtTraceState)
+        {
+            var traceState = W3CTraceContextPropagator.ParseTraceState(header);
+            traceState.OtTraceState.Should().Be(expectedOtTraceState);
+        }
+
+        [Theory]
+        [InlineData("dd=s:1;o:rum,foo=bar", null, "foo=bar")]
+        [InlineData("dd=s:1,ot=rv:1;th:2,foo=bar", "rv:1;th:2", "foo=bar")]
+        [InlineData("foo=bar,ot=rv:1,dd=s:1,baz=qux", "rv:1", "foo=bar,baz=qux")]
+        public void SplitTraceStateValues_ExtractsOtValues(string header, string expectedOt, string expectedAdditional)
+        {
+            W3CTraceContextPropagator.SplitTraceStateValues(header, out _, out var otValues, out var additionalValues);
+            otValues.Should().Be(expectedOt);
+            additionalValues.Should().Be(expectedAdditional);
+        }
+
         [Fact]
         public void MissingLastParentId_ShouldBe_Zeroes()
         {
