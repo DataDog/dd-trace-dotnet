@@ -327,7 +327,8 @@ namespace Datadog.Trace
                 samplingDecision.Priority,
                 samplingDecision.Mechanism,
                 samplingDecision.Rate,
-                samplingDecision.LimiterRate);
+                samplingDecision.LimiterRate,
+                sample: samplingDecision.Sample);
 
             return samplingDecision.Priority;
         }
@@ -337,7 +338,8 @@ namespace Datadog.Trace
             string? mechanism = null,
             float? rate = null,
             float? limiterRate = null,
-            bool notifyDistributedTracer = true)
+            bool notifyDistributedTracer = true,
+            bool? sample = null)
         {
             if (priority is not { } p)
             {
