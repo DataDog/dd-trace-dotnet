@@ -115,6 +115,15 @@ namespace Datadog.Trace
         /// </summary>
         internal string? AdditionalW3CTraceState { get; set; }
 
+        /// <summary>
+        /// Gets or sets the raw content of the inbound/rewritten W3C tracestate "ot=" member
+        /// (OpenTelemetry consistent-probability-sampling sub-keys), with no "ot=" prefix.
+        /// Null means there is nothing to emit. Never decoded into typed fields — see
+        /// <see cref="Propagators.OtelTraceStateHelpers"/> for the only code that inspects
+        /// or rewrites its "rv"/"th" sub-keys.
+        /// </summary>
+        internal string? OtelTraceState { get; set; }
+
         /// <summary> Gets the IAST context </summary>
         internal IastRequestContext? IastRequestContext => _iastRequestContext;
 
