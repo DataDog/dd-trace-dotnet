@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.OpenTelemetry.Traces;
 using Datadog.Trace.Tests.Util;
 using FluentAssertions;
@@ -152,6 +154,88 @@ public class OtlpTracesProtobufSerializerTests
         span.Status.Should().NotBeNull();
         span.Status.Code.Should().Be(OtlpStatusCode.Error);
         span.Status.Message.Should().Be("oops");
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void SerializeSpans_ErrorSpanWithoutOtelStatusCodeTag_EmitsErrorStatus(bool openTelemetrySemanticsEnabled)
+    {
+        // Our own instrumentation marks spans as errors via span.Error and never sets "otel.status_code"
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+        ddSpan.Error = true;
+        ddSpan.GetTag("otel.status_code").Should().BeNull();
+
+        var span = SerializeAndParse(CreateChunk(ddSpan), openTelemetrySemanticsEnabled);
+
+        OtlpStatusCode? actualStatusCode = span.Status?.Code;
+        actualStatusCode.Should().Be(OtlpStatusCode.Error);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void SerializeSpans_NonErrorSpanWithoutOtelStatusCodeTag_OmitsStatus(bool openTelemetrySemanticsEnabled)
+    {
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+        ddSpan.Error.Should().BeFalse();
+        ddSpan.GetTag("otel.status_code").Should().BeNull();
+
+        var span = SerializeAndParse(CreateChunk(ddSpan), openTelemetrySemanticsEnabled);
+
+        span.Status.Should().BeNull();
+    }
+
+    [Fact]
+    public void SerializeSpans_ErrorSpanWithoutOtelStatusCodeTag_UsesErrorMsgAsStatusMessage()
+    {
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: true);
+        ddSpan.Error = true;
+        ddSpan.SetTag(Tags.ErrorMsg, "oops");
+
+        var span = SerializeAndParse(CreateChunk(ddSpan), openTelemetrySemanticsEnabled: true);
+
+        span.Status.Code.Should().Be(OtlpStatusCode.Error);
+        span.Status.Message.Should().Be("oops");
+    }
+
+    [Theory]
+    [InlineData("STATUS_CODE_OK", OtlpStatusCode.Ok)]
+    [InlineData("STATUS_CODE_ERROR", OtlpStatusCode.Error)]
+    public void SerializeSpans_ErrorSpanWithExplicitOtelStatusCodeTag_KeepsTheTagValue(string otelStatusCode, OtlpStatusCode expectedStatusCode)
+    {
+        // A status set through the OTel API wins over span.Error
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: true);
+        ddSpan.Error = true;
+        ddSpan.SetTag("otel.status_code", otelStatusCode);
+
+        var span = SerializeAndParse(CreateChunk(ddSpan), openTelemetrySemanticsEnabled: true);
+
+        span.Status.Code.Should().Be(expectedStatusCode);
+    }
+
+    // Under OTel semantics SetHttpStatusCode sets error.type instead of error.msg, and per the
+    // HTTP semantic conventions the status description is left unset, so the message is empty.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void SerializeSpans_HttpSpanWithErrorStatusCode_EmitsErrorStatus(bool openTelemetrySemanticsEnabled)
+    {
+        // Unlike the JSON serializer, which omits the property entirely, protobuf always
+        // round-trips Status.Message as a string, so an unset description arrives as empty.
+        string expectedMessage = openTelemetrySemanticsEnabled ? string.Empty : "The HTTP response has status code 500.";
+
+        // Regression test for HTTP spans marked as errors by SetHttpStatusCode, which sets
+        // span.Error but no "otel.status_code" tag.
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+        ddSpan.SetHttpStatusCode(500, isServer: true, new TracerSettings().Manager.InitialMutableSettings);
+        ddSpan.Error.Should().BeTrue();
+        ddSpan.GetTag("otel.status_code").Should().BeNull();
+
+        var span = SerializeAndParse(CreateChunk(ddSpan), openTelemetrySemanticsEnabled);
+
+        span.Status.Code.Should().Be(OtlpStatusCode.Error);
+        span.Status.Message.Should().Be(expectedMessage);
     }
 
     [Fact]
@@ -536,9 +620,9 @@ public class OtlpTracesProtobufSerializerTests
         return attributes[0].Value;
     }
 
-    private static OtlpSpan SerializeAndParse(TraceChunkModel chunk)
+    private static OtlpSpan SerializeAndParse(TraceChunkModel chunk, bool openTelemetrySemanticsEnabled = false)
     {
-        var serializer = new OtlpTracesProtobufSerializer(openTelemetrySemanticsEnabled: false);
+        var serializer = new OtlpTracesProtobufSerializer(openTelemetrySemanticsEnabled);
         var buffer = new byte[64 * 1024];
         var written = serializer.SerializeSpans(ref buffer, 0, chunk, spanBufferOffset: 0, maxSize: buffer.Length);
         serializer.FinishBody(ref buffer, written, maxSize: buffer.Length);
@@ -558,14 +642,15 @@ public class OtlpTracesProtobufSerializerTests
         ulong spanId = 0,
         ulong parentSpanId = 0,
         string serviceName = "service_name",
-        string resourceName = "resource_name")
+        string resourceName = "resource_name",
+        bool openTelemetrySemanticsEnabled = false)
     {
         var traceContext = new TraceContext(new StubDatadogTracer());
         SpanContext? parent = parentSpanId == 0
             ? null
             : new SpanContext(parent: null, traceContext, serviceName, traceId: traceId, spanId: parentSpanId);
         var context = new SpanContext(parent: parent, traceContext, serviceName, traceId: traceId, spanId: spanId);
-        var span = new Span(context, DateTimeOffset.UtcNow)
+        var span = new Span(context, DateTimeOffset.UtcNow, tags: null, links: null, openTelemetrySemanticsEnabled)
         {
             OperationName = "operation_name",
             ResourceName = resourceName,
