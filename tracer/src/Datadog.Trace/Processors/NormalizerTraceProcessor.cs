@@ -143,6 +143,7 @@ namespace Datadog.Trace.Processors
                 {
                     Log.Debug("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={InvalidStatusCode}: {Span}", rawHttpStatusCode, span);
                     span.Tags.SetTag(Tags.HttpStatusCode, null);
+                    span.Tags.SetTag(Tags.HttpResponseStatusCode, null);
                 }
             }
 

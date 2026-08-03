@@ -3,8 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.Tagging;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.TraceProcessors
@@ -121,6 +124,24 @@ namespace Datadog.Trace.Tests.TraceProcessors
                 yield return new object[] { "Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.Too$Long$.", "too_long_.too_long_.too_long_.too_long_.too_long_.too_long_.too_long_.too_long_.too_long_.too_long_." };
                 yield return new object[] { "bad$service", "bad_service" };
             }
+        }
+
+        [Theory]
+        [InlineData(Tags.HttpStatusCode)]
+        [InlineData(Tags.HttpResponseStatusCode)]
+        public void ProcessRemovesInvalidHttpStatusCodeTag(string tagName)
+        {
+            var tags = new TagsList();
+            tags.SetTag(tagName, "99");
+            var span = new Span(new SpanContext(1, 1, serviceName: "service"), DateTimeOffset.UtcNow, tags)
+            {
+                OperationName = "operation",
+                ResourceName = "resource",
+            };
+
+            new Trace.Processors.NormalizerTraceProcessor().Process(span);
+            span.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            span.GetTag(Tags.HttpResponseStatusCode).Should().BeNull();
         }
     }
 }
