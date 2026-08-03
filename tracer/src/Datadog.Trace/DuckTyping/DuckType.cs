@@ -284,14 +284,14 @@ namespace Datadog.Trace.DuckTyping
                     // We can't reverse proxy a struct
                     if (typeToDeriveFrom.IsValueType)
                     {
-                        DuckTypeReverseProxyBaseIsStructException.Throw(typeToDelegateTo);
+                        return Failed(DuckTypeReverseProxyBaseIsStructException.Create(typeToDelegateTo));
                     }
 
                     // The "delegation" type can't be an interface for reverse proxy, as
                     // it needs to contain the implementations
                     if (typeToDelegateTo.IsInterface || typeToDelegateTo.IsAbstract)
                     {
-                        DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException.Throw(typeToDeriveFrom);
+                        return Failed(DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException.Create(typeToDeriveFrom));
                     }
 
                     ModuleBuilder? moduleBuilder = null;
@@ -315,7 +315,10 @@ namespace Datadog.Trace.DuckTyping
                         return Failed(methodError);
                     }
 
-                    AddCustomAttributes(proxyTypeBuilder, typeToDelegateTo, dryRun);
+                    if (AddCustomAttributes(proxyTypeBuilder, typeToDelegateTo, dryRun) is { } attributeError)
+                    {
+                        return Failed(attributeError);
+                    }
 
                     if (dryRun)
                     {
@@ -545,7 +548,7 @@ namespace Datadog.Trace.DuckTyping
             return instanceField;
         }
 
-        private static void AddCustomAttributes(TypeBuilder? proxyTypeBuilder, Type targetType, bool isDryRun)
+        private static DuckTypeCustomAttributeHasNamedArgumentsException? AddCustomAttributes(TypeBuilder? proxyTypeBuilder, Type targetType, bool isDryRun)
         {
             foreach (var customAttributeData in targetType.GetCustomAttributesData())
             {
@@ -563,7 +566,7 @@ namespace Datadog.Trace.DuckTyping
                 // Don't support named arguments for now
                 if (customAttributeData.NamedArguments?.Count > 0)
                 {
-                    DuckTypeCustomAttributeHasNamedArgumentsException.Throw(targetType, customAttributeData);
+                    return DuckTypeCustomAttributeHasNamedArgumentsException.Create(targetType, customAttributeData);
                 }
 
                 var args = Array.Empty<object?>();
@@ -584,6 +587,8 @@ namespace Datadog.Trace.DuckTyping
                     proxyTypeBuilder?.SetCustomAttribute(attributeBuilder);
                 }
             }
+
+            return null;
         }
 
         /// <summary>
@@ -884,14 +889,15 @@ namespace Datadog.Trace.DuckTyping
                 if ((implementationProperty.CanRead && implementationProperty.GetMethod?.IsAbstract == true)
                  || (implementationProperty.CanWrite && implementationProperty.SetMethod?.IsAbstract == true))
                 {
-                    DuckTypeReverseProxyPropertyCannotBeAbstractException.Throw(implementationProperty);
+                    // Unreachable: line 292 above rejects an interface or abstract typeToDelegateTo, and only those
+                    // can declare an abstract member. Kept as a defensive invariant check.
+                    return DuckTypeReverseProxyPropertyCannotBeAbstractException.Create(implementationProperty);
                 }
 
                 PropertyInfo? overriddenProperty = GetTargetPropertyOrIndex(typeToDeriveFrom, duckAttribute.Name, duckAttribute.BindingFlags, implementationProperty);
                 if (overriddenProperty is null)
                 {
-                    DuckTypePropertyOrFieldNotFoundException.Throw(implementationProperty.Name, duckAttribute.Name, typeToDeriveFrom);
-                    continue;
+                    return DuckTypePropertyOrFieldNotFoundException.Create(implementationProperty.Name, duckAttribute.Name, typeToDeriveFrom);
                 }
 
                 propertyBuilder = proxyTypeBuilder?.DefineProperty(implementationProperty.Name, PropertyAttributes.None, implementationProperty.PropertyType, null);
@@ -901,7 +907,7 @@ namespace Datadog.Trace.DuckTyping
                     // Check if the target property can be read
                     if (!overriddenProperty.CanRead)
                     {
-                        DuckTypePropertyCantBeReadException.Throw(overriddenProperty);
+                        return DuckTypePropertyCantBeReadException.Create(overriddenProperty);
                     }
 
                     if (GetPropertyGetMethod(
@@ -928,13 +934,13 @@ namespace Datadog.Trace.DuckTyping
                     // Check if the target property can be written
                     if (!overriddenProperty.CanWrite)
                     {
-                        DuckTypePropertyCantBeWrittenException.Throw(overriddenProperty);
+                        return DuckTypePropertyCantBeWrittenException.Create(overriddenProperty);
                     }
 
                     // Check if the target property declaring type is an struct (structs modification is not supported)
                     if (overriddenProperty.DeclaringType?.IsValueType == true)
                     {
-                        DuckTypeStructMembersCannotBeChangedException.Throw(overriddenProperty.DeclaringType);
+                        return DuckTypeStructMembersCannotBeChangedException.Create(overriddenProperty.DeclaringType);
                     }
 
                     if (GetPropertySetMethod(
@@ -977,7 +983,7 @@ namespace Datadog.Trace.DuckTyping
 
             if (propertiesThatShouldBeImplemented.Count > 0)
             {
-                DuckTypeReverseProxyMissingPropertyImplementationException.Throw(propertiesThatShouldBeImplemented);
+                return DuckTypeReverseProxyMissingPropertyImplementationException.Create(propertiesThatShouldBeImplemented);
             }
 
             return null;
