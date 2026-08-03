@@ -224,7 +224,7 @@ namespace Datadog.Trace.Tests
         {
             // RFC worked example: trace_id_low64 = 0xfff972474538efff, rate = 0.1
             // -> ot=rv:ef284ace7a91e1;th:e6666666666668
-            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
 
             traceContext.SetSamplingPriority(
                 priority: SamplingPriorityValues.UserKeep,
@@ -238,7 +238,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SetSamplingPriority_RootProbabilityDrop_StillEmitsTh()
         {
-            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
 
             traceContext.SetSamplingPriority(
                 priority: SamplingPriorityValues.UserReject,
@@ -255,7 +255,7 @@ namespace Datadog.Trace.Tests
             // RFC §3 example: trace_id_low64 = 0x03a93ee8b1999f00, rate = 0.1 disagrees pre-clamp
             var traceIdLower = 0x03a93ee8b1999f00UL;
             var sample = SamplingHelpers.SampleByRate(traceIdLower, 0.1);
-            var traceContext = CreateTraceContextWithRootSpan(traceIdLower);
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower);
 
             traceContext.SetSamplingPriority(
                 priority: sample ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject,
@@ -271,7 +271,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SetSamplingPriority_NonProbabilityMechanism_DoesNotDeriveOtelTraceState()
         {
-            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 1);
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 1);
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
 
@@ -281,7 +281,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SetSamplingPriority_RateLimiterDemotesKeep_StripsThButKeepsRv()
         {
-            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
 
             // sample=true (probability said keep) but final priority is UserReject (limiter demoted it)
             traceContext.SetSamplingPriority(
@@ -295,9 +295,26 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void TraceSampler_LimiterDemotesKeep_ErasesThOnTraceContext_ViaGetOrMakeSamplingDecision()
+        {
+            var builder = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: 0, intervalMilliseconds: null));
+            builder.RegisterRule(new GlobalSamplingRateRule(1.0f));
+            var sampler = builder.Build();
+
+            var tracer = new StubDatadogTracer(sampler);
+            var rootSpan = new Span(new SpanContext(0xfff972474538efffUL, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            var traceContext = new TraceContext(tracer);
+            traceContext.AddSpan(rootSpan);
+
+            traceContext.GetOrMakeSamplingDecision();
+
+            traceContext.OtelTraceState.Should().Be("rv:ef284ace7a91e1");
+        }
+
+        [Fact]
         public void SetSamplingPriority_RateZero_ThStaysWithin56BitDomain()
         {
-            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
 
             traceContext.SetSamplingPriority(
                 priority: SamplingPriorityValues.UserReject,
@@ -314,7 +331,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SetSamplingPriority_RateOne_InconsistentDropDoesNotUnderflow()
         {
-            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
 
             traceContext.SetSamplingPriority(
                 priority: SamplingPriorityValues.UserReject,
@@ -329,7 +346,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SetSamplingPriority_ManualOverride_StripsInheritedThButKeepsRv()
         {
-            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 1);
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 1);
             traceContext.OtelTraceState = "rv:ef284ace7a91e1;th:e6666666666668";
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
@@ -340,7 +357,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SetSamplingPriority_AsmOverride_StripsInheritedThButKeepsRv()
         {
-            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 1);
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 1);
             traceContext.OtelTraceState = "th:e6666666666668";
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Asm);
@@ -351,19 +368,11 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SetSamplingPriority_ManualOverride_NoInheritedState_StaysNull()
         {
-            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 1);
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 1);
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
 
             traceContext.OtelTraceState.Should().BeNull();
-        }
-
-        private static TraceContext CreateTraceContextWithRootSpan(ulong traceIdLower)
-        {
-            var traceContext = new TraceContext(new StubDatadogTracer());
-            var rootSpan = new Span(new SpanContext(traceIdLower, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
-            traceContext.AddSpan(rootSpan);
-            return traceContext;
         }
 
         private static ulong ParseThForTest(string otelTraceState)
