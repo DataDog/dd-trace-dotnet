@@ -826,6 +826,26 @@ namespace Datadog.Trace.Tests.Propagators
                       opts => opts.ExcludingMissingMembers());
         }
 
+        [Fact]
+        public void Extract_CopiesOtelTraceStateOntoSpanContext()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:1,ot=rv:ef284ace7a91e1;th:e6666666666668" });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
+            headers.Verify(h => h.GetValues("tracestate"), Times.Once());
+            headers.VerifyNoOtherCalls();
+
+            result.SpanContext!.OtelTraceState.Should().Be("rv:ef284ace7a91e1;th:e6666666666668");
+        }
+
         [Theory]
         [InlineData(SamplingPriorityValues.AutoReject)]
         [InlineData(SamplingPriorityValues.UserReject)]
