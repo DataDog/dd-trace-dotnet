@@ -66,11 +66,20 @@ public class CanCreateConsistencyTests
     {
         var target = ObscureObject.GetObject(obscureObjectName);
         using var scope = new AssertionScope();
+        bool canCreate;
 
         // Deliberately first, so this call populates the cache and everything below reads it back.
-        var canCreate = DuckType.CanCreate(duckType, target);
+        using (var counter = new FirstChanceExceptionCounter())
+        {
+            canCreate = DuckType.CanCreate(duckType, target);
 
-        target.DuckIs(duckType).Should().Be(canCreate);
+            target.DuckIs(duckType).Should().Be(canCreate);
+
+            // Deciding whether a proxy can be built must be exception-free, apart from two pre-existing
+            // sources this series has not addressed (see KnownResidual). Allow-listed rather than ignored,
+            // so a *new* kind of first-chance exception still fails here.
+            counter.Exceptions.Should().NotContain(x => !KnownResidual(x));
+        }
 
         DuckType.GetOrCreateProxyType(duckType, target.GetType())
                 .CanCreate()
@@ -95,6 +104,26 @@ public class CanCreateConsistencyTests
 
             target.DuckAs(duckType).Should().BeNull();
         }
+
+        using (var counter = new FirstChanceExceptionCounter())
+        {
+            try
+            {
+                target.TryDuckCast(duckType, out _);
+            }
+            catch (Exception ex) when (ex is InvalidCastException || ex.InnerException is InvalidCastException)
+            {
+                // Arrives raw from the generic path, or wrapped in TargetInvocationException from the
+                // non-generic one, because that goes through the activator's DynamicInvoke.
+                // TryDuckCast also instantiates, and for a [DuckCopy] struct that means copying every field
+                // at cast time - so a reference-type field whose type doesn't match the target raises this
+                // even though the proxy type was built successfully. It escapes TryDuckCast, which therefore
+                // does not honour its own non-throwing contract for that case.
+            }
+
+            // Whatever else happens, one of our own shape failures must never surface as a first-chance exception
+            counter.Exceptions.Should().NotContain(x => x is DuckTypeException);
+        }
     }
 
     [Theory]
@@ -107,9 +136,16 @@ public class CanCreateConsistencyTests
         var instance = Activator.CreateInstance(reversedType);
         using var scope = new AssertionScope();
 
-        var canCreate = DuckType.GetOrCreateReverseProxyType(typeToImplement, reversedType).CanCreate();
+        bool canCreate;
+        object proxy;
+        using (var counter = new FirstChanceExceptionCounter())
+        {
+            canCreate = DuckType.GetOrCreateReverseProxyType(typeToImplement, reversedType).CanCreate();
 
-        instance.TryDuckImplement(typeToImplement, out var proxy).Should().Be(canCreate);
+            instance.TryDuckImplement(typeToImplement, out proxy).Should().Be(canCreate);
+
+            counter.Exceptions.Should().NotContain(x => !KnownResidual(x));
+        }
 
         if (canCreate)
         {
@@ -127,6 +163,27 @@ public class CanCreateConsistencyTests
                      .WithInnerException<DuckTypeException>();
         }
     }
+
+    /// <summary>
+    /// Two first-chance exception sources inside the proxy-creation path that predate this work and are
+    /// tracked as their own follow-ups. Both are raised and swallowed while building a proxy, so both are
+    /// live instances of the hazard behind APMS-20197 - they are allow-listed here, not accepted.
+    /// </summary>
+    private static bool KnownResidual(Exception exception)
+        => exception switch
+        {
+            // Type.GetProperty throws when a target declares more than one matching indexer;
+            // DuckType.GetTargetPropertyOrIndex calls it without disambiguating.
+            AmbiguousMatchException => true,
+
+            // MethodIlHelper.AddIlToLoadArguments indexes innerMethodParameters with a loop bound taken from
+            // max(outer, inner), so a proxy declaring more parameters than the target faults instead of
+            // reporting a signature mismatch. The general catch in CreateProxyType turns it into a generic
+            // "Error creating duck type" - which is also why the diagnostic for that case is poor.
+            IndexOutOfRangeException => true,
+
+            _ => false,
+        };
 
     /// <summary>
     /// Runs the throwing entry point and returns the exception it surfaced, unwrapping the
