@@ -178,6 +178,11 @@ namespace Datadog.Trace
         public const string ServerPort = "server.port";
 
         /// <summary>
+        /// The version of the protocol used for the exchange, e.g. "1.1" or "2".
+        /// </summary>
+        public const string NetworkProtocolVersion = "network.protocol.version";
+
+        /// <summary>
         /// The size of the message.
         /// </summary>
         public const string MessageSize = "message.size";

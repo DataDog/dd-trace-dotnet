@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.OpenTelemetry;
 using FluentAssertions;
 using Xunit;
@@ -63,5 +64,40 @@ public class HttpSemanticConventionsTests
     {
         HttpSemanticConventions.NormalizeRequestMethod(canonicalMethod).Should().Be(canonicalMethod);
         HttpSemanticConventions.NormalizeRequestMethod(canonicalMethod.ToLowerInvariant()).Should().Be(canonicalMethod);
+    }
+
+    [Theory]
+    // The versions we expect to see. Note that the minor version is only reported for HTTP/1.x
+    [InlineData(1, 0, "1.0")]
+    [InlineData(1, 1, "1.1")]
+    [InlineData(2, 0, "2")]
+    [InlineData(3, 0, "3")]
+
+    // Anything else falls back to the version as-is
+    [InlineData(1, 2, "1.2")]
+    [InlineData(2, 1, "2.1")]
+    [InlineData(4, 0, "4.0")]
+    public void GetNetworkProtocolVersion_OmitsTheMinorVersionForHttp2AndAbove(int major, int minor, string expected)
+    {
+        HttpSemanticConventions.GetNetworkProtocolVersion(new Version(major, minor)).Should().Be(expected);
+    }
+
+    [Fact]
+    public void GetNetworkProtocolVersion_ReturnsNullWhenThereIsNoResponse()
+    {
+        HttpSemanticConventions.GetNetworkProtocolVersion(null).Should().BeNull();
+    }
+
+    // A Version can carry a build and a revision, which the major/minor patterns ignore. We must
+    // not fall through to Version.ToString() for those, or an HTTP/1.1 response constructed as a
+    // four-component Version would be reported as "1.1.0.0".
+    [Theory]
+    [InlineData(1, 1, 0, 0, "1.1")]
+    [InlineData(1, 1, 1, 1, "1.1")]
+    [InlineData(2, 0, 0, 0, "2")]
+    [InlineData(2, 1, 0, 0, "2")]
+    public void GetNetworkProtocolVersion_IgnoresTheBuildAndRevision(int major, int minor, int build, int revision, string expected)
+    {
+        HttpSemanticConventions.GetNetworkProtocolVersion(new Version(major, minor, build, revision)).Should().Be(expected);
     }
 }

@@ -52,6 +52,14 @@ namespace Datadog.Trace.Tagging
         /// </summary>
         [Tag(Trace.Tags.ServerPort)]
         public int? ServerPort { get; set; }
+
+        /// <summary>
+        /// Gets or sets the version of the protocol negotiated with the remote server, as
+        /// reported by the response. This is an OpenTelemetry-only concept, so it is only
+        /// set when OpenTelemetry semantics are enabled.
+        /// </summary>
+        [Tag(Trace.Tags.NetworkProtocolVersion)]
+        public string NetworkProtocolVersion { get; set; }
     }
 
     internal sealed partial class HttpV1Tags : HttpTags

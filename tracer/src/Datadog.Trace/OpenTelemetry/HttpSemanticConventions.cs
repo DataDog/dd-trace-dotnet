@@ -32,6 +32,13 @@ namespace Datadog.Trace.OpenTelemetry
         /// </summary>
         internal const string UnknownMethodSpanName = "HTTP";
 
+        // The values reported in "network.protocol.version" for the protocol versions we expect to
+        // see. Held as constants so the common cases don't allocate a string per request.
+        private const string ProtocolVersion10 = "1.0";
+        private const string ProtocolVersion11 = "1.1";
+        private const string ProtocolVersion20 = "2";
+        private const string ProtocolVersion30 = "3";
+
         /// <summary>
         /// Maps a method name to its canonical form, ignoring case. Contains the methods defined in
         /// <see href="https://www.rfc-editor.org/rfc/rfc9110.html#name-methods">RFC 9110</see>, plus
@@ -90,6 +97,36 @@ namespace Datadog.Trace.OpenTelemetry
                 tags.ServerPort = requestUri.Port;
             }
         }
+
+        /// <summary>
+        /// Sets the response tags of an HTTP client span, using the OpenTelemetry HTTP semantic
+        /// conventions. Does nothing when OpenTelemetry semantics are disabled.
+        /// </summary>
+        /// <param name="span">The HTTP client span</param>
+        /// <param name="protocolVersion">The protocol version of the response, if one was received</param>
+        internal static void SetHttpClientResponseValues(Span span, Version? protocolVersion)
+        {
+            if (span.OpenTelemetrySemanticsEnabled && span.Tags is HttpTags tags)
+            {
+                tags.NetworkProtocolVersion = GetNetworkProtocolVersion(protocolVersion);
+            }
+        }
+
+        /// <summary>
+        /// Gets the value to report in "network.protocol.version" for the protocol version of a
+        /// response, or <c>null</c> if no response was received. Note that the minor version is
+        /// only included for HTTP/1.x, so HTTP/2 is reported as "2" rather than "2.0".
+        /// </summary>
+        internal static string? GetNetworkProtocolVersion(Version? protocolVersion)
+            => protocolVersion switch
+            {
+                null => null,
+                { Major: 1, Minor: 0 } => ProtocolVersion10,
+                { Major: 1, Minor: 1 } => ProtocolVersion11,
+                { Major: 2, Minor: 0 } => ProtocolVersion20,
+                { Major: 3, Minor: 0 } => ProtocolVersion30,
+                _ => protocolVersion.ToString(),
+            };
 
         /// <summary>
         /// Gets the value to report in "http.request.method": the canonical form of

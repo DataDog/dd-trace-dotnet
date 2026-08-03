@@ -228,6 +228,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -266,6 +272,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -310,6 +322,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -348,6 +366,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -392,6 +416,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -430,6 +460,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -474,6 +510,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -512,6 +554,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -556,6 +604,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -594,6 +648,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -638,6 +698,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -676,6 +742,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -720,6 +792,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -758,6 +836,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -802,6 +886,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -840,6 +930,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -884,6 +980,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -922,6 +1024,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -966,44 +1074,9 @@
                   }
                 },
                 {
-                  "key": "server.address",
+                  "key": "network.protocol.version",
                   "value": {
-                    "stringValue": "localhost"
-                  }
-                },
-                {
-                  "key": "server.port",
-                  "value": {
-                    "intValue": "00000"
-                  }
-                },
-                {
-                  "key": "url.full",
-                  "value": {
-                    "stringValue": "http://localhost:00000/Guid_2/?GetResponse"
-                  }
-                }
-              ]
-            },
-            {
-              "traceId": "normalized-trace-id",
-              "spanId": "normalized-span-id",
-              "parentSpanId": "normalized-parent-span-id",
-              "name": "GET",
-              "kind": 3,
-              "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "http.request.method",
-                  "value": {
-                    "stringValue": "GET"
-                  }
-                },
-                {
-                  "key": "http.response.status_code",
-                  "value": {
-                    "intValue": "200"
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -1045,6 +1118,59 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
+                  "key": "server.address",
+                  "value": {
+                    "stringValue": "localhost"
+                  }
+                },
+                {
+                  "key": "server.port",
+                  "value": {
+                    "intValue": "00000"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:00000/Guid_2/?GetResponse"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "GET",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "GET"
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -1086,6 +1212,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -1127,6 +1259,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "404"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -1197,6 +1335,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -1261,6 +1405,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "404"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -1331,6 +1481,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -1398,6 +1554,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -1436,6 +1598,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -1480,6 +1648,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -1518,6 +1692,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -1562,6 +1742,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -1600,6 +1786,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -1644,6 +1836,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -1682,6 +1880,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -1842,44 +2046,9 @@
                   }
                 },
                 {
-                  "key": "server.address",
+                  "key": "network.protocol.version",
                   "value": {
-                    "stringValue": "localhost"
-                  }
-                },
-                {
-                  "key": "server.port",
-                  "value": {
-                    "intValue": "00000"
-                  }
-                },
-                {
-                  "key": "url.full",
-                  "value": {
-                    "stringValue": "http://localhost:00000/Guid_2/?BeginGetRequestStream"
-                  }
-                }
-              ]
-            },
-            {
-              "traceId": "normalized-trace-id",
-              "spanId": "normalized-span-id",
-              "parentSpanId": "normalized-parent-span-id",
-              "name": "POST",
-              "kind": 3,
-              "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "http.request.method",
-                  "value": {
-                    "stringValue": "POST"
-                  }
-                },
-                {
-                  "key": "http.response.status_code",
-                  "value": {
-                    "intValue": "200"
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -1924,6 +2093,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -1962,6 +2137,59 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
+                  "key": "server.address",
+                  "value": {
+                    "stringValue": "localhost"
+                  }
+                },
+                {
+                  "key": "server.port",
+                  "value": {
+                    "intValue": "00000"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:00000/Guid_2/?BeginGetRequestStream"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "POST",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -2006,6 +2234,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -2044,6 +2278,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -2100,6 +2340,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -2138,6 +2384,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "404"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -2182,6 +2434,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -2222,44 +2480,9 @@
                   }
                 },
                 {
-                  "key": "server.address",
+                  "key": "network.protocol.version",
                   "value": {
-                    "stringValue": "localhost"
-                  }
-                },
-                {
-                  "key": "server.port",
-                  "value": {
-                    "intValue": "00000"
-                  }
-                },
-                {
-                  "key": "url.full",
-                  "value": {
-                    "stringValue": "http://localhost:00000/Guid_2/?GetRequestStream"
-                  }
-                }
-              ]
-            },
-            {
-              "traceId": "normalized-trace-id",
-              "spanId": "normalized-span-id",
-              "parentSpanId": "normalized-parent-span-id",
-              "name": "POST",
-              "kind": 3,
-              "startTimeUnixNano": "0",
-              "endTimeUnixNano": "0",
-              "attributes": [
-                {
-                  "key": "http.request.method",
-                  "value": {
-                    "stringValue": "POST"
-                  }
-                },
-                {
-                  "key": "http.response.status_code",
-                  "value": {
-                    "intValue": "200"
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -2304,6 +2527,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -2342,6 +2571,59 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
+                  "key": "server.address",
+                  "value": {
+                    "stringValue": "localhost"
+                  }
+                },
+                {
+                  "key": "server.port",
+                  "value": {
+                    "intValue": "00000"
+                  }
+                },
+                {
+                  "key": "url.full",
+                  "value": {
+                    "stringValue": "http://localhost:00000/Guid_2/?GetRequestStream"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "POST",
+              "kind": 3,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "POST"
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -2386,6 +2668,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -2424,6 +2712,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -2468,6 +2762,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -2506,6 +2806,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -2550,6 +2856,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -2588,6 +2900,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -2632,6 +2950,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -2670,6 +2994,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -2714,6 +3044,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -2752,6 +3088,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -2796,6 +3138,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -2834,6 +3182,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -2878,6 +3232,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -2916,6 +3276,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -2960,6 +3326,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -2998,6 +3370,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -3042,6 +3420,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -3080,6 +3464,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -3124,6 +3514,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -3162,6 +3558,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -3206,6 +3608,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -3244,6 +3652,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -3288,6 +3702,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -3326,6 +3746,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -3370,6 +3796,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -3408,6 +3840,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -3452,6 +3890,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -3490,6 +3934,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -3534,6 +3984,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -3572,6 +4028,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -3616,6 +4078,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -3654,6 +4122,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -3698,6 +4172,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -3736,6 +4216,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -3780,6 +4266,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -3818,6 +4310,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -3862,6 +4360,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -3900,6 +4404,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -3944,6 +4454,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -3982,6 +4498,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -4026,6 +4548,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -4064,6 +4592,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
@@ -4108,6 +4642,12 @@
                   }
                 },
                 {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
+                  }
+                },
+                {
                   "key": "server.address",
                   "value": {
                     "stringValue": "localhost"
@@ -4146,6 +4686,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {

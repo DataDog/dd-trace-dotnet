@@ -53,6 +53,9 @@ namespace Datadog.Trace.Tagging
         // ServerPortBytes = MessagePack.Serialize("server.port");
         private static ReadOnlySpan<byte> ServerPortBytes => [171, 115, 101, 114, 118, 101, 114, 46, 112, 111, 114, 116];
 
+        // NetworkProtocolVersionBytes = MessagePack.Serialize("network.protocol.version");
+        private static ReadOnlySpan<byte> NetworkProtocolVersionBytes => [184, 110, 101, 116, 119, 111, 114, 107, 46, 112, 114, 111, 116, 111, 99, 111, 108, 46, 118, 101, 114, 115, 105, 111, 110];
+
         public override string? GetTag(string key)
         {
             return key switch
@@ -69,6 +72,7 @@ namespace Datadog.Trace.Tagging
                 "out.host" => Host,
                 "server.address" => Host,
                 "server.port" => ServerPort is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(ServerPort.Value),
+                "network.protocol.version" => NetworkProtocolVersion,
                 _ => base.GetTag(key),
             };
         }
@@ -120,6 +124,9 @@ namespace Datadog.Trace.Tagging
                         ServerPort = null;
                     }
 
+                    break;
+                case "network.protocol.version": 
+                    NetworkProtocolVersion = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(HttpTags));
@@ -205,6 +212,11 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<int>("server.port", ServerPort.Value, ServerPortBytes));
             }
 
+            if (NetworkProtocolVersion is not null)
+            {
+                processor.Process(new TagItem<string>("network.protocol.version", NetworkProtocolVersion, NetworkProtocolVersionBytes));
+            }
+
             base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
@@ -270,6 +282,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("server.port (tag):")
                   .Append(ServerPort.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                  .Append(',');
+            }
+
+            if (NetworkProtocolVersion is not null)
+            {
+                sb.Append("network.protocol.version (tag):")
+                  .Append(NetworkProtocolVersion)
                   .Append(',');
             }
 
