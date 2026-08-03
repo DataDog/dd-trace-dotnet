@@ -20,7 +20,6 @@ public class TraceContextTests_KnuthSamplingRate
         [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.LocalTraceSamplingRule, 0.25f, "0.25")]
         [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.RemoteUserSamplingRule, 0.75f, "0.75")]
         [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.RemoteAdaptiveSamplingRule, 0.333333f, "0.333333")]
-        [InlineData(SamplingPriorityValues.AutoKeep, SamplingMechanism.Default, 0.5f, "0.5")]
         public void SetSamplingPriority_SetsKsrTag_ForApplicableMechanisms(
             int samplingPriority, string samplingMechanism, float rate, string expectedKsr)
         {
@@ -53,6 +52,7 @@ public class TraceContextTests_KnuthSamplingRate
         [Theory]
         [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual, 0.5f)]
         [InlineData(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm, 0.5f)]
+        [InlineData(SamplingPriorityValues.AutoKeep, SamplingMechanism.Default, 0.5f)]
         public void SetSamplingPriority_DoesNotSetKsrTag_ForNonApplicableMechanisms(
             int samplingPriority, string samplingMechanism, float rate)
         {
