@@ -1484,6 +1484,9 @@ partial class Build
                     try
                     {
                         DotNetTest(x => x
+                            // Configure process output before any setting that attaches a delegate.
+                            // NUKE 6.3 clones settings in SetProcessLogOutput(), and delegates cannot be serialized.
+                            .When(IsGitlab, settings => settings.SetProcessLogOutput(true))
                             .EnableNoRestore()
                             .EnableNoBuild()
                             .SetFilter(filter)
@@ -1495,9 +1498,6 @@ partial class Build
                             .SetLogsDirectory(TestLogsDirectory)
                             .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                             .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
-                            // Configure process output before attaching a custom logger. NUKE 6.3
-                            // clones settings in SetProcessLogOutput(), and delegates cannot be serialized.
-                            .When(IsGitlab, settings => settings.SetProcessLogOutput(true))
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
