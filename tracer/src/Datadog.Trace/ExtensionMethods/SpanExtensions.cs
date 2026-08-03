@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -93,6 +92,24 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
+        internal static int? GetHttpStatusCode(this Span span)
+        {
+            if (span.Tags is IHasStatusCode statusCodeTags)
+            {
+                return statusCodeTags.HttpStatusCode;
+            }
+            else
+            {
+                var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
+                if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
+                {
+                    return null;
+                }
+
+                return httpStatusCode;
+            }
+        }
+
         internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, MutableSettings tracerSettings)
         {
             if (statusCode < 100 || statusCode >= 600)
@@ -101,15 +118,13 @@ namespace Datadog.Trace.ExtensionMethods
                 return;
             }
 
-            string statusCodeString = ConvertStatusCodeToString(statusCode);
-
             if (span.Tags is IHasStatusCode statusCodeTags)
             {
-                statusCodeTags.HttpStatusCode = statusCodeString;
+                statusCodeTags.HttpStatusCode = statusCode;
             }
             else
             {
-                span.SetTag(Tags.HttpStatusCode, statusCodeString);
+                span.SetTag(Tags.HttpStatusCode, IntStringCache.ToInvariantString(statusCode));
             }
 
             // Check the customers http statuses that should be marked as errors
@@ -121,7 +136,7 @@ namespace Datadog.Trace.ExtensionMethods
                 {
                     if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorType)))
                     {
-                        span.SetTag(Tags.ErrorType, statusCodeString);
+                        span.SetTag(Tags.ErrorType, IntStringCache.ToInvariantString(statusCode));
                     }
                 }
                 else
@@ -129,50 +144,10 @@ namespace Datadog.Trace.ExtensionMethods
                     // if an error message already exists (e.g. from a previous exception), don't replace it
                     if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
                     {
-                        span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {statusCodeString}.");
+                        span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {IntStringCache.ToInvariantString(statusCode)}.");
                     }
                 }
             }
-        }
-
-        private static string ConvertStatusCodeToString(int statusCode)
-        {
-            if (statusCode == 200)
-            {
-                return "200";
-            }
-
-            if (statusCode == 302)
-            {
-                return "302";
-            }
-
-            if (statusCode == 401)
-            {
-                return "401";
-            }
-
-            if (statusCode == 403)
-            {
-                return "403";
-            }
-
-            if (statusCode == 404)
-            {
-                return "404";
-            }
-
-            if (statusCode == 500)
-            {
-                return "500";
-            }
-
-            if (statusCode == 503)
-            {
-                return "503";
-            }
-
-            return statusCode.ToString();
         }
     }
 }

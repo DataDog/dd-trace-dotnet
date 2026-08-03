@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.TraceSamplers;
 
@@ -237,7 +238,7 @@ internal sealed class TraceFilter
         }
     }
 
-    private struct RegexTagFilterProcessor : IItemProcessor<string>
+    private struct RegexTagFilterProcessor : IItemProcessor<string>, IItemProcessor<int>
     {
         private readonly RegexTagFilter _filter;
         public bool Matched;
@@ -258,6 +259,22 @@ internal sealed class TraceFilter
                     // Key-only filter: any matching key is sufficient
                     // Key:Value filter: value must also match
                     Matched = _filter.ValuePattern is null || _filter.ValuePattern.IsMatch(item.Value);
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Process(TagItem<int> item)
+        {
+            if (!Matched)
+            {
+                if (_filter.KeyPattern.IsMatch(item.Key))
+                {
+                    // Key-only filter: any matching key is sufficient
+                    // Key:Value filter: value must also match
+                    // Regex.IsMatch(ReadOnlySpan<char>) is .NET 7+, so we have to hand it a string;
+                    // IntStringCache keeps that allocation-free for the values we actually see.
+                    Matched = _filter.ValuePattern is null || _filter.ValuePattern.IsMatch(IntStringCache.ToInvariantString(item.Value));
                 }
             }
         }

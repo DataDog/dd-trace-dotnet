@@ -69,7 +69,7 @@ namespace Datadog.Trace.Tagging
                 "_dd.peer.service.source" => PeerServiceSource,
                 "http.method" => HttpMethod,
                 "http.url" => HttpUrl,
-                "http.status_code" => HttpStatusCode,
+                "http.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
                 _ => base.GetTag(key),
             };
         }
@@ -103,7 +103,15 @@ namespace Datadog.Trace.Tagging
                     HttpUrl = value;
                     break;
                 case "http.status_code": 
-                    HttpStatusCode = value;
+                    if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedHttpStatusCode))
+                    {
+                        HttpStatusCode = parsedHttpStatusCode;
+                    }
+                    else
+                    {
+                        HttpStatusCode = null;
+                    }
+
                     break;
                 case "component": 
                 case "aws.agent": 
@@ -181,7 +189,7 @@ namespace Datadog.Trace.Tagging
 
             if (HttpStatusCode is not null)
             {
-                processor.Process(new TagItem<string>("http.status_code", HttpStatusCode, HttpStatusCodeBytes));
+                processor.Process(new TagItem<int>("http.status_code", HttpStatusCode.Value, HttpStatusCodeBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -276,7 +284,7 @@ namespace Datadog.Trace.Tagging
             if (HttpStatusCode is not null)
             {
                 sb.Append("http.status_code (tag):")
-                  .Append(HttpStatusCode)
+                  .Append(HttpStatusCode.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
                   .Append(',');
             }
 
