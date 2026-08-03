@@ -23,26 +23,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     /// </summary>
     internal static class OtlpSnapshotHelper
     {
-        // Single source of truth for translating an OTLP http/protobuf payload (rendered as JSON
-        // by the test agent with snake_case field names and string-form enum values) to the
-        // OTLP http/json shape (camelCase field names, integer enum values). When a new OTLP
-        // field or enum reaches the serializer, add the mapping here.
+        // Key-casing mappings come from OtlpFieldNames.FieldNamePairs, the single source of
+        // truth shared with the structural JObject navigation in OpenTelemetrySdkTests -- this
+        // covers every OTLP JSON key with a different casing per protocol, not just span fields
+        // (e.g. it also includes the AnyValue oneof members like double_value/doubleValue). Enum
+        // mappings are scrubber-only: OtlpFieldNames only tracks key casing, not the
+        // int-vs-string-enum shape difference between the two OTLP renderings.
         private static readonly (string From, string To)[] ProtobufToJsonFieldNameMappings =
-        {
-            ("\"resource_spans\"",        "\"resourceSpans\""),
-            ("\"scope_spans\"",           "\"scopeSpans\""),
-            ("\"trace_id\"",              "\"traceId\""),
-            ("\"span_id\"",               "\"spanId\""),
-            ("\"parent_span_id\"",        "\"parentSpanId\""),
-            ("\"start_time_unix_nano\"",  "\"startTimeUnixNano\""),
-            ("\"end_time_unix_nano\"",    "\"endTimeUnixNano\""),
-            ("\"time_unix_nano\"",        "\"timeUnixNano\""),
-            ("\"string_value\"",          "\"stringValue\""),
-            ("\"double_value\"",          "\"doubleValue\""),
-            ("\"int_value\"",             "\"intValue\""),
-            ("\"bool_value\"",            "\"boolValue\""),
-            ("\"array_value\"",           "\"arrayValue\""),
-        };
+            OtlpFieldNames.FieldNamePairs
+                          .Select(p => ($"\"{p.Protobuf}\"", $"\"{p.Json}\""))
+                          .ToArray();
 
         private static readonly (string From, string To)[] ProtobufToJsonEnumMappings =
         {
