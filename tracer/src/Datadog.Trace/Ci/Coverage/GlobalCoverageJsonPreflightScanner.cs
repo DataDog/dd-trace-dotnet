@@ -148,6 +148,11 @@ internal sealed class GlobalCoverageJsonPreflightScanner
             }
             else if (kind == ContainerKind.Array)
             {
+                if (parent.PendingProperty is PropertyKind.ExecutableBitmap or PropertyKind.ExecutedBitmap)
+                {
+                    throw new InvalidDataException("The global coverage input contains an array-valued bitmap.");
+                }
+
                 arrayKind = parent.PendingProperty switch
                 {
                     PropertyKind.Components => ArrayKind.Components,
@@ -390,21 +395,45 @@ internal sealed class GlobalCoverageJsonPreflightScanner
     {
         OnArrayElement(isObject: false);
 
+        var valueProperty = _depth > 0 && _frames[_depth - 1].Kind == ContainerKind.Object
+                                ? _frames[_depth - 1].PendingProperty
+                                : PropertyKind.Unknown;
+        var isNullableIdentity = valueProperty is PropertyKind.Name or PropertyKind.Path;
+        var nullCharacterIndex = 0;
+        if (isNullableIdentity)
+        {
+            if (firstCharacter != 'n')
+            {
+                throw new InvalidDataException("The global coverage input contains a non-string identity.");
+            }
+
+            nullCharacterIndex = 1;
+        }
+
         var length = 1;
-        var character = firstCharacter;
         while (true)
         {
             var value = Read();
             if (value < 0)
             {
-                return;
+                break;
             }
 
-            character = (char)value;
+            var character = (char)value;
             if (char.IsWhiteSpace(character) || character is ',' or ']' or '}')
             {
                 Unread();
-                return;
+                break;
+            }
+
+            if (isNullableIdentity)
+            {
+                if (nullCharacterIndex >= 4 || character != "null"[nullCharacterIndex])
+                {
+                    throw new InvalidDataException("The global coverage input contains a non-string identity.");
+                }
+
+                nullCharacterIndex++;
             }
 
             length = checked(length + 1);
@@ -412,6 +441,11 @@ internal sealed class GlobalCoverageJsonPreflightScanner
             {
                 throw new InvalidDataException("The global coverage scalar-token limit was exceeded.");
             }
+        }
+
+        if (isNullableIdentity && nullCharacterIndex != 4)
+        {
+            throw new InvalidDataException("The global coverage input contains a non-string identity.");
         }
     }
 

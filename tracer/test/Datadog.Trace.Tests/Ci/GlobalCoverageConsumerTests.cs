@@ -123,6 +123,44 @@ public class GlobalCoverageConsumerTests
     }
 
     [Theory]
+    [InlineData("{\"components\":[{\"name\":123,\"files\":[]}]}")]
+    [InlineData("{\"components\":[{\"name\":\"component\",\"files\":[{\"path\":123}]}]}")]
+    public void PreflightRejectsNonStringIdentityValues(string json)
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+        var scanner = new GlobalCoverageJsonPreflightScanner(CreateSmallLimits(maximumBitmapBytes: 8, maximumIdentityCharacters: 128));
+
+        var action = () => scanner.Scan(stream);
+
+        action.Should().Throw<InvalidDataException>();
+    }
+
+    [Theory]
+    [InlineData("{\"components\":[{\"name\":\"component\",\"files\":[{\"path\":\"file\",\"executableBitmap\":[1]}]}]}")]
+    [InlineData("{\"components\":[{\"name\":\"component\",\"files\":[{\"path\":\"file\",\"executedBitmap\":[1]}]}]}")]
+    public void PreflightRejectsArrayValuedBitmaps(string json)
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+        var scanner = new GlobalCoverageJsonPreflightScanner(CreateSmallLimits(maximumBitmapBytes: 8, maximumIdentityCharacters: 128));
+
+        var action = () => scanner.Scan(stream);
+
+        action.Should().Throw<InvalidDataException>();
+    }
+
+    [Fact]
+    public void PreflightAcceptsNullIdentityValues()
+    {
+        const string Json = "{\"components\":[{\"name\":null,\"files\":[{\"path\":null}]}]}";
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(Json));
+        var scanner = new GlobalCoverageJsonPreflightScanner(CreateSmallLimits(maximumBitmapBytes: 8, maximumIdentityCharacters: 128));
+
+        var action = () => scanner.Scan(stream);
+
+        action.Should().NotThrow();
+    }
+
+    [Theory]
     [InlineData("{\"components\":[{\"name\":\"c\",\"files\":[{\"path\":\"p\",\"executableBitmap\":\"gA==\",\"executedBitmap\":\"/w==\"}]}]}")]
     [InlineData("{\"components\":[{\"name\":\"c\",\"files\":[{\"path\":\"p\",\"executedBitmap\":\"gA==\"}]}]}")]
     [InlineData("{\"components\":[{\"name\":\"c\",\"files\":[{\"path\":\"p\",\"executableBitmap\":\"gA==\",\"executedBitmap\":\"gAA=\"}]}]}")]
