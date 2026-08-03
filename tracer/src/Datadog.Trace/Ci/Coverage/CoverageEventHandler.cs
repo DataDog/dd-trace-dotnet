@@ -21,10 +21,12 @@ internal abstract class CoverageEventHandler
     private readonly AsyncLocal<CoverageContextContainer?> _asyncContext = new(OnAsyncContextChanged);
     private readonly CoverageContextContainer _globalContainer = new(bufferKind: ModuleValue.BufferKind.GlobalFallback);
     private readonly ContextDiagnostics _contextDiagnostics = new();
+    private readonly Action<IReadOnlyList<ModuleValue>> _completeDeferredSession;
     private readonly Action _recordContextDisposed;
 
     protected CoverageEventHandler()
     {
+        _completeDeferredSession = CompleteDeferredSession;
         // Cache the instance delegate once; closed contexts may retain it briefly while an inherited
         // ExecutionContext finishes, so allocating a new delegate for every test would be unnecessary churn.
         _recordContextDisposed = _contextDiagnostics.RecordDisposed;
@@ -103,9 +105,10 @@ internal abstract class CoverageEventHandler
         }
 
         _contextDiagnostics.RecordClosed();
+        var deferCompletion = false;
         try
         {
-            var sessionEndData = OnSessionFinished(context, modules);
+            var sessionEndData = OnSessionFinished(context, modules, out deferCompletion);
             if (context.State is MetricTags.CIVisibilityTestFramework telemetryTestingFramework)
             {
                 TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageFinished(telemetryTestingFramework, MetricTags.CIVisibilityCoverageLibrary.Custom);
@@ -115,13 +118,27 @@ internal abstract class CoverageEventHandler
         }
         finally
         {
+            var admissionTransferred = false;
             try
             {
-                context.DisposeWhenExecutionContextsAreInactive(_recordContextDisposed);
+                if (deferCompletion)
+                {
+                    // Keep the session admission open until every inherited ExecutionContext has stopped
+                    // using its cached probe pointer and the final counters have been merged.
+                    admissionTransferred = true;
+                    context.DisposeWhenExecutionContextsAreInactive(_completeDeferredSession, _recordContextDisposed, handle.Admission);
+                }
+                else
+                {
+                    context.DisposeWhenExecutionContextsAreInactive(null, _recordContextDisposed);
+                }
             }
             finally
             {
-                handle.Admission.Release();
+                if (!admissionTransferred)
+                {
+                    handle.Admission.Release();
+                }
             }
         }
     }
@@ -147,14 +164,7 @@ internal abstract class CoverageEventHandler
 
             _contextDiagnostics.RecordClosed();
             MarkGlobalCoverageIncomplete(reason);
-            try
-            {
-                context.DisposeWhenExecutionContextsAreInactive(_recordContextDisposed);
-            }
-            finally
-            {
-                handle.Admission.Release();
-            }
+            context.DisposeWhenExecutionContextsAreInactive(null, _recordContextDisposed, handle.Admission);
         }
         catch
         {
@@ -193,7 +203,14 @@ internal abstract class CoverageEventHandler
 
     protected abstract void OnSessionStart(CoverageContextContainer context);
 
-    protected abstract object? OnSessionFinished(CoverageContextContainer context, IReadOnlyList<ModuleValue> modules);
+    protected abstract object? OnSessionFinished(
+        CoverageContextContainer context,
+        IReadOnlyList<ModuleValue> modules,
+        out bool deferCompletion);
+
+    protected virtual void OnDeferredSessionFinished(IReadOnlyList<ModuleValue> modules)
+    {
+    }
 
     private static void OnAsyncContextChanged(AsyncLocalValueChangedArgs<CoverageContextContainer?> args)
     {
@@ -207,6 +224,9 @@ internal abstract class CoverageEventHandler
         args.PreviousValue?.OnExecutionContextExited();
         args.CurrentValue?.OnExecutionContextEntered();
     }
+
+    private void CompleteDeferredSession(IReadOnlyList<ModuleValue> modules)
+        => OnDeferredSessionFinished(modules);
 
     private sealed class ContextDiagnostics
     {

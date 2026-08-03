@@ -21,7 +21,9 @@ internal sealed class CoverageContextContainer : IDisposable
     private readonly List<ModuleValue> _modules = new();
     private readonly ModuleValue.BufferKind _bufferKind;
     private ModuleValue? _currentModuleValue;
+    private Action<IReadOnlyList<ModuleValue>>? _onBeforeDisposed;
     private Action? _onDisposed;
+    private CoverageContextAdmission? _deferredAdmission;
     private int _activeExecutionContexts;
     private int _closed;
     private int _disposeRequested;
@@ -36,6 +38,8 @@ internal sealed class CoverageContextContainer : IDisposable
     public object? State { get; set; }
 
     public bool IsClosed => Volatile.Read(ref _closed) != 0;
+
+    public bool HasActiveExecutionContexts => Volatile.Read(ref _activeExecutionContexts) != 0;
 
     public void OnExecutionContextEntered() => Interlocked.Increment(ref _activeExecutionContexts);
 
@@ -148,12 +152,17 @@ internal sealed class CoverageContextContainer : IDisposable
 
     public void Clear() => Dispose();
 
-    public void DisposeWhenExecutionContextsAreInactive(Action onDisposed)
+    public void DisposeWhenExecutionContextsAreInactive(
+        Action<IReadOnlyList<ModuleValue>>? onBeforeDisposed,
+        Action onDisposed,
+        CoverageContextAdmission? deferredAdmission = null)
     {
         // A flowed ExecutionContext may still be executing instrumented code with a raw pointer cached
         // in an IL local. Inactive contexts cannot hold a live probe frame, and future probes observe
         // the closed flag and use the global fallback, so the last active exit is the safe reclamation point.
+        _onBeforeDisposed = onBeforeDisposed;
         _onDisposed = onDisposed;
+        _deferredAdmission = deferredAdmission;
         Volatile.Write(ref _disposeRequested, 1);
         if (Volatile.Read(ref _activeExecutionContexts) == 0)
         {
@@ -164,7 +173,9 @@ internal sealed class CoverageContextContainer : IDisposable
     public void Dispose()
     {
         ExceptionDispatchInfo? firstException = null;
+        Action<IReadOnlyList<ModuleValue>>? onBeforeDisposed = null;
         Action? onDisposed = null;
+        CoverageContextAdmission? deferredAdmission = null;
         lock (_gate)
         {
             if (_disposed != 0)
@@ -177,6 +188,16 @@ internal sealed class CoverageContextContainer : IDisposable
             _currentModuleValue = null;
             try
             {
+                onBeforeDisposed = _onBeforeDisposed;
+                try
+                {
+                    onBeforeDisposed?.Invoke(_modules);
+                }
+                catch (Exception ex)
+                {
+                    firstException ??= ExceptionDispatchInfo.Capture(ex);
+                }
+
                 foreach (var moduleValue in _modules)
                 {
                     try
@@ -192,12 +213,23 @@ internal sealed class CoverageContextContainer : IDisposable
             finally
             {
                 _modules.Clear();
+                _onBeforeDisposed = null;
                 onDisposed = _onDisposed;
                 _onDisposed = null;
+                deferredAdmission = _deferredAdmission;
+                _deferredAdmission = null;
             }
         }
 
-        onDisposed?.Invoke();
+        try
+        {
+            onDisposed?.Invoke();
+        }
+        finally
+        {
+            deferredAdmission?.Release();
+        }
+
         firstException?.Throw();
     }
 

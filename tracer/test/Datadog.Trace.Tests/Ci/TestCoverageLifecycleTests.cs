@@ -12,6 +12,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Metadata;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
@@ -59,6 +60,32 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
         action.Should().Throw<InvalidOperationException>().WithMessage("Injected coverage-end failure.");
         test.IsClosed.Should().BeTrue();
         handler.Container.Should().BeNull();
+    }
+
+    [Fact]
+    public unsafe void NormalCustomerModuleDoesNotMaterializeAnIntermediateGlobalSnapshot()
+    {
+        var handler = new DefaultWithGlobalCoverageEventHandler();
+        using var harness = new TestHarness(handler);
+        var metadata = new TestModuleCoverageMetadata(
+            8,
+            0,
+            [new FileCoverageMetadata("/src/global-fallback.cs", 0, 8, [0xff])]);
+        handler.GlobalContainer.TryGetOrAddModuleValue(
+                   metadata,
+                   typeof(TestCoverageLifecycleTests).Module,
+                   8,
+                   out var module)
+               .Should()
+               .BeTrue();
+        ((byte*)module!.FilesLines)[0] = 1;
+
+        harness.Module.Close();
+        handler.GlobalContainer.Clear();
+
+        using var snapshot = handler.AcquireGlobalCoverageSnapshot().Snapshot!;
+        snapshot.Model.Components.Should().BeEmpty(
+            "a normal module does not consume the percentage and final publication captures the fallback separately");
     }
 
     private static void AssertBalancedSuppressedCoverage(DefaultWithGlobalCoverageEventHandler handler, GlobalCoverageFailureReason reason)
@@ -126,8 +153,14 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
         {
         }
 
-        protected override object? OnSessionFinished(CoverageContextContainer context, IReadOnlyList<ModuleValue> modules)
-            => throw new InvalidOperationException("Injected coverage-end failure.");
+        protected override object? OnSessionFinished(
+            CoverageContextContainer context,
+            IReadOnlyList<ModuleValue> modules,
+            out bool deferCompletion)
+        {
+            deferCompletion = false;
+            throw new InvalidOperationException("Injected coverage-end failure.");
+        }
     }
 
     private sealed class TestCIEnvironmentValues : CIEnvironmentValues

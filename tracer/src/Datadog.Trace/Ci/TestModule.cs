@@ -407,7 +407,12 @@ public sealed class TestModule
         // Update status
         Tags.Status ??= TestTags.StatusPass;
 
+        // Only out-of-process test modules without ITR publish this intermediate percentage.
+        // Normal customer sessions rely on the final session snapshot and must not materialize
+        // the full global model once per module.
         if (_testOptimization.Settings.CodeCoverageEnabled == true &&
+            !_testOptimization.Settings.IntelligentTestRunnerEnabled &&
+            _fakeSession is not null &&
             CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
         {
             var snapshotResult = coverageHandler.AcquireGlobalCoverageSnapshot();
@@ -422,15 +427,9 @@ public sealed class TestModule
                             snapshot,
                             () =>
                             {
-                                // We only report global code coverage if ITR is disabled and we are in a fake session (like the internal testlogger scenario)
-                                // For a normal customer session we never report the percentage of total lines on modules
-                                if (!_testOptimization.Settings.IntelligentTestRunnerEnabled && _fakeSession is not null)
-                                {
-                                    // Adds the global code coverage percentage to the module
-                                    var codeCoveragePercentage = globalCoverage.GetTotalPercentage();
-                                    SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
-                                    _fakeSession.SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
-                                }
+                                var codeCoveragePercentage = globalCoverage.GetTotalPercentage();
+                                SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
+                                _fakeSession.SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
                             });
                     }
                     catch (Exception ex)

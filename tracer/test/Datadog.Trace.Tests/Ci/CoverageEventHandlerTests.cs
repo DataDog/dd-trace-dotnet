@@ -94,13 +94,13 @@ public class CoverageEventHandlerTests
             var child = Task.Run(
                 () =>
                 {
-                    var pointer = GetStaleFlowCounter();
-                    WriteCounter(pointer);
+                    var pointer = GetDeferredFlowCounter();
+                    WriteCounter(pointer, 0);
                     pointerAcquired.Set();
                     releaseProbe.Wait();
                     if (Volatile.Read(ref writeAfterClose) != 0)
                     {
-                        WriteCounter(pointer);
+                        WriteCounter(pointer, 1);
                     }
                 });
 
@@ -113,6 +113,8 @@ public class CoverageEventHandlerTests
                 module.FilesLines.Should().NotBe(
                     IntPtr.Zero,
                     "the inherited execution context can still hold a raw counter pointer");
+                using var intermediate = handler.AcquireGlobalCoverageSnapshot().Snapshot!;
+                intermediate.MergedContextCount.Should().Be(0, "the final counters are not available while a probe is still active");
                 Volatile.Write(ref writeAfterClose, 1);
             }
             finally
@@ -124,7 +126,9 @@ public class CoverageEventHandlerTests
             SpinWait.SpinUntil(() => module.FilesLines == IntPtr.Zero, TimeSpan.FromSeconds(5)).Should().BeTrue();
             module.AllocatedByteLength.Should().Be(0);
             using var snapshot = handler.AcquireGlobalCoverageSnapshot().Snapshot!;
-            snapshot.Model.Data.Should().Equal(100, 1, 1);
+            snapshot.MergedContextCount.Should().Be(1);
+            snapshot.Model.Data.Should().Equal(100, 2, 2);
+            snapshot.Model.Components.Should().ContainSingle().Subject.Files.Should().ContainSingle().Subject.ExecutedBitmap.Should().Equal(0xc0);
         }
         finally
         {
@@ -296,11 +300,11 @@ public class CoverageEventHandlerTests
         *pointer = 1;
     }
 
-    private static unsafe IntPtr GetStaleFlowCounter()
-        => (IntPtr)CoverageReporter<StaleFlowMetadata>.GetFileCounter(0);
+    private static unsafe IntPtr GetDeferredFlowCounter()
+        => (IntPtr)CoverageReporter<DeferredFlowMetadata>.GetFileCounter(0);
 
-    private static unsafe void WriteCounter(IntPtr pointer)
-        => *(byte*)pointer = 1;
+    private static unsafe void WriteCounter(IntPtr pointer, int line)
+        => ((byte*)pointer)[line] = 1;
 
     private static TestModuleCoverageMetadata CreateMetadata(int totalLines, int coverageMode, int lastExecutableLine)
         => new(
@@ -312,6 +316,14 @@ public class CoverageEventHandlerTests
     {
         public StaleFlowMetadata()
             : base(1, 0, [new FileCoverageMetadata("/src/stale.cs", 0, 1, [0x80])])
+        {
+        }
+    }
+
+    private sealed class DeferredFlowMetadata : TestModuleCoverageMetadata
+    {
+        public DeferredFlowMetadata()
+            : base(2, 0, [new FileCoverageMetadata("/src/deferred.cs", 0, 2, [0xc0])])
         {
         }
     }

@@ -137,13 +137,23 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
         }
     }
 
-    protected override object? OnSessionFinished(CoverageContextContainer context, IReadOnlyList<ModuleValue> modules)
+    protected override object? OnSessionFinished(
+        CoverageContextContainer context,
+        IReadOnlyList<ModuleValue> modules,
+        out bool deferCompletion)
     {
+        // Only contexts that can still have a cached raw pointer need a second, final capture.
+        // The normal path keeps the existing single capture and immediate merge.
+        deferCompletion = context.HasActiveExecutionContexts;
         var merged = false;
         try
         {
             var testCoverage = ProcessSessionFinished(modules, out var moduleCoverage);
-            merged = _accumulator.TryMerge(moduleCoverage) != GlobalCoverageMergeResult.BecameSuppressedIncomplete;
+            if (!deferCompletion)
+            {
+                merged = _accumulator.TryMerge(moduleCoverage) != GlobalCoverageMergeResult.BecameSuppressedIncomplete;
+            }
+
             return testCoverage;
         }
         catch
@@ -154,6 +164,25 @@ internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEve
             }
 
             throw;
+        }
+    }
+
+    protected override void OnDeferredSessionFinished(IReadOnlyList<ModuleValue> modules)
+    {
+        if (_accumulator.IsSuppressed)
+        {
+            return;
+        }
+
+        try
+        {
+            _accumulator.TryMerge(CaptureModuleCoverage(modules));
+        }
+        catch (Exception ex)
+        {
+            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+            Log.Error(ex, "Error processing deferred coverage data.");
+            _accumulator.Suppress(GlobalCoverageFailureReason.PerTestProcessingFailed);
         }
     }
 

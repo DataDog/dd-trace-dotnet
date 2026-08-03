@@ -22,23 +22,39 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
 {
     protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultCoverageEventHandler));
 
+    protected static ModuleCoverageData[] CaptureModuleCoverage(IReadOnlyList<ModuleValue> modules)
+    {
+        var moduleCoverage = new ModuleCoverageData[modules.Count];
+        for (var moduleIndex = 0; moduleIndex < modules.Count; moduleIndex++)
+        {
+            moduleCoverage[moduleIndex] = ModuleCoverageData.Capture(modules[moduleIndex]);
+        }
+
+        return moduleCoverage;
+    }
+
     protected override void OnSessionStart(CoverageContextContainer context)
     {
     }
 
-    protected override object? OnSessionFinished(CoverageContextContainer context, IReadOnlyList<ModuleValue> modules)
-        => ProcessSessionFinished(modules, out _);
+    protected override object? OnSessionFinished(
+        CoverageContextContainer context,
+        IReadOnlyList<ModuleValue> modules,
+        out bool deferCompletion)
+    {
+        deferCompletion = false;
+        return ProcessSessionFinished(modules, out _);
+    }
 
     protected object? ProcessSessionFinished(IReadOnlyList<ModuleValue> modules, out ModuleCoverageData[] moduleCoverage)
     {
         try
         {
-            moduleCoverage = new ModuleCoverageData[modules.Count];
+            moduleCoverage = CaptureModuleCoverage(modules);
             Dictionary<string, FileCoverage>? fileDictionary = null;
-            for (var moduleIndex = 0; moduleIndex < modules.Count; moduleIndex++)
+            for (var moduleIndex = 0; moduleIndex < moduleCoverage.Length; moduleIndex++)
             {
-                var capturedModule = ModuleCoverageData.Capture(modules[moduleIndex]);
-                moduleCoverage[moduleIndex] = capturedModule;
+                var capturedModule = moduleCoverage[moduleIndex];
                 for (var fileIndex = 0; fileIndex < capturedModule.Metadata.Files.Length; fileIndex++)
                 {
                     var executedBitmap = capturedModule.ExecutedBitmaps[fileIndex];
