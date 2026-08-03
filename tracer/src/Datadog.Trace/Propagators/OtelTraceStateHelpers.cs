@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
@@ -34,15 +33,15 @@ namespace Datadog.Trace.Propagators
                 return null;
             }
 
-            var remaining = new StringSegment(raw);
+            var remaining = raw!.AsSpan();
 
             while (true)
             {
-                var separatorIndex = IndexOf(remaining, ';');
+                var separatorIndex = remaining.IndexOf(';');
                 var item = separatorIndex < 0 ? remaining : remaining.Slice(0, separatorIndex);
-                var colonIndex = IndexOf(item, ':');
+                var colonIndex = item.IndexOf(':');
 
-                if (colonIndex > 0 && colonIndex < item.Length - 1 && item.Slice(0, colonIndex).Equals("rv", StringComparison.Ordinal))
+                if (colonIndex > 0 && colonIndex < item.Length - 1 && item.Slice(0, colonIndex).Equals("rv".AsSpan(), StringComparison.Ordinal))
                 {
                     return TryParseLowercaseHex(item.Slice(colonIndex + 1), MaxRvHexDigits, out var rv) ? rv : null;
                 }
@@ -67,38 +66,6 @@ namespace Datadog.Trace.Propagators
         /// </summary>
         internal static string? SetRvTh(string? raw, ulong? rv, ulong? th)
         {
-            List<StringSegment>? otherItems = null;
-
-            if (!StringUtil.IsNullOrEmpty(raw))
-            {
-                var remaining = new StringSegment(raw!);
-
-                while (true)
-                {
-                    var separatorIndex = IndexOf(remaining, ';');
-                    var item = separatorIndex < 0 ? remaining : remaining.Slice(0, separatorIndex);
-                    var colonIndex = IndexOf(item, ':');
-                    var key = colonIndex > 0 ? item.Slice(0, colonIndex) : item;
-
-                    if (!key.Equals("rv", StringComparison.Ordinal) && !key.Equals("th", StringComparison.Ordinal))
-                    {
-                        (otherItems ??= new List<StringSegment>()).Add(item);
-                    }
-
-                    if (separatorIndex < 0)
-                    {
-                        break;
-                    }
-
-                    remaining = remaining.Slice(separatorIndex + 1);
-                }
-            }
-
-            if (rv is null && th is null && otherItems is null)
-            {
-                return null;
-            }
-
             var sb = StringBuilderCache.Acquire();
 
             try
@@ -118,16 +85,33 @@ namespace Datadog.Trace.Propagators
                     sb.Append("th:").Append(FormatThresholdHex(thValue));
                 }
 
-                if (otherItems is not null)
+                if (!StringUtil.IsNullOrEmpty(raw))
                 {
-                    foreach (var item in otherItems)
+                    var remaining = raw!.AsSpan();
+
+                    while (true)
                     {
-                        if (sb.Length > 0)
+                        var separatorIndex = remaining.IndexOf(';');
+                        var item = separatorIndex < 0 ? remaining : remaining.Slice(0, separatorIndex);
+                        var colonIndex = item.IndexOf(':');
+                        var key = colonIndex > 0 ? item.Slice(0, colonIndex) : item;
+
+                        if (!key.Equals("rv".AsSpan(), StringComparison.Ordinal) && !key.Equals("th".AsSpan(), StringComparison.Ordinal))
                         {
-                            sb.Append(';');
+                            if (sb.Length > 0)
+                            {
+                                sb.Append(';');
+                            }
+
+                            sb.Append(item);
                         }
 
-                        sb.Append(item.Value, item.Offset, item.Length);
+                        if (separatorIndex < 0)
+                        {
+                            break;
+                        }
+
+                        remaining = remaining.Slice(separatorIndex + 1);
                     }
                 }
 
@@ -148,20 +132,7 @@ namespace Datadog.Trace.Propagators
             return trimmed.Length == 0 ? "0" : trimmed;
         }
 
-        private static int IndexOf(StringSegment value, char character)
-        {
-            for (var index = 0; index < value.Length; index++)
-            {
-                if (value[index] == character)
-                {
-                    return index;
-                }
-            }
-
-            return -1;
-        }
-
-        private static bool TryParseLowercaseHex(StringSegment value, int maxDigits, out ulong result)
+        private static bool TryParseLowercaseHex(ReadOnlySpan<char> value, int maxDigits, out ulong result)
         {
             result = 0;
 

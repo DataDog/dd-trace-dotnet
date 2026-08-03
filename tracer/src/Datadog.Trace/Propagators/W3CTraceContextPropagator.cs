@@ -311,29 +311,32 @@ namespace Datadog.Trace.Propagators
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
             if (string.IsNullOrWhiteSpace(header))
             {
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null, otTraceState: null);
             }
 
             SplitTraceStateValues(
                 header!.AsSpan().Trim(),
                 out var ddValues,
-                out var precedingMembers,
-                out var succeedingMembers,
-                out _);
-            var additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
+                out _,
+                out var otTraceState,
+                out var hasOtTraceState,
+                out var firstAdditionalMembers,
+                out var secondAdditionalMembers,
+                out var thirdAdditionalMembers);
+            var additionalValues = GetAdditionalValues(firstAdditionalMembers, secondAdditionalMembers, thirdAdditionalMembers);
 
-            return ParseDdMember(ddValues, additionalValues);
+            return ParseDdMember(ddValues, additionalValues, hasOtTraceState ? otTraceState.ToString() : null);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static W3CTraceState ParseDdMember(ReadOnlySpan<char> ddValues, string? additionalValues)
+        private static W3CTraceState ParseDdMember(ReadOnlySpan<char> ddValues, string? additionalValues, string? otTraceState)
         {
             if (ddValues.Length < 3)
             {
                 // "dd" section not found or it is too short
                 // shortest valid length is 3 as in "a:b" ("dd=" prefix already stripped)
                 // note for this case the p will be viewed as 0 if added as a span tag
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues, otTraceState);
             }
 
             int? samplingPriority = null;
@@ -392,7 +395,7 @@ namespace Datadog.Trace.Propagators
                     propagatedTags = null;
                 }
 
-                return new W3CTraceState(samplingPriority, origin.IsEmpty ? null : origin.ToString(), lastParent.IsEmpty ? ZeroLastParent : lastParent.ToString(), propagatedTags, additionalValues);
+                return new W3CTraceState(samplingPriority, origin.IsEmpty ? null : origin.ToString(), lastParent.IsEmpty ? ZeroLastParent : lastParent.ToString(), propagatedTags, additionalValues, otTraceState);
             }
             finally
             {
@@ -420,11 +423,24 @@ namespace Datadog.Trace.Propagators
         private static void SplitTraceStateValues(
             ReadOnlySpan<char> header,
             out ReadOnlySpan<char> ddValues,
-            out ReadOnlySpan<char> precedingMembers,
-            out ReadOnlySpan<char> succeedingMembers,
-            out bool hasDdValues)
+            out bool hasDdValues,
+            out ReadOnlySpan<char> otValues,
+            out bool hasOtValues,
+            out ReadOnlySpan<char> firstAdditionalMembers,
+            out ReadOnlySpan<char> secondAdditionalMembers,
+            out ReadOnlySpan<char> thirdAdditionalMembers)
         {
-            ExtractMember(header, "dd=", out ddValues, out precedingMembers, out succeedingMembers, out hasDdValues);
+            ExtractMember(header, "dd=", out ddValues, out var precedingMembers, out var succeedingMembers, out hasDdValues);
+            ExtractMember(precedingMembers, "ot=", out otValues, out firstAdditionalMembers, out secondAdditionalMembers, out hasOtValues);
+
+            if (hasOtValues)
+            {
+                thirdAdditionalMembers = succeedingMembers;
+                return;
+            }
+
+            ExtractMember(succeedingMembers, "ot=", out otValues, out secondAdditionalMembers, out thirdAdditionalMembers, out hasOtValues);
+            firstAdditionalMembers = precedingMembers;
         }
 
         private static void ExtractMember(
@@ -474,23 +490,45 @@ namespace Datadog.Trace.Propagators
         }
 
         private static string? GetAdditionalValues(
-            ReadOnlySpan<char> precedingMembers,
-            ReadOnlySpan<char> succeedingMembers)
+            ReadOnlySpan<char> firstMembers,
+            ReadOnlySpan<char> secondMembers,
+            ReadOnlySpan<char> thirdMembers)
         {
-            if (precedingMembers.IsEmpty)
+            if (firstMembers.IsEmpty)
             {
-                return succeedingMembers.IsEmpty ? null : succeedingMembers.ToString();
+                if (secondMembers.IsEmpty)
+                {
+                    return thirdMembers.IsEmpty ? null : thirdMembers.ToString();
+                }
+
+                return thirdMembers.IsEmpty ? secondMembers.ToString() : CombineMembers(secondMembers, thirdMembers);
             }
 
-            if (succeedingMembers.IsEmpty)
+            if (secondMembers.IsEmpty)
             {
-                return precedingMembers.ToString();
+                return thirdMembers.IsEmpty ? firstMembers.ToString() : CombineMembers(firstMembers, thirdMembers);
             }
 
-            var sb = StringBuilderCache.Acquire(precedingMembers.Length + succeedingMembers.Length + 1);
-            sb.Append(precedingMembers)
+            if (thirdMembers.IsEmpty)
+            {
+                return CombineMembers(firstMembers, secondMembers);
+            }
+
+            var sb = StringBuilderCache.Acquire(firstMembers.Length + secondMembers.Length + thirdMembers.Length + 2);
+            sb.Append(firstMembers)
               .Append(TraceStateHeaderValuesSeparator)
-              .Append(succeedingMembers);
+              .Append(secondMembers)
+              .Append(TraceStateHeaderValuesSeparator)
+              .Append(thirdMembers);
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        private static string CombineMembers(ReadOnlySpan<char> firstMembers, ReadOnlySpan<char> secondMembers)
+        {
+            var sb = StringBuilderCache.Acquire(firstMembers.Length + secondMembers.Length + 1);
+            sb.Append(firstMembers)
+              .Append(TraceStateHeaderValuesSeparator)
+              .Append(secondMembers);
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
