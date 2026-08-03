@@ -21,6 +21,13 @@
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Internal.Datadog.Trace.dll">
+      <HintPath>.\Internal.Datadog.Trace.dll</HintPath>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Reference>
+  </ItemGroup>
+
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Net.Http" />
     <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
