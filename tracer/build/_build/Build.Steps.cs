@@ -1498,7 +1498,20 @@ partial class Build
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
-                                .SetProjectFile(project)));
+                                .SetProjectFile(project)
+                                .When(IsGitlab, settings => settings
+                                    .SetProcessLogOutput(true)
+                                    .SetProcessCustomLogger((type, text) =>
+                                    {
+                                        // The Datadog test logger emits two lines for every successful
+                                        // test. Preserve failures, skips, diagnostics, and summaries while
+                                        // keeping the combined Windows build below GitLab's 4 MiB log limit.
+                                        if (!text.Contains(": STARTED:", StringComparison.Ordinal) &&
+                                            !text.Contains(": SUCCESS:", StringComparison.Ordinal))
+                                        {
+                                            DotNetTasks.DotNetLogger(type, text);
+                                        }
+                                    }))));
                     }
                     catch (Exception ex)
                     {
