@@ -236,6 +236,63 @@ public class FirstChanceExceptionTests
         result.Should().BeFalse();
     }
 
+    [Fact]
+    public void FailingTryDuckCastForMissingMethodRaisesNoFirstChanceException()
+    {
+        Warmup();
+
+        object target = new MissingMethodTarget();
+        using var counter = new FirstChanceExceptionCounter();
+
+        var result = target.TryDuckCast<IMissingMethodProxy>(out _);
+
+        counter.Exceptions.Should().BeEmpty();
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public void FailingTryDuckCastForWrongArgumentTypeRaisesNoFirstChanceException()
+    {
+        Warmup();
+
+        object target = new WrongArgumentTypeTarget();
+        using var counter = new FirstChanceExceptionCounter();
+
+        var result = target.TryDuckCast<IWrongArgumentTypeProxy>(out _);
+
+        counter.Exceptions.Should().BeEmpty();
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public void FailingTryDuckCastForWrongNumberOfArgumentsRaisesNoFirstChanceException()
+    {
+        Warmup();
+
+        object target = new WrongArgumentCountTarget();
+        using var counter = new FirstChanceExceptionCounter();
+
+        var result = target.TryDuckCast<IWrongArgumentCountProxy>(out _);
+
+        counter.Exceptions.Should().BeEmpty();
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public void FailingTryDuckCastForAmbiguousMethodRaisesNoFirstChanceException()
+    {
+        Warmup();
+
+        // Reaches SelectTargetMethod's ambiguous-match path rather than a CreateMethods check.
+        object target = new AmbiguousMethodTarget();
+        using var counter = new FirstChanceExceptionCounter();
+
+        var result = target.TryDuckCast<IAmbiguousMethodProxy>(out _);
+
+        counter.Exceptions.Should().BeEmpty();
+        result.Should().BeFalse();
+    }
+
     /// <summary>
     /// The throwing entry points keep throwing, and must still raise exactly one first-chance exception -
     /// from the rethrow at the call site, outside the Lazy value factory, where it is safe.
@@ -347,6 +404,26 @@ public class FirstChanceExceptionTests
         string Field { get; set; }
     }
 
+    public interface IMissingMethodProxy
+    {
+        string NotOnTheTarget();
+    }
+
+    public interface IWrongArgumentTypeProxy
+    {
+        string Echo(Guid value);
+    }
+
+    public interface IWrongArgumentCountProxy
+    {
+        string Echo(string a, string b, string c);
+    }
+
+    public interface IAmbiguousMethodProxy
+    {
+        object Echo(object value);
+    }
+
     internal class MissingPropertyTarget
     {
         public string Present => "ok";
@@ -388,6 +465,28 @@ public class FirstChanceExceptionTests
     internal class MissingFieldTarget
     {
         public string Present => "ok";
+    }
+
+    internal class MissingMethodTarget
+    {
+        public string Present() => "ok";
+    }
+
+    internal class WrongArgumentTypeTarget
+    {
+        public string Echo(string value) => value;
+    }
+
+    internal class WrongArgumentCountTarget
+    {
+        public string Echo(string a) => a;
+    }
+
+    internal class AmbiguousMethodTarget
+    {
+        public string Echo(string value) => value;
+
+        public int Echo(int value) => value;
     }
 
     internal class ReadonlyFieldTarget
