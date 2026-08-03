@@ -20,6 +20,7 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
@@ -346,6 +347,8 @@ namespace Datadog.Trace
                 return;
             }
 
+            var isLocalRoot = SamplingPriority is null;
+
             // priority (keep/drop) can change (manually, ASM, etc)
             SamplingPriority = priority;
 
@@ -368,15 +371,46 @@ namespace Datadog.Trace
                 Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 
-            // set Knuth sampling rate as a propagated tag for agent and rule-based sampling.
-            // use TryAddTag to preserve the original rate, consistent with AppliedSamplingRate ??= rate above.
+            // set Knuth sampling rate as a propagated tag for agent and rule-based sampling,
+            // and (for OTel interop) derive/erase the "ot=" tracestate rv/th sub-keys.
             if (rate is { } samplingRate && mechanism is Sampling.SamplingMechanism.AgentRate
                                                       or Sampling.SamplingMechanism.LocalTraceSamplingRule
                                                       or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
-                                                      or Sampling.SamplingMechanism.RemoteUserSamplingRule)
+                                                      or Sampling.SamplingMechanism.RemoteUserSamplingRule
+                                                      or Sampling.SamplingMechanism.Default)
             {
                 // format with up to 6 decimal digits, no trailing zeros (per RFC)
                 Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("0.######", CultureInfo.InvariantCulture));
+
+                if (isLocalRoot && sample is { } didSample && RootSpan is { } rootSpan)
+                {
+                    var h = SamplingHelpers.ComputeKnuthHash(rootSpan.TraceId128.Lower);
+                    var rv = (~h) >> 8;
+                    // round-trip the rate through decimal first: samplingRate is a float, and widening it to
+                    // double directly keeps its 32-bit mantissa noise in the low bits of the 56-bit threshold.
+                    var th = (ulong)Math.Round((1.0 - (double)(decimal)samplingRate) * (1UL << 56), MidpointRounding.AwayFromZero);
+
+                    // 64<>56-bit imprecision clamp (design doc Decision 2 / RFC §7):
+                    // force agreement between the (rv, th) pair and DD's actual keep/drop decision.
+                    if (didSample && rv < th)
+                    {
+                        rv = th;
+                    }
+                    else if (!didSample && rv >= th)
+                    {
+                        rv = th - 1;
+                    }
+
+                    // overwrites any inherited rv/th outright; keeps unrecognized sub-keys.
+                    OtelTraceState = OtelTraceStateHelpers.SetRvTh(OtelTraceState, rv, th);
+
+                    // rate-limiter demotion: probability decision said keep (didSample), but the
+                    // final priority is a reject (the limiter is what changed the outcome) -> erase th.
+                    if (didSample && SamplingPriorityValues.IsDrop(p))
+                    {
+                        OtelTraceState = OtelTraceStateHelpers.SetRvTh(OtelTraceState, OtelTraceStateHelpers.ExtractRv(OtelTraceState), th: null);
+                    }
+                }
             }
 
             if (notifyDistributedTracer)
