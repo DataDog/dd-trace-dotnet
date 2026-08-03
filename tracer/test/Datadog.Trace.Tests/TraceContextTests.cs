@@ -7,6 +7,7 @@ using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
@@ -216,6 +217,102 @@ namespace Datadog.Trace.Tests
             var span = tracer.StartSpan("operation");
             span.SetService(null, null);
             span.Finish(); // should not throw
+        }
+
+        [Fact]
+        public void SetSamplingPriority_RootProbabilityKeep_DerivesRvTh_MatchesRfcWorkedExample()
+        {
+            // RFC worked example: trace_id_low64 = 0xfff972474538efff, rate = 0.1
+            // -> ot=rv:ef284ace7a91e1;th:e6666666666668
+            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
+
+            traceContext.SetSamplingPriority(
+                priority: SamplingPriorityValues.UserKeep,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: 0.1f,
+                sample: true);
+
+            traceContext.OtelTraceState.Should().Be("rv:ef284ace7a91e1;th:e6666666666668");
+        }
+
+        [Fact]
+        public void SetSamplingPriority_RootProbabilityDrop_StillEmitsTh()
+        {
+            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
+
+            traceContext.SetSamplingPriority(
+                priority: SamplingPriorityValues.UserReject,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: 0.1f,
+                sample: false);
+
+            traceContext.OtelTraceState.Should().Contain("th:e6666666666668");
+        }
+
+        [Fact]
+        public void SetSamplingPriority_ImprecisionClamp_ForcesAgreementWithDdDecision()
+        {
+            // RFC §3 example: trace_id_low64 = 0x03a93ee8b1999f00, rate = 0.1 disagrees pre-clamp
+            var traceIdLower = 0x03a93ee8b1999f00UL;
+            var sample = SamplingHelpers.SampleByRate(traceIdLower, 0.1);
+            var traceContext = CreateTraceContextWithRootSpan(traceIdLower);
+
+            traceContext.SetSamplingPriority(
+                priority: sample ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: 0.1f,
+                sample: sample);
+
+            var rv = OtelTraceStateHelpers.ExtractRv(traceContext.OtelTraceState)!.Value;
+            var th = ParseThForTest(traceContext.OtelTraceState);
+            (rv >= th).Should().Be(sample); // post-clamp, rv>=th must agree with DD's actual keep/drop decision
+        }
+
+        [Fact]
+        public void SetSamplingPriority_NonProbabilityMechanism_DoesNotDeriveOtelTraceState()
+        {
+            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 1);
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
+
+            traceContext.OtelTraceState.Should().BeNull();
+        }
+
+        [Fact]
+        public void SetSamplingPriority_RateLimiterDemotesKeep_StripsThButKeepsRv()
+        {
+            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
+
+            // sample=true (probability said keep) but final priority is UserReject (limiter demoted it)
+            traceContext.SetSamplingPriority(
+                priority: SamplingPriorityValues.UserReject,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: 0.1f,
+                limiterRate: 0.05f,
+                sample: true);
+
+            traceContext.OtelTraceState.Should().Be("rv:ef284ace7a91e1");
+        }
+
+        private static TraceContext CreateTraceContextWithRootSpan(ulong traceIdLower)
+        {
+            var traceContext = new TraceContext(new StubDatadogTracer());
+            var rootSpan = new Span(new SpanContext(traceIdLower, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            traceContext.AddSpan(rootSpan);
+            return traceContext;
+        }
+
+        private static ulong ParseThForTest(string otelTraceState)
+        {
+            foreach (var item in otelTraceState.Split(';'))
+            {
+                if (item.StartsWith("th:", StringComparison.Ordinal))
+                {
+                    return Convert.ToUInt64(item.Substring(3), 16);
+                }
+            }
+
+            throw new InvalidOperationException("no th found");
         }
     }
 }
