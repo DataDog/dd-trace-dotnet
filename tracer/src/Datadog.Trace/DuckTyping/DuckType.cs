@@ -183,8 +183,6 @@ namespace Datadog.Trace.DuckTyping
 
             lock (Locker)
             {
-                var errors = new ProxyBuildErrors();
-
                 try
                 {
                     ModuleBuilder? moduleBuilder = null;
@@ -199,9 +197,7 @@ namespace Datadog.Trace.DuckTyping
                     if (proxyDefinitionType.IsValueType)
                     {
                         // Create Fields and Properties from the struct information
-                        CreatePropertiesFromStruct(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField, errors);
-
-                        if (errors.Error is { } structError)
+                        if (CreatePropertiesFromStruct(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField) is { } structError)
                         {
                             return Failed(structError);
                         }
@@ -214,19 +210,26 @@ namespace Datadog.Trace.DuckTyping
 
                         // Create Type
                         Type proxyType = proxyTypeBuilder!.CreateTypeInfo()!.AsType();
-                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, CreateStructCopyMethod(moduleBuilder, proxyDefinitionType, proxyType, targetType), null);
+
+                        if (CreateStructCopyMethod(moduleBuilder, proxyDefinitionType, proxyType, targetType, out var structActivator) is { } copyError)
+                        {
+                            return Failed(copyError);
+                        }
+
+                        return new CreateTypeResult(proxyDefinitionType, proxyType, targetType, structActivator, null);
                     }
                     else
                     {
                         // Create Fields and Properties
-                        CreateProperties(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField, errors);
+                        if (CreateProperties(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField) is { } propertyError)
+                        {
+                            return Failed(propertyError);
+                        }
 
                         // Create Methods
-                        CreateMethods(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField, errors);
-
-                        if (errors.Error is { } error)
+                        if (CreateMethods(proxyTypeBuilder, proxyDefinitionType, targetType, instanceField) is { } methodError)
                         {
-                            return Failed(error);
+                            return Failed(methodError);
                         }
 
                         if (dryRun)
@@ -276,8 +279,6 @@ namespace Datadog.Trace.DuckTyping
 
             lock (Locker)
             {
-                var errors = new ProxyBuildErrors();
-
                 try
                 {
                     // We can't reverse proxy a struct
@@ -303,17 +304,18 @@ namespace Datadog.Trace.DuckTyping
                     }
 
                     // Create Fields and Properties
-                    CreateReverseProxyProperties(proxyTypeBuilder, typeToDeriveFrom, typeToDelegateTo, instanceField, errors);
+                    if (CreateReverseProxyProperties(proxyTypeBuilder, typeToDeriveFrom, typeToDelegateTo, instanceField) is { } propertyError)
+                    {
+                        return Failed(propertyError);
+                    }
 
                     // Create Methods
-                    CreateReverseProxyMethods(proxyTypeBuilder, typeToDeriveFrom, typeToDelegateTo, instanceField, errors);
+                    if (CreateReverseProxyMethods(proxyTypeBuilder, typeToDeriveFrom, typeToDelegateTo, instanceField) is { } methodError)
+                    {
+                        return Failed(methodError);
+                    }
 
                     AddCustomAttributes(proxyTypeBuilder, typeToDelegateTo, dryRun);
-
-                    if (errors.Error is { } error)
-                    {
-                        return Failed(error);
-                    }
 
                     if (dryRun)
                     {
@@ -653,8 +655,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="proxyDefinitionType">The type we're inheriting from/implementing</param>
         /// <param name="targetType">The original type of the instance we're duck typing</param>
         /// <param name="instanceField">The field for accessing the instance of the <paramref name="targetType"/></param>
-        /// <param name="errors">Collects the first proxy incompatibility found, so it can be returned instead of thrown</param>
-        private static void CreateProperties(TypeBuilder? proxyTypeBuilder, Type proxyDefinitionType, Type targetType, FieldInfo? instanceField, ProxyBuildErrors errors)
+        private static DuckTypeException? CreateProperties(TypeBuilder? proxyTypeBuilder, Type proxyDefinitionType, Type targetType, FieldInfo? instanceField)
         {
             // Gets all properties to be implemented
             List<PropertyInfo> proxyTypeProperties = GetProperties(proxyDefinitionType);
@@ -670,7 +671,7 @@ namespace Datadog.Trace.DuckTyping
                 // Check if proxy is a reverse method (shouldn't be called from here)
                 if (proxyProperty.GetCustomAttribute<DuckReverseMethodAttribute>(true) is not null)
                 {
-                    DuckTypeIncorrectReversePropertyUsageException.Throw(proxyProperty);
+                    return DuckTypeIncorrectReversePropertyUsageException.Create(proxyProperty);
                 }
 
                 PropertyBuilder? propertyBuilder = null;
@@ -706,7 +707,7 @@ namespace Datadog.Trace.DuckTyping
                                 var getMethod = proxyProperty.GetMethod;
                                 if (getMethod.IsAbstract || getMethod.IsVirtual)
                                 {
-                                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name, targetType);
+                                    return DuckTypePropertyOrFieldNotFoundException.Create(proxyProperty.Name, duckAttribute.Name, targetType);
                                 }
                             }
 
@@ -715,7 +716,7 @@ namespace Datadog.Trace.DuckTyping
                                 var setMethod = proxyProperty.SetMethod;
                                 if (setMethod.IsAbstract || setMethod.IsVirtual)
                                 {
-                                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name, targetType);
+                                    return DuckTypePropertyOrFieldNotFoundException.Create(proxyProperty.Name, duckAttribute.Name, targetType);
                                 }
                             }
 
@@ -729,18 +730,21 @@ namespace Datadog.Trace.DuckTyping
                             // Check if the target property can be read
                             if (!targetProperty.CanRead)
                             {
-                                DuckTypePropertyCantBeReadException.Throw(targetProperty);
+                                return DuckTypePropertyCantBeReadException.Create(targetProperty);
                             }
 
-                            MethodBuilder? getMethodBuilder = GetPropertyGetMethod(
+                            if (GetPropertyGetMethod(
                                 proxyTypeBuilder,
                                 targetType: targetType,
                                 proxyMember: proxyProperty,
                                 targetProperty: targetProperty,
                                 instanceField: instanceField,
-                                errors: errors,
+                                proxyMethodResult: out var getMethodBuilder,
                                 duckCastInnerToOuterFunc: MethodIlHelper.AddIlToDuckChain,
-                                needsDuckChaining: NeedsDuckChaining);
+                                needsDuckChaining: NeedsDuckChaining) is { } getError)
+                            {
+                                return getError;
+                            }
 
                             if (getMethodBuilder is not null)
                             {
@@ -753,24 +757,27 @@ namespace Datadog.Trace.DuckTyping
                             // Check if the target property can be written
                             if (!targetProperty.CanWrite)
                             {
-                                DuckTypePropertyCantBeWrittenException.Throw(targetProperty);
+                                return DuckTypePropertyCantBeWrittenException.Create(targetProperty);
                             }
 
                             // Check if the target property declaring type is an struct (structs modification is not supported)
                             if (targetProperty.DeclaringType?.IsValueType == true)
                             {
-                                DuckTypeStructMembersCannotBeChangedException.Throw(targetProperty.DeclaringType);
+                                return DuckTypeStructMembersCannotBeChangedException.Create(targetProperty.DeclaringType);
                             }
 
-                            MethodBuilder? setMethodBuilder = GetPropertySetMethod(
+                            if (GetPropertySetMethod(
                                 proxyTypeBuilder,
                                 targetType: targetType,
                                 proxyMember: proxyProperty,
                                 targetProperty: targetProperty,
                                 instanceField: instanceField,
-                                errors: errors,
+                                proxyMethodResult: out var setMethodBuilder,
                                 duckCastOuterToInner: MethodIlHelper.AddIlToExtractDuckType,
-                                needsDuckChaining: NeedsDuckChaining);
+                                needsDuckChaining: NeedsDuckChaining) is { } setError)
+                            {
+                                return setError;
+                            }
 
                             if (setMethodBuilder is not null)
                             {
@@ -795,15 +802,18 @@ namespace Datadog.Trace.DuckTyping
 
                         if (targetField is null)
                         {
-                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name, targetType);
-                            continue;
+                            return DuckTypePropertyOrFieldNotFoundException.Create(proxyProperty.Name, duckAttribute.Name, targetType);
                         }
 
                         propertyBuilder = proxyTypeBuilder?.DefineProperty(proxyProperty.Name, PropertyAttributes.None, proxyProperty.PropertyType, null);
 
                         if (proxyProperty.CanRead)
                         {
-                            MethodBuilder? getMethodBuilder = GetFieldGetMethod(proxyTypeBuilder, targetType, proxyProperty, targetField, instanceField, errors);
+                            if (GetFieldGetMethod(proxyTypeBuilder, targetType, proxyProperty, targetField, instanceField, out var getMethodBuilder) is { } getError)
+                            {
+                                return getError;
+                            }
+
                             if (getMethodBuilder is not null)
                             {
                                 propertyBuilder?.SetGetMethod(getMethodBuilder);
@@ -815,16 +825,20 @@ namespace Datadog.Trace.DuckTyping
                             // Check if the target field is marked as InitOnly (readonly) and throw an exception in that case
                             if ((targetField.Attributes & FieldAttributes.InitOnly) != 0)
                             {
-                                DuckTypeFieldIsReadonlyException.Throw(targetField);
+                                return DuckTypeFieldIsReadonlyException.Create(targetField);
                             }
 
                             // Check if the target field declaring type is an struct (structs modification is not supported)
                             if (targetField.DeclaringType?.IsValueType == true)
                             {
-                                DuckTypeStructMembersCannotBeChangedException.Throw(targetField.DeclaringType);
+                                return DuckTypeStructMembersCannotBeChangedException.Create(targetField.DeclaringType);
                             }
 
-                            MethodBuilder? setMethodBuilder = GetFieldSetMethod(proxyTypeBuilder, targetType, proxyProperty, targetField, instanceField, errors);
+                            if (GetFieldSetMethod(proxyTypeBuilder, targetType, proxyProperty, targetField, instanceField, out var setMethodBuilder) is { } setError)
+                            {
+                                return setError;
+                            }
+
                             if (setMethodBuilder is not null)
                             {
                                 propertyBuilder?.SetSetMethod(setMethodBuilder);
@@ -834,6 +848,8 @@ namespace Datadog.Trace.DuckTyping
                         break;
                 }
             }
+
+            return null;
         }
 
         /// <summary>
@@ -843,8 +859,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="typeToDeriveFrom">The type we're inheriting from/implementing</param>
         /// <param name="typeToDelegateTo">The type we're delegating the implementation too</param>
         /// <param name="instanceField">The field for accessing the instance of the <paramref name="typeToDelegateTo"/></param>
-        /// <param name="errors">Collects the first proxy incompatibility found, so it can be returned instead of thrown</param>
-        private static void CreateReverseProxyProperties(TypeBuilder? proxyTypeBuilder, Type typeToDeriveFrom, Type typeToDelegateTo, FieldInfo? instanceField, ProxyBuildErrors errors)
+        private static DuckTypeException? CreateReverseProxyProperties(TypeBuilder? proxyTypeBuilder, Type typeToDeriveFrom, Type typeToDelegateTo, FieldInfo? instanceField)
         {
             var propertiesThatShouldBeImplemented = GetReverseProperties(typeToDeriveFrom);
 
@@ -889,15 +904,18 @@ namespace Datadog.Trace.DuckTyping
                         DuckTypePropertyCantBeReadException.Throw(overriddenProperty);
                     }
 
-                    MethodBuilder? getMethodBuilder = GetPropertyGetMethod(
+                    if (GetPropertyGetMethod(
                         proxyTypeBuilder,
                         targetType: typeToDeriveFrom,
                         proxyMember: overriddenProperty,
                         targetProperty: implementationProperty,
                         instanceField: instanceField,
-                        errors: errors,
+                        proxyMethodResult: out var getMethodBuilder,
                         duckCastInnerToOuterFunc: MethodIlHelper.AddIlToExtractDuckType,
-                        needsDuckChaining: MethodIlHelper.NeedsDuckChainingReverse);
+                        needsDuckChaining: MethodIlHelper.NeedsDuckChainingReverse) is { } getError)
+                    {
+                        return getError;
+                    }
 
                     if (getMethodBuilder is not null)
                     {
@@ -919,15 +937,18 @@ namespace Datadog.Trace.DuckTyping
                         DuckTypeStructMembersCannotBeChangedException.Throw(overriddenProperty.DeclaringType);
                     }
 
-                    MethodBuilder? setMethodBuilder = GetPropertySetMethod(
+                    if (GetPropertySetMethod(
                         proxyTypeBuilder,
                         targetType: typeToDeriveFrom,
                         proxyMember: overriddenProperty,
                         targetProperty: implementationProperty,
                         instanceField: instanceField,
-                        errors: errors,
+                        proxyMethodResult: out var setMethodBuilder,
                         duckCastOuterToInner: MethodIlHelper.AddIlToDuckChain,
-                        needsDuckChaining: MethodIlHelper.NeedsDuckChainingReverse);
+                        needsDuckChaining: MethodIlHelper.NeedsDuckChainingReverse) is { } setError)
+                    {
+                        return setError;
+                    }
 
                     if (setMethodBuilder is not null)
                     {
@@ -958,6 +979,8 @@ namespace Datadog.Trace.DuckTyping
             {
                 DuckTypeReverseProxyMissingPropertyImplementationException.Throw(propertiesThatShouldBeImplemented);
             }
+
+            return null;
         }
 
         /// <summary>
@@ -967,8 +990,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="proxyDefinitionType">The custom type we defined</param>
         /// <param name="targetType">The original type we are proxying</param>
         /// <param name="instanceField">The field for accessing the instance of the <paramref name="targetType"/></param>
-        /// <param name="errors">Collects the first proxy incompatibility found, so it can be returned instead of thrown</param>
-        private static void CreatePropertiesFromStruct(TypeBuilder? proxyTypeBuilder, Type proxyDefinitionType, Type targetType, FieldInfo? instanceField, ProxyBuildErrors errors)
+        private static DuckTypeException? CreatePropertiesFromStruct(TypeBuilder? proxyTypeBuilder, Type proxyDefinitionType, Type targetType, FieldInfo? instanceField)
         {
             // Gets all fields to be copied
             foreach (FieldInfo proxyFieldInfo in proxyDefinitionType.GetFields())
@@ -1014,27 +1036,29 @@ namespace Datadog.Trace.DuckTyping
                                 goto case DuckKind.Field;
                             }
 
-                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
-                            continue;
+                            return DuckTypePropertyOrFieldNotFoundException.Create(proxyFieldInfo.Name, duckAttribute.Name, targetType);
                         }
 
                         // Check if the target property can be read
                         if (!targetProperty.CanRead)
                         {
-                            DuckTypePropertyCantBeReadException.Throw(targetProperty);
+                            return DuckTypePropertyCantBeReadException.Create(targetProperty);
                         }
 
                         propertyBuilder = proxyTypeBuilder?.DefineProperty(proxyFieldInfo.Name, PropertyAttributes.None, proxyFieldInfo.FieldType, null);
 
-                        getMethodBuilder = GetPropertyGetMethod(
+                        if (GetPropertyGetMethod(
                             proxyTypeBuilder,
                             targetType: targetType,
                             proxyMember: proxyFieldInfo,
                             targetProperty: targetProperty,
                             instanceField: instanceField,
-                            errors: errors,
+                            proxyMethodResult: out getMethodBuilder,
                             duckCastInnerToOuterFunc: MethodIlHelper.AddIlToDuckChain,
-                            needsDuckChaining: NeedsDuckChaining);
+                            needsDuckChaining: NeedsDuckChaining) is { } getError)
+                        {
+                            return getError;
+                        }
 
                         if (getMethodBuilder is not null)
                         {
@@ -1058,12 +1082,15 @@ namespace Datadog.Trace.DuckTyping
 
                         if (targetField is null)
                         {
-                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
-                            continue;
+                            return DuckTypePropertyOrFieldNotFoundException.Create(proxyFieldInfo.Name, duckAttribute.Name, targetType);
                         }
 
                         propertyBuilder = proxyTypeBuilder?.DefineProperty(proxyFieldInfo.Name, PropertyAttributes.None, proxyFieldInfo.FieldType, null);
-                        getMethodBuilder = GetFieldGetMethod(proxyTypeBuilder, targetType, proxyFieldInfo, targetField, instanceField, errors);
+                        if (GetFieldGetMethod(proxyTypeBuilder, targetType, proxyFieldInfo, targetField, instanceField, out getMethodBuilder) is { } fieldGetError)
+                        {
+                            return fieldGetError;
+                        }
+
                         if (getMethodBuilder is not null)
                         {
                             propertyBuilder?.SetGetMethod(getMethodBuilder);
@@ -1072,6 +1099,8 @@ namespace Datadog.Trace.DuckTyping
                         break;
                 }
             }
+
+            return null;
         }
 
         private static Delegate GetCreateProxyInstanceDelegate(ModuleBuilder? moduleBuilder, Type proxyDefinitionType, Type proxyType, Type targetType)
@@ -1110,8 +1139,9 @@ namespace Datadog.Trace.DuckTyping
             return createProxyMethod.CreateDelegate(delegateType);
         }
 
-        private static Delegate CreateStructCopyMethod(ModuleBuilder? moduleBuilder, Type proxyDefinitionType, Type proxyType, Type targetType)
+        private static DuckTypeDuckCopyStructDoesNotContainsAnyField? CreateStructCopyMethod(ModuleBuilder? moduleBuilder, Type proxyDefinitionType, Type proxyType, Type targetType, out Delegate? activator)
         {
+            activator = null;
             ConstructorInfo ctor = proxyType.GetConstructors()[0];
 
             DynamicMethod createStructMethod = new DynamicMethod(
@@ -1172,11 +1202,12 @@ namespace Datadog.Trace.DuckTyping
 
             if (!containsFields && proxyDefinitionType.GetProperties().Length != 0)
             {
-                DuckTypeDuckCopyStructDoesNotContainsAnyField.Throw(proxyDefinitionType);
+                return DuckTypeDuckCopyStructDoesNotContainsAnyField.Create(proxyDefinitionType);
             }
 
             Type delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
-            return createStructMethod.CreateDelegate(delegateType);
+            activator = createStructMethod.CreateDelegate(delegateType);
+            return null;
         }
 
         private static PropertyInfo? GetTargetPropertyOrIndex(Type targetType, string propertyName, BindingFlags bindingFlags, PropertyInfo proxyPropertyInfo)
