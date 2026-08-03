@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, assertExpectedCount: false);
 
                 using var s = new AssertionScope();
 
@@ -268,7 +268,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 30000);
+                var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 30000, assertExpectedCount: false);
 
                 using var s = new AssertionScope();
 

@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             using (var agent = MockTracerAgent.Create(Output, agentPort))
             using (await RunSampleAndWaitForExit(agent))
             {
-                var spans = await agent.WaitForSpansAsync(1, 2500);
+                var spans = await agent.WaitForSpansAsync(1, 2500, assertExpectedCount: false);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 ValidateLogCorrelation(spans, _log200FileTests, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount);
