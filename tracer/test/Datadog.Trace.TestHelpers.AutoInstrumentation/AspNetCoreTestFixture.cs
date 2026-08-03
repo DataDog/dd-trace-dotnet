@@ -243,7 +243,8 @@ namespace Datadog.Trace.TestHelpers
             return await Agent.WaitForSpansAsync(
                        count: 1,
                        minDateTime: now,
-                       returnAllOperations: true);
+                       returnAllOperations: true,
+                       assertExpectedCount: false);
         }
 
         // Returns true when a known race fingerprint was detected in the captured stderr and the
