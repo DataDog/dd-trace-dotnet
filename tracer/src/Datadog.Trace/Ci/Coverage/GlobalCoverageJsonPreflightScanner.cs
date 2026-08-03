@@ -144,22 +144,7 @@ internal sealed class GlobalCoverageJsonPreflightScanner
             ref var parent = ref _frames[_depth - 1];
             if (parent.Kind == ContainerKind.Array)
             {
-                if (kind == ContainerKind.Object && parent.ArrayKind == ArrayKind.Components)
-                {
-                    _componentCount = checked(_componentCount + 1);
-                    if (_componentCount > _limits.MaximumComponents)
-                    {
-                        throw new InvalidDataException("The global coverage component limit was exceeded.");
-                    }
-                }
-                else if (kind == ContainerKind.Object && parent.ArrayKind == ArrayKind.Files)
-                {
-                    _entryCount = checked(_entryCount + 1);
-                    if (_entryCount > _limits.MaximumEntries)
-                    {
-                        throw new InvalidDataException("The global coverage entry limit was exceeded.");
-                    }
-                }
+                OnArrayElement(kind == ContainerKind.Object);
             }
             else if (kind == ContainerKind.Array)
             {
@@ -204,6 +189,8 @@ internal sealed class GlobalCoverageJsonPreflightScanner
 
     private void ReadStringToken()
     {
+        OnArrayElement(isObject: false);
+
         var isProperty = _depth > 0 &&
                          _frames[_depth - 1].Kind == ContainerKind.Object &&
                          _frames[_depth - 1].ExpectingProperty;
@@ -401,6 +388,8 @@ internal sealed class GlobalCoverageJsonPreflightScanner
 
     private void ReadScalarToken(char firstCharacter)
     {
+        OnArrayElement(isObject: false);
+
         var length = 1;
         var character = firstCharacter;
         while (true)
@@ -431,6 +420,44 @@ internal sealed class GlobalCoverageJsonPreflightScanner
         if (_depth > 0 && _frames[_depth - 1].Kind == ContainerKind.Object)
         {
             _frames[_depth - 1].PendingProperty = PropertyKind.Unknown;
+        }
+    }
+
+    private void OnArrayElement(bool isObject)
+    {
+        if (_depth == 0 || _frames[_depth - 1].Kind != ContainerKind.Array)
+        {
+            return;
+        }
+
+        switch (_frames[_depth - 1].ArrayKind)
+        {
+            case ArrayKind.Components:
+                if (!isObject)
+                {
+                    throw new InvalidDataException("The global coverage input contains a non-object component.");
+                }
+
+                _componentCount = checked(_componentCount + 1);
+                if (_componentCount > _limits.MaximumComponents)
+                {
+                    throw new InvalidDataException("The global coverage component limit was exceeded.");
+                }
+
+                break;
+            case ArrayKind.Files:
+                if (!isObject)
+                {
+                    throw new InvalidDataException("The global coverage input contains a non-object file.");
+                }
+
+                _entryCount = checked(_entryCount + 1);
+                if (_entryCount > _limits.MaximumEntries)
+                {
+                    throw new InvalidDataException("The global coverage entry limit was exceeded.");
+                }
+
+                break;
         }
     }
 

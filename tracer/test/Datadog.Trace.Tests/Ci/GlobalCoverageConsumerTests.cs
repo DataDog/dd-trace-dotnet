@@ -106,6 +106,23 @@ public class GlobalCoverageConsumerTests
     }
 
     [Theory]
+    [InlineData("{\"components\":[null]}")]
+    [InlineData("{\"components\":[\"component\"]}")]
+    [InlineData("{\"components\":[[]]}")]
+    [InlineData("{\"components\":[{\"name\":\"component\",\"files\":[null]}]}")]
+    [InlineData("{\"components\":[{\"name\":\"component\",\"files\":[\"file\"]}]}")]
+    [InlineData("{\"components\":[{\"name\":\"component\",\"files\":[[]]}]}")]
+    public void PreflightRejectsNonObjectCoverageEntries(string json)
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+        var scanner = new GlobalCoverageJsonPreflightScanner(CreateSmallLimits(maximumBitmapBytes: 8, maximumIdentityCharacters: 128));
+
+        var action = () => scanner.Scan(stream);
+
+        action.Should().Throw<InvalidDataException>();
+    }
+
+    [Theory]
     [InlineData("{\"components\":[{\"name\":\"c\",\"files\":[{\"path\":\"p\",\"executableBitmap\":\"gA==\",\"executedBitmap\":\"/w==\"}]}]}")]
     [InlineData("{\"components\":[{\"name\":\"c\",\"files\":[{\"path\":\"p\",\"executedBitmap\":\"gA==\"}]}]}")]
     [InlineData("{\"components\":[{\"name\":\"c\",\"files\":[{\"path\":\"p\",\"executableBitmap\":\"gA==\",\"executedBitmap\":\"gAA=\"}]}]}")]
