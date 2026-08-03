@@ -408,7 +408,8 @@ namespace Datadog.Trace.Tests.Agent
             agent.BackBuffer.SpanCount.Should().Be(1);
 
             agent.DroppedTracesBufferFull.Should().Be(1);
-            agent.DroppedTracesBufferLocked.Should().Be(0);
+            agent.DroppedTracesBufferFullAndLocked.Should().Be(0);
+            agent.DroppedTracesBuffersLocked.Should().Be(0);
             agent.DroppedTracesTooLarge.Should().Be(0);
 
             // Dropped trace should have been reported to statsd
@@ -434,7 +435,29 @@ namespace Datadog.Trace.Tests.Agent
             agent.WriteTrace(CreateTraceChunk(1));
 
             agent.DroppedTracesBufferFull.Should().Be(0);
-            agent.DroppedTracesBufferLocked.Should().Be(1);
+            agent.DroppedTracesBufferFullAndLocked.Should().Be(0);
+            agent.DroppedTracesBuffersLocked.Should().Be(1);
+            agent.DroppedTracesTooLarge.Should().Be(0);
+        }
+
+        [Fact]
+        public void DropTraceWhenOneBufferIsFullAndOneIsLocked()
+        {
+            var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
+            var agent = new AgentWriter(
+                Mock.Of<IApi>(),
+                statsAggregator: null,
+                statsd: TestStatsdManager.NoOp,
+                automaticFlush: false,
+                maxBufferSize: (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1);
+
+            agent.FrontBuffer.Lock().Should().BeTrue();
+            agent.WriteTrace(CreateTraceChunk(1));
+            agent.WriteTrace(CreateTraceChunk(2));
+
+            agent.DroppedTracesBufferFull.Should().Be(0);
+            agent.DroppedTracesBufferFullAndLocked.Should().Be(1);
+            agent.DroppedTracesBuffersLocked.Should().Be(0);
             agent.DroppedTracesTooLarge.Should().Be(0);
         }
 
