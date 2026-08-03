@@ -17,6 +17,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.OpenTelemetry.Traces;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
 {
@@ -62,12 +63,13 @@ namespace Datadog.Trace.Agent
         private long _droppedP0Traces;
         private long _droppedP0Spans;
 
-        private long _droppedTraces;
+        private long _droppedTracesBufferFull;
+        private long _droppedTracesTooLarge;
 
         private bool _traceMetricsEnabled;
 
         public AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, TracerSettings settings)
-            : this(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabled, initialTracerMetricsEnabled: settings.Manager.InitialMutableSettings.TracerMetricsEnabled)
+            : this(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabled, initialTracerMetricsEnabled: settings.Manager.InitialMutableSettings.TracerMetricsEnabled, openTelemetrySemanticsEnabled: settings.OtelSemanticsEnabled)
         {
             settings.Manager.SubscribeToChanges(changes =>
             {
@@ -80,12 +82,12 @@ namespace Datadog.Trace.Agent
             });
         }
 
-        public AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool apmTracingEnabled = true, bool initialTracerMetricsEnabled = false)
-        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval, apmTracingEnabled, initialTracerMetricsEnabled)
+        public AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool apmTracingEnabled = true, bool initialTracerMetricsEnabled = false, bool openTelemetrySemanticsEnabled = false)
+        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval, apmTracingEnabled, initialTracerMetricsEnabled, openTelemetrySemanticsEnabled)
         {
         }
 
-        internal AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval, bool apmTracingEnabled, bool initialTracerMetricsEnabled)
+        internal AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval, bool apmTracingEnabled, bool initialTracerMetricsEnabled, bool openTelemetrySemanticsEnabled)
         {
             _statsAggregator = statsAggregator ?? new NullStatsAggregator();
 
@@ -96,8 +98,8 @@ namespace Datadog.Trace.Agent
 
             ISpanBufferSerializer CreateSpanSerializer() => api.TracesEncoding switch
             {
-                TracesEncoding.OtlpJson => new OtlpTracesJsonSerializer(),
-                TracesEncoding.OtlpProtobuf => new OtlpTracesProtobufSerializer(),
+                TracesEncoding.OtlpJson => new OtlpTracesJsonSerializer(openTelemetrySemanticsEnabled),
+                TracesEncoding.OtlpProtobuf => new OtlpTracesProtobufSerializer(openTelemetrySemanticsEnabled),
                 _ => new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance),
             };
 
@@ -130,6 +132,12 @@ namespace Datadog.Trace.Agent
         internal SpanBuffer FrontBuffer => _frontBuffer;
 
         internal SpanBuffer BackBuffer => _backBuffer;
+
+        // For tests only
+        internal long DroppedTracesBufferFull => Volatile.Read(ref _droppedTracesBufferFull);
+
+        // For tests only
+        internal long DroppedTracesTooLarge => Volatile.Read(ref _droppedTracesTooLarge);
 
         public bool CanComputeStats => _apmTracingEnabled && _statsAggregator.CanComputeStats == true;
 
@@ -345,11 +353,23 @@ namespace Datadog.Trace.Agent
                         }
                     }
 
-                    var droppedTraces = Interlocked.Exchange(ref _droppedTraces, 0);
+                    var droppedTracesTooLarge = Interlocked.Exchange(ref _droppedTracesTooLarge, 0);
 
-                    if (droppedTraces > 0)
+                    if (droppedTracesTooLarge > 0)
                     {
-                        Log.Warning("{Count} traces were dropped since the last flush operation.", droppedTraces);
+                        Log.Warning<long, int>(
+                            "{Count} traces were dropped because their serialized size exceeded the trace buffer limit of {MaxBufferSize} bytes since the last flush operation.",
+                            droppedTracesTooLarge,
+                            _frontBuffer.MaxBufferSize);
+                    }
+
+                    var droppedTracesBufferFull = Interlocked.Exchange(ref _droppedTracesBufferFull, 0);
+
+                    if (droppedTracesBufferFull > 0)
+                    {
+                        Log.Warning<long>(
+                            "{Count} traces were dropped because both trace buffers were full or unavailable since the last flush operation.",
+                            droppedTracesBufferFull);
                     }
 
                     if (buffer.TraceCount > 0)
@@ -520,7 +540,7 @@ namespace Datadog.Trace.Agent
             if (writeStatus == SpanBuffer.WriteStatus.Overflow)
             {
                 // The trace is too big for the buffer, no point in trying again
-                DropTrace(chunk.Count);
+                DropTrace(chunk.Count, MetricTags.DropReason.TraceTooLarge);
                 return;
             }
 
@@ -532,23 +552,44 @@ namespace Datadog.Trace.Agent
                 // One buffer is full, request an eager flush
                 RequestFlush();
 
-                if (buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority) == SpanBuffer.WriteStatus.Success)
+                writeStatus = buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority);
+
+                if (writeStatus == SpanBuffer.WriteStatus.Success)
                 {
                     // Serialization to the secondary buffer succeeded
+                    return;
+                }
+
+                if (writeStatus == SpanBuffer.WriteStatus.Overflow)
+                {
+                    // The trace is too big for the buffer
+                    DropTrace(chunk.Count, MetricTags.DropReason.TraceTooLarge);
                     return;
                 }
             }
 
             // All the buffers are full :( drop the trace
-            DropTrace(chunk.Count);
+            DropTrace(chunk.Count, MetricTags.DropReason.OverfullBuffer);
         }
 
-        private void DropTrace(int count)
+        private void DropTrace(int count, MetricTags.DropReason dropReason)
         {
-            Interlocked.Increment(ref _droppedTraces);
+            switch (dropReason)
+            {
+                case MetricTags.DropReason.OverfullBuffer:
+                    Interlocked.Increment(ref _droppedTracesBufferFull);
+                    break;
+                case MetricTags.DropReason.TraceTooLarge:
+                    Interlocked.Increment(ref _droppedTracesTooLarge);
+                    break;
+                default:
+                    ThrowHelper.ThrowArgumentOutOfRangeException(nameof(dropReason), dropReason, "Unexpected trace drop reason");
+                    break;
+            }
+
             _traceKeepRateCalculator.IncrementDrops(1);
-            TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.OverfullBuffer, count);
-            TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.OverfullBuffer);
+            TelemetryFactory.Metrics.RecordCountSpanDropped(dropReason, count);
+            TelemetryFactory.Metrics.RecordCountTraceChunkDropped(dropReason);
 
             if (Volatile.Read(ref _traceMetricsEnabled))
             {

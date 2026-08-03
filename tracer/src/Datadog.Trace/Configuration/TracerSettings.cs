@@ -772,6 +772,9 @@ namespace Datadog.Trace.Configuration
             IsFlaggingProviderEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled)
                                                        .AsBool(false);
 
+            IsSpanEnrichmentEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled)
+                                                       .AsBool(false);
+
             if (source is CompositeConfigurationSource compositeSource)
             {
                 foreach (var nestedSource in compositeSource)
@@ -803,6 +806,17 @@ namespace Datadog.Trace.Configuration
             // Default to false on unsupported TFMs so the StatsD RuntimeMetricsWriter runs as expected.
             OtlpRuntimeMetricsEnabled = false;
 #endif
+
+            // OTEL_TRACES_SPAN_METRICS_ENABLED is a tri-state: explicit true/false overrides auto-detection.
+            // When unset, span metrics are auto-enabled iff OTEL_TRACES_EXPORTER=otlp AND DD_METRICS_OTEL_ENABLED=true.
+            var otelTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsString();
+            var explicitSpanMetrics = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled).AsBool();
+            OtelTracesSpanMetricsEnabled = explicitSpanMetrics
+                ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled);
+
+            OtelSemanticsEnabled = config
+                .WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled)
+                .AsBool(defaultValue: false);
 
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
@@ -859,6 +873,22 @@ namespace Datadog.Trace.Configuration
             _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
 
             Manager = new(source, this, telemetry, errorLog);
+
+            // OTLP span metrics require OTLP trace export (see TracerManagerFactory.GetAgentWriter).
+            // Force to false otherwise, even if explicitly requested.
+            if (OtelTracesSpanMetricsEnabled && !Manager.InitialExporterSettings.IsOtlpTraceExport)
+            {
+                if (explicitSpanMetrics == true)
+                {
+                    Log.Warning(
+                        "{ConfigurationKey} is set to true, but traces are not being exported using OTLP encoding (OTEL_TRACES_EXPORTER={OtelTracesExporter}). OTLP span metrics require OTLP trace export, so this setting has been disabled.",
+                        ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled,
+                        otelTracesExporter);
+                }
+
+                OtelTracesSpanMetricsEnabled = false;
+                telemetry.Record(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled, false, ConfigurationOrigins.Calculated);
+            }
         }
 
         internal bool IsRunningInCiVisibility { get; }
@@ -1249,6 +1279,24 @@ namespace Datadog.Trace.Configuration
         internal bool OtlpRuntimeMetricsEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether OTLP span metrics export is enabled.
+        /// Derived from the tri-state OTEL_TRACES_SPAN_METRICS_ENABLED:
+        /// explicit true/false overrides auto-detection; when unset, enabled iff
+        /// OTEL_TRACES_EXPORTER=otlp and DD_METRICS_OTEL_ENABLED=true.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled"/>
+        internal bool OtelTracesSpanMetricsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether OpenTelemetry semantics mode is enabled.
+        /// When enabled, traces and OTLP span metrics data points will only emit OTel semantic-convention attributes,
+        /// suppressing Datadog-specific attributes.
+        /// Default is <c>false</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
+        internal bool OtelSemanticsEnabled { get; }
+
+        /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpClientExcludedUrlSubstrings"/>
@@ -1440,6 +1488,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether remote Feature Flags Provider is enabled
         /// </summary>
         internal bool IsFlaggingProviderEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether APM span enrichment is enabled; see <see cref="IsFlaggingProviderEnabled"/>.
+        /// </summary>
+        internal bool IsSpanEnrichmentEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether partial flush is enabled

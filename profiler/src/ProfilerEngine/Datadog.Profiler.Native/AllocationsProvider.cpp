@@ -333,9 +333,13 @@ void AllocationsProvider::OnAllocation(std::chrono::nanoseconds timestamp,
     // rawSample.Address = address;
     rawSample.MethodTable = classId;
 
-    // The provided type name contains the metadata-based `xx syntax for generics instead of <>
-    // So rely on the frame store to get a C#-like representation like what is done for frames
-    if (!_pFrameStore->GetTypeName(classId, rawSample.AllocationClass))
+    // classId is 0 for untrusted sources: for ETW on .NET Framework, any local process can connect
+    // to the inbound pipe and forge an AllocationTick with an arbitrary TypeId, so EtwEventsManager
+    // zeroes it and it must never be handed to ICorProfilerInfo here (FrameStore::GetTypeName ->
+    // IsArrayClass / GetClassIDInfo would dereference it as a CLR pointer). For trusted sources
+    // (in-process / EventPipe) it is a genuine ClassID and the frame store yields a nicer
+    // C#-like type name; otherwise we fall back to the transmitted, length-validated type name.
+    if ((classId == 0) || !_pFrameStore->GetTypeName(classId, rawSample.AllocationClass))
     {
         rawSample.AllocationClass = typeName;
     }

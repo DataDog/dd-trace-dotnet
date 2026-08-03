@@ -225,17 +225,19 @@ internal static class RaspModule
             // the blockings, so we report first and then block
             try
             {
-                var matchSuccesCode = result.ReturnCode == WafReturnCode.Match && result.ShouldBlock ?
+                // since libddwaf 2.x a run that only produces attributes or actions also returns
+                // DDWAF_MATCH, so the rule match metrics have to go by the event aware status
+                var matchSuccesCode = result.ShouldReportSecurityResult && result.ShouldBlock ?
                     BlockType.Success : BlockType.Irrelevant;
 
-                securityCoordinator.Value.ReportAndBlock(result, () => RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout, matchSuccesCode));
+                securityCoordinator.Value.ReportAndBlock(result, () => RecordRaspTelemetry(address, result.ShouldReportSecurityResult, result.Timeout, matchSuccesCode));
             }
             catch (Exception ex) when (ex is not BlockException)
             {
-                var matchFailureCode = result.ReturnCode == WafReturnCode.Match && result.ShouldBlock ?
+                var matchFailureCode = result.ShouldReportSecurityResult && result.ShouldBlock ?
                     BlockType.Failure : BlockType.Irrelevant;
 
-                RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout, matchFailureCode);
+                RecordRaspTelemetry(address, result.ShouldReportSecurityResult, result.Timeout, matchFailureCode);
                 Log.Error(ex, "RASP: Error while reporting and blocking.");
             }
         }

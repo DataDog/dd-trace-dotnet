@@ -33,7 +33,7 @@
       "hash": -1084027092,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.Controllers.IastController",
+        "class": "Samples.Security.AspNetCore5.Controllers.IastController",
         "method": "TypeReflectionInjection"
       },
       "evidence": {
@@ -79,6 +79,9 @@
       env: integration_tests,
       language: dotnet,
       span.kind: server
+    },
+    Metrics: {
+      _dd.apm.enabled: 0.0
     }
   }
 ]

@@ -27,7 +27,8 @@
       "hash": -2097573301,
       "location": {
         "spanId": XXX,
-        "path": "ASP._Page_Views_Iast_ReflectedXss_cshtml",
+        "path": "ReflectedXss.cshtml",
+        "class": "ASP._Page_Views_Iast_ReflectedXss_cshtml",
         "method": "Execute",
         "line": XXX
       },

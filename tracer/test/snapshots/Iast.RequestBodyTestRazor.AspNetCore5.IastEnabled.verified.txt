@@ -33,7 +33,7 @@
       "hash": 1750686827,
       "location": {
         "spanId": XXX,
-        "path": "Samples.Security.AspNetCore5.DataRazorIastPageModel",
+        "class": "Samples.Security.AspNetCore5.DataRazorIastPageModel",
         "method": "OnPost"
       },
       "evidence": {

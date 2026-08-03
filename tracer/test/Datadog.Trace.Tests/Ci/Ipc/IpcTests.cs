@@ -72,7 +72,7 @@ public class IpcTests
 
         client.TrySendMessage(new TestMessage(0, 0));
 
-        var delayTask = Task.Delay(30_000);
+        var delayTask = Task.Delay(40_000);
         var ipcTasks = Task.WhenAll(serverTaskCompletion.Task, clientTaskCompletion.Task);
         if (await Task.WhenAny(ipcTasks, delayTask) == delayTask)
         {

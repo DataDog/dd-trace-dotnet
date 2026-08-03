@@ -114,6 +114,11 @@ internal static class MetaStructHelper
                         locationDict["path"] = location.Path;
                     }
 
+                    if (location.Class is { Length: > 0 })
+                    {
+                        locationDict["class"] = location.Class;
+                    }
+
                     if (location.Method is { Length: > 0 })
                     {
                         locationDict["method"] = location.Method;

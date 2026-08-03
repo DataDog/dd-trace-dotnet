@@ -51,6 +51,124 @@
 
 
 
+
+
+## [Release 3.50.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.50.0)
+
+## Summary
+
+- [Tracing] Add support for Serilog 4.4.0
+- [Test Optimization] Add support for MSTest 4.3.0
+- [ASM] Handle billing issues for standonly mode
+- [Dynamic Instrumentation] Redact sensitive values in expression dumps
+
+## Changes
+
+### Tracer
+* [OTLP] Removing the path with OtelTracesSpanMetricsEnabled (#8921)
+* Add support for Serilog 4.4.0 (#8917)
+
+### CI Visibility
+* fix(mstest): support ExecuteTestAsync in 4.3 (#8934)
+
+### ASM
+* [ASM] Set _dd.apm.enabled:0 on all spans (#8923)
+* [IAST] Exclude FSharp.* assemblies from dataflow (#8905)
+* [AppSec] Report agentic onboarding marker in configuration telemetry (RFC-1113) (#8920)
+
+### Continuous Profiler
+* [Profiler] Fix possible namepipe-related issues (#8821)
+
+### Debugger
+* [Debugger] Redact sensitive values in expression dumps (#8879)
+
+### Build / Test
+* Move TestOptimizationFeatureTests to TracerInstanceTestCollection (#8880)
+* [Debugger] Deflake instanceof assembly lookup tests (#8885)
+* chore(benchmarks): migrate benchmarking base image to :newest tag (#8924)
+* Mark CheckProfilesSentThroughNamedPipe Flaky (#8932)
+* Forward BP_EXTERNAL_S3_URL through benchmark CI triggers (#8882)
+* make sure parent env variables are not polluting the test env (#8883)
+* Attempt to fix more flake in System.Data.SqlClient (#8899)
+* Forward BP_EXTERNAL_S3_URL explicitly on benchmark triggers (#8908)
+* clean env variables in the correct place (#8918)
+* [Tests] Skip MySQL and Npgsql tests on database timeouts (#8922)
+* Exclude EndServerAsyncAdd from WCF legacy snapshots (#8927)
+* Fix Azure Service Bus sample restore (#8933)
+
+
+[Changes since 3.49.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.49.0...v3.50.0)
+
+## [Release 3.49.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.49.0)
+
+## Summary
+
+* [OTLP] Add trace metrics via OTLP span metrics export (#8826)
+* Implement span-derived primary tags (AKA Additional tags) on Client-Side-Stats computation (#8766)
+* Implement support for `DD_TAGS` in Client-Side stats (#8823)
+* Add EventBridge DSM producer injection (#8639)
+
+## Changes
+
+### Tracer
+* Refactor GraphQL error response building and add pre-emptive truncation (#8647)
+* Implement span-derived primary tags (AKA Additional tags) on Client-Side-Stats computation (#8766)
+* Minor and performance updates for client-side-stats (#8822)
+* Implement support for `DD_TAGS` in Client-Side stats (#8823)
+* Apply cardinality limits to Client-Side stats implementation (#8824)
+* [OTLP] Add trace metrics via OTLP span metrics export (#8826)
+* Optimise OTEL metrics collection to reduce allocations (#8834)
+* Update `TruncateUTF8` to never split a code point and improve perf (#8836)
+* [Debugger] Log over-length identifier redaction at Warning instead of Error (#8853)
+* Attempt to prevent crash on module unload (#8854)
+
+### ASM
+* [AAP] Add response headers even if no appsec event is present (#8784)
+* [Appsec] Add comments and refs to help out codex reviews when libddwaf is involved (#8831)
+* [BUG] Fix query obfuscation culture invariant (#8850)
+
+### Continuous Profiler
+* [Profiler] Fix live objects age (#8842)
+* Avoid excessive BuggyBits exceptions in endpoint tests (#8881)
+
+### Debugger
+* [Debugger] Define debugger safety guidance (#8817)
+* [Debugger] Prevent expression member access from invoking getters (#8878)
+
+### Fixes
+* Remove config_norm_rules.json tests (#8844)
+
+### Miscellaneous
+*  Add dd-autoinstrumentation CLI with LLM-native structured output (#8313)
+* [Tests] Add Azure Functions Trigger tests for messaging SDKs (#8698)
+* Bump libdatadog to 2.0.0 (~v36.0.0) (#8827)
+* Add bounded cardinality limits for OTEL metrics collection (#8846)
+* update AAS setup guide (#8848)
+
+### Data Streams Monitoring
+* Add EventBridge DSM producer injection (#8639)
+
+### Build / Test
+* [Test] Handle dotnet/runtime#127957 BadImageFormatException fingerprint (#8729)
+* [CI] Add commit-only fallback when resolving serverless/single-step Azure build artifacts (#8782)
+* Flag new major versions of NuGets we don't support (#8800)
+* [Test Package Versions Bump] Updating package versions (#8837)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#8838)
+* Remove legacy create_draft_release workflow (#8839)
+* Bump the gh-actions-packages group across 2 directories with 6 updates (#8851)
+* Update CI VMs to use latest images (#8852)
+* Remove unused kafka services from docker-compose.ym (#8855)
+* [Test Package Versions Bump] Updating package versions (#8857)
+* Move webhook url to protected environment (#8863)
+* [Test Package Versions Bump] Updating package versions (#8864)
+* Update `CODEOWNERS` to remove IDM from DSM and expand DSM ownership (#8870)
+* Fix ADO.NET dropped trace test flakes (#8871)
+* Make transaction early-flush writer test deterministic (#8872)
+* [Tests] Handle UTF-16 output from ProcDump v12.01 (#8890)
+
+
+[Changes since 3.48.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.48.0...v3.49.0)
+
 ## [Release 3.48.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.48.0)
 
 ## Summary

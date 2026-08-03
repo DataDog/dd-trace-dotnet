@@ -23,7 +23,12 @@ internal static class OtlpTransportStrategy
 
     public static IApiRequestFactory GetTraces(ExporterSettings settings)
     {
-        return Get(settings.OtlpTracesEndpoint, settings.OtlpTracesProtocol, settings.OtlpTracesHeaders ?? [], settings.OtlpTracesTimeoutMs, "traces");
+        return Get(settings.OtlpTracesEndpoint, settings.OtlpTracesProtocol, settings.OtlpTracesHeaders ?? [], settings.OtlpTracesTimeoutMs, "/v1/traces", "traces");
+    }
+
+    public static IApiRequestFactory GetMetrics(ExporterSettings settings)
+    {
+        return Get(settings.OtlpMetricsEndpoint, settings.OtlpMetricsProtocol, settings.OtlpMetricsHeaders ?? [], settings.OtlpMetricsTimeoutMs, "/v1/metrics", "metrics");
     }
 
     [SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance", Justification = "Different implementation types are returned on for different TFMs")]
@@ -32,6 +37,7 @@ internal static class OtlpTransportStrategy
         OtlpProtocol protocol,
         KeyValuePair<string, string>[] signalHeaders,
         int timeoutMs,
+        string signalPath,
         string productName)
     {
         var httpHeaderHelper = new OtlpHeaderHelper(signalHeaders);
@@ -41,7 +47,7 @@ internal static class OtlpTransportStrategy
             var socketPath = signalEndpoint.PathAndQuery;
             var endpointPath = protocol switch
             {
-                OtlpProtocol.HttpProtobuf or OtlpProtocol.HttpJson => UriHelpers.Combine(Localhost, "/v1/traces"),
+                OtlpProtocol.HttpProtobuf or OtlpProtocol.HttpJson => UriHelpers.Combine(Localhost, signalPath),
                 _ => Localhost,
             };
 

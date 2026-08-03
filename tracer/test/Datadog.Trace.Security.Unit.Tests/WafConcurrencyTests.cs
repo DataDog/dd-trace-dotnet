@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading;
 
 #if NETFRAMEWORK
@@ -69,6 +70,55 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
         }
     }
 
+    [Fact]
+    public void DisposeInterruptedByALockIsFinishedByTheNextOperation()
+    {
+        var initResult = CreateWaf();
+        var waf = initResult.Waf;
+        waf.Should().NotBeNull();
+
+        var locker = (AppSec.Concurrency.ReaderWriterLock)typeof(Waf).GetField("_wafLocker", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(waf)!;
+
+        // we want the dispose to give up on the write lock, not to wait out its real timeout
+        waf!.DisposeLockTimeoutInMs = 200;
+
+        // hold the read lock on another thread, the way an in flight CreateContext would
+        using var readLockTaken = new ManualResetEventSlim(false);
+        using var releaseReadLock = new ManualResetEventSlim(false);
+        var reader = new Thread(
+            () =>
+            {
+                locker.EnterReadLock();
+                readLockTaken.Set();
+                releaseReadLock.Wait();
+                locker.ExitReadLock();
+            })
+        {
+            IsBackground = true
+        };
+
+        reader.Start();
+        readLockTaken.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+
+        waf.Dispose();
+
+        // the write lock timed out, so the waf instance couldn't be released. It has to stay owned:
+        // giving up on it would leak the ruleset for the lifetime of the process
+        waf.Disposed.Should().BeTrue();
+        waf.HasNativeHandles.Should().BeTrue();
+
+        releaseReadLock.Set();
+        reader.Join(TimeSpan.FromSeconds(10)).Should().BeTrue();
+
+        // the next operation to get the lock finishes the disposal on its way out
+        waf.GetKnownAddresses();
+        waf.HasNativeHandles.Should().BeFalse();
+
+        // and disposing again is harmless once there is nothing left to release
+        waf.Dispose();
+        waf.HasNativeHandles.Should().BeFalse();
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -117,13 +167,17 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
                         }
 
                         var result = context.Run(args, WafRunTimeoutMicroSeconds);
-                        result.ReturnCode.Should().Be(WafReturnCode.Ok);
+
+                        // since libddwaf 2.x a run that only derives attributes (here the fingerprints)
+                        // also returns Match, so the return code no longer tells attacks apart from
+                        // benign runs: ShouldReportSecurityResult does
+                        result.ShouldReportSecurityResult.Should().BeFalse();
                         args.Clear();
 
                         args.Add(AddressesConstants.RequestBody, new List<string> { "dog1", "dog2", "dog3", "dog4" });
                         result = context.Run(args, WafRunTimeoutMicroSeconds);
                         result.Timeout.Should().BeFalse("Timeout should be false");
-                        result.ReturnCode.Should().Be(WafReturnCode.Ok);
+                        result.ShouldReportSecurityResult.Should().BeFalse();
                         args.Clear();
 
                         args.Add(AddressesConstants.RequestCookies, new Dictionary<string, object> { { $"appscan_fingerprint{{j}}", "[$slice]" }, { "dog3", $"[$slice]{next}" } });
@@ -151,7 +205,7 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
                         args.Add(AddressesConstants.ResponseStatus, "200");
                         result = context.Run(args, WafRunTimeoutMicroSeconds);
                         result.Timeout.Should().BeFalse("Timeout should be false");
-                        result.ReturnCode.Should().Be(WafReturnCode.Ok);
+                        result.ShouldReportSecurityResult.Should().BeFalse();
                         args.Clear();
                     }
                 });

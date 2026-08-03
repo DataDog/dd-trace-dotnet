@@ -1,4 +1,4 @@
-﻿Condition:
+Condition:
 Json:{
     "dsl": "SomeLocal > 2",
     "json": {
