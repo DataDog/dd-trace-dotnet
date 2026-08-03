@@ -107,27 +107,17 @@ namespace Datadog.Trace.Util.Http
         internal static string GetUrlFull(Uri uri, QueryStringManager? queryStringManager = null)
         {
             var userInfo = uri.UserInfo;
-            var url = GetUrl(uri, queryStringManager);
-
             if (StringUtil.IsNullOrEmpty(userInfo))
             {
-                return url;
+                return GetUrl(uri, queryStringManager);
             }
 
-            // GetUrl() never includes the user info, so the redacted form has to be inserted at the
-            // start of the authority. A scheme cannot contain '/', so the first "//" always delimits
-            // it. If it somehow isn't there, return the URL that already has no credentials in it
-            // rather than building something malformed.
-            var schemeDelimiterIndex = url.IndexOf("//", StringComparison.Ordinal);
-            if (schemeDelimiterIndex < 0)
-            {
-                return url;
-            }
+            var redacted = userInfo.IndexOf(':') >= 0 ? RedactedUserNameAndPassword : RedactedUserName;
+            var queryString = queryStringManager?.TruncateAndObfuscate(uri.Query) ?? string.Empty;
 
-            // We must never report the credentials, but the URL should still show that they were there
-            return url.Insert(
-                schemeDelimiterIndex + 2,
-                userInfo.IndexOf(':') >= 0 ? RedactedUserNameAndPassword : RedactedUserName);
+            return uri.IsDefaultPort
+                    ? $"{uri.Scheme}://{redacted}{uri.Host}{uri.AbsolutePath}{queryString}"
+                    : FormattableString.Invariant($"{uri.Scheme}://{redacted}{uri.Host}:{uri.Port}{uri.AbsolutePath}{queryString}");
         }
 
         internal static string GetUrl(string scheme, string host, int? port, string pathBase, string path, string queryString, QueryStringManager? queryStringManager = null)
