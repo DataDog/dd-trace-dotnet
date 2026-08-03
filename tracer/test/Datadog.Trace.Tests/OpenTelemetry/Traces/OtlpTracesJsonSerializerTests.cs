@@ -99,11 +99,11 @@ public class OtlpTracesJsonSerializerTests
     public void WriteSpan_ErrorSpanWithoutOtelStatusCodeTag_EmitsErrorStatus(bool openTelemetrySemanticsEnabled)
     {
         // Our own instrumentation marks spans as errors via span.Error and never sets "otel.status_code"
-        var ddSpan = CreateSpan();
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
         ddSpan.Error = true;
         ddSpan.GetTag("otel.status_code").Should().BeNull();
 
-        var json = WriteSpan(ddSpan, openTelemetrySemanticsEnabled);
+        var json = WriteSpan(ddSpan);
 
         var actualStatusCode = json["status"]?["code"]?.Value<int>();
         actualStatusCode.Should().Be((int)StatusCode.Error);
@@ -114,11 +114,11 @@ public class OtlpTracesJsonSerializerTests
     [InlineData(false)]
     public void WriteSpan_NonErrorSpanWithoutOtelStatusCodeTag_OmitsStatus(bool openTelemetrySemanticsEnabled)
     {
-        var ddSpan = CreateSpan();
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
         ddSpan.Error.Should().BeFalse();
         ddSpan.GetTag("otel.status_code").Should().BeNull();
 
-        var json = WriteSpan(ddSpan, openTelemetrySemanticsEnabled);
+        var json = WriteSpan(ddSpan);
 
         json["status"].Should().BeNull();
     }
@@ -130,7 +130,7 @@ public class OtlpTracesJsonSerializerTests
         ddSpan.Error = true;
         ddSpan.SetTag(Tags.ErrorMsg, "oops");
 
-        var json = WriteSpan(ddSpan, openTelemetrySemanticsEnabled: true);
+        var json = WriteSpan(ddSpan);
 
         json["status"]!["code"]!.Value<int>().Should().Be((int)StatusCode.Error);
         json["status"]!["message"]!.Value<string>().Should().Be("oops");
@@ -142,11 +142,11 @@ public class OtlpTracesJsonSerializerTests
     public void WriteSpan_ErrorSpanWithExplicitOtelStatusCodeTag_KeepsTheTagValue(string otelStatusCode, int expectedStatusCode)
     {
         // A status set through the OTel API wins over span.Error
-        var ddSpan = CreateSpan();
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: true);
         ddSpan.Error = true;
         ddSpan.SetTag("otel.status_code", otelStatusCode);
 
-        var json = WriteSpan(ddSpan, openTelemetrySemanticsEnabled: true);
+        var json = WriteSpan(ddSpan);
 
         json["status"]!["code"]!.Value<int>().Should().Be(expectedStatusCode);
     }
@@ -167,7 +167,7 @@ public class OtlpTracesJsonSerializerTests
         ddSpan.Error.Should().BeTrue();
         ddSpan.GetTag("otel.status_code").Should().BeNull();
 
-        var json = WriteSpan(ddSpan, openTelemetrySemanticsEnabled);
+        var json = WriteSpan(ddSpan);
 
         json["status"]!["code"]!.Value<int>().Should().Be((int)StatusCode.Error);
 
@@ -189,9 +189,9 @@ public class OtlpTracesJsonSerializerTests
         return span;
     }
 
-    private static JObject WriteSpan(Span span, bool openTelemetrySemanticsEnabled)
+    private static JObject WriteSpan(Span span)
     {
-        var serializer = new OtlpTracesJsonSerializer(openTelemetrySemanticsEnabled);
+        var serializer = new OtlpTracesJsonSerializer();
         var traceChunk = new TraceChunkModel(new SpanCollection(new[] { span }));
 
         using var stringWriter = new StringWriter();
