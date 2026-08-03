@@ -199,6 +199,21 @@ namespace Datadog.Trace.Propagators
                     sb.Length--;
                 }
 
+                // OTel consistent-probability-sampling sub-keys ("ot=rv:...;th:..."), placed
+                // immediately after "dd=" so both survive right-side truncation of a crowded
+                // tracestate (W3C permits dropping members past 32).
+                var otelTraceState = context.OtelTraceState;
+
+                if (!string.IsNullOrWhiteSpace(otelTraceState))
+                {
+                    if (sb.Length > 0)
+                    {
+                        sb.Append(TraceStateHeaderValuesSeparator);
+                    }
+
+                    sb.Append("ot=").Append(otelTraceState);
+                }
+
                 var additionalState = context.AdditionalW3CTraceState;
 
                 if (!string.IsNullOrWhiteSpace(additionalState))
