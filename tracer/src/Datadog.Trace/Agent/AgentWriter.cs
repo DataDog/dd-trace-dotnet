@@ -146,7 +146,7 @@ namespace Datadog.Trace.Agent
         // For tests only
         internal long DroppedTracesBufferFull => Volatile.Read(ref _droppedTracesBufferFull);
 
-        // For tests only
+        [TestingOnly]
         internal long DroppedTracesBufferFullAndLocked => Volatile.Read(ref _droppedTracesBufferFullAndLocked);
 
         // For tests only
