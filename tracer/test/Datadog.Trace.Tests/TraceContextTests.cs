@@ -294,6 +294,38 @@ namespace Datadog.Trace.Tests
             traceContext.OtelTraceState.Should().Be("rv:ef284ace7a91e1");
         }
 
+        [Fact]
+        public void SetSamplingPriority_RateZero_ThStaysWithin56BitDomain()
+        {
+            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
+
+            traceContext.SetSamplingPriority(
+                priority: SamplingPriorityValues.UserReject,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: 0.0f,
+                sample: false);
+
+            var otelState = traceContext.OtelTraceState;
+            otelState.Should().NotBeNull();
+            var th = ParseThForTest(otelState!);
+            th.Should().BeLessOrEqualTo((1UL << 56) - 1);
+        }
+
+        [Fact]
+        public void SetSamplingPriority_RateOne_InconsistentDropDoesNotUnderflow()
+        {
+            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
+
+            traceContext.SetSamplingPriority(
+                priority: SamplingPriorityValues.UserReject,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: 1.0f,
+                sample: false);
+
+            var rv = OtelTraceStateHelpers.ExtractRv(traceContext.OtelTraceState)!.Value;
+            rv.Should().Be(0UL);
+        }
+
         private static TraceContext CreateTraceContextWithRootSpan(ulong traceIdLower)
         {
             var traceContext = new TraceContext(new StubDatadogTracer());
