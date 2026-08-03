@@ -1080,16 +1080,16 @@
     "integrationName": "MySql",
     "assemblyName": "MySql.Data",
     "minAssemblyVersionInclusive": "6.7.0",
-    "maxAssemblyVersionInclusive": "9.65535.65535",
+    "maxAssemblyVersionInclusive": "26.65535.65535",
     "packages": [
       {
         "name": "MySql.Data",
         "minVersionAvailableInclusive": "5.1.7",
         "minVersionSupportedInclusive": "6.7.4",
         "minVersionTestedInclusive": "6.7.9",
-        "maxVersionSupportedInclusive": "9.7.0",
+        "maxVersionSupportedInclusive": "26.7.0",
         "maxVersionAvailableInclusive": "26.7.0",
-        "maxVersionTestedInclusive": "9.7.0"
+        "maxVersionTestedInclusive": "26.7.0"
       }
     ]
   },
