@@ -64,6 +64,7 @@ namespace Datadog.Trace.Agent
         private long _droppedP0Spans;
 
         private long _droppedTracesBufferFull;
+        private long _droppedTracesBufferLocked;
         private long _droppedTracesTooLarge;
 
         private bool _traceMetricsEnabled;
@@ -135,6 +136,9 @@ namespace Datadog.Trace.Agent
 
         // For tests only
         internal long DroppedTracesBufferFull => Volatile.Read(ref _droppedTracesBufferFull);
+
+        // For tests only
+        internal long DroppedTracesBufferLocked => Volatile.Read(ref _droppedTracesBufferLocked);
 
         // For tests only
         internal long DroppedTracesTooLarge => Volatile.Read(ref _droppedTracesTooLarge);
@@ -368,8 +372,17 @@ namespace Datadog.Trace.Agent
                     if (droppedTracesBufferFull > 0)
                     {
                         Log.Warning<long>(
-                            "{Count} traces were dropped because both trace buffers were full or unavailable since the last flush operation.",
+                            "{Count} traces were dropped because both trace buffers were full since the last flush operation.",
                             droppedTracesBufferFull);
+                    }
+
+                    var droppedTracesBufferLocked = Interlocked.Exchange(ref _droppedTracesBufferLocked, 0);
+
+                    if (droppedTracesBufferLocked > 0)
+                    {
+                        Log.Warning<long>(
+                            "{Count} traces were dropped because one or both trace buffers were unavailable while being flushed since the last flush operation.",
+                            droppedTracesBufferLocked);
                     }
 
                     if (buffer.TraceCount > 0)
@@ -530,6 +543,7 @@ namespace Datadog.Trace.Agent
             var buffer = _activeBuffer;
 
             var writeStatus = buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority);
+            var bufferLocked = writeStatus == SpanBuffer.WriteStatus.Locked;
 
             if (writeStatus == SpanBuffer.WriteStatus.Success)
             {
@@ -553,6 +567,7 @@ namespace Datadog.Trace.Agent
                 RequestFlush();
 
                 writeStatus = buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority);
+                bufferLocked |= writeStatus == SpanBuffer.WriteStatus.Locked;
 
                 if (writeStatus == SpanBuffer.WriteStatus.Success)
                 {
@@ -569,15 +584,23 @@ namespace Datadog.Trace.Agent
             }
 
             // All the buffers are full :( drop the trace
-            DropTrace(chunk.Count, MetricTags.DropReason.OverfullBuffer);
+            DropTrace(chunk.Count, MetricTags.DropReason.OverfullBuffer, bufferLocked);
         }
 
-        private void DropTrace(int count, MetricTags.DropReason dropReason)
+        private void DropTrace(int count, MetricTags.DropReason dropReason, bool bufferLocked = false)
         {
             switch (dropReason)
             {
                 case MetricTags.DropReason.OverfullBuffer:
-                    Interlocked.Increment(ref _droppedTracesBufferFull);
+                    if (bufferLocked)
+                    {
+                        Interlocked.Increment(ref _droppedTracesBufferLocked);
+                    }
+                    else
+                    {
+                        Interlocked.Increment(ref _droppedTracesBufferFull);
+                    }
+
                     break;
                 case MetricTags.DropReason.TraceTooLarge:
                     Interlocked.Increment(ref _droppedTracesTooLarge);

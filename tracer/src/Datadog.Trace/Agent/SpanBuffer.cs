@@ -41,7 +41,8 @@ namespace Datadog.Trace.Agent
         {
             Success = 0,
             Full = 1,
-            Overflow = 2
+            Overflow = 2,
+            Locked = 3
         }
 
         public ArraySegment<byte> Data
@@ -82,8 +83,8 @@ namespace Datadog.Trace.Agent
 
                 if (!lockTaken || _locked)
                 {
-                    // A flush operation is in progress, consider this buffer full
-                    return WriteStatus.Full;
+                    // A flush operation is in progress
+                    return WriteStatus.Locked;
                 }
 
                 // since all we have is an array of spans, use the trace context from the first span

@@ -408,6 +408,7 @@ namespace Datadog.Trace.Tests.Agent
             agent.BackBuffer.SpanCount.Should().Be(1);
 
             agent.DroppedTracesBufferFull.Should().Be(1);
+            agent.DroppedTracesBufferLocked.Should().Be(0);
             agent.DroppedTracesTooLarge.Should().Be(0);
 
             // Dropped trace should have been reported to statsd
@@ -416,6 +417,25 @@ namespace Datadog.Trace.Tests.Agent
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.DroppedTraces, 1, 1, null), Times.Once);
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.DroppedSpans, 2, 1, null), Times.Once);
             statsd.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void DropTraceWhenBothBuffersAreLocked()
+        {
+            var agent = new AgentWriter(
+                Mock.Of<IApi>(),
+                statsAggregator: null,
+                statsd: TestStatsdManager.NoOp,
+                automaticFlush: false);
+
+            agent.FrontBuffer.Lock().Should().BeTrue();
+            agent.BackBuffer.Lock().Should().BeTrue();
+
+            agent.WriteTrace(CreateTraceChunk(1));
+
+            agent.DroppedTracesBufferFull.Should().Be(0);
+            agent.DroppedTracesBufferLocked.Should().Be(1);
+            agent.DroppedTracesTooLarge.Should().Be(0);
         }
 
         [Fact]
