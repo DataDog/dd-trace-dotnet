@@ -1,0 +1,197 @@
+// <copyright file="OtelTraceStateHelpers.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using Datadog.Trace.Util;
+
+namespace Datadog.Trace.Propagators
+{
+    /// <summary>
+    /// String-surgery helpers over the raw content of the W3C tracestate "ot=" list-member
+    /// (OpenTelemetry consistent-probability-sampling sub-keys "rv"/"th"). The value is never
+    /// decoded into a typed struct: these two helpers are the only code that inspects or
+    /// rewrites the "rv"/"th" sub-keys; every other sub-key (recognized or not) round-trips
+    /// byte-for-byte through <see cref="SetRvTh"/> in its original order.
+    /// </summary>
+    internal static class OtelTraceStateHelpers
+    {
+        private const int MaxRvHexDigits = 14;
+
+        /// <summary>
+        /// Finds the "rv" item in the raw "ot=" value (items separated by ';', key/value by ':')
+        /// and returns its value parsed as 1-14 lowercase hex digits, or null if absent or malformed.
+        /// Never throws.
+        /// </summary>
+        internal static ulong? ExtractRv(string? raw)
+        {
+            if (StringUtil.IsNullOrEmpty(raw))
+            {
+                return null;
+            }
+
+            var remaining = new StringSegment(raw);
+
+            while (true)
+            {
+                var separatorIndex = IndexOf(remaining, ';');
+                var item = separatorIndex < 0 ? remaining : remaining.Slice(0, separatorIndex);
+                var colonIndex = IndexOf(item, ':');
+
+                if (colonIndex > 0 && colonIndex < item.Length - 1 && item.Slice(0, colonIndex).Equals("rv", StringComparison.Ordinal))
+                {
+                    return TryParseLowercaseHex(item.Slice(colonIndex + 1), MaxRvHexDigits, out var rv) ? rv : null;
+                }
+
+                if (separatorIndex < 0)
+                {
+                    break;
+                }
+
+                remaining = remaining.Slice(separatorIndex + 1);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Drops any existing "rv"/"th" items from <paramref name="raw"/> (whether well-formed
+        /// or not), then emits "rv:&lt;14-hex-digits&gt;" (if <paramref name="rv"/> is non-null)
+        /// followed by "th:&lt;hex, trailing zero nibbles trimmed&gt;" (if <paramref name="th"/>
+        /// is non-null), followed by every other item from <paramref name="raw"/> in its original
+        /// order. Returns null when nothing is left to emit.
+        /// </summary>
+        internal static string? SetRvTh(string? raw, ulong? rv, ulong? th)
+        {
+            List<StringSegment>? otherItems = null;
+
+            if (!StringUtil.IsNullOrEmpty(raw))
+            {
+                var remaining = new StringSegment(raw!);
+
+                while (true)
+                {
+                    var separatorIndex = IndexOf(remaining, ';');
+                    var item = separatorIndex < 0 ? remaining : remaining.Slice(0, separatorIndex);
+                    var colonIndex = IndexOf(item, ':');
+                    var key = colonIndex > 0 ? item.Slice(0, colonIndex) : item;
+
+                    if (!key.Equals("rv", StringComparison.Ordinal) && !key.Equals("th", StringComparison.Ordinal))
+                    {
+                        (otherItems ??= new List<StringSegment>()).Add(item);
+                    }
+
+                    if (separatorIndex < 0)
+                    {
+                        break;
+                    }
+
+                    remaining = remaining.Slice(separatorIndex + 1);
+                }
+            }
+
+            if (rv is null && th is null && otherItems is null)
+            {
+                return null;
+            }
+
+            var sb = StringBuilderCache.Acquire();
+
+            try
+            {
+                if (rv is { } rvValue)
+                {
+                    sb.Append("rv:").Append(rvValue.ToString("x14"));
+                }
+
+                if (th is { } thValue)
+                {
+                    if (sb.Length > 0)
+                    {
+                        sb.Append(';');
+                    }
+
+                    sb.Append("th:").Append(FormatThresholdHex(thValue));
+                }
+
+                if (otherItems is not null)
+                {
+                    foreach (var item in otherItems)
+                    {
+                        if (sb.Length > 0)
+                        {
+                            sb.Append(';');
+                        }
+
+                        sb.Append(item.Value, item.Offset, item.Length);
+                    }
+                }
+
+                return sb.Length == 0 ? null : StringBuilderCache.GetStringAndRelease(sb);
+            }
+            finally
+            {
+                StringBuilderCache.Release(sb);
+            }
+        }
+
+        private static string FormatThresholdHex(ulong th)
+        {
+            // Format as hex (up to 14 hex digits for a 56-bit value), then trim trailing zero nibbles.
+            // A fully-zero threshold trims to the empty string; represent it as a single "0".
+            var hex = th.ToString("x");
+            var trimmed = hex.TrimEnd('0');
+            return trimmed.Length == 0 ? "0" : trimmed;
+        }
+
+        private static int IndexOf(StringSegment value, char character)
+        {
+            for (var index = 0; index < value.Length; index++)
+            {
+                if (value[index] == character)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        private static bool TryParseLowercaseHex(StringSegment value, int maxDigits, out ulong result)
+        {
+            result = 0;
+
+            if (value.Length == 0 || value.Length > maxDigits)
+            {
+                return false;
+            }
+
+            for (var index = 0; index < value.Length; index++)
+            {
+                var character = value[index];
+                int digit;
+
+                if (character is >= '0' and <= '9')
+                {
+                    digit = character - '0';
+                }
+                else if (character is >= 'a' and <= 'f')
+                {
+                    digit = character - 'a' + 10;
+                }
+                else
+                {
+                    return false;
+                }
+
+                result = (result << 4) | (uint)digit;
+            }
+
+            return true;
+        }
+    }
+}
