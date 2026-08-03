@@ -222,6 +222,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 attribute["value"]![stringValueKey] = "normalized-otel-trace-id";
             }
 
+            // Samples bind a dynamic port, so server.port changes between runs. VerifyHelper's
+            // SpanScrubbers handles this for the Datadog-format snapshots, but a text scrubber
+            // can't reach the value through the OTLP key/value attribute shape.
+            foreach (var attribute in tracesRequests.SelectTokens("$..spans[*].attributes[?(@.key == 'server.port')]"))
+            {
+                if (attribute["value"] is JObject value)
+                {
+                    // The port arrives as an int on client spans and as a double on server spans,
+                    // so overwrite whichever value kind is present. Always writing a string keeps
+                    // http/json and http/protobuf rendering identically, as the timestamps above do.
+                    // TODO: Fix this up when implementing HTTP server spans as they should always
+                    // be emitted as ints from our instrumentation once implemented.
+                    foreach (var property in value.Properties())
+                    {
+                        property.Value = "00000";
+                    }
+                }
+            }
+
             foreach (var link in tracesRequests.SelectTokens("$..links[*]"))
             {
                 if (isJson)
