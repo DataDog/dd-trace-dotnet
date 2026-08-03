@@ -42,10 +42,6 @@ public abstract class ContainerFixture : IAsyncLifetime
 
     public virtual IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables() => Enumerable.Empty<KeyValuePair<string, string>>();
 
-    protected abstract Task InitializeResources(Action<string, object> registerResource);
-
-    protected T GetResource<T>(string key) => (T)_resources[key];
-
     protected static async Task StartContainerAsync(IContainer container)
     {
         var attempt = 1;
@@ -70,6 +66,10 @@ public abstract class ContainerFixture : IAsyncLifetime
             }
         }
     }
+
+    protected abstract Task InitializeResources(Action<string, object> registerResource);
+
+    protected T GetResource<T>(string key) => (T)_resources[key];
 
     private static bool IsTransientSystemdCgroupFailure(DockerApiException exception)
     {
