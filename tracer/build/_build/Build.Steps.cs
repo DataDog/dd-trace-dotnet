@@ -1495,12 +1495,14 @@ partial class Build
                             .SetLogsDirectory(TestLogsDirectory)
                             .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                             .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
+                            // Configure process output before attaching a custom logger. NUKE 6.3
+                            // clones settings in SetProcessLogOutput(), and delegates cannot be serialized.
+                            .When(IsGitlab, settings => settings.SetProcessLogOutput(true))
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
                                 .SetProjectFile(project)
                                 .When(IsGitlab, settings => settings
-                                    .SetProcessLogOutput(true)
                                     .SetProcessCustomLogger((type, text) =>
                                     {
                                         // The Datadog test logger emits two lines for every successful
