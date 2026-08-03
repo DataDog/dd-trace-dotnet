@@ -173,6 +173,25 @@ namespace Datadog.Trace.Tests.Sampling
             mechanism2.Should().Be(SamplingMechanism.AgentRate);
         }
 
+        [Fact]
+        public async Task MakeSamplingDecision_ReturnsSampleField_MatchingKnuthOutcome()
+        {
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, ServiceName } });
+            await using var tracer = TracerHelper.CreateWithFakeAgent(settings);
+
+            using var scope = (Scope)tracer.StartActive(OperationName);
+            scope.Span.Context.TraceContext.Environment = Env;
+
+            var builder = new TraceSampler.Builder(new NoLimits());
+            builder.RegisterAgentSamplingRule(new AgentSamplingRule());
+            var sampler = builder.Build();
+            sampler.SetDefaultSampleRates(new Dictionary<string, float> { { $"service:{ServiceName},env:{Env}", 1f } });
+
+            var decision = sampler.MakeSamplingDecision(scope.Span);
+
+            decision.Sample.Should().BeTrue();
+        }
+
         private async Task RunSamplerTest(
             ITraceSampler sampler,
             int iterations,
