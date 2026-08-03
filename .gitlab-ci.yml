@@ -223,6 +223,42 @@ build:
         throw "Native test container exited with code $LASTEXITCODE"
       }
     - |
+      # Start the managed Windows unit-test migration with one modern .NET target
+      # and .NET Framework. Preserve each framework's results before the next NUKE
+      # invocation cleans the shared results and logs directories.
+      $managedTestFrameworks = @("net8.0", "net48")
+      foreach ($framework in $managedTestFrameworks) {
+        Write-Output "Building and running managed unit tests for $framework"
+        docker run --rm -m 20480M `
+          -v "$(Get-Location):c:\mnt" `
+          -e CI_JOB_ID=${CI_JOB_ID} `
+          -e WINDOWS_BUILDER=true `
+          -e AWS_NETWORKING=true `
+          -e NUGET_CERT_REVOCATION_MODE=offline `
+          -e DD_LOGGER_DD_API_KEY `
+          -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+          -e CI_PROJECT_NAME `
+          -e CI_JOB_NAME_SLUG `
+          $env:WINDOWS_BUILD_IMAGE `
+          BuildManagedUnitTests RunManagedUnitTests `
+          --framework $framework `
+          --NugetPackageDirectory c:\mnt\packages
+        $managedTestExitCode = $LASTEXITCODE
+
+        $frameworkArtifacts = Join-Path "artifacts/build_data/managed-unit-tests" $framework
+        New-Item -ItemType Directory -Path $frameworkArtifacts -Force | Out-Null
+        foreach ($directory in @("results", "logs")) {
+          $source = Join-Path "artifacts/build_data" $directory
+          if (Test-Path $source) {
+            Copy-Item -Path $source -Destination $frameworkArtifacts -Recurse -Force
+          }
+        }
+
+        if ($managedTestExitCode -ne 0) {
+          throw "Managed unit tests for $framework exited with code $managedTestExitCode"
+        }
+      }
+    - |
       # Package and sign only after the native tests pass so the release outputs are
       # produced from the successfully tested build state.
       docker run --rm -m 20480M `
@@ -254,6 +290,8 @@ build:
     paths:
     - artifacts-out
     - artifacts/build_data/tests
+    - artifacts/build_data/managed-unit-tests
+    - artifacts/build_data/dumps
     - profiler/build_data/tests
     reports:
       junit:
