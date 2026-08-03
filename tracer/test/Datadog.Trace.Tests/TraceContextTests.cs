@@ -344,6 +344,20 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void SetSamplingPriority_NaNRate_DoesNotThrow()
+        {
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 1);
+
+            Action act = () => traceContext.SetSamplingPriority(
+                priority: SamplingPriorityValues.UserKeep,
+                mechanism: SamplingMechanism.Default,
+                rate: float.NaN,
+                sample: true);
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
         public void SetSamplingPriority_ManualOverride_StripsInheritedThButKeepsRv()
         {
             var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 1);
