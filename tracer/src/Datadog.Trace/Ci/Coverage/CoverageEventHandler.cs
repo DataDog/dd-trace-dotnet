@@ -18,9 +18,17 @@ namespace Datadog.Trace.Ci.Coverage;
 
 internal abstract class CoverageEventHandler
 {
-    private readonly AsyncLocal<CoverageContextContainer?> _asyncContext = new();
+    private readonly AsyncLocal<CoverageContextContainer?> _asyncContext = new(OnAsyncContextChanged);
     private readonly CoverageContextContainer _globalContainer = new(bufferKind: ModuleValue.BufferKind.GlobalFallback);
     private readonly ContextDiagnostics _contextDiagnostics = new();
+    private readonly Action _recordContextDisposed;
+
+    protected CoverageEventHandler()
+    {
+        // Cache the instance delegate once; closed contexts may retain it briefly while an inherited
+        // ExecutionContext finishes, so allocating a new delegate for every test would be unnecessary churn.
+        _recordContextDisposed = _contextDiagnostics.RecordDisposed;
+    }
 
     public CoverageContextContainer? Container => _asyncContext.Value;
 
@@ -109,8 +117,7 @@ internal abstract class CoverageEventHandler
         {
             try
             {
-                context.Dispose();
-                _contextDiagnostics.RecordDisposed();
+                context.DisposeWhenExecutionContextsAreInactive(_recordContextDisposed);
             }
             finally
             {
@@ -142,8 +149,7 @@ internal abstract class CoverageEventHandler
             MarkGlobalCoverageIncomplete(reason);
             try
             {
-                context.Dispose();
-                _contextDiagnostics.RecordDisposed();
+                context.DisposeWhenExecutionContextsAreInactive(_recordContextDisposed);
             }
             finally
             {
@@ -189,26 +195,39 @@ internal abstract class CoverageEventHandler
 
     protected abstract object? OnSessionFinished(CoverageContextContainer context, IReadOnlyList<ModuleValue> modules);
 
+    private static void OnAsyncContextChanged(AsyncLocalValueChangedArgs<CoverageContextContainer?> args)
+    {
+        if (ReferenceEquals(args.PreviousValue, args.CurrentValue))
+        {
+            return;
+        }
+
+        // Instrumented methods cache raw counter pointers for the duration of the method. Track active
+        // ExecutionContexts here so session cleanup never adds synchronization to the probe hot path.
+        args.PreviousValue?.OnExecutionContextExited();
+        args.CurrentValue?.OnExecutionContextEntered();
+    }
+
     private sealed class ContextDiagnostics
     {
         private long _started;
         private long _closed;
         private long _disposed;
 
-        public void RecordStarted() => _started++;
+        public void RecordStarted() => Interlocked.Increment(ref _started);
 
-        public void RecordClosed() => _closed++;
+        public void RecordClosed() => Interlocked.Increment(ref _closed);
 
-        public void RecordDisposed() => _disposed++;
+        public void RecordDisposed() => Interlocked.Increment(ref _disposed);
 
         public void Log(long merged)
         {
             TestOptimization.Instance.Log.Debug<int, long, long, long, long>(
                 "Global coverage context diagnostics: pid={ProcessId}, started={Started}, closed={Closed}, disposed={Disposed}, merged={Merged}.",
                 DomainMetadata.Instance.ProcessId,
-                _started,
-                _closed,
-                _disposed,
+                Interlocked.Read(ref _started),
+                Interlocked.Read(ref _closed),
+                Interlocked.Read(ref _disposed),
                 merged);
         }
     }

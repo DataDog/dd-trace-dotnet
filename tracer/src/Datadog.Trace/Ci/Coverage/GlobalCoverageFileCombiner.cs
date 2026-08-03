@@ -21,10 +21,12 @@ internal static class GlobalCoverageFileCombiner
     public static bool TryAcquireInputFiles(string inputFolder, string? expectedRunToken, out string[] inputFiles)
     {
         inputFiles = [];
-        var pendingPattern = expectedRunToken is null
-                                 ? GlobalCoverageProtocol.PendingMarkerPattern
-                                 : GlobalCoverageProtocol.PendingMarkerPrefix + expectedRunToken + "-*";
-        if (Directory.EnumerateFiles(inputFolder, pendingPattern, SearchOption.TopDirectoryOnly).Any())
+        if (expectedRunToken is not null &&
+            Directory.EnumerateFiles(
+                         inputFolder,
+                         GlobalCoverageProtocol.PendingMarkerPrefix + expectedRunToken + "-*",
+                         SearchOption.TopDirectoryOnly)
+                     .Any())
         {
             return false;
         }

@@ -79,6 +79,60 @@ public class CoverageEventHandlerTests
     }
 
     [Fact]
+    public async Task EndSessionDefersBufferReleaseWhileAnInheritedExecutionContextIsActive()
+    {
+        var previousHandler = CoverageReporter.Handler;
+        var handler = new DefaultWithGlobalCoverageEventHandler();
+        CoverageReporter.Handler = handler;
+        using var pointerAcquired = new ManualResetEventSlim();
+        using var releaseProbe = new ManualResetEventSlim();
+        var writeAfterClose = 0;
+
+        try
+        {
+            var handle = handler.StartSession("xunit");
+            var child = Task.Run(
+                () =>
+                {
+                    var pointer = GetStaleFlowCounter();
+                    WriteCounter(pointer);
+                    pointerAcquired.Set();
+                    releaseProbe.Wait();
+                    if (Volatile.Read(ref writeAfterClose) != 0)
+                    {
+                        WriteCounter(pointer);
+                    }
+                });
+
+            pointerAcquired.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
+            var module = handle.Context!.SnapshotModules().Should().ContainSingle().Subject;
+            try
+            {
+                handler.EndSession(handle);
+
+                module.FilesLines.Should().NotBe(
+                    IntPtr.Zero,
+                    "the inherited execution context can still hold a raw counter pointer");
+                Volatile.Write(ref writeAfterClose, 1);
+            }
+            finally
+            {
+                releaseProbe.Set();
+                await child;
+            }
+
+            SpinWait.SpinUntil(() => module.FilesLines == IntPtr.Zero, TimeSpan.FromSeconds(5)).Should().BeTrue();
+            module.AllocatedByteLength.Should().Be(0);
+            using var snapshot = handler.AcquireGlobalCoverageSnapshot().Snapshot!;
+            snapshot.Model.Data.Should().Equal(100, 1, 1);
+        }
+        finally
+        {
+            CoverageReporter.Handler = previousHandler;
+        }
+    }
+
+    [Fact]
     public async Task ConcurrentFirstProbePublishesExactlyOneNativeBuffer()
     {
         var context = new CoverageContextContainer();
@@ -241,6 +295,12 @@ public class CoverageEventHandlerTests
         var pointer = (byte*)CoverageReporter<StaleFlowMetadata>.GetFileCounter(0);
         *pointer = 1;
     }
+
+    private static unsafe IntPtr GetStaleFlowCounter()
+        => (IntPtr)CoverageReporter<StaleFlowMetadata>.GetFileCounter(0);
+
+    private static unsafe void WriteCounter(IntPtr pointer)
+        => *(byte*)pointer = 1;
 
     private static TestModuleCoverageMetadata CreateMetadata(int totalLines, int coverageMode, int lastExecutableLine)
         => new(

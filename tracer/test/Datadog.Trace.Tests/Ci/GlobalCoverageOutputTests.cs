@@ -73,6 +73,27 @@ public class GlobalCoverageOutputTests
     }
 
     [Fact]
+    public void UnrelatedPendingProducerDoesNotPreventLegacyConsumption()
+    {
+        var directory = CreateTemporaryDirectory();
+        try
+        {
+            var input = Path.Combine(directory, "legacy.json");
+            File.WriteAllText(input, "{}");
+            File.WriteAllText(
+                Path.Combine(directory, GlobalCoverageProtocol.GetPendingMarkerFileName("unrelated-process")),
+                string.Empty);
+
+            GlobalCoverageFileCombiner.TryAcquireInputFiles(directory, expectedRunToken: null, out var files).Should().BeTrue();
+            files.Should().Equal(input);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void CollectorCanProvideOutputDirectoryAfterInMemoryCoverageStarts()
     {
         var directory = CreateTemporaryDirectory();

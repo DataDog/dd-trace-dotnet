@@ -21,7 +21,10 @@ internal sealed class CoverageContextContainer : IDisposable
     private readonly List<ModuleValue> _modules = new();
     private readonly ModuleValue.BufferKind _bufferKind;
     private ModuleValue? _currentModuleValue;
+    private Action? _onDisposed;
+    private int _activeExecutionContexts;
     private int _closed;
+    private int _disposeRequested;
     private int _disposed;
 
     public CoverageContextContainer(object? state = null, ModuleValue.BufferKind bufferKind = ModuleValue.BufferKind.Context)
@@ -33,6 +36,16 @@ internal sealed class CoverageContextContainer : IDisposable
     public object? State { get; set; }
 
     public bool IsClosed => Volatile.Read(ref _closed) != 0;
+
+    public void OnExecutionContextEntered() => Interlocked.Increment(ref _activeExecutionContexts);
+
+    public void OnExecutionContextExited()
+    {
+        if (Interlocked.Decrement(ref _activeExecutionContexts) == 0 && Volatile.Read(ref _disposeRequested) != 0)
+        {
+            Dispose();
+        }
+    }
 
     public ModuleValue? GetModuleValue(Module module)
     {
@@ -135,9 +148,23 @@ internal sealed class CoverageContextContainer : IDisposable
 
     public void Clear() => Dispose();
 
+    public void DisposeWhenExecutionContextsAreInactive(Action onDisposed)
+    {
+        // A flowed ExecutionContext may still be executing instrumented code with a raw pointer cached
+        // in an IL local. Inactive contexts cannot hold a live probe frame, and future probes observe
+        // the closed flag and use the global fallback, so the last active exit is the safe reclamation point.
+        _onDisposed = onDisposed;
+        Volatile.Write(ref _disposeRequested, 1);
+        if (Volatile.Read(ref _activeExecutionContexts) == 0)
+        {
+            Dispose();
+        }
+    }
+
     public void Dispose()
     {
         ExceptionDispatchInfo? firstException = null;
+        Action? onDisposed = null;
         lock (_gate)
         {
             if (_disposed != 0)
@@ -165,9 +192,12 @@ internal sealed class CoverageContextContainer : IDisposable
             finally
             {
                 _modules.Clear();
+                onDisposed = _onDisposed;
+                _onDisposed = null;
             }
         }
 
+        onDisposed?.Invoke();
         firstException?.Throw();
     }
 
