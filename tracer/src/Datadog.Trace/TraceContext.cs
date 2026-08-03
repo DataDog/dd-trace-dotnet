@@ -373,7 +373,8 @@ namespace Datadog.Trace
 
             // set Knuth sampling rate as a propagated tag for agent and rule-based sampling,
             // and (for OTel interop) derive/erase the "ot=" tracestate rv/th sub-keys.
-            if (rate is { } samplingRate && mechanism is Sampling.SamplingMechanism.AgentRate
+            if (rate is { } samplingRate && samplingRate is >= 0f and <= 1f
+                                          && mechanism is Sampling.SamplingMechanism.AgentRate
                                                       or Sampling.SamplingMechanism.LocalTraceSamplingRule
                                                       or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
                                                       or Sampling.SamplingMechanism.RemoteUserSamplingRule
