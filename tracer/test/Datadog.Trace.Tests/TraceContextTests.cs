@@ -326,6 +326,38 @@ namespace Datadog.Trace.Tests
             rv.Should().Be(0UL);
         }
 
+        [Fact]
+        public void SetSamplingPriority_ManualOverride_StripsInheritedThButKeepsRv()
+        {
+            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 1);
+            traceContext.OtelTraceState = "rv:ef284ace7a91e1;th:e6666666666668";
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
+
+            traceContext.OtelTraceState.Should().Be("rv:ef284ace7a91e1");
+        }
+
+        [Fact]
+        public void SetSamplingPriority_AsmOverride_StripsInheritedThButKeepsRv()
+        {
+            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 1);
+            traceContext.OtelTraceState = "th:e6666666666668";
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Asm);
+
+            traceContext.OtelTraceState.Should().BeNull();
+        }
+
+        [Fact]
+        public void SetSamplingPriority_ManualOverride_NoInheritedState_StaysNull()
+        {
+            var traceContext = CreateTraceContextWithRootSpan(traceIdLower: 1);
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
+
+            traceContext.OtelTraceState.Should().BeNull();
+        }
+
         private static TraceContext CreateTraceContextWithRootSpan(ulong traceIdLower)
         {
             var traceContext = new TraceContext(new StubDatadogTracer());
