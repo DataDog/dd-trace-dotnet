@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Security.IntegrationTests.IAST;
 
 [Trait("RequiresDockerDependency", "true")]
+[Trait("DockerGroup", "1")]
 [Collection(AspNetCore5IastDbTestsCollection.Name)]
 public class AspNetCore5IastDbTests : AspNetCore5IastTests
 {

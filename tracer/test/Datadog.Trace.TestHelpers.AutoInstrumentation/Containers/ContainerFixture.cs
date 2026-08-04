@@ -31,14 +31,27 @@ public abstract class ContainerFixture : IAsyncLifetime
         {
             await InitializeResources(RegisterResource).ConfigureAwait(false);
         }
-        catch
+        catch (Exception initializationException)
         {
-            await DisposeResourcesAsync().ConfigureAwait(false);
+            var disposalExceptions = await DisposeResourcesAsync().ConfigureAwait(false);
+            if (disposalExceptions is not null)
+            {
+                disposalExceptions.Insert(0, initializationException);
+                throw new AggregateException("Container fixture initialization failed and cleanup also encountered errors.", disposalExceptions);
+            }
+
             throw;
         }
     }
 
-    public Task DisposeAsync() => DisposeResourcesAsync();
+    public async Task DisposeAsync()
+    {
+        var disposalExceptions = await DisposeResourcesAsync().ConfigureAwait(false);
+        if (disposalExceptions is not null)
+        {
+            throw new AggregateException("One or more container fixture resources failed to dispose.", disposalExceptions);
+        }
+    }
 
     public virtual IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables() => Enumerable.Empty<KeyValuePair<string, string>>();
 
@@ -86,8 +99,10 @@ public abstract class ContainerFixture : IAsyncLifetime
         _resourcesForDisposal.Add(resource);
     }
 
-    private async Task DisposeResourcesAsync()
+    private async Task<List<Exception>?> DisposeResourcesAsync()
     {
+        List<Exception>? exceptions = null;
+
         for (var i = _resourcesForDisposal.Count - 1; i >= 0; i--)
         {
             try
@@ -102,13 +117,15 @@ public abstract class ContainerFixture : IAsyncLifetime
                     disposable.Dispose();
                 }
             }
-            catch
+            catch (Exception exception)
             {
-                // Continue disposing the remaining resources.
+                exceptions ??= [];
+                exceptions.Add(exception);
             }
         }
 
         _resources.Clear();
         _resourcesForDisposal.Clear();
+        return exceptions;
     }
 }
