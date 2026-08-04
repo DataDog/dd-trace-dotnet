@@ -331,7 +331,7 @@ partial class Build
     Target RestoreManagedUnitTestPackages => _ => _
         .Unlisted()
         .Before(BuildRunnerTool, CompileManagedUnitTests)
-        .OnlyWhenDynamic(() => !string.IsNullOrEmpty(NugetPackageDirectory))
+        .OnlyWhenDynamic(() => IsGitlab && !string.IsNullOrEmpty(NugetPackageDirectory))
         .Executes(() =>
         {
             // NuGet.exe restore does not fully populate all SDK-style PackageReference
@@ -817,7 +817,7 @@ partial class Build
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
                     var frameworks = project.TryGetTargetFrameworks();
-                    if (Framework is not null)
+                    if (IsGitlab && Framework is not null)
                     {
                         frameworks = frameworks.Where(x => x == Framework).ToList();
                     }
@@ -1438,7 +1438,7 @@ partial class Build
         {
             DotnetBuild(
                 TracerDirectory.GlobFiles("src/**/Datadog.InstrumentedAssembly*.csproj"),
-                noRestore: string.IsNullOrEmpty(NugetPackageDirectory),
+                noRestore: !IsGitlab,
                 noDependencies: false);
         });
 
@@ -1450,10 +1450,11 @@ partial class Build
         .Executes(() =>
         {
             //we need to build in this exact order
+            var framework = IsGitlab ? Framework : null;
             DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Shared/*.csproj"));
             DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"));
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"), framework: Framework);
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"), framework: Framework);
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"), framework: framework, noRestore: !IsGitlab);
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"), framework: framework, noRestore: !IsGitlab);
         });
 
     Target CompileManagedUnitTests => _ => _
@@ -1467,7 +1468,10 @@ partial class Build
         .DependsOn(CompileManagedLoader)
         .Executes(() =>
         {
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"), framework: Framework);
+            DotnetBuild(
+                TracerDirectory.GlobFiles("test/**/*.Tests.csproj"),
+                framework: IsGitlab ? Framework : null,
+                noRestore: !IsGitlab);
         });
 
     Target RunManagedUnitTests => _ => _
