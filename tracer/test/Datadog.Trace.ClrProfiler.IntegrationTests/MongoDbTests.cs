@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(expectedSpanCount, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 // mongo stamps the current framework version, and OS so normalise those

@@ -119,7 +119,7 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
                    expectedExitCode: ExpectedFuncKillExitCode))
         {
             // Wait for at least 7 spans (1 health-check ping + 6 meaningful).
-            var allSpans = await agent.WaitForSpansAsync(7, timeoutInMilliseconds: 30000, returnAllOperations: true, assertExpectedCount: false);
+            var allSpans = await agent.WaitForSpansAsync(7, timeoutInMilliseconds: 30000, returnAllOperations: true);
             // Keep only the two relevant traces: the seeder trace and the trigger trace.
             // The trigger trace is identified by the manual span, which is only created for
             // the expected test event.

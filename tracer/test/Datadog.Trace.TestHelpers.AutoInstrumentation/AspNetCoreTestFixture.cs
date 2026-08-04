@@ -243,8 +243,7 @@ namespace Datadog.Trace.TestHelpers
             return await Agent.WaitForSpansAsync(
                        count: 1,
                        minDateTime: now,
-                       returnAllOperations: true,
-                       assertExpectedCount: false);
+                       returnAllOperations: true);
         }
 
         // Returns true when a known race fingerprint was detected in the captured stderr and the
@@ -320,7 +319,7 @@ namespace Datadog.Trace.TestHelpers
 
                         if (responseCode == HttpStatusCode.OK)
                         {
-                            await Agent.WaitForSpansAsync(1, minDateTime: dateTime, assertExpectedCount: false);
+                            await Agent.WaitForSpansAsync(1, minDateTime: dateTime);
                             serverReady = true;
                         }
                     }

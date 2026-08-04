@@ -555,8 +555,7 @@ namespace Datadog.Trace.TestHelpers
             return await agent.WaitForSpansAsync(
                        count: expectedSpanCount,
                        minDateTime: testStart,
-                       returnAllOperations: true,
-                       assertExpectedCount: false);
+                       returnAllOperations: true);
         }
 
         protected async Task AssertWebServerSpan(

@@ -81,7 +81,7 @@ public class DataStreamsMonitoringAwsSqsTests : TestHelper
 #else
             var expectedCount = 9;
 #endif
-            var spans = await agent.WaitForSpansAsync(expectedCount, assertExpectedCount: false);
+            var spans = await agent.WaitForSpansAsync(expectedCount);
             var sqsSpans = spans.Where(
                 span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
 

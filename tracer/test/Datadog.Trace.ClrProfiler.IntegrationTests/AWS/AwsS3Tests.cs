@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using var agent = EnvironmentHelper.GetMockAgent();
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(1, returnAllOperations: true, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(1, returnAllOperations: true);
 
                 Assert.NotEmpty(spans);
                 spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();

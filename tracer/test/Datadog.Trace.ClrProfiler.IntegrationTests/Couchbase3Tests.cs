@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = (await agent.WaitForSpansAsync(10, 500, assertExpectedCount: false))
+                var spans = (await agent.WaitForSpansAsync(10, 500))
                            .Where(s => s.Type == "db")
                            .ToList();
 
