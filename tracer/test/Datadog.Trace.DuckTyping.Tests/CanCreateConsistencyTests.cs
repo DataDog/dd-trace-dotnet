@@ -75,9 +75,9 @@ public class CanCreateConsistencyTests
 
             target.DuckIs(duckType).Should().Be(canCreate);
 
-            // Deciding whether a proxy can be built must be exception-free, apart from two pre-existing
-            // sources this series has not addressed (see KnownResidual). Allow-listed rather than ignored,
-            // so a *new* kind of first-chance exception still fails here.
+            // Deciding whether a proxy can be built must be exception-free, apart from one remaining case
+            // (see KnownResidual). Allow-listed rather than ignored, so a *new* kind of first-chance
+            // exception still fails here.
             counter.Exceptions.Should().NotContain(x => !KnownResidual(x));
         }
 
@@ -165,25 +165,16 @@ public class CanCreateConsistencyTests
     }
 
     /// <summary>
-    /// Two first-chance exception sources inside the proxy-creation path that predate this work and are
-    /// tracked as their own follow-ups. Both are raised and swallowed while building a proxy, so both are
-    /// live instances of the hazard behind APMS-20197 - they are allow-listed here, not accepted.
+    /// The one first-chance exception source left inside proxy creation.
+    /// <para>
+    /// <c>Type.GetProperty(name, bindingFlags)</c> throws when a target declares several indexers.
+    /// <c>DuckType.FindPropertyOrIndex</c> now resolves the proxy's exact signature up front, which avoids
+    /// the throw whenever such an indexer exists - but when the proxy's indexer matches none of them (the
+    /// <c>WrongReturnType</c> permutations declare <c>string[] this[string]</c> against a target with
+    /// <c>string this[string]</c>), it still falls through to the ambiguous lookup.
+    /// </para>
     /// </summary>
-    private static bool KnownResidual(Exception exception)
-        => exception switch
-        {
-            // Type.GetProperty throws when a target declares more than one matching indexer;
-            // DuckType.GetTargetPropertyOrIndex calls it without disambiguating.
-            AmbiguousMatchException => true,
-
-            // MethodIlHelper.AddIlToLoadArguments indexes innerMethodParameters with a loop bound taken from
-            // max(outer, inner), so a proxy declaring more parameters than the target faults instead of
-            // reporting a signature mismatch. The general catch in CreateProxyType turns it into a generic
-            // "Error creating duck type" - which is also why the diagnostic for that case is poor.
-            IndexOutOfRangeException => true,
-
-            _ => false,
-        };
+    private static bool KnownResidual(Exception exception) => exception is AmbiguousMatchException;
 
     /// <summary>
     /// Runs the throwing entry point and returns the exception it surfaced, unwrapping the
