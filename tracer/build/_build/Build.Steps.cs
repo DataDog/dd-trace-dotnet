@@ -1471,6 +1471,22 @@ partial class Build
             testProjects.ForEach(EnsureResultsDirectory);
             var filter = string.IsNullOrWhiteSpace(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter;
             var exceptions = new List<Exception>();
+            var defaultDotNetLogger = DotNetTasks.DotNetLogger;
+            if (IsGitlab)
+            {
+                DotNetTasks.DotNetLogger = (type, text) =>
+                {
+                    // The Datadog test logger emits two lines for every successful
+                    // test. Preserve failures, skips, diagnostics, and summaries while
+                    // keeping the combined Windows build below GitLab's 4 MiB log limit.
+                    if (!text.Contains(": STARTED:", StringComparison.Ordinal) &&
+                        !text.Contains(": SUCCESS:", StringComparison.Ordinal))
+                    {
+                        defaultDotNetLogger(type, text);
+                    }
+                };
+            }
+
             try
             {
                 foreach (var targetFramework in TestingFrameworks.Where(x => x == Framework || Framework is null))
@@ -1484,9 +1500,6 @@ partial class Build
                     try
                     {
                         DotNetTest(x => x
-                            // Configure process output before any setting that attaches a delegate.
-                            // NUKE 6.3 clones settings in SetProcessLogOutput(), and delegates cannot be serialized.
-                            .When(IsGitlab, settings => settings.SetProcessLogOutput(true))
                             .EnableNoRestore()
                             .EnableNoBuild()
                             .SetFilter(filter)
@@ -1501,19 +1514,7 @@ partial class Build
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
-                                .SetProjectFile(project)
-                                .When(IsGitlab, settings => settings
-                                    .SetProcessCustomLogger((type, text) =>
-                                    {
-                                        // The Datadog test logger emits two lines for every successful
-                                        // test. Preserve failures, skips, diagnostics, and summaries while
-                                        // keeping the combined Windows build below GitLab's 4 MiB log limit.
-                                        if (!text.Contains(": STARTED:", StringComparison.Ordinal) &&
-                                            !text.Contains(": SUCCESS:", StringComparison.Ordinal))
-                                        {
-                                            DotNetTasks.DotNetLogger(type, text);
-                                        }
-                                    }))));
+                                .SetProjectFile(project)));
                     }
                     catch (Exception ex)
                     {
@@ -1529,6 +1530,7 @@ partial class Build
             }
             finally
             {
+                DotNetTasks.DotNetLogger = defaultDotNetLogger;
                 CopyDumpsToBuildData();
             }
         });
