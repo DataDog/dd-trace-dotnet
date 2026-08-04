@@ -258,10 +258,7 @@ namespace Datadog.Trace.Agent
 
             WriteStringKvJson(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue);
 
-            if (!StringUtil.IsNullOrEmpty(key.Service) && !string.Equals(key.Service, defaultServiceName, StringComparison.OrdinalIgnoreCase))
-            {
-                WriteStringKvJson(writer, "service.name", key.Service);
-            }
+            WriteStringKvJson(writer, "service.name", StringUtil.IsNullOrEmpty(key.Service) ? (defaultServiceName ?? "unknown_service:dotnet") : key.Service);
 
             if (!otelSemanticsEnabled)
             {
@@ -539,10 +536,7 @@ namespace Datadog.Trace.Agent
 
             WriteAttribute(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue, FieldNumbers.HistogramDataPointAttributes);
 
-            if (!StringUtil.IsNullOrEmpty(key.Service) && !string.Equals(key.Service, defaultServiceName, StringComparison.OrdinalIgnoreCase))
-            {
-                WriteAttribute(writer, "service.name", key.Service, FieldNumbers.HistogramDataPointAttributes);
-            }
+            WriteAttribute(writer, "service.name", StringUtil.IsNullOrEmpty(key.Service) ? (defaultServiceName ?? "unknown_service:dotnet") : key.Service, FieldNumbers.HistogramDataPointAttributes);
 
             if (!otelSemanticsEnabled)
             {

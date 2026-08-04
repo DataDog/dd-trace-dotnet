@@ -177,7 +177,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public void SerializeJson_ServiceNameOmitted_WhenMatchesDefault()
+        public void SerializeJson_ServiceNameIncluded_WhenMatchesDefault()
         {
             var buffer = CreateBuffer(service: "my-service");
             var key = CreateKey(service: "my-service");
@@ -186,7 +186,7 @@ namespace Datadog.Trace.Tests.Agent
             var json = SerializeToJson(buffer);
             var attrs = GetDataPointAttributes(json);
 
-            attrs.Should().NotContainKey("service.name");
+            attrs.Should().ContainKey("service.name").WhoseValue.Should().Be("my-service");
         }
 
         [Fact]
