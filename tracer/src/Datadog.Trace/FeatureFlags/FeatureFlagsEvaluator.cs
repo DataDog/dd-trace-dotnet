@@ -302,6 +302,13 @@ namespace Datadog.Trace.FeatureFlags
                     return CompareNumber(attributeValue, condition.Value, (a, b) => a <= b);
                 case ConditionOperator.LT:
                     return CompareNumber(attributeValue, condition.Value, (a, b) => a < b);
+                case ConditionOperator.SEMVER_EQ:
+                case ConditionOperator.SEMVER_NEQ:
+                case ConditionOperator.SEMVER_LT:
+                case ConditionOperator.SEMVER_LTE:
+                case ConditionOperator.SEMVER_GT:
+                case ConditionOperator.SEMVER_GTE:
+                    return CompareSemanticVersion(attributeValue, condition.Value, condition.Operator.Value);
                 default:
                     throw new FormatException($"Unknown condition operator {condition.Operator.ToString()}");
             }
@@ -369,6 +376,29 @@ namespace Datadog.Trace.FeatureFlags
             var a = ParseDouble(attributeValue);
             var b = ParseDouble(conditionValue);
             return comparator(a, b);
+        }
+
+        private static bool CompareSemanticVersion(object attributeValue, object? conditionValue, ConditionOperator conditionOperator)
+        {
+            if (attributeValue is not string attribute
+             || conditionValue is not string comparand
+             || !SemanticVersion.TryParse(attribute, out var attributeVersion)
+             || !SemanticVersion.TryParse(comparand, out var comparandVersion))
+            {
+                return false;
+            }
+
+            var ordering = attributeVersion.CompareTo(comparandVersion);
+            return conditionOperator switch
+            {
+                ConditionOperator.SEMVER_EQ => ordering == 0,
+                ConditionOperator.SEMVER_NEQ => ordering != 0,
+                ConditionOperator.SEMVER_LT => ordering < 0,
+                ConditionOperator.SEMVER_LTE => ordering <= 0,
+                ConditionOperator.SEMVER_GT => ordering > 0,
+                ConditionOperator.SEMVER_GTE => ordering >= 0,
+                _ => false,
+            };
         }
 
         private static bool MatchesShard(Shard shard, string? targetingKey)

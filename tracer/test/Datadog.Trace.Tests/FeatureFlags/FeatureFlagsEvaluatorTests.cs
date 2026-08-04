@@ -324,6 +324,102 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal("vip", result.Variant);
     }
 
+    [Theory]
+    [InlineData("1.0.0-alpha", "1.0.0", -1)]
+    [InlineData("1.0.0-beta.2", "1.0.0-beta.11", -1)]
+    [InlineData("1.0.0+2", "1.0.0+11", -1)]
+    [InlineData("1.0.0+90", "1.0.0+090", -1)]
+    [InlineData("1.0.0+a", "1.0.0+a.b", -1)]
+    [InlineData("1.0.0+1", "1.0.0+alpha", -1)]
+    [InlineData("1.0.0+linux", "1.0.0+darwin", 1)]
+    [InlineData("18446744073709551615.0.0", "1.0.0", 1)]
+    public void SemanticVersionUsesExpectedOrdering(string left, string right, int expected)
+    {
+        SemanticVersion.TryParse(left, out var leftVersion).Should().BeTrue();
+        SemanticVersion.TryParse(right, out var rightVersion).Should().BeTrue();
+
+        Math.Sign(leftVersion.CompareTo(rightVersion)).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("1")]
+    [InlineData("1.2")]
+    [InlineData("v1.2.3")]
+    [InlineData("01.2.3")]
+    [InlineData("1.02.3")]
+    [InlineData("1.2.03")]
+    [InlineData("18446744073709551616.0.0")]
+    [InlineData("1.0.0-alpha.01")]
+    [InlineData("1.0.0-")]
+    [InlineData("1.0.0+")]
+    [InlineData("1.0.0+build..1")]
+    [InlineData("1.0.0+build_1")]
+    public void SemanticVersionRejectsInvalidSyntax(string value)
+    {
+        SemanticVersion.TryParse(value, out _).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("not-a-version", "1.2.3")]
+    [InlineData("1.2", "1.2.3")]
+    [InlineData(1.2, "1.2.0")]
+    [InlineData("1.2.3", "not-a-version")]
+    [InlineData("1.2.3", 1.2)]
+    [InlineData("1.2.3", null)]
+    public void EvaluateSemanticVersionNotEqualWithInvalidOperandDoesNotMatch(object attributeValue, object? conditionValue)
+    {
+        var condition = new ConditionConfiguration
+        {
+            Attribute = "app_version",
+            Operator = ConditionOperator.SEMVER_NEQ,
+            Value = conditionValue,
+        };
+        var flag = new Flag
+        {
+            Key = "semver-invalid-operand",
+            Enabled = true,
+            VariationType = ValueType.String,
+            Variations = new Dictionary<string, Variant> { ["matched"] = new Variant("matched", "matched") },
+            Allocations =
+            [
+                new Allocation
+                {
+                    Rules = [new Rule([condition])],
+                    Splits = [new Split { VariationKey = "matched", Shards = [] }],
+                }
+            ]
+        };
+        var evaluator = new FeatureFlagsEvaluator(
+            null,
+            new ServerConfiguration { Flags = new Dictionary<string, Flag> { ["semver-invalid-operand"] = flag } });
+
+        var result = evaluator.Evaluate(
+            "semver-invalid-operand",
+            ValueType.String,
+            "default",
+            new EvaluationContext("user", new Dictionary<string, object?> { ["app_version"] = attributeValue }));
+
+        result.Value.Should().Be("default");
+        result.Reason.Should().Be(EvaluationReason.Default);
+        result.Error.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData("SEMVER_EQ")]
+    [InlineData("SEMVER_NEQ")]
+    [InlineData("SEMVER_LT")]
+    [InlineData("SEMVER_LTE")]
+    [InlineData("SEMVER_GT")]
+    [InlineData("SEMVER_GTE")]
+    public void SemanticVersionOperatorsDeserialize(string operatorName)
+    {
+        var condition = JsonConvert.DeserializeObject<ConditionConfiguration>($"{{\"operator\":\"{operatorName}\"}}");
+
+        condition.Should().NotBeNull();
+        condition!.Operator.ToString().Should().Be(operatorName);
+    }
+
     [Fact]
     public void EvaluateTimeBasedFlagWithExpiredAllocationReturnsDefaultReason()
     {

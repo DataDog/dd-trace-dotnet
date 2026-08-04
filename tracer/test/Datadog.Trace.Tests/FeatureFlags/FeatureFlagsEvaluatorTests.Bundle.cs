@@ -49,7 +49,15 @@ public partial class FeatureFlagsEvaluatorTests
         }
 
         AssertEqual(testCase.Result.Value, result.Value);
-        AssertEqual(testCase.Result.Variant, result.Variant);
+        if (testCase.Result.Variant is not null)
+        {
+            AssertEqual(testCase.Result.Variant, result.Variant);
+        }
+
+        if (testCase.Result.Reason is not null)
+        {
+            Assert.Equal(testCase.Result.Reason, GetCanonicalReason(result.Reason));
+        }
 
         Assert.NotNull(description);
 
@@ -87,6 +95,22 @@ public partial class FeatureFlagsEvaluatorTests
             "BOOLEAN" => Trace.FeatureFlags.ValueType.Boolean,
             "JSON" => Trace.FeatureFlags.ValueType.Json,
             _ => throw new NotImplementedException(),
+        };
+    }
+
+    private static string GetCanonicalReason(EvaluationReason reason)
+    {
+        return reason switch
+        {
+            EvaluationReason.Default => "DEFAULT",
+            EvaluationReason.Static => "STATIC",
+            EvaluationReason.TargetingMatch => "TARGETING_MATCH",
+            EvaluationReason.Split => "SPLIT",
+            EvaluationReason.Disabled => "DISABLED",
+            EvaluationReason.Cached => "CACHED",
+            EvaluationReason.Unknown => "UNKNOWN",
+            EvaluationReason.Error => "ERROR",
+            _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, null),
         };
     }
 
@@ -145,7 +169,7 @@ public partial class FeatureFlagsEvaluatorTests
 
     private static List<object[]> GetTestData()
     {
-        // This file should regularly be updated from here https://github.com/DataDog/experimental/blob/main/teams/asm/iast/redaction/suite/evidence-redaction-suite.yml
+        // These embedded fixtures should regularly be updated from https://github.com/DataDog/ffe-system-test-data.
 
         List<object[]> testData = new List<object[]>();
 
@@ -179,7 +203,7 @@ public partial class FeatureFlagsEvaluatorTests
         {
             public object? Value { get; set; }
 
-            public EvaluationReason Reason { get; set; }
+            public string? Reason { get; set; }
 
             public string? Variant { get; set; }
 
