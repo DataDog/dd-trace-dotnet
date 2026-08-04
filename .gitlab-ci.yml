@@ -423,6 +423,7 @@ microbenchmarks:
 
 dsm_throughput:
   stage: benchmarks
+  needs: []
   trigger:
     include: .gitlab/benchmarks/dsm-throughput.yml
   variables:
@@ -432,12 +433,7 @@ dsm_throughput:
     # so downstream code must treat that literal as unset.
     BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL
   allow_failure: true
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
-      when: always
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
-      when: always
-    - when: manual
+  when: always
 
 
 validate_supported_configurations_v2_local_file:
