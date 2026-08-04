@@ -23,9 +23,7 @@ services:
 
   mongo_arm64:
     image: mongo:5.0.31@sha256:54bcd8da3ea5eec561b68c605046c55c6b304387dc4c2bf5b3a5f5064fbb7495
-    ports:
-      - "27017"
-    command: mongod
+    profiles: ["testcontainers"]
 
   mysql_arm64:
     image: mysql/mysql-server:8.0@sha256:d6c8301b7834c5b9c2b733b10b7e630f441af7bc917c74dba379f24eeeb6a313
@@ -95,10 +93,7 @@ services:
 
   mongo:
     image: mongo:5.0.31@sha256:54bcd8da3ea5eec561b68c605046c55c6b304387dc4c2bf5b3a5f5064fbb7495
-    profiles: ["group2"]
-    ports:
-      - "127.0.0.1:27017:27017"
-    command: mongod
+    profiles: ["testcontainers"]
 
   couchbase:
     image: couchbase:community-6.6.0@sha256:43103efdd4b562366c7a48afa977c4ad148e09c877da28a83a86b2c5ee2daa97
@@ -320,7 +315,6 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - IncludeAllTestFrameworks
-      - MONGO_HOST=mongo
       - ELASTICSEARCH7_HOST=elasticsearch7:9200
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
@@ -538,7 +532,6 @@ services:
       - elasticsearch7
       - elasticsearch6
       - elasticsearch5
-      - mongo
       - localstack
       - sqledge
       - azureservicebus-emulator
@@ -548,7 +541,7 @@ services:
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 mongo:27017 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 cosmosdb-emulator:8081 test-agent:8126 test-agent:4317 test-agent:4318
+    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 azure-eventhubs-emulator:5672 cosmosdb-emulator:8081 test-agent:8126 test-agent:4317 test-agent:4318
 
   IntegrationTests.ARM64:
     build:
@@ -580,7 +573,6 @@ services:
       - TESTCONTAINERS_RYUK_CONTAINER_IMAGE
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeAllTestFrameworks
-      - MONGO_HOST=mongo_arm64
       - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
@@ -616,7 +608,6 @@ services:
       - TEST_AGENT_HOST=test-agent
     depends_on:
       - elasticsearch7_arm64
-      - mongo_arm64
       - localstack_arm64
       - test-agent
       - cosmosdb-emulator_arm64
@@ -625,13 +616,12 @@ services:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
     depends_on:
       - elasticsearch7_arm64
-      - mongo_arm64
       - localstack_arm64
       - test-agent
       - cosmosdb-emulator_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch7_arm64:9200 mongo_arm64:27017 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
+    command: elasticsearch7_arm64:9200 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
 
   IntegrationTests.ARM64.Debugger:
     build:
@@ -705,11 +695,10 @@ services:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
     depends_on:
       - elasticsearch7_osx_arm64
-      - mongo_osx_arm64
       - localstack_osx_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch7_osx_arm64:9200 mongo_osx_arm64:27017 localstack_osx_arm64:4566
+    command: elasticsearch7_osx_arm64:9200 localstack_osx_arm64:4566
 
   # OSX ARM64 dependencies
 
@@ -736,9 +725,7 @@ services:
 
   mongo_osx_arm64:
     image: mongo:5.0.31@sha256:54bcd8da3ea5eec561b68c605046c55c6b304387dc4c2bf5b3a5f5064fbb7495
-    ports:
-      - "27017:27017"
-    command: mongod
+    profiles: ["testcontainers"]
 
   mysql_osx_arm64:
     image: mysql/mysql-server:8.0@sha256:d6c8301b7834c5b9c2b733b10b7e630f441af7bc917c74dba379f24eeeb6a313

@@ -18,6 +18,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     }
 
     [CollectionDefinition(Name, DisableParallelization = true)]
+    public class MongoDbCollection : ICollectionFixture<MongoDbFixture>
+    {
+        public const string Name = "MongoDb";
+    }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
     public class ServiceStackRedisCollection : ICollectionFixture<ServiceStackRedisFixture>
     {
         public const string Name = "ServiceStackRedis";
