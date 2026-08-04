@@ -110,14 +110,9 @@ namespace Datadog.Trace.Processors
 
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L214-L219
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsValidStatusCode(string statusCode)
+        public static bool IsValidStatusCode(int? code)
         {
-            if (int.TryParse(statusCode, out int code))
-            {
-                return 100 <= code && code < 600;
-            }
-
-            return false;
+            return code is not null && 100 <= code && code < 600;
         }
 
         // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/traceutil/normalize.go#L98-L209

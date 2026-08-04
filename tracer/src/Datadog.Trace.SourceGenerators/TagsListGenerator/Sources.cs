@@ -134,8 +134,18 @@ namespace ");
                     sb.Append('"')
                       .Append(property.TagValue)
                       .Append(@""" => ")
-                      .Append(property.PropertyName)
-                      .Append(
+                      .Append(property.PropertyName);
+
+                    switch (property.PropertyType)
+                    {
+                        case TagListGenerator.PropertyType.NullableInt:
+                            sb.Append(" is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(")
+                              .Append(property.PropertyName)
+                              .Append(".Value)");
+                            break;
+                    }
+
+                    sb.Append(
                            @",
                 ");
                 }
@@ -163,12 +173,42 @@ namespace ");
                       .Append(property.TagValue)
                       .Append(
                            @""": 
-                    ")
-                      .Append(property.PropertyName)
-                      .Append(
-                           @" = value;
+                    ");
+
+                    if (property.PropertyType is TagListGenerator.PropertyType.NullableInt)
+                    {
+                        // Invalid values (null and anything that isn't a valid integer) remove the tag
+                        sb.Append("if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsed")
+                          .Append(property.PropertyName)
+                          .Append(
+                               @"))
+                    {
+                        ")
+                          .Append(property.PropertyName)
+                          .Append(@" = parsed")
+                          .Append(property.PropertyName)
+                          .Append(
+                               @";
+                    }
+                    else
+                    {
+                        ")
+                          .Append(property.PropertyName)
+                          .Append(
+                               @" = null;
+                    }
+
                     break;
                 ");
+                    }
+                    else
+                    {
+                        sb.Append(property.PropertyName)
+                          .Append(
+                               @" = value;
+                    break;
+                ");
+                    }
                 }
 
                 var haveReadOnlyTags = false;
@@ -209,20 +249,41 @@ namespace ");
             ");
                 foreach (var property in tagList.TagProperties)
                 {
-                    sb.Append(@"if (")
-                      .Append(property.PropertyName)
-                      .Append(@" is not null)
+                    switch (property.PropertyType)
+                    {
+                        case TagListGenerator.PropertyType.NullableInt:
+                            sb.Append(@"if (")
+                              .Append(property.PropertyName)
+                              .Append(@" is not null)
             {
-                processor.Process(new TagItem<string>(""")
-                      .Append(property.TagValue)
-                      .Append(@""", ")
-                      .Append(property.PropertyName)
-                      .Append(@", ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes));
+                processor.Process(new TagItem<int>(""")
+                              .Append(property.TagValue)
+                              .Append(@""", ")
+                              .Append(property.PropertyName)
+                              .Append(@".Value, ")
+                              .Append(property.PropertyName)
+                              .Append(@"Bytes));
             }
 
             ");
+                            break;
+                        default:
+                            sb.Append(@"if (")
+                              .Append(property.PropertyName)
+                              .Append(@" is not null)
+            {
+                processor.Process(new TagItem<string>(""")
+                              .Append(property.TagValue)
+                              .Append(@""", ")
+                              .Append(property.PropertyName)
+                              .Append(@", ")
+                              .Append(property.PropertyName)
+                              .Append(@"Bytes));
+            }
+
+            ");
+                            break;
+                    }
                 }
 
                 sb.Append(
@@ -234,22 +295,45 @@ namespace ");
             ");
                 foreach (var property in tagList.TagProperties)
                 {
-                    sb.Append(@"if (")
-                      .Append(property.PropertyName)
-                      .Append(
-                           @" is not null)
+                    switch (property.PropertyType)
+                    {
+                        case TagListGenerator.PropertyType.NullableInt:
+                            sb.Append(@"if (")
+                              .Append(property.PropertyName)
+                              .Append(
+                                   @" is not null)
             {
                 sb.Append(""")
-                      .Append(property.TagValue)
-                      .Append(@" (tag):"")
+                              .Append(property.TagValue)
+                              .Append(@" (tag):"")
                   .Append(")
-                      .Append(property.PropertyName)
-                      .Append(
-                           @")
+                              .Append(property.PropertyName)
+                              .Append(
+                                   @".Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
                   .Append(',');
             }
 
             ");
+                            break;
+                        default:
+                            sb.Append(@"if (")
+                              .Append(property.PropertyName)
+                              .Append(
+                                   @" is not null)
+            {
+                sb.Append(""")
+                              .Append(property.TagValue)
+                              .Append(@" (tag):"")
+                  .Append(")
+                              .Append(property.PropertyName)
+                              .Append(
+                                   @")
+                  .Append(',');
+            }
+
+            ");
+                            break;
+                    }
                 }
 
                 sb.Append(@"base.WriteAdditionalTags(sb);

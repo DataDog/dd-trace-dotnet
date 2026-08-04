@@ -81,6 +81,7 @@ public sealed class TestModule
                 CIProvider = sessionSpanTags.CIProvider,
                 CIPipelineId = sessionSpanTags.CIPipelineId,
                 CIPipelineName = sessionSpanTags.CIPipelineName,
+                CIPipelineDisplayName = sessionSpanTags.CIPipelineDisplayName,
                 CIPipelineNumber = sessionSpanTags.CIPipelineNumber,
                 CIPipelineUrl = sessionSpanTags.CIPipelineUrl,
                 CIJobName = sessionSpanTags.CIJobName,

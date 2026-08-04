@@ -602,7 +602,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         {
             "STATUS_CODE_OK" => StatusCode.Ok,
             "STATUS_CODE_ERROR" => StatusCode.Error,
-            _ => null,
+            _ => spanModel.Span.Error ? StatusCode.Error : null,
         };
         if (statusCode is not null)
         {
