@@ -183,7 +183,14 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
                              Hex(hr));
     }
 
-    _preLoadedModuleIds = moduleIds;
+    // Resolve modules that are already loaded right away, instead of waiting for the next ModuleLoaded
+    // event. Deferring this meant the first GetModuleInfo lookup for a preloaded module (e.g. via
+    // GetAspectsModule, resolving the aspects-defining module) could happen lazily from inside a JIT
+    // callback, calling GetModuleInfo2 in a context where the runtime does not support it and crashing.
+    for (auto const& id : moduleIds)
+    {
+        GetModuleInfo(id);
+    }
 }
 
 Dataflow::~Dataflow()
@@ -386,16 +393,6 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
     CSGUARD(_cs);
-    // Retrieve all already modules at once to mimic initialization from creation behavior
-    if (_preLoadedModuleIds.size() > 0)
-    {
-        for (auto const& id : _preLoadedModuleIds)
-        {
-            GetModuleInfo(id);
-        }
-        _preLoadedModuleIds.clear();
-    }
-
     GetModuleInfo(moduleId);
     return S_OK;
 }
