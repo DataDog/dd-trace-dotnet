@@ -265,6 +265,10 @@ public:
     // Dataflow helper methods
     //
     ModuleID GetProfilerAssemblyModuleId(AppDomainID appDomainId);
+    // Datadog.Trace.dll's own module is deliberately excluded from module_ids (see TryRejitModule), but
+    // GetAspectsModule resolves it by ModuleID, so Dataflow must preload it separately to avoid resolving
+    // it lazily from inside a JIT callback.
+    std::vector<ModuleID> GetProfilerAssemblyModuleIds();
 };
 
 // Note: Generally you should not have a single, global callback implementation,
