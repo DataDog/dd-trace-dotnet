@@ -3,7 +3,9 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "DeploymentMode.h"
@@ -127,6 +129,16 @@ private:
     std::chrono::milliseconds ExtractLibrariesInfoCacheStartTimeout() const;
     int32_t ExtractHeapHandleLimit() const;
     uint32_t ExtractReferenceTreeFormat() const;
+
+// The decision below is a pure function of the environment variable and of the number of signal
+// queue slots available on the host, so tests can drive every outcome by passing a slot count.
+#ifdef DD_TEST
+public:
+#endif
+    static CpuProfilerType ExtractCpuProfilerType(bool isCpuProfilingEnabled, std::optional<std::uint64_t> availableSignalQueueSlots);
+
+    // Headroom, in signal queue slots, below which timer_create-based CPU profiling is not attempted.
+    static constexpr std::uint64_t MinimumFreeSignalQueueSlots = 512;
 
 private:
     static std::string const DefaultProdSite;
