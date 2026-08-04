@@ -1,5 +1,6 @@
 stages:
   - build
+  - test
   - publish
   - package
   - shared-pipeline-build
@@ -223,42 +224,6 @@ build:
         throw "Native test container exited with code $LASTEXITCODE"
       }
     - |
-      # Start the managed Windows unit-test migration with one modern .NET target
-      # and .NET Framework. Preserve each framework's results before the next NUKE
-      # invocation cleans the shared results and logs directories.
-      $managedTestFrameworks = @("net8.0", "net48")
-      foreach ($framework in $managedTestFrameworks) {
-        Write-Output "Building and running managed unit tests for $framework"
-        docker run --rm -m 20480M `
-          -v "$(Get-Location):c:\mnt" `
-          -e CI_JOB_ID=${CI_JOB_ID} `
-          -e WINDOWS_BUILDER=true `
-          -e AWS_NETWORKING=true `
-          -e NUGET_CERT_REVOCATION_MODE=offline `
-          -e DD_LOGGER_DD_API_KEY `
-          -e CI_IDENTITIES_GITLAB_ID_TOKEN `
-          -e CI_PROJECT_NAME `
-          -e CI_JOB_NAME_SLUG `
-          --entrypoint cmd.exe `
-          $env:WINDOWS_BUILD_IMAGE `
-          /d /s /c `
-          "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && c:\entrypoint.bat BuildManagedUnitTests RunManagedUnitTests --framework $framework --NugetPackageDirectory c:\mnt\packages"
-        $managedTestExitCode = $LASTEXITCODE
-
-        $frameworkArtifacts = Join-Path "artifacts/build_data/managed-unit-tests" $framework
-        New-Item -ItemType Directory -Path $frameworkArtifacts -Force | Out-Null
-        foreach ($directory in @("results", "logs")) {
-          $source = Join-Path "artifacts/build_data" $directory
-          if (Test-Path $source) {
-            Copy-Item -Path $source -Destination $frameworkArtifacts -Recurse -Force
-          }
-        }
-
-        if ($managedTestExitCode -ne 0) {
-          throw "Managed unit tests for $framework exited with code $managedTestExitCode"
-        }
-      }
-    - |
       # Package and sign only after the native tests pass so the release outputs are
       # produced from the successfully tested build state.
       docker run --rm -m 20480M `
@@ -289,14 +254,81 @@ build:
     expire_in: 2 weeks
     paths:
     - artifacts-out
+    # Inputs consumed by the parallel managed unit-test jobs. Each job restores its
+    # own MSBuild obj files and builds only its requested test target framework.
+    - artifacts/bin
+    - artifacts/monitoring-home
     - artifacts/build_data/tests
-    - artifacts/build_data/managed-unit-tests
     - artifacts/build_data/dumps
     - profiler/build_data/tests
     reports:
       junit:
         - artifacts/build_data/tests/*.xml
         - profiler/build_data/tests/*.xml
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
+
+unit-tests-windows:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: test
+  timeout: 1h
+  tags: ["windows-v2:2022"]
+  needs:
+    - job: build
+      artifacts: true
+  parallel:
+    matrix:
+      - FRAMEWORK:
+          - net48
+          - netcoreapp3.0
+          - netcoreapp3.1
+          - net5.0
+          - net6.0
+          - net7.0
+          - net8.0
+          - net9.0
+          - net10.0
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  script:
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+      Write-Output "Running managed unit tests for $env:FRAMEWORK with $env:WINDOWS_BUILD_IMAGE"
+
+      docker run --rm -m 20480M `
+        -v "$(Get-Location):c:\mnt" `
+        -e CI_JOB_ID=${CI_JOB_ID} `
+        -e WINDOWS_BUILDER=true `
+        -e AWS_NETWORKING=true `
+        -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e DD_LOGGER_DD_API_KEY `
+        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+        -e CI_PROJECT_NAME `
+        -e CI_JOB_NAME_SLUG `
+        --entrypoint cmd.exe `
+        $env:WINDOWS_BUILD_IMAGE `
+        /d /s /c `
+        "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && c:\entrypoint.bat BuildManagedUnitTests RunManagedUnitTests --framework $env:FRAMEWORK --NugetPackageDirectory c:\mnt\packages"
+      if ($LASTEXITCODE -ne 0) {
+        throw "Managed unit tests for $env:FRAMEWORK exited with code $LASTEXITCODE"
+      }
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    name: "managed-unit-tests-$FRAMEWORK"
+    paths:
+      - artifacts/build_data/results
+      - artifacts/build_data/logs
+      - artifacts/build_data/dumps
   id_tokens:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
