@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
@@ -67,9 +68,10 @@ namespace Datadog.Trace.Agent
 
         internal int MaxBufferSize => _maxBufferSize;
 
-        internal bool IsLocked => Volatile.Read(ref _locked);
+        [TestingOnly]
+        internal bool IsLocked => _locked;
 
-        // For tests only
+        [TestingOnly]
         internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == _serializer.HeaderSize;
 
         public WriteStatus TryWrite(in SpanCollection spans, ref byte[] temporaryBuffer, int? samplingPriority = null)

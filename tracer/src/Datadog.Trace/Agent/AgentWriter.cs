@@ -15,6 +15,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.OpenTelemetry.Traces;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -456,7 +457,7 @@ namespace Datadog.Trace.Agent
         private void SerializeTrace(in SpanCollection spans)
         {
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
-            SpanBuffer? SwapBuffers(ref int lockedBufferCount)
+            SpanBuffer? SwapBuffers()
             {
                 var alternateBuffer = _activeBuffer == _frontBuffer ? _backBuffer : _frontBuffer;
 
@@ -464,13 +465,6 @@ namespace Datadog.Trace.Agent
                 {
                     Volatile.Write(ref _activeBuffer, alternateBuffer);
                     return alternateBuffer;
-                }
-
-                // A buffer remains full while it is being flushed, so account for the lock even though
-                // we won't try to write to it.
-                if (alternateBuffer.IsLocked)
-                {
-                    lockedBufferCount++;
                 }
 
                 return null;
@@ -578,7 +572,7 @@ namespace Datadog.Trace.Agent
             }
 
             // Active buffer is full, swap them
-            buffer = SwapBuffers(ref lockedBufferCount);
+            buffer = SwapBuffers();
 
             if (buffer != null)
             {
