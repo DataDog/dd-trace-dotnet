@@ -2490,7 +2490,7 @@ std::vector<ModuleID> CorProfiler::GetProfilerAssemblyModuleIds()
     std::vector<ModuleID> moduleIds;
     auto loadedAppDomains = managed_profiler_loaded_app_domains.Get();
     moduleIds.reserve(loadedAppDomains->size());
-    for (const auto& [appDomainId, moduleId] : *loadedAppDomains)
+    for (const auto& [appDomainId, moduleId] : loadedAppDomains.Ref())
     {
         moduleIds.push_back(moduleId);
     }
