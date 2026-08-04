@@ -389,12 +389,6 @@
     <ClInclude Include="EventPipeEventsManager.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
-    <ClInclude Include="Profile.h">
-      <Filter>libdatadog</Filter>
-    </ClInclude>
-    <ClInclude Include="Exporter.h">
-      <Filter>libdatadog</Filter>
-    </ClInclude>
     <ClInclude Include="Tags.h">
       <Filter>libdatadog</Filter>
     </ClInclude>
@@ -404,21 +398,15 @@
     <ClInclude Include="FfiHelper.h">
       <Filter>libdatadog</Filter>
     </ClInclude>
-    <ClInclude Include="AgentProxy.hpp">
-      <Filter>libdatadog</Filter>
-    </ClInclude>
-    <ClInclude Include="EncodedProfile.hpp">
-      <Filter>libdatadog</Filter>
-    </ClInclude>
-    <ClInclude Include="ExporterBuilder.h">
-      <Filter>libdatadog</Filter>
-    </ClInclude>
     <ClInclude Include="ProfileExporter.h">
       <Filter>libdatadog</Filter>
     </ClInclude>
-    <ClInclude Include="ProfileImpl.hpp">
-      <Filter>libdatadog</Filter>
-    </ClInclude>
+    <ClInclude Include="ProtobufWriter.h" />
+    <ClInclude Include="EncodedPprof.h" />
+    <ClInclude Include="PprofBuilder.h" />
+    <ClInclude Include="HttpClient.h" />
+    <ClInclude Include="AgentHttpExporter.h" />
+    <ClInclude Include="DebugPprofWriter.h" />
     <ClInclude Include="Success.h">
       <Filter>libdatadog</Filter>
     </ClInclude>
@@ -430,9 +418,6 @@
     </ClInclude>
     <ClInclude Include="FileHelper.h">
       <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="FileSaver.hpp">
-      <Filter>libdatadog</Filter>
     </ClInclude>
     <ClInclude Include="FrameworkThreadInfo.h">
       <Filter>Threads</Filter>
@@ -722,12 +707,9 @@
     <ClCompile Include="EventPipeEventsManager.cpp">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
-    <ClCompile Include="Profile.cpp">
-      <Filter>libdatadog</Filter>
-    </ClCompile>
-    <ClCompile Include="Exporter.cpp">
-      <Filter>libdatadog</Filter>
-    </ClCompile>
+    <ClCompile Include="PprofBuilder.cpp" />
+    <ClCompile Include="HttpClient.cpp" />
+    <ClCompile Include="AgentHttpExporter.cpp" />
     <ClCompile Include="Tags.cpp">
       <Filter>libdatadog</Filter>
     </ClCompile>
@@ -736,9 +718,6 @@
     </ClCompile>
     <ClCompile Include="FfiHelper.cpp">
       <Filter>libdatadog</Filter>
-    </ClCompile>
-    <ClCompile Include="ExporterBuilder.cpp">
-      <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="FileHelper.cpp">
       <Filter>Utils</Filter>

@@ -125,6 +125,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -158,6 +159,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -187,6 +189,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -222,6 +225,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>Datadog.Profiler.Native.def</ModuleDefinitionFile>
+      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -245,13 +249,11 @@
     <ClInclude Include="DotnetEventsProvider.h" />
     <ClInclude Include="EnabledProfilers.h" />
     <ClInclude Include="EnablementStatus.h" />
-    <ClInclude Include="EncodedProfile.hpp" />
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
     <ClInclude Include="EventPipeEventsManager.h" />
     <ClInclude Include="EventsParserHelper.h" />
-    <ClInclude Include="ExporterBuilder.h" />
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
     <ClInclude Include="GCDescReader.h" />
@@ -285,16 +287,12 @@
     <ClInclude Include="SsiManager.h" />
     <ClInclude Include="Success.h" />
     <ClInclude Include="Exception.h" />
-    <ClInclude Include="Exporter.h" />
     <ClInclude Include="GarbageCollection.h" />
     <ClInclude Include="GCBaseRawSample.h" />
     <ClInclude Include="GarbageCollectionProvider.h" />
     <ClInclude Include="GCThreadsCpuProvider.h" />
     <ClInclude Include="IEtwEventsManager.h" />
-    <ClInclude Include="AgentProxy.hpp" />
     <ClInclude Include="SuccessImpl.hpp" />
-    <ClInclude Include="FileSaver.hpp" />
-    <ClInclude Include="ProfileImpl.hpp" />
     <ClInclude Include="TagsImpl.hpp" />
     <ClInclude Include="MetadataProvider.h" />
     <ClInclude Include="IAllocationsRecorder.h" />
@@ -312,7 +310,6 @@
     <ClInclude Include="MetricBase.h" />
     <ClInclude Include="MetricsRegistry.h" />
     <ClInclude Include="NativeThreadsCpuProviderBase.h" />
-    <ClInclude Include="Profile.h" />
     <ClInclude Include="ProxyMetric.h" />
     <ClInclude Include="RawGarbageCollectionSample.h" />
     <ClInclude Include="RawThreadLifetimeSample.h" />
@@ -367,6 +364,12 @@
     <ClInclude Include="OsSpecificApi.h" />
     <ClInclude Include="PInvoke.h" />
     <ClInclude Include="ProfileExporter.h" />
+    <ClInclude Include="ProtobufWriter.h" />
+    <ClInclude Include="EncodedPprof.h" />
+    <ClInclude Include="PprofBuilder.h" />
+    <ClInclude Include="HttpClient.h" />
+    <ClInclude Include="AgentHttpExporter.h" />
+    <ClInclude Include="DebugPprofWriter.h" />
     <ClInclude Include="ProfilerEngineStatus.h" />
     <ClInclude Include="RawAllocationSample.h" />
     <ClInclude Include="RawContentionSample.h" />
@@ -421,7 +424,6 @@
     <ClCompile Include="DogstatsdService.cpp" />
     <ClCompile Include="EnabledProfilers.cpp" />
     <ClCompile Include="EventPipeEventsManager.cpp" />
-    <ClCompile Include="ExporterBuilder.cpp" />
     <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="FrameworkThreadInfo.cpp" />
     <ClCompile Include="InlineVTCache.cpp" />
@@ -441,7 +443,6 @@
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />
-    <ClCompile Include="Exporter.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
     <ClCompile Include="GarbageCollectionProvider.cpp" />
@@ -452,7 +453,6 @@
     <ClCompile Include="MeanMaxMetric.cpp" />
     <ClCompile Include="MetricsRegistry.cpp" />
     <ClCompile Include="NativeThreadsCpuProviderBase.cpp" />
-    <ClCompile Include="Profile.cpp" />
     <ClCompile Include="ProxyMetric.cpp" />
     <ClCompile Include="RawGarbageCollectionSample.cpp" />
     <ClCompile Include="RawThreadLifetimeSample.cpp" />
@@ -466,6 +466,9 @@
     <ClCompile Include="OpSysTools.cpp" />
     <ClCompile Include="PInvoke.cpp" />
     <ClCompile Include="ProfileExporter.cpp" />
+    <ClCompile Include="PprofBuilder.cpp" />
+    <ClCompile Include="HttpClient.cpp" />
+    <ClCompile Include="AgentHttpExporter.cpp" />
     <ClCompile Include="ProfilerEngineStatus.cpp" />
     <ClCompile Include="RawExceptionSample.cpp" />
     <ClCompile Include="RawSample.cpp" />
