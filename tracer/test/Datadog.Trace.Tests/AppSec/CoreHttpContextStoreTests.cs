@@ -48,7 +48,7 @@ public class CoreHttpContextStoreTests
         store.Remove();
 
         store.Get().Should().BeNull();
-        ReadStoreIn(capturedDuringTheRequest).Should().BeNull("and in the ones captured before that");
+        ReadStoreIn(capturedDuringTheRequest).Should().BeNull();
     }
 
     [Fact]
