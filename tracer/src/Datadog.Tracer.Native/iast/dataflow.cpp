@@ -187,9 +187,14 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
     // event. Deferring this meant the first GetModuleInfo lookup for a preloaded module (e.g. via
     // GetAspectsModule, resolving the aspects-defining module) could happen lazily from inside a JIT
     // callback, calling GetModuleInfo2 in a context where the runtime does not support it and crashing.
-    for (auto const& id : moduleIds)
+    // Skip this when the QueryInterface above failed: _profiler is null and GetModuleInfo would crash
+    // dereferencing it, instead of leaving Dataflow disabled as intended.
+    if (_profiler != nullptr)
     {
-        GetModuleInfo(id);
+        for (auto const& id : moduleIds)
+        {
+            GetModuleInfo(id);
+        }
     }
 }
 
