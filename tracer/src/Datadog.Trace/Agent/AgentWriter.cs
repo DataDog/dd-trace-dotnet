@@ -143,16 +143,16 @@ namespace Datadog.Trace.Agent
 
         internal SpanBuffer BackBuffer => _backBuffer;
 
-        // For tests only
+        [TestingOnly]
         internal long DroppedTracesBufferFull => Volatile.Read(ref _droppedTracesBufferFull);
 
         [TestingOnly]
         internal long DroppedTracesBufferFullAndLocked => Volatile.Read(ref _droppedTracesBufferFullAndLocked);
 
-        // For tests only
+        [TestingOnly]
         internal long DroppedTracesBuffersLocked => Volatile.Read(ref _droppedTracesBuffersLocked);
 
-        // For tests only
+        [TestingOnly]
         internal long DroppedTracesTooLarge => Volatile.Read(ref _droppedTracesTooLarge);
 
         public bool CanComputeStats => _apmTracingEnabled && _statsAggregator.CanComputeStats == true;
