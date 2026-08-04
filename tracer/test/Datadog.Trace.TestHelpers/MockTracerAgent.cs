@@ -1623,7 +1623,8 @@ namespace Datadog.Trace.TestHelpers
                 {
                     try
                     {
-                        var bytesReceived = new byte[0x1000];
+                        // Must be at least StatsdMaxUnixDomainSocketPacketSize
+                        var bytesReceived = new byte[0x2000];
                         // Connectionless protocol doesn't need Accept, Receive will block until we get something
                         var byteCount = _udsStatsSocket.Receive(bytesReceived);
                         var stats = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);

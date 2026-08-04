@@ -273,7 +273,7 @@ internal static class OtlpMapper
         return droppedAttributesCount;
     }
 
-    internal struct TagWriter<TState> : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>
+    internal struct TagWriter<TState> : IItemProcessor<string>, IItemProcessor<int>, IItemProcessor<double>, IItemProcessor<byte[]>
     {
         private readonly KeyValueWriter<TState> _writeKeyValue;
         private readonly ITagProcessor[]? _tagProcessors;
@@ -334,6 +334,32 @@ internal static class OtlpMapper
 
             if (Count < _limit)
             {
+                if (_tagProcessors is not null)
+                {
+                    for (var i = 0; i < _tagProcessors.Length; i++)
+                    {
+                        _tagProcessors[i]?.ProcessMeta(ref key, ref value);
+                    }
+                }
+
+                _writeKeyValue(ref State, new KeyValue(key, value));
+                Count++;
+            }
+            else
+            {
+                DroppedCount++;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Process(TagItem<int> item)
+        {
+            if (Count < _limit)
+            {
+                // We are using the original key since we're not serializing MessagePack
+                string key = item.Key;
+                int value = item.Value;
+
                 if (_tagProcessors is not null)
                 {
                     for (var i = 0; i < _tagProcessors.Length; i++)

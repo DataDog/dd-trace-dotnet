@@ -609,12 +609,13 @@ std::tuple<ULONG, std::string, std::string, mdTypeDef> FrameStore::GetMethodName
         }
         else // normal namespace.type case
         {
+            // a type declared outside of any namespace has no namespace: don't prefix it with a '.'
             if (!ns.empty())
             {
-                builder << ns;
+                builder << ns << ".";
             }
 
-            builder << "." << typeName;
+            builder << typeName;
         }
 
         if (i < genericParametersCount - 1)
@@ -1117,30 +1118,17 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(ICorProfilerI
         return std::make_pair("", "T");
     }
 
-    IMetaDataImport2* pMetadata;
-    hr = pInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(&pMetadata));
+    ComPtr<IMetaDataImport2> pMetadata;
+    hr = pInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(pMetadata.GetAddressOf()));
     if (FAILED(hr))
     {
         return std::make_pair("", "T");
     }
 
-    std::string typeName = GetTypeNameFromMetadata(pMetadata, mdTypeToken);
-    pMetadata->Release();
-    if (typeName.empty())
-    {
-        return std::make_pair("", "T");
-    }
-
-    // look for the namespace
-    auto const pos = typeName.find_last_of('.');
-    if (pos == std::string::npos)
-    {
-        // no namespace
-        return std::make_pair("", std::move(typeName));
-    }
-
-    // need to split to get the namespace and type name
-    return std::make_pair(typeName.substr(0, pos), typeName.substr(pos + 1));
+    // the namespace and the enclosing types are not part of the metadata name of a nested type
+    // (such as the state machine generated for an async method): GetTypeWithNamespace() rebuilds
+    // them and, for a type that is not nested, splits the namespace from the type name
+    return GetTypeWithNamespace(pMetadata.Get(), mdTypeToken);
 }
 
 // use Peter Sollich way in ClrProfiler to parse the binary signature
