@@ -67,10 +67,7 @@ namespace Datadog.Trace.OpenTelemetry
             {
                 tags.HttpUrl = HttpRequestUtils.GetUrlFull(requestUri, queryStringManager);
                 tags.Host = GetServerAddress(requestUri.Host);
-
-                // Uri.Port is the default port for the scheme when the URL doesn't specify one,
-                // which is what we want to report in "server.port"
-                tags.ServerPort = requestUri.Port;
+                tags.ServerPort = GetServerPort(requestUri);
             }
         }
 
@@ -92,6 +89,16 @@ namespace Datadog.Trace.OpenTelemetry
                        ? host.Substring(1, host.Length - 2)
                        : host;
         }
+
+        /// <summary>
+        /// Gets the value to report in "server.port" for <paramref name="requestUri"/>. This is
+        /// <see cref="Uri.Port"/>, which is the default port for the scheme when the URL doesn't
+        /// specify one, except when the scheme has no registered default port and none was
+        /// specified either (for example, "http+unix://socket/path"). In that case,
+        /// <see cref="Uri.Port"/> is -1, which is not a valid port, so we omit the tag instead.
+        /// </summary>
+        internal static int? GetServerPort(Uri requestUri)
+            => requestUri.Port >= 0 ? requestUri.Port : null;
 
         /// <summary>
         /// Sets the response tags of an HTTP client span, using the OpenTelemetry HTTP semantic

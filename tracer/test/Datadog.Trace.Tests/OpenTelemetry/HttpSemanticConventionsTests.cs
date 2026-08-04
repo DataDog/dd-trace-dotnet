@@ -108,6 +108,24 @@ public class HttpSemanticConventionsTests
         HttpSemanticConventions.GetServerAddress(host).Should().Be(expected);
     }
 
+    [Theory]
+    // An explicit port is reported as-is
+    [InlineData("http://example.com:8080", 8080)]
+    [InlineData("https://example.com:8443", 8443)]
+
+    // No explicit port falls back to the scheme's default port
+    [InlineData("http://example.com", 80)]
+    [InlineData("https://example.com", 443)]
+
+    // A scheme with no registered default port and no explicit port has no valid port to report,
+    // as Uri.Port is -1 in that case (for example, a custom HttpMessageHandler using a
+    // "http+unix://socket/path" style URI)
+    [InlineData("http+unix://socket/path", null)]
+    public void GetServerPort_OmitsThePortWhenTheUriHasNone(string uri, int? expected)
+    {
+        HttpSemanticConventions.GetServerPort(new Uri(uri)).Should().Be(expected);
+    }
+
     // A Version can carry a build and a revision, which the major/minor patterns ignore. We must
     // not fall through to Version.ToString() for those, or an HTTP/1.1 response constructed as a
     // four-component Version would be reported as "1.1.0.0".
