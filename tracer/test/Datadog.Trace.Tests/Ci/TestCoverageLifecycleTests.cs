@@ -8,6 +8,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
@@ -60,6 +62,34 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
         action.Should().Throw<InvalidOperationException>().WithMessage("Injected coverage-end failure.");
         test.IsClosed.Should().BeTrue();
         handler.Container.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ConcurrentCloseClaimsCoverageSessionExactlyOnce()
+    {
+        var handler = new CountingCoverageEventHandler();
+        using var harness = new TestHarness(handler);
+        var test = harness.Suite.CreateTest("concurrent-close");
+        using var start = new ManualResetEventSlim();
+
+        var firstClose = Task.Run(
+            () =>
+            {
+                start.Wait();
+                test.Close(TestStatus.Pass);
+            });
+        var secondClose = Task.Run(
+            () =>
+            {
+                start.Wait();
+                test.Close(TestStatus.Pass);
+            });
+
+        start.Set();
+        await Task.WhenAll(firstClose, secondClose);
+
+        test.IsClosed.Should().BeTrue();
+        handler.FinishedCount.Should().Be(1);
     }
 
     [Fact]
@@ -160,6 +190,27 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
         {
             deferCompletion = false;
             throw new InvalidOperationException("Injected coverage-end failure.");
+        }
+    }
+
+    private sealed class CountingCoverageEventHandler : CoverageEventHandler
+    {
+        private int _finishedCount;
+
+        public int FinishedCount => _finishedCount;
+
+        protected override void OnSessionStart(CoverageContextContainer context)
+        {
+        }
+
+        protected override object? OnSessionFinished(
+            CoverageContextContainer context,
+            IReadOnlyList<ModuleValue> modules,
+            out bool deferCompletion)
+        {
+            Interlocked.Increment(ref _finishedCount);
+            deferCompletion = false;
+            return null;
         }
     }
 

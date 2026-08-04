@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.IO;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Coverage;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
@@ -38,7 +37,6 @@ namespace Datadog.Trace.Coverage.Collector;
 public class InProcCoverageCollector : InProcDataCollection
 {
     private const string OutputPathKey = "OutputPath";
-    private string? _outputPathValue = null;
 
     /// <summary>
     /// Initialize inproc coverage collector
@@ -54,14 +52,10 @@ public class InProcCoverageCollector : InProcDataCollection
     /// <param name="testSessionStartArgs">Test session start arguments</param>
     public void TestSessionStart(TestSessionStartArgs testSessionStartArgs)
     {
-        if (testSessionStartArgs.GetPropertyValue(OutputPathKey) is string outputPath)
-        {
-            _outputPathValue = outputPath;
-        }
-
         if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
         {
-            var outputDirectory = _outputPathValue ?? Environment.CurrentDirectory;
+            var configuredOutputPath = testSessionStartArgs.GetPropertyValue(OutputPathKey) as string;
+            var outputDirectory = CoverageReporter.ResolveCollectorOutputDirectory(configuredOutputPath, Environment.CurrentDirectory);
             coverageHandler.RegisterCollectorOutputDirectory(outputDirectory);
         }
     }

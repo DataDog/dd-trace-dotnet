@@ -46,6 +46,9 @@ public static class CoverageReporter
 
     internal static CoverageContextContainer GlobalContainer => Handler.GlobalContainer;
 
+    internal static string ResolveCollectorOutputDirectory(string? configuredOutputDirectory, string fallbackDirectory)
+        => StringUtil.IsNullOrWhiteSpace(configuredOutputDirectory) ? fallbackDirectory : configuredOutputDirectory!;
+
     /// <summary>
     /// Publishes the final global coverage snapshot and seals the process output, if coverage was used by this process.
     /// </summary>

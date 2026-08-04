@@ -20,6 +20,14 @@ namespace Datadog.Trace.Tests.Ci;
 [Collection(nameof(CoverageGlobalStateTestCollection))]
 public class GlobalCoverageOutputTests
 {
+    [Theory]
+    [InlineData(null, "/fallback", "/fallback")]
+    [InlineData("", "/fallback", "/fallback")]
+    [InlineData("   ", "/fallback", "/fallback")]
+    [InlineData("/configured", "/fallback", "/configured")]
+    public void CollectorOutputDirectoryIsNormalized(string? configuredDirectory, string fallbackDirectory, string expected)
+        => CoverageReporter.ResolveCollectorOutputDirectory(configuredDirectory, fallbackDirectory).Should().Be(expected);
+
     [Fact]
     public unsafe void SealPublishesOneProcessArtifactWithTheExactAccumulatedUnion()
     {
@@ -108,6 +116,30 @@ public class GlobalCoverageOutputTests
             output.RegisterCollectorAndFreeze(directory).Should().BeTrue();
 
             Directory.GetFiles(directory, GlobalCoverageProtocol.PendingMarkerPattern).Should().ContainSingle();
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ConfiguredOutputDirectoryTakesPrecedenceOverCollectorDirectory()
+    {
+        var directory = CreateTemporaryDirectory();
+        try
+        {
+            var configuredDirectory = Path.Combine(directory, "configured");
+            var collectorDirectory = Path.Combine(directory, "collector");
+            var output = new GlobalCoverageOutputManager(
+                configuredDirectory,
+                directory,
+                () => "configured-precedence");
+
+            output.RegisterCollectorAndFreeze(collectorDirectory).Should().BeTrue();
+
+            Directory.GetFiles(configuredDirectory, GlobalCoverageProtocol.PendingMarkerPattern).Should().ContainSingle();
+            Directory.Exists(collectorDirectory).Should().BeFalse();
         }
         finally
         {

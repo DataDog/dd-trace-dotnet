@@ -512,6 +512,7 @@ public sealed class Test
         // Calculate duration beforehand
         duration ??= scope.Span.Context.TraceContext.Clock.ElapsedSince(scope.Span.StartTime);
 
+        // The immutable coverage handle must be claimed once because Close() may be called concurrently.
         var coverageSessionHandle = Interlocked.Exchange(ref _coverageSessionHandle, null);
         var coverageEnded = coverageSessionHandle is null || !coverageSessionHandle.IsValid;
         try
@@ -519,7 +520,7 @@ public sealed class Test
             // Set coverage through the exact handler/context captured when the test was constructed.
             if (coverageSessionHandle is { IsValid: true })
             {
-                var coverageResult = coverageSessionHandle.Owner!.EndSession(coverageSessionHandle);
+                var coverageResult = coverageSessionHandle.Owner.EndSession(coverageSessionHandle);
                 coverageEnded = true;
                 if (coverageResult is Coverage.Models.Tests.TestCoverage testCoverage)
                 {

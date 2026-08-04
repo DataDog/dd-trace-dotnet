@@ -1,32 +1,42 @@
-// <copyright file="CiRunGlobalCoverageMemoryTests.cs" company="Datadog">
+// <copyright file="GlobalCoverageMemoryTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET8_0
+#if NET8_0 || NET10_0
 
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Xml.Linq;
+using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Backfill;
+using Datadog.Trace.Ci.Ipc;
+using Datadog.Trace.Ci.Ipc.Messages;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
+using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Tools.Runner.IntegrationTests;
+namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
-[Collection(nameof(ConsoleTestsCollection))]
-public sealed class CiRunGlobalCoverageMemoryTests
+public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
 {
-    private const long MaximumStressPrivateBytesGrowth = 384L * 1024 * 1024;
+    private const long MaximumStressMemoryGrowth = 384L * 1024 * 1024;
     private const string SampleName = "NUnitGlobalCoverageMemory";
     private const string SampleSourceFileName = "GlobalCoverageMemoryTests.cs";
     private const int CommonCoverageLine = 131_072;
@@ -35,34 +45,116 @@ public sealed class CiRunGlobalCoverageMemoryTests
     private const int LastCoverageSentinelLine = 131_075;
     private readonly ITestOutputHelper _output;
 
-    public CiRunGlobalCoverageMemoryTests(ITestOutputHelper output)
+    public GlobalCoverageMemoryTests(ITestOutputHelper output)
+        : base(SampleName, output)
     {
         _output = output;
     }
 
-    [SkippableTheory]
-    [InlineData("3.2.0")]
-    [InlineData("6.0.0")]
+    [SkippableFact]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "LoadTest")]
-    public void SixThousandNUnitContextsDoNotRetainNativeCoverageBuffers(string coverletVersion)
+    public void SixThousandNUnitContextsDoNotRetainNativeCoverageBuffers()
     {
-        Skip.IfNot(FrameworkDescription.Instance.IsWindows());
-        RunStress(
-            packageVersion: coverletVersion,
-            expectedCaseCount: 6_000,
-            includeCoverlet: true);
+        RunStress(expectedCaseCount: 6_000);
     }
 
-    private void RunStress(
-        string packageVersion,
-        int expectedCaseCount,
-        bool includeCoverlet)
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.NUnitGlobalCoverageMemoryCoverlet), MemberType = typeof(PackageVersions))]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    public async Task SupportedCoverletVersionsProduceCorrectCoverage(string packageVersion)
     {
-        var environmentHelper = new EnvironmentHelper(SampleName, typeof(CiRunGlobalCoverageMemoryTests), _output);
-        var sampleAssembly = environmentHelper.GetTestCommandForSampleApplicationPath(packageVersion, "net8.0");
+        var coverageResults = new List<CodeCoverageAggregationResult>();
+        var unresolvedCoverageReferences = new List<string>();
+        InjectSession(
+            out var sessionId,
+            out _,
+            out _,
+            out _,
+            out _,
+            out _,
+            out var runId);
+
+        using var root = new TemporaryDirectory("dd-coverlet-compatibility-");
+        var resultsDirectory = Directory.CreateDirectory(Path.Combine(root.RootPath, "results")).FullName;
+        var logDirectory = Directory.CreateDirectory(Path.Combine(root.RootPath, "logs")).FullName;
+        var progressPath = Path.Combine(root.RootPath, "progress.jsonl");
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.CodeCoverage, "1");
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, "dotnet test --collect XPlat Code Coverage");
+        SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDirectory);
+        SetEnvironmentVariable("NUNIT_GLOBAL_COVERAGE_CASE_COUNT", "1");
+        SetEnvironmentVariable("NUNIT_GLOBAL_COVERAGE_PROGRESS_PATH", progressPath);
+
+        var coverageIpcTestOptimization = CreateCoverageIpcTestOptimization(runId);
+        using var ipcServer = new IpcServer($"session_{sessionId}");
+        ipcServer.SetMessageReceivedCallback(
+            message =>
+            {
+                if (TryResolveCoverageIpcMessage(coverageIpcTestOptimization, sessionId, message, out var coverageResult, out var unresolvedReference))
+                {
+                    lock (coverageResults)
+                    {
+                        coverageResults.Add(coverageResult);
+                    }
+                }
+                else if (unresolvedReference is not null)
+                {
+                    lock (unresolvedCoverageReferences)
+                    {
+                        unresolvedCoverageReferences.Add(unresolvedReference);
+                    }
+                }
+            });
+
+        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true, useStatsD: !IsMacOS());
+        using var processResult = await RunDotnetTestSampleAndWaitForExit(
+                                      agent,
+                                      arguments: $"/Collect:\"XPlat Code Coverage;IncludeTestAssembly=true\" /ResultsDirectory:\"{resultsDirectory}\"",
+                                      packageVersion: packageVersion,
+                                      expectedExitCode: 0);
+
+        AssertProgress(progressPath, expectedCaseCount: 1);
+        AssertCoberturaCoverage(resultsDirectory);
+        var logLines = Directory.GetFiles(logDirectory, "*.log", SearchOption.AllDirectories)
+                                .SelectMany(File.ReadLines)
+                                .ToArray();
+        logLines.Should().Contain(
+            line => line.Contains(nameof(CoverageGetCoverageResultIntegration), StringComparison.Ordinal),
+            "the native profiler must match and rewrite Coverlet.Core.Coverage.GetCoverageResult for every supported version");
+        logLines.Should().NotContain(line => line.Contains("Could not cast to ICoverageResultProxy", StringComparison.Ordinal));
+
+        lock (unresolvedCoverageReferences)
+        {
+            unresolvedCoverageReferences.Should().BeEmpty();
+        }
+
+        if (FrameworkDescription.Instance.IsWindows())
+        {
+            // On Windows the in-process Coverlet callback proves that the CallTarget integration ran.
+            // Coverlet currently writes Cobertura without invoking that callback on Linux, where the
+            // report assertions above still verify the real collector and its line-level correctness.
+            CodeCoverageAggregationResult coverageResult;
+            lock (coverageResults)
+            {
+                coverageResult = coverageResults.Should().ContainSingle().Subject;
+            }
+
+            coverageResult.Source.Should().Be(CodeCoverageReportSource.Coverlet);
+            coverageResult.Percentage.Should().BeGreaterThan(0);
+            coverageResult.ExecutableLines.Should().BeGreaterThan(0);
+            coverageResult.CoveredLines.Should().BeGreaterThan(0);
+        }
+    }
+
+    private void RunStress(int expectedCaseCount)
+    {
+        var environmentHelper = new EnvironmentHelper(SampleName, typeof(GlobalCoverageMemoryTests), _output);
+        var sampleAssembly = environmentHelper.GetTestCommandForSampleApplicationPath();
         File.Exists(sampleAssembly).Should().BeTrue($"the required sample output must be present at {sampleAssembly}");
 
         var runnerDirectory = GetRunnerDirectory();
@@ -81,7 +173,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
         using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
         var logDirectory = Directory.CreateDirectory(Path.Combine(root.RootPath, "logs")).FullName;
         var progressPath = Path.Combine(root.RootPath, "progress.jsonl");
-        var targetCommand = CreateVstestCommand(environmentHelper.GetDotnetExe(), sampleAssembly, includeCoverlet);
+        var targetCommand = CreateVstestCommand(environmentHelper.GetDotnetExe(), sampleAssembly);
         var arguments = CreateCiRunArguments(
             environmentHelper.MonitoringHome,
             agent.Port,
@@ -98,19 +190,6 @@ public sealed class CiRunGlobalCoverageMemoryTests
         var testhostProcessId = AssertProgress(progressPath, expectedCaseCount);
         AssertPublishedCoverage(coverageDirectory, expectedCaseCount);
         AssertCoverageDiagnostics(logDirectory, testhostProcessId, expectedCaseCount);
-
-        static string GetRunnerDirectory()
-        {
-            // The integration-test output also contains Datadog.collector.dll from DatadogTestCollector.
-            // Use the tool output so VSTest resolves the same collector and directory layout shipped to customers.
-            var pivot = $"{EnvironmentTools.GetBuildConfiguration().ToLowerInvariant()}_net8.0";
-            return Path.Combine(
-                EnvironmentTools.GetSolutionDirectory(),
-                "artifacts",
-                "bin",
-                "Datadog.Trace.Tools.Runner.Tool",
-                pivot);
-        }
     }
 
     private ProcessResult RunRunner(string dotnetExecutable, string runnerAssembly, string[] arguments, string logDirectory)
@@ -158,25 +237,28 @@ public sealed class CiRunGlobalCoverageMemoryTests
         return new ProcessResult(process.ExitCode, output, error);
     }
 
-    private string[] CreateVstestCommand(
-        string dotnetExecutable,
-        string sampleAssembly,
-        bool includeCoverlet)
+    private string GetRunnerDirectory()
     {
-        var command = new System.Collections.Generic.List<string>
-        {
+        // The integration-test output also contains Datadog.collector.dll from DatadogTestCollector.
+        // Use the tool output so VSTest resolves the same collector and directory layout shipped to customers.
+        // The tool artifact used by integration tests is published for net8.0 independently of
+        // the sample TFM. A net8 runner can launch both net8 and net10 VSTest assemblies.
+        var pivot = $"{EnvironmentTools.GetBuildConfiguration().ToLowerInvariant()}_net8.0";
+        return Path.Combine(
+            EnvironmentTools.GetSolutionDirectory(),
+            "artifacts",
+            "bin",
+            "Datadog.Trace.Tools.Runner.Tool",
+            pivot);
+    }
+
+    private string[] CreateVstestCommand(string dotnetExecutable, string sampleAssembly)
+        =>
+        [
             dotnetExecutable,
             "vstest",
             sampleAssembly,
-        };
-
-        if (includeCoverlet)
-        {
-            command.Add("/Collect:XPlat Code Coverage;IncludeTestAssembly=true");
-        }
-
-        return command.ToArray();
-    }
+        ];
 
     private string[] CreateCiRunArguments(
         string monitoringHome,
@@ -187,7 +269,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
         int expectedCaseCount,
         string[] targetCommand)
     {
-        var arguments = new System.Collections.Generic.List<string>
+        var arguments = new List<string>
         {
             "ci",
             "run",
@@ -235,18 +317,21 @@ public sealed class CiRunGlobalCoverageMemoryTests
                           .ToArray();
 
         records.Should().NotBeEmpty();
-        records.Should().OnlyContain(record => record != null && record.Pid > 0 && record.PrivateBytes > 0 && record.ManagedBytes > 0);
+        records.Should().OnlyContain(record => record != null && record.Pid > 0 && record.ManagedBytes > 0);
         records.Select(static record => record!.Pid).Distinct().Should().ContainSingle("all test cases must run in one testhost process");
         records[^1]!.Completed.Should().Be(expectedCaseCount);
 
-        if (expectedCaseCount > 1)
+        if (expectedCaseCount > 1 && !IsMacOS())
         {
-            var initialPrivateBytes = records[0]!.PrivateBytes;
-            var maximumPrivateBytes = records.Max(static record => record!.PrivateBytes);
-            (maximumPrivateBytes - initialPrivateBytes).Should()
-                                                       .BeLessThan(
-                                                            MaximumStressPrivateBytesGrowth,
-                                                            "completed test contexts must not retain their 128 KiB native coverage buffers");
+            // Process.PrivateMemorySize64 reports zero on macOS. Linux and Windows, which run this
+            // regression in CI, must provide private-byte samples so the native leak remains covered.
+            records.Should().OnlyContain(record => record!.PrivateBytes > 0, "the stress run requires private-byte measurements");
+            var initialBytes = records[0]!.PrivateBytes;
+            var maximumBytes = records.Max(static record => record!.PrivateBytes);
+            (maximumBytes - initialBytes).Should()
+                                         .BeLessThan(
+                                              MaximumStressMemoryGrowth,
+                                              "completed test contexts must not retain their 128 KiB native coverage buffers");
         }
 
         return records[0]!.Pid;
@@ -275,6 +360,73 @@ public sealed class CiRunGlobalCoverageMemoryTests
 
         Directory.GetFiles(coverageDirectory, GlobalCoverageProtocol.CoverageFilePattern, SearchOption.TopDirectoryOnly).Should().NotBeEmpty();
         Directory.GetFiles(coverageDirectory, ".dd-coverage-process-incomplete-*", SearchOption.TopDirectoryOnly).Should().BeEmpty();
+    }
+
+    private void AssertCoberturaCoverage(string resultsDirectory)
+    {
+        var reportPath = Directory.GetFiles(resultsDirectory, "coverage.cobertura.xml", SearchOption.AllDirectories)
+                                  .Should()
+                                  .ContainSingle()
+                                  .Subject;
+        var sourceClasses = XDocument.Load(reportPath)
+                                     .Descendants("class")
+                                     .Where(element => string.Equals(Path.GetFileName((string?)element.Attribute("filename")), SampleSourceFileName, StringComparison.OrdinalIgnoreCase))
+                                     .ToArray();
+        sourceClasses.Should().NotBeEmpty();
+        var lines = sourceClasses.SelectMany(static element => element.Descendants("line"))
+                                 .GroupBy(element => int.Parse(element.Attribute("number")!.Value, CultureInfo.InvariantCulture))
+                                 .ToDictionary(
+                                      static group => group.Key,
+                                      static group => group.Sum(element => long.Parse(element.Attribute("hits")!.Value, CultureInfo.InvariantCulture)));
+
+        lines[CommonCoverageLine].Should().BeGreaterThan(0);
+        lines[FirstCoverageSentinelLine].Should().BeGreaterThan(0);
+        lines[MiddleCoverageSentinelLine].Should().Be(0);
+        lines[LastCoverageSentinelLine].Should().Be(0);
+    }
+
+    private bool TryResolveCoverageIpcMessage(ITestOptimization testOptimization, ulong sessionId, object message, out CodeCoverageAggregationResult result, out string? unresolvedReference)
+    {
+        result = default;
+        unresolvedReference = null;
+
+        if (message is SessionCodeCoverageMessage coverageMessage)
+        {
+            result = new CodeCoverageAggregationResult(
+                coverageMessage.Source,
+                coverageMessage.Value,
+                coverageMessage.Backfilled,
+                coverageMessage.ExecutableLines,
+                coverageMessage.CoveredLines,
+                coverageMessage.Diagnostic,
+                coverageMessage.ResultId,
+                coverageMessage.BackfillValidated,
+                coverageMessage.BackfillNotApplicable,
+                coverageMessage.BackfillValidation,
+                coverageMessage.SupersededResultIds);
+            return true;
+        }
+
+        if (message is SessionCodeCoverageReferenceMessage referenceMessage)
+        {
+            if (CoverageBackfillDataStore.TryReadCoverageIpcResult(testOptimization, sessionId, referenceMessage.Source, referenceMessage.ResultId, out result))
+            {
+                return true;
+            }
+
+            unresolvedReference = $"{referenceMessage.Source}:{referenceMessage.ResultId}";
+        }
+
+        return false;
+    }
+
+    private ITestOptimization CreateCoverageIpcTestOptimization(string runId)
+    {
+        var testOptimization = new Mock<ITestOptimization>();
+        testOptimization.Setup(x => x.RunId).Returns(runId);
+        testOptimization.Setup(x => x.CIValues).Returns(new CoverageIpcTestEnvironmentValues(Environment.CurrentDirectory));
+        testOptimization.Setup(x => x.Log).Returns(DatadogLogging.GetLoggerFor(typeof(GlobalCoverageMemoryTests)));
+        return testOptimization.Object;
     }
 
     private void AssertLine(byte[]? bitmap, int line, bool expected)
@@ -316,7 +468,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
         Parse(nativeAllocationMatch, 2).Should().Be(allocations);
         Parse(nativeAllocationMatch, 3).Should().BeGreaterThanOrEqualTo(128 * 1024);
 
-        static Match FindLastMatch(string[] lines, string pattern)
+        static System.Text.RegularExpressions.Match FindLastMatch(string[] lines, string pattern)
         {
             var match = lines.Select(line => Regex.Match(line, pattern, RegexOptions.CultureInvariant))
                              .LastOrDefault(static candidate => candidate.Success);
@@ -324,7 +476,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
             return match!;
         }
 
-        static long Parse(Match match, int group)
+        static long Parse(System.Text.RegularExpressions.Match match, int group)
             => long.Parse(match.Groups[group].Value, NumberStyles.None, CultureInfo.InvariantCulture);
     }
 
@@ -341,6 +493,18 @@ public sealed class CiRunGlobalCoverageMemoryTests
         public long ManagedBytes { get; set; }
     }
 
+    private sealed class CoverageIpcTestEnvironmentValues : CIEnvironmentValues
+    {
+        public CoverageIpcTestEnvironmentValues(string workspacePath)
+        {
+            WorkspacePath = workspacePath;
+        }
+
+        protected override void Setup(IGitInfo gitInfo)
+        {
+        }
+    }
+
     private sealed class TemporaryDirectory : IDisposable
     {
         public TemporaryDirectory(string prefix)
@@ -353,10 +517,7 @@ public sealed class CiRunGlobalCoverageMemoryTests
 
         public void Dispose()
         {
-            if (Directory.Exists(RootPath))
-            {
-                Directory.Delete(RootPath, recursive: true);
-            }
+            Directory.Delete(RootPath, recursive: true);
         }
     }
 }

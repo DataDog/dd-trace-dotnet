@@ -54,7 +54,9 @@ internal sealed class GlobalCoverageAccumulator
 
     public long AcceptedContextCount => Volatile.Read(ref _acceptedContextCount);
 
-    private static bool IsRecoverable(Exception exception)
+    // Global coverage is optional. Suppressing an OutOfMemoryException only abandons its retained
+    // state; it does not claim that the process recovered or retry the failed allocation.
+    private static bool ShouldSuppressGlobalCoverage(Exception exception)
         => exception is OutOfMemoryException or OverflowException or GlobalCoverageLimitException or GlobalCoverageMetadataException;
 
     private static GlobalCoverageInfo Materialize(CoverageState coverage)
@@ -105,7 +107,7 @@ internal sealed class GlobalCoverageAccumulator
                 return GlobalCoverageMergeResult.Merged;
             }
         }
-        catch (Exception ex) when (IsRecoverable(ex))
+        catch (Exception ex) when (ShouldSuppressGlobalCoverage(ex))
         {
             Suppress(GlobalCoverageFailureReason.MergeFailed);
             return GlobalCoverageMergeResult.BecameSuppressedIncomplete;
@@ -267,7 +269,7 @@ internal sealed class GlobalCoverageAccumulator
                 return GlobalCoverageSnapshotResult.Success(snapshot);
             }
         }
-        catch (Exception ex) when (IsRecoverable(ex))
+        catch (Exception ex) when (ShouldSuppressGlobalCoverage(ex))
         {
             Suppress(GlobalCoverageFailureReason.SnapshotFailed);
             return GlobalCoverageSnapshotResult.Suppressed(FailureReason);

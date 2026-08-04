@@ -549,16 +549,16 @@
     "integrationName": "DotnetTest",
     "assemblyName": "coverlet.core",
     "minAssemblyVersionInclusive": "3.0.0",
-    "maxAssemblyVersionInclusive": "6.65535.65535",
+    "maxAssemblyVersionInclusive": "10.65535.65535",
     "packages": [
       {
         "name": "coverlet.collector",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "3.0.0",
         "minVersionTestedInclusive": "3.2.0",
-        "maxVersionSupportedInclusive": "6.0.4",
+        "maxVersionSupportedInclusive": "10.0.1",
         "maxVersionAvailableInclusive": "10.0.1",
-        "maxVersionTestedInclusive": "6.0.0"
+        "maxVersionTestedInclusive": "10.0.1"
       }
     ]
   },

@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Datadog.Trace.Ci.Coverage;
 
 internal sealed class CoverageSessionHandle
@@ -31,6 +33,7 @@ internal sealed class CoverageSessionHandle
 
     public CoverageContextAdmission Admission { get; }
 
+    [MemberNotNullWhen(true, nameof(Owner), nameof(Context))]
     public bool IsValid => Owner is not null && Context is not null;
 
     public void AbortIncomplete(GlobalCoverageFailureReason reason)

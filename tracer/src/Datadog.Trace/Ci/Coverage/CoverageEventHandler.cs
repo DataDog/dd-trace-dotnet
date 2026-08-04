@@ -93,7 +93,7 @@ internal abstract class CoverageEventHandler
             ThrowHelper.ThrowInvalidOperationException("The coverage session handle belongs to another handler.");
         }
 
-        var context = handle.Context!;
+        var context = handle.Context;
         if (ReferenceEquals(_asyncContext.Value, context))
         {
             _asyncContext.Value = null;

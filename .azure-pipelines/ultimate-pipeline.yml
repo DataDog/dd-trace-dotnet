@@ -1686,16 +1686,6 @@ stages:
       parameters:
         framework: $(framework)
         includeMultiVersions: false
-    # The global coverage regression tests exercise two Coverlet versions. Keep the
-    # Windows download surgical instead of pulling every multi-version sample.
-    - template: steps/download-artifact.yml
-      parameters:
-        artifact: samples-multi-version-net8.0
-        path: $(outputDir)/publish
-        patterns: |
-          Samples.NUnitGlobalCoverageMemory/release_net8.0_3.2.0/**
-          Samples.NUnitGlobalCoverageMemory/release_net8.0_6.0.0/**
-        condition: and(succeeded(), eq(variables['framework'], 'net8.0'), ne(variables['area'], 'ASM'))
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
 #    - powershell: |
