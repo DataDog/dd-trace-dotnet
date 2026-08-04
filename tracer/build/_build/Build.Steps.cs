@@ -1433,7 +1433,10 @@ partial class Build
         .After(Restore, CompileManagedSrc)
         .Executes(() =>
         {
-            DotnetBuild(TracerDirectory.GlobFiles("src/**/Datadog.InstrumentedAssembly*.csproj"), noDependencies: false);
+            DotnetBuild(
+                TracerDirectory.GlobFiles("src/**/Datadog.InstrumentedAssembly*.csproj"),
+                noRestore: string.IsNullOrEmpty(NugetPackageDirectory),
+                noDependencies: false);
         });
 
     Target CompileManagedTestHelpers => _ => _
