@@ -49,7 +49,9 @@
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 class ContentionProvider;
@@ -261,6 +263,27 @@ private :
     SamplesCollector* _pSamplesCollector = nullptr;
     StopTheWorldGCProvider* _pStopTheWorldProvider = nullptr;
     GarbageCollectionProvider* _pGarbageCollectionProvider = nullptr;
+
+    // Low-overhead GC path: when only GC profiling is enabled (no allocation/heap
+    // profiling) on .NET 8+, GC lifecycle is collected via the COR_PRF_HIGH_BASIC_GC
+    // ICorProfiler callbacks instead of the EventPipe KEYWORD_GC stream. That stream
+    // makes the runtime serialize ~6 + one-per-heap (GCPerHeapHistory) events per
+    // collection; the callbacks fire once per collection, eliminating that emission.
+    // Reduced fidelity vs the event path: no compaction flag / memory-pressure /
+    // background-vs-foreground type (see PROF-15622).
+    bool _useGcCallbacks = false;
+    std::mutex _gcCallbackLock;
+    bool _gcInProgress = false;
+    int32_t _gcNumber = 0;
+    uint32_t _gcGeneration = 0;
+    GCReason _gcReason = GCReason::AllocSmall;
+    std::chrono::nanoseconds _gcStartTimestamp{0};
+    std::chrono::nanoseconds _gcSuspensionStart{0};
+    std::chrono::nanoseconds _gcPauseDuration{0};
+    void OnGcCallbackSuspendStarted(COR_PRF_SUSPEND_REASON suspendReason);
+    void OnGcCallbackResumeFinished();
+    void OnGcCallbackStarted(int cGenerations, BOOL generationCollected[], COR_PRF_GC_REASON reason);
+    void OnGcCallbackFinished();
     LiveObjectsProvider* _pLiveObjectsProvider = nullptr;
     ThreadLifetimeProvider* _pThreadLifetimeProvider = nullptr;
     NetworkProvider* _pNetworkProvider = nullptr;
