@@ -50,9 +50,9 @@ public class HttpSemanticConventionsTests
     [InlineData("GET", "GET")]
     [InlineData("POST", "POST")]
     [InlineData("_OTHER", "HTTP")]
-    public void GetSpanName_UsesHttpForUnknownMethods(string requestMethod, string expected)
+    public void GetResourceName_UsesHttpForUnknownMethods(string requestMethod, string expected)
     {
-        HttpSemanticConventions.GetSpanName(requestMethod).Should().Be(expected);
+        HttpSemanticConventions.GetResourceName(requestMethod).Should().Be(expected);
     }
 
     // NormalizeRequestMethod holds the known methods twice: an ordinal switch for the fast path,

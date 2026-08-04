@@ -61,7 +61,7 @@ namespace Datadog.Trace.OpenTelemetry
             // The span name is "{method} {target}", but there is no low-cardinality target available
             // for HTTP client spans until we support "url.template", so we only use the method.
             // Note that we must not fall back to using the URI path as the target.
-            span.ResourceName = GetSpanName(requestMethod);
+            span.ResourceName = GetResourceName(requestMethod);
 
             if (requestUri is not null)
             {
@@ -192,10 +192,10 @@ namespace Datadog.Trace.OpenTelemetry
         }
 
         /// <summary>
-        /// Gets the span name for a request with the provided "http.request.method" value, when no
+        /// Gets the resource name for a request with the provided "http.request.method" value, when no
         /// low-cardinality target is available.
         /// </summary>
-        internal static string GetSpanName(string requestMethod)
+        internal static string GetResourceName(string requestMethod)
             => string.Equals(requestMethod, OtherRequestMethod, StringComparison.Ordinal)
                    ? UnknownMethodSpanName
                    : requestMethod;
