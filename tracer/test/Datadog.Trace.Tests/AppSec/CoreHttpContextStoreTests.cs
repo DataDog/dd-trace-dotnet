@@ -47,7 +47,7 @@ public class CoreHttpContextStoreTests
 
         store.Remove();
 
-        store.Get().Should().BeNull("the context is gone in the ExecutionContext that removed it");
+        store.Get().Should().BeNull();
         ReadStoreIn(capturedDuringTheRequest).Should().BeNull("and in the ones captured before that");
     }
 
