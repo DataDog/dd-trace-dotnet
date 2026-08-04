@@ -271,7 +271,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         if (isIastEnabled || isRaspEnabled)
         {
             auto modules = module_ids.Get();
-            _dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref(), runtime_information_);
+            std::vector<ModuleID> preloadedModuleIds = modules.Ref();
+            const auto& profilerModuleIds = GetProfilerAssemblyModuleIds();
+            preloadedModuleIds.insert(preloadedModuleIds.end(), profilerModuleIds.begin(), profilerModuleIds.end());
+            _dataflow = new iast::Dataflow(info_, rejit_handler, preloadedModuleIds, runtime_information_);
         }
         else
         {
@@ -2104,7 +2107,10 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, size_t aspectsLength, UINT
     {
         Logger::Debug("Creating Dataflow.");
         auto modules = module_ids.Get();
-        dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref(), runtime_information_);
+        std::vector<ModuleID> preloadedModuleIds = modules.Ref();
+        const auto& profilerModuleIds = GetProfilerAssemblyModuleIds();
+        preloadedModuleIds.insert(preloadedModuleIds.end(), profilerModuleIds.begin(), profilerModuleIds.end());
+        dataflow = new iast::Dataflow(info_, rejit_handler, preloadedModuleIds, runtime_information_);
     }
 
     if (dataflow != nullptr)
@@ -2472,6 +2478,23 @@ ModuleID CorProfiler::GetProfilerAssemblyModuleId(AppDomainID appDomainId)
     }
 
     return 0;
+}
+
+std::vector<ModuleID> CorProfiler::GetProfilerAssemblyModuleIds()
+{
+    if (managed_profiler_domain_neutral_module_id > 0)
+    {
+        return {managed_profiler_domain_neutral_module_id};
+    }
+
+    std::vector<ModuleID> moduleIds;
+    auto loadedAppDomains = managed_profiler_loaded_app_domains.Get();
+    moduleIds.reserve(loadedAppDomains->size());
+    for (const auto& [appDomainId, moduleId] : *loadedAppDomains)
+    {
+        moduleIds.push_back(moduleId);
+    }
+    return moduleIds;
 }
 
 

@@ -11,6 +11,7 @@
     <ClCompile Include="version_struct_test.cpp" />
     <ClCompile Include="string_test.cpp" />
     <ClCompile Include="util_test.cpp" />
+    <ClCompile Include="test_link_stubs.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

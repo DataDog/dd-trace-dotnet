@@ -32,8 +32,8 @@ public:
 
     HRESULT STDMETHODCALLTYPE QueryInterface(const IID& riid, void** ppvObject) override
     {
-        if (riid == __uuidof(IUnknown) || riid == __uuidof(ICorProfilerInfo) ||
-            riid == __uuidof(ICorProfilerInfo2) || riid == __uuidof(ICorProfilerInfo3))
+        if (riid == __uuidof(ICorProfilerInfo) || riid == __uuidof(ICorProfilerInfo2) ||
+            riid == __uuidof(ICorProfilerInfo3))
         {
             *ppvObject = this;
             return S_OK;

@@ -47,6 +47,7 @@ add_executable(${TEST_EXECUTABLE_NAME}
     dataflow_test.cpp
     string_test.cpp
 	util_test.cpp
+    test_link_stubs.cpp
 )
 
 # Define directories includes
