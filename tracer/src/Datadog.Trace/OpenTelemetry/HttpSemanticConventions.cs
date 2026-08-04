@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
@@ -23,12 +22,13 @@ namespace Datadog.Trace.OpenTelemetry
     {
         /// <summary>
         /// The value reported in "http.request.method" when the request method is not one of the
-        /// <see cref="CanonicalRequestMethods"/>.
+        /// standardized methods in RFC 9110, plus PATCH and QUERY.
         /// </summary>
         internal const string OtherRequestMethod = "_OTHER";
 
         /// <summary>
-        /// The span name used when the request method is not one of the <see cref="CanonicalRequestMethods"/>.
+        /// The span name used when the request method is not one of the standardized methods in
+        /// RFC 9110, plus PATCH and QUERY.
         /// </summary>
         internal const string UnknownMethodSpanName = "HTTP";
 
@@ -38,26 +38,6 @@ namespace Datadog.Trace.OpenTelemetry
         private const string ProtocolVersion11 = "1.1";
         private const string ProtocolVersion20 = "2";
         private const string ProtocolVersion30 = "3";
-
-        /// <summary>
-        /// Maps a method name to its canonical form, ignoring case. Contains the methods defined in
-        /// <see href="https://www.rfc-editor.org/rfc/rfc9110.html#name-methods">RFC 9110</see>, plus
-        /// PATCH and QUERY. Any other method is reported as <see cref="OtherRequestMethod"/>.
-        /// </summary>
-        private static readonly Dictionary<string, string> CanonicalRequestMethods =
-            new(StringComparer.OrdinalIgnoreCase)
-            {
-                { "CONNECT", "CONNECT" },
-                { "DELETE", "DELETE" },
-                { "GET", "GET" },
-                { "HEAD", "HEAD" },
-                { "OPTIONS", "OPTIONS" },
-                { "PATCH", "PATCH" },
-                { "POST", "POST" },
-                { "PUT", "PUT" },
-                { "QUERY", "QUERY" },
-                { "TRACE", "TRACE" },
-            };
 
         /// <summary>
         /// Sets the span name and the request tags of an HTTP client span, using the OpenTelemetry
@@ -127,7 +107,9 @@ namespace Datadog.Trace.OpenTelemetry
         /// <summary>
         /// Gets the value to report in "http.request.method": the canonical form of
         /// <paramref name="httpMethod"/>, or <see cref="OtherRequestMethod"/> if it is not one of
-        /// the <see cref="CanonicalRequestMethods"/>.
+        /// the methods defined in
+        /// <see href="https://www.rfc-editor.org/rfc/rfc9110.html#name-methods">RFC 9110</see>, plus
+        /// PATCH and QUERY.
         /// </summary>
         internal static string NormalizeRequestMethod(string? httpMethod)
         {
@@ -137,8 +119,6 @@ namespace Datadog.Trace.OpenTelemetry
             }
 
             // Fast path: the method is already in its canonical form, which is the common case.
-            // Kept in sync with CanonicalRequestMethods, but written as a switch because an ordinal
-            // match is measurably cheaper than the case-insensitive hash the dictionary has to compute.
             switch (httpMethod)
             {
                 case "CONNECT":
@@ -155,10 +135,60 @@ namespace Datadog.Trace.OpenTelemetry
             }
 
             // HTTP methods are case-sensitive, but the libraries we instrument are not always,
-            // so treat a case-insensitive match as the canonical method.
-            return CanonicalRequestMethods.TryGetValue(httpMethod, out var canonicalMethod)
-                       ? canonicalMethod
-                       : OtherRequestMethod;
+            // so treat a case-insensitive match as the canonical method. Inlined as ordinal
+            // case-insensitive comparisons rather than a dictionary lookup, since there are few
+            // enough methods that this avoids the overhead of computing a case-insensitive hash.
+            if (string.Equals(httpMethod, "GET", StringComparison.OrdinalIgnoreCase))
+            {
+                return "GET";
+            }
+
+            if (string.Equals(httpMethod, "POST", StringComparison.OrdinalIgnoreCase))
+            {
+                return "POST";
+            }
+
+            if (string.Equals(httpMethod, "PUT", StringComparison.OrdinalIgnoreCase))
+            {
+                return "PUT";
+            }
+
+            if (string.Equals(httpMethod, "DELETE", StringComparison.OrdinalIgnoreCase))
+            {
+                return "DELETE";
+            }
+
+            if (string.Equals(httpMethod, "PATCH", StringComparison.OrdinalIgnoreCase))
+            {
+                return "PATCH";
+            }
+
+            if (string.Equals(httpMethod, "CONNECT", StringComparison.OrdinalIgnoreCase))
+            {
+                return "CONNECT";
+            }
+
+            if (string.Equals(httpMethod, "HEAD", StringComparison.OrdinalIgnoreCase))
+            {
+                return "HEAD";
+            }
+
+            if (string.Equals(httpMethod, "OPTIONS", StringComparison.OrdinalIgnoreCase))
+            {
+                return "OPTIONS";
+            }
+
+            if (string.Equals(httpMethod, "QUERY", StringComparison.OrdinalIgnoreCase))
+            {
+                return "QUERY";
+            }
+
+            if (string.Equals(httpMethod, "TRACE", StringComparison.OrdinalIgnoreCase))
+            {
+                return "TRACE";
+            }
+
+            return OtherRequestMethod;
         }
 
         /// <summary>
