@@ -1323,6 +1323,12 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "error.type",
+                  "value": {
+                    "stringValue": "418"
+                  }
+                },
+                {
                   "key": "http.request.method",
                   "value": {
                     "stringValue": "GET"
@@ -1384,7 +1390,10 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "status": {
+                "code": 2
+              }
             },
             {
               "traceId": "normalized-trace-id",
@@ -1469,6 +1478,12 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "error.type",
+                  "value": {
+                    "stringValue": "418"
+                  }
+                },
+                {
                   "key": "http.request.method",
                   "value": {
                     "stringValue": "GET"
@@ -1525,12 +1540,15 @@
                     {
                       "key": "exception.stacktrace",
                       "value": {
-                        "stringValue": "System.Net.WebException: The remote server returned an error: (418) .\n   at System.Net.HttpWebRequest.GetResponse()\n   at Samples.WebRequest.RequestHelpers.SendWebRequestRequests(Boolean tracingDisabled, String url, String requestContent) in {SolutionDirectory}tracer/test/test-applications/integrations/Samples.WebRequest/RequestHelpers.cs:line 400"
+                        "stringValue": "System.Net.WebException: The remote server returned an error: (418) .\n   at System.Net.HttpWebRequest.GetResponse()\n   at Samples.WebRequest.RequestHelpers.SendWebRequestRequests(Boolean tracingDisabled, String url, String requestContent) in /Users/zach.montoya/.supacode/repos/dd-trace-dotnet/otel-httpclient/tracer/test/test-applications/integrations/Samples.WebRequest/RequestHelpers.cs:line 400"
                       }
                     }
                   ]
                 }
-              ]
+              ],
+              "status": {
+                "code": 2
+              }
             },
             {
               "traceId": "normalized-trace-id",
@@ -2422,6 +2440,12 @@
               "endTimeUnixNano": "0",
               "attributes": [
                 {
+                  "key": "error.type",
+                  "value": {
+                    "stringValue": "418"
+                  }
+                },
+                {
                   "key": "http.request.method",
                   "value": {
                     "stringValue": "POST"
@@ -2457,7 +2481,10 @@
                     "stringValue": "http://localhost:00000/Guid_2/?BeginGetResponseTeapotAsync"
                   }
                 }
-              ]
+              ],
+              "status": {
+                "code": 2
+              }
             },
             {
               "traceId": "normalized-trace-id",

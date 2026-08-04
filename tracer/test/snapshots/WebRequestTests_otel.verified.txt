@@ -2758,7 +2758,7 @@
     Tags: {
       component: WebRequest,
       env: integration_tests,
-      error.msg: The HTTP response has status code 418.,
+      error.type: 418,
       events: [{"name":"exception","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"exception.type":"System.Net.WebException","exception.message":"The remote server returned an error: (418) .","exception.stacktrace":"System.Net.WebException: The remote server returned an error: (418) .\n   at System.Net.HttpWebRequest.GetResponse()\n   at Samples.WebRequest.RequestHelpers.SendWebRequestRequests(Boolean tracingDisabled, String url, String requestContent) in {SolutionDirectory}tracer/test/test-applications/integrations/Samples.WebRequest/RequestHelpers.cs:line 400"}}],
       http.request.method: GET,
       http.response.status_code: 418,
@@ -2870,7 +2870,7 @@
     Tags: {
       component: WebRequest,
       env: integration_tests,
-      error.msg: The HTTP response has status code 418.,
+      error.type: 418,
       events: [{"name":"exception","time_unix_nano":<DateTimeOffset.Now>,"attributes":{"exception.type":"System.Net.WebException","exception.message":"The remote server returned an error: (418) .","exception.stacktrace":"System.Net.WebException: The remote server returned an error: (418) .\n   at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult)\n   at System.Threading.Tasks.TaskFactory`1.FromAsyncCoreLogic(IAsyncResult iar, Func`2 endFunction, Action`1 endAction, Task`1 promise, Boolean requiresSynchronization)\n--- End of stack trace from previous location ---\n   at System.Net.WebRequest.GetResponseAsync()"}}],
       http.request.method: GET,
       http.response.status_code: 418,
@@ -3173,7 +3173,7 @@
     Tags: {
       component: HttpMessageHandler,
       env: integration_tests,
-      error.msg: The HTTP response has status code 418.,
+      error.type: 418,
       http-client-handler-type: System.Net.Http.SocketsHttpHandler,
       http.request.method: POST,
       http.response.status_code: 418,

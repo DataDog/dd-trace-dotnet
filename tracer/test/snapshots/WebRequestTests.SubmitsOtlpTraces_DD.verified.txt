@@ -2960,7 +2960,11 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "status": {
+                "message": "The remote server returned an error: (418) .",
+                "code": 2
+              }
             },
             {
               "traceId": "normalized-trace-id",
@@ -3150,7 +3154,11 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "status": {
+                "message": "The remote server returned an error: (418) .",
+                "code": 2
+              }
             },
             {
               "traceId": "normalized-trace-id",
@@ -5291,7 +5299,11 @@
                     "stringValue": "http"
                   }
                 }
-              ]
+              ],
+              "status": {
+                "message": "The HTTP response has status code 418.",
+                "code": 2
+              }
             },
             {
               "traceId": "normalized-trace-id",
