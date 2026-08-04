@@ -147,24 +147,11 @@ services:
 
   sqledge:
     image: mcr.microsoft.com/azure-sql-edge:latest@sha256:902628a8be89e35dfb7895ca31d602974c7bafde4d583a0d0873844feb1c42cf
-    profiles: ["group2"]
-    environment:
-    - ACCEPT_EULA=Y
-    - MSSQL_SA_PASSWORD=Strong!Passw0rd
+    profiles: ["testcontainers"]
 
   azureservicebus-emulator:
     image: mcr.microsoft.com/azure-messaging/servicebus-emulator:1.1.2@sha256:353913ece3d9124cebd40f4b91d00dd197846b8cf86eae9a4790698709c64a1d
-    profiles: ["group2"]
-    depends_on:
-      - sqledge
-    ports:
-      - "127.0.0.1:5672:5672"
-    environment:
-      - ACCEPT_EULA=Y
-      - SQL_SERVER=sqledge:1433
-      - MSSQL_SA_PASSWORD=Strong!Passw0rd
-    volumes:
-      - ./docker/servicebus-emulator-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json:ro
+    profiles: ["testcontainers"]
 
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite:latest@sha256:647c63a91102a9d8e8000aab803436e1fc85fbb285e7ce830a82ee5d6661cf37
@@ -304,7 +291,6 @@ services:
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
       - AWS_SDK_HOST=localstack:4566
       - ORACLE_HOST=oracle
-      - ASB_CONNECTION_STRING=Endpoint=sb://azureservicebus-emulator:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
       - COSMOSDB_ENDPOINT=https://cosmosdb-emulator:8081
       - TEST_AGENT_HOST=test-agent
       - CONTAINER_HOSTNAME=http://integrationtests
@@ -516,13 +502,11 @@ services:
       - elasticsearch6
       - elasticsearch5
       - localstack
-      - sqledge
-      - azureservicebus-emulator
       - cosmosdb-emulator
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 localstack:4566 sqledge:1433 azureservicebus-emulator:5672 cosmosdb-emulator:8081 test-agent:8126 test-agent:4317 test-agent:4318
+    command: elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 localstack:4566 cosmosdb-emulator:8081 test-agent:8126 test-agent:4317 test-agent:4318
 
   IntegrationTests.ARM64:
     build:

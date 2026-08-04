@@ -9,7 +9,7 @@ using Xunit;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure;
 
 [CollectionDefinition(Name, DisableParallelization = true)]
-public class AzureMessagingEmulatorTestsCollection : ICollectionFixture<AzureEventHubsFixture>
+public class AzureMessagingEmulatorTestsCollection : ICollectionFixture<AzureEventHubsFixture>, ICollectionFixture<AzureServiceBusFixture>
 {
     public const string Name = nameof(AzureMessagingEmulatorTestsCollection);
 }

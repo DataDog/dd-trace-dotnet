@@ -39,18 +39,18 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
     private const string EventHubConsumerGroup = "cg1";
     private const string TestIdEnvironmentVariable = "DD_AZURE_FUNCTIONS_MESSAGING_TEST_ID";
     private const string TestModeEnvironmentVariable = "DD_AZURE_FUNCTIONS_MESSAGING_TEST_MODE";
-    private const string LocalServiceBusConnectionString = "Endpoint=sb://localhost:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;";
     private readonly AzureEventHubsFixture _eventHubsFixture;
+    private readonly AzureServiceBusFixture _serviceBusFixture;
 
-    public AzureFunctionsMessagingTriggerTests(ITestOutputHelper output, AzureEventHubsFixture eventHubsFixture)
+    public AzureFunctionsMessagingTriggerTests(ITestOutputHelper output, AzureEventHubsFixture eventHubsFixture, AzureServiceBusFixture serviceBusFixture)
         : base("AzureFunctions.V4Isolated.Messaging", output)
     {
         _eventHubsFixture = eventHubsFixture;
-        ConfigureContainers(eventHubsFixture);
+        _serviceBusFixture = serviceBusFixture;
+        ConfigureContainers(eventHubsFixture, serviceBusFixture);
         SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
         SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         SetEnvironmentVariable("WEBSITE_SITE_NAME", nameof(AzureFunctionsMessagingTriggerTests));
-        SetEnvironmentVariable("ASB_CONNECTION_STRING", GetServiceBusConnectionString());
     }
 
     private static int ExpectedFuncKillExitCode
@@ -68,7 +68,7 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         SetEnvironmentVariable("AzureWebJobs.ServiceBusTrigger.Disabled", "false");
         SetEnvironmentVariable("AzureWebJobs.EventHubTrigger.Disabled", "true");
 
-        await using (var client = new ServiceBusClient(GetServiceBusConnectionString()))
+        await using (var client = new ServiceBusClient(_serviceBusFixture.ServiceBusConnectionString))
         await using (var receiver = client.CreateReceiver(ServiceBusQueueName))
         {
             await PurgeQueue(receiver);
@@ -184,9 +184,6 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         }
     }
 
-    private static string GetServiceBusConnectionString()
-        => Environment.GetEnvironmentVariable("ASB_CONNECTION_STRING") ?? LocalServiceBusConnectionString;
-
     private static string CreateTestId()
         => Guid.NewGuid().ToString("N");
 
@@ -199,9 +196,9 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         settings.AddSimpleScrubber("aas.environment.runtime: .NET Core", "aas.environment.runtime: .NET");
         // Normalize emulator hostnames so snapshots are consistent across local and CI (Docker) environments
         settings.AddSimpleScrubber($"network.destination.name: {_eventHubsFixture.EventHubsHostname}", "network.destination.name: localhost");
-        settings.AddSimpleScrubber("network.destination.name: azureservicebus-emulator", "network.destination.name: localhost");
+        settings.AddSimpleScrubber($"network.destination.name: {_serviceBusFixture.ServiceBusHostname}", "network.destination.name: localhost");
         settings.AddSimpleScrubber($"server.address: {_eventHubsFixture.EventHubsHostname}", "server.address: localhost");
-        settings.AddSimpleScrubber("server.address: azureservicebus-emulator", "server.address: localhost");
+        settings.AddSimpleScrubber($"server.address: {_serviceBusFixture.ServiceBusHostname}", "server.address: localhost");
         // SpanLinks contain raw 128-bit trace IDs and trace state that change between runs
         settings.AddRegexScrubber(new Regex(@"TraceIdLow: \d+"), "TraceIdLow: 0");
         settings.AddRegexScrubber(new Regex(@"TraceIdHigh: \d+"), "TraceIdHigh: 0");
