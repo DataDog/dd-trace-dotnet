@@ -44,6 +44,7 @@ namespace Datadog.Trace.Configuration.Schema
                 ServiceNameMetadata.Resolve("aws.stepfunctions", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("azureeventhubs", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("azureservicebus", defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve("azureeventgrid", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("ibmmq", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("kafka", defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve("msmq", defaultServiceName, serviceNameMappings, useSuffix),
@@ -79,6 +80,7 @@ namespace Datadog.Trace.Configuration.Schema
             AwsStepFunctions,
             AzureEventHubs,
             AzureServiceBus,
+            AzureEventGrid,
             IbmMq,
             Kafka,
             Msmq,
@@ -124,6 +126,12 @@ namespace Datadog.Trace.Configuration.Schema
         public AzureEventHubsTags CreateAzureEventHubsTags(string spanKind)
         {
             var tags = _useV0Tags ? new AzureEventHubsTags(spanKind) : new AzureEventHubsV1Tags(spanKind);
+            return tags;
+        }
+
+        public AzureEventGridTags CreateAzureEventGridTags(string spanKind)
+        {
+            var tags = _useV0Tags ? new AzureEventGridTags(spanKind) : new AzureEventGridV1Tags(spanKind);
             return tags;
         }
 
