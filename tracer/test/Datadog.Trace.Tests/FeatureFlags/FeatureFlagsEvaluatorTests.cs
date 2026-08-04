@@ -360,49 +360,75 @@ public partial class FeatureFlagsEvaluatorTests
         SemanticVersion.TryParse(value, out _).Should().BeFalse();
     }
 
-    [Theory]
-    [InlineData("not-a-version", "1.2.3")]
-    [InlineData("1.2", "1.2.3")]
-    [InlineData(1.2, "1.2.0")]
-    [InlineData("1.2.3", "not-a-version")]
-    [InlineData("1.2.3", 1.2)]
-    [InlineData("1.2.3", null)]
-    public void EvaluateSemanticVersionNotEqualWithInvalidOperandDoesNotMatch(object attributeValue, object? conditionValue)
+    public static IEnumerable<object?[]> SemanticVersionEvaluationCases()
     {
-        var condition = new ConditionConfiguration
-        {
-            Attribute = "app_version",
-            Operator = ConditionOperator.SEMVER_NEQ,
-            Value = conditionValue,
-        };
-        var flag = new Flag
-        {
-            Key = "semver-invalid-operand",
-            Enabled = true,
-            VariationType = ValueType.String,
-            Variations = new Dictionary<string, Variant> { ["matched"] = new Variant("matched", "matched") },
-            Allocations =
-            [
-                new Allocation
-                {
-                    Rules = [new Rule([condition])],
-                    Splits = [new Split { VariationKey = "matched", Shards = [] }],
-                }
-            ]
-        };
-        var evaluator = new FeatureFlagsEvaluator(
-            null,
-            new ServerConfiguration { Flags = new Dictionary<string, Flag> { ["semver-invalid-operand"] = flag } });
+        yield return ["equal", "SEMVER_EQ", "1.2.3", "1.2.3", true];
+        yield return ["equal mismatch", "SEMVER_EQ", "1.2.4", "1.2.3", false];
+        yield return ["not equal", "SEMVER_NEQ", "1.2.4", "1.2.3", true];
+        yield return ["not equal mismatch", "SEMVER_NEQ", "1.2.3", "1.2.3", false];
+        yield return ["less than", "SEMVER_LT", "1.9.9", "2.0.0", true];
+        yield return ["less than mismatch", "SEMVER_LT", "2.0.0", "2.0.0", false];
+        yield return ["less than or equal", "SEMVER_LTE", "2.0.0", "2.0.0", true];
+        yield return ["less than or equal mismatch", "SEMVER_LTE", "2.0.1", "2.0.0", false];
+        yield return ["greater than", "SEMVER_GT", "1.0.1", "1.0.0", true];
+        yield return ["greater than mismatch", "SEMVER_GT", "1.0.0", "1.0.0", false];
+        yield return ["greater than or equal", "SEMVER_GTE", "1.0.0", "1.0.0", true];
+        yield return ["greater than or equal mismatch", "SEMVER_GTE", "0.9.9", "1.0.0", false];
+        yield return ["prerelease before release", "SEMVER_LT", "1.0.0-beta.1", "1.0.0", true];
+        yield return ["numeric prerelease ordering", "SEMVER_LT", "1.0.0-beta.2", "1.0.0-beta.11", true];
+        yield return ["build metadata ordering", "SEMVER_GT", "1.0.0+2", "1.0.0+1", true];
+        yield return ["build metadata leading zeros", "SEMVER_LT", "1.0.0+90", "1.0.0+090", true];
+        yield return ["build metadata identifier count", "SEMVER_LT", "1.0.0+a", "1.0.0+a.b", true];
+        yield return ["build metadata numeric length", "SEMVER_LT", "1.0.0+2", "1.0.0+11", true];
+        yield return ["numeric build metadata before nonnumeric", "SEMVER_LT", "1.0.0+1", "1.0.0+alpha", true];
+        yield return ["different build metadata not equal", "SEMVER_NEQ", "1.0.0+linux", "1.0.0+darwin", true];
+        yield return ["invalid attribute", "SEMVER_NEQ", "not-a-version", "1.0.0", false];
+        yield return ["short attribute", "SEMVER_GTE", "1.2", "1.0.0", false];
+        yield return ["prefixed attribute", "SEMVER_GTE", "v1.2.3", "1.0.0", false];
+        yield return ["overflowing attribute", "SEMVER_GTE", "18446744073709551616.0.0", "1.0.0", false];
+        yield return ["non-string attribute", "SEMVER_EQ", 1.2, "1.2.0", false];
+        yield return ["invalid comparand", "SEMVER_NEQ", "1.2.3", "not-a-version", false];
+        yield return ["non-string comparand", "SEMVER_EQ", "1.2.3", 1.2, false];
+    }
 
-        var result = evaluator.Evaluate(
-            "semver-invalid-operand",
-            ValueType.String,
-            "default",
-            new EvaluationContext("user", new Dictionary<string, object?> { ["app_version"] = attributeValue }));
+    [Theory]
+    [MemberData(nameof(SemanticVersionEvaluationCases))]
+    public void EvaluateSemanticVersionConditionMatchesExpected(
+        string description,
+        string operatorName,
+        object attributeValue,
+        object? conditionValue,
+        bool expected)
+    {
+        var conditionOperator = Enum.Parse<ConditionOperator>(operatorName);
+        var result = EvaluateSemanticVersionCondition(
+            conditionOperator,
+            conditionValue,
+            new Dictionary<string, object?> { ["app_version"] = attributeValue });
+
+        result.Value.Should().Be(expected ? "matched" : "default");
+        result.Reason.Should().Be(expected ? EvaluationReason.TargetingMatch : EvaluationReason.Default);
+        result.Error.Should().BeNull();
+        description.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void EvaluateSemanticVersionConditionWithMissingAttributeDoesNotMatch()
+    {
+        var result = EvaluateSemanticVersionCondition(
+            ConditionOperator.SEMVER_EQ,
+            "1.2.3",
+            new Dictionary<string, object?>());
 
         result.Value.Should().Be("default");
         result.Reason.Should().Be(EvaluationReason.Default);
         result.Error.Should().BeNull();
+    }
+
+    [Fact]
+    public void CompareSemanticVersionWithUnsupportedOperatorDoesNotMatch()
+    {
+        FeatureFlagsEvaluator.CompareSemanticVersion("1.2.3", "1.2.3", (ConditionOperator)int.MaxValue).Should().BeFalse();
     }
 
     [Theory]
@@ -648,6 +674,45 @@ public partial class FeatureFlagsEvaluatorTests
     public void GetLongFromMd5Tests(string salt, string targetingKey, int expected)
     {
         FeatureFlagsEvaluator.GetShard(salt, targetingKey, int.MaxValue).Should().Be(expected);
+    }
+
+    private static Evaluation EvaluateSemanticVersionCondition(
+        ConditionOperator conditionOperator,
+        object? conditionValue,
+        Dictionary<string, object?> attributes)
+    {
+        const string flagKey = "semver-condition";
+        var condition = new ConditionConfiguration
+        {
+            Attribute = "app_version",
+            Operator = conditionOperator,
+            Value = conditionValue,
+        };
+        var flag = new Flag
+        {
+            Key = flagKey,
+            Enabled = true,
+            VariationType = ValueType.String,
+            Variations = new Dictionary<string, Variant> { ["matched"] = new Variant("matched", "matched") },
+            Allocations =
+            [
+                new Allocation
+                {
+                    Key = "semver-allocation",
+                    Rules = [new Rule([condition])],
+                    Splits = [new Split { VariationKey = "matched", Shards = [] }],
+                }
+            ]
+        };
+        var evaluator = new FeatureFlagsEvaluator(
+            null,
+            new ServerConfiguration { Flags = new Dictionary<string, Flag> { [flagKey] = flag } });
+
+        return evaluator.Evaluate(
+            flagKey,
+            ValueType.String,
+            "default",
+            new EvaluationContext("user", attributes));
     }
 
     private static Flag CreateTimeBasedFlagWithDates(string key, string startAt, string endAt)

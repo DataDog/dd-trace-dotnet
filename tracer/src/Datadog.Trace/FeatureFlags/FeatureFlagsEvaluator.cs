@@ -378,7 +378,7 @@ namespace Datadog.Trace.FeatureFlags
             return comparator(a, b);
         }
 
-        private static bool CompareSemanticVersion(object attributeValue, object? conditionValue, ConditionOperator conditionOperator)
+        internal static bool CompareSemanticVersion(object attributeValue, object? conditionValue, ConditionOperator conditionOperator)
         {
             if (attributeValue is not string attribute
              || conditionValue is not string comparand
