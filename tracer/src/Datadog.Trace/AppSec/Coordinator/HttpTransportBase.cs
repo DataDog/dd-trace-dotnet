@@ -32,7 +32,7 @@ internal abstract class HttpTransportBase
 
     internal abstract IHeadersCollection? GetRequestHeaders();
 
-    internal abstract IHeadersCollection GetResponseHeaders();
+    internal abstract IHeadersCollection? GetResponseHeaders();
 
     internal abstract void MarkBlocked();
 }

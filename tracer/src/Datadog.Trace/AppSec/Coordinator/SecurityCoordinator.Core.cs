@@ -111,9 +111,38 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    private Dictionary<string, object> GetBasicRequestArgsForWaf()
+    /// <summary>
+    /// Collects the WAF addresses describing the current request.
+    /// </summary>
+    /// <returns>
+    /// The addresses, or <c>null</c> when the request can no longer be read, in which case there is
+    /// nothing left to analyze and the caller must skip the WAF call.
+    /// </returns>
+    private Dictionary<string, object>? GetBasicRequestArgsForWaf()
     {
-        var request = _httpTransport.Context.Request;
+        if (_httpTransport.IsHttpContextDisposed)
+        {
+            return null;
+        }
+
+        // ASP.NET Core pools HttpContext instances, so the context we hold can already have been
+        // uninitialized (its feature collection set to null) by the time we read it, for instance when
+        // the request was aborted. Every member of the request then throws, and letting that escape
+        // would surface our instrumentation as a 500 in the customer's application.
+        try
+        {
+            return BuildBasicRequestArgsForWaf(_httpTransport.Context.Request);
+        }
+        catch (Exception e) when (e is ObjectDisposedException or NullReferenceException)
+        {
+            Log.Debug(e, "Exception while trying to read the request of a Context, skipping the WAF call.");
+            _httpTransport.IsHttpContextDisposed = true;
+            return null;
+        }
+    }
+
+    private Dictionary<string, object> BuildBasicRequestArgsForWaf(HttpRequest request)
+    {
         var headersDic = ExtractHeadersFromRequest(request.Headers);
         var cookiesDic = ExtractCookiesFromRequest(request);
         var queryStringDic = new Dictionary<string, List<string>>(request.Query?.Count ?? 0);
@@ -257,7 +286,19 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        internal override IHeadersCollection GetResponseHeaders() => new HeadersCollectionAdapter(Context.Response.Headers);
+        internal override IHeadersCollection? GetResponseHeaders()
+        {
+            try
+            {
+                return new HeadersCollectionAdapter(Context.Response.Headers);
+            }
+            catch (Exception e) when (e is ObjectDisposedException or NullReferenceException)
+            {
+                Log.Debug(e, "Exception while trying to access the response headers of a Context.");
+                IsHttpContextDisposed = true;
+                return null;
+            }
+        }
     }
 }
 #endif
