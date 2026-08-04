@@ -766,7 +766,14 @@ namespace Datadog.Trace.DuckTyping
                 for (int idx = 0; idx < maxParamLength; idx++)
                 {
                     ParameterInfo? outerParamInfo = idx < outerMethodParameters.Length ? outerMethodParameters[idx] : null;
-                    ParameterInfo innerParamInfo = innerMethodParameters[idx];
+                    ParameterInfo? innerParamInfo = idx < innerMethodParameters.Length ? innerMethodParameters[idx] : null;
+
+                    if (innerParamInfo is null)
+                    {
+                        // The proxy declares more parameters than the target can accept. Nothing can be passed
+                        // for them, so the signatures don't match.
+                        return DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Create(outerMethod, innerMethod);
+                    }
 
                     if (outerParamInfo is null)
                     {

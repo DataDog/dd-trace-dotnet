@@ -998,6 +998,8 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="instanceField">The field for accessing the instance of the <paramref name="targetType"/></param>
         private static DuckTypeException? CreatePropertiesFromStruct(TypeBuilder? proxyTypeBuilder, Type proxyDefinitionType, Type targetType, FieldInfo? instanceField)
         {
+            var containsFields = false;
+
             // Gets all fields to be copied
             foreach (FieldInfo proxyFieldInfo in proxyDefinitionType.GetFields())
             {
@@ -1012,6 +1014,11 @@ namespace Datadog.Trace.DuckTyping
                 {
                     continue;
                 }
+
+                // Any field that gets this far either has a getter generated for it below, or makes the
+                // whole proxy fail - so reaching here is what CreateStructCopyMethod means by "contains
+                // fields".
+                containsFields = true;
 
                 PropertyBuilder? propertyBuilder = null;
                 MethodBuilder? getMethodBuilder = null;
@@ -1104,6 +1111,13 @@ namespace Datadog.Trace.DuckTyping
 
                         break;
                 }
+            }
+
+            // A [DuckCopy] proxy copies values into fields, so one declaring only properties can never be
+            // populated. Checked here so that it fails on the dry run too
+            if (!containsFields && proxyDefinitionType.GetProperties().Length != 0)
+            {
+                return DuckTypeDuckCopyStructDoesNotContainsAnyField.Create(proxyDefinitionType);
             }
 
             return null;
@@ -1206,6 +1220,8 @@ namespace Datadog.Trace.DuckTyping
             il.WriteLoadLocal(structLocal.LocalIndex);
             il.Emit(OpCodes.Ret);
 
+            // Now unreachable: CreatePropertiesFromStruct makes the same check on both legs, and this method
+            // only runs after that succeeded. Kept as a defensive guard.
             if (!containsFields && proxyDefinitionType.GetProperties().Length != 0)
             {
                 return DuckTypeDuckCopyStructDoesNotContainsAnyField.Create(proxyDefinitionType);
@@ -1220,31 +1236,13 @@ namespace Datadog.Trace.DuckTyping
         {
             if (propertyName.IndexOf(',') == -1)
             {
-                try
-                {
-                    return targetType.GetProperty(propertyName, bindingFlags);
-                }
-                catch
-                {
-                    // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
-                    // In this case we make sure we select the indexer we want
-                    return targetType.GetProperty(propertyName, proxyPropertyInfo.PropertyType, proxyPropertyInfo.GetIndexParameters().Select(i => i.ParameterType).ToArray());
-                }
+                return FindPropertyOrIndex(targetType, propertyName, bindingFlags, proxyPropertyInfo);
             }
 
             PropertyInfo? targetProperty = null;
             foreach (var name in propertyName.Split(','))
             {
-                try
-                {
-                    targetProperty = targetType.GetProperty(name, bindingFlags);
-                }
-                catch
-                {
-                    // This will run only when multiple indexers are defined in a class, that way we can end up with multiple properties with the same name.
-                    // In this case we make sure we select the indexer we want
-                    targetProperty = targetType.GetProperty(name, proxyPropertyInfo.PropertyType, proxyPropertyInfo.GetIndexParameters().Select(i => i.ParameterType).ToArray());
-                }
+                targetProperty = FindPropertyOrIndex(targetType, name, bindingFlags, proxyPropertyInfo);
 
                 if (targetProperty is not null)
                 {
@@ -1253,6 +1251,79 @@ namespace Datadog.Trace.DuckTyping
             }
 
             return targetProperty;
+
+            static PropertyInfo? FindPropertyOrIndex(Type targetType, string propertyName, BindingFlags bindingFlags, PropertyInfo proxyPropertyInfo)
+            {
+                // Type.GetProperty(name, bindingFlags) throws AmbiguousMatchException when several properties
+                // match, which happens whenever the target declares more than one indexer, so when the proxy member is an indexer,
+                // ask for its exact signature first and avoid the ambiguity altogether.
+                var indexParameters = proxyPropertyInfo.GetIndexParameters();
+                if (indexParameters.Length > 0)
+                {
+                    // Matching a full signature is deterministic, so this cannot be ambiguous. Done by hand
+                    // rather than with GetProperty(name, returnType, types) because that overload only searches
+                    // public members, and a non-public indexer would otherwise fall through to the throwing
+                    // lookup below.
+                    var indexer = FindExactIndexer(targetType, propertyName, proxyPropertyInfo.PropertyType, indexParameters, bindingFlags);
+                    if (indexer is not null)
+                    {
+                        return indexer;
+                    }
+
+                    // Fall through: the target's indexer differs from the proxy's in a way that only needs a
+                    // conversion, so the plain lookup below still has to resolve it.
+                }
+
+                try
+                {
+                    return targetType.GetProperty(propertyName, bindingFlags);
+                }
+                catch
+                {
+                    // Several indexers are declared and none matched the proxy's exact signature above.
+                    var parameterTypes = new Type[indexParameters.Length];
+                    for (var i = 0; i < indexParameters.Length; i++)
+                    {
+                        parameterTypes[i] = indexParameters[i].ParameterType;
+                    }
+
+                    return targetType.GetProperty(propertyName, proxyPropertyInfo.PropertyType, parameterTypes);
+                }
+            }
+
+            static PropertyInfo? FindExactIndexer(Type targetType, string propertyName, Type propertyType, ParameterInfo[] indexParameters, BindingFlags bindingFlags)
+            {
+                foreach (var candidate in targetType.GetProperties(bindingFlags))
+                {
+                    if (candidate.Name != propertyName || candidate.PropertyType != propertyType)
+                    {
+                        continue;
+                    }
+
+                    var candidateParameters = candidate.GetIndexParameters();
+                    if (candidateParameters.Length != indexParameters.Length)
+                    {
+                        continue;
+                    }
+
+                    var matches = true;
+                    for (var i = 0; i < candidateParameters.Length; i++)
+                    {
+                        if (candidateParameters[i].ParameterType != indexParameters[i].ParameterType)
+                        {
+                            matches = false;
+                            break;
+                        }
+                    }
+
+                    if (matches)
+                    {
+                        return candidate;
+                    }
+                }
+
+                return null;
+            }
         }
 
         private static PropertyInfo? GetTargetProperty(Type targetType, string propertyName, BindingFlags bindingFlags)
