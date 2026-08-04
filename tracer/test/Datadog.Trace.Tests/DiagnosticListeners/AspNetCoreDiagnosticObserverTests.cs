@@ -314,6 +314,32 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             Assert.Equal("GET /home/?/action", span.ResourceName);
         }
+
+        /// <summary>
+        /// Once the request is over ASP.NET Core uninitializes the <see cref="HttpContext"/> and returns it to
+        /// its pool, so the store must not keep handing it out. The context here carries no tracking feature,
+        /// which means <c>StopAspNetCorePipelineScope</c> — the only other place that clears the store — is
+        /// never reached, and the observer has to do it itself.
+        /// </summary>
+        [Theory]
+        [CombinatorialData]
+        public async Task HttpRequestIn_Stop_ClearsTheHttpContextStore(bool singleSpan)
+        {
+            await using var tracer = GetTracer();
+            var (security, iast) = GetSecurity();
+            var spanCodeOrigin = GetSpanCodeOrigin();
+
+            IObserver<KeyValuePair<string, object>> observer = singleSpan
+                ? new SingleSpanAspNetCoreDiagnosticObserver(tracer, security, iast, spanCodeOrigin)
+                : new AspNetCoreDiagnosticObserver(tracer, security, iast, spanCodeOrigin);
+
+            var context = new HostingApplication.Context { HttpContext = GetHttpContext() };
+            CoreHttpContextStore.Instance.Set(context.HttpContext);
+
+            observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop", context));
+
+            CoreHttpContextStore.Instance.Get().Should().BeNull();
+        }
 #endif
 
         private static ScopedTracer GetTracer(bool hasResourceBasedSamplingRules = false)
