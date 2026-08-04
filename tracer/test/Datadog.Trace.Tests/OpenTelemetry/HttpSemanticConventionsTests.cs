@@ -88,6 +88,26 @@ public class HttpSemanticConventionsTests
         HttpSemanticConventions.GetNetworkProtocolVersion(null).Should().BeNull();
     }
 
+    [Theory]
+    // IPv4 addresses and regular hostnames are unaffected
+    [InlineData("example.com", "example.com")]
+    [InlineData("127.0.0.1", "127.0.0.1")]
+
+    // Uri.Host wraps IPv6 addresses in brackets (RFC 2732); those must be stripped, since
+    // OpenTelemetry expects the address itself in "server.address"
+    [InlineData("[::1]", "::1")]
+    [InlineData("[2001:db8::1]", "2001:db8::1")]
+
+    // Edge cases: no host, or a value that merely looks bracket-like
+    [InlineData(null, null)]
+    [InlineData("", null)]
+    [InlineData("[", "[")]
+    [InlineData("]", "]")]
+    public void GetServerAddress_StripsIPv6Brackets(string host, string expected)
+    {
+        HttpSemanticConventions.GetServerAddress(host).Should().Be(expected);
+    }
+
     // A Version can carry a build and a revision, which the major/minor patterns ignore. We must
     // not fall through to Version.ToString() for those, or an HTTP/1.1 response constructed as a
     // four-component Version would be reported as "1.1.0.0".

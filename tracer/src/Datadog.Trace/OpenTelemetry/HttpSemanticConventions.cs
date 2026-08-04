@@ -66,12 +66,31 @@ namespace Datadog.Trace.OpenTelemetry
             if (requestUri is not null)
             {
                 tags.HttpUrl = HttpRequestUtils.GetUrlFull(requestUri, queryStringManager);
-                tags.Host = HttpRequestUtils.GetNormalizedHost(requestUri.Host);
+                tags.Host = GetServerAddress(requestUri.Host);
 
                 // Uri.Port is the default port for the scheme when the URL doesn't specify one,
                 // which is what we want to report in "server.port"
                 tags.ServerPort = requestUri.Port;
             }
+        }
+
+        /// <summary>
+        /// Gets the value to report in "server.address" for <paramref name="host"/>. Same as
+        /// <see cref="HttpRequestUtils.GetNormalizedHost"/>, except that the brackets
+        /// <see cref="Uri.Host"/> puts around IPv6 addresses (for example, "[::1]") are stripped, as
+        /// OpenTelemetry expects the address itself. The brackets are only kept in "url.full".
+        /// </summary>
+        internal static string? GetServerAddress(string? host)
+        {
+            // TODO: Follow the logic of .NET to prefer host headers as seen in https://github.com/dotnet/runtime/blob/c3901aafba2513705da036e20fdfde3058aa74e5/src/libraries/System.Net.Http/src/System/Net/Http/DiagnosticsHelper.cs#L42
+            if (StringUtil.IsNullOrEmpty(host))
+            {
+                return null;
+            }
+
+            return host.Length > 1 && host[0] == '[' && host[host.Length - 1] == ']'
+                       ? host.Substring(1, host.Length - 2)
+                       : host;
         }
 
         /// <summary>
