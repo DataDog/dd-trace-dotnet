@@ -3,8 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.IO;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.OpenTelemetry.Traces;
+using Datadog.Trace.Tests.Util;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
 using Xunit;
@@ -85,6 +91,116 @@ public class OtlpTracesJsonSerializerTests
         var values = json["arrayValue"]!["values"]!;
         values.Should().HaveCount(1);
         values[0]!["stringValue"]!.Value<string>().Should().Be(nestedBytes.ToString());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void WriteSpan_ErrorSpanWithoutOtelStatusCodeTag_EmitsErrorStatus(bool openTelemetrySemanticsEnabled)
+    {
+        // Our own instrumentation marks spans as errors via span.Error and never sets "otel.status_code"
+        var ddSpan = CreateSpan();
+        ddSpan.Error = true;
+        ddSpan.GetTag("otel.status_code").Should().BeNull();
+
+        var json = WriteSpan(ddSpan, openTelemetrySemanticsEnabled);
+
+        var actualStatusCode = json["status"]?["code"]?.Value<int>();
+        actualStatusCode.Should().Be((int)StatusCode.Error);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void WriteSpan_NonErrorSpanWithoutOtelStatusCodeTag_OmitsStatus(bool openTelemetrySemanticsEnabled)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Error.Should().BeFalse();
+        ddSpan.GetTag("otel.status_code").Should().BeNull();
+
+        var json = WriteSpan(ddSpan, openTelemetrySemanticsEnabled);
+
+        json["status"].Should().BeNull();
+    }
+
+    [Fact]
+    public void WriteSpan_ErrorSpanWithoutOtelStatusCodeTag_UsesErrorMsgAsStatusMessage()
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Error = true;
+        ddSpan.SetTag(Tags.ErrorMsg, "oops");
+
+        var json = WriteSpan(ddSpan, openTelemetrySemanticsEnabled: true);
+
+        json["status"]!["code"]!.Value<int>().Should().Be((int)StatusCode.Error);
+        json["status"]!["message"]!.Value<string>().Should().Be("oops");
+    }
+
+    [Theory]
+    [InlineData("STATUS_CODE_OK", 1)]
+    [InlineData("STATUS_CODE_ERROR", 2)]
+    public void WriteSpan_ErrorSpanWithExplicitOtelStatusCodeTag_KeepsTheTagValue(string otelStatusCode, int expectedStatusCode)
+    {
+        // A status set through the OTel API wins over span.Error
+        var ddSpan = CreateSpan();
+        ddSpan.Error = true;
+        ddSpan.SetTag("otel.status_code", otelStatusCode);
+
+        var json = WriteSpan(ddSpan, openTelemetrySemanticsEnabled: true);
+
+        json["status"]!["code"]!.Value<int>().Should().Be(expectedStatusCode);
+    }
+
+    // Under OTel semantics SetHttpStatusCode sets error.type instead of error.msg, and per the
+    // HTTP semantic conventions the status description is left unset, so no message is written.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void WriteSpan_HttpSpanWithErrorStatusCode_EmitsErrorStatus(bool openTelemetrySemanticsEnabled)
+    {
+        string? expectedMessage = openTelemetrySemanticsEnabled ? null : "The HTTP response has status code 500.";
+
+        // Regression test for HTTP spans marked as errors by SetHttpStatusCode, which sets
+        // span.Error but no "otel.status_code" tag.
+        var ddSpan = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+        ddSpan.SetHttpStatusCode(500, isServer: true, new TracerSettings().Manager.InitialMutableSettings);
+        ddSpan.Error.Should().BeTrue();
+        ddSpan.GetTag("otel.status_code").Should().BeNull();
+
+        var json = WriteSpan(ddSpan, openTelemetrySemanticsEnabled);
+
+        json["status"]!["code"]!.Value<int>().Should().Be((int)StatusCode.Error);
+
+        // Assign first: "json["status"]!["message"]?.Value<string>().Should()" would short-circuit
+        // to a no-op when the message is omitted, making the assertion vacuous.
+        var actualMessage = json["status"]!["message"]?.Value<string>();
+        actualMessage.Should().Be(expectedMessage);
+    }
+
+    private static Span CreateSpan(bool openTelemetrySemanticsEnabled = false)
+    {
+        var context = new SpanContext(parent: null, new TraceContext(new StubDatadogTracer()), serviceName: "service_name");
+        var span = new Span(context, DateTimeOffset.UtcNow, tags: null, links: null, openTelemetrySemanticsEnabled)
+        {
+            OperationName = "operation_name",
+            ResourceName = "resource_name",
+        };
+        span.SetDuration(TimeSpan.FromMilliseconds(1));
+        return span;
+    }
+
+    private static JObject WriteSpan(Span span, bool openTelemetrySemanticsEnabled)
+    {
+        var serializer = new OtlpTracesJsonSerializer(openTelemetrySemanticsEnabled);
+        var traceChunk = new TraceChunkModel(new SpanCollection(new[] { span }));
+
+        using var stringWriter = new StringWriter();
+        using (var writer = new VendorJsonTextWriter(stringWriter))
+        {
+            serializer.WriteSpan(writer, traceChunk.GetSpanModel(0));
+        }
+
+        return JObject.Parse(stringWriter.ToString());
     }
 
     private static JObject WriteAnyValue(object? value)

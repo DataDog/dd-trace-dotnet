@@ -24,6 +24,13 @@ public class TagListGenerator : IIncrementalGenerator
     private const string TagAttributeFullName = "Datadog.Trace.SourceGenerators.TagAttribute";
     private const string MetricAttributeFullName = "Datadog.Trace.SourceGenerators.MetricAttribute";
 
+    internal enum PropertyType
+    {
+        String,
+        NullableInt,
+        NullableDouble,
+    }
+
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -187,11 +194,28 @@ public class TagListGenerator : IIncrementalGenerator
             }
         }
 
-        var hasRequiredReturnType =
-            isTag
-                ? propertySymbol.Type.Name == "String"
-                : propertySymbol.Type is INamedTypeSymbol { Name: "Nullable", TypeArguments: { Length: 1 } typeArgs }
-               && typeArgs[0].Name == "Double";
+        PropertyType propertyType = PropertyType.String;
+        bool hasRequiredReturnType = false;
+        if (isTag)
+        {
+            if (propertySymbol.Type.Name == "String")
+            {
+                propertyType = PropertyType.String;
+                hasRequiredReturnType = true;
+            }
+            else if (propertySymbol.Type is INamedTypeSymbol { Name: "Nullable", TypeArguments: { Length: 1 } intTypeArgs }
+                  && intTypeArgs[0].Name == "Int32")
+            {
+                propertyType = PropertyType.NullableInt;
+                hasRequiredReturnType = true;
+            }
+        }
+        else if (propertySymbol.Type is INamedTypeSymbol { Name: "Nullable", TypeArguments: { Length: 1 } doubleTypeArgs }
+              && doubleTypeArgs[0].Name == "Double")
+        {
+            propertyType = PropertyType.NullableDouble;
+            hasRequiredReturnType = true;
+        }
 
         if (!hasRequiredReturnType)
         {
@@ -218,7 +242,8 @@ public class TagListGenerator : IIncrementalGenerator
             isReadOnly: propertySymbol!.IsReadOnly,
             propertyName: propertySymbol.Name,
             tagValue: key!,
-            isTag: isTag);
+            isTag: isTag,
+            propertyType: propertyType);
 
         return new Result<(PropertyTag PropertyTag, bool IsValid)>((tag, true), errors);
     }
@@ -280,8 +305,9 @@ public class TagListGenerator : IIncrementalGenerator
         public readonly string PropertyName;
         public readonly string TagValue;
         public readonly bool IsTag;
+        public readonly PropertyType PropertyType;
 
-        public PropertyTag(string nameSpace, string className, bool isReadOnly, string propertyName, string tagValue, bool isTag)
+        public PropertyTag(string nameSpace, string className, bool isReadOnly, string propertyName, string tagValue, bool isTag, PropertyType propertyType)
         {
             IsReadOnly = isReadOnly;
             PropertyName = propertyName;
@@ -289,6 +315,7 @@ public class TagListGenerator : IIncrementalGenerator
             IsTag = isTag;
             Namespace = nameSpace;
             ClassName = className;
+            PropertyType = propertyType;
         }
     }
 }

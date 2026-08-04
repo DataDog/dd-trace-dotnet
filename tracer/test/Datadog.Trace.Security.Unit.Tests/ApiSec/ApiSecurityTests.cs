@@ -50,8 +50,8 @@ public class ApiSecurityTests
         tc.SetSamplingPriority(samplingPriority);
         var span = new Span(new SpanContext(SpanContext.None, tc, "Test"), DateTimeOffset.Now);
         span.SetTag(Tags.HttpRoute, route);
-        var statusCode = "200";
-        span.SetTag(Tags.HttpStatusCode, statusCode);
+        var statusCode = 200;
+        span.SetTag(Tags.HttpStatusCode, statusCode.ToString()); // TODO: We may need to test that setting http.response.status_code succeeds too
         span.SetTag(Tags.HttpMethod, "GET");
         var res = apiSec.ShouldAnalyzeSchema(lastCall, span, dic, statusCode, new Dictionary<string, object>());
         if (res)
@@ -86,7 +86,7 @@ public class ApiSecurityTests
 
             var route = $"route{i}";
             var method = $"GET{i}";
-            var statusCode = i.ToString();
+            var statusCode = i;
             var resHash = ApiSecurity.CombineHashes(route, method, statusCode);
             queue.Enqueue(resHash);
             var dic = new Dictionary<string, object>();
@@ -95,7 +95,7 @@ public class ApiSecurityTests
 
             var span = new Span(new SpanContext(SpanContext.None, tc, "Test"), dt);
             span.SetTag(Tags.HttpRoute, route);
-            span.SetTag(Tags.HttpStatusCode, statusCode);
+            span.SetTag(Tags.HttpStatusCode, statusCode.ToString());
             span.SetTag(Tags.HttpMethod, method);
             var res = apiSec.ShouldAnalyzeSchema(true, span, dic, statusCode, new Dictionary<string, object>());
             res.Should().BeTrue();

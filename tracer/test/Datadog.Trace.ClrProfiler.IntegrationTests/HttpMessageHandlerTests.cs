@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    if (span.Tags[Tags.HttpStatusCode] == "502")
+                    if (span.GetHttpStatusCode() == "502")
                     {
                         span.Error.Should().Be(1);
                     }

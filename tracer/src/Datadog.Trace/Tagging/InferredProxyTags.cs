@@ -27,7 +27,7 @@ internal sealed partial class InferredProxyTags : InstrumentationTags, IHasStatu
     public string? HttpRoute { get; set; }
 
     [Tag(Trace.Tags.HttpStatusCode)]
-    public string? HttpStatusCode { get; set; }
+    public int? HttpStatusCode { get; set; }
 
     [Tag(Trace.Tags.ProxyStage)]
     public string? Stage { get; set; }

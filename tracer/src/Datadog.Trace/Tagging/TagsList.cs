@@ -209,7 +209,7 @@ namespace Datadog.Trace.Tagging
         }
 
         public virtual void EnumerateTags<TProcessor>(ref TProcessor processor)
-            where TProcessor : struct, IItemProcessor<string>
+            where TProcessor : struct, IItemProcessor<string>, IItemProcessor<int>
         {
             var tags = Volatile.Read(ref _tags);
             if (tags is not null)
