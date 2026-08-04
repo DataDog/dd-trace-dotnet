@@ -71,15 +71,25 @@ public class DataStreamsWriterTests
     [Fact]
     public async Task WhenSupported_TracksTransactions()
     {
-        var bucketDurationMs = 100;
+        var bucketDurationMs = int.MaxValue;
         var api = new StubApi();
         var writer = CreateWriter(api, out var discovery, bucketDurationMs);
         TriggerSupportUpdate(discovery, isSupported: true);
 
-        writer.AddTransaction(new DataStreamsTransactionInfo("id", 1, "checkpoint"));
-        await api.WaitForCount(1, 30_000);
+        var transaction = new DataStreamsTransactionInfo("id", 1, "checkpoint");
+        writer.AddTransaction(transaction);
+        await writer.FlushAsync();
 
-        HasOneOrTwoPoints(api);
+        var sent = api.Sent.Should().ContainSingle().Subject;
+        using var compressed = new MemoryStream(sent.Array!, sent.Offset, sent.Count);
+        using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
+        using var decompressed = new MemoryStream();
+        await gzip.CopyToAsync(decompressed);
+
+        var payload = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(decompressed.ToArray());
+        payload.Stats.Should().ContainSingle();
+        payload.Stats[0].Transactions.Should().Equal(transaction.GetBytes());
+
         await writer.DisposeAsync();
     }
 
@@ -252,25 +262,6 @@ public class DataStreamsWriterTests
         await writer.DisposeAsync();
 
         api.Sent.Should().ContainSingle();
-    }
-
-    [Fact]
-    public async Task FlushAsync_DrainsPendingTransactions()
-    {
-        // int.MaxValue bucket: timer will never fire and ShouldFlushTransactions
-        // won't trigger for a small payload.  FlushAsync must drain _transactionBuffer
-        // directly — it is called immediately so ProcessQueueLoop has not yet woken
-        // from its initial 10 ms sleep.
-        var bucketDuration = int.MaxValue;
-        var api = new StubApi();
-        var writer = CreateWriter(api, out var discovery, bucketDuration);
-        TriggerSupportUpdate(discovery, isSupported: true);
-
-        writer.AddTransaction(new DataStreamsTransactionInfo("tx-id", 1L, "cp"));
-        await writer.FlushAsync();
-
-        api.Sent.Should().NotBeEmpty("FlushAsync must drain the transaction buffer");
-        await writer.DisposeAsync();
     }
 
     [Fact]
