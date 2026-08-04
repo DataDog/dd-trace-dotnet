@@ -465,7 +465,12 @@ partial class Build : NukeBuild
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdTrace))
                 .EnableNoRestore()
-                .EnableNoDependencies()
+                // Azure restores the complete working directory, including intermediate
+                // reference assemblies. GitLab matrix jobs receive final build outputs only,
+                // so build the runner's project dependencies for the selected framework.
+                .When(!IsGitlab || Framework is null, settings => settings.EnableNoDependencies())
+                .When(IsGitlab && Framework is not null, settings => settings.SetFramework(
+                    Framework == TargetFramework.NET48 ? TargetFramework.NET8_0 : Framework))
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
