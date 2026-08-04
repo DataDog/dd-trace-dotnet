@@ -30,7 +30,13 @@ Write-Host "Installing the .NET $channel x64 runtime for $Framework..."
 
 try {
     & $installScript -Architecture x64 -Runtime dotnet -Channel $channel -InstallDir $InstallDir -NoPath
-    if ($LASTEXITCODE -ne 0) {
+
+    # dotnet-install.ps1 can leave a stale non-zero $LASTEXITCODE from one of its
+    # internal native commands even after reporting a successful installation.
+    # Verify the installed shared framework directly instead.
+    $installedRuntimes = & (Join-Path $InstallDir 'dotnet.exe') --list-runtimes
+    $runtimePattern = "^Microsoft\.NETCore\.App $([regex]::Escape($channel))\."
+    if ($LASTEXITCODE -ne 0 -or -not ($installedRuntimes -match $runtimePattern)) {
         throw "Failed to install the .NET $channel runtime"
     }
 }
