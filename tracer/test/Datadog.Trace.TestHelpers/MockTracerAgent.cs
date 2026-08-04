@@ -27,7 +27,6 @@ using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
-using FluentAssertions;
 using HttpMultipartParser;
 using MessagePack; // use nuget MessagePack to deserialize
 using Xunit.Abstractions;
@@ -147,15 +146,13 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="operationName">The integration we're testing</param>
         /// <param name="minDateTime">Minimum time to check for spans from</param>
         /// <param name="returnAllOperations">When true, returns every span regardless of operation name</param>
-        /// <param name="assertExpectedCount">When true, asserts that at least the requested number of spans was received.</param>
         /// <returns>The list of spans.</returns>
         public async Task<IImmutableList<MockSpan>> WaitForSpansAsync(
             int count,
             int timeoutInMilliseconds = 20000,
             string operationName = null,
             DateTimeOffset? minDateTime = null,
-            bool returnAllOperations = false,
-            bool assertExpectedCount = false)
+            bool returnAllOperations = false)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
             var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
@@ -194,11 +191,6 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 await Task.Delay(250);
-            }
-
-            if (assertExpectedCount)
-            {
-                relevantSpans.Should().HaveCountGreaterThanOrEqualTo(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent");
             }
 
             foreach (var headers in TraceRequestHeaders)

@@ -298,7 +298,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 using (processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
                 {
-                    var spans = await agent.WaitForSpansAsync(totalExpectedSpans, 500, assertExpectedCount: false);
+                    var spans = await agent.WaitForSpansAsync(totalExpectedSpans, 500);
 
                     using var scope = new AssertionScope();
 
