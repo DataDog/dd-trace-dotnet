@@ -18,7 +18,6 @@ src/Datadog.Trace/PropagationErrorTagValues.cs
 src/Datadog.Trace/ReadOnlySpanContext.cs
 src/Datadog.Trace/Scope.IScope.cs
 src/Datadog.Trace/Span.cs
-src/Datadog.Trace/SpanContext.cs
 src/Datadog.Trace/SpanExtensions.Core.cs
 src/Datadog.Trace/SpanExtensions.cs
 src/Datadog.Trace/SpanExtensions.Framework.cs
