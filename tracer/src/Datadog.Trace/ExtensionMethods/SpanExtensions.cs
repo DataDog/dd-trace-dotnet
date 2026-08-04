@@ -88,12 +88,14 @@ namespace Datadog.Trace.ExtensionMethods
             }
             else
             {
-                return span.GetTag(Tags.HttpStatusCode) is not null || span.GetTag(Tags.HttpResponseStatusCode) is not null;
+                return span.GetHttpStatusCodeString() is not null;
             }
         }
 
         internal static string GetHttpStatusCodeString(this Span span)
-            => span.GetTag(Tags.HttpStatusCode) ?? span.GetTag(Tags.HttpResponseStatusCode);
+            => span.OpenTelemetrySemanticsEnabled
+                   ? span.GetTag(Tags.HttpResponseStatusCode)
+                   : span.GetTag(Tags.HttpStatusCode);
 
         internal static int? GetHttpStatusCode(this Span span)
         {

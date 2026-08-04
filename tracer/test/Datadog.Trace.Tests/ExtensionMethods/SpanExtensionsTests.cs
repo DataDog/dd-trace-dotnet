@@ -126,6 +126,51 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             span.GetTag(Tags.ErrorType).Should().Be(existingErrorType);
         }
 
+        [Theory]
+        [InlineData(false, "500")]
+        [InlineData(true, "500")]
+        public void GetHttpStatusCodeString_ReadsTagMatchingCurrentSemantics(bool otelSemanticsEnabled, string statusCode)
+        {
+            var span = CreateSpan(openTelemetrySemanticsEnabled: otelSemanticsEnabled);
+            span.SetTag(otelSemanticsEnabled ? Tags.HttpResponseStatusCode : Tags.HttpStatusCode, statusCode);
+
+            span.GetHttpStatusCodeString().Should().Be(statusCode);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void GetHttpStatusCodeString_DoesNotFallBackToTheOtherSemanticsTag(bool otelSemanticsEnabled)
+        {
+            var span = CreateSpan(openTelemetrySemanticsEnabled: otelSemanticsEnabled);
+            // Set only the tag for the *other* semantics mode - this is not a supported
+            // configuration, so the getter should not fall back to it.
+            span.SetTag(otelSemanticsEnabled ? Tags.HttpStatusCode : Tags.HttpResponseStatusCode, "500");
+
+            span.GetHttpStatusCodeString().Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void HasHttpStatusCode_ReturnsFalseWhenNoStatusCodeTagIsSet(bool otelSemanticsEnabled)
+        {
+            var span = CreateSpan(openTelemetrySemanticsEnabled: otelSemanticsEnabled);
+
+            span.HasHttpStatusCode().Should().BeFalse();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void HasHttpStatusCode_ReturnsTrueWhenMatchingSemanticsTagIsSet(bool otelSemanticsEnabled)
+        {
+            var span = CreateSpan(openTelemetrySemanticsEnabled: otelSemanticsEnabled);
+            span.SetTag(otelSemanticsEnabled ? Tags.HttpResponseStatusCode : Tags.HttpStatusCode, "500");
+
+            span.HasHttpStatusCode().Should().BeTrue();
+        }
+
         private static MutableSettings CreateMutableSettings(bool otelSemanticsEnabled = false)
         {
             // Keep the settings in lockstep with the span's own flag: Tracer always passes
