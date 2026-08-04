@@ -1398,6 +1398,56 @@ TEST_F(ConfigurationTest, CheckForceHttpSamplingIsEnabledIfEnvVarIsEnabled)
     ASSERT_THAT(configuration.ForceHttpSampling(), expectedValue);
 }
 
+// Mirrors Configuration::DefaultLibrariesInfoCacheStartTimeout, which is private
+#if defined(DD_SANITIZERS)
+static constexpr auto ExpectedDefaultLibrariesInfoCacheStartTimeout = 10'000ms;
+#else
+static constexpr auto ExpectedDefaultLibrariesInfoCacheStartTimeout = 2'000ms;
+#endif
+
+#if defined(DD_SANITIZERS)
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutWhenEnvVarNotSetUnderSanitizers)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 10ms);
+}
+#else
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutWhenEnvVarNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 2ms);
+}
+#endif
+
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutWhenEnvVarIsCorrectlySet)
+{
+    // Deliberately not one of the defaults, so the test fails if the env var is ignored
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LibrariesInfoCacheStartTimeout, WStr("4200"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 4'200ms);
+}
+
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutIsDefaultWhenEnvVarIsNotParsable)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LibrariesInfoCacheStartTimeout, WStr("not_an_int"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), ExpectedDefaultLibrariesInfoCacheStartTimeout);
+}
+
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutIsDefaultWhenEnvVarIsZero)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LibrariesInfoCacheStartTimeout, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), ExpectedDefaultLibrariesInfoCacheStartTimeout);
+}
+
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutIsDefaultWhenEnvVarIsNegative)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LibrariesInfoCacheStartTimeout, WStr("-5000"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), ExpectedDefaultLibrariesInfoCacheStartTimeout);
+}
+
 TEST_F(ConfigurationTest, CheckWaitHandleProfilingIsDisabledByDefault)
 {
     auto configuration = Configuration{};

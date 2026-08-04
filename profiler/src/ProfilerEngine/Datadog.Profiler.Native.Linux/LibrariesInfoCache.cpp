@@ -152,7 +152,8 @@ LibrariesInfoCache::LibrariesInfoCache(IConfiguration* configuration, shared::pm
     _newSymbols{_wrappersAllocator},
 #endif
     _stopRequested{false},
-    _event(true)
+    _event(true),
+    _startTimeout(configuration->GetLibrariesInfoCacheStartTimeout())
 {
     if (_tracker)
     {
@@ -186,17 +187,11 @@ bool LibrariesInfoCache::StartImpl()
 
     // Wait for the thread to be fully started and the cache populated
     // before setting s_instance and registering with libunwind.
-    // Cache population can be slow under sanitizers (ASAN/UBSAN add overhead to
-    // every allocation and memory access) — use a longer timeout in that case.
-#if defined(DD_SANITIZERS)
-    constexpr auto startTimeout = 10s;
-#else
-    constexpr auto startTimeout = 2s;
-#endif
-    if (!startEvent->Wait(startTimeout))
+
+    if (!startEvent->Wait(_startTimeout))
     {
-        Log::Error("Failed to populate LibrariesInfoCache within timeout. "
-                   "Not registering custom iterate_phdr_function with libunwind.");
+        Log::Error("Failed to populate LibrariesInfoCache within timeout: ", _startTimeout,
+                   ". Not registering custom iterate_phdr_function with libunwind.");
         _stopRequested = true;
         _event.Set();
         _worker.join();
