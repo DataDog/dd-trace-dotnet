@@ -21,12 +21,6 @@ namespace Datadog.Trace.Tests.AppSec;
 
 public class SecurityCoordinatorTests
 {
-    /// <summary>
-    /// ASP.NET Core pools <see cref="HttpContext"/> instances and uninitializes them once the request is
-    /// over, which leaves the feature collection null. Reading the request afterwards throws a
-    /// <see cref="NullReferenceException"/> from inside ASP.NET Core itself, and that used to escape
-    /// <c>Scan</c> into the customer's pipeline, turning the request into a 500.
-    /// </summary>
     [Fact]
     public void GivenAnUninitializedHttpContext_WhenScanning_NoExceptionIsThrown()
     {
