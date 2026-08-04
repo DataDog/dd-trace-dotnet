@@ -122,6 +122,75 @@ namespace Datadog.Trace.Security.Unit.Tests
                 schemaExtraction: """{"_dd.appsec.s.req.headers":[{"Content-Type":[8]}]}""");
         }
 
+        // Validates that libddwaf treats persistent addresses as immutable once set in a context:
+        // the status supplied at the body run must be the first (real) supply, not a stale begin-request 200.
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void ResponseBodyAndStatusCombinedRule_BodyFirst_ThenStatus_Fires(bool useUnsafeEncoder)
+        {
+            var ruleFile = "response-status-body-rules.json";
+            var initResult = CreateWaf(useUnsafeEncoder, ruleFile);
+            using var waf = initResult.Waf!;
+            using var context = waf.CreateContext();
+
+            // Run 1: body with sentinel — no status yet, rule should not fire
+            var bodyArgs = new Dictionary<string, object>
+            {
+                { AddressesConstants.ResponseBody, new Dictionary<string, string> { { "message", "waf_sentinel_response_body" } } },
+                { AddressesConstants.RequestMethod, "GET" },
+                { AddressesConstants.RequestUriRaw, "http://localhost/" },
+            };
+            var result1 = context.Run(bodyArgs, TimeoutMicroSeconds);
+            result1.Timeout.Should().BeFalse();
+            result1.ReturnCode.Should().Be(WafReturnCode.Ok, "rule should not fire without a matching status");
+
+            // Run 2: supply the real (non-200) status — rule should now fire because body persists
+            var statusArgs = new Dictionary<string, object>
+            {
+                { AddressesConstants.ResponseStatus, "404" },
+            };
+            var result2 = context.Run(statusArgs, TimeoutMicroSeconds);
+            result2.Timeout.Should().BeFalse();
+            result2.ReturnCode.Should().Be(WafReturnCode.Match, "rule must fire when the real status is supplied after the body");
+            var jsonString = JsonConvert.SerializeObject(result2.Data);
+            var match = JsonConvert.DeserializeObject<WafMatch[]>(jsonString)!.First();
+            match.Rule.Id.Should().Be("test-response-status-body-001");
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void ResponseBodyAndStatusCombinedRule_StaleStatus200_ThenBody_DoesNotFire(bool useUnsafeEncoder)
+        {
+            // Regression guard: a stale 200 seeded first (the old begin-request behaviour)
+            // must NOT allow the rule to fire even when the body arrives later.
+            var ruleFile = "response-status-body-rules.json";
+            var initResult = CreateWaf(useUnsafeEncoder, ruleFile);
+            using var waf = initResult.Waf!;
+            using var context = waf.CreateContext();
+
+            // Run 1: stale 200 (was seeded at begin-request before this fix)
+            var staleStatusArgs = new Dictionary<string, object>
+            {
+                { AddressesConstants.ResponseStatus, "200" },
+                { AddressesConstants.RequestMethod, "GET" },
+                { AddressesConstants.RequestUriRaw, "http://localhost/" },
+            };
+            var result1 = context.Run(staleStatusArgs, TimeoutMicroSeconds);
+            result1.Timeout.Should().BeFalse();
+            result1.ReturnCode.Should().Be(WafReturnCode.Ok);
+
+            // Run 2: body arrives — the stale 200 is sticky; rule must not fire (404 required)
+            var bodyArgs = new Dictionary<string, object>
+            {
+                { AddressesConstants.ResponseBody, new Dictionary<string, string> { { "message", "waf_sentinel_response_body" } } },
+            };
+            var result2 = context.Run(bodyArgs, TimeoutMicroSeconds);
+            result2.Timeout.Should().BeFalse();
+            result2.ReturnCode.Should().Be(WafReturnCode.Ok, "rule must not fire when the only status supplied was the stale 200");
+        }
+
         private void Execute(string address, object value, string flow = null, string rule = null, string schemaExtraction = null)
         {
             ExecuteInternal(address, value, flow, rule, schemaExtraction, false);
