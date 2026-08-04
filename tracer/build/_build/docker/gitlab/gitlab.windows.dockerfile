@@ -40,6 +40,10 @@ ENV DOTNET_VERSION="10.0.100" \
 COPY install_dotnet.ps1 .
 RUN powershell -Command .\install_dotnet.ps1  -Version $ENV:DOTNET_VERSION -Sha512 $ENV:DOTNET_SHA512 $ENV:DOTNET_DOWNLOAD_URL
 
+# Install the older runtimes used by the Windows managed unit-test matrix.
+COPY install_dotnet_runtimes.ps1 .
+RUN powershell -Command .\install_dotnet_runtimes.ps1
+
 # Copy the CI Identities GitLab Job Client
 COPY --from=registry.ddbuild.io/ci-identities/ci-identities-gitlab-job-client:v0.6.3-windows-amd64 C:/ci-identities-gitlab-job-client.exe c:/devtools/ci-identities-gitlab-job-client.exe
 

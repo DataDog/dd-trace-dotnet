@@ -262,6 +262,8 @@ build:
     # intermediate reference assemblies, not through the final binaries above.
     - artifacts/obj/**/ref/**/*
     - artifacts/obj/**/refint/**/*
+    # The dd_dotnet tests also copy the producer-built executable host.
+    - artifacts/obj/Datadog.Trace.Tools.dd_dotnet/**/apphost.exe
     - artifacts/build_data/tests
     - artifacts/build_data/dumps
     - profiler/build_data/tests
