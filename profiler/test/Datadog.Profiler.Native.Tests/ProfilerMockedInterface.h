@@ -96,6 +96,9 @@ public:
     MOCK_METHOD(bool, IsManagedActivationEnabled, (), (const override));
     MOCK_METHOD(void, SetEnablementStatus, (EnablementStatus status), (override));
     MOCK_METHOD(bool, IsHeapSnapshotEnabled, (), (const override));
+    MOCK_METHOD(bool, IsEEHeapEnabled, (), (const override));
+    MOCK_METHOD(bool, IsMemoryBreakdownEnabled, (), (const override));
+    MOCK_METHOD(bool, IsMemoryBreakdownWorkingSetEnabled, (), (const override));
     MOCK_METHOD(bool, IsHeapSnapshotSkipTraversal, (), (const override));
     MOCK_METHOD(std::chrono::minutes, GetHeapSnapshotInterval, (), (const override));
     MOCK_METHOD(std::chrono::milliseconds, GetHeapSnapshotCheckInterval, (), (const override));

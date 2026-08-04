@@ -1,0 +1,384 @@
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+
+#include "gtest/gtest.h"
+
+#include "AddressRegion.h"
+#include "AddressSpaceMap.h"
+#include "ClrNativeHeapInfo.h"
+#include "EEHeapTestHelpers.h"
+#include "MemoryBreakdownProvider.h"
+#include "MetricsRegistry.h"
+#include "Sample.h"
+#include "SampleValueTypeProvider.h"
+#include "SamplesEnumerator.h"
+
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace
+{
+constexpr size_t CommittedIndex = 0; // first (and only) provider registered -> offsets {0, 1}
+constexpr size_t RssIndex = 1;
+
+AddressRegion Image(uintptr_t address, uint64_t size, const std::string& name, const std::string& protection)
+{
+    AddressRegion r;
+    r.Address = address;
+    r.Size = size;
+    r.Committed = size;
+    r.Category = RegionCategory::Image;
+    r.ModuleName = name;
+    r.Protection = protection;
+    return r;
+}
+
+AddressRegion Private(uintptr_t address, uint64_t size)
+{
+    AddressRegion r;
+    r.Address = address;
+    r.Size = size;
+    r.Committed = size;
+    r.Category = RegionCategory::PrivateData;
+    return r;
+}
+
+ClrNativeHeapInfo Segment(uintptr_t address, uint64_t size, int generation, int gcHeap)
+{
+    ClrNativeHeapInfo h;
+    h.Address = address;
+    h.Size = size;
+    h.Committed = size;
+    h.Kind = NativeHeapKind::GCHeapSegment;
+    h.State = NativeHeapState::Active;
+    h.Generation = generation;
+    h.GCHeap = gcHeap;
+    return h;
+}
+
+ClrNativeHeapInfo NativeHeap(uintptr_t address, uint64_t size, NativeHeapKind kind)
+{
+    ClrNativeHeapInfo h;
+    h.Address = address;
+    h.Size = size;
+    h.Committed = size;
+    h.Kind = kind;
+    h.State = NativeHeapState::Active;
+    return h;
+}
+
+std::vector<std::shared_ptr<Sample>> Collect(SamplesEnumerator* e)
+{
+    std::vector<std::shared_ptr<Sample>> result;
+    std::shared_ptr<Sample> s;
+    while (e->MoveNext(s))
+    {
+        result.push_back(s);
+    }
+    return result;
+}
+
+std::string GetStringLabel(const std::shared_ptr<Sample>& s, const std::string& key)
+{
+    for (auto const& l : s->GetLabels())
+    {
+        if (auto* sl = std::get_if<StringLabel>(&l); sl != nullptr && sl->first == key)
+        {
+            return sl->second;
+        }
+    }
+    return {};
+}
+
+bool HasLabel(const std::shared_ptr<Sample>& s, const std::string& key)
+{
+    for (auto const& l : s->GetLabels())
+    {
+        if (auto* sl = std::get_if<StringLabel>(&l); sl != nullptr && sl->first == key)
+        {
+            return true;
+        }
+        if (auto* nl = std::get_if<NumericLabel>(&l); nl != nullptr && nl->first == key)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool FrameContains(const std::shared_ptr<Sample>& s, std::string_view needle)
+{
+    for (auto const& f : s->GetCallstack())
+    {
+        if (f.Frame.find(needle) != std::string_view::npos)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+int64_t Committed(const std::shared_ptr<Sample>& s)
+{
+    return s->GetValues()[CommittedIndex];
+}
+
+// Builds the standard scenario: a CLR module (3 protection runs) + an app module, a large private GC
+// region holding gen0 (x2 heaps), gen1, gen2, LOH, POH segments and a loader heap. Windows-like
+// (committed, no RSS).
+std::unique_ptr<AddressSpaceMap> BuildScenarioMap()
+{
+    std::vector<AddressRegion> regions{
+        Image(0x1000, 0x1000, "clr.dll", "r-x"),
+        Image(0x2000, 0x1000, "clr.dll", "r--"),
+        Image(0x3000, 0x1000, "clr.dll", "rw-"),
+        Image(0x5000, 0x1000, "app.dll", "r-x"),
+        Private(0x100000, 0x10000),
+    };
+    return std::make_unique<AddressSpaceMap>(std::move(regions), /*committed*/ true, /*rss*/ false);
+}
+
+std::vector<ClrNativeHeapInfo> BuildScenarioHeaps()
+{
+    return {
+        Segment(0x100000, 0x1000, 0, 0),
+        Segment(0x101000, 0x1000, 0, 1),
+        Segment(0x102000, 0x1000, 1, 0),
+        Segment(0x103000, 0x1000, 2, 0),
+        Segment(0x104000, 0x1000, 3, 0), // LOH
+        Segment(0x105000, 0x1000, 4, 0), // POH
+        NativeHeap(0x106000, 0x1000, NativeHeapKind::HighFrequencyHeap),
+    };
+}
+} // namespace
+
+TEST(MemoryBreakdownProviderTest, ReconciliationDoesNotDoubleCount)
+{
+    auto map = BuildScenarioMap();
+    FakeClrNativeHeapSnapshot snapshot(BuildScenarioHeaps(), /*available*/ true, "dac", map.get());
+
+    SampleValueTypeProvider valueTypeProvider;
+    MetricsRegistry registry;
+    MemoryBreakdownProvider provider(valueTypeProvider, &snapshot, registry);
+
+    auto enumerator = provider.GetSamples();
+    auto samples = Collect(enumerator.get());
+    ASSERT_FALSE(samples.empty());
+
+    // 4 image runs (0x4000) + private region (0x10000) = 0x14000 committed, attributed exactly once.
+    int64_t total = 0;
+    for (const auto& s : samples)
+    {
+        total += Committed(s);
+    }
+    EXPECT_EQ(total, 0x14000);
+}
+
+TEST(MemoryBreakdownProviderTest, SameGenerationAcrossHeapsCollapsesIntoOneLeaf)
+{
+    auto map = BuildScenarioMap();
+    FakeClrNativeHeapSnapshot snapshot(BuildScenarioHeaps(), /*available*/ true, "dac", map.get());
+
+    SampleValueTypeProvider valueTypeProvider;
+    MetricsRegistry registry;
+    MemoryBreakdownProvider provider(valueTypeProvider, &snapshot, registry);
+
+    auto enumerator = provider.GetSamples();
+    auto samples = Collect(enumerator.get());
+
+    // The two gen0 segments (heap 0 and heap 1) must collapse into a single gen0 sample summing 0x2000.
+    int gen0Count = 0;
+    int64_t gen0Committed = 0;
+    for (const auto& s : samples)
+    {
+        if (FrameContains(s, "fn:gen0 "))
+        {
+            gen0Count++;
+            gen0Committed += Committed(s);
+            EXPECT_EQ(GetStringLabel(s, Sample::GarbageCollectionGenerationLabel), "0");
+        }
+    }
+    EXPECT_EQ(gen0Count, 1);
+    EXPECT_EQ(gen0Committed, 0x2000);
+}
+
+TEST(MemoryBreakdownProviderTest, ManagedGenerationFramesAndLabels)
+{
+    auto map = BuildScenarioMap();
+    FakeClrNativeHeapSnapshot snapshot(BuildScenarioHeaps(), /*available*/ true, "dac", map.get());
+
+    SampleValueTypeProvider valueTypeProvider;
+    MetricsRegistry registry;
+    MemoryBreakdownProvider provider(valueTypeProvider, &snapshot, registry);
+
+    auto samples = Collect(provider.GetSamples().get());
+
+    struct Expect
+    {
+        std::string_view frame;
+        const char* generation;
+    };
+    const Expect expected[] = {
+        {"fn:gen1 ", "1"},
+        {"fn:gen2 ", "2"},
+        {"fn:LOH ", "3"},
+        {"fn:POH ", "4"},
+    };
+
+    for (const auto& e : expected)
+    {
+        bool found = false;
+        for (const auto& s : samples)
+        {
+            if (FrameContains(s, e.frame))
+            {
+                found = true;
+                EXPECT_EQ(GetStringLabel(s, Sample::GarbageCollectionGenerationLabel), e.generation);
+                EXPECT_EQ(GetStringLabel(s, "memory_source"), "managed");
+                EXPECT_TRUE(FrameContains(s, "fn:Managed Heap (GC) "));
+                EXPECT_TRUE(FrameContains(s, "fn:Process Memory "));
+            }
+        }
+        EXPECT_TRUE(found) << "missing frame " << e.frame;
+    }
+}
+
+TEST(MemoryBreakdownProviderTest, ClrNativeLeafHasGroupAndKindLabels)
+{
+    auto map = BuildScenarioMap();
+    FakeClrNativeHeapSnapshot snapshot(BuildScenarioHeaps(), /*available*/ true, "dac", map.get());
+
+    SampleValueTypeProvider valueTypeProvider;
+    MetricsRegistry registry;
+    MemoryBreakdownProvider provider(valueTypeProvider, &snapshot, registry);
+
+    auto samples = Collect(provider.GetSamples().get());
+
+    bool found = false;
+    for (const auto& s : samples)
+    {
+        if (GetStringLabel(s, "region_kind") == "HighFrequencyHeap")
+        {
+            found = true;
+            EXPECT_EQ(GetStringLabel(s, "memory_source"), "clr-native");
+            EXPECT_EQ(GetStringLabel(s, "region_group"), "Loader");
+            EXPECT_TRUE(FrameContains(s, "fn:Loader "));
+            EXPECT_TRUE(FrameContains(s, "fn:CLR Native "));
+        }
+    }
+    EXPECT_TRUE(found);
+}
+
+TEST(MemoryBreakdownProviderTest, ModuleProtectionRunsCollapseIntoOneSample)
+{
+    auto map = BuildScenarioMap();
+    FakeClrNativeHeapSnapshot snapshot(BuildScenarioHeaps(), /*available*/ true, "dac", map.get());
+
+    SampleValueTypeProvider valueTypeProvider;
+    MetricsRegistry registry;
+    MemoryBreakdownProvider provider(valueTypeProvider, &snapshot, registry);
+
+    auto samples = Collect(provider.GetSamples().get());
+
+    int clrModuleCount = 0;
+    int64_t clrModuleCommitted = 0;
+    for (const auto& s : samples)
+    {
+        if (GetStringLabel(s, "module") == "clr.dll")
+        {
+            clrModuleCount++;
+            clrModuleCommitted += Committed(s);
+            EXPECT_EQ(GetStringLabel(s, "memory_source"), "image");
+            // protection must never be surfaced as a sample label (would re-fragment the module).
+            EXPECT_FALSE(HasLabel(s, "protection"));
+        }
+    }
+
+    // The 3 protection runs (r-x/r--/rw-) collapse into exactly one clr.dll sample of 0x3000.
+    EXPECT_EQ(clrModuleCount, 1);
+    EXPECT_EQ(clrModuleCommitted, 0x3000);
+}
+
+TEST(MemoryBreakdownProviderTest, PrivateRemainderIsAttributedToPrivateLeaf)
+{
+    auto map = BuildScenarioMap();
+    FakeClrNativeHeapSnapshot snapshot(BuildScenarioHeaps(), /*available*/ true, "dac", map.get());
+
+    SampleValueTypeProvider valueTypeProvider;
+    MetricsRegistry registry;
+    MemoryBreakdownProvider provider(valueTypeProvider, &snapshot, registry);
+
+    auto samples = Collect(provider.GetSamples().get());
+
+    // Private region 0x10000 minus 7 CLR sub-regions (0x7000) => 0x9000 attributed to the private leaf.
+    int64_t privateCommitted = 0;
+    for (const auto& s : samples)
+    {
+        if (GetStringLabel(s, "memory_source") == "private")
+        {
+            privateCommitted += Committed(s);
+            EXPECT_TRUE(FrameContains(s, "fn:Native Heap / Private "));
+        }
+    }
+    EXPECT_EQ(privateCommitted, 0x9000);
+}
+
+TEST(MemoryBreakdownProviderTest, EverySampleHasMemorySourceAndPid)
+{
+    auto map = BuildScenarioMap();
+    FakeClrNativeHeapSnapshot snapshot(BuildScenarioHeaps(), /*available*/ true, "dac", map.get());
+
+    SampleValueTypeProvider valueTypeProvider;
+    MetricsRegistry registry;
+    MemoryBreakdownProvider provider(valueTypeProvider, &snapshot, registry);
+
+    auto samples = Collect(provider.GetSamples().get());
+    ASSERT_FALSE(samples.empty());
+
+    for (const auto& s : samples)
+    {
+        EXPECT_FALSE(GetStringLabel(s, "memory_source").empty());
+        EXPECT_TRUE(HasLabel(s, Sample::ProcessIdLabel));
+    }
+}
+
+TEST(MemoryBreakdownProviderTest, NoSamplesWhenSnapshotUnavailable)
+{
+    FakeClrNativeHeapSnapshot snapshot(BuildScenarioHeaps(), /*available*/ false, "dac", nullptr);
+
+    SampleValueTypeProvider valueTypeProvider;
+    MetricsRegistry registry;
+    MemoryBreakdownProvider provider(valueTypeProvider, &snapshot, registry);
+
+    auto enumerator = provider.GetSamples();
+    EXPECT_EQ(enumerator->size(), 0u);
+}
+
+TEST(MemoryBreakdownProviderTest, RegistersDurationMetrics)
+{
+    auto map = BuildScenarioMap();
+    FakeClrNativeHeapSnapshot snapshot(BuildScenarioHeaps(), /*available*/ true, "dac", map.get());
+
+    SampleValueTypeProvider valueTypeProvider;
+    MetricsRegistry registry;
+    MemoryBreakdownProvider provider(valueTypeProvider, &snapshot, registry);
+
+    provider.GetSamples();
+
+    bool foundDuration = false;
+    bool foundWorkingSet = false;
+    for (const auto& [name, value] : registry.Collect())
+    {
+        if (name == "dotnet_memory_breakdown_duration")
+        {
+            foundDuration = true;
+        }
+        if (name == "dotnet_memory_breakdown_workingset_duration")
+        {
+            foundWorkingSet = true;
+        }
+    }
+    EXPECT_TRUE(foundDuration);
+    EXPECT_TRUE(foundWorkingSet);
+}

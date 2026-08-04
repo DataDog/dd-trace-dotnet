@@ -1438,6 +1438,62 @@ TEST_F(ConfigurationTest, CheckHeapSnapshotIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsHeapSnapshotEnabled(), false);
 }
 
+TEST_F(ConfigurationTest, CheckEEHeapIsDisabledByDefault)
+{
+    unsetenv(EnvironmentVariables::EEHeapEnabled);
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsEEHeapEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckEEHeapIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::EEHeapEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsEEHeapEnabled(), true);
+}
+
+TEST_F(ConfigurationTest, CheckEEHeapIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::EEHeapEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsEEHeapEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckMemoryBreakdownIsDisabledByDefault)
+{
+    unsetenv(EnvironmentVariables::MemoryBreakdownEnabled);
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsMemoryBreakdownEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckMemoryBreakdownIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::MemoryBreakdownEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsMemoryBreakdownEnabled(), true);
+}
+
+TEST_F(ConfigurationTest, CheckMemoryBreakdownIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::MemoryBreakdownEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsMemoryBreakdownEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckMemoryBreakdownWorkingSetIsDisabledByDefault)
+{
+    unsetenv(EnvironmentVariables::MemoryBreakdownWorkingSetEnabled);
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsMemoryBreakdownWorkingSetEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckMemoryBreakdownWorkingSetIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::MemoryBreakdownWorkingSetEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsMemoryBreakdownWorkingSetEnabled(), true);
+}
+
 TEST_F(ConfigurationTest, CheckHeapSnapshotSkipTraversalIsDisabledByDefault)
 {
     auto configuration = Configuration{};
