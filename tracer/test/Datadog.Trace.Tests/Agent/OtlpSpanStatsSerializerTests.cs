@@ -150,6 +150,32 @@ namespace Datadog.Trace.Tests.Agent
             attrs.Should().NotContainKey("datadog.span.top_level");
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void SerializeJson_OtelSemanticsDisabled_IncludesIsTraceRoot(bool isTraceRoot)
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(isTraceRoot: isTraceRoot);
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetDataPointAttributes(SerializeToJson(buffer, otelSemanticsEnabled: false));
+
+            attrs.Should().ContainKey("datadog.is_trace_root").WhoseValue.Should().Be(isTraceRoot.ToString().ToLowerInvariant());
+        }
+
+        [Fact]
+        public void SerializeJson_OtelSemanticsEnabled_ExcludesIsTraceRoot()
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(isTraceRoot: true);
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetDataPointAttributes(SerializeToJson(buffer, otelSemanticsEnabled: true));
+
+            attrs.Should().NotContainKey("datadog.is_trace_root");
+        }
+
         [Fact]
         public void SerializeJson_ServiceNameOmitted_WhenMatchesDefault()
         {
@@ -190,7 +216,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public void SerializeJson_NonErrorDataPoint_NoStatusCode()
+        public void SerializeJson_NonErrorDataPoint_IncludesStatusCodeOk()
         {
             var buffer = CreateBuffer();
             var key = CreateKey(isError: false);
@@ -199,7 +225,7 @@ namespace Datadog.Trace.Tests.Agent
             var json = SerializeToJson(buffer);
             var attrs = GetDataPointAttributes(json);
 
-            attrs.Should().NotContainKey("status.code");
+            attrs.Should().ContainKey("status.code").WhoseValue.Should().Be("STATUS_CODE_OK");
         }
 
         [Fact]
@@ -299,6 +325,19 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void SerializeJson_AdditionalMetricTags_EmittedAsUnprefixedAttributes_RegardlessOfOtelSemantics()
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey();
+            var additionalMetricTags = new List<byte[]> { Encoding.UTF8.GetBytes("team:payments") };
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetDataPointAttributes(SerializeToJson(buffer, otelSemanticsEnabled: true));
+
+            attrs.Should().ContainKey("team").WhoseValue.Should().Be("payments");
+        }
+
+        [Fact]
         public void SerializeJson_AggregationTemporalityIsDelta()
         {
             var json = SerializeToJson(CreateBufferWithOneHit());
@@ -363,6 +402,35 @@ namespace Datadog.Trace.Tests.Agent
             var attrs = GetDataPointAttributes(SerializeToJson(buffer));
 
             attrs.Should().NotContainKey("rpc.response.status_code");
+        }
+
+        [Theory]
+        [InlineData("server", "SPAN_KIND_SERVER")]
+        [InlineData("client", "SPAN_KIND_CLIENT")]
+        [InlineData("producer", "SPAN_KIND_PRODUCER")]
+        [InlineData("consumer", "SPAN_KIND_CONSUMER")]
+        [InlineData("internal", "SPAN_KIND_INTERNAL")]
+        public void SerializeJson_SpanKind_EmitsCanonicalUppercaseName(string input, string expected)
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(spanKind: input);
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetDataPointAttributes(SerializeToJson(buffer));
+
+            attrs.Should().ContainKey("span.kind").WhoseValue.Should().Be(expected);
+        }
+
+        [Fact]
+        public void SerializeJson_SpanKind_AbsentWhenUnknown()
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(spanKind: "not-a-real-kind");
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetDataPointAttributes(SerializeToJson(buffer));
+
+            attrs.Should().NotContainKey("span.kind");
         }
 
         [Fact]

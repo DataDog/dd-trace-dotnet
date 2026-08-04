@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Logging;
@@ -25,8 +26,9 @@ namespace Datadog.Trace.Agent
         private const int WireTypeFixed64 = 1;
         private const int WireTypeLengthDelimited = 2;
         private const int AggregationTemporalityDelta = 1;
-        private const long StatusCodeErrorProto = 2;
-        private const string StatusCodeErrorJson = "STATUS_CODE_ERROR";
+
+        private const string StatusCodeOkValue = "STATUS_CODE_OK";
+        private const string StatusCodeErrorValue = "STATUS_CODE_ERROR";
 
         private const string MetricUnit = "s";
 
@@ -47,6 +49,15 @@ namespace Datadog.Trace.Agent
             "FAILED_PRECONDITION", "ABORTED", "OUT_OF_RANGE", "UNIMPLEMENTED",
             "INTERNAL", "UNAVAILABLE", "DATA_LOSS", "UNAUTHENTICATED",
         ];
+
+        private static readonly Dictionary<string, string> SpanKindNames = new(StringComparer.OrdinalIgnoreCase)
+        {
+            [SpanKinds.Client] = "SPAN_KIND_CLIENT",
+            [SpanKinds.Server] = "SPAN_KIND_SERVER",
+            [SpanKinds.Producer] = "SPAN_KIND_PRODUCER",
+            [SpanKinds.Consumer] = "SPAN_KIND_CONSUMER",
+            [SpanKinds.Internal] = "SPAN_KIND_INTERNAL",
+        };
 
         static OtlpSpanStatsSerializer()
         {
@@ -141,6 +152,8 @@ namespace Datadog.Trace.Agent
             if (!otelSemanticsEnabled)
             {
                 WriteStringKvJson(writer, "datadog.runtime_id", Tracer.RuntimeId);
+
+                // TODO: emit datadog.process_tags from details.ProcessTags (not yet wired into OTLP output).
             }
 
             writer.WriteEndArray();
@@ -216,9 +229,10 @@ namespace Datadog.Trace.Agent
                 WriteStringKvJson(writer, "span.name", key.Resource);
             }
 
-            if (!StringUtil.IsNullOrEmpty(key.SpanKind))
+            var spanKindJson = CanonicalizeSpanKind(key.SpanKind);
+            if (spanKindJson is not null)
             {
-                WriteStringKvJson(writer, "span.kind", key.SpanKind);
+                WriteStringKvJson(writer, "span.kind", spanKindJson);
             }
 
             if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
@@ -242,10 +256,7 @@ namespace Datadog.Trace.Agent
                 WriteStringKvJson(writer, "rpc.response.status_code", grpcStatusName);
             }
 
-            if (key.IsError)
-            {
-                WriteStringKvJson(writer, "status.code", StatusCodeErrorJson);
-            }
+            WriteStringKvJson(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue);
 
             if (!StringUtil.IsNullOrEmpty(key.Service) && !string.Equals(key.Service, defaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
@@ -265,12 +276,24 @@ namespace Datadog.Trace.Agent
                 }
 
                 WriteBoolKvJson(writer, "datadog.span.top_level", key.IsTopLevel);
+                WriteBoolKvJson(writer, "datadog.is_trace_root", key.IsTraceRoot ?? false);
 
                 if (key.IsSyntheticsRequest)
                 {
                     WriteStringKvJson(writer, "datadog.origin", "synthetics");
                 }
             }
+
+            // additional_metric_tags support is still evolving/TBD across most SDKs; unlike peer_tags/process_tags, each configured key is its own unprefixed attribute.
+            foreach (var tag in bucket.AdditionalMetricTags)
+            {
+                if (TrySplitEncodedTag(tag, out var tagKey, out var tagValue))
+                {
+                    WriteStringKvJson(writer, tagKey, tagValue);
+                }
+            }
+
+            // TODO: emit datadog.peer_tags from bucket.PeerTags (not yet wired into OTLP output; mirror the legacy MessagePack shape in StatsBuffer.cs as a single combined arrayValue).
 
             writer.WriteEndArray();
 
@@ -487,9 +510,10 @@ namespace Datadog.Trace.Agent
                 WriteAttribute(writer, "span.name", key.Resource, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            if (!StringUtil.IsNullOrEmpty(key.SpanKind))
+            var spanKindProto = CanonicalizeSpanKind(key.SpanKind);
+            if (spanKindProto is not null)
             {
-                WriteAttribute(writer, "span.kind", key.SpanKind, FieldNumbers.HistogramDataPointAttributes);
+                WriteAttribute(writer, "span.kind", spanKindProto, FieldNumbers.HistogramDataPointAttributes);
             }
 
             if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
@@ -513,10 +537,7 @@ namespace Datadog.Trace.Agent
                 WriteAttribute(writer, "rpc.response.status_code", grpcStatusNameProto, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            if (key.IsError)
-            {
-                WriteIntAttribute(writer, "status.code", StatusCodeErrorProto, FieldNumbers.HistogramDataPointAttributes);
-            }
+            WriteAttribute(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue, FieldNumbers.HistogramDataPointAttributes);
 
             if (!StringUtil.IsNullOrEmpty(key.Service) && !string.Equals(key.Service, defaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
@@ -536,10 +557,19 @@ namespace Datadog.Trace.Agent
                 }
 
                 WriteBoolAttribute(writer, "datadog.span.top_level", key.IsTopLevel, FieldNumbers.HistogramDataPointAttributes);
+                WriteBoolAttribute(writer, "datadog.is_trace_root", key.IsTraceRoot ?? false, FieldNumbers.HistogramDataPointAttributes);
 
                 if (key.IsSyntheticsRequest)
                 {
                     WriteAttribute(writer, "datadog.origin", "synthetics", FieldNumbers.HistogramDataPointAttributes);
+                }
+            }
+
+            foreach (var tag in bucket.AdditionalMetricTags)
+            {
+                if (TrySplitEncodedTag(tag, out var tagKey, out var tagValue))
+                {
+                    WriteAttribute(writer, tagKey, tagValue, FieldNumbers.HistogramDataPointAttributes);
                 }
             }
 
@@ -636,6 +666,16 @@ namespace Datadog.Trace.Agent
             return BoundsNs.Length; // overflow
         }
 
+        private static string? CanonicalizeSpanKind(string spanKind)
+        {
+            if (StringUtil.IsNullOrEmpty(spanKind))
+            {
+                return null;
+            }
+
+            return SpanKindNames.TryGetValue(spanKind, out var canonical) ? canonical : null;
+        }
+
         private static string? NormalizeGrpcStatusName(string grpcStatusCode)
         {
             if (StringUtil.IsNullOrEmpty(grpcStatusCode))
@@ -677,6 +717,23 @@ namespace Datadog.Trace.Agent
             }
 
             return null;
+        }
+
+        private static bool TrySplitEncodedTag(byte[] encodedTag, out string key, out string value)
+        {
+            var decoded = EncodingHelpers.Utf8NoBom.GetString(encodedTag);
+            var separatorIndex = decoded.IndexOf(':');
+            if (separatorIndex < 0)
+            {
+                // Cardinality-limit sentinel (StatsAggregator.BlockedByTracerSentinel) carries no colon; skip it.
+                key = string.Empty;
+                value = string.Empty;
+                return false;
+            }
+
+            key = decoded.Substring(0, separatorIndex);
+            value = decoded.Substring(separatorIndex + 1);
+            return true;
         }
 
         private static void WriteAttribute(BinaryWriter writer, string key, string value, int fieldNumber = FieldNumbers.Attributes)
