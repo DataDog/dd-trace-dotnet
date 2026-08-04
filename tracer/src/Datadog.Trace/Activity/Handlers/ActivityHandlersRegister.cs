@@ -28,6 +28,9 @@ namespace Datadog.Trace.Activity.Handlers
             // Quartz handlers
             new QuartzActivityHandler(),
 
+            // Azure Functions Durable Task host-side distributed tracing (V2)
+            new DurableTaskActivityHandler(),
+
             // The default handler catches an activity and creates a datadog span from it.
             new DefaultActivityHandler(),
         };
