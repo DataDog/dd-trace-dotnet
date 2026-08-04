@@ -258,6 +258,10 @@ build:
     # own MSBuild obj files and builds only its requested test target framework.
     - artifacts/bin
     - artifacts/monitoring-home
+    # `dotnet build --no-dependencies` resolves project references through these
+    # intermediate reference assemblies, not through the final binaries above.
+    - artifacts/obj/**/ref/**/*
+    - artifacts/obj/**/refint/**/*
     - artifacts/build_data/tests
     - artifacts/build_data/dumps
     - profiler/build_data/tests

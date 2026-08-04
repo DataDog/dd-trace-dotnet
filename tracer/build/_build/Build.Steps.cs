@@ -1463,8 +1463,16 @@ partial class Build
         .DependsOn(CompileManagedLoader)
         .Executes(() =>
         {
+            var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj");
+            if (IsGitlab && Framework is not null)
+            {
+                testProjects = testProjects
+                              .Where(path => Solution.GetProject(path).GetTargetFrameworks().Contains(Framework))
+                              .ToList();
+            }
+
             DotnetBuild(
-                TracerDirectory.GlobFiles("test/**/*.Tests.csproj"),
+                testProjects,
                 framework: IsGitlab ? Framework : null,
                 noRestore: !IsGitlab);
         });
@@ -1477,6 +1485,7 @@ partial class Build
         {
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
                 .Select(x => Solution.GetProject(x))
+                .Where(project => !IsGitlab || Framework is null || project.GetTargetFrameworks().Contains(Framework))
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
