@@ -71,6 +71,55 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        public void CheckReferenceTreeProducedAcrossConsecutiveSnapshots(string appName, string framework, string appAssembly)
+        {
+            // Regression guard for fault handling: a memory access fault during one
+            // snapshot's traversal must not disable reference chains for the following
+            // snapshots. We run long enough for several snapshots and assert that a
+            // valid reference tree is produced by each consecutive snapshot, not just
+            // the first one.
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            runner.TestDurationInSeconds = 50;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "10");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated");
+
+            // Group the emitted files by the export (snapshot) they belong to. Each
+            // snapshot that ran the traversal and found a root emits exactly one tree.
+            var snapshotIds = referenceTreeFiles
+                .Select(f => GetSnapshotId(f, "reference_tree_"))
+                .Distinct()
+                .ToList();
+
+            _output.WriteLine($"Reference trees were produced for {snapshotIds.Count} distinct snapshot(s).");
+
+            // "A bad dump does not kill the next one": we must see trees from multiple
+            // consecutive snapshots, not a single one followed by silence.
+            Assert.True(
+                snapshotIds.Count >= 2,
+                $"Expected reference trees from at least 2 consecutive snapshots, got {snapshotIds.Count}");
+
+            // Every emitted tree must be structurally valid and contain the scenario chain,
+            // proving traversal kept working snapshot after snapshot.
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+            Assert.Equal(referenceTreeFiles.Length, trees.Count);
+
+            Assert.True(
+                trees.Any(tree =>
+                    HasRootOfCategory(tree, "K") &&
+                    HasAncestorDescendantChain(tree, "Order", "Customer") &&
+                    HasAncestorDescendantChain(tree, "Customer", "Address")),
+                "Expected at least one snapshot to still contain the Order->Customer->Address chain");
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckSimpleChainBinaryFormat(string appName, string framework, string appAssembly)
         {
             // Same as CheckSimpleChainScenario but with binary serialization (format=1, the default).

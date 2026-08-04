@@ -22,6 +22,7 @@
 
 #include <memory>
 
+class CoreLibModuleProvider;
 class IConfiguration;
 class SampleValueTypeProvider;
 class RawSampleTransformer;
@@ -36,6 +37,7 @@ public:
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
+        CoreLibModuleProvider* pCoreLibModuleProvider,
         IConfiguration* pConfiguration,
         RawSampleTransformer* rawSampleTransformer,
         MetricsRegistry& metricsRegistry,
@@ -86,10 +88,11 @@ private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;
+    CoreLibModuleProvider* _pCoreLibModuleProvider;
     COR_FIELD_OFFSET _messageFieldOffset;
     ULONG _stringLengthOffset;
     ULONG _stringBufferOffset;
-    ModuleID _mscorlibModuleId;
+    bool _isStringLayoutLoaded;
     ClassID _exceptionClassId;
     bool _loggedMscorlibError;
     std::unordered_map<ClassID, std::string> _exceptionTypes;

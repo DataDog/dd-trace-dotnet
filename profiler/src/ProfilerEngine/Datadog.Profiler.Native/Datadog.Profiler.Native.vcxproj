@@ -330,6 +330,7 @@
     <ClInclude Include="cgroup.h" />
     <ClInclude Include="ClrLifetime.h" />
     <ClInclude Include="Configuration.h" />
+    <ClInclude Include="CoreLibModuleProvider.h" />
     <ClInclude Include="CorProfilerCallback.h" />
     <ClInclude Include="CorProfilerCallbackFactory.h" />
     <ClInclude Include="CpuTimeProvider.h" />
@@ -412,6 +413,7 @@
     <ClCompile Include="ClrLifetime.cpp" />
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="ContentionProvider.cpp" />
+    <ClCompile Include="CoreLibModuleProvider.cpp" />
     <ClCompile Include="CorProfilerCallback.cpp" />
     <ClCompile Include="CorProfilerCallbackFactory.cpp" />
     <ClCompile Include="CounterMetric.cpp" />

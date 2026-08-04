@@ -59,6 +59,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CoreLibModuleProvider.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
     <ClInclude Include="CorProfilerCallback.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
@@ -544,6 +547,9 @@
     </ClCompile>
     <ClCompile Include="HResultConverter.cpp">
       <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="CoreLibModuleProvider.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
     <ClCompile Include="CorProfilerCallback.cpp">
       <Filter>CorProfiler-Infrastructure</Filter>

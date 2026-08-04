@@ -26,6 +26,7 @@
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "ContentionProvider.h"
+#include "CoreLibModuleProvider.h"
 #include "CpuTimeProvider.h"
 #include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
@@ -188,6 +189,9 @@ void CorProfilerCallback::InitializeServices()
     _pFrameStore = std::make_unique<FrameStore>(
         _pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get(), _managedCodeCache.get());
 
+    // must be created before the components that resolve core library types (i.e. exceptions and heap snapshot)
+    _pCoreLibModuleProvider = std::make_unique<CoreLibModuleProvider>(_pCorProfilerInfo);
+
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
 
@@ -305,6 +309,7 @@ void CorProfilerCallback::InitializeServices()
             _pCorProfilerInfo,
             _pManagedThreadList,
             _pFrameStore.get(),
+            _pCoreLibModuleProvider.get(),
             _pConfiguration.get(),
             _rawSampleTransformer.get(),
             _metricsRegistry,
@@ -399,6 +404,7 @@ void CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _pCorProfilerInfoEvents,
                 _pFrameStore.get(),
+                _pCoreLibModuleProvider.get(),
                 _pThreadsCpuManager,
                 _metricsRegistry,
                 _pNativeThreadList,
@@ -2058,6 +2064,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         GetFullFrameworkVersion(moduleId);
     }
 #endif
+
+    // must be done first: the other consumers rely on the core library module id being set
+    if (_pCoreLibModuleProvider != nullptr)
+    {
+        _pCoreLibModuleProvider->OnModuleLoaded(moduleId);
+    }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {

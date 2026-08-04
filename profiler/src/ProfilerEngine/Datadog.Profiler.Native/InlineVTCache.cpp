@@ -2,12 +2,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "InlineVTCache.h"
+#include "CoreLibModuleProvider.h"
 #include "Log.h"
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
-InlineVTCache::InlineVTCache(ICorProfilerInfo12* pCorProfilerInfo, IFrameStore* pFrameStore)
-    : _pCorProfilerInfo(pCorProfilerInfo), _pFrameStore(pFrameStore)
+InlineVTCache::InlineVTCache(
+    ICorProfilerInfo12* pCorProfilerInfo,
+    IFrameStore* pFrameStore,
+    CoreLibModuleProvider* pCoreLibModuleProvider)
+    :
+    _pCorProfilerInfo(pCorProfilerInfo),
+    _pFrameStore(pFrameStore),
+    _pCoreLibModuleProvider(pCoreLibModuleProvider)
 {
 }
 
@@ -30,9 +37,137 @@ const InlineVTCache::InlineVTInfo* InlineVTCache::GetInlineVTInfo(ClassID classI
         return it->second.has_value() ? &it->second.value() : nullptr;
     }
 
-    auto info = BuildInlineVTInfo(classID);
-    auto [insertedIt, _] = _cache.emplace(classID, std::move(info));
-    return insertedIt->second.has_value() ? &insertedIt->second.value() : nullptr;
+    // Inspecting the type here would mean resolving its fields types while the runtime is
+    // suspended for the dump: this is done later, once the dump is over.
+    _pendingClassIDs.insert(classID);
+    return nullptr;
+}
+
+const InlineVTCache::InlineVTInfo* InlineVTCache::GetOrBuildInlineVTInfo(ClassID classID)
+{
+    if (classID == 0)
+    {
+        return nullptr;
+    }
+
+    if (!GCDesc::ContainsGCPointers(classID))
+    {
+        return nullptr;
+    }
+
+    auto it = _cache.find(classID);
+    if (it == _cache.end())
+    {
+        // BuildInlineVTInfo inspects the base types, so it can insert into _cache: it must be
+        // called before emplace to avoid reentering it while it is being modified.
+        auto info = BuildInlineVTInfo(classID);
+        it = _cache.emplace(classID, std::move(info)).first;
+    }
+
+    return it->second.has_value() ? &it->second.value() : nullptr;
+}
+
+size_t InlineVTCache::ResolvePendingTypes()
+{
+    if (_pendingClassIDs.empty())
+    {
+        return 0;
+    }
+
+    // Inspecting a type also inspects its base types, which adds entries to _cache:
+    // iterate over a copy of the queue instead of the queue itself.
+    std::unordered_set<ClassID> pendingClassIDs;
+    pendingClassIDs.swap(_pendingClassIDs);
+
+    for (ClassID classID : pendingClassIDs)
+    {
+        // Types without inline VTs are cached as "nothing to attribute" so they don't
+        // come back in the queue at the next dump.
+        GetOrBuildInlineVTInfo(classID);
+    }
+
+    return pendingClassIDs.size();
+}
+
+ClassID InlineVTCache::ResolveClassIDFromToken(
+    ModuleID moduleID,
+    mdToken token,
+    ULONG32 typeArgCount,
+    ClassID* pTypeArgs)
+{
+    // GetClassFromTokenAndTypeArgs may trigger a type load, so it can only be called outside
+    // of the dump GC (see ResolvePendingTypes).
+    //
+    // A TypeRef or a TypeSpec does not identify a type defined in moduleID: the runtime would
+    // start a type load that always fails, so don't even ask.
+    if (TypeFromToken(token) != mdtTypeDef)
+    {
+        return 0;
+    }
+
+    ClassID classID = 0;
+    HRESULT hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(
+        moduleID, token, typeArgCount, pTypeArgs, &classID);
+
+    return SUCCEEDED(hr) ? classID : 0;
+}
+
+bool InlineVTCache::TryGetTypeDefAndMetadata(
+    ClassID classID,
+    ModuleID& moduleID,
+    mdTypeDef& typeDef,
+    ComPtr<IMetaDataImport>& pMetadataImport,
+    ClassID* pParentClassID,
+    std::vector<ClassID>* pTypeArgs)
+{
+    moduleID = 0;
+    typeDef = mdTokenNil;
+
+    if (classID == 0)
+    {
+        return false;
+    }
+
+    // arrays are not described by a type definition
+    CorElementType elementType;
+    ClassID elementClassID;
+    ULONG rank = 0;
+    if (_pCorProfilerInfo->IsArrayClass(classID, &elementType, &elementClassID, &rank) == S_OK)
+    {
+        return false;
+    }
+
+    ClassID parentClassID = 0;
+    ULONG32 typeArgCount = 0;
+    HRESULT hr = _pCorProfilerInfo->GetClassIDInfo2(
+        classID, &moduleID, &typeDef, &parentClassID, 0, &typeArgCount, nullptr);
+
+    if (FAILED(hr) || moduleID == 0)
+    {
+        return false;
+    }
+
+    if (pParentClassID != nullptr)
+    {
+        *pParentClassID = parentClassID;
+    }
+
+    if (pTypeArgs != nullptr && typeArgCount > 0)
+    {
+        pTypeArgs->resize(typeArgCount);
+        hr = _pCorProfilerInfo->GetClassIDInfo2(
+            classID, nullptr, nullptr, nullptr, typeArgCount, &typeArgCount, pTypeArgs->data());
+        if (FAILED(hr))
+        {
+            pTypeArgs->clear();
+        }
+    }
+
+    hr = _pCorProfilerInfo->GetModuleMetaData(
+        moduleID, ofRead, IID_IMetaDataImport,
+        reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()));
+
+    return SUCCEEDED(hr) && pMetadataImport.Get() != nullptr;
 }
 
 std::optional<InlineVTCache::InlineVTInfo> InlineVTCache::BuildInlineVTInfo(ClassID classID)
@@ -42,43 +177,16 @@ std::optional<InlineVTCache::InlineVTInfo> InlineVTCache::BuildInlineVTInfo(Clas
         return std::nullopt;
     }
 
-    CorElementType elementType;
-    ClassID elementClassID;
-    ULONG rank = 0;
-    if (_pCorProfilerInfo->IsArrayClass(classID, &elementType, &elementClassID, &rank) == S_OK)
-    {
-        return std::nullopt;
-    }
-
-    ModuleID moduleID;
-    mdTypeDef typeDef;
-    ClassID parentClassID;
-    ULONG32 numTypeArgs = 0;
-
-    HRESULT hr = _pCorProfilerInfo->GetClassIDInfo2(
-        classID, &moduleID, &typeDef, &parentClassID, 0, &numTypeArgs, nullptr);
-
-    if (FAILED(hr) || moduleID == 0)
-    {
-        return std::nullopt;
-    }
-
+    ModuleID moduleID = 0;
+    mdTypeDef typeDef = mdTokenNil;
+    ClassID parentClassID = 0;
     std::vector<ClassID> typeArgs;
-    if (numTypeArgs > 0)
-    {
-        typeArgs.resize(numTypeArgs);
-        hr = _pCorProfilerInfo->GetClassIDInfo2(
-            classID, nullptr, nullptr, nullptr, numTypeArgs, &numTypeArgs, typeArgs.data());
-        if (FAILED(hr))
-        {
-            typeArgs.clear();
-        }
-    }
+    ComPtr<IMetaDataImport> pMetadataImport;
 
-    ULONG fieldCount = 0;
-    ULONG classSize = 0;
-    hr = _pCorProfilerInfo->GetClassLayout(
-        classID, nullptr, 0, &fieldCount, &classSize);
+    if (!TryGetTypeDefAndMetadata(classID, moduleID, typeDef, pMetadataImport, &parentClassID, &typeArgs))
+    {
+        return std::nullopt;
+    }
 
     // Parent fields sit at lower offsets in the object layout, so collect them first.
     std::vector<std::pair<ULONG, ClassID>> inlineVtFields;
@@ -86,6 +194,11 @@ std::optional<InlineVTCache::InlineVTInfo> InlineVTCache::BuildInlineVTInfo(Clas
     {
         MergeParentInlineVTs(parentClassID, inlineVtFields);
     }
+
+    ULONG fieldCount = 0;
+    ULONG classSize = 0;
+    HRESULT hr = _pCorProfilerInfo->GetClassLayout(
+        classID, nullptr, 0, &fieldCount, &classSize);
 
     if (SUCCEEDED(hr) && fieldCount > 0)
     {
@@ -95,27 +208,17 @@ std::optional<InlineVTCache::InlineVTInfo> InlineVTCache::BuildInlineVTInfo(Clas
 
         if (SUCCEEDED(hr))
         {
-            ComPtr<IMetaDataImport> pMetadataImport;
-            hr = _pCorProfilerInfo->GetModuleMetaData(
-                moduleID, ofRead, IID_IMetaDataImport,
-                reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()));
-
-            if (SUCCEEDED(hr) && pMetadataImport.Get() != nullptr)
+            for (ULONG i = 0; i < fieldCount; i++)
             {
-                for (ULONG i = 0; i < fieldCount; i++)
+                VTFieldInfo fieldInfo;
+                fieldInfo.offset = fieldOffsets[i].ulOffset;
+                fieldInfo.fieldToken = fieldOffsets[i].ridOfField;
+
+                ResolveValueTypeField(fieldInfo, moduleID, pMetadataImport.Get(), typeArgs);
+
+                if (fieldInfo.isValueType && fieldInfo.valueTypeClassID != 0)
                 {
-                    ULONG fieldOffset = fieldOffsets[i].ulOffset;
-
-                    VTFieldInfo fieldInfo;
-                    fieldInfo.offset = fieldOffset;
-                    fieldInfo.fieldToken = fieldOffsets[i].ridOfField;
-
-                    ResolveValueTypeField(fieldInfo, moduleID, pMetadataImport.Get(), typeArgs);
-
-                    if (fieldInfo.isValueType && fieldInfo.valueTypeClassID != 0)
-                    {
-                        inlineVtFields.emplace_back(fieldInfo.offset, fieldInfo.valueTypeClassID);
-                    }
+                    inlineVtFields.emplace_back(fieldInfo.offset, fieldInfo.valueTypeClassID);
                 }
             }
         }
@@ -218,65 +321,20 @@ void InlineVTCache::ResolveValueTypeField(
         mdToken vtToken;
         idx += CorSigUncompressToken(&pSignature[idx], &vtToken);
 
-        hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(
-            moduleID, vtToken, 0, nullptr, &valueTypeClassID);
-        if (FAILED(hr))
-        {
-            valueTypeClassID = 0;
-        }
+        valueTypeClassID = ResolveClassIDFromToken(moduleID, vtToken, 0, nullptr);
     }
     else if (elementType == ELEMENT_TYPE_GENERICINST)
     {
-        idx++;
-        if (idx >= signatureSize)
-        {
-            return;
-        }
-        CorElementType genericBase = static_cast<CorElementType>(pSignature[idx]);
-        if (genericBase != ELEMENT_TYPE_VALUETYPE)
-        {
-            return;
-        }
-
-        idx++;
-        if (idx >= signatureSize)
-        {
-            return;
-        }
-        mdToken vtToken;
-        idx += CorSigUncompressToken(&pSignature[idx], &vtToken);
-
-        if (idx >= signatureSize)
-        {
-            return;
-        }
-        ULONG genericArgCount;
-        idx += CorSigUncompressData(&pSignature[idx], &genericArgCount);
-
-        std::vector<ClassID> genericArgs;
-        genericArgs.reserve(genericArgCount);
-        for (ULONG argIndex = 0; argIndex < genericArgCount && idx < signatureSize; argIndex++)
-        {
-            ClassID argClassID = ResolveGenericArgClassID(
-                pSignature, signatureSize, idx, moduleID, pMetadataImport, typeArgs);
-            if (argClassID == 0)
-            {
-                return;
-            }
-            genericArgs.push_back(argClassID);
-        }
-
-        if (genericArgs.size() != genericArgCount)
+        // only embedded generic structs are of interest here:
+        // a field of generic reference type is a reference, not an inline value type
+        if ((idx + 1 >= signatureSize) ||
+            (static_cast<CorElementType>(pSignature[idx + 1]) != ELEMENT_TYPE_VALUETYPE))
         {
             return;
         }
 
-        hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(
-            moduleID, vtToken, genericArgCount, genericArgs.data(), &valueTypeClassID);
-        if (FAILED(hr))
-        {
-            valueTypeClassID = 0;
-        }
+        valueTypeClassID = ResolveGenericArgClassID(
+            pSignature, signatureSize, idx, moduleID, pMetadataImport, typeArgs);
     }
 
     if (valueTypeClassID == 0)
@@ -323,10 +381,7 @@ ClassID InlineVTCache::ResolveGenericArgClassID(
         mdToken argToken = mdTokenNil;
         idx += CorSigUncompressToken(&pSignature[idx], &argToken);
 
-        ClassID argClassID = 0;
-        HRESULT hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(
-            moduleID, argToken, 0, nullptr, &argClassID);
-        return SUCCEEDED(hr) ? argClassID : 0;
+        return ResolveClassIDFromToken(moduleID, argToken, 0, nullptr);
     }
 
     if (argType == ELEMENT_TYPE_GENERICINST)
@@ -375,10 +430,7 @@ ClassID InlineVTCache::ResolveGenericArgClassID(
             return 0;
         }
 
-        ClassID result = 0;
-        HRESULT hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(
-            moduleID, token, nestedArgCount, nestedArgs.data(), &result);
-        return SUCCEEDED(hr) ? result : 0;
+        return ResolveClassIDFromToken(moduleID, token, nestedArgCount, nestedArgs.data());
     }
 
     // Primitive / well-known types (single-byte element types with no trailing token).
@@ -433,48 +485,29 @@ ClassID InlineVTCache::ResolvePrimitiveClassID(
         return 0;
     }
 
-    mdToken token = mdTokenNil;
+    ClassID classID = 0;
 
-    // Try TypeDef first (works when the module IS the core library).
-    HRESULT hr = pMetadataImport->FindTypeDefByName(typeName, mdTokenNil, &token);
-    if (FAILED(hr))
+    // Fast path: the module defines the type (i.e. it IS the core library).
+    mdTypeDef typeDef = mdTokenNil;
+    if ((pMetadataImport != nullptr) &&
+        SUCCEEDED(pMetadataImport->FindTypeDefByName(typeName, mdTokenNil, &typeDef)))
     {
-        // Enumerate assembly refs and try FindTypeRef for each.
-        ComPtr<IMetaDataAssemblyImport> pAsmImport;
-        hr = pMetadataImport->QueryInterface(
-            IID_IMetaDataAssemblyImport,
-            reinterpret_cast<void**>(pAsmImport.GetAddressOf()));
-        if (FAILED(hr) || pAsmImport.Get() == nullptr)
-        {
-            return 0;
-        }
-
-        HCORENUM hEnum = nullptr;
-        mdAssemblyRef asmRefs[32];
-        ULONG count = 0;
-        while (SUCCEEDED(pAsmImport->EnumAssemblyRefs(&hEnum, asmRefs, 32, &count)) && count > 0)
-        {
-            for (ULONG i = 0; i < count; i++)
-            {
-                hr = pMetadataImport->FindTypeRef(asmRefs[i], typeName, &token);
-                if (SUCCEEDED(hr))
-                {
-                    pAsmImport->CloseEnum(hEnum);
-                    goto resolved;
-                }
-            }
-        }
-        pAsmImport->CloseEnum(hEnum);
-        return 0;
+        classID = ResolveClassIDFromToken(moduleID, typeDef, 0, nullptr);
     }
 
-resolved:
-    ClassID classID = 0;
-    hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(moduleID, token, 0, nullptr, &classID);
-    if (SUCCEEDED(hr) && classID != 0)
+    if (classID == 0 && _pCoreLibModuleProvider != nullptr)
+    {
+        // Primitives are defined in the core library: it is the only module able to resolve them.
+        // Looking for a TypeRef in the current module instead would give a token that the runtime
+        // refuses (it expects a TypeDef of the module it is given).
+        classID = _pCoreLibModuleProvider->ResolveTypeInCoreLib(typeName);
+    }
+
+    if (classID != 0)
     {
         _primitiveClassIDs[elementType] = classID;
     }
+
     return classID;
 }
 
@@ -482,7 +515,7 @@ void InlineVTCache::MergeParentInlineVTs(
     ClassID parentClassID,
     std::vector<std::pair<ULONG, ClassID>>& fields)
 {
-    const InlineVTInfo* parentInfo = GetInlineVTInfo(parentClassID);
+    const InlineVTInfo* parentInfo = GetOrBuildInlineVTInfo(parentClassID);
     if (parentInfo == nullptr)
     {
         return;
@@ -495,41 +528,18 @@ void InlineVTCache::MergeParentInlineVTs(
 
 bool InlineVTCache::IsClassIDValueType(ClassID classID)
 {
-    if (classID == 0)
-    {
-        return false;
-    }
-
-    CorElementType et;
-    ClassID elemID;
-    ULONG rank;
-    if (_pCorProfilerInfo->IsArrayClass(classID, &et, &elemID, &rank) == S_OK)
-    {
-        return false;
-    }
-
-    ModuleID moduleID;
-    mdTypeDef typeDef;
-    HRESULT hr = _pCorProfilerInfo->GetClassIDInfo2(
-        classID, &moduleID, &typeDef, nullptr, 0, nullptr, nullptr);
-    if (FAILED(hr))
-    {
-        return false;
-    }
-
+    ModuleID moduleID = 0;
+    mdTypeDef typeDef = mdTokenNil;
     ComPtr<IMetaDataImport> pMetadataImport;
-    hr = _pCorProfilerInfo->GetModuleMetaData(
-        moduleID, ofRead, IID_IMetaDataImport,
-        reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()));
 
-    if (FAILED(hr) || pMetadataImport.Get() == nullptr)
+    if (!TryGetTypeDefAndMetadata(classID, moduleID, typeDef, pMetadataImport))
     {
         return false;
     }
 
     DWORD flags = 0;
     mdToken extendsToken = mdTokenNil;
-    hr = pMetadataImport->GetTypeDefProps(
+    HRESULT hr = pMetadataImport->GetTypeDefProps(
         typeDef, nullptr, 0, nullptr, &flags, &extendsToken);
 
     if (FAILED(hr))
@@ -580,6 +590,9 @@ size_t InlineVTCache::GetMemorySize() const
             total += opt->fields.capacity() * sizeof(std::pair<ULONG, ClassID>);
         }
     }
+
+    total += _pendingClassIDs.bucket_count() * sizeof(void*);
+    total += _pendingClassIDs.size() * sizeof(ClassID);
 
     total += _primitiveClassIDs.bucket_count() * sizeof(void*);
     total += _primitiveClassIDs.size() * (sizeof(CorElementType) + sizeof(ClassID));
