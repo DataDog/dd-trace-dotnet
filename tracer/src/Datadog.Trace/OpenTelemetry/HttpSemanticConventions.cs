@@ -74,13 +74,9 @@ namespace Datadog.Trace.OpenTelemetry
 
             tags.HttpMethod = requestMethod;
 
-            // "http.request.method_original" is only set when it differs from "http.request.method",
-            // which happens when the method is unknown, or was not already in its canonical form.
-            // Always assigned, as some integrations call this more than once for the same span.
-            tags.HttpRequestMethodOriginal =
-                !StringUtil.IsNullOrEmpty(httpMethod) && !string.Equals(httpMethod, requestMethod, StringComparison.Ordinal)
-                    ? httpMethod
-                    : null;
+            // "http.request.method_original" is only set when it differs from "http.request.method", ignoring case.
+            // Always assigned, as some integrations call this method more than once for the same span.
+            tags.HttpRequestMethodOriginal = requestMethod == OtherRequestMethod ? httpMethod : null;
 
             // The span name is "{method} {target}", but there is no low-cardinality target available
             // for HTTP client spans until we support "url.template", so we only use the method.
@@ -159,8 +155,7 @@ namespace Datadog.Trace.OpenTelemetry
             }
 
             // HTTP methods are case-sensitive, but the libraries we instrument are not always,
-            // so treat a case-insensitive match as the canonical method. The original value is
-            // reported separately in "http.request.method_original".
+            // so treat a case-insensitive match as the canonical method.
             return CanonicalRequestMethods.TryGetValue(httpMethod, out var canonicalMethod)
                        ? canonicalMethod
                        : OtherRequestMethod;

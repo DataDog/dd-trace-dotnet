@@ -94,10 +94,10 @@ public class ScopeFactoryTests
     }
 
     [Theory]
-    // known methods are reported in their canonical form, with the original value when it differs
+    // known methods are reported in their canonical form, with the original value when it differs in a case-insensitive comparison
     [InlineData("GET", "GET", null, "GET")]
-    [InlineData("get", "GET", "get", "GET")]
-    [InlineData("Patch", "PATCH", "Patch", "PATCH")]
+    [InlineData("get", "GET", null, "GET")]
+    [InlineData("Patch", "PATCH", null, "PATCH")]
 
     // unknown methods are reported as _OTHER, and the span is named HTTP
     [InlineData("FOO", "_OTHER", "FOO", "HTTP")]
