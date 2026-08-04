@@ -817,6 +817,10 @@ partial class Build
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
                     var frameworks = project.TryGetTargetFrameworks();
+                    if (Framework is not null)
+                    {
+                        frameworks = frameworks.Where(x => x == Framework).ToList();
+                    }
 
                     // dotnet test runs under x86 for net461, even on x64 platforms
                     // so copy both, just to be safe
@@ -1445,8 +1449,8 @@ partial class Build
             //we need to build in this exact order
             DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Shared/*.csproj"));
             DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"));
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"));
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"));
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"), framework: Framework);
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"), framework: Framework);
         });
 
     Target CompileManagedUnitTests => _ => _
@@ -1460,7 +1464,7 @@ partial class Build
         .DependsOn(CompileManagedLoader)
         .Executes(() =>
         {
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));
+            DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"), framework: Framework);
         });
 
     Target RunManagedUnitTests => _ => _

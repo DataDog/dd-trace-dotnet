@@ -32,7 +32,7 @@ CI is split across Azure DevOps and GitLab.
 
 - `.azure-pipelines/ultimate-pipeline.yml` contains the full build and test matrix. As of this update, it is 5,693 lines with 80 top-level stages.
 - Azure DevOps covers Windows, Linux x64 and ARM64, glibc and musl, macOS, unit tests, integration tests, smoke tests, profiler tests, packaging, and publishing.
-- GitLab currently runs the Windows build and native unit tests in one job, followed by packaging and publishing work, plus benchmarks.
+- GitLab currently runs the Windows build and native unit tests in one producer job, followed by a nine-framework parallel Windows managed-unit-test matrix, packaging/publishing work, and benchmarks.
 - Existing GitLab jobs import Azure artifacts through `.gitlab/download-single-step-artifacts.sh` and `.gitlab/download-serverless-artifacts.sh`.
 - The proposed `.gitlab/ci/` Phase 1 files do not exist yet.
 
@@ -199,11 +199,15 @@ The first complete run of the final build → test → package topology succeede
 
 The complete GitLab job took approximately 35:32. Pulling the hash-tagged Windows image took about 13:49, from the start of the automatic pull until Docker reported the newer image downloaded. This confirms that image availability, rather than build/test/package execution, remains the dominant avoidable cost. The build container peaked at 8.628 GiB, 43.1% of its 20 GB limit. Artifact publication remained small and fast: GitLab found 135 release artifact entries, four tracer/loader XML reports, and two profiler XML reports; both archive and JUnit uploads succeeded.
 
-The next Windows PoC adds managed unit tests for `net8.0` and `net48` to the same build job, after native tests and before packaging. These two frameworks cover a modern .NET runtime and the distinct .NET Framework execution path without immediately multiplying the Windows image-pull cost across the full Azure matrix. Each framework runs `BuildManagedUnitTests` followed by `RunManagedUnitTests` against the existing workspace and shared `c:\mnt\packages` directory.
+The first Windows managed-test PoC ran `net8.0` and `net48` sequentially in the existing build job. Both frameworks completed successfully: `net8.0` reported 20,429 passed and 57 skipped tests, while `net48` reported 19,222 passed and 90 skipped tests. The complete job took approximately 59 minutes; the two managed invocations contributed 15:51 and 15:33 respectively. The resulting 2.28 MB log remained below GitLab's 4 MiB limit.
 
-Managed test results use TRX rather than JUnit XML. Because each NUKE invocation cleans the shared results and logs directories, the job copies them into framework-specific directories under `artifacts/build_data/managed-unit-tests/<framework>` before starting the next framework. They are retained as ordinary job artifacts for the PoC. Converting TRX to JUnit, or otherwise surfacing the managed results directly in GitLab's test-report UI, remains pending before expanding the complete matrix.
+The PoC exposed a Windows-container difference for .NET Framework. Coverage-backfill tests produced temporary paths longer than `MAX_PATH`; `net8.0` passed, while `net48` initially failed with `DirectoryNotFoundException`. Enabling `LongPathsEnabled` inside the managed-test container fixed all 52 failures. The setting is currently applied before the existing Docker entrypoint runs and should later be baked into the Windows build image.
 
-The first managed-test execution exceeded GitLab's 4 MiB job-log limit before the actual failure was printed. By the cutoff, the Datadog xUnit logger had emitted 7,230 per-test `STARTED` or `SUCCESS` lines. GitLab managed-unit-test processes now filter only those two successful-event forms. Failures, skips, diagnostics, summaries, Azure output, and local output remain unchanged. The framework-specific TRX artifacts remain the source of truth if a failure occurs after any future log truncation.
+The validated two-framework loop has now been replaced by the Azure-shaped architecture: the `build` job remains the producer and runs native tests inline, while `unit-tests-windows` expands into nine parallel jobs for `net48`, `netcoreapp3.0`, `netcoreapp3.1`, and `net5.0` through `net10.0`. The producer publishes `artifacts/bin` and `artifacts/monitoring-home`; each consumer restores its own package and MSBuild metadata, builds only its requested test TFM, and runs that framework. Artifact size and transfer time for this reduced handoff must be measured on the first matrix run.
+
+Managed test results use TRX rather than JUnit XML. Each framework job retains its own `artifacts/build_data/results`, logs, and dumps as ordinary artifacts. Converting TRX to JUnit, or otherwise surfacing the managed results directly in GitLab's test-report UI, remains pending.
+
+The first managed-test execution exceeded GitLab's 4 MiB job-log limit before the actual failure was printed. By the cutoff, the Datadog xUnit logger had emitted 7,230 per-test `STARTED` or `SUCCESS` lines. GitLab temporarily overrides NUKE's static `DotNetTasks.DotNetLogger` while managed tests run and filters only those two successful-event forms. This avoids NUKE 6.3's inability to clone settings containing delegates. Failures, skips, diagnostics, summaries, Azure output, and local output remain unchanged. The framework-specific TRX artifacts remain the source of truth if a failure occurs after any future log truncation.
 
 The first managed-test attempts exposed a broader restore boundary. The solution-level Windows `NuGet.exe restore` did not populate every SDK-style `PackageReference` dependency needed by the managed test graph in the shared directory. This first appeared as a missing `StyleCop.Analyzers.Unstable` package in `BuildRunnerTool`; after restoring that project directly, compilation reached another missing package, `Microsoft.NET.ILLink.Analyzers`, through `Datadog.Trace.Tools.dd_dotnet`. The project-specific workaround was replaced with one `RestoreManagedUnitTestPackages` prerequisite. When an explicit `NugetPackageDirectory` is provided, it uses `dotnet restore` on the solution before `BuildRunnerTool` and `CompileManagedUnitTests`. The restore explicitly selects `Release|Any CPU`; otherwise NUKE's Windows `x64` target platform produces an invalid generated-solution configuration. GitLab supplies `c:\mnt\packages`, so the complete SDK-style package graph survives the short-lived container boundary. Without that parameter the prerequisite is skipped, preserving Azure and local behavior.
 
@@ -444,7 +448,7 @@ CompileProfilerNativeTests
 RunProfilerNativeTests
 ```
 
-The existing `test-native-windows` PoC now provides this Windows parity in a downstream job. It should be moved into the proposed Phase 1 file layout rather than reimplemented.
+The current `build` job provides this Windows parity inline, matching Azure's build-then-native-test topology. It should be moved into the proposed Phase 1 file layout rather than reimplemented.
 
 Additional native-test jobs required for current Azure parity:
 
@@ -485,7 +489,7 @@ Azure's artifact is broader, while the tested GitLab artifact selected native tr
 
 | Job pattern | Matrix | Runner | Dependency | NUKE target |
 | --- | --- | --- | --- | --- |
-| `gl-test-unit:windows:x64` | `net48`, `net8.0`, `net9.0`, `net10.0` | `windows-v2:2022` | `gl-build:windows:x64` | `RunManagedUnitTests --framework $FRAMEWORK` |
+| `unit-tests-windows` | `net48`, `netcoreapp3.0`, `netcoreapp3.1`, `net5.0`–`net10.0` | `windows-v2:2022` | `build` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
 | `gl-test-unit:linux` | arch × libc × `net8.0`, `net9.0`, `net10.0` | matching `arch:*` | matching Linux build | `RunManagedUnitTests --framework $FRAMEWORK` |
 | `gl-test-unit:macos:arm64` | `net8.0`, `net9.0`, `net10.0` | `macos:sonoma-arm64` | `gl-build:macos:arm64` | `RunManagedUnitTests --framework $FRAMEWORK` |
 
@@ -495,10 +499,10 @@ Initial Phase 1 budget:
 
 - 6 build jobs.
 - 2 Linux native-unit-test jobs; Windows native tests run inline in the Windows build job.
-- 4 Windows managed-unit-test jobs.
+- 9 Windows managed-unit-test jobs.
 - 12 Linux managed-unit-test jobs.
 - 3 macOS managed-unit-test jobs.
-- 28 total jobs.
+- 33 total jobs.
 
 Validate the budget with the CI Infrastructure team because concurrency is shared and job count alone does not capture queueing or CPU usage.
 
@@ -640,7 +644,7 @@ No macOS native unit-test targets are required for current Azure parity.
 ### Pipeline dry run
 
 - Push a branch with `GITLAB_POC=true`.
-- Confirm all 28 Phase 1 jobs are created.
+- Confirm all 33 Phase 1 jobs are created.
 - Confirm each job selects the intended runner and image.
 - Confirm build artifacts are available through `needs`.
 - Confirm test reports appear on the merge request.
