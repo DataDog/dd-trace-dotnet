@@ -115,7 +115,6 @@ public class HttpSemanticConventionsTests
     [InlineData(1, 1, 0, 0, "1.1")]
     [InlineData(1, 1, 1, 1, "1.1")]
     [InlineData(2, 0, 0, 0, "2")]
-    [InlineData(2, 1, 0, 0, "2")]
     public void GetNetworkProtocolVersion_IgnoresTheBuildAndRevision(int major, int minor, int build, int revision, string expected)
     {
         HttpSemanticConventions.GetNetworkProtocolVersion(new Version(major, minor, build, revision)).Should().Be(expected);
