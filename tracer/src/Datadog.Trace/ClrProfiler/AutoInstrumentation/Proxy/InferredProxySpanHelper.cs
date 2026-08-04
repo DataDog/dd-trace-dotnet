@@ -20,10 +20,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 internal static class InferredProxySpanHelper
 {
     public const string AzureProxyHeaderValue = "azure-apim";
+    public const string AzureFrontDoorHeaderValue = "azure-fd";
     public const string AwsProxyHeaderValue = "aws-apigateway";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InferredProxySpanHelper));
     private static InferredProxyCoordinator? _awsCoordinator;
-    private static InferredProxyCoordinator? _azureCoordinator;
+    private static InferredProxyCoordinator? _azureApimCoordinator;
+    private static InferredProxyCoordinator? _azureFrontDoorCoordinator;
 
     /// <summary>
     /// Creates an inferred proxy span from request headers.
@@ -54,8 +56,14 @@ internal static class InferredProxySpanHelper
 
         if (string.Equals(proxyName, AzureProxyHeaderValue, StringComparison.OrdinalIgnoreCase))
         {
-            _azureCoordinator ??= new InferredProxyCoordinator(new AzureApiManagementExtractor(), new AzureApiManagementSpanFactory());
-            return _azureCoordinator.ExtractAndCreateScope(tracer, carrier, accessor, propagationContext);
+            _azureApimCoordinator ??= new InferredProxyCoordinator(new AzureApiManagementExtractor(), new AzureApiManagementSpanFactory());
+            return _azureApimCoordinator.ExtractAndCreateScope(tracer, carrier, accessor, propagationContext);
+        }
+
+        if (string.Equals(proxyName, AzureFrontDoorHeaderValue, StringComparison.OrdinalIgnoreCase))
+        {
+            _azureFrontDoorCoordinator ??= new InferredProxyCoordinator(new AzureFrontDoorExtractor(), new AzureFrontDoorSpanFactory());
+            return _azureFrontDoorCoordinator.ExtractAndCreateScope(tracer, carrier, accessor, propagationContext);
         }
 
         if (string.Equals(proxyName, AwsProxyHeaderValue, StringComparison.OrdinalIgnoreCase))
