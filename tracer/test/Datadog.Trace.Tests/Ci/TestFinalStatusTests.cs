@@ -48,7 +48,7 @@ public class TestFinalStatusTests
         result.Should().Be(TestTags.StatusPass);
     }
 
-    // Priority 1: Quarantined/Disabled Tests
+    // Quarantined/Disabled Tests
 
     [Fact]
     public void CalculateFinalStatus_Quarantined_AnyPassed_ReturnsSkip()
@@ -83,31 +83,38 @@ public class TestFinalStatusTests
     }
 
     [Fact]
-    public void CalculateFinalStatus_QuarantinedWithATF_Passed_ReturnsSkip()
+    public void CalculateFinalStatus_QuarantinedWithATF_Passed_ReturnsPass()
     {
-        // Quarantine always masks to skip, even with ATF enabled
         var tags = new TestSpanTags { IsQuarantined = "true", IsAttemptToFix = "true" };
         var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
-        result.Should().Be(TestTags.StatusSkip, "quarantined tests with ATF still return skip");
+        result.Should().Be(TestTags.StatusPass, "ATF takes precedence over quarantine when all attempts pass");
     }
 
     [Fact]
-    public void CalculateFinalStatus_QuarantinedWithATF_AllFailed_ReturnsSkip()
+    public void CalculateFinalStatus_QuarantinedWithATF_AllFailed_ReturnsFail()
     {
         var tags = new TestSpanTags { IsQuarantined = "true", IsAttemptToFix = "true" };
         var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
-        result.Should().Be(TestTags.StatusSkip, "quarantined tests with ATF still return skip");
+        result.Should().Be(TestTags.StatusFail, "ATF takes precedence over quarantine when any attempt fails");
     }
 
     [Fact]
-    public void CalculateFinalStatus_DisabledWithATF_Passed_ReturnsSkip()
+    public void CalculateFinalStatus_DisabledWithATF_Passed_ReturnsPass()
     {
         var tags = new TestSpanTags { IsDisabled = "true", IsAttemptToFix = "true" };
         var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
-        result.Should().Be(TestTags.StatusSkip, "disabled tests with ATF still return skip");
+        result.Should().Be(TestTags.StatusPass, "ATF takes precedence over disabled when all attempts pass");
     }
 
-    // Priority 2: For ATF - Any Execution Failed
+    [Fact]
+    public void CalculateFinalStatus_DisabledWithATF_AllFailed_ReturnsFail()
+    {
+        var tags = new TestSpanTags { IsDisabled = "true", IsAttemptToFix = "true" };
+        var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
+        result.Should().Be(TestTags.StatusFail, "ATF takes precedence over disabled when any attempt fails");
+    }
+
+    // Priority 1: Attempt-to-Fix Tests
 
     [Fact]
     public void CalculateFinalStatus_ATF_AnyFailed_ReturnsFail()
@@ -605,21 +612,21 @@ public class TestFinalStatusTests
     }
 
     [Fact]
-    public void CalculateFinalStatus_ATF_Quarantined_Passes_ReturnsSkip()
+    public void CalculateFinalStatus_ATF_Quarantined_Passes_ReturnsPass()
     {
-        // Test 59: MsTest ATF on quarantined test (passes) -> skip
+        // Test 59: MsTest ATF on quarantined test (passes) -> pass
         var tags = new TestSpanTags { IsAttemptToFix = "true", IsQuarantined = "true" };
         var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
-        result.Should().Be(TestTags.StatusSkip, "quarantined always takes precedence");
+        result.Should().Be(TestTags.StatusPass, "ATF takes precedence over quarantine");
     }
 
     [Fact]
-    public void CalculateFinalStatus_ATF_Disabled_Fails_ReturnsSkip()
+    public void CalculateFinalStatus_ATF_Disabled_Fails_ReturnsFail()
     {
-        // Test 60: MsTest ATF on disabled test (fails) -> skip
+        // Test 60: MsTest ATF on disabled test (fails) -> fail
         var tags = new TestSpanTags { IsAttemptToFix = "true", IsDisabled = "true" };
         var result = Common.CalculateFinalStatus(anyExecutionPassed: false, anyExecutionFailed: true, isSkippedOrInconclusive: false, testTags: tags);
-        result.Should().Be(TestTags.StatusSkip, "disabled always takes precedence");
+        result.Should().Be(TestTags.StatusFail, "ATF takes precedence over disabled");
     }
 
     // ATR with FlakyRetryCount=0 Edge Cases - Tests 63-65
@@ -965,12 +972,12 @@ public class TestFinalStatusTests
     }
 
     [Fact]
-    public void CalculateFinalStatus_QuarantinedDisabledAndATF_AllSet_ReturnsSkip()
+    public void CalculateFinalStatus_QuarantinedDisabledAndATF_AllSet_ReturnsPass()
     {
         // Edge case: all flags set
         var tags = new TestSpanTags { IsQuarantined = "true", IsDisabled = "true", IsAttemptToFix = "true" };
         var result = Common.CalculateFinalStatus(anyExecutionPassed: true, anyExecutionFailed: false, isSkippedOrInconclusive: false, testTags: tags);
-        result.Should().Be(TestTags.StatusSkip, "quarantined/disabled always takes precedence over ATF");
+        result.Should().Be(TestTags.StatusPass, "ATF takes precedence over quarantine/disabled");
     }
 
     // EFD + New Test Combinations

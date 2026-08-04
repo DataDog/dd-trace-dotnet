@@ -262,6 +262,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                                                 "attempt_to_fix": true
                                                             }
                                                         },
+                                                        "SimpleErrorParameterizedTest": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
@@ -274,6 +279,131 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     1,
                     ExpectedTestCount + 9 + 9,
                     "quarantined_and_disabled");
+
+                yield return row.Concat(
+                    new MockData(
+                        GetSettingsJson("false", "false", "true", "10"),
+                        string.Empty,
+                        """
+                        {
+                            "data": {
+                                "id": "878448902e138d339eb9f26a778851f35582b5ea3622ae8ab446209d232399af",
+                                "type": "ci_app_libraries_tests",
+                                "attributes": {
+                                    "modules": {
+                                        "Samples.NUnitTests": {
+                                            "suites": {
+                                                "Samples.NUnitTests.TestSuite": {
+                                                    "tests": {
+                                                        "SimplePassTest": {
+                                                            "properties": {
+                                                                "quarantined": true,
+                                                                "attempt_to_fix": true
+                                                            }
+                                                        },
+                                                        "TraitPassTest": {
+                                                            "properties": {
+                                                                "disabled": true,
+                                                                "attempt_to_fix": true
+                                                            }
+                                                        },
+                                                        "TraitErrorTest": {
+                                                            "properties": {
+                                                                "quarantined": true
+                                                            }
+                                                        },
+                                                        "SimpleErrorTest": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        },
+                                                        "SimpleErrorParameterizedTest": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "Samples.NUnitTests.TestFixtureSetupError(\"Test01\")": {
+                                                    "tests": {
+                                                        "Test": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "Samples.NUnitTests.TestFixtureSetupError(\"Test02\")": {
+                                                    "tests": {
+                                                        "Test": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "Samples.NUnitTests.TestSetupError": {
+                                                    "tests": {
+                                                        "IsNull": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        },
+                                                        "Test01": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        },
+                                                        "Test02": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        },
+                                                        "Test03": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        },
+                                                        "Test04": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        },
+                                                        "Test05": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "Samples.NUnitTests.TestTearDownError": {
+                                                    "tests": {
+                                                        "IsNull": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "Samples.NUnitTests.TestTearDown2Error": {
+                                                    "tests": {
+                                                        "IsNull": {
+                                                            "properties": {
+                                                                "disabled": true
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        """),
+                    0,
+                    ExpectedTestCount + 9 + 9,
+                    "quarantined_and_disabled_attempt_to_fix_passes");
             }
         }
 

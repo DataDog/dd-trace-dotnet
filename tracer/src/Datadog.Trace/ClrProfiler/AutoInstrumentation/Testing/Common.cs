@@ -433,8 +433,8 @@ internal static class Common
     /// <summary>
     /// Calculates the final status for a test based on execution results and test management tags.
     /// Priority order (first match wins):
-    /// 1. Quarantined/disabled -> skip (always mask to skip)
-    /// 2. For ATF tests: any execution failed -> fail (flaky test = fix didn't work)
+    /// 1. For ATF tests: any execution failed -> fail (flaky test = fix didn't work)
+    /// 2. Quarantined/disabled -> skip (always mask non-ATF tests to skip)
     /// 3. Any execution passed -> pass
     /// 4. Skip/inconclusive AND no pass -> skip
     /// 5. All executions failed -> fail
@@ -446,17 +446,31 @@ internal static class Common
     /// <returns>The final status string: "pass", "fail", or "skip".</returns>
     internal static string CalculateFinalStatus(bool anyExecutionPassed, bool anyExecutionFailed, bool isSkippedOrInconclusive, TestSpanTags? testTags)
     {
-        // Priority 1: Quarantined/disabled tests always mask to skip
+        // Priority 1: ATF tests ignore quarantine/disabled when reporting final status
+        if (testTags?.IsAttemptToFix == "true")
+        {
+            if (anyExecutionFailed)
+            {
+                return TestTags.StatusFail;
+            }
+
+            if (anyExecutionPassed)
+            {
+                return TestTags.StatusPass;
+            }
+
+            if (isSkippedOrInconclusive)
+            {
+                return TestTags.StatusSkip;
+            }
+
+            return TestTags.StatusFail;
+        }
+
+        // Priority 2: Quarantined/disabled tests always mask to skip
         if (testTags?.IsQuarantined == "true" || testTags?.IsDisabled == "true")
         {
             return TestTags.StatusSkip;
-        }
-
-        // Priority 2: For ATF tests, any failure means fix didn't work (test is still flaky)
-        // This must be checked BEFORE anyPassed for ATF tests
-        if (testTags?.IsAttemptToFix == "true" && anyExecutionFailed)
-        {
-            return TestTags.StatusFail;
         }
 
         // Priority 3: Any execution passed -> pass (pass takes precedence over skip)
