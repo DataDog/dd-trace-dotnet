@@ -226,7 +226,27 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        internal override IDictionary<string, object>? RouteData => Context.GetRouteData()?.Values;
+        internal override IDictionary<string, object>? RouteData
+        {
+            get
+            {
+                if (IsHttpContextDisposed)
+                {
+                    return null;
+                }
+
+                try
+                {
+                    return Context.GetRouteData()?.Values;
+                }
+                catch (Exception e) when (e is NullReferenceException or ObjectDisposedException)
+                {
+                    Log.Debug(e, "Exception while trying to access the route data of a Context.");
+                    IsHttpContextDisposed = true;
+                    return null;
+                }
+            }
+        }
 
         internal override bool ReportedExternalWafsRequestHeaders
         {

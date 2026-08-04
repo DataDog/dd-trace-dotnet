@@ -65,6 +65,47 @@ public class SecurityCoordinatorTests
         securityCoordinator.Scan().Should().BeNull();
     }
 
+    /// <summary>
+    /// The route data is read on every <c>RunWaf</c>, RASP included. An exception there was contained by
+    /// <c>RunWaf</c>'s catch, but at the cost of an error log and an error telemetry metric per call, and it
+    /// threw before anything could set <see cref="SecurityCoordinator.HttpTransport.IsHttpContextDisposed"/>,
+    /// so every later call paid for it again.
+    /// </summary>
+    [Fact]
+    public void GivenAnUninitializedHttpContext_WhenReadingTheRouteData_NoExceptionIsThrown()
+    {
+        var context = new DefaultHttpContext();
+        context.Uninitialize();
+
+        var transport = new SecurityCoordinator.HttpTransport(context);
+
+        IDictionary<string, object> routeData = null;
+        Action readRouteData = () => routeData = transport.RouteData;
+
+        readRouteData.Should().NotThrow();
+        routeData.Should().BeNull();
+        transport.IsHttpContextDisposed.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Reachable from <c>EventTrackingSdk</c> and <c>EventTrackingSdkV2</c>, which don't catch anything, so
+    /// this used to throw straight into the application that called the SDK.
+    /// </summary>
+    [Fact]
+    public void GivenAnUninitializedHttpContext_WhenCollectingHeaders_NoExceptionIsThrown()
+    {
+        var context = new DefaultHttpContext();
+        context.Uninitialize();
+
+        var transport = new SecurityCoordinator.HttpTransport(context);
+        var securityCoordinator = CreateSecurityCoordinator(transport);
+
+        Action collectHeaders = () => securityCoordinator.Reporter.CollectHeaders();
+
+        collectHeaders.Should().NotThrow();
+        transport.IsHttpContextDisposed.Should().BeTrue();
+    }
+
     private static SecurityCoordinator CreateSecurityCoordinator(SecurityCoordinator.HttpTransport transport)
     {
         var settings = TracerSettings.Create(new Dictionary<string, object>());

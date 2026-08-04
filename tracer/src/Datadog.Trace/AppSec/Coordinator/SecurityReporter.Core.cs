@@ -6,7 +6,6 @@
 #nullable enable
 #if !NETFRAMEWORK
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Headers;
 
 namespace Datadog.Trace.AppSec.Coordinator;
 
@@ -40,8 +39,13 @@ internal sealed partial class SecurityReporter
 
     internal void CollectHeaders()
     {
-        var headers = new HeadersCollectionAdapter(_httpTransport.Context.Request.Headers);
-        AddRequestHeaders(headers);
+        // through the guarded accessor rather than _httpTransport.Context.Request.Headers directly: this is
+        // reachable from the public user-event SDKs, which don't catch anything, so an unreadable context
+        // would throw straight into the application
+        if (_httpTransport.GetRequestHeaders() is { } headers)
+        {
+            AddRequestHeaders(headers);
+        }
     }
 }
 #endif
