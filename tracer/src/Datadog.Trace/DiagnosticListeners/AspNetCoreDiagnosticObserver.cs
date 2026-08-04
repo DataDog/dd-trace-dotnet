@@ -710,9 +710,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStop(object arg)
         {
-            // the request is over, so the context must not be reachable from the store anymore: ASP.NET Core
-            // is about to uninitialize it and hand it back to its pool. Moved above the integration check so
-            // that an integration disabled mid-request can't leave the reference behind.
             CoreHttpContextStore.Instance.Remove();
 
             if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
