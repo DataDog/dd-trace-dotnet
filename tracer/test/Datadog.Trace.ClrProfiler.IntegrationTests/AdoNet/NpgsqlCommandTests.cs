@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-            var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: expectedOperationName);
+            var spans = await agent.WaitForSpansAsync(expectedSpanCount, operationName: expectedOperationName, assertExpectedCount: false);
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
             var filteredSpans = spans.Where(s => s.ParentId.HasValue).ToList();
 
@@ -110,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             try
             {
                 using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-                var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
+                var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true, assertExpectedCount: false);
 
                 Assert.NotEmpty(spans);
                 spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();

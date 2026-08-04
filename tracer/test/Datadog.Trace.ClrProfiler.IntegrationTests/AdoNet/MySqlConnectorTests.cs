@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             try
             {
                 using var process = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
-                var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
+                var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true, assertExpectedCount: false);
 
                 Assert.NotEmpty(spans);
                 spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
