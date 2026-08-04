@@ -35,16 +35,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         public const string Name = "Postgres";
     }
 
+    // MySQL 8 is shared by the MySql.Data and MySqlConnector tests to avoid restarting the container.
     [CollectionDefinition(Name, DisableParallelization = true)]
-    public class MySqlCollection : ICollectionFixture<MySql8Fixture>, ICollectionFixture<MySql57Fixture>
+    public class MySqlCollection : ICollectionFixture<MySql8Fixture>
     {
         public const string Name = "MySql";
-    }
-
-    [CollectionDefinition(Name, DisableParallelization = true)]
-    public class MySqlConnectorCollection : ICollectionFixture<MySql8Fixture>
-    {
-        public const string Name = "MySqlConnector";
     }
 
     [CollectionDefinition(Name, DisableParallelization = true)]

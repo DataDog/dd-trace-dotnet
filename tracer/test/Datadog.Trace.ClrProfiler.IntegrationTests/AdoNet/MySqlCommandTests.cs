@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     [Trait("DockerGroup", "1")]
     [UsesVerify]
     [Collection(MySqlCollection.Name)]
-    public class MySqlCommandTests : TracingIntegrationTest
+    public class MySqlCommandTests : TracingIntegrationTest, IClassFixture<MySql57Fixture>
     {
         private readonly MySql8Fixture _mySql8Fixture;
         private readonly MySql57Fixture _mySql57Fixture;
