@@ -127,13 +127,13 @@ namespace Datadog.Trace.Tests.TraceProcessors
         }
 
         [Theory]
-        [InlineData(Tags.HttpStatusCode)]
-        [InlineData(Tags.HttpResponseStatusCode)]
-        public void ProcessRemovesInvalidHttpStatusCodeTag(string tagName)
+        [CombinatorialData]
+        public void ProcessRemovesInvalidHttpStatusCodeTag(bool openTelemetrySemanticsEnabled)
         {
             var tags = new TagsList();
+            var tagName = openTelemetrySemanticsEnabled ? Tags.HttpResponseStatusCode : Tags.HttpStatusCode;
             tags.SetTag(tagName, "99");
-            var span = new Span(new SpanContext(1, 1, serviceName: "service"), DateTimeOffset.UtcNow, tags)
+            var span = new Span(new SpanContext(1, 1, serviceName: "service"), DateTimeOffset.UtcNow, tags, openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled)
             {
                 OperationName = "operation",
                 ResourceName = "resource",
