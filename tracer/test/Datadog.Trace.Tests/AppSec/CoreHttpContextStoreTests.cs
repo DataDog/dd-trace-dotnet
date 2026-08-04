@@ -17,7 +17,7 @@ public class CoreHttpContextStoreTests
     [Fact]
     public void GivenAContextInTheStore_WhenItIsRemoved_TheStoreIsEmpty()
     {
-        var store = CoreHttpContextStore.Instance;
+        var store = new CoreHttpContextStore();
         var context = new DefaultHttpContext();
 
         store.Set(context);
@@ -38,7 +38,7 @@ public class CoreHttpContextStoreTests
     [Fact]
     public void GivenAContextCapturedDuringTheRequest_WhenItIsRemoved_TheCaptureSeesNothing()
     {
-        var store = CoreHttpContextStore.Instance;
+        var store = new CoreHttpContextStore();
         var context = new DefaultHttpContext();
         store.Set(context);
 
@@ -48,13 +48,13 @@ public class CoreHttpContextStoreTests
         store.Remove();
 
         store.Get().Should().BeNull();
-        ReadStoreIn(capturedDuringTheRequest).Should().BeNull();
+        ReadStoreIn(store, capturedDuringTheRequest).Should().BeNull();
     }
 
     [Fact]
     public void GivenACaptureFromAPreviousRequest_WhenANewRequestStarts_TheCaptureDoesNotSeeIt()
     {
-        var store = CoreHttpContextStore.Instance;
+        var store = new CoreHttpContextStore();
         var firstRequest = new DefaultHttpContext();
         store.Set(firstRequest);
 
@@ -64,14 +64,14 @@ public class CoreHttpContextStoreTests
         // the contexts are pooled, so leaking one request's context into a capture from another one would be
         // handing the WAF the wrong request's headers, cookies and body
         store.Set(new DefaultHttpContext());
-        ReadStoreIn(capturedDuringTheFirstRequest).Should().BeNull();
+        ReadStoreIn(store, capturedDuringTheFirstRequest).Should().BeNull();
     }
 
-    private static HttpContext ReadStoreIn(ExecutionContext executionContext)
+    private static HttpContext ReadStoreIn(CoreHttpContextStore store, ExecutionContext executionContext)
     {
         // deliberately not null, so that a callback which never ran would fail the assertion instead of passing it
         HttpContext result = new DefaultHttpContext();
-        ExecutionContext.Run(executionContext, _ => result = CoreHttpContextStore.Instance.Get(), null);
+        ExecutionContext.Run(executionContext, _ => result = store.Get(), null);
         return result;
     }
 }

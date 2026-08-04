@@ -45,19 +45,21 @@ namespace Datadog.Trace.AppSec
 
         // a fresh holder per request, so that a holder still captured by a previous request can never be
         // revived and start handing out this request's context
-        public void Set(HttpContext context) => _localStore.Value = new HttpContextHolder { Context = context };
+        public void Set(HttpContext context) => _localStore.Value = new HttpContextHolder(context);
 
-        public void Remove()
-        {
-            if (_localStore.Value is { } holder)
-            {
-                holder.Context = null;
-            }
-        }
+        public void Remove() => _localStore.Value?.Clear();
 
         private sealed class HttpContextHolder
         {
-            public HttpContext? Context { get; set; }
+            private HttpContext? _context;
+
+            public HttpContextHolder(HttpContext context) => _context = context;
+
+            // the holder is shared by every ExecutionContext captured during the request, so it can be read
+            // from a thread other than the one that clears it
+            public HttpContext? Context => Volatile.Read(ref _context);
+
+            public void Clear() => Interlocked.Exchange(ref _context, null);
         }
     }
 }
