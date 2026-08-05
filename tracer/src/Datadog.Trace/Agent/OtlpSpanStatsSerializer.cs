@@ -230,10 +230,7 @@ namespace Datadog.Trace.Agent
             }
 
             var spanKindJson = CanonicalizeSpanKind(key.SpanKind);
-            if (spanKindJson is not null)
-            {
-                WriteStringKvJson(writer, "span.kind", spanKindJson);
-            }
+            WriteStringKvJson(writer, "span.kind", spanKindJson);
 
             if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
             {
@@ -508,10 +505,7 @@ namespace Datadog.Trace.Agent
             }
 
             var spanKindProto = CanonicalizeSpanKind(key.SpanKind);
-            if (spanKindProto is not null)
-            {
-                WriteAttribute(writer, "span.kind", spanKindProto, FieldNumbers.HistogramDataPointAttributes);
-            }
+            WriteAttribute(writer, "span.kind", spanKindProto, FieldNumbers.HistogramDataPointAttributes);
 
             if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
             {
@@ -660,14 +654,14 @@ namespace Datadog.Trace.Agent
             return BoundsNs.Length; // overflow
         }
 
-        private static string? CanonicalizeSpanKind(string spanKind)
+        private static string CanonicalizeSpanKind(string spanKind)
         {
             if (StringUtil.IsNullOrEmpty(spanKind))
             {
-                return null;
+                return "SPAN_KIND_INTERNAL";
             }
 
-            return SpanKindNames.TryGetValue(spanKind, out var canonical) ? canonical : null;
+            return SpanKindNames.TryGetValue(spanKind, out var canonical) ? canonical : "SPAN_KIND_INTERNAL";
         }
 
         private static string? NormalizeGrpcStatusName(string grpcStatusCode)
@@ -719,7 +713,7 @@ namespace Datadog.Trace.Agent
             var separatorIndex = decoded.IndexOf(':');
             if (separatorIndex < 0)
             {
-                // Cardinality-limit sentinel (StatsAggregator.BlockedByTracerSentinel) carries no colon; skip it.
+                // TODO: Preserve the cardinality-limit sentinel once its OTLP representation is defined.
                 key = string.Empty;
                 value = string.Empty;
                 return false;

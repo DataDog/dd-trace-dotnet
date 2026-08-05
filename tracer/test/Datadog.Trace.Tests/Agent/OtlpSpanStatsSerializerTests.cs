@@ -421,16 +421,18 @@ namespace Datadog.Trace.Tests.Agent
             attrs.Should().ContainKey("span.kind").WhoseValue.Should().Be(expected);
         }
 
-        [Fact]
-        public void SerializeJson_SpanKind_AbsentWhenUnknown()
+        [Theory]
+        [InlineData("")]
+        [InlineData("not-a-real-kind")]
+        public void SerializeJson_SpanKind_DefaultsToInternalWhenUnknown(string spanKind)
         {
             var buffer = CreateBuffer();
-            var key = CreateKey(spanKind: "not-a-real-kind");
+            var key = CreateKey(spanKind: spanKind);
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
             var attrs = GetDataPointAttributes(SerializeToJson(buffer));
 
-            attrs.Should().NotContainKey("span.kind");
+            attrs.Should().ContainKey("span.kind").WhoseValue.Should().Be("SPAN_KIND_INTERNAL");
         }
 
         [Fact]
