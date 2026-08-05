@@ -73,7 +73,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+                // The MongoDB driver sends periodic monitors. Don't count them towards the
+                // snapshot span count, but keep the raw spans for the assertions below.
+                Func<MockSpan, bool> isAdminSpan = x => x.Resource is "buildInfo admin" or "getLastError admin";
+                agent.SpanFilters.Add(x => !isAdminSpan(x));
+                var nonAdminSpans = await agent.WaitForSpansAsync(expectedSpanCount);
+                var spans = agent.Spans;
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 // mongo stamps the current framework version, and OS so normalise those
@@ -93,13 +98,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // In 2.19, The explain query includes { "$expr" : true }, whereas in earlier versions it doesn't
                 settings.AddSimpleScrubber("{ \"$expr\" : true }", "{ }");
 
-                // The mongodb driver sends periodic monitors
                 var adminSpans = spans
-                                .Where(x => x.Resource is "buildInfo admin" or "getLastError admin")
+                                .Where(isAdminSpan)
                                 .ToList();
-                var nonAdminSpans = spans
-                                   .Where(x => !adminSpans.Contains(x))
-                                   .ToList();
                 var allMongoSpans = spans
                                     .Where(x => x.GetTag(Tags.InstrumentationName) == "MongoDb")
                                     .ToList();
