@@ -8,8 +8,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -19,12 +21,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
+    [Collection(LocalStackCollection.Name)]
     [UsesVerify]
     public class AwsS3Tests : TracingIntegrationTest
     {
-        public AwsS3Tests(ITestOutputHelper output)
+        private readonly LocalStackFixture _localStackFixture;
+
+        public AwsS3Tests(ITestOutputHelper output, LocalStackFixture localStackFixture)
             : base("AWS.S3", output)
         {
+            _localStackFixture = localStackFixture;
+            ConfigureContainers(localStackFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -63,19 +70,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 s3Spans.Should().NotBeEmpty();
                 ValidateIntegrationSpans(s3Spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: true);
 
-                var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
-
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
                 settings.UseFileName($"{nameof(AwsS3Tests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
                 settings.AddRegexScrubber(
                     new Regex(@"(http\.url: .*?my-bucket)(?=,)"),
                     "$1/");
-
-                if (!string.IsNullOrWhiteSpace(host))
-                {
-                    settings.AddSimpleScrubber(host, "localhost:00000");
-                }
+                settings.AddSimpleScrubber(_localStackFixture.HostAndPort, "localhost:00000");
 
                 settings.DisableRequireUniquePrefix();
 

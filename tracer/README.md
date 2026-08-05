@@ -151,20 +151,13 @@ brew install cmake
 # Build NuGet packages and MSIs. Requires BuildTracerHome to have previously been run
 ./build.sh PackageTracerHome
 
-# Start IntergrationTests dependencies, but only for a specific test
-docker-compose up rabbitmq_osx_arm64
-
-# Start IntegrationTests dependencies.
-docker-compose up StartDependencies.OSXARM64
-
-# Build and run integration tests. Requires BuildTracerHome to have previously been run
+# Build and run integration tests. Requires BuildTracerHome to have previously been run.
+# Testcontainers-backed Docker dependencies are started automatically.
 ./build.sh BuildAndRunIntegrationTests
 
 # Build and run integration tests filtering on one framework, one set of tests and a sample app.
 ./build.sh BuildAndRunIntegrationTests --framework "net6.0" --filter "Datadog.Trace.ClrProfiler.IntegrationTests.RabbitMQTests" --SampleName "Samples.Rabbit"
 
-# Stop IntegrationTests dependencies.
-docker-compose down
 ```
 
 Troubleshooting tips for build errors:

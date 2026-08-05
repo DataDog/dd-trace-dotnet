@@ -264,13 +264,6 @@ internal static partial class DotNetSettingsExtensions
         return settings;
     }
 
-    public static T SetLocalOsxEnvironmentVariables<T>(this T toolSettings)
-        where T : ToolSettings
-    {
-        return toolSettings
-              .SetProcessEnvironmentVariable("AWS_SDK_HOST", "localhost:4566");
-    }
-
     public static T ConfigureDotNetRunSettings<T>(this T toolSettings, Func<T, T> configure) where T : DotNetRunSettings
     {
         return configure(toolSettings);
