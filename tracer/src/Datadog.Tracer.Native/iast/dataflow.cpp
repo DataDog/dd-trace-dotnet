@@ -604,7 +604,7 @@ ModuleInfo* Dataflow::GetAspectsModule(AppDomainID id)
 
     if (moduleId > 0)
     {
-        return ResolveModuleInfo(moduleId);
+        return GetModuleInfo(moduleId);
     }
 
     return nullptr;
