@@ -244,6 +244,50 @@ build:
       if ($LASTEXITCODE -ne 0) {
         throw "Docker packaging container exited with code $LASTEXITCODE"
       }
+    - |
+      $targetBranch = if ($env:CI_MERGE_REQUEST_TARGET_BRANCH_NAME) {
+        $env:CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+      } else {
+        $env:CI_DEFAULT_BRANCH
+      }
+
+      if (-not $targetBranch) {
+        throw "Unable to determine the target branch for GitLab matrix generation"
+      }
+
+      # GenerateVariables compares the current commit with origin/<target branch>.
+      git fetch --no-tags origin "+refs/heads/${targetBranch}:refs/remotes/origin/${targetBranch}"
+      if ($LASTEXITCODE -ne 0) {
+        throw "Failed to fetch target branch '$targetBranch' for matrix generation"
+      }
+
+      $forceAllFrameworks = $env:run_all_test_frameworks -eq "true" -or $env:RUN_ALL_TEST_FRAMEWORKS -eq "true"
+      $isMainlineBranch = $env:CI_COMMIT_BRANCH -in @("master", "main") `
+                       -or $env:CI_COMMIT_BRANCH -like "release/*" `
+                       -or $env:CI_COMMIT_BRANCH -like "hotfix/*"
+      $includeAllFrameworks = $forceAllFrameworks `
+                           -or ($isMainlineBranch -and $env:CI_PIPELINE_SOURCE -ne "schedule")
+
+      Write-Output "Generating Windows unit-test child pipeline (target=$targetBranch, includeAll=$includeAllFrameworks)"
+      docker run --rm -m 20480M `
+        -v "$(Get-Location):c:\mnt" `
+        -e CI=true `
+        -e CI_JOB_ID=${CI_JOB_ID} `
+        -e CI_COMMIT_BRANCH `
+        -e CI_MERGE_REQUEST_SOURCE_BRANCH_NAME `
+        -e CI_PROJECT_NAME `
+        -e CI_JOB_NAME_SLUG `
+        -e AWS_NETWORKING=true `
+        -e WINDOWS_BUILDER=true `
+        -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+        --entrypoint cmd.exe `
+        $env:WINDOWS_BUILD_IMAGE `
+        /d /s /c `
+        "git config --global --add safe.directory c:\mnt && c:\entrypoint.bat GenerateVariables --TargetBranch $targetBranch --IncludeAllTestFrameworks $includeAllFrameworks"
+      if ($LASTEXITCODE -ne 0) {
+        throw "GitLab child-pipeline generation exited with code $LASTEXITCODE"
+      }
     - mkdir artifacts-out
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
     - remove-item -recurse -force build-out\${CI_JOB_ID}
@@ -264,6 +308,7 @@ build:
     - artifacts/obj/**/refint/**/*
     # The dd_dotnet tests also copy the producer-built executable host.
     - artifacts/obj/Datadog.Trace.Tools.dd_dotnet/**/apphost.exe
+    - .gitlab/generated/windows-unit-tests.yml
     - artifacts/build_data/tests
     - artifacts/build_data/dumps
     - profiler/build_data/tests
@@ -281,63 +326,15 @@ unit-tests-windows:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG
   stage: test
-  timeout: 1h
-  tags: ["windows-v2:2022"]
   needs:
-    - job: build
-      artifacts: true
-  parallel:
-    matrix:
-      - FRAMEWORK:
-          - net48
-          - netcoreapp3.0
-          - netcoreapp3.1
-          - net5.0
-          - net6.0
-          - net7.0
-          - net8.0
-          - net9.0
-          - net10.0
-  hooks:
-    pre_get_sources_script:
-      - git config --system core.longpaths true
-  script:
-    - |
-      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
-      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
-        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
-      }
-      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
-      Write-Output "Running managed unit tests for $env:FRAMEWORK with $env:WINDOWS_BUILD_IMAGE"
-
-      docker run --rm -m 20480M `
-        -v "$(Get-Location):c:\mnt" `
-        -e CI_JOB_ID=${CI_JOB_ID} `
-        -e WINDOWS_BUILDER=true `
-        -e AWS_NETWORKING=true `
-        -e NUGET_CERT_REVOCATION_MODE=offline `
-        -e DD_LOGGER_DD_API_KEY `
-        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
-        -e CI_PROJECT_NAME `
-        -e CI_JOB_NAME_SLUG `
-        --entrypoint cmd.exe `
-        $env:WINDOWS_BUILD_IMAGE `
-        /d /s /c `
-        "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK && c:\entrypoint.bat BuildManagedUnitTests RunManagedUnitTests --framework $env:FRAMEWORK --NugetPackageDirectory c:\mnt\packages"
-      if ($LASTEXITCODE -ne 0) {
-        throw "Managed unit tests for $env:FRAMEWORK exited with code $LASTEXITCODE"
-      }
-  artifacts:
-    when: always
-    expire_in: 2 weeks
-    name: "managed-unit-tests-$FRAMEWORK"
-    paths:
-      - artifacts/build_data/results
-      - artifacts/build_data/logs
-      - artifacts/build_data/dumps
-  id_tokens:
-    CI_IDENTITIES_GITLAB_ID_TOKEN:
-      aud: ci-identities
+    - build
+  trigger:
+    include:
+      - artifact: .gitlab/generated/windows-unit-tests.yml
+        job: build
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
 publish:
   only:

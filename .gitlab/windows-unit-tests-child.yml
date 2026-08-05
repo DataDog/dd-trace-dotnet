@@ -1,0 +1,48 @@
+.windows-unit-test:
+  stage: test
+  timeout: 1h
+  tags: ["windows-v2:2022"]
+  needs:
+    - pipeline: "$PARENT_PIPELINE_ID"
+      job: build
+      artifacts: true
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  script:
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+      Write-Output "Running managed unit tests for $env:FRAMEWORK with $env:WINDOWS_BUILD_IMAGE"
+
+      docker run --rm -m 20480M `
+        -v "$(Get-Location):c:\mnt" `
+        -e CI_JOB_ID=${CI_JOB_ID} `
+        -e WINDOWS_BUILDER=true `
+        -e AWS_NETWORKING=true `
+        -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e DD_LOGGER_DD_API_KEY `
+        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+        -e CI_PROJECT_NAME `
+        -e CI_JOB_NAME_SLUG `
+        --entrypoint cmd.exe `
+        $env:WINDOWS_BUILD_IMAGE `
+        /d /s /c `
+        "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK && c:\entrypoint.bat BuildManagedUnitTests RunManagedUnitTests --framework $env:FRAMEWORK --NugetPackageDirectory c:\mnt\packages"
+      if ($LASTEXITCODE -ne 0) {
+        throw "Managed unit tests for $env:FRAMEWORK exited with code $LASTEXITCODE"
+      }
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    name: "managed-unit-tests-$FRAMEWORK"
+    paths:
+      - artifacts/build_data/results
+      - artifacts/build_data/logs
+      - artifacts/build_data/dumps
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities

@@ -222,7 +222,7 @@ partial class Build
 
     bool RequiresThoroughTesting()
     {
-        if (IsLocalBuild)
+        if (IsLocalBuild && !IsGitlab)
         {
             // we should always run all tests locally
             return true;

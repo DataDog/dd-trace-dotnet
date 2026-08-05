@@ -32,7 +32,7 @@ CI is split across Azure DevOps and GitLab.
 
 - `.azure-pipelines/ultimate-pipeline.yml` contains the full build and test matrix. As of this update, it is 5,693 lines with 80 top-level stages.
 - Azure DevOps covers Windows, Linux x64 and ARM64, glibc and musl, macOS, unit tests, integration tests, smoke tests, profiler tests, packaging, and publishing.
-- GitLab currently runs the Windows build and native unit tests in one producer job, followed by a nine-framework parallel Windows managed-unit-test matrix, packaging/publishing work, and benchmarks.
+- GitLab currently runs the Windows build and native unit tests in one producer job, followed by a NUKE-generated Windows managed-unit-test child pipeline, packaging/publishing work, and benchmarks.
 - Existing GitLab jobs import Azure artifacts through `.gitlab/download-single-step-artifacts.sh` and `.gitlab/download-serverless-artifacts.sh`.
 - The proposed `.gitlab/ci/` Phase 1 files do not exist yet.
 
@@ -203,13 +203,17 @@ The first Windows managed-test PoC ran `net8.0` and `net48` sequentially in the 
 
 The PoC exposed a Windows-container difference for .NET Framework. Coverage-backfill tests produced temporary paths longer than `MAX_PATH`; `net8.0` passed, while `net48` initially failed with `DirectoryNotFoundException`. Enabling `LongPathsEnabled` inside the managed-test container fixed all 52 failures. The setting is currently applied before the existing Docker entrypoint runs and should later be baked into the Windows build image.
 
-The validated two-framework loop has now been replaced by the Azure-shaped architecture: the `build` job remains the producer and runs native tests inline, while `unit-tests-windows` expands into nine parallel jobs for `net48`, `netcoreapp3.0`, `netcoreapp3.1`, and `net5.0` through `net10.0`. The producer publishes `artifacts/bin`, `artifacts/monitoring-home`, and only the managed intermediate `ref`/`refint` assemblies needed by `dotnet build --no-dependencies`; broad `obj` trees are not transferred. The `dd_dotnet` apphost is also included because its net7 test project copies that intermediate executable. Each consumer restores its own package and MSBuild metadata, builds only projects that declare its requested test TFM, and runs that framework. This filtering is required because some unit-test projects intentionally target only one runtime, such as `Datadog.Trace.Tools.dd_dotnet.Tests` on `net7.0`. During matrix validation, jobs for .NET 3.0, 3.1, 5.0, 6.0, and 7.0 install only their requested runtime inside the container, allowing the existing image to remain usable. Once the runtime set is verified, these runtimes should be baked into and published as a new Windows image. Artifact size and transfer time for this reduced handoff must be measured on the first matrix run.
+The validated two-framework loop has now been replaced by the Azure-shaped architecture: the `build` job remains the producer and runs native tests inline, then invokes NUKE's existing `GenerateVariables` target to generate a Windows managed-unit-test child pipeline. Both Azure and GitLab therefore use `GetTestingFrameworks(PlatformFamily.Windows)` as the source of truth. Normal merge requests generate jobs for `net48`, `netcoreapp3.1`, `net9.0`, and `net10.0`; mainline runs, explicitly forced runs, integration changes, and large snapshot changes generate all nine frameworks from `net48` through `net10.0`. The parent `unit-tests-windows` trigger uses `strategy: depend`, and generated child jobs retrieve the successful parent `build` artifact with `needs:pipeline:job` and the quoted parent pipeline ID.
+
+The producer publishes `artifacts/bin`, `artifacts/monitoring-home`, and only the managed intermediate `ref`/`refint` assemblies needed by `dotnet build --no-dependencies`; broad `obj` trees are not transferred. The `dd_dotnet` apphost is also included because its net7 test project copies that intermediate executable. Each consumer restores its own package and MSBuild metadata, builds only projects that declare its requested test TFM, and runs that framework. This filtering is required because some unit-test projects intentionally target only one runtime, such as `Datadog.Trace.Tools.dd_dotnet.Tests` on `net7.0`. During matrix validation, jobs for .NET 3.0, 3.1, 5.0, 6.0, and 7.0 install only their requested runtime inside the container, allowing the existing image to remain usable. Once the runtime set is verified, these runtimes should be baked into and published as a new Windows image.
+
+The first successful matrix consumer was `net7.0`. It downloaded and extracted the producer artifact in approximately 10 seconds, pulled the two missing image layers in approximately 3 seconds, and installed the 7.0.20 x64 runtime in approximately 4 seconds. NUKE completed in 15:03, including 0:48 to compile the selected test projects and 12:52 to run them; the complete GitLab job took approximately 15:56. All 10 applicable test assemblies produced TRX files: 20,463 tests passed, 57 were skipped, and none failed. The downloaded result artifact contains 10 TRX files and 11 tracer logs, totalling 53.4 MB uncompressed and 6.4 MB as the downloaded ZIP. The artifact upload succeeded. The only pipeline warnings were the expected `NU1503` messages for native projects included in the generated solution and the absent dumps directory on a successful run. The stored size of the producer handoff should still be measured from GitLab's build artifact UI.
 
 Managed test results use TRX rather than JUnit XML. Each framework job retains its own `artifacts/build_data/results`, logs, and dumps as ordinary artifacts. Converting TRX to JUnit, or otherwise surfacing the managed results directly in GitLab's test-report UI, remains pending.
 
 The first managed-test execution exceeded GitLab's 4 MiB job-log limit before the actual failure was printed. By the cutoff, the Datadog xUnit logger had emitted 7,230 per-test `STARTED` or `SUCCESS` lines. GitLab temporarily overrides NUKE's static `DotNetTasks.DotNetLogger` while managed tests run and filters only those two successful-event forms. This avoids NUKE 6.3's inability to clone settings containing delegates. Failures, skips, diagnostics, summaries, Azure output, and local output remain unchanged. The framework-specific TRX artifacts remain the source of truth if a failure occurs after any future log truncation.
 
-The first managed-test attempts exposed a broader restore boundary. The solution-level Windows `NuGet.exe restore` did not populate every SDK-style `PackageReference` dependency needed by the managed test graph in the shared directory. This first appeared as a missing `StyleCop.Analyzers.Unstable` package in `BuildRunnerTool`; after restoring that project directly, compilation reached another missing package, `Microsoft.NET.ILLink.Analyzers`, through `Datadog.Trace.Tools.dd_dotnet`. GitLab now runs one `RestoreManagedUnitTestPackages` prerequisite against the solution using `Release|Any CPU`; otherwise NUKE's Windows `x64` target platform produces an invalid generated-solution configuration. Projects outside or incompletely represented by that solution restore—the instrumentation-verification generator, test helpers, and unit-test projects—restore explicitly for the selected GitLab TFM before building. GitLab matrix jobs also build the runner tool's project dependencies because the reduced artifact contains final binaries but not `artifacts/obj` reference assemblies; the `net48` cell builds the runner's `net8.0` target because the runner does not target .NET Framework. All of this behavior is gated by `IsGitlab`; Azure and local builds retain their original restored-workspace and all-TFM behavior.
+The first managed-test attempts exposed a broader restore boundary. The solution-level Windows `NuGet.exe restore` did not populate every SDK-style `PackageReference` dependency needed by the managed test graph in the shared directory. This first appeared as a missing `StyleCop.Analyzers.Unstable` package in `BuildRunnerTool`; after restoring that project directly, compilation reached another missing package, `Microsoft.NET.ILLink.Analyzers`, through `Datadog.Trace.Tools.dd_dotnet`. GitLab now runs one `RestoreManagedUnitTestPackages` prerequisite against the solution using `Release|Any CPU`; otherwise NUKE's Windows `x64` target platform produces an invalid generated-solution configuration. Projects outside or incompletely represented by that solution restore—the instrumentation-verification generator, test helpers, and unit-test projects—restore explicitly for the selected GitLab TFM before building. The reduced producer artifact includes managed `ref`/`refint` assemblies so existing `--no-dependencies` builds can resolve project references without rebuilding the full production graph. It also includes the small `Datadog.Trace.Tools.dd_dotnet` apphost set required by its net7 test project. All of this behavior is gated by `IsGitlab`; Azure and local builds retain their original restored-workspace and all-TFM behavior.
 
 The first run also revealed that the configured JUnit paths pointed at `build-out`, while NUKE writes results to `artifacts/build_data/tests` and `profiler/build_data/tests`. The paths are corrected. Native-loader x64 and x86 previously wrote the same filename; the filename now uses the loop architecture so both reports are retained.
 
@@ -489,7 +493,7 @@ Azure's artifact is broader, while the tested GitLab artifact selected native tr
 
 | Job pattern | Matrix | Runner | Dependency | NUKE target |
 | --- | --- | --- | --- | --- |
-| `unit-tests-windows` | `net48`, `netcoreapp3.0`, `netcoreapp3.1`, `net5.0`–`net10.0` | `windows-v2:2022` | `build` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
+| `unit-tests-windows:*` | NUKE-selected Windows TFMs: 4 normally, 9 for thorough runs | `windows-v2:2022` | parent `build` via `needs:pipeline:job` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
 | `gl-test-unit:linux` | arch × libc × `net8.0`, `net9.0`, `net10.0` | matching `arch:*` | matching Linux build | `RunManagedUnitTests --framework $FRAMEWORK` |
 | `gl-test-unit:macos:arm64` | `net8.0`, `net9.0`, `net10.0` | `macos:sonoma-arm64` | `gl-build:macos:arm64` | `RunManagedUnitTests --framework $FRAMEWORK` |
 
@@ -499,10 +503,10 @@ Initial Phase 1 budget:
 
 - 6 build jobs.
 - 2 Linux native-unit-test jobs; Windows native tests run inline in the Windows build job.
-- 9 Windows managed-unit-test jobs.
+- 4 Windows managed-unit-test jobs normally; 9 for thorough runs.
 - 12 Linux managed-unit-test jobs.
 - 3 macOS managed-unit-test jobs.
-- 33 total jobs.
+- 27 total jobs normally; 32 for thorough runs.
 
 Validate the budget with the CI Infrastructure team because concurrency is shared and job count alone does not capture queueing or CPU usage.
 
@@ -716,7 +720,7 @@ After deployment:
 
 - Decide when to add the Linux x64 R2R variant.
 - Decide whether samples are built once or inside integration jobs.
-- Replace Azure's generated-variable matrices with static YAML or a small generated child pipeline.
+- Extend the generated-child-pipeline approach beyond Windows unit tests as each later matrix migrates.
 - Confirm Linux package-signing parity.
 - Re-evaluate Dockerfile layer splitting if AMI pre-pull and vcpkg initialization do not meet the Windows target.
 - Consider pre-caching libdatadog after measuring its remaining contribution.

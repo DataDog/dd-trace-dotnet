@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using CodeOwners;
 using Microsoft.Extensions.FileSystemGlobbing;
@@ -160,10 +161,16 @@ partial class Build : NukeBuild
 
             void GenerateUnitTestFrameworkMatrices()
             {
-                GenerateTfmsMatrix("unit_tests_windows_matrix", GetTestingFrameworks(PlatformFamily.Windows));
+                var windowsFrameworks = GetTestingFrameworks(PlatformFamily.Windows);
+                GenerateTfmsMatrix("unit_tests_windows_matrix", windowsFrameworks);
                 GenerateTfmsMatrix("unit_tests_macos_matrix", GetTestingFrameworks(PlatformFamily.OSX));
                 GenerateLinuxMatrix("x64", GetTestingFrameworks(PlatformFamily.Linux));
                 GenerateLinuxMatrix("arm64", GetTestingFrameworks(PlatformFamily.Linux, isArm64: true));
+
+                if (IsGitlab)
+                {
+                    GenerateGitlabWindowsUnitTestsPipeline(windowsFrameworks);
+                }
 
                 void GenerateTfmsMatrix(string name, IEnumerable<TargetFramework> frameworks)
                 {
@@ -186,6 +193,33 @@ partial class Build : NukeBuild
 
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetOutputVariable($"unit_tests_linux_{platform}_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                void GenerateGitlabWindowsUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
+                {
+                    var yaml = new StringBuilder(
+                        """
+                        include:
+                          - local: .gitlab/windows-unit-tests-child.yml
+
+                        stages:
+                          - test
+
+                        """);
+
+                    foreach (var framework in frameworks)
+                    {
+                        yaml.AppendLine($"\"unit-tests-windows:{framework}\":");
+                        yaml.AppendLine("  extends: .windows-unit-test");
+                        yaml.AppendLine("  variables:");
+                        yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+                    }
+
+                    var outputDirectory = RootDirectory / ".gitlab" / "generated";
+                    Directory.CreateDirectory(outputDirectory);
+                    var outputPath = outputDirectory / "windows-unit-tests.yml";
+                    File.WriteAllText(outputPath, yaml.ToString());
+                    Logger.Information("Generated GitLab Windows unit-test child pipeline at {Path}", outputPath);
                 }
             }
 
@@ -876,12 +910,24 @@ partial class Build : NukeBuild
         const string AzureSystemPullRequestSourceBranch = "SYSTEM_PULLREQUEST_SOURCEBRANCH";
         const string AzureBuildSourceBranch = "BUILD_SOURCEBRANCH";
         const string AzureBuildSourceBranchName = "BUILD_SOURCEBRANCHNAME";
+        const string GitlabMergeRequestSourceBranch = "CI_MERGE_REQUEST_SOURCE_BRANCH_NAME";
+        const string GitlabCommitBranch = "CI_COMMIT_BRANCH";
 
         var prBranch = Environment.GetEnvironmentVariable(AzureSystemPullRequestSourceBranch);
+        if (string.IsNullOrWhiteSpace(prBranch))
+        {
+            prBranch = Environment.GetEnvironmentVariable(GitlabMergeRequestSourceBranch);
+        }
+
         var branch = !string.IsNullOrWhiteSpace(prBranch) ? prBranch : Environment.GetEnvironmentVariable(AzureBuildSourceBranch);
         if (string.IsNullOrWhiteSpace(branch))
         {
             branch = Environment.GetEnvironmentVariable(AzureBuildSourceBranchName);
+        }
+
+        if (string.IsNullOrWhiteSpace(branch))
+        {
+            branch = Environment.GetEnvironmentVariable(GitlabCommitBranch);
         }
 
         Console.WriteLine("Base Branch: {0}", baseBranch);
