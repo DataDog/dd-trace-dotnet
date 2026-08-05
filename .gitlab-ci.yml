@@ -81,6 +81,98 @@ build-windows-ci-image:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
 
+generate-windows-unit-tests-pipeline:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: build
+  timeout: 15m
+  tags: ["windows-v2:2022"]
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  script:
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+
+      docker manifest inspect $env:WINDOWS_BUILD_IMAGE
+      if ($LASTEXITCODE -ne 0) {
+        throw "Windows build image not found at $env:WINDOWS_BUILD_IMAGE"
+      }
+
+      $targetBranch = if ($env:CI_MERGE_REQUEST_TARGET_BRANCH_NAME) {
+        $env:CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+      } else {
+        $env:CI_DEFAULT_BRANCH
+      }
+
+      if (-not $targetBranch) {
+        throw "Unable to determine the target branch for GitLab matrix generation"
+      }
+
+      # Mirror NUKE's thorough-testing checks before passing the decision to the
+      # focused child-pipeline generator in the Windows image.
+      git fetch --no-tags origin "+refs/heads/${targetBranch}:refs/remotes/origin/${targetBranch}"
+      if ($LASTEXITCODE -ne 0) {
+        throw "Failed to fetch target branch '$targetBranch' for matrix generation"
+      }
+
+      $changedFiles = @(git diff --name-only "origin/${targetBranch}...HEAD")
+      if ($LASTEXITCODE -ne 0) {
+        throw "Failed to find changes relative to '$targetBranch' for matrix generation"
+      }
+
+      $hasIntegrationChanges = $changedFiles | Where-Object {
+        $path = $_.Replace('\', '/')
+        $path -like "tracer/src/Datadog.Trace/Generated/*/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator*" `
+          -or $path -like "tracer/src/Datadog.Trace/Generated/*/Datadog.Trace.SourceGenerators/AspectsDefinitionsGenerator*" `
+          -or $path -like "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/*" `
+          -or $path -like "tracer/src/Datadog.Trace/Iast/Aspects/*"
+      }
+      $snapshotChangeCount = @($changedFiles | Where-Object { $_ -like "*verified.txt" }).Count
+
+      $forceAllFrameworks = $env:run_all_test_frameworks -eq "true" -or $env:RUN_ALL_TEST_FRAMEWORKS -eq "true"
+      $isMainlineBranch = $env:CI_COMMIT_BRANCH -in @("master", "main") `
+                       -or $env:CI_COMMIT_BRANCH -like "release/*" `
+                       -or $env:CI_COMMIT_BRANCH -like "hotfix/*"
+      $includeAllFrameworks = $forceAllFrameworks `
+                           -or ($isMainlineBranch -and $env:CI_PIPELINE_SOURCE -ne "schedule") `
+                           -or [bool]$hasIntegrationChanges `
+                           -or $snapshotChangeCount -gt 100
+
+      Write-Output "Generating Windows unit-test child pipeline (target=$targetBranch, includeAll=$includeAllFrameworks)"
+      docker run --rm -m 20480M `
+        -v "$(Get-Location):c:\mnt" `
+        -e CI=true `
+        -e CI_JOB_ID=${CI_JOB_ID} `
+        -e CI_COMMIT_BRANCH `
+        -e CI_MERGE_REQUEST_SOURCE_BRANCH_NAME `
+        -e CI_PROJECT_NAME `
+        -e CI_JOB_NAME_SLUG `
+        -e AWS_NETWORKING=true `
+        -e WINDOWS_BUILDER=true `
+        -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+        --entrypoint cmd.exe `
+        $env:WINDOWS_BUILD_IMAGE `
+        /d /s /c `
+        "c:\entrypoint.bat GenerateGitlabWindowsUnitTestsPipeline --IncludeAllTestFrameworks $includeAllFrameworks"
+      if ($LASTEXITCODE -ne 0) {
+        throw "GitLab child-pipeline generation exited with code $LASTEXITCODE"
+      }
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+      - .gitlab/generated/windows-unit-tests.yml
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
+
 build:
   except:
     variables:
@@ -244,67 +336,6 @@ build:
       if ($LASTEXITCODE -ne 0) {
         throw "Docker packaging container exited with code $LASTEXITCODE"
       }
-    - |
-      $targetBranch = if ($env:CI_MERGE_REQUEST_TARGET_BRANCH_NAME) {
-        $env:CI_MERGE_REQUEST_TARGET_BRANCH_NAME
-      } else {
-        $env:CI_DEFAULT_BRANCH
-      }
-
-      if (-not $targetBranch) {
-        throw "Unable to determine the target branch for GitLab matrix generation"
-      }
-
-      # Mirror NUKE's thorough-testing checks before passing the decision to the
-      # focused child-pipeline generator in the Windows image.
-      git fetch --no-tags origin "+refs/heads/${targetBranch}:refs/remotes/origin/${targetBranch}"
-      if ($LASTEXITCODE -ne 0) {
-        throw "Failed to fetch target branch '$targetBranch' for matrix generation"
-      }
-
-      $changedFiles = @(git diff --name-only "origin/${targetBranch}...HEAD")
-      if ($LASTEXITCODE -ne 0) {
-        throw "Failed to find changes relative to '$targetBranch' for matrix generation"
-      }
-
-      $hasIntegrationChanges = $changedFiles | Where-Object {
-        $path = $_.Replace('\', '/')
-        $path -like "tracer/src/Datadog.Trace/Generated/*/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator*" `
-          -or $path -like "tracer/src/Datadog.Trace/Generated/*/Datadog.Trace.SourceGenerators/AspectsDefinitionsGenerator*" `
-          -or $path -like "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/*" `
-          -or $path -like "tracer/src/Datadog.Trace/Iast/Aspects/*"
-      }
-      $snapshotChangeCount = @($changedFiles | Where-Object { $_ -like "*verified.txt" }).Count
-
-      $forceAllFrameworks = $env:run_all_test_frameworks -eq "true" -or $env:RUN_ALL_TEST_FRAMEWORKS -eq "true"
-      $isMainlineBranch = $env:CI_COMMIT_BRANCH -in @("master", "main") `
-                       -or $env:CI_COMMIT_BRANCH -like "release/*" `
-                       -or $env:CI_COMMIT_BRANCH -like "hotfix/*"
-      $includeAllFrameworks = $forceAllFrameworks `
-                           -or ($isMainlineBranch -and $env:CI_PIPELINE_SOURCE -ne "schedule") `
-                           -or [bool]$hasIntegrationChanges `
-                           -or $snapshotChangeCount -gt 100
-
-      Write-Output "Generating Windows unit-test child pipeline (target=$targetBranch, includeAll=$includeAllFrameworks)"
-      docker run --rm -m 20480M `
-        -v "$(Get-Location):c:\mnt" `
-        -e CI=true `
-        -e CI_JOB_ID=${CI_JOB_ID} `
-        -e CI_COMMIT_BRANCH `
-        -e CI_MERGE_REQUEST_SOURCE_BRANCH_NAME `
-        -e CI_PROJECT_NAME `
-        -e CI_JOB_NAME_SLUG `
-        -e AWS_NETWORKING=true `
-        -e WINDOWS_BUILDER=true `
-        -e NUGET_CERT_REVOCATION_MODE=offline `
-        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
-        --entrypoint cmd.exe `
-        $env:WINDOWS_BUILD_IMAGE `
-        /d /s /c `
-        "c:\entrypoint.bat GenerateGitlabWindowsUnitTestsPipeline --IncludeAllTestFrameworks $includeAllFrameworks"
-      if ($LASTEXITCODE -ne 0) {
-        throw "GitLab child-pipeline generation exited with code $LASTEXITCODE"
-      }
     - mkdir artifacts-out
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
     - remove-item -recurse -force build-out\${CI_JOB_ID}
@@ -325,7 +356,6 @@ build:
     - artifacts/obj/**/refint/**/*
     # The dd_dotnet tests also copy the producer-built executable host.
     - artifacts/obj/Datadog.Trace.Tools.dd_dotnet/**/apphost.exe
-    - .gitlab/generated/windows-unit-tests.yml
     - artifacts/build_data/tests
     - artifacts/build_data/dumps
     - profiler/build_data/tests
@@ -344,11 +374,14 @@ unit-tests-windows:
       - $CI_COMMIT_TAG
   stage: test
   needs:
-    - build
+    - job: build
+      artifacts: false
+    - job: generate-windows-unit-tests-pipeline
+      artifacts: false
   trigger:
     include:
       - artifact: .gitlab/generated/windows-unit-tests.yml
-        job: build
+        job: generate-windows-unit-tests-pipeline
     strategy: depend
   variables:
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
