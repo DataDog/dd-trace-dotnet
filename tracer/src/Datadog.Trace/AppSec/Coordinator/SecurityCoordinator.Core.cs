@@ -111,38 +111,9 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    /// <summary>
-    /// Collects the WAF addresses describing the current request.
-    /// </summary>
-    /// <returns>
-    /// The addresses, or <c>null</c> when the request can no longer be read, in which case there is
-    /// nothing left to analyze and the caller must skip the WAF call.
-    /// </returns>
-    private Dictionary<string, object>? GetBasicRequestArgsForWaf()
+    private Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
-        if (_httpTransport.IsHttpContextDisposed)
-        {
-            return null;
-        }
-
-        // ASP.NET Core pools HttpContext instances, so the context we hold can already have been
-        // uninitialized (its feature collection set to null) by the time we read it, for instance when
-        // the request was aborted. Every member of the request then throws, and letting that escape
-        // would surface our instrumentation as a 500 in the customer's application.
-        try
-        {
-            return BuildBasicRequestArgsForWaf(_httpTransport.Context.Request);
-        }
-        catch (Exception e) when (e is ObjectDisposedException or NullReferenceException)
-        {
-            Log.Debug(e, "Exception while trying to read the request of a Context, skipping the WAF call.");
-            _httpTransport.IsHttpContextDisposed = true;
-            return null;
-        }
-    }
-
-    private Dictionary<string, object> BuildBasicRequestArgsForWaf(HttpRequest request)
-    {
+        var request = _httpTransport.Context.Request;
         var headersDic = ExtractHeadersFromRequest(request.Headers);
         var cookiesDic = ExtractCookiesFromRequest(request);
         var queryStringDic = new Dictionary<string, List<string>>(request.Query?.Count ?? 0);
@@ -226,27 +197,7 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        internal override IDictionary<string, object>? RouteData
-        {
-            get
-            {
-                if (IsHttpContextDisposed)
-                {
-                    return null;
-                }
-
-                try
-                {
-                    return Context.GetRouteData()?.Values;
-                }
-                catch (Exception e) when (e is NullReferenceException or ObjectDisposedException)
-                {
-                    Log.Debug(e, "Exception while trying to access the route data of a Context.");
-                    IsHttpContextDisposed = true;
-                    return null;
-                }
-            }
-        }
+        internal override IDictionary<string, object>? RouteData => Context.GetRouteData()?.Values;
 
         internal override bool ReportedExternalWafsRequestHeaders
         {
@@ -306,19 +257,7 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        internal override IHeadersCollection? GetResponseHeaders()
-        {
-            try
-            {
-                return new HeadersCollectionAdapter(Context.Response.Headers);
-            }
-            catch (Exception e) when (e is ObjectDisposedException or NullReferenceException)
-            {
-                Log.Debug(e, "Exception while trying to access the response headers of a Context.");
-                IsHttpContextDisposed = true;
-                return null;
-            }
-        }
+        internal override IHeadersCollection GetResponseHeaders() => new HeadersCollectionAdapter(Context.Response.Headers);
     }
 }
 #endif

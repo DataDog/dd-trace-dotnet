@@ -102,10 +102,10 @@ internal sealed partial class SecurityReporter
             }
         }
 
-        if (CanAccessHeaders && _httpTransport.GetResponseHeaders() is { } responseHeaders)
+        if (CanAccessHeaders)
         {
             var headers = _span.IsAppsecEvent() ? ResponseHeaders : AlwaysResponseHeaders;
-            AddHeaderTags(_span, responseHeaders, headers, SpanContextPropagator.HttpResponseHeadersTagPrefix);
+            AddHeaderTags(_span, _httpTransport.GetResponseHeaders(), headers, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
     }
 
@@ -356,9 +356,9 @@ internal sealed partial class SecurityReporter
             _span.SetTag(Tags.HttpEndpoint, route);
         }
 
-        if (CanAccessHeaders && _httpTransport.GetResponseHeaders() is { } responseHeaders)
+        if (CanAccessHeaders)
         {
-            AddHeaderTags(_span, responseHeaders, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
+            AddHeaderTags(_span, _httpTransport.GetResponseHeaders(), ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
     }
 }

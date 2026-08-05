@@ -43,9 +43,7 @@ internal readonly partial struct SecurityCoordinator
     public IResult? Scan(bool lastTime = false)
     {
         var args = GetBasicRequestArgsForWaf();
-
-        // a null result means the request couldn't be read at all, so there is nothing to give the WAF
-        return args is null ? null : RunWaf(args, lastTime);
+        return RunWaf(args, lastTime);
     }
 
     public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false, string? sessionId = null)
