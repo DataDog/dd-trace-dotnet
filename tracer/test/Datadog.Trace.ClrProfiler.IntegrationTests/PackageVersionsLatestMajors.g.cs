@@ -2803,14 +2803,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET8_0
                 new object[] { "23.4.3" },
                 new object[] { "24.1.0" },
+                new object[] { "25.0.0" },
 #endif
 #if NET9_0
                 new object[] { "23.4.3" },
                 new object[] { "24.1.0" },
+                new object[] { "25.0.0" },
 #endif
 #if NET10_0
                 new object[] { "23.4.3" },
                 new object[] { "24.1.0" },
+                new object[] { "25.0.0" },
 #endif
 #endif
             };
