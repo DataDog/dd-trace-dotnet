@@ -12,7 +12,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 57;
+    public const int Length = 60;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -64,6 +64,9 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureMemoryUsagePct => "memory_pressure.memory_usage_pct",
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureGcActivity => "memory_pressure.gc_activity",
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureDuration => "memory_pressure.duration",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerEventsSkipped => "events.skipped",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerEventsDropped => "events.dropped",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerCaptureIncomplete => "capture.incomplete",
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "waf.init",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "waf.updates",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "waf.requests",
@@ -122,6 +125,9 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureMemoryUsagePct => "live_debugger",
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureGcActivity => "live_debugger",
             Datadog.Trace.Telemetry.Metrics.Count.DebuggerMemoryPressureDuration => "live_debugger",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerEventsSkipped => "debugger",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerEventsDropped => "debugger",
+            Datadog.Trace.Telemetry.Metrics.Count.DebuggerCaptureIncomplete => "debugger",
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "appsec",
