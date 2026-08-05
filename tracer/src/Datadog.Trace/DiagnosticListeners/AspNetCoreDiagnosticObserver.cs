@@ -710,6 +710,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStop(object arg)
         {
+            CoreHttpContextStore.Instance.Remove();
+
             if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
@@ -721,7 +723,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(_tracer, _security, rootScope, httpContext);
             }
 
-            CoreHttpContextStore.Instance.Remove();
             // If we don't have a scope, no need to call Stop pipeline
         }
 
