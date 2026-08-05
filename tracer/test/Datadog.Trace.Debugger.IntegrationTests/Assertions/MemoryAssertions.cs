@@ -70,6 +70,7 @@ internal class MemoryAssertions
     /// <param name="output">The test output helper</param>
     /// <param name="timeout">Timeout for the memory snapshot operation</param>
     /// <returns>MemoryAssertions or null if the operation timed out</returns>
+    /// <exception cref="SkipException">Thrown to skip the test when ClrMD cannot capture or analyze the heap.</exception>
     public static async Task<MemoryAssertions?> TryCaptureSnapshotToAssertOn(Process process, ITestOutputHelper output, TimeSpan timeout)
     {
         try
