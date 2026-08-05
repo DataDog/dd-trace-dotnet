@@ -68,11 +68,79 @@ namespace Datadog.Trace.Util
             return new StringSegment(Value, Offset + start, length);
         }
 
+        public StringSegment Trim()
+        {
+#if NETCOREAPP
+            var value = Value.AsSpan(Offset, Length);
+            var startTrimmed = value.TrimStart();
+            var trimmed = startTrimmed.TrimEnd();
+            return Slice(Length - startTrimmed.Length, trimmed.Length);
+#else
+            var start = 0;
+            var end = Length;
+
+            while (start < end && char.IsWhiteSpace(Value[Offset + start]))
+            {
+                start++;
+            }
+
+            while (end > start && char.IsWhiteSpace(Value[Offset + end - 1]))
+            {
+                end--;
+            }
+
+            return Slice(start, end - start);
+#endif
+        }
+
         public bool Equals(string? other, StringComparison comparisonType)
         {
-            return other is { Length: var length } &&
-                   length == Length &&
-                   string.Compare(Value, Offset, other, 0, Length, comparisonType) == 0;
+            if (other is not { Length: var length } || length != Length)
+            {
+                return false;
+            }
+
+#if NETCOREAPP
+            return Value.AsSpan(Offset, Length).Equals(other.AsSpan(), comparisonType);
+#else
+            return string.Compare(Value, Offset, other, 0, Length, comparisonType) == 0;
+#endif
+        }
+
+        public bool StartsWith(string prefix)
+        {
+            if (prefix.Length > Length)
+            {
+                return false;
+            }
+
+#if NETCOREAPP
+            return Value.AsSpan(Offset, Length).StartsWith(prefix.AsSpan(), StringComparison.Ordinal);
+#else
+            return string.Compare(Value, Offset, prefix, 0, prefix.Length, StringComparison.Ordinal) == 0;
+#endif
+        }
+
+        public int IndexOf(char character, int startIndex = 0, int count = -1)
+        {
+            var length = count < 0 ? Length - startIndex : count;
+
+#if NETCOREAPP
+            var index = Value.AsSpan(Offset + startIndex, length).IndexOf(character);
+            return index < 0 ? -1 : startIndex + index;
+#else
+            var endIndex = startIndex + length;
+
+            for (var index = startIndex; index < endIndex; index++)
+            {
+                if (Value[Offset + index] == character)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+#endif
         }
 
         public override string ToString()
