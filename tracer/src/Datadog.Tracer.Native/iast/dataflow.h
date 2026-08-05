@@ -101,8 +101,8 @@ namespace iast
                               MatchResult* excludedMatch = nullptr);
         bool HasMethodAttributeExclusions();
 
-        AppDomainInfo* GetAppDomain(AppDomainID id);
-        ModuleInfo* GetModuleInfo(ModuleID moduleId);
+        AppDomainInfo* GetAppDomain(AppDomainID id, int attempts = 1);
+        ModuleInfo* GetModuleInfo(ModuleID moduleId, int attempts = 1);
         ModuleInfo* GetAspectsModule(AppDomainID id);
         MethodInfo* GetMethodInfo(ModuleID moduleId, mdMethodDef methodId);
 
