@@ -669,7 +669,9 @@ namespace Datadog.Trace.Tests.Agent
             agentWriter.DroppedTracesBufferFullAndLocked.Should().Be(1);
 
             var capacityFlush = InvokeFlushBuffers(agentWriter, flushAllBuffers: false);
-            var completedWithoutFirstSend = await Task.WhenAny(capacityFlush, Task.Delay(TimeSpan.FromSeconds(1))) == capacityFlush;
+            // The second mocked send completes synchronously, so the capacity flush can only remain incomplete
+            // if it is incorrectly waiting for the blocked first send.
+            var completedWithoutFirstSend = capacityFlush.IsCompleted;
             if (!completedWithoutFirstSend)
             {
                 releaseFirstSend.TrySetResult(true);
