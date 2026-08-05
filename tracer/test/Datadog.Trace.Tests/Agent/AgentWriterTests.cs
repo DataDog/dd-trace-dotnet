@@ -630,6 +630,68 @@ namespace Datadog.Trace.Tests.Agent
             await agentWriter.FlushAndCloseAsync();
         }
 
+        [Fact]
+        public async Task FullBufferIsDrainedWhileExplicitFlushIsBlocked()
+        {
+            var api = new Mock<IApi>();
+            var releaseFirstSend = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var sentSpanIds = new List<ulong>();
+            var sendCount = 0;
+
+            api.Setup(i => i.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
+               .Returns((ArraySegment<byte> traces, int _, bool _, long _, long _, bool _) =>
+                {
+                    var payload = global::MessagePack.MessagePackSerializer.Deserialize<List<List<MockSpan>>>(traces);
+                    lock (sentSpanIds)
+                    {
+                        sentSpanIds.AddRange(payload.SelectMany(trace => trace).Select(span => span.SpanId));
+                    }
+
+                    return Interlocked.Increment(ref sendCount) == 1 ? releaseFirstSend.Task : Task.FromResult(true);
+                });
+
+            var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
+            var agentWriter = new AgentWriter(
+                api.Object,
+                statsAggregator: null,
+                statsd: TestStatsdManager.NoOp,
+                automaticFlush: false,
+                maxBufferSize: (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1);
+
+            agentWriter.WriteTrace(CreateTraceChunk(1, startingId: 1));
+            var explicitFlush = agentWriter.FlushTracesAsync();
+
+            agentWriter.WriteTrace(CreateTraceChunk(1, startingId: 2));
+
+            // Discover that the back buffer is full. This trace is the single expected capacity drop.
+            agentWriter.WriteTrace(CreateTraceChunk(1, startingId: 3));
+            agentWriter.BackBuffer.IsFull.Should().BeTrue();
+            agentWriter.DroppedTracesBufferFullAndLocked.Should().Be(1);
+
+            var capacityFlush = InvokeFlushBuffers(agentWriter, flushAllBuffers: false);
+            var completedWithoutFirstSend = await Task.WhenAny(capacityFlush, Task.Delay(TimeSpan.FromSeconds(1))) == capacityFlush;
+            if (!completedWithoutFirstSend)
+            {
+                releaseFirstSend.TrySetResult(true);
+            }
+
+            await capacityFlush;
+
+            completedWithoutFirstSend.Should().BeTrue();
+            explicitFlush.IsCompleted.Should().BeFalse();
+            agentWriter.BackBuffer.IsEmpty.Should().BeTrue();
+
+            // The capacity flush freed the alternate buffer without waiting for the slow first send.
+            agentWriter.WriteTrace(CreateTraceChunk(1, startingId: 4));
+
+            releaseFirstSend.TrySetResult(true);
+            await explicitFlush;
+            await agentWriter.FlushTracesAsync();
+
+            sentSpanIds.Should().Equal(1, 2, 4);
+            await agentWriter.FlushAndCloseAsync();
+        }
+
         private static Task InvokeFlushBuffers(AgentWriter agentWriter, bool flushAllBuffers)
         {
             var method = typeof(AgentWriter).GetMethod("FlushBuffers", BindingFlags.Instance | BindingFlags.NonPublic);

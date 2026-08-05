@@ -317,14 +317,38 @@ namespace Datadog.Trace.Agent
         /// <returns>Async operation</returns>
         private async Task FlushBuffers(bool flushAllBuffers = false)
         {
-            // A flush may be requested by the periodic loop while an explicit flush is in progress. Serializing
-            // the complete operation prevents those callers from locking opposite buffers and dropping new traces.
-            await _flushGate.WaitAsync().ConfigureAwait(false);
+            bool gateAcquired;
+            if (flushAllBuffers)
+            {
+                await _flushGate.WaitAsync().ConfigureAwait(false);
+                gateAcquired = true;
+            }
+            else
+            {
+                gateAcquired = _flushGate.Wait(0);
+            }
 
             try
             {
                 var activeBuffer = Volatile.Read(ref _activeBuffer);
                 var fallbackBuffer = activeBuffer == _frontBuffer ? _backBuffer : _frontBuffer;
+
+                if (!gateAcquired)
+                {
+                    // Another caller is performing a complete flush. Avoid locking its alternate buffer for an
+                    // opportunistic flush, but still drain full buffers so a slow send cannot block ingestion.
+                    if (fallbackBuffer.IsFull)
+                    {
+                        await FlushBuffer(fallbackBuffer).ConfigureAwait(false);
+                    }
+
+                    if (activeBuffer.IsFull)
+                    {
+                        await FlushBuffer(activeBuffer).ConfigureAwait(false);
+                    }
+
+                    return;
+                }
 
                 // First, flush the back buffer if full
                 if (fallbackBuffer.IsFull || flushAllBuffers)
@@ -341,7 +365,10 @@ namespace Datadog.Trace.Agent
             }
             finally
             {
-                _flushGate.Release();
+                if (gateAcquired)
+                {
+                    _flushGate.Release();
+                }
             }
         }
 
