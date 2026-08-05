@@ -389,7 +389,14 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
     auto it = _appDomains.find(appDomainId);
     if (it != _appDomains.end())
     {
-        DBG("Dataflow::AppDomainShutdown -> AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name, " ] ");
+        if (it->second != nullptr)
+        {
+            DBG("Dataflow::AppDomainShutdown -> AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name, " ] ");
+        }
+        else
+        {
+            DBG("Dataflow::AppDomainShutdown -> AppDomainId = ", Hex((ULONG) appDomainId), " (Not resolved)");
+        }
         DEL(it->second);
         _appDomains.erase(appDomainId);
         return S_OK;
@@ -420,7 +427,14 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
         auto it = _modules.find(moduleId);
         if (it != _modules.end())
         {
-            DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " [ ", it->second->_appDomain.Name, " ] ", it->second->_name);
+            if (it->second != nullptr)
+            {
+                DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " [ ", it->second->_appDomain.Name, " ] ", it->second->_name);
+            }
+            else
+            {
+                DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " (Not resolved)");
+            }
             DEL(it->second);
         }
         else
