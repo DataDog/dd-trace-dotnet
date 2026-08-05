@@ -57,9 +57,7 @@ namespace Datadog.Trace
         private string _rawTraceId;
         private string _rawSpanId;
         private string _origin;
-#nullable enable
-        private RemoteW3CTraceState? _remoteW3CTraceState;
-#nullable restore
+        private RemoteW3CTraceState _remoteW3CTraceState;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
@@ -545,14 +543,12 @@ namespace Datadog.Trace
             PathwayContext = pathwayContext;
         }
 
-#nullable enable
         private sealed class RemoteW3CTraceState
         {
-            public string? AdditionalW3CTraceState { get; set; }
+            public string AdditionalW3CTraceState { get; set; }
 
-            public string? OtelTraceState { get; set; }
+            public string OtelTraceState { get; set; }
         }
-#nullable restore
 
         internal static class Keys
         {
