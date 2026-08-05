@@ -9,9 +9,12 @@
 // end
 
 #include <memory>
+#include <shared_mutex>
+#include <unordered_map>
 
 #include "BclEventsParser.h"
 #include "ClrEventsParser.h"
+#include "DotnetEventsProvider.h"
 
 
 class IAllocationsListener;
@@ -55,9 +58,28 @@ private:
         DWORD& version
         );
 
+    // Resolves (and caches) the provider that emitted an event, to avoid calling
+    // EventPipeGetProviderInfo (which copies the provider name) plus the string
+    // comparisons on every event.
+    DotnetEventsProvider GetProviderType(EVENTPIPE_PROVIDER provider);
+
+public:
+    // Called from EventPipeProviderCreated: a provider can be destroyed and a new one
+    // allocated at the same address, so drop any stale cache entry for that address.
+    void OnProviderCreated(EVENTPIPE_PROVIDER provider);
+
 
 private:
+    // We only ever subscribe to a handful of providers (<= 6). Cap the cache so it
+    // stays bounded even if providers are re-created; if the cap is reached the cache
+    // is dropped and entries are re-resolved lazily.
+    static constexpr size_t MaxCachedProviders = 64;
+
     ICorProfilerInfo12* _pCorProfilerInfo;
     std::unique_ptr<ClrEventsParser> _clrParser;
     std::unique_ptr<BclEventsParser> _bclParser;
+    // The event callback is not guaranteed to be single-threaded, so the cache is
+    // guarded by a reader/writer lock: shared for lookups, exclusive to update.
+    std::shared_mutex _providerTypesLock;
+    std::unordered_map<EVENTPIPE_PROVIDER, DotnetEventsProvider> _providerTypes;
 };
