@@ -26,11 +26,12 @@
     <CallTarget Targets="CopyCoverletDataCollectorFiles" />
 
     <!-- Windows integration tests consume the standalone build output instead of the publish output.
-         Keep the collector beside the test assembly so direct VSTest execution can discover it. -->
+         Keep Coverlet in a dedicated adapter directory so its PDBs are not instrumented by the
+         global coverage stress test, which deliberately processes top-level sample assemblies. -->
     <ItemGroup>
       <PublishedTraceDataCollectorArtifacts Include="$(PublishDir)**\*.*" />
     </ItemGroup>
-    <Move SourceFiles="@(PublishedTraceDataCollectorArtifacts)" DestinationFolder="$(OutputPath)\%(RecursiveDir)" />
+    <Move SourceFiles="@(PublishedTraceDataCollectorArtifacts)" DestinationFolder="$(OutputPath)\coverlet\%(RecursiveDir)" />
   </Target>
 
 </Project>

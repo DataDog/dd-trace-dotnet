@@ -37,6 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
 {
     private const long MaximumStressMemoryGrowth = 384L * 1024 * 1024;
+    private const string CoverletAdapterDirectoryName = "coverlet";
     private const string SampleName = "NUnitGlobalCoverageMemory";
     private const string SampleSourceFileName = "GlobalCoverageMemoryTests.cs";
     private const int CommonCoverageLine = 131_072;
@@ -112,9 +113,20 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
             });
 
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true, useStatsD: !IsMacOS());
+        var sampleOutputDirectory = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion);
+        var coverletAdapterDirectory = Path.Combine(sampleOutputDirectory, CoverletAdapterDirectoryName);
+        File.Exists(Path.Combine(coverletAdapterDirectory, "coverlet.collector.dll"))
+            .Should()
+            .BeTrue("the Coverlet data collector must be available to direct VSTest execution");
+
+        // CI executes samples built on a different agent, so the absolute source paths in their PDBs
+        // are not available locally. Coverlet 3.x and newer versions use different options to retain
+        // those modules; each version ignores the option it does not recognize. Restricting the module
+        // filter to this sample avoids instrumenting the entire published TestPlatform dependency set.
+        const string collectorConfiguration = "XPlat Code Coverage;IncludeTestAssembly=true;InstrumentModulesWithoutLocalSources=true;ExcludeAssembliesWithoutSources=None;Include=[Samples.NUnitGlobalCoverageMemory]*";
         using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                       agent,
-                                      arguments: $"/Collect:\"XPlat Code Coverage;IncludeTestAssembly=true\" /ResultsDirectory:\"{resultsDirectory}\"",
+                                      arguments: $"/TestAdapterPath:\"{coverletAdapterDirectory}\" /Collect:\"{collectorConfiguration}\" /ResultsDirectory:\"{resultsDirectory}\"",
                                       packageVersion: packageVersion,
                                       expectedExitCode: 0);
 
@@ -169,6 +181,9 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
         var environmentHelper = new EnvironmentHelper(SampleName, typeof(GlobalCoverageMemoryTests), _output);
         var sampleAssembly = environmentHelper.GetTestCommandForSampleApplicationPath();
         File.Exists(sampleAssembly).Should().BeTrue($"the required sample output must be present at {sampleAssembly}");
+        Directory.GetFiles(Path.GetDirectoryName(sampleAssembly)!, "coverlet*.pdb", SearchOption.TopDirectoryOnly)
+                 .Should()
+                 .BeEmpty("the stress collector instruments top-level assemblies with PDBs, so Coverlet must remain isolated in its adapter directory");
 
         var runnerDirectory = GetRunnerDirectory();
         var runnerAssembly = Path.Combine(runnerDirectory, "Datadog.Trace.Tools.Runner.dll");
