@@ -232,33 +232,33 @@ namespace Datadog.Trace.Agent
             var spanKindJson = CanonicalizeSpanKind(key.SpanKind);
             WriteStringKvJson(writer, "span.kind", spanKindJson);
 
-            if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
-            {
-                WriteStringKvJson(writer, "http.request.method", key.HttpMethod);
-            }
-
-            if (key.HttpStatusCode != 0)
-            {
-                WriteIntKvJson(writer, "http.response.status_code", key.HttpStatusCode);
-            }
-
-            if (!StringUtil.IsNullOrEmpty(key.HttpEndpoint))
-            {
-                WriteStringKvJson(writer, "http.route", key.HttpEndpoint);
-            }
-
-            var grpcStatusName = NormalizeGrpcStatusName(key.GrpcStatusCode);
-            if (grpcStatusName is not null)
-            {
-                WriteStringKvJson(writer, "rpc.response.status_code", grpcStatusName);
-            }
-
             WriteStringKvJson(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue);
 
-            WriteStringKvJson(writer, "service.name", StringUtil.IsNullOrEmpty(key.Service) ? (defaultServiceName ?? "unknown_service:dotnet") : key.Service);
+            WriteStringKvJson(writer, "service.name", StringUtil.IsNullOrEmpty(key.Service) ? (StringUtil.IsNullOrEmpty(defaultServiceName) ? "unknown_service:dotnet" : defaultServiceName) : key.Service);
 
             if (!otelSemanticsEnabled)
             {
+                if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
+                {
+                    WriteStringKvJson(writer, "http.request.method", key.HttpMethod);
+                }
+
+                if (key.HttpStatusCode != 0)
+                {
+                    WriteIntKvJson(writer, "http.response.status_code", key.HttpStatusCode);
+                }
+
+                if (!StringUtil.IsNullOrEmpty(key.HttpEndpoint))
+                {
+                    WriteStringKvJson(writer, "http.route", key.HttpEndpoint);
+                }
+
+                var grpcStatusName = NormalizeGrpcStatusName(key.GrpcStatusCode);
+                if (grpcStatusName is not null)
+                {
+                    WriteStringKvJson(writer, "rpc.response.status_code", grpcStatusName);
+                }
+
                 if (!StringUtil.IsNullOrEmpty(key.OperationName))
                 {
                     WriteStringKvJson(writer, "datadog.operation.name", key.OperationName);
@@ -270,20 +270,22 @@ namespace Datadog.Trace.Agent
                 }
 
                 WriteBoolKvJson(writer, "datadog.span.top_level", key.IsTopLevel);
-                WriteBoolKvJson(writer, "datadog.is_trace_root", key.IsTraceRoot ?? false);
+                if (key.IsTraceRoot is { } isTraceRoot)
+                {
+                    WriteBoolKvJson(writer, "datadog.is_trace_root", isTraceRoot);
+                }
 
                 if (key.IsSyntheticsRequest)
                 {
                     WriteStringKvJson(writer, "datadog.origin", "synthetics");
                 }
-            }
 
-            // additional_metric_tags support is still evolving/TBD across most SDKs; unlike peer_tags/process_tags, each configured key is its own unprefixed attribute.
-            foreach (var tag in bucket.AdditionalMetricTags)
-            {
-                if (TrySplitEncodedTag(tag, out var tagKey, out var tagValue))
+                foreach (var tag in bucket.AdditionalMetricTags)
                 {
-                    WriteStringKvJson(writer, tagKey, tagValue);
+                    if (TrySplitEncodedTag(tag, out var tagKey, out var tagValue))
+                    {
+                        WriteStringKvJson(writer, tagKey, tagValue);
+                    }
                 }
             }
 
@@ -507,33 +509,33 @@ namespace Datadog.Trace.Agent
             var spanKindProto = CanonicalizeSpanKind(key.SpanKind);
             WriteAttribute(writer, "span.kind", spanKindProto, FieldNumbers.HistogramDataPointAttributes);
 
-            if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
-            {
-                WriteAttribute(writer, "http.request.method", key.HttpMethod, FieldNumbers.HistogramDataPointAttributes);
-            }
-
-            if (key.HttpStatusCode != 0)
-            {
-                WriteIntAttribute(writer, "http.response.status_code", key.HttpStatusCode, FieldNumbers.HistogramDataPointAttributes);
-            }
-
-            if (!StringUtil.IsNullOrEmpty(key.HttpEndpoint))
-            {
-                WriteAttribute(writer, "http.route", key.HttpEndpoint, FieldNumbers.HistogramDataPointAttributes);
-            }
-
-            var grpcStatusNameProto = NormalizeGrpcStatusName(key.GrpcStatusCode);
-            if (grpcStatusNameProto is not null)
-            {
-                WriteAttribute(writer, "rpc.response.status_code", grpcStatusNameProto, FieldNumbers.HistogramDataPointAttributes);
-            }
-
             WriteAttribute(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue, FieldNumbers.HistogramDataPointAttributes);
 
-            WriteAttribute(writer, "service.name", StringUtil.IsNullOrEmpty(key.Service) ? (defaultServiceName ?? "unknown_service:dotnet") : key.Service, FieldNumbers.HistogramDataPointAttributes);
+            WriteAttribute(writer, "service.name", StringUtil.IsNullOrEmpty(key.Service) ? (StringUtil.IsNullOrEmpty(defaultServiceName) ? "unknown_service:dotnet" : defaultServiceName) : key.Service, FieldNumbers.HistogramDataPointAttributes);
 
             if (!otelSemanticsEnabled)
             {
+                if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
+                {
+                    WriteAttribute(writer, "http.request.method", key.HttpMethod, FieldNumbers.HistogramDataPointAttributes);
+                }
+
+                if (key.HttpStatusCode != 0)
+                {
+                    WriteIntAttribute(writer, "http.response.status_code", key.HttpStatusCode, FieldNumbers.HistogramDataPointAttributes);
+                }
+
+                if (!StringUtil.IsNullOrEmpty(key.HttpEndpoint))
+                {
+                    WriteAttribute(writer, "http.route", key.HttpEndpoint, FieldNumbers.HistogramDataPointAttributes);
+                }
+
+                var grpcStatusNameProto = NormalizeGrpcStatusName(key.GrpcStatusCode);
+                if (grpcStatusNameProto is not null)
+                {
+                    WriteAttribute(writer, "rpc.response.status_code", grpcStatusNameProto, FieldNumbers.HistogramDataPointAttributes);
+                }
+
                 if (!StringUtil.IsNullOrEmpty(key.OperationName))
                 {
                     WriteAttribute(writer, "datadog.operation.name", key.OperationName, FieldNumbers.HistogramDataPointAttributes);
@@ -545,19 +547,22 @@ namespace Datadog.Trace.Agent
                 }
 
                 WriteBoolAttribute(writer, "datadog.span.top_level", key.IsTopLevel, FieldNumbers.HistogramDataPointAttributes);
-                WriteBoolAttribute(writer, "datadog.is_trace_root", key.IsTraceRoot ?? false, FieldNumbers.HistogramDataPointAttributes);
+                if (key.IsTraceRoot is { } isTraceRoot)
+                {
+                    WriteBoolAttribute(writer, "datadog.is_trace_root", isTraceRoot, FieldNumbers.HistogramDataPointAttributes);
+                }
 
                 if (key.IsSyntheticsRequest)
                 {
                     WriteAttribute(writer, "datadog.origin", "synthetics", FieldNumbers.HistogramDataPointAttributes);
                 }
-            }
 
-            foreach (var tag in bucket.AdditionalMetricTags)
-            {
-                if (TrySplitEncodedTag(tag, out var tagKey, out var tagValue))
+                foreach (var tag in bucket.AdditionalMetricTags)
                 {
-                    WriteAttribute(writer, tagKey, tagValue, FieldNumbers.HistogramDataPointAttributes);
+                    if (TrySplitEncodedTag(tag, out var tagKey, out var tagValue))
+                    {
+                        WriteAttribute(writer, tagKey, tagValue, FieldNumbers.HistogramDataPointAttributes);
+                    }
                 }
             }
 
