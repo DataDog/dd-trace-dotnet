@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
@@ -21,7 +22,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
     [UsesVerify]
-    public class AerospikeTests : TracingIntegrationTest, IClassFixture<AerospikeFixture>
+    [Collection(AerospikeCollection.Name)]
+    public class AerospikeTests : TracingIntegrationTest
     {
         public AerospikeTests(ITestOutputHelper output, AerospikeFixture aerospikeFixture)
             : base("Aerospike", output)

@@ -8,8 +8,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions.Execution;
 using VerifyXunit;
 using Xunit;
@@ -20,12 +22,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
+    [Collection(CouchbaseCollection.Name)]
     public class Couchbase3Tests : TracingIntegrationTest
     {
-        public Couchbase3Tests(ITestOutputHelper output)
+        private readonly CouchbaseFixture _couchbaseFixture;
+
+        public Couchbase3Tests(ITestOutputHelper output, CouchbaseFixture couchbaseFixture)
             : base("Couchbase3", output)
         {
+            _couchbaseFixture = couchbaseFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(couchbaseFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -56,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, retryOnRuntime127957Race: false))
             {
                 var spans = (await agent.WaitForSpansAsync(10, 500))
                            .Where(s => s.Type == "db")
@@ -74,6 +81,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 settings.AddSimpleScrubber("db.couchbase.seed.nodes: localhost", "db.couchbase.seed.nodes: couchbase");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: couchbase");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: couchbase");
+                settings.AddRegexScrubber(new Regex($@"db.couchbase.seed.nodes: {Regex.Escape(_couchbaseFixture.Host)}(?::[0-9]+)?"), "db.couchbase.seed.nodes: couchbase");
+                settings.AddSimpleScrubber($"out.host: {_couchbaseFixture.Host}", "out.host: couchbase");
+                settings.AddRegexScrubber(new Regex($@"peer.service: {Regex.Escape(_couchbaseFixture.Host)}(?::[0-9]+)?"), "peer.service: couchbase");
+                settings.AddSimpleScrubber($"couchbase.operation.bucket: {_couchbaseFixture.BucketName}", "couchbase.operation.bucket: default");
 
                 // theres' a fair amount less in 3.0.7 - fewer spans, different terminology etc
 
@@ -126,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 return "_3_4";
             }
 
-            return string.Empty;
+            return version < new Version("3.8.0") ? string.Empty : "_3_8";
         }
 
         private static Version GetPackageVersion(string packageVersion)
