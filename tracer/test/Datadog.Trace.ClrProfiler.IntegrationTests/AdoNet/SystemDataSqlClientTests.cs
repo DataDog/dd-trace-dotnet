@@ -147,6 +147,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var spans = await agent.WaitForSpansAsync(totalSpanCount, returnAllOperations: true);
 
             Assert.NotEmpty(spans);
+            spans.Should().ContainSingle(s => s.Name == "RunAllAsync<TCommand>", "because the complete initial trace should be received");
             spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
             await telemetry.AssertIntegrationDisabledAsync(IntegrationId.SqlClient);
         }

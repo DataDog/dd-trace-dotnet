@@ -27,6 +27,7 @@ using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using FluentAssertions;
 using HttpMultipartParser;
 using MessagePack; // use nuget MessagePack to deserialize
 using Xunit.Abstractions;
@@ -146,13 +147,15 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="operationName">The integration we're testing</param>
         /// <param name="minDateTime">Minimum time to check for spans from</param>
         /// <param name="returnAllOperations">When true, returns every span regardless of operation name</param>
+        /// <param name="failOnTimeout">When true, fails if the requested number of spans is not received before the timeout.</param>
         /// <returns>The list of spans.</returns>
         public async Task<IImmutableList<MockSpan>> WaitForSpansAsync(
             int count,
             int timeoutInMilliseconds = 20000,
             string operationName = null,
             DateTimeOffset? minDateTime = null,
-            bool returnAllOperations = false)
+            bool returnAllOperations = false,
+            bool failOnTimeout = true)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
             var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
@@ -191,6 +194,13 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 await Task.Delay(250);
+            }
+
+            if (failOnTimeout)
+            {
+                relevantSpans.Count(s => operationName is null || s.Name == operationName)
+                             .Should()
+                             .BeGreaterThanOrEqualTo(count, "because the requested spans should be received before the timeout");
             }
 
             foreach (var headers in TraceRequestHeaders)
