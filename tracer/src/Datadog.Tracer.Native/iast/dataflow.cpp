@@ -10,6 +10,7 @@
 #include "../function_control_wrapper.h"
 #include <fstream>
 #include <chrono>
+#include <thread>
 #include "../../../../shared/src/native-src/com_ptr.h"
 #include "../environment_variables_util.h"
 
@@ -191,9 +192,10 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
     // dereferencing it, instead of leaving Dataflow disabled as intended.
     if (_profiler != nullptr)
     {
+        const int preloadAttempts = 5;
         for (auto const& id : moduleIds)
         {
-            GetModuleInfo(id);
+            GetModuleInfo(id, preloadAttempts);
         }
     }
 }
@@ -507,7 +509,7 @@ ICorProfilerInfo* Dataflow::GetCorProfilerInfo()
     return _profiler;
 }
 
-AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
+AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id, int attempts)
 {
     CSGUARD(_cs);
     auto found = _appDomains.find(id);
@@ -525,8 +527,13 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
     hr = _profiler->GetAppDomainInfo(id, 256, &cchAppDomainName, wszAppDomainName, &pProcID);
     if (FAILED(hr))
     {
+        if (attempts > 1)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            return GetAppDomain(id, attempts - 1);
+        }
         trace::Logger::Error("Dataflow::GetAppDomain -> GetAppDomainInfo failed for AppDomainId ", id);
-        _appDomains[id] = nullptr; // Cache the failure
+        _appDomains[id] = nullptr;
         return nullptr;
     }
 
@@ -535,7 +542,7 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
 
     return info;
 }
-ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
+ModuleInfo* Dataflow::GetModuleInfo(ModuleID id, int attempts)
 {
     CSGUARD(_cs);
     auto found = _modules.find(id);
@@ -573,13 +580,18 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     hr = _profiler->GetAssemblyInfo(assemblyId, pathLen, &pathOut, wszName, &appDomainId, &modIDDummy);
     if (FAILED(hr))
     {
+        if (attempts > 1)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            return GetModuleInfo(id, attempts - 1);
+        }
         trace::Logger::Error("Dataflow::GetModuleInfo -> GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ",
                              assemblyId, " hr:", Hex(hr));
         _modules[id] = nullptr;
         return nullptr;
     }
 
-    AppDomainInfo* appDomain = GetAppDomain(appDomainId);
+    AppDomainInfo* appDomain = GetAppDomain(appDomainId, attempts);
     if (appDomain == nullptr)
     {
         trace::Logger::Error("Dataflow::GetModuleInfo -> GetAppDomain failed for AppDomainId ", appDomainId);
