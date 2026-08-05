@@ -316,10 +316,10 @@ namespace Datadog.Trace.Propagators
 
             SplitTraceStateValues(header!, out var ddValues, out var additionalValues);
 
-            if (ddValues is null or { Length: < 6 })
+            if (ddValues is null or { Length: < 3 })
             {
                 // "dd" section not found or it is too short
-                // shortest valid length is 6 as in "dd=a:b"
+                // shortest valid length is 3 as in "a:b" ("dd=" prefix already stripped)
                 // note for this case the p will be viewed as 0 if added as a span tag
                 return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues);
             }
@@ -331,8 +331,7 @@ namespace Datadog.Trace.Propagators
 
             try
             {
-                // skip "dd="
-                var startIndex = 3;
+                var startIndex = 0;
 
                 // name1:value1;
                 //             ^ endIndex
@@ -469,79 +468,70 @@ namespace Datadog.Trace.Propagators
             }
 
             header = header.Trim();
-            int ddStartIndex;
 
-            if (header.StartsWith("dd=", StringComparison.Ordinal))
-            {
-                ddStartIndex = 0;
-            }
-            else
-            {
-                // if "dd=" is not at start of header, make sure we find the one preceded by comma
-                // in case there is something like "key1=valuedd=whatisthis,dd=..."
-                //                                                          ^ take this one
-                //                                            ^ ignore this one
-                ddStartIndex = header.IndexOf(",dd=", StringComparison.Ordinal);
+            ExtractMember(header, "dd=", out ddValues, out additionalValues);
+        }
 
-                if (ddStartIndex >= 0)
-                {
-                    // if ",dd=" was found, skip the ','
-                    ddStartIndex++;
-                }
-            }
-
-            if (ddStartIndex < 0)
+        private static void ExtractMember(string? header, string prefix, out string? value, out string? remainder)
+        {
+            if (string.IsNullOrEmpty(header))
             {
-                // "dd=" was not found in header, the entire header is "additional values"
-                // example tracestate: "foo=bar"
-                //                      ^^^^^^^
-                ddValues = null;
-                additionalValues = header;
+                value = null;
+                remainder = header;
                 return;
             }
 
-            // search for end of "dd="
-            var ddEndIndex = header.IndexOf(TraceStateHeaderValuesSeparator, ddStartIndex + 3);
+            int startIndex;
 
-            if (ddEndIndex < 0)
+            if (header!.StartsWith(prefix, StringComparison.Ordinal))
             {
-                // "dd=" reaches the end of header
-                ddEndIndex = header.Length;
-            }
-
-            ddValues = header.Substring(ddStartIndex, ddEndIndex - ddStartIndex);
-
-            if (ddStartIndex == 0 && ddEndIndex == header.Length)
-            {
-                // "dd" was the only key, no additional values
-                // example tracestate: "dd=s:1;o:rum"
-                additionalValues = null;
-            }
-            else if (ddStartIndex == 0)
-            {
-                // "dd" first, additional values later
-                // example tracestate: "dd=s:1;o:rum,foo=bar"
-                //                                   ^^^^^^^
-                additionalValues = header.Substring(ddEndIndex + 1, header.Length - ddEndIndex - 1);
-            }
-            else if (ddEndIndex == header.Length)
-            {
-                // additional values first, "dd" later
-                // example tracestate: "foo=bar,dd=s:1;o:rum"
-                //                      ^^^^^^^
-                additionalValues = header.Substring(0, ddStartIndex - 1);
+                startIndex = 0;
             }
             else
             {
-                // additional values on both sides, "dd" in the middle
-                // example tracestate: "foo1=bar1,dd=s:1;o:rum,foo2=bar2" => "foo1=bar1,foo2=bar2"
-                //                      ^^^^^^^^^              ^^^^^^^^^
-                var otherValuesLeft = header.Substring(0, ddStartIndex - 1);
-                var otherValuesRight = header.Substring(ddEndIndex + 1, header.Length - ddEndIndex - 1);
+                startIndex = header.IndexOf("," + prefix, StringComparison.Ordinal);
 
-                var sb = StringBuilderCache.Acquire(otherValuesLeft.Length + otherValuesRight.Length + 1);
-                sb.Append(otherValuesLeft).Append(TraceStateHeaderValuesSeparator).Append(otherValuesRight);
-                additionalValues = StringBuilderCache.GetStringAndRelease(sb);
+                if (startIndex >= 0)
+                {
+                    startIndex++;
+                }
+            }
+
+            if (startIndex < 0)
+            {
+                value = null;
+                remainder = header;
+                return;
+            }
+
+            var endIndex = header.IndexOf(TraceStateHeaderValuesSeparator, startIndex + prefix.Length);
+
+            if (endIndex < 0)
+            {
+                endIndex = header.Length;
+            }
+
+            value = header.Substring(startIndex + prefix.Length, endIndex - startIndex - prefix.Length);
+
+            if (startIndex == 0 && endIndex == header.Length)
+            {
+                remainder = null;
+            }
+            else if (startIndex == 0)
+            {
+                remainder = header.Substring(endIndex + 1, header.Length - endIndex - 1);
+            }
+            else if (endIndex == header.Length)
+            {
+                remainder = header.Substring(0, startIndex - 1);
+            }
+            else
+            {
+                var left = header.Substring(0, startIndex - 1);
+                var right = header.Substring(endIndex + 1, header.Length - endIndex - 1);
+                var sb = StringBuilderCache.Acquire(left.Length + right.Length + 1);
+                sb.Append(left).Append(TraceStateHeaderValuesSeparator).Append(right);
+                remainder = StringBuilderCache.GetStringAndRelease(sb);
             }
         }
 
