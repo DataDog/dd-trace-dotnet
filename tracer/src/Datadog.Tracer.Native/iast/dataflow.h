@@ -65,6 +65,8 @@ namespace iast
         std::map<AppDomainID, AppDomainInfo*> _appDomains;
 
         void LoadSecurityControls();
+
+        ModuleInfo* ResolveModuleInfo(ModuleID id);
     protected:
         bool _setILOnJit = false;
 
@@ -101,8 +103,8 @@ namespace iast
                               MatchResult* excludedMatch = nullptr);
         bool HasMethodAttributeExclusions();
 
-        AppDomainInfo* GetAppDomain(AppDomainID id, int attempts = 1);
-        ModuleInfo* GetModuleInfo(ModuleID moduleId, int attempts = 1);
+        AppDomainInfo* GetAppDomain(AppDomainID id);
+        ModuleInfo* GetModuleInfo(ModuleID moduleId);
         ModuleInfo* GetAspectsModule(AppDomainID id);
         MethodInfo* GetMethodInfo(ModuleID moduleId, mdMethodDef methodId);
 
