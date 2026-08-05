@@ -57,7 +57,7 @@ ConfigurationKeys.ProductName.cs. Without a product name, the keys will go in th
 - `product`: Groups the key into a product-specific partial class (e.g., `OpenTelemetry`)
 - `aliases`: A list of fallback environment variable names checked in order when the primary key is not found
 - `const_name`: Overrides the auto-generated constant name (useful for backward compatibility). For `managed`, the default is PascalCase.
-- `sensitive`: Marks a credential-bearing value. Use `true` only when the configuration value itself must never be recorded in telemetry. The value must be `true` or `false` (case-insensitive); any other value is a YAML parse error.
+- `sensitive`: Marks a value for redaction in configuration telemetry. Use `true` whenever the configured value should not be recorded, including structured values that may contain sensitive data. The value must be `true` or `false` (case-insensitive); any other value is a YAML parse error.
 
 These fields are mandatory to keep the configuration registry complete and to ensure consistent behavior and documentation across products.
 
@@ -182,7 +182,7 @@ The codebase includes Roslyn analyzers that enforce the use of configuration key
 
 - **`ConfigurationBuilderWithKeysAnalyzer`** - Enforces that `ConfigurationBuilder.WithKeys()` method calls only accept string constants from `ConfigurationKeys` or `PlatformKeys` classes, not hardcoded strings or variables.
 
-For keys marked `sensitive: true`, the analyzer also enforces telemetry redaction at compile time. Read a sensitive string through `AsRedactedString()` or `AsRedactedStringResult()`. Use `AsRedactedDictionaryResult()` for dictionary-valued settings, or `AsStringResult(..., recordValue: false)` when the explicit `false` is a compile-time constant. Other accessors and storing the intermediate `WithKeys()` result are rejected because they could record the value.
+For keys marked `sensitive: true`, the analyzer also enforces telemetry redaction at compile time. Read a string through `AsRedactedString()` or `AsRedactedStringResult()`. Use `AsRedactedDictionaryResult()` for dictionary-valued settings, or `AsStringResult(..., recordValue: false)` when the explicit `false` is a compile-time constant. Other accessors and storing the intermediate `WithKeys()` result are rejected because they could record the value.
 
 ```csharp
 var apiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
@@ -192,13 +192,12 @@ var headers = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHe
                     .AsRedactedDictionaryResult(separator: '=');
 ```
 
-Aliases use the normal `WithKeys()` fallback chain. When a sensitive primary key falls back to an alias, the selected value remains redacted because the redacted accessor records no value in telemetry.
+Aliases use the normal `WithKeys()` fallback chain. When a key marked for redaction falls back to an alias, the selected value remains redacted because the redacted accessor records no value in telemetry.
 
 ##### Diagnostic rules:
 - **DD0007**: Triggers when hardcoded string literals are used instead of configuration key constants
 - **DD0008**: Triggers when variables or expressions are used instead of configuration key constants
-- **DD0015**: Triggers when a sensitive configuration key is not read through `AsRedactedString`, `AsRedactedStringResult`, `AsRedactedDictionaryResult`, or `AsStringResult` with compile-time `recordValue: false`
-- **DD0016**: Triggers when the analyzer cannot load exactly one valid `supported-configurations.yaml` additional file
+- **DD0015**: Triggers when a configuration key marked for telemetry redaction is not read through `AsRedactedString`, `AsRedactedStringResult`, `AsRedactedDictionaryResult`, or `AsStringResult` with compile-time `recordValue: false`
 
 #### 2. EnvironmentGetEnvironmentVariableAnalyzer
 

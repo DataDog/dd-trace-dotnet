@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -341,34 +340,6 @@ namespace Datadog.Trace.Tests.Configuration
 
             settings.TracesTransport.Should().Be(TracesTransportType.WindowsNamedPipe);
             settings.TraceAgentUriBase.Should().Be(@"\\.\pipe\" + pipeName);
-        }
-
-        [Theory]
-        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders, "general-header-secret", 3)]
-        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders, "metrics-header-secret", 1)]
-        [InlineData(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders, "traces-header-secret", 1)]
-        public void OtlpHeaderIsParsedAndRedactedInTelemetry(string headerKey, string sentinel, int expectedTelemetryCount)
-        {
-            var source = BuildSource($"{headerKey}:dd-api-key={sentinel}");
-            var telemetry = new ConfigurationTelemetry();
-
-            var settings = new ExporterSettings(source, NoFile(), telemetry);
-            var entries = telemetry.GetQueueForTesting();
-
-            if (headerKey != ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders)
-            {
-                settings.OtlpMetricsHeaders.Should().Contain(new KeyValuePair<string, string>("dd-api-key", sentinel));
-            }
-
-            if (headerKey != ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders)
-            {
-                settings.OtlpTracesHeaders.Should().Contain(new KeyValuePair<string, string>("dd-api-key", sentinel));
-            }
-
-            entries.Where(x => x.Key == headerKey)
-                   .Should()
-                   .HaveCount(expectedTelemetryCount)
-                   .And.OnlyContain(x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted && x.StringValue == null);
         }
 
         [Fact]

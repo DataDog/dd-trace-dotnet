@@ -114,6 +114,9 @@
 
   <ItemGroup>
     <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
+    <AdditionalFiles Include="Configuration\supported-configurations.yaml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
   </ItemGroup>
 
   <!-- Below this point is reserved for vendor items -->

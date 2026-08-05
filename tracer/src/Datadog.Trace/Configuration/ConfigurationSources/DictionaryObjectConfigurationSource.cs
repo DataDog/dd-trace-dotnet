@@ -129,12 +129,15 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
         => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
 
     public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
+        => GetDictionary(key, telemetry, validator, allowOptionalMappings, separator, recordValue: true);
+
+    public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator, bool recordValue)
     {
         if (TryGetValue(key, out var objValue) && objValue is not null)
         {
             if (objValue is not IDictionary<string, string> value)
             {
-                telemetry.Record(key, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
+                telemetry.Record(key, objValue.ToString(), recordValue, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
                 return ConfigurationResult<IDictionary<string, string>>.ParseFailure();
             }
 
@@ -157,11 +160,11 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
 
             if (validator is null || validator(value))
             {
-                telemetry.Record(key, dictAsString, recordValue: true, Origin);
+                telemetry.Record(key, dictAsString, recordValue, Origin);
                 return ConfigurationResult<IDictionary<string, string>>.Valid(value, dictAsString);
             }
 
-            telemetry.Record(key, dictAsString, recordValue: true, Origin, TelemetryErrorCode.FailedValidation);
+            telemetry.Record(key, dictAsString, recordValue, Origin, TelemetryErrorCode.FailedValidation);
             return ConfigurationResult<IDictionary<string, string>>.Invalid(value);
         }
 

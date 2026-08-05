@@ -9,6 +9,7 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.SourceGenerators.Helpers;
 using Datadog.Trace.Tools.Analyzers.Helpers;
 using Microsoft.CodeAnalysis;
@@ -16,6 +17,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
 {
@@ -26,8 +28,6 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class ConfigurationBuilderWithKeysAnalyzer : DiagnosticAnalyzer
     {
-        private const string SupportedConfigurationsFileName = "supported-configurations.yaml";
-
         /// <summary>
         /// Diagnostic descriptor for when WithKeys is called with a hardcoded string instead of a constant from PlatformKeys or ConfigurationKeys.
         /// </summary>
@@ -61,21 +61,13 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             isEnabledByDefault: true,
             description: "Sensitive configuration values must not be recorded in configuration telemetry.");
 
-        private static readonly DiagnosticDescriptor SensitiveConfigurationMetadataRule = new(
-            id: "DD0016",
-            title: "Load sensitive configuration metadata",
-            messageFormat: "The analyzer requires exactly one readable and valid supported-configurations.yaml additional file",
-            category: "Usage",
-            defaultSeverity: DiagnosticSeverity.Error,
-            isEnabledByDefault: true,
-            description: "Sensitive configuration metadata must be available so configuration telemetry redaction can be enforced.",
-            customTags: WellKnownDiagnosticTags.CompilationEnd);
+        private static SensitiveKeysCache? _sensitiveKeysCache;
 
         /// <summary>
         /// Gets the supported diagnostics
         /// </summary>
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            [UseConfigurationConstantsRule, UseConfigurationConstantsNotVariablesRule, RedactSensitiveConfigurationRule, SensitiveConfigurationMetadataRule, Diagnostics.MissingRequiredType];
+            [UseConfigurationConstantsRule, UseConfigurationConstantsNotVariablesRule, RedactSensitiveConfigurationRule, Diagnostics.MissingRequiredType];
 
         /// <summary>
         /// Initialize the analyzer
@@ -107,12 +99,7 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                     return;
                 }
 
-                if (!TryGetSensitiveKeys(compilationContext.Options, compilationContext.CancellationToken, out var sensitiveKeys))
-                {
-                    compilationContext.RegisterCompilationEndAction(
-                        c => c.ReportDiagnostic(Diagnostic.Create(SensitiveConfigurationMetadataRule, Location.None)));
-                    return;
-                }
+                TryGetSensitiveKeys(compilationContext.Options, compilationContext.CancellationToken, out var sensitiveKeys);
 
                 var targetTypes = new TargetTypeSymbols(configurationBuilder, configurationKeys, platformKeys);
 
@@ -194,9 +181,10 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                     }
                     else if (field?.ConstantValue is string key
                           && sensitiveKeys.Contains(key)
-                          && !IsRedactedRead(invocation, context.SemanticModel, context.CancellationToken))
+                          && !IsRedactedRead(invocation, context.SemanticModel, context.CancellationToken, out var accessorInvocation))
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(RedactSensitiveConfigurationRule, memberAccess.GetLocation(), key));
+                        var location = accessorInvocation is null ? invocation.GetLocation() : GetInvocationLocation(accessorInvocation);
+                        context.ReportDiagnostic(Diagnostic.Create(RedactSensitiveConfigurationRule, location, key));
                     }
 
                     break;
@@ -254,10 +242,15 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             return false;
         }
 
-        private static bool IsRedactedRead(InvocationExpressionSyntax withKeysInvocation, SemanticModel semanticModel, CancellationToken cancellationToken)
+        private static bool IsRedactedRead(
+            InvocationExpressionSyntax withKeysInvocation,
+            SemanticModel semanticModel,
+            CancellationToken cancellationToken,
+            out InvocationExpressionSyntax? accessorInvocation)
         {
             if (semanticModel.GetOperation(withKeysInvocation, cancellationToken) is not IInvocationOperation withKeysOperation)
             {
+                accessorInvocation = null;
                 return false;
             }
 
@@ -267,8 +260,22 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                 current = current.Parent;
             }
 
-            if (current.Parent is not IInvocationOperation accessorOperation
-             || accessorOperation.TargetMethod.IsStatic
+            IInvocationOperation? accessorOperation = current.Parent as IInvocationOperation;
+            if (accessorOperation is null
+             && current.Parent is IArgumentOperation argumentOperation
+             && argumentOperation.Parent is IInvocationOperation extensionAccessorOperation)
+            {
+                accessorOperation = extensionAccessorOperation;
+            }
+
+            if (accessorOperation is null)
+            {
+                accessorInvocation = null;
+                return false;
+            }
+
+            accessorInvocation = accessorOperation.Syntax as InvocationExpressionSyntax;
+            if (accessorOperation.TargetMethod.IsStatic
              || !SymbolEqualityComparer.Default.Equals(accessorOperation.TargetMethod.ContainingType, withKeysOperation.TargetMethod.ReturnType))
             {
                 return false;
@@ -288,13 +295,21 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
             return recordValueArgument?.Value.ConstantValue is { HasValue: true, Value: false };
         }
 
+        private static Location GetInvocationLocation(InvocationExpressionSyntax invocation)
+        {
+            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+            {
+                return Location.Create(invocation.SyntaxTree, TextSpan.FromBounds(memberAccess.Name.SpanStart, invocation.Span.End));
+            }
+
+            return invocation.GetLocation();
+        }
+
         private static bool TryGetSensitiveKeys(AnalyzerOptions options, CancellationToken cancellationToken, out ImmutableHashSet<string> sensitiveKeys)
         {
-            var files = options.AdditionalFiles
-                               .Where(x => Path.GetFileName(x.Path).Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
-                               .Take(2)
-                               .ToArray();
-            if (files.Length != 1)
+            var file = options.AdditionalFiles.FirstOrDefault(
+                x => Path.GetFileName(x.Path).Equals(Constants.SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase));
+            if (file is null)
             {
                 sensitiveKeys = ImmutableHashSet<string>.Empty;
                 return false;
@@ -302,11 +317,18 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
 
             try
             {
-                var content = files[0].GetText(cancellationToken)?.ToString();
+                var content = file.GetText(cancellationToken)?.ToString();
                 if (string.IsNullOrEmpty(content))
                 {
                     sensitiveKeys = ImmutableHashSet<string>.Empty;
                     return false;
+                }
+
+                var cached = Volatile.Read(ref _sensitiveKeysCache);
+                if (cached is not null && cached.Content == content)
+                {
+                    sensitiveKeys = cached.Keys;
+                    return true;
                 }
 
                 var configurations = YamlReader.ParseSupportedConfigurations(content!).Configurations;
@@ -316,9 +338,17 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                     return false;
                 }
 
-                sensitiveKeys = configurations.Where(x => x.Value.Sensitive)
-                                              .Select(x => x.Key)
-                                              .ToImmutableHashSet(StringComparer.Ordinal);
+                var builder = ImmutableHashSet.CreateBuilder<string>(StringComparer.Ordinal);
+                foreach (var configuration in configurations)
+                {
+                    if (configuration.Value.Sensitive)
+                    {
+                        builder.Add(configuration.Key);
+                    }
+                }
+
+                sensitiveKeys = builder.ToImmutable();
+                Interlocked.Exchange(ref _sensitiveKeysCache, new SensitiveKeysCache(content!, sensitiveKeys));
                 return true;
             }
             catch (OperationCanceledException)
@@ -366,6 +396,19 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                 ConfigurationKeys = configurationKeys;
                 PlatformKeys = platformKeys;
             }
+        }
+
+        private sealed class SensitiveKeysCache
+        {
+            public SensitiveKeysCache(string content, ImmutableHashSet<string> keys)
+            {
+                Content = content;
+                Keys = keys;
+            }
+
+            public string Content { get; }
+
+            public ImmutableHashSet<string> Keys { get; }
         }
     }
 }

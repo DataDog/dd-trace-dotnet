@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
-using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration.Telemetry;
 
@@ -521,8 +520,8 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
         private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(bool allowOptionalMappings, char separator, bool recordValue = true)
         {
             var source = Source;
-            IConfigurationTelemetry telemetry = recordValue ? Telemetry : new RedactedConfigurationTelemetry(Telemetry);
-            return GetResultWithFallback(key => source.GetDictionary(key, telemetry, validator: null, allowOptionalMappings, separator));
+            var telemetry = Telemetry;
+            return GetResultWithFallback(key => source.GetDictionary(key, telemetry, validator: null, allowOptionalMappings, separator, recordValue));
         }
 
         private ConfigurationResult<IDictionary<string, string>> GetDictionaryResult(Func<string, IDictionary<string, string>> parser)
@@ -558,38 +557,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source, IConf
             }
 
             return result;
-        }
-
-        private sealed class RedactedConfigurationTelemetry(IConfigurationTelemetry telemetry) : IConfigurationTelemetry
-        {
-            private readonly IConfigurationTelemetry _telemetry = telemetry;
-
-            public void Record(string key, string? value, bool recordValue, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-                => _telemetry.Record(key, value, recordValue: false, origin, error);
-
-            public void Record(string key, bool value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-                => _telemetry.Record(key, value, origin, error);
-
-            public void Record(string key, double value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-                => _telemetry.Record(key, value, origin, error);
-
-            public void Record(string key, int value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-                => _telemetry.Record(key, value, origin, error);
-
-            public void Record(string key, double? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-                => _telemetry.Record(key, value, origin, error);
-
-            public void Record(string key, int? value, ConfigurationOrigins origin, TelemetryErrorCode? error = null)
-                => _telemetry.Record(key, value, origin, error);
-
-            public ICollection<ConfigurationKeyValue>? GetIncrementalData()
-                => _telemetry.GetIncrementalData();
-
-            public void CopyTo(IConfigurationTelemetry destination)
-                => _telemetry.CopyTo(destination);
-
-            public ICollection<ConfigurationKeyValue>? GetFullData()
-                => _telemetry.GetFullData();
         }
     }
 
