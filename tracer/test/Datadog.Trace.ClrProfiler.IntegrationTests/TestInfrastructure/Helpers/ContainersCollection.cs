@@ -89,6 +89,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     {
         public const string Name = "CosmosDbVnext";
     }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class LocalStackCollection : ICollectionFixture<LocalStackFixture>
+    {
+        public const string Name = "LocalStack";
+    }
 }
 
 #pragma warning restore SA1649 // File name should match first type name
