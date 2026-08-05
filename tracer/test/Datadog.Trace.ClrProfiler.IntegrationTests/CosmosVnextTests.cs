@@ -126,6 +126,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             settings.AddSimpleScrubber("out.host: https://localhost:00000/", "out.host: https://cosmosdb-emulator:8081/");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: cosmosdb-emulator");
             settings.AddSimpleScrubber($"out.host: {_cosmosDbFixture.Host}", "out.host: cosmosdb-emulator");
+            settings.AddSimpleScrubber($"out.port: {_cosmosDbFixture.Port}", "out.port: 8081");
             settings.AddSimpleScrubber("peer.service: localhost", "peer.service: cosmosdb-emulator");
             settings.AddSimpleScrubber($"peer.service: {_cosmosDbFixture.Host}", "peer.service: cosmosdb-emulator");
             settings.AddRegexScrubber(new(@"http\.useragent: cosmos-netstandard-sdk\/[^\,]+", VerifyHelper.RegOptions), "http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|");
