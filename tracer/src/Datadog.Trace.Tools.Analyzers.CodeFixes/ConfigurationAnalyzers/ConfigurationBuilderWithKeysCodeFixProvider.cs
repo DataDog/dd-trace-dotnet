@@ -15,9 +15,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
 {
-    /// <summary>
-    /// Replaces unsafe configuration string reads with their redacted equivalent.
-    /// </summary>
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConfigurationBuilderWithKeysCodeFixProvider))]
     [Shared]
     public class ConfigurationBuilderWithKeysCodeFixProvider : CodeFixProvider

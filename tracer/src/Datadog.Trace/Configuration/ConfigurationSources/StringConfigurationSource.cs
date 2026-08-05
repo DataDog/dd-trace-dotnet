@@ -236,7 +236,6 @@ namespace Datadog.Trace.Configuration
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings, separator, recordValue: true);
 
-        /// <inheritdoc />
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator, bool recordValue)
         {
             var value = GetString(key);

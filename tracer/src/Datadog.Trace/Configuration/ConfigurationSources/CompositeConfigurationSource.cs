@@ -195,7 +195,6 @@ namespace Datadog.Trace.Configuration
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator)
             => GetDictionary(key, telemetry, validator, parser: null, allowOptionalMappings, separator, recordValue: true);
 
-        /// <inheritdoc />
         public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, char separator, bool recordValue)
             => GetDictionary(key, telemetry, validator, parser: null, allowOptionalMappings, separator, recordValue);
 
@@ -274,7 +273,7 @@ namespace Datadog.Trace.Configuration
 
             if (result.IsValid && !isLastFound)
             {
-                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue: true, origin);
+                telemetry.Record(key, result.TelemetryOverride ?? result.Result?.ToString(), recordValue, origin);
             }
 
             return result;

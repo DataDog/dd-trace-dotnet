@@ -26,6 +26,34 @@ public class ConfigurationBuilderTests
         IConfigurationSource GetSource(IDictionary<string, object> collection);
     }
 
+    public class RedactedStringTests
+    {
+        [Fact]
+        public void AsRedactedStringRedactsUnexpectedObjectTypes()
+        {
+            const string key = "key";
+            var telemetry = new ConfigurationTelemetry();
+            var source = new DictionaryObjectConfigurationSource(
+                new Dictionary<string, object> { [key] = new SensitiveValue() });
+
+            _ = new ConfigurationBuilder(source, telemetry)
+               .WithKeys(key)
+               .AsRedactedString();
+
+            telemetry.GetQueueForTesting()
+                     .Should()
+                     .ContainSingle(
+                          x => x.Key == key
+                            && x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted
+                            && x.StringValue == null);
+        }
+
+        private sealed class SensitiveValue
+        {
+            public override string ToString() => "secret";
+        }
+    }
+
     public class RedactedDictionaryTests
     {
         [Fact]

@@ -39,7 +39,7 @@ internal class DictionaryObjectConfigurationSource : IConfigurationSource
         {
             if (objValue is not string value)
             {
-                telemetry.Record(key, objValue.ToString(), recordValue: true, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
+                telemetry.Record(key, objValue.ToString(), recordValue, Origin, TelemetryErrorCode.UnexpectedTypeInConfigurationSource);
                 return ConfigurationResult<string>.ParseFailure();
             }
 
