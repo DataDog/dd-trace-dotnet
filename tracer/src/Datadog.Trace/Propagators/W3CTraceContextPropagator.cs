@@ -481,54 +481,53 @@ namespace Datadog.Trace.Propagators
                 return;
             }
 
-            int startIndex;
+            var traceState = header!;
+            var members = new StringSegment(traceState);
+            var startIndex = 0;
+            int endIndex;
 
-            if (header!.StartsWith(prefix, StringComparison.Ordinal))
+            while (true)
             {
-                startIndex = 0;
-            }
-            else
-            {
-                startIndex = header.IndexOf("," + prefix, StringComparison.Ordinal);
+                endIndex = members.IndexOf(TraceStateHeaderValuesSeparator, startIndex);
 
-                if (startIndex >= 0)
+                if (endIndex < 0)
                 {
-                    startIndex++;
+                    endIndex = members.Length;
                 }
+
+                if (members.Slice(startIndex, endIndex - startIndex).StartsWith(prefix))
+                {
+                    break;
+                }
+
+                if (endIndex == members.Length)
+                {
+                    value = null;
+                    remainder = traceState;
+                    return;
+                }
+
+                startIndex = endIndex + 1;
             }
 
-            if (startIndex < 0)
-            {
-                value = null;
-                remainder = header;
-                return;
-            }
+            value = traceState.Substring(startIndex + prefix.Length, endIndex - startIndex - prefix.Length);
 
-            var endIndex = header.IndexOf(TraceStateHeaderValuesSeparator, startIndex + prefix.Length);
-
-            if (endIndex < 0)
-            {
-                endIndex = header.Length;
-            }
-
-            value = header.Substring(startIndex + prefix.Length, endIndex - startIndex - prefix.Length);
-
-            if (startIndex == 0 && endIndex == header.Length)
+            if (startIndex == 0 && endIndex == traceState.Length)
             {
                 remainder = null;
             }
             else if (startIndex == 0)
             {
-                remainder = header.Substring(endIndex + 1, header.Length - endIndex - 1);
+                remainder = traceState.Substring(endIndex + 1, traceState.Length - endIndex - 1);
             }
-            else if (endIndex == header.Length)
+            else if (endIndex == traceState.Length)
             {
-                remainder = header.Substring(0, startIndex - 1);
+                remainder = traceState.Substring(0, startIndex - 1);
             }
             else
             {
-                var left = header.Substring(0, startIndex - 1);
-                var right = header.Substring(endIndex + 1, header.Length - endIndex - 1);
+                var left = traceState.Substring(0, startIndex - 1);
+                var right = traceState.Substring(endIndex + 1, traceState.Length - endIndex - 1);
                 var sb = StringBuilderCache.Acquire(left.Length + right.Length + 1);
                 sb.Append(left).Append(TraceStateHeaderValuesSeparator).Append(right);
                 remainder = StringBuilderCache.GetStringAndRelease(sb);
