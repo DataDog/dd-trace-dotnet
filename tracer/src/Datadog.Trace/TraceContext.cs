@@ -371,19 +371,28 @@ namespace Datadog.Trace
                 Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 
-            // set Knuth sampling rate as a propagated tag for agent and rule-based sampling,
-            // and (for OTel interop) derive/erase the "ot=" tracestate rv/th sub-keys.
-            if (rate is { } samplingRate && samplingRate is >= 0f and <= 1f
-                                          && mechanism is Sampling.SamplingMechanism.AgentRate
-                                                      or Sampling.SamplingMechanism.LocalTraceSamplingRule
-                                                      or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
-                                                      or Sampling.SamplingMechanism.RemoteUserSamplingRule
-                                                      or Sampling.SamplingMechanism.Default)
+            if (rate is { } samplingRate && samplingRate is >= 0f and <= 1f)
             {
-                // format with up to 6 decimal digits, no trailing zeros (per RFC)
-                Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("0.######", CultureInfo.InvariantCulture));
+                // set Knuth sampling rate as a propagated tag for agent and rule-based sampling only:
+                // "Default" means no agent-configured rate has been received yet (client-side fallback),
+                // and must not propagate as _dd.p.ksr, to stay consistent with other tracers.
+                if (mechanism is Sampling.SamplingMechanism.AgentRate
+                              or Sampling.SamplingMechanism.LocalTraceSamplingRule
+                              or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
+                              or Sampling.SamplingMechanism.RemoteUserSamplingRule)
+                {
+                    // format with up to 6 decimal digits, no trailing zeros (per RFC)
+                    Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("0.######", CultureInfo.InvariantCulture));
+                }
 
-                if (isLocalRoot && sample is { } didSample && RootSpan is { } rootSpan)
+                // (for OTel interop) derive/erase the "ot=" tracestate rv/th sub-keys on every root
+                // probability decision, including the "Default" mechanism fallback rate.
+                if (isLocalRoot && sample is { } didSample && RootSpan is { } rootSpan
+                                && mechanism is Sampling.SamplingMechanism.AgentRate
+                                             or Sampling.SamplingMechanism.LocalTraceSamplingRule
+                                             or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
+                                             or Sampling.SamplingMechanism.RemoteUserSamplingRule
+                                             or Sampling.SamplingMechanism.Default)
                 {
                     var h = SamplingHelpers.ComputeKnuthHash(rootSpan.TraceId128.Lower);
                     var rv = (~h) >> 8;
