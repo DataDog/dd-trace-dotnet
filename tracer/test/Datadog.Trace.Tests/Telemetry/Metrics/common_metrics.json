@@ -54,6 +54,41 @@
       "user_tags": []
     }
   },
+  "debugger": {
+    "events.skipped": {
+      "tags": [
+        "reason",
+        "event_type"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of debugger events skipped before capture, tagged by reason and event type",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "events.dropped": {
+      "tags": [
+        "reason",
+        "event_type"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of debugger events dropped after capture, tagged by reason and event type",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "capture.incomplete": {
+      "tags": [
+        "event_type",
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of incomplete debugger captures, tagged by event type and reason",
+      "send_to_user": false,
+      "user_tags": []
+    }
+  },
   "general": {
     "init_time": {
       "tags": [

@@ -238,6 +238,23 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<MetricTags.DebuggerMemoryPressureDurationBucket>("memory_pressure.duration", isCommon: true, NS.LiveDebugger)] DebuggerMemoryPressureDuration,
 #endregion
+#region Debugger Namespace
+
+    /// <summary>
+    /// The number of debugger events skipped before capture, tagged by reason and event type.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerEventsSkippedReason, MetricTags.DebuggerEventType>("events.skipped", isCommon: true, NS.Debugger)] DebuggerEventsSkipped,
+
+    /// <summary>
+    /// The number of debugger events dropped after capture, tagged by reason and event type.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerEventsDroppedReason, MetricTags.DebuggerEventType>("events.dropped", isCommon: true, NS.Debugger)] DebuggerEventsDropped,
+
+    /// <summary>
+    /// The number of incomplete debugger captures, tagged by event type and reason.
+    /// </summary>
+    [TelemetryMetric<MetricTags.DebuggerEventType, MetricTags.DebuggerCaptureIncompleteReason>("capture.incomplete", isCommon: true, NS.Debugger)] DebuggerCaptureIncomplete,
+#endregion
 #region AppSec Namespace
 
     /// <summary>
