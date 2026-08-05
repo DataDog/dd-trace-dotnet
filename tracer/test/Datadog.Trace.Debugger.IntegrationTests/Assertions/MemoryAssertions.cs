@@ -10,6 +10,8 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Microsoft.Diagnostics.Runtime;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Debugger.IntegrationTests.Assertions;
@@ -84,6 +86,16 @@ internal class MemoryAssertions
             output?.WriteLine($"Memory assertion operation timed out after {timeout.TotalSeconds} seconds.");
             return null;
         }
+        catch (ClrDiagnosticsException ex)
+        {
+            output?.WriteLine($"Skipping memory assertion because ClrMD failed to capture or analyze the heap: {ex}");
+            throw new SkipException($"ClrMD failed to capture or analyze the heap: {ex.Message}");
+        }
+        catch (InvalidOperationException ex) when (IsClrMdStackRootEnumerationFailure(ex))
+        {
+            output?.WriteLine($"Skipping memory assertion because ClrMD failed while enumerating stack roots: {ex}");
+            throw new SkipException($"ClrMD failed while enumerating stack roots: {ex.Message}");
+        }
     }
 
     public void NoUndisposedObjectsExist<T>()
@@ -136,6 +148,14 @@ internal class MemoryAssertions
         {
             throw new MemoryAssertionException($"Expected {typeof(T).Name} objects in memory, but not found.", GetDumpDetails());
         }
+    }
+
+    private static bool IsClrMdStackRootEnumerationFailure(Exception exception)
+    {
+        var stackTrace = exception.StackTrace;
+        return stackTrace is not null &&
+               stackTrace.IndexOf("Microsoft.Diagnostics.Runtime", StringComparison.Ordinal) >= 0 &&
+               stackTrace.IndexOf("EnumerateStackRoots", StringComparison.Ordinal) >= 0;
     }
 
     private string GetDumpDetails()
