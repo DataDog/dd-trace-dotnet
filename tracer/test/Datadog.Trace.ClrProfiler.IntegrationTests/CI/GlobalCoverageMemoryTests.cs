@@ -151,6 +151,19 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
         }
     }
 
+    private static string? GetFileName(string? path)
+    {
+        if (path is null)
+        {
+            return null;
+        }
+
+        // CI builds sample PDBs on Windows before consuming them on Linux, so their document
+        // names can use either directory separator regardless of the current operating system.
+        var lastSeparator = Math.Max(path.LastIndexOf('/'), path.LastIndexOf('\\'));
+        return path[(lastSeparator + 1)..];
+    }
+
     private void RunStress(int expectedCaseCount)
     {
         var environmentHelper = new EnvironmentHelper(SampleName, typeof(GlobalCoverageMemoryTests), _output);
@@ -347,7 +360,7 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
         coverage!.GetTotalPercentage().Should().BeGreaterThan(0);
         var sampleFile = coverage.Components.SelectMany(static component => component.Files)
                                  .Should()
-                                 .ContainSingle(file => string.Equals(Path.GetFileName(file.Path), SampleSourceFileName, StringComparison.OrdinalIgnoreCase))
+                                 .ContainSingle(file => string.Equals(GetFileName(file.Path), SampleSourceFileName, StringComparison.OrdinalIgnoreCase))
                                  .Subject;
         AssertLine(sampleFile.ExecutableBitmap, CommonCoverageLine, expected: true);
         AssertLine(sampleFile.ExecutedBitmap, CommonCoverageLine, expected: true);
@@ -370,7 +383,7 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
                                   .Subject;
         var sourceClasses = XDocument.Load(reportPath)
                                      .Descendants("class")
-                                     .Where(element => string.Equals(Path.GetFileName((string?)element.Attribute("filename")), SampleSourceFileName, StringComparison.OrdinalIgnoreCase))
+                                     .Where(element => string.Equals(GetFileName((string?)element.Attribute("filename")), SampleSourceFileName, StringComparison.OrdinalIgnoreCase))
                                      .ToArray();
         sourceClasses.Should().NotBeEmpty();
         var lines = sourceClasses.SelectMany(static element => element.Descendants("line"))

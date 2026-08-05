@@ -20,4 +20,17 @@
     </PackageReference>
   </ItemGroup>
 
+  <Target Name="CodeCoverageFixTarget" AfterTargets="Build" Condition="'$(TargetFramework)' != '' AND '$(ManuallyCopyCodeCoverageFiles)' != 'false'">
+    <Message Importance="High" Text="Fixing Code Coverage: $(TargetFramework)" />
+    <CallTarget Targets="ComputeFilesToPublish" />
+    <CallTarget Targets="CopyCoverletDataCollectorFiles" />
+
+    <!-- Windows integration tests consume the standalone build output instead of the publish output.
+         Keep the collector beside the test assembly so direct VSTest execution can discover it. -->
+    <ItemGroup>
+      <PublishedTraceDataCollectorArtifacts Include="$(PublishDir)**\*.*" />
+    </ItemGroup>
+    <Move SourceFiles="@(PublishedTraceDataCollectorArtifacts)" DestinationFolder="$(OutputPath)\%(RecursiveDir)" />
+  </Target>
+
 </Project>
