@@ -616,6 +616,27 @@
     ]
   },
   {
+    "IntegrationName": "NUnitGlobalCoverageMemoryCoverlet",
+    "SampleProjectName": "Samples.NUnitGlobalCoverageMemory",
+    "NugetPackageSearchName": "coverlet.collector",
+    "MinVersion": "3.0.0",
+    "MaxVersionExclusive": "11.0.0",
+    "SpecificVersions": [
+      "3.*.*",
+      "6.*.*",
+      "8.*.*",
+      "10.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "IncludeOnlyTargetFrameworks": [
+          "net8.0",
+          "net10.0"
+        ]
+      }
+    ]
+  },
+  {
     "IntegrationName": "NUnitRetries",
     "SampleProjectName": "Samples.NUnitTestsRetries",
     "NugetPackageSearchName": "NUnit",
