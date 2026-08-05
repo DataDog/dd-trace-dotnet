@@ -14,11 +14,6 @@ RuntimeInformation MakeTestRuntimeInformation()
 }
 } // namespace
 
-// Regression test for APPSEC-69538: a module already loaded before the Dataflow instance was
-// constructed used to sit unresolved in memory until the next ModuleLoaded event, so the first
-// GetModuleInfo lookup for it (e.g. via GetAspectsModule, reached from inside a JIT callback)
-// could call GetModuleInfo2 in an unsafe context and crash the runtime. Preloaded modules must
-// now be resolved eagerly, during construction.
 TEST(DataflowTests, PreloadedModulesAreResolvedEagerlyAtConstruction)
 {
     MockCorProfilerInfo mockProfiler;
