@@ -1400,22 +1400,22 @@ TEST_F(ConfigurationTest, CheckForceHttpSamplingIsEnabledIfEnvVarIsEnabled)
 
 // Mirrors Configuration::DefaultLibrariesInfoCacheStartTimeout, which is private
 #if defined(DD_SANITIZERS)
-static constexpr auto ExpectedDefaultLibrariesInfoCacheStartTimeout = 10'000ms;
+static constexpr auto ExpectedDefaultLibrariesInfoCacheStartTimeout = 10s;
 #else
-static constexpr auto ExpectedDefaultLibrariesInfoCacheStartTimeout = 2'000ms;
+static constexpr auto ExpectedDefaultLibrariesInfoCacheStartTimeout = 2s;
 #endif
 
 #if defined(DD_SANITIZERS)
 TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutWhenEnvVarNotSetUnderSanitizers)
 {
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 10ms);
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 10s);
 }
 #else
 TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutWhenEnvVarNotSet)
 {
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 2ms);
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 2s);
 }
 #endif
 
@@ -1424,7 +1424,7 @@ TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutWhenEnvVarIsCorrect
     // Deliberately not one of the defaults, so the test fails if the env var is ignored
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LibrariesInfoCacheStartTimeout, WStr("4200"));
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 4'200ms);
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 4200ms);
 }
 
 TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutIsDefaultWhenEnvVarIsNotParsable)
