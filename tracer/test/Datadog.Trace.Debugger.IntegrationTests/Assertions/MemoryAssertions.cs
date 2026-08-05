@@ -10,9 +10,9 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Microsoft.Diagnostics.Runtime;
 using Xunit;
 using Xunit.Abstractions;
+using ClrDiagnosticsException = Microsoft.Diagnostics.Runtime.ClrDiagnosticsException;
 
 namespace Datadog.Trace.Debugger.IntegrationTests.Assertions;
 
