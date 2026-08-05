@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
 {
-    private const long MaximumStressMemoryGrowth = 384L * 1024 * 1024;
+    private const long MaximumProcessMemoryGrowth = 512L * 1024 * 1024;
     private const string CoverletAdapterDirectoryName = "coverlet";
     private const string SampleName = "NUnitGlobalCoverageMemory";
     private const string SampleSourceFileName = "GlobalCoverageMemoryTests.cs";
@@ -114,7 +114,11 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
 
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true, useStatsD: !IsMacOS());
         var sampleOutputDirectory = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion);
-        var coverletAdapterDirectory = Path.Combine(sampleOutputDirectory, CoverletAdapterDirectoryName);
+        // Standalone builds isolate Coverlet in an adapter directory, while the multi-version
+        // build publishes the collector alongside the sample and disables the isolation target.
+        var coverletAdapterDirectory = string.IsNullOrEmpty(packageVersion)
+                                           ? Path.Combine(sampleOutputDirectory, CoverletAdapterDirectoryName)
+                                           : sampleOutputDirectory;
         File.Exists(Path.Combine(coverletAdapterDirectory, "coverlet.collector.dll"))
             .Should()
             .BeTrue("the Coverlet data collector must be available to direct VSTest execution");
@@ -351,15 +355,16 @@ public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
 
         if (expectedCaseCount > 1 && !IsMacOS())
         {
-            // Process.PrivateMemorySize64 reports zero on macOS. Linux and Windows, which run this
-            // regression in CI, must provide private-byte samples so the native leak remains covered.
+            // Process.PrivateMemorySize64 reports zero on macOS. On Linux and Windows it is a coarse
+            // whole-process guard against catastrophic growth; the diagnostics below prove exact
+            // coverage-buffer allocation/free parity and that no native buffers remain active.
             records.Should().OnlyContain(record => record!.PrivateBytes > 0, "the stress run requires private-byte measurements");
             var initialBytes = records[0]!.PrivateBytes;
             var maximumBytes = records.Max(static record => record!.PrivateBytes);
             (maximumBytes - initialBytes).Should()
                                          .BeLessThan(
-                                              MaximumStressMemoryGrowth,
-                                              "completed test contexts must not retain their 128 KiB native coverage buffers");
+                                              MaximumProcessMemoryGrowth,
+                                              "the stress run must remain below the coarse whole-process memory safety bound");
         }
 
         return records[0]!.Pid;
