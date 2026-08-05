@@ -183,9 +183,12 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
                              Hex(hr));
     }
 
-    for (auto const& id : moduleIds)
+    if (_profiler != nullptr)
     {
-        ResolveModuleInfo(id);
+        for (auto const& id : moduleIds)
+        {
+            ResolveModuleInfo(id);
+        }
     }
 }
 
