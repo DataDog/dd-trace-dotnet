@@ -32,15 +32,6 @@
 class MockConfiguration : public IConfiguration
 {
 public:
-    MockConfiguration()
-    {
-        // The gmock default of zero would make services that wait on this fail to start.
-        // Generous on purpose: these tests also run under ASAN/UBSAN/TSAN, where every
-        // allocation and memory access is instrumented and startup is much slower.
-        ON_CALL(*this, GetLibrariesInfoCacheStartTimeout())
-            .WillByDefault(::testing::Return(std::chrono::milliseconds(10'000)));
-    }
-
     ~MockConfiguration() override = default;
     MOCK_METHOD(bool, IsDebugLogEnabled, (), (const override));
     MOCK_METHOD(fs::path const&, GetLogDirectory, (), (const override));
@@ -110,7 +101,15 @@ public:
     MOCK_METHOD(std::chrono::milliseconds, GetHeapSnapshotCheckInterval, (), (const override));
     MOCK_METHOD(uint32_t, GetHeapSnapshotMemoryPressureThreshold, (), (const override));
     MOCK_METHOD(std::chrono::seconds, GetTestHeapSnapshotInterval, (), (const override));
-    MOCK_METHOD(std::chrono::milliseconds, GetLibrariesInfoCacheStartTimeout, (), (const override));
+    // Deliberately not mocked: the gmock default of zero would make the services that wait
+    // on it fail to start, and stubbing it with ON_CALL would register every instance with
+    // the leak detector, which breaks the fixtures that exit() out of a death test.
+    // Generous value on purpose, as these tests also run under ASAN/UBSAN/TSAN.
+    std::chrono::milliseconds GetLibrariesInfoCacheStartTimeout() const override
+    {
+        return std::chrono::seconds(10);
+    }
+
     MOCK_METHOD(uint32_t, GetHeapHandleLimit, (), (const override));
     MOCK_METHOD(bool, UseManagedCodeCache, (), (const override));
     MOCK_METHOD(bool, IsMemoryFootprintEnabled, (), (const override));
