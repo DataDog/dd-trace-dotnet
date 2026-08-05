@@ -4,13 +4,7 @@ services:
   # ARM64 dependencies
   localstack_arm64:
     image: localstack/localstack:4.14.0@sha256:3ebc37595918b8accb852f8048fef2aff047d465167edd655528065b07bc364a
-    environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
-      - DEBUG=1
-      - DATA_DIR=/tmp/localstack/data
-      - DEFAULT_REGION=us-east-1
-    ports:
-      - "4566:4566"
+    profiles: ["testcontainers"]
 
   elasticsearch7_arm64:
     image: elasticsearch:7.10.1@sha256:7cd88158f6ac75d43b447fdd98c4eb69483fa7bf1be5616a85fe556262dc864a
@@ -51,16 +45,7 @@ services:
 # Dependencies
   localstack:
     image: localstack/localstack:4.14.0@sha256:3ebc37595918b8accb852f8048fef2aff047d465167edd655528065b07bc364a
-    profiles: ["group2"]
-    environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
-      - DEBUG=1
-      - DATA_DIR=/tmp/localstack/data
-      - DEFAULT_REGION=us-east-1
-    ports:
-      - "4566:4566"
-    volumes:
-      - "./.localstack:/tmp"
+    profiles: ["testcontainers"]
 
   rabbitmq:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
@@ -258,7 +243,6 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - IncludeAllTestFrameworks
-      - AWS_SDK_HOST=localstack:4566
       - ORACLE_HOST=oracle
       - TEST_AGENT_HOST=test-agent
       - CONTAINER_HOSTNAME=http://integrationtests
@@ -466,11 +450,10 @@ services:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
     profiles: ["group2"]
     depends_on:
-      - localstack
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: localstack:4566 test-agent:8126 test-agent:4317 test-agent:4318
+    command: test-agent:8126 test-agent:4317 test-agent:4318
 
   IntegrationTests.ARM64:
     build:
@@ -502,7 +485,6 @@ services:
       - TESTCONTAINERS_RYUK_CONTAINER_IMAGE
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeAllTestFrameworks
-      - AWS_SDK_HOST=localstack_arm64:4566
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
@@ -532,17 +514,15 @@ services:
       - RANDOM_SEED
       - TEST_AGENT_HOST=test-agent
     depends_on:
-      - localstack_arm64
       - test-agent
 
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
     depends_on:
-      - localstack_arm64
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318
+    command: test-agent:8126 test-agent:4317 test-agent:4318
 
   IntegrationTests.ARM64.Debugger:
     build:
@@ -612,27 +592,11 @@ services:
     # api-security attrs are unfortunately ignored because gzip compression generates different bytes per platform windows/linux
     - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,meta.network.client.ip,meta.http.client_ip,metrics.process_id,meta._dd.p.dm,meta._dd.p.tid,meta._dd.parent_id,meta._dd.appsec.s.req.params,meta._dd.appsec.s.res.body,meta._dd.appsec.s.req.headers,meta._dd.appsec.s.res.headers,meta._dd.appsec.fp.http.endpoint,meta._dd.appsec.fp.http.header,meta._dd.appsec.fp.http.network
 
-  StartDependencies.OSXARM64:
-    image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
-    depends_on:
-      - localstack_osx_arm64
-    environment:
-      - TIMEOUT_LENGTH=120
-    command: localstack_osx_arm64:4566
-
   # OSX ARM64 dependencies
 
   localstack_osx_arm64:
     image: localstack/localstack:4.14.0@sha256:3ebc37595918b8accb852f8048fef2aff047d465167edd655528065b07bc364a
-    environment:
-      - SERVICES=sns,sqs,kinesis,dynamodb,events,s3,stepfunctions,lambda
-      - DEBUG=1
-      - DATA_DIR=/tmp/localstack/data
-      - DEFAULT_REGION=us-east-1
-    ports:
-      - "4566:4566"
-    volumes:
-      - "./.localstack:/tmp"
+    profiles: ["testcontainers"]
 
   elasticsearch7_osx_arm64:
     image: elasticsearch:7.10.1@sha256:7cd88158f6ac75d43b447fdd98c4eb69483fa7bf1be5616a85fe556262dc864a
