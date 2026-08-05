@@ -28,6 +28,21 @@ namespace Datadog.Trace.Tests.Util
         }
 
         [Theory]
+        [InlineData("  value  ", "value")]
+        [InlineData("\tvalue\r\n", "value")]
+        [InlineData("\t\r\n", "")]
+        [InlineData("value", "value")]
+        public void Trim_UsesSegmentBounds(string value, string expected)
+        {
+            var segment = new StringSegment($"prefix{value}suffix", offset: 6, length: value.Length);
+
+            var trimmed = segment.Trim();
+
+            trimmed.Value.Should().BeSameAs(segment.Value);
+            trimmed.ToString().Should().Be(expected);
+        }
+
+        [Theory]
         [InlineData("Ab", StringComparison.Ordinal, false)]
         [InlineData("Ab", StringComparison.OrdinalIgnoreCase, true)]
         [InlineData("ab", StringComparison.Ordinal, true)]
