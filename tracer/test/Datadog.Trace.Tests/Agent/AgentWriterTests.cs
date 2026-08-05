@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -586,47 +587,54 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public void AgentWriterEnqueueFlushTasks()
+        public async Task ConcurrentPeriodicAndExplicitFlushesDoNotDropTraces()
         {
             var api = new Mock<IApi>();
             var agentWriter = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
-            var flushTcs = new TaskCompletionSource<bool>();
-            int invocation = 0;
+            var releaseSends = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var sentSpanIds = new List<ulong>();
 
             api.Setup(i => i.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
-                .Returns(() =>
+               .Returns((ArraySegment<byte> traces, int _, bool _, long _, long _, bool _) =>
                 {
-                    // One for the front buffer, one for the back buffer
-                    if (Interlocked.Increment(ref invocation) <= 2)
+                    var payload = global::MessagePack.MessagePackSerializer.Deserialize<List<List<MockSpan>>>(traces);
+                    lock (sentSpanIds)
                     {
-                        return flushTcs.Task;
+                        sentSpanIds.AddRange(payload.SelectMany(trace => trace).Select(span => span.SpanId));
                     }
 
-                    return Task.FromResult(true);
+                    return releaseSends.Task;
                 });
 
-            var spans = CreateTraceChunk(1);
+            agentWriter.WriteTrace(CreateTraceChunk(1, startingId: 1));
+            var explicitFlush = agentWriter.FlushTracesAsync();
 
-            // Write trace to the front buffer
-            agentWriter.WriteTrace(spans);
+            agentWriter.FrontBuffer.IsLocked.Should().BeTrue();
 
-            // Flush front buffer
-            _ = agentWriter.FlushTracesAsync();
+            // The explicit flush is blocked sending the front buffer, so this trace switches to the back buffer.
+            agentWriter.WriteTrace(CreateTraceChunk(1, startingId: 2));
 
-            // This will swap to the back buffer due front buffer is blocked.
-            agentWriter.WriteTrace(spans);
+            // Invoke the same non-forced flush used by the periodic loop. Calling the private method avoids
+            // timing dependencies while still exercising the production path without adding test hooks to it.
+            var periodicFlush = InvokeFlushBuffers(agentWriter, flushAllBuffers: false);
 
-            // Flush the second buffer
-            _ = agentWriter.FlushTracesAsync();
+            agentWriter.WriteTrace(CreateTraceChunk(1, startingId: 3));
+            var droppedTracesBuffersLocked = agentWriter.DroppedTracesBuffersLocked;
 
-            // This trace will force other buffer swap and then a drop because both buffers are blocked
-            agentWriter.WriteTrace(spans);
+            releaseSends.SetResult(true);
+            await Task.WhenAll(explicitFlush, periodicFlush);
+            await agentWriter.FlushTracesAsync();
 
-            // This will try to flush the front buffer again.
-            var thirdFlush = agentWriter.FlushTracesAsync();
+            droppedTracesBuffersLocked.Should().Be(0);
+            sentSpanIds.Should().Equal(1, 2, 3);
+            await agentWriter.FlushAndCloseAsync();
+        }
 
-            // Third flush should wait for the first flush to complete.
-            thirdFlush.IsCompleted.Should().BeFalse();
+        private static Task InvokeFlushBuffers(AgentWriter agentWriter, bool flushAllBuffers)
+        {
+            var method = typeof(AgentWriter).GetMethod("FlushBuffers", BindingFlags.Instance | BindingFlags.NonPublic);
+            method.Should().NotBeNull();
+            return (Task)method!.Invoke(agentWriter, [flushAllBuffers])!;
         }
 
         private static bool WaitForDequeue(AgentWriter agent, bool wakeUpThread = true, int delay = -1)

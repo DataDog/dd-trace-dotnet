@@ -39,6 +39,7 @@ namespace Datadog.Trace.Agent
         private readonly SpanBuffer _frontBuffer;
         private readonly SpanBuffer _backBuffer;
 
+        private readonly SemaphoreSlim _flushGate = new(1, 1);
         private readonly ManualResetEventSlim _serializationMutex = new ManualResetEventSlim(initialState: false, spinCount: 0);
 
         private readonly int _batchInterval;
@@ -316,6 +317,10 @@ namespace Datadog.Trace.Agent
         /// <returns>Async operation</returns>
         private async Task FlushBuffers(bool flushAllBuffers = false)
         {
+            // A flush may be requested by the periodic loop while an explicit flush is in progress. Serializing
+            // the complete operation prevents those callers from locking opposite buffers and dropping new traces.
+            await _flushGate.WaitAsync().ConfigureAwait(false);
+
             try
             {
                 var activeBuffer = Volatile.Read(ref _activeBuffer);
@@ -333,6 +338,10 @@ namespace Datadog.Trace.Agent
             catch (Exception ex)
             {
                 Log.Error(ex, "An unhandled error occurred while flushing trace buffers");
+            }
+            finally
+            {
+                _flushGate.Release();
             }
         }
 
