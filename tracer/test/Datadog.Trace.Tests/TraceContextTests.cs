@@ -250,6 +250,19 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void SetSamplingPriority_WithoutW3CInjection_DoesNotDeriveOtelTraceState()
+        {
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.PropagationStyleInject, ContextPropagationHeaderStyle.Datadog } });
+            var traceContext = new TraceContext(new StubDatadogTracer(settings));
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: RandomIdGenerator.Shared.NextSpanId());
+            traceContext.AddSpan(new Span(spanContext, DateTimeOffset.UtcNow));
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.LocalTraceSamplingRule, rate: 0.1f, sample: true);
+
+            traceContext.OtelTraceState.Should().BeNull();
+        }
+
+        [Fact]
         public void SetSamplingPriority_ImprecisionClamp_ForcesAgreementWithDdDecision()
         {
             // RFC §3 example: trace_id_low64 = 0x03a93ee8b1999f00, rate = 0.1 disagrees pre-clamp
