@@ -49,11 +49,13 @@ ReferenceChainTraverser::ReferenceChainTraverser(
     IFrameStore* pFrameStore,
     TypeReferenceTree& tree,
     InlineVTCache& inlineVTCache,
-    size_t visitedSetInitialCapacity)
+    size_t visitedSetInitialCapacity,
+    const GCHeapRangeSet* pHeapRanges)
     : _pCorProfilerInfo(pCorProfilerInfo),
       _pFrameStore(pFrameStore),
       _tree(tree),
       _inlineVTCache(inlineVTCache),
+      _pHeapRanges(pHeapRanges),
       _visited(visitedSetInitialCapacity),
       _objectsTraversed(0),
       _rootsProcessed(0)
@@ -74,49 +76,47 @@ ReferenceChainTraverser::ReferenceChainTraverser(
 
 void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
 {
-    // If the GCDesc reader failed its self-test, skip all GCDesc-based traversal.
-    // The class histogram does not depend on this path and keeps working.
-    if (!_gcDescTrusted)
+    // If the GCDesc reader failed its self-test, skip all GCDesc-based traversal
+    // (permanent). If faults have exhausted the per-dump budget, skip the rest of
+    // this dump (transient). The class histogram does not depend on this path.
+    if (!_gcDescTrusted || _faultBudgetExhausted)
     {
         return;
     }
 
-#ifdef _WINDOWS
-    __try
-    {
-        TraverseFromSingleRootImpl(root);
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        OnTraversalFault();
-    }
-#else
-    // Linux: recover from SIGSEGV/SIGBUS via a signal handler + siglongjmp.
-    // (macOS is not supported; see the comment at the top of this file.)
-    if (sigsetjmp(t_traversalJmpBuf, 1) == 0)
-    {
-        t_inGuardedTraversal = 1;
-        TraverseFromSingleRootImpl(root);
-        t_inGuardedTraversal = 0;
-    }
-    else
-    {
-        t_inGuardedTraversal = 0;
-        OnTraversalFault();
-    }
-#endif
-}
-
-void ReferenceChainTraverser::TraverseFromSingleRootImpl(const RootInfo& root)
-{
     auto startTime = OpSysTools::GetHighPrecisionTimestamp();
-    _rootCategoryCounts[static_cast<int>(root.category)]++;
 
-    TypeTreeNode* rootNode = _tree.AddRoot(root.classID, root.category, root.objectSize, root.fieldName);
+    // Seeding reads the root's MethodTable, so it too runs under the fault guard.
+    // A fault while seeding means we cannot even start this root -- skip it.
+    if (!SeedRootGuarded(root))
+    {
+        _totalTraversalDuration += OpSysTools::GetHighPrecisionTimestamp() - startTime;
+        return;
+    }
 
-    _visited.Clear();
+    // Resume loop: each guarded drain returns either because the stack was fully
+    // consumed or because a memory access fault interrupted it. On a fault the
+    // faulting frame has already been popped (the drain pops before it scans), so
+    // re-entering picks up at the next unscanned frame. We only lose the remaining
+    // references of the single object that faulted, not the whole root subgraph.
+    while (!_traversalStack.empty() && _gcDescTrusted && !_faultBudgetExhausted)
+    {
+        uint32_t faultsBeforeDrain = _faultCount;
+        uint64_t objectsBeforeDrain = _objectsTraversed;
 
-    TraverseObjectGraph(root.address, rootNode, 1, root.classID, root.objectSize);
+        DrainTraversalStackGuarded();
+
+        // Progress guarantee. Each drain pops a frame BEFORE scanning it and bumps
+        // _objectsTraversed right after the pop, so a faulting drain that scanned
+        // anything has already removed the offending frame -- no action needed (using
+        // stack size here would be wrong, since a drain also PUSHES children before it
+        // faults). Only if a fault somehow occurred without popping any frame do we
+        // drop one so the loop cannot spin. The fault budget is the ultimate backstop.
+        if (_faultCount != faultsBeforeDrain && _objectsTraversed == objectsBeforeDrain && !_traversalStack.empty())
+        {
+            _traversalStack.pop_back();
+        }
+    }
 
     if (_traversalStack.capacity() > _traversalStackHighWatermark)
     {
@@ -127,19 +127,112 @@ void ReferenceChainTraverser::TraverseFromSingleRootImpl(const RootInfo& root)
     _totalTraversalDuration += OpSysTools::GetHighPrecisionTimestamp() - startTime;
 }
 
+bool ReferenceChainTraverser::SeedRootGuarded(const RootInfo& root)
+{
+    uint32_t faultsBefore = _faultCount;
+
+#ifdef _WINDOWS
+    __try
+    {
+        SeedRoot(root);
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        OnTraversalFault();
+    }
+#else
+    // Linux: recover from SIGSEGV/SIGBUS via a signal handler + siglongjmp.
+    // savemask = 1 so the mask that blocked SIGSEGV/SIGBUS in the handler is
+    // restored on the recovery path; otherwise a second fault would be fatal.
+    // (macOS is not supported; see the comment at the top of this file.)
+    if (sigsetjmp(t_traversalJmpBuf, 1) == 0)
+    {
+        t_inGuardedTraversal = 1;
+        SeedRoot(root);
+        t_inGuardedTraversal = 0;
+    }
+    else
+    {
+        t_inGuardedTraversal = 0;
+        OnTraversalFault();
+    }
+#endif
+
+    return _faultCount == faultsBefore;
+}
+
+void ReferenceChainTraverser::SeedRoot(const RootInfo& root)
+{
+    _rootCategoryCounts[static_cast<int>(root.category)]++;
+
+    TypeTreeNode* rootNode = _tree.AddRoot(root.classID, root.category, root.objectSize, root.fieldName);
+
+    _visited.Clear();
+    _traversalStack.clear();
+    _traversalStack.reserve(_traversalStackHighWatermark);
+
+    _visited.MarkVisitedAndStore(root.address, root.classID);
+    PushTraversalFrameIfScannable(root.address, rootNode, 1, root.classID, root.objectSize);
+}
+
+void ReferenceChainTraverser::DrainTraversalStackGuarded()
+{
+    // IMPORTANT: this function must contain no local objects requiring C++ unwinding.
+    // On Windows /EHsc, SEH unwinding does not run destructors of intervening frames;
+    // on Linux, siglongjmp does not run destructors at all. Keep the guarded body a
+    // plain call so a fault cannot leak or corrupt anything owned by this frame.
+#ifdef _WINDOWS
+    __try
+    {
+        DrainTraversalStack();
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        OnTraversalFault();
+    }
+#else
+    // savemask = 1: see the note in SeedRootGuarded.
+    if (sigsetjmp(t_traversalJmpBuf, 1) == 0)
+    {
+        t_inGuardedTraversal = 1;
+        DrainTraversalStack();
+        t_inGuardedTraversal = 0;
+    }
+    else
+    {
+        t_inGuardedTraversal = 0;
+        OnTraversalFault();
+    }
+#endif
+}
+
 void ReferenceChainTraverser::OnTraversalFault()
 {
-    _gcDescTrusted = false;
-    _selfTest = GCDesc::SelfTestResult::Failed;
+    // A memory access fault is a data-level event: one address happened to be
+    // unreadable. It says nothing about whether the GCDesc/MethodTable layout
+    // model is correct, so it must NOT touch _gcDescTrusted / _selfTest. Those
+    // are only tripped by the layout self-test.
+    _faultCount++;
+    if (_faultCount >= MaxFaultsPerDump)
+    {
+        _faultBudgetExhausted = true;
+    }
+
+    // The interrupted insert may have written an address into the visited set
+    // without recording its bucket in _dirtyIndices, so the next Clear() must
+    // wipe the whole table instead of only the tracked buckets.
+    _visited.MarkPossiblyInconsistent();
+
     LogOnce(Warn,
             "Reference-chain traversal hit a memory access fault while reading object graph memory. "
-            "Disabling reference-chain traversal for the rest of the process. The class histogram is unaffected.");
+            "The faulting object is skipped and traversal continues. "
+            "See the per-dump fault count in the traversal statistics.");
 }
 
 #ifdef DD_TEST
 void ReferenceChainTraverser::Test_FaultReadUnderGuard(const volatile void* ptr)
 {
-    if (!_gcDescTrusted)
+    if (!_gcDescTrusted || _faultBudgetExhausted)
     {
         return;
     }
@@ -182,7 +275,10 @@ void ReferenceChainTraverser::LogStats() const
     Log::Debug("Reference chain traversal completed in ", durationMs, "ms: ",
               _rootsProcessed, " roots, ",
               _objectsTraversed, " objects traversed, ",
-              "stack high watermark: ", _traversalStackHighWatermark);
+              "stack high watermark: ", _traversalStackHighWatermark, ", ",
+              "memory access faults: ", _faultCount,
+              (_faultBudgetExhausted ? " (fault budget exhausted; traversal aborted for this dump)" : ""),
+              ", refs rejected by heap-range filter: ", _refsRejectedByRangeFilter);
 
     Log::Debug("  VisitedObjectSet: ",
               _visited.Size(), " current / ",
@@ -233,19 +329,15 @@ void ReferenceChainTraverser::LogStats() const
     }
 }
 
-void ReferenceChainTraverser::TraverseObjectGraph(
-    uintptr_t objectAddress,
-    TypeTreeNode* currentNode,
-    uint32_t depth,
-    ClassID rootClassID,
-    SIZE_T rootObjectSize)
+void ReferenceChainTraverser::DrainTraversalStack()
 {
-    _traversalStack.clear();
-    _traversalStack.reserve(_traversalStackHighWatermark);
-
-    _visited.MarkVisitedAndStore(objectAddress, rootClassID);
-    PushTraversalFrameIfScannable(objectAddress, currentNode, depth, rootClassID, rootObjectSize);
-
+    // Accepted residual risk: this runs under the fault guard and mutates the tree
+    // via TypeTreeNode::GetOrCreateChild (which allocates unordered_map nodes and can
+    // rehash). A fault landing mid-rehash could in theory leave the tree inconsistent.
+    // In practice faults come from raw object/MethodTable reads (GCDesc slots,
+    // GetClassFromObject), never from our own allocator, so this is not observed. The
+    // airtight follow-up would be a harvest-then-process split (read slots under the
+    // guard into a pre-sized buffer, mutate the tree outside it).
     while (!_traversalStack.empty())
     {
         auto frame = _traversalStack.back();
@@ -306,6 +398,8 @@ void ReferenceChainTraverser::TraverseObjectGraph(
         // FAST PATH: Read positive GCDesc series directly from the MethodTable.
         // This handles both regular objects and reference arrays, matching the GC scanner.
         // Check if this type has inline VTs (slow path needed for tree attribution).
+        // A type met for the first time is only known from the next snapshot on: it cannot be
+        // inspected from here (see InlineVTCache::ResolvePendingTypes).
         const InlineVTCache::InlineVTInfo* vtInfo = _inlineVTCache.GetInlineVTInfo(classID);
 
         if (vtInfo == nullptr)
@@ -361,13 +455,14 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
         return;
     }
 
-    // Stack-allocate for rank 1; heap-allocate only for multi-dimensional.
+    // Stack-allocate for rank 1; use reusable members for multi-dimensional so no
+    // vector destructor runs on this fault-guarded path (a fault unwinds without
+    // running C++ destructors). resize() may allocate, but that happens before any
+    // object-graph memory is read, and the members outlive a longjmp.
     ULONG32 dimSize1;
     int dimBound1;
     ULONG32* dimensionSizes;
     int* dimensionLowerBounds;
-    std::vector<ULONG32> dimSizesVec;
-    std::vector<int> dimBoundsVec;
     if (rank == 1)
     {
         dimensionSizes = &dimSize1;
@@ -375,10 +470,10 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
     }
     else
     {
-        dimSizesVec.resize(rank);
-        dimBoundsVec.resize(rank);
-        dimensionSizes = dimSizesVec.data();
-        dimensionLowerBounds = dimBoundsVec.data();
+        _dimSizesScratch.resize(rank);
+        _dimBoundsScratch.resize(rank);
+        dimensionSizes = _dimSizesScratch.data();
+        dimensionLowerBounds = _dimBoundsScratch.data();
     }
 
     BYTE* pData = nullptr;
@@ -568,7 +663,7 @@ std::string ReferenceChainTraverser::GetClassName(ClassID classID) const
     return "<classID=" + std::to_string(classID) + ">";
 }
 
-bool ReferenceChainTraverser::IsValidObjectAddress(uintptr_t address) const
+bool ReferenceChainTraverser::IsValidObjectAddress(uintptr_t address)
 {
     if (address == 0 || address < 0x10000)
     {
@@ -577,6 +672,15 @@ bool ReferenceChainTraverser::IsValidObjectAddress(uintptr_t address) const
 
     if ((address % sizeof(void*)) != 0)
     {
+        return false;
+    }
+
+    // Coarse GC-heap plausibility check. The set is empty (accepts everything) when
+    // the bounds could not be captured, so this never becomes a hard gate. A false
+    // reject silently drops a real edge, so this stays intentionally permissive.
+    if (_pHeapRanges != nullptr && !_pHeapRanges->Contains(address))
+    {
+        _refsRejectedByRangeFilter++;
         return false;
     }
 

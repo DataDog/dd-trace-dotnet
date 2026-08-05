@@ -19,8 +19,13 @@ std::vector<uint8_t> TypeReferenceTreeBinarySerializer::Serialize(const TypeRefe
     }
 
     std::unordered_map<ClassID, uint32_t> typeToIndex;
-    std::vector<std::string_view> typeTable;
-    uint32_t nextIndex = 0;
+
+    // The string table is encoded as types are discovered so that no per-type string
+    // is retained: the same scratch buffer is reused for every name resolution.
+    std::vector<uint8_t> stringTable;
+    stringTable.reserve(4096);
+    uint32_t typeCount = 0;
+    std::string scratch;
 
     // Phase 1: serialize roots + tree body into a temp buffer.
     // Types are discovered lazily during the DFS walk.
@@ -29,22 +34,9 @@ std::vector<uint8_t> TypeReferenceTreeBinarySerializer::Serialize(const TypeRefe
 
     for (const auto& [key, rootNode] : tree._roots)
     {
-        auto [it, inserted] = typeToIndex.try_emplace(key.typeID, nextIndex);
-        if (inserted)
-        {
-            std::string_view typeName;
-            if (pFrameStore->GetTypeName(key.typeID, typeName))
-            {
-                typeTable.push_back(typeName);
-            }
-            else
-            {
-                typeTable.emplace_back("?");
-            }
-            nextIndex++;
-        }
+        auto typeIndex = RegisterType(key.typeID, typeToIndex, stringTable, typeCount, scratch, pFrameStore);
 
-        WriteVarint(body, it->second);
+        WriteVarint(body, typeIndex);
         body.push_back(static_cast<uint8_t>(rootNode->category));
 
         WriteVarint(body, rootNode->node.instanceCount);
@@ -55,67 +47,78 @@ std::vector<uint8_t> TypeReferenceTreeBinarySerializer::Serialize(const TypeRefe
         WriteVarint(body, rootNode->node.children.size());
         for (const auto& [childTypeID, childNode] : rootNode->node.children)
         {
-            WriteNode(*childNode, typeToIndex, typeTable, nextIndex, pFrameStore, body);
+            WriteNode(*childNode, typeToIndex, stringTable, typeCount, scratch, pFrameStore, body);
         }
     }
 
     // Phase 2: assemble header + string table + body
     std::vector<uint8_t> out;
-    out.reserve(sizeof(Magic) + 16 + typeTable.size() * 32 + body.size());
+    out.reserve(sizeof(Magic) + 16 + stringTable.size() + body.size());
 
     WriteBytes(out, Magic, sizeof(Magic));
     WriteVarint(out, FormatVersion);
-    WriteVarint(out, typeTable.size());
+    WriteVarint(out, typeCount);
     WriteVarint(out, tree._roots.size());
 
-    for (const auto& name : typeTable)
-    {
-        WriteString(out, name);
-    }
-
+    out.insert(out.end(), stringTable.begin(), stringTable.end());
     out.insert(out.end(), body.begin(), body.end());
 
     auto endTime = OpSysTools::GetHighPrecisionTimestamp();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
 
     Log::Debug("Reference tree binary serialization completed: ", duration, "ms, ",
-               out.size(), " bytes, ", typeTable.size(), " types, ",
+               out.size(), " bytes, ", typeCount, " types, ",
                tree._roots.size(), " roots");
 
     return out;
 }
 
-void TypeReferenceTreeBinarySerializer::WriteNode(
-    const TypeTreeNode& node,
+uint32_t TypeReferenceTreeBinarySerializer::RegisterType(
+    ClassID typeID,
     std::unordered_map<ClassID, uint32_t>& typeToIndex,
-    std::vector<std::string_view>& typeTable,
-    uint32_t& nextIndex,
-    IFrameStore* pFrameStore,
-    std::vector<uint8_t>& out)
+    std::vector<uint8_t>& stringTable,
+    uint32_t& typeCount,
+    std::string& scratch,
+    IFrameStore* pFrameStore)
 {
-    auto [it, inserted] = typeToIndex.try_emplace(node.typeID, nextIndex);
+    auto [it, inserted] = typeToIndex.try_emplace(typeID, typeCount);
     if (inserted)
     {
-        std::string_view typeName;
-        if (pFrameStore->GetTypeName(node.typeID, typeName))
+        // The std::string overload returns the namespace qualified name, so the type
+        // names here match the ones emitted in the class histogram.
+        if (pFrameStore->GetTypeName(typeID, scratch))
         {
-            typeTable.push_back(typeName);
+            WriteString(stringTable, scratch);
         }
         else
         {
-            typeTable.emplace_back("?");
+            WriteString(stringTable, "?");
         }
-        nextIndex++;
+        typeCount++;
     }
 
-    WriteVarint(out, it->second);
+    return it->second;
+}
+
+void TypeReferenceTreeBinarySerializer::WriteNode(
+    const TypeTreeNode& node,
+    std::unordered_map<ClassID, uint32_t>& typeToIndex,
+    std::vector<uint8_t>& stringTable,
+    uint32_t& typeCount,
+    std::string& scratch,
+    IFrameStore* pFrameStore,
+    std::vector<uint8_t>& out)
+{
+    auto typeIndex = RegisterType(node.typeID, typeToIndex, stringTable, typeCount, scratch, pFrameStore);
+
+    WriteVarint(out, typeIndex);
     WriteVarint(out, node.instanceCount);
     WriteVarint(out, node.totalSize);
 
     WriteVarint(out, node.children.size());
     for (const auto& [childTypeID, childNode] : node.children)
     {
-        WriteNode(*childNode, typeToIndex, typeTable, nextIndex, pFrameStore, out);
+        WriteNode(*childNode, typeToIndex, stringTable, typeCount, scratch, pFrameStore, out);
     }
 }
 

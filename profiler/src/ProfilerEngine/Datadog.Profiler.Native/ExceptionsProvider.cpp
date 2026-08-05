@@ -4,7 +4,7 @@
 #include "ExceptionsProvider.h"
 
 #include "COMHelpers.h"
-#include "FrameStore.h"
+#include "CoreLibModuleProvider.h"
 #include "HResultConverter.h"
 #include "IConfiguration.h"
 #include "Log.h"
@@ -26,6 +26,7 @@ ExceptionsProvider::ExceptionsProvider(
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
+    CoreLibModuleProvider* pCoreLibModuleProvider,
     IConfiguration* pConfiguration,
     RawSampleTransformer* rawSampleTransformer,
     MetricsRegistry& metricsRegistry,
@@ -36,10 +37,11 @@ ExceptionsProvider::ExceptionsProvider(
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
+    _pCoreLibModuleProvider(pCoreLibModuleProvider),
     _messageFieldOffset(),
     _stringLengthOffset(0),
     _stringBufferOffset(0),
-    _mscorlibModuleId(0),
+    _isStringLayoutLoaded(false),
     _exceptionClassId(0),
     _loggedMscorlibError(false),
     _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval(), true),
@@ -53,28 +55,21 @@ ExceptionsProvider::ExceptionsProvider(
 
 bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
 {
-    if (_mscorlibModuleId != 0)
+    if (_isStringLayoutLoaded)
     {
         return false;
     }
 
-    // Check if it's mscorlib. In that case, locate the System.Exception type
-    std::string assemblyName;
-
-    if (!FrameStore::GetAssemblyName(_pCorProfilerInfo, moduleId, assemblyName))
-    {
-        Log::Warn("Failed to retrieve assembly name for module ", moduleId);
-        return false;
-    }
-
-    if (assemblyName != "System.Private.CoreLib" && assemblyName != "mscorlib")
+    // The core library detection is done by the CoreLibModuleProvider, called before this method.
+    // Once it is loaded, the string layout can be fetched: it is needed to read exception messages.
+    if (_pCoreLibModuleProvider->GetModuleId() == 0)
     {
         return false;
     }
-
-    _mscorlibModuleId = moduleId;
 
     INVOKE(_pCorProfilerInfo->GetStringLayout2(&_stringLengthOffset, &_stringBufferOffset))
+
+    _isStringLayoutLoaded = true;
 
     return true;
 }
@@ -83,7 +78,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
 {
     _exceptionsCountMetric->Incr();
 
-    if (_mscorlibModuleId == 0)
+    if (!_isStringLayoutLoaded)
     {
         if (!_loggedMscorlibError)
         {
@@ -215,8 +210,11 @@ bool ExceptionsProvider::LoadExceptionMetadata()
     // This is the first observed exception, lazy-load the exception metadata
     ComPtr<IMetaDataImport2> metadataImportMscorlib;
 
-    INVOKE(
-        _pCorProfilerInfo->GetModuleMetaData(_mscorlibModuleId, CorOpenFlags::ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImportMscorlib.GetAddressOf())))
+    if (!_pCoreLibModuleProvider->TryGetMetadata(metadataImportMscorlib.GetAddressOf()))
+    {
+        Log::Warn("Failed to get the core library metadata: exception types will not be resolved");
+        return false;
+    }
 
     mdTypeDef exceptionTypeDef;
 
@@ -224,7 +222,7 @@ bool ExceptionsProvider::LoadExceptionMetadata()
 
     ClassID exceptionClassId;
 
-    INVOKE(_pCorProfilerInfo->GetClassFromTokenAndTypeArgs(_mscorlibModuleId, exceptionTypeDef, 0, nullptr, &exceptionClassId));
+    INVOKE(_pCorProfilerInfo->GetClassFromTokenAndTypeArgs(_pCoreLibModuleProvider->GetModuleId(), exceptionTypeDef, 0, nullptr, &exceptionClassId));
 
     ULONG numberOfFields;
     ULONG classSize;

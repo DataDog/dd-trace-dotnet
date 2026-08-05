@@ -17,11 +17,13 @@
 #include "MetricsRegistry.h"
 #include "ProxyMetric.h"
 #include "InlineVTCache.h"
+#include "GCHeapRangeSet.h"
 #include "SnapshotCooldown.h"
 
 #include "corprof.h"
 
 // forward declarations
+class CoreLibModuleProvider;
 class IThreadsCpuManager;
 class INativeThreadList;
 class IRuntimeInfo;
@@ -61,6 +63,7 @@ public:
         IConfiguration* pConfiguration,
         ICorProfilerInfo12* pProfilerInfo,
         IFrameStore* pFrameStore,
+        CoreLibModuleProvider* pCoreLibModuleProvider,
         IThreadsCpuManager* pThreadsCpuManager,
         MetricsRegistry& metricsRegistry,
         INativeThreadList* pNativeThreadList,
@@ -159,6 +162,15 @@ private:
     void CleanupSession();
     void StartAsyncSnapshotIfNeeded();
 
+    // Inspects the types met during the last traversal: MUST NOT be called while a dump is
+    // in progress because it may load types (see InlineVTCache::ResolvePendingTypes).
+    void ResolvePendingInlineValueTypes();
+
+    // Rebuilds _gcHeapRanges from GetGenerationBounds. MUST be called outside a GC
+    // (i.e. before the dump's EventPipe session starts). Fails open: on any error
+    // the range set is left empty, which the traverser treats as "accept everything".
+    void SeedHeapRanges();
+
     // Logs (once) the detected runtime type/version and whether it falls within
     // the range the GCDesc reader has been validated against. This is a soft
     // signal for diagnostics only; it never disables the feature.
@@ -185,6 +197,7 @@ private:
     std::shared_ptr<ProxyMetric> _heapSnapshotDurationMetric;
     std::shared_ptr<ProxyMetric> _heapSnapshotObjectCountMetric;
     std::shared_ptr<ProxyMetric> _heapSnapshotTotalSizeMetric;
+    std::shared_ptr<ProxyMetric> _heapSnapshotTraversalFaultsMetric;
 
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
@@ -224,16 +237,31 @@ private:
     std::unique_ptr<TypeReferenceTree> _typeReferenceTree;
     std::unique_ptr<ReferenceChainTraverser> _pReferenceChainTraverser;
 
-    // Set to true once the GCDesc reader fails its runtime self-test during a dump.
+    // Set to true once the GCDesc reader fails its runtime self-test during a dump,
+    // or once memory access faults exhaust the budget on several consecutive dumps.
     // When set, subsequent dumps skip reference-chain traversal entirely (no
     // traverser is created) while the class histogram continues to work.
     bool _gcDescDisabled = false;
+
+    // Consecutive dumps whose traversal was cut short by memory access faults.
+    // A single bad dump is treated as transient; a run of them is not.
+    static constexpr uint32_t MaxConsecutiveFaultyDumps = 3;
+    uint32_t _consecutiveFaultyDumps = 0;
+
+    // Fault count from the most recent dump's traversal, surfaced as a metric.
+    uint32_t _lastTraversalFaultCount = 0;
 
     // Ensures the runtime version range diagnostic is logged at most once.
     bool _runtimeVersionLogged = false;
 
     // Persisted across heap dumps to avoid re-inspecting types for inline VT fields.
     std::unique_ptr<InlineVTCache> _pInlineVTCache;
+
+    // Coarse GC-heap plausibility filter used by the traverser to reject candidate
+    // references that fall outside the heap before dereferencing them. Seeded from
+    // GetGenerationBounds at the start of each dump and grown from validated root
+    // addresses during the dump. Rebuilt each dump.
+    GCHeapRangeSet _gcHeapRanges;
 
     // Persisted across dumps to pre-size the visited set, avoiding repeated Grow() calls.
     size_t _visitedSetHighWatermark = 512;

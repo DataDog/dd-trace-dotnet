@@ -19,12 +19,18 @@
 // Mock IFrameStore for unit tests
 // ============================================================================
 
+// The two GetTypeName overloads deliberately return different names, exactly like
+// FrameStore does: the std::string one is namespace qualified while the
+// std::string_view one is reserved for the allocations recorder and drops the
+// namespace. Serializers must use the qualified one so that the type names they
+// emit match the ones in the class histogram.
 class MockFrameStore : public IFrameStore
 {
 public:
     void RegisterType(ClassID classId, const std::string& typeName)
     {
         _typeNames[classId] = typeName;
+        _shortTypeNames[classId] = BuildShortName(typeName);
     }
 
     std::pair<bool, FrameInfoView> GetFrame(uintptr_t instructionPointer) override
@@ -45,8 +51,8 @@ public:
 
     bool GetTypeName(ClassID classId, std::string_view& name) override
     {
-        auto it = _typeNames.find(classId);
-        if (it != _typeNames.end())
+        auto it = _shortTypeNames.find(classId);
+        if (it != _shortTypeNames.end())
         {
             name = it->second;
             return true;
@@ -65,7 +71,29 @@ public:
     }
 
 private:
+    // Drop the namespace of the outer type while keeping the generic parameters,
+    // like FrameStore does when it caches Type + Parameters.
+    static std::string BuildShortName(const std::string& typeName)
+    {
+        auto genericStart = typeName.find('<');
+        auto searchEnd = (genericStart == std::string::npos) ? typeName.size() : genericStart;
+        if (searchEnd == 0)
+        {
+            return typeName;
+        }
+
+        auto lastDot = typeName.rfind('.', searchEnd - 1);
+        if (lastDot == std::string::npos)
+        {
+            return typeName;
+        }
+
+        return typeName.substr(lastDot + 1);
+    }
+
+private:
     std::unordered_map<ClassID, std::string> _typeNames;
+    std::unordered_map<ClassID, std::string> _shortTypeNames;
 };
 
 // ============================================================================
@@ -1866,4 +1894,52 @@ TEST(TypeReferenceTreeBinarySerializerTest, StaticFieldNameRoundTrip)
     reader.ReadVarint(); // ts
 
     ASSERT_EQ(reader.ReadString(), "_staticOrders");
+}
+
+// The type names must stay namespace qualified so they can be matched against the
+// ones emitted in histogram.json for the same snapshot.
+TEST(TypeReferenceTreeBinarySerializerTest, TypeNamesAreNamespaceQualified)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeA = 100;
+    ClassID typeB = 200;
+    frameStore.RegisterType(typeA, "System.Collections.Generic.Dictionary<System.String,MyApp.Order>");
+    frameStore.RegisterType(typeB, "MyApp.Nested.Customer");
+
+    TypeTreeNode* rootNode = tree.AddRoot(typeA, RootCategory::StaticVariable, 256);
+    rootNode->GetOrCreateChild(typeB)->AddInstance(64);
+
+    auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
+    BinReader reader(bin);
+
+    uint8_t magic[4];
+    reader.ReadFixedBytes(magic, 4);
+    reader.ReadVarint(); // version
+    ASSERT_EQ(reader.ReadVarint(), 2u);
+    ASSERT_EQ(reader.ReadVarint(), 1u);
+
+    ASSERT_EQ(reader.ReadString(), "System.Collections.Generic.Dictionary<System.String,MyApp.Order>");
+    ASSERT_EQ(reader.ReadString(), "MyApp.Nested.Customer");
+}
+
+TEST(TypeReferenceTreeJsonSerializerTest, TypeNamesAreNamespaceQualified)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeA = 100;
+    ClassID typeB = 200;
+    frameStore.RegisterType(typeA, "System.Collections.Generic.Dictionary<System.String,MyApp.Order>");
+    frameStore.RegisterType(typeB, "MyApp.Nested.Customer");
+
+    TypeTreeNode* rootNode = tree.AddRoot(typeA, RootCategory::StaticVariable, 256);
+    rootNode->GetOrCreateChild(typeB)->AddInstance(64);
+
+    auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
+
+    ASSERT_NE(json.find("\"tt\":[\"System.Collections.Generic.Dictionary<System.String,MyApp.Order>\",\"MyApp.Nested.Customer\"]"),
+              std::string::npos)
+        << json;
 }

@@ -6,6 +6,7 @@
 #include "TypeReferenceTree.h"
 #include "IFrameStore.h"
 #include <cstdint>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -24,11 +25,22 @@ private:
     static void WriteBytes(std::vector<uint8_t>& out, const uint8_t* data, size_t len);
     static void WriteString(std::vector<uint8_t>& out, std::string_view str);
 
+    // Returns the string table index for the given type, appending its fully
+    // qualified name to the already encoded string table on first encounter.
+    static uint32_t RegisterType(
+        ClassID typeID,
+        std::unordered_map<ClassID, uint32_t>& typeToIndex,
+        std::vector<uint8_t>& stringTable,
+        uint32_t& typeCount,
+        std::string& scratch,
+        IFrameStore* pFrameStore);
+
     static void WriteNode(
         const TypeTreeNode& node,
         std::unordered_map<ClassID, uint32_t>& typeToIndex,
-        std::vector<std::string_view>& typeTable,
-        uint32_t& nextIndex,
+        std::vector<uint8_t>& stringTable,
+        uint32_t& typeCount,
+        std::string& scratch,
         IFrameStore* pFrameStore,
         std::vector<uint8_t>& out);
 };

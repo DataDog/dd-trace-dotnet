@@ -20,6 +20,7 @@ HeapSnapshotManager::HeapSnapshotManager(
     IConfiguration* pConfiguration,
     ICorProfilerInfo12* pCorProfilerInfo,
     IFrameStore* pFrameStore,
+    CoreLibModuleProvider* pCoreLibModuleProvider,
     IThreadsCpuManager* pThreadsCpuManager,
     MetricsRegistry& metricsRegistry,
     INativeThreadList* pNativeThreadList,
@@ -81,12 +82,16 @@ HeapSnapshotManager::HeapSnapshotManager(
         return static_cast<double>(_totalSize);
     });
 
+    _heapSnapshotTraversalFaultsMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_heapsnapshot_traversal_faults", [this]() {
+        return static_cast<double>(_lastTraversalFaultCount);
+    });
+
 
     _pCorProfilerInfo->AddRef();
 
     // Initialize reference tree and inline VT cache (persisted across dumps)
     _typeReferenceTree = std::make_unique<TypeReferenceTree>();
-    _pInlineVTCache = std::make_unique<InlineVTCache>(pCorProfilerInfo, pFrameStore);
+    _pInlineVTCache = std::make_unique<InlineVTCache>(pCorProfilerInfo, pFrameStore, pCoreLibModuleProvider);
 }
 
 HeapSnapshotManager::~HeapSnapshotManager()
@@ -181,12 +186,33 @@ void HeapSnapshotManager::MainLoopIteration()
         // Note: GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods.
         // They fail with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE from another thread, and crash the CLR after a GC.
         // --> Traversal is done during the OnBulkRoot* event handlers (see OnBulkRootEdges/OnBulkRootStaticVar).
+
+        // Conversely, looking for the inline value types of a type may load types: this is
+        // forbidden during the dump GC, so the traversal only queued the types it met. The
+        // session is now closed (i.e. no callback can run anymore) so they can be inspected
+        // here: their references will be attributed to the embedded structs starting with
+        // the next snapshot.
+        ResolvePendingInlineValueTypes();
     }
     else
     if (_shouldStartHeapDump.load())
     {
         _shouldStartHeapDump.store(false);
         StartGCDump();
+    }
+}
+
+void HeapSnapshotManager::ResolvePendingInlineValueTypes()
+{
+    if (_pInlineVTCache == nullptr)
+    {
+        return;
+    }
+
+    size_t inspectedCount = _pInlineVTCache->ResolvePendingTypes();
+    if (inspectedCount > 0)
+    {
+        Log::Debug("InlineVTCache: inspected ", inspectedCount, " type(s) met during the last snapshot.");
     }
 }
 
@@ -331,6 +357,12 @@ void HeapSnapshotManager::OnBulkRootEdges(
     uint32_t count,
     GCBulkRootEdgeValue* pRoots)
 {
+    // This lock MUST stay above the reference-chain traversal below. The traverser
+    // recovers from memory access faults via SEH / siglongjmp, which unwinds WITHOUT
+    // running destructors. The fault guard lives entirely inside TraverseFromSingleRoot
+    // (below this lock), so recovery never skips this lock_guard's unlock. Never move
+    // the guard above this line or a fault would leave _histogramLock held and deadlock
+    // the GC.
     std::lock_guard lock(_histogramLock);
 
     Log::Debug("OnBulkRootEdges: index=", index, " count=", count);
@@ -403,6 +435,11 @@ void HeapSnapshotManager::OnBulkRootEdges(
         successCount++;
         RootInfo rootInfo(root.RootedNodeAddress, category, rootClassID, size);
 
+        // Self-calibrate the heap-range filter: this address just survived
+        // GetClassFromObject + GetObjectSize2, so it is a real live object at its
+        // post-GC location. Feeding it in covers any region the (pre-GC) seed missed.
+        _gcHeapRanges.AddAddress(static_cast<uintptr_t>(root.RootedNodeAddress));
+
         // Traverse the object graph from this root immediately (while still in GC callback context)
         if (_pReferenceChainTraverser)
         {
@@ -433,6 +470,9 @@ void HeapSnapshotManager::OnBulkRootStaticVar(const GCBulkRootStaticVarValue& ro
     }
 
     RootInfo rootInfo(root.ObjectID, RootCategory::StaticVariable, root.TypeID, size, fieldName);
+
+    // Self-calibrate the heap-range filter from this validated live root address.
+    _gcHeapRanges.AddAddress(static_cast<uintptr_t>(root.ObjectID));
 
     // Traverse the object graph from this root immediately (while still in GC callback context)
     if (_pReferenceChainTraverser)
@@ -614,6 +654,52 @@ void HeapSnapshotManager::LogRuntimeVersionRangeOnce()
                     "the GCDesc self-test will determine whether reference-chain traversal stays enabled.");
 }
 
+void HeapSnapshotManager::SeedHeapRanges()
+{
+    _gcHeapRanges.Clear();
+
+    if (_pCorProfilerInfo == nullptr)
+    {
+        return;
+    }
+
+    // Two-call pattern: first ask for the count, then fill.
+    ULONG count = 0;
+    HRESULT hr = _pCorProfilerInfo->GetGenerationBounds(0, &count, nullptr);
+    if (FAILED(hr) || count == 0)
+    {
+        // Fail open: empty set accepts everything. If this consistently returns
+        // CORPROF_E_UNSUPPORTED_CALL_SEQUENCE the filter degrades to root-only
+        // self-calibration (addresses added during OnBulkRoot* handling).
+        return;
+    }
+
+    std::vector<COR_PRF_GC_GENERATION_RANGE> ranges(count);
+    ULONG written = 0;
+    hr = _pCorProfilerInfo->GetGenerationBounds(count, &written, ranges.data());
+    if (FAILED(hr))
+    {
+        _gcHeapRanges.Clear();
+        return;
+    }
+
+    // Include every generation (gen0..gen2, LOH, POH): roots point into all of them.
+    // Use rangeLengthReserved so the whole reservation is covered, not just the
+    // currently committed part.
+    for (ULONG i = 0; i < written; i++)
+    {
+        const auto& r = ranges[i];
+        uintptr_t start = static_cast<uintptr_t>(r.rangeStart);
+        size_t length = static_cast<size_t>(r.rangeLengthReserved != 0 ? r.rangeLengthReserved : r.rangeLength);
+        _gcHeapRanges.AddRange(start, length);
+    }
+
+    _gcHeapRanges.Finalize();
+
+    Log::Debug("HeapSnapshotManager: seeded GC heap-range filter with ", _gcHeapRanges.GetRangeCount(),
+               " merged range(s) from ", written, " generation bound(s).");
+}
+
 void HeapSnapshotManager::StartGCDump()
 {
     if (_session != 0)
@@ -623,6 +709,14 @@ void HeapSnapshotManager::StartGCDump()
     }
 
     LogRuntimeVersionRangeOnce();
+
+    // Seed the coarse GC-heap plausibility filter BEFORE starting the EventPipe
+    // session. GetGenerationBounds is illegal while a GC is in progress (i.e. during
+    // the induced dump GC and its OnBulkRoot* callbacks), so this is the only safe
+    // point to call it. The captured ranges are pre-GC and may be slightly stale;
+    // the filter widens them and grows from validated root addresses during the dump.
+    // On any failure the set stays empty, which means "accept everything".
+    SeedHeapRanges();
 
     // reset the class histogram and reference tree
     {
@@ -644,7 +738,7 @@ void HeapSnapshotManager::StartGCDump()
         {
             _pReferenceChainTraverser = std::make_unique<ReferenceChainTraverser>(
                 _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree, *_pInlineVTCache,
-                _visitedSetHighWatermark);
+                _visitedSetHighWatermark, &_gcHeapRanges);
         }
 
         _cachedItemsSize.store(0, std::memory_order_relaxed);
@@ -704,14 +798,46 @@ void HeapSnapshotManager::OnEndGCDump()
         Log::Debug("VisitedObjectSet high watermark for next dump: ", _visitedSetHighWatermark,
                    " buckets (peak entries this dump: ", peakEntries, ")");
 
-        // If the GCDesc reader failed its self-test during this dump, disable
-        // reference-chain traversal for all subsequent dumps. The class histogram
-        // is unaffected and continues to be produced.
+        _lastTraversalFaultCount = _pReferenceChainTraverser->GetFaultCount();
+
+        // Three-way policy separating the permanent layout-level signal from the
+        // transient data-level one:
+        //  1. Self-test failure is systemic (our MethodTable/GCDesc model is wrong)
+        //     -> disable permanently.
+        //  2. Faults that exhausted the budget are data-local -> tolerate a single
+        //     bad dump, but disable if it keeps happening dump after dump.
+        //  3. Otherwise the dump was clean (or recovered from a few faults) -> reset
+        //     the consecutive-faulty-dump counter.
+        // In all cases the class histogram is unaffected and continues to be produced.
         if (!_pReferenceChainTraverser->IsGCDescTrusted())
         {
             _gcDescDisabled = true;
             Log::Warn("Reference-chain traversal has been disabled for the remainder of the process "
                       "because the GCDesc reader failed its self-test. Heap class histograms are unaffected.");
+        }
+        else if (_pReferenceChainTraverser->WasAbortedByFaults())
+        {
+            _consecutiveFaultyDumps++;
+            Log::Warn("Reference-chain traversal was cut short by ", _lastTraversalFaultCount,
+                      " memory access fault(s) (", _consecutiveFaultyDumps,
+                      " consecutive dump(s)). The reference tree for this dump is partial.");
+
+            if (_consecutiveFaultyDumps >= MaxConsecutiveFaultyDumps)
+            {
+                _gcDescDisabled = true;
+                Log::Warn("Reference-chain traversal has been disabled for the remainder of the process "
+                          "after ", MaxConsecutiveFaultyDumps, " consecutive dumps hit the memory access "
+                          "fault budget. Heap class histograms are unaffected.");
+            }
+        }
+        else
+        {
+            if (_lastTraversalFaultCount > 0)
+            {
+                Log::Debug("Reference-chain traversal recovered from ", _lastTraversalFaultCount,
+                           " memory access fault(s) this dump.");
+            }
+            _consecutiveFaultyDumps = 0;
         }
     }
 
