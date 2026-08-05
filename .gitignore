@@ -402,3 +402,6 @@ tools/dumps/
 
 # test optimization temp/run folder
 .dd/
+
+# Generated GitLab child-pipeline configuration
+.gitlab/generated/
