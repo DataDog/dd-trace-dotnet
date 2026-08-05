@@ -268,9 +268,6 @@ internal static partial class DotNetSettingsExtensions
         where T : ToolSettings
     {
         return toolSettings
-              .SetProcessEnvironmentVariable("ELASTICSEARCH7_HOST", "localhost:9200")
-              .SetProcessEnvironmentVariable("ELASTICSEARCH6_HOST", "localhost:9200")
-              .SetProcessEnvironmentVariable("ELASTICSEARCH5_HOST", "localhost:9200")
               .SetProcessEnvironmentVariable("AWS_SDK_HOST", "localhost:4566");
     }
 

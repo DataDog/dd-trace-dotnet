@@ -24,6 +24,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     }
 
     [CollectionDefinition(Name, DisableParallelization = true)]
+    public class Elasticsearch5Collection : ICollectionFixture<Elasticsearch5Fixture>
+    {
+        public const string Name = "Elasticsearch5";
+    }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class Elasticsearch6Collection : ICollectionFixture<Elasticsearch6Fixture>
+    {
+        public const string Name = "Elasticsearch6";
+    }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class Elasticsearch7Collection : ICollectionFixture<Elasticsearch7Fixture>
+    {
+        public const string Name = "Elasticsearch7";
+    }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
     public class ServiceStackRedisCollection : ICollectionFixture<ServiceStackRedisFixture>
     {
         public const string Name = "ServiceStackRedis";
