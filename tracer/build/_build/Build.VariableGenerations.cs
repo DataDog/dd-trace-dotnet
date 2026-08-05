@@ -39,6 +39,42 @@ partial class Build : NukeBuild
         new ChangedTeamValue { VariableName = "isProfilerChanged", TeamName = ProfilerDotnet},
     };
 
+    Target GenerateGitlabWindowsUnitTestsPipeline
+        => _ => _
+           .Unlisted()
+           .Executes(() => WriteGitlabWindowsUnitTestsPipeline(
+                GetTestingFrameworks(
+                    PlatformFamily.Windows,
+                    isArm64: false,
+                    includeAllFrameworks: IncludeAllTestFrameworks)));
+
+    void WriteGitlabWindowsUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
+    {
+        var yaml = new StringBuilder(
+            """
+            include:
+              - local: .gitlab/windows-unit-tests-child.yml
+
+            stages:
+              - test
+
+            """);
+
+        foreach (var framework in frameworks)
+        {
+            yaml.AppendLine($"\"unit-tests-windows:{framework}\":");
+            yaml.AppendLine("  extends: .windows-unit-test");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+        }
+
+        var outputDirectory = RootDirectory / ".gitlab" / "generated";
+        Directory.CreateDirectory(outputDirectory);
+        var outputPath = outputDirectory / "windows-unit-tests.yml";
+        File.WriteAllText(outputPath, yaml.ToString());
+        Logger.Information("Generated GitLab Windows unit-test child pipeline at {Path}", outputPath);
+    }
+
     Target GenerateVariables
         => _ =>
         {
@@ -169,7 +205,7 @@ partial class Build : NukeBuild
 
                 if (IsGitlab)
                 {
-                    GenerateGitlabWindowsUnitTestsPipeline(windowsFrameworks);
+                    WriteGitlabWindowsUnitTestsPipeline(windowsFrameworks);
                 }
 
                 void GenerateTfmsMatrix(string name, IEnumerable<TargetFramework> frameworks)
@@ -195,32 +231,6 @@ partial class Build : NukeBuild
                     AzurePipelines.Instance.SetOutputVariable($"unit_tests_linux_{platform}_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
-                void GenerateGitlabWindowsUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
-                {
-                    var yaml = new StringBuilder(
-                        """
-                        include:
-                          - local: .gitlab/windows-unit-tests-child.yml
-
-                        stages:
-                          - test
-
-                        """);
-
-                    foreach (var framework in frameworks)
-                    {
-                        yaml.AppendLine($"\"unit-tests-windows:{framework}\":");
-                        yaml.AppendLine("  extends: .windows-unit-test");
-                        yaml.AppendLine("  variables:");
-                        yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
-                    }
-
-                    var outputDirectory = RootDirectory / ".gitlab" / "generated";
-                    Directory.CreateDirectory(outputDirectory);
-                    var outputPath = outputDirectory / "windows-unit-tests.yml";
-                    File.WriteAllText(outputPath, yaml.ToString());
-                    Logger.Information("Generated GitLab Windows unit-test child pipeline at {Path}", outputPath);
-                }
             }
 
             // We only call this method for the tracer and ASM areas

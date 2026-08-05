@@ -255,18 +255,35 @@ build:
         throw "Unable to determine the target branch for GitLab matrix generation"
       }
 
-      # GenerateVariables compares the current commit with origin/<target branch>.
+      # Mirror NUKE's thorough-testing checks before passing the decision to the
+      # focused child-pipeline generator in the Windows image.
       git fetch --no-tags origin "+refs/heads/${targetBranch}:refs/remotes/origin/${targetBranch}"
       if ($LASTEXITCODE -ne 0) {
         throw "Failed to fetch target branch '$targetBranch' for matrix generation"
       }
+
+      $changedFiles = @(git diff --name-only "origin/${targetBranch}...HEAD")
+      if ($LASTEXITCODE -ne 0) {
+        throw "Failed to find changes relative to '$targetBranch' for matrix generation"
+      }
+
+      $hasIntegrationChanges = $changedFiles | Where-Object {
+        $path = $_.Replace('\', '/')
+        $path -like "tracer/src/Datadog.Trace/Generated/*/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator*" `
+          -or $path -like "tracer/src/Datadog.Trace/Generated/*/Datadog.Trace.SourceGenerators/AspectsDefinitionsGenerator*" `
+          -or $path -like "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/*" `
+          -or $path -like "tracer/src/Datadog.Trace/Iast/Aspects/*"
+      }
+      $snapshotChangeCount = @($changedFiles | Where-Object { $_ -like "*verified.txt" }).Count
 
       $forceAllFrameworks = $env:run_all_test_frameworks -eq "true" -or $env:RUN_ALL_TEST_FRAMEWORKS -eq "true"
       $isMainlineBranch = $env:CI_COMMIT_BRANCH -in @("master", "main") `
                        -or $env:CI_COMMIT_BRANCH -like "release/*" `
                        -or $env:CI_COMMIT_BRANCH -like "hotfix/*"
       $includeAllFrameworks = $forceAllFrameworks `
-                           -or ($isMainlineBranch -and $env:CI_PIPELINE_SOURCE -ne "schedule")
+                           -or ($isMainlineBranch -and $env:CI_PIPELINE_SOURCE -ne "schedule") `
+                           -or [bool]$hasIntegrationChanges `
+                           -or $snapshotChangeCount -gt 100
 
       Write-Output "Generating Windows unit-test child pipeline (target=$targetBranch, includeAll=$includeAllFrameworks)"
       docker run --rm -m 20480M `
@@ -284,7 +301,7 @@ build:
         --entrypoint cmd.exe `
         $env:WINDOWS_BUILD_IMAGE `
         /d /s /c `
-        "git config --global --add safe.directory c:\mnt && c:\entrypoint.bat GenerateVariables --TargetBranch $targetBranch --IncludeAllTestFrameworks $includeAllFrameworks"
+        "c:\entrypoint.bat GenerateGitlabWindowsUnitTestsPipeline --IncludeAllTestFrameworks $includeAllFrameworks"
       if ($LASTEXITCODE -ne 0) {
         throw "GitLab child-pipeline generation exited with code $LASTEXITCODE"
       }

@@ -200,7 +200,11 @@ partial class Build
 
     TargetFramework[] TestingFrameworks => GetTestingFrameworks(Platform, IsArm64);
 
-    TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) => (platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
+    TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) =>
+        GetTestingFrameworks(platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting());
+
+    TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64, bool includeAllFrameworks) =>
+        (platform, isArm64, includeAllFrameworks) switch
     {
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
         (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
