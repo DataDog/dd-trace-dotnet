@@ -4,12 +4,65 @@
 #include "ManagedCodeCache.h"
 
 #include "Configuration.h"
+#include "CounterMetric.h"
+#include "MetricsRegistry.h"
 
 #include <algorithm>
+#include <chrono>
 #include <set>
 #include <variant>
 
+#ifndef _WINDOWS
+#include <pthread.h>
+#include <signal.h>
+#endif
+
 #include "Log.h"
+
+// Maximum time the signal-handler read path waits to acquire a cache lock
+// before giving up and returning std::nullopt.
+static constexpr auto SignalLockTimeout = std::chrono::microseconds(500);
+
+namespace {
+
+// RAII guard that blocks the profiler signals (SIGPROF for the timer_create CPU
+// profiler, SIGUSR1 for wall-time stack collection) for the duration of a cache
+// write. This guarantees the writing thread cannot be interrupted by a profiler
+// signal whose handler would try to acquire a reader lock on the same mutex,
+// which would otherwise deadlock. The signals are deferred (not dropped) and
+// delivered once the previous mask is restored.
+class ScopedProfilerSignalBlocker
+{
+public:
+#ifndef _WINDOWS
+    ScopedProfilerSignalBlocker()
+    {
+        sigset_t toBlock;
+        sigemptyset(&toBlock);
+        sigaddset(&toBlock, SIGPROF);
+        sigaddset(&toBlock, SIGUSR1);
+        pthread_sigmask(SIG_BLOCK, &toBlock, &_previous);
+    }
+
+    ~ScopedProfilerSignalBlocker()
+    {
+        pthread_sigmask(SIG_SETMASK, &_previous, nullptr);
+    }
+
+private:
+    sigset_t _previous;
+#else
+    ScopedProfilerSignalBlocker() = default;
+    ~ScopedProfilerSignalBlocker() = default;
+#endif
+
+    ScopedProfilerSignalBlocker(const ScopedProfilerSignalBlocker&) = delete;
+    ScopedProfilerSignalBlocker& operator=(const ScopedProfilerSignalBlocker&) = delete;
+    ScopedProfilerSignalBlocker(ScopedProfilerSignalBlocker&&) = delete;
+    ScopedProfilerSignalBlocker& operator=(ScopedProfilerSignalBlocker&&) = delete;
+};
+
+} // namespace
 
 template <typename Container, typename Value>
 std::optional<typename Container::value_type> FindRange(Container const& container, Value const& value)
@@ -37,48 +90,33 @@ struct IMAGE_NT_HEADERS_GENERIC
     WORD    Magic;
 };
 
-ManagedCodeCache::ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo)
+ManagedCodeCache::ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, MetricsRegistry& metricsRegistry)
     : _profilerInfo(pProfilerInfo),
-      _workerQueueEvent(false),
-      _requestStop(false)
+      _lockFailureMetric(metricsRegistry.GetOrRegister<CounterMetric>("dotnet_managed_code_cache_lock_failures"))
 {
 }
 
-ManagedCodeCache::~ManagedCodeCache()
-{
-    if (_worker.joinable())
-    {
-        _requestStop = true;
-        _workerQueueEvent.Set();
-        _worker.join();
-    }
-}
+ManagedCodeCache::~ManagedCodeCache() = default;
 
 bool ManagedCodeCache::Initialize()
 {
-    std::promise<void> startPromise;
-    auto future = startPromise.get_future();
-    _worker = std::thread(&ManagedCodeCache::WorkerThread, this, std::move(startPromise));
-    if (future.wait_for(2s) == std::future_status::ready)
-    {
-        Log::Info("ManagedCodeCache initialized successfully");
-        return true;
-    }
-    Log::Error("Failed to initialize ManagedCodeCache");
-    return false;
+    Log::Info("ManagedCodeCache initialized successfully");
+    return true;
 }
 
 std::optional<bool> ManagedCodeCache::IsCodeInR2RModule(std::uintptr_t ip, bool signalSafe) const noexcept
 {
     // IsCodeInR2RModule can be called in a signal handler or not.
-    // If it's called in a signal handler, we need to use a shared lock with try_to_lock.
-    // If it's called not in a signal handler, we need to use a shared lock with defer_lock.
-    auto moduleLock = [](std::shared_mutex& mutex, bool signalSafe) {
+    // If it's called in a signal handler, we use a time-based acquire so the
+    // handler waits a bounded amount of time for a writer on another thread
+    // instead of failing immediately (and never blocks indefinitely).
+    // If it's called not in a signal handler, we use a plain blocking shared lock.
+    auto moduleLock = [](std::shared_timed_mutex& mutex, bool signalSafe) {
         if (signalSafe)
         {
-            return std::shared_lock<std::shared_mutex>(mutex, std::try_to_lock);
+            return std::shared_lock<std::shared_timed_mutex>(mutex, SignalLockTimeout);
         }
-        return std::shared_lock<std::shared_mutex>(mutex);
+        return std::shared_lock<std::shared_timed_mutex>(mutex);
     }(_modulesMutex, signalSafe);
 
     if (!moduleLock.owns_lock())
@@ -128,10 +166,7 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionId(std::uintptr_t ip) noe
     auto functionId = GetFunctionFromIP_Original(ip);
     if (functionId.has_value() && functionId.value() != InvalidFunctionId) {
         // We found a function id and we can add it synchronously to our cache.
-        // It's safe to do this synchronously because this function is called
-        // by a native thread belonging to profiler.
-        // This thread won't be interrupted by the profiler.
-        AddFunctionImpl(functionId.value(), false);
+        AddFunctionImpl(functionId.value());
         return std::optional<FunctionID>(functionId.value());
     }
     // If we arrive here, it means that the call to GetFunctionFromIP_Original possibly crashed.
@@ -183,7 +218,7 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionIdImpl(std::uintptr_t ip)
     uint64_t page = GetPageNumber(static_cast<UINT_PTR>(ip));
     
     // Level 1: Find the page (shared lock on map structure)
-    std::shared_lock<std::shared_mutex> mapLock(_pagesMutex);
+    std::shared_lock<std::shared_timed_mutex> mapLock(_pagesMutex);
     auto pageIt = _pagesMap.find(page);
     if (pageIt == _pagesMap.end())
     {
@@ -191,7 +226,7 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionIdImpl(std::uintptr_t ip)
     }
     
     // Level 2: Binary search within the page's ranges (shared lock on page)
-    std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock);
+    std::shared_lock<std::shared_timed_mutex> pageLock(pageIt->second.lock);
     auto range = FindRange(pageIt->second.ranges, static_cast<UINT_PTR>(ip));
     if (range.has_value())
     {
@@ -204,21 +239,17 @@ std::optional<FunctionID> ManagedCodeCache::GetFunctionIdImpl(std::uintptr_t ip)
 // can be called in a signal handler
 std::optional<bool> ManagedCodeCache::IsManaged(std::uintptr_t ip) const noexcept
 {
-    // This is temporary workaround to try at best identifying an instruction pointer.
-    // Once ManagedCodeCache has a better concurrent data structure, we can remove this function.
-    // Best effort to get the managed code address range
-    // If IsManaged returns nullopt (which means that we failed at acquiring the lock),
-    // we try MaxRetries times.
-    auto constexpr MaxRetries = 5;
-    for (auto i = 0; i < MaxRetries; i++)
+    // Best effort to identify an instruction pointer. When called from a signal
+    // handler, IsManagedImpl uses a time-based lock acquire (bounded wait) and
+    // returns std::nullopt if a lock cannot be acquired within the timeout.
+    auto result = IsManagedImpl(ip);
+    if (!result.has_value())
     {
-        auto result = IsManagedImpl(ip);
-        if (result.has_value())
-        {
-            return result;
-        }
+        // Lock could not be acquired within the timeout: record it. Incr() is an
+        // atomic increment, so this is safe to call from a signal handler.
+        _lockFailureMetric->Incr();
     }
-    return std::nullopt;
+    return result;
 }
 
 std::optional<bool> ManagedCodeCache::IsManagedImpl(std::uintptr_t ip) const noexcept
@@ -227,7 +258,7 @@ std::optional<bool> ManagedCodeCache::IsManagedImpl(std::uintptr_t ip) const noe
     
     {
         // Level 1: Find the page (shared lock on map structure)
-        std::shared_lock<std::shared_mutex> mapLock(_pagesMutex, std::try_to_lock);
+        std::shared_lock<std::shared_timed_mutex> mapLock(_pagesMutex, SignalLockTimeout);
         if (!mapLock.owns_lock())
         {
             return std::nullopt;
@@ -236,7 +267,7 @@ std::optional<bool> ManagedCodeCache::IsManagedImpl(std::uintptr_t ip) const noe
         if (pageIt != _pagesMap.end())
         {
             // Level 2: Binary search within the page's ranges (shared lock on page)
-            std::shared_lock<std::shared_mutex> pageLock(pageIt->second.lock, std::try_to_lock);
+            std::shared_lock<std::shared_timed_mutex> pageLock(pageIt->second.lock, SignalLockTimeout);
             if (!pageLock.owns_lock())
             {
                 return std::nullopt;
@@ -255,11 +286,11 @@ std::optional<bool> ManagedCodeCache::IsManagedImpl(std::uintptr_t ip) const noe
 
 void ManagedCodeCache::AddFunction(FunctionID functionId)
 {
-    AddFunctionImpl(functionId, true);
+    AddFunctionImpl(functionId);
 }
 
 // Maybe rename this into OnJitCompilation
-void ManagedCodeCache::AddFunctionImpl(FunctionID functionId, bool isAsync)
+void ManagedCodeCache::AddFunctionImpl(FunctionID functionId)
 {
     auto ranges = GetCodeRanges(functionId);
 
@@ -268,26 +299,11 @@ void ManagedCodeCache::AddFunctionImpl(FunctionID functionId, bool isAsync)
         return;
     }
 
-    if (isAsync)
-    {
-        // IMPORTANT: Defer to background thread to avoid deadlock
-        //
-        // Why we can't do this synchronously:
-        // 1. JITCompilationFinished is called on a managed thread (Thread A)
-        // 2. If we called AppendRangesToCache directly here, Thread A would acquire 
-        //    writer lock on PageEntry
-        // 3. CPU profiler signal could interrupt Thread A (async)
-        // 4. Signal handler calls IsManaged, tries to acquire reader lock on same PageEntry
-        // 5. DEADLOCK: Reader lock waits for writer lock held by same thread
-        //
-        // Solution: Enqueue work to background thread. Thread A never acquires PageEntry 
-        // locks, so signal handler can safely acquire locks without deadlock.
-        AddFunctionCodeRangesAsync(std::move(ranges));
-    }
-    else
-    {
-        AddFunctionRangesToCache(std::move(ranges));
-    }
+    // The write is performed synchronously. AddFunctionRangesToCache blocks the
+    // profiler signals while it holds the writer locks, so the calling (managed)
+    // thread cannot be interrupted into a signal handler that would try to take a
+    // reader lock on the same mutex (which would otherwise deadlock).
+    AddFunctionRangesToCache(std::move(ranges));
 }
 
 // Maybe rename this into OnModuleLoaded
@@ -311,21 +327,11 @@ void ManagedCodeCache::AddModule(ModuleID moduleId)
         Log::Debug("ManagedCodeCache::AddModule: Module code ranges for module id: ", moduleId, " are: ", ss.str());
     }
 
-    // IMPORTANT: Defer to background thread to avoid deadlock
-    //
-    // Scenario: ModuleLoadFinished is called on a managed thread (Thread A)
-    // 1. Thread A calls AddModuleRanges, acquires writer lock if done synchronously
-    // 2. CPU profiler signal interrupts Thread A (async)
-    // 3. Signal handler calls IsManaged, tries to acquire reader lock
-    // 4. DEADLOCK: Reader lock waits for writer lock held by same thread
-    //
-    // Solution: Enqueue work to background thread. Thread A holds no locks
-    // when it returns from this callback, so signal handler can safely
-    // acquire locks.
-    //
-    // Additional benefit: Reduces callback latency and avoids holding
-    // CLR-internal locks longer than necessary.
-    AddModuleCodeRangesAsync(std::move(moduleCodeRanges));
+    // The write is performed synchronously. AddModuleRangesToCache blocks the
+    // profiler signals while it holds the writer lock, so the calling (managed)
+    // thread cannot be interrupted into a signal handler that would try to take a
+    // reader lock on the same mutex (which would otherwise deadlock).
+    AddModuleRangesToCache(std::move(moduleCodeRanges));
 }
 
 void ManagedCodeCache::RemoveModule(ModuleID moduleId)
@@ -336,7 +342,10 @@ void ManagedCodeCache::RemoveModule(ModuleID moduleId)
         return;
     }
 
-    std::unique_lock<std::shared_mutex> moduleLock(_modulesMutex);
+    // Block profiler signals while holding the writer lock so this thread cannot
+    // be interrupted into a signal handler that would deadlock on the same mutex.
+    ScopedProfilerSignalBlocker signalBlocker;
+    std::unique_lock<std::shared_timed_mutex> moduleLock(_modulesMutex);
     for (auto const& range : moduleCodeRanges)
     {
         auto it = std::find_if(_modulesCodeRanges.begin(), _modulesCodeRanges.end(),
@@ -386,14 +395,17 @@ std::vector<CodeRange> ManagedCodeCache::GetCodeRanges(FunctionID functionId)
 void ManagedCodeCache::InsertCodeRangeIntoPage(PagesMap::iterator pageIt,
     const CodeRange& range)
 {
-    std::unique_lock<std::shared_mutex> pageLock(pageIt->second.lock);
+    std::unique_lock<std::shared_timed_mutex> pageLock(pageIt->second.lock);
     auto& ranges = pageIt->second.ranges;
     ranges.insert(std::upper_bound(ranges.begin(), ranges.end(), range), range);
 }
 
-// This function must be called by the worker thread only
 void ManagedCodeCache::AddFunctionRangesToCache(std::vector<CodeRange> newRanges)
 {
+    // Block profiler signals for the whole write so this thread cannot be
+    // interrupted into a signal handler that would deadlock on the same mutex.
+    ScopedProfilerSignalBlocker signalBlocker;
+
     for (const auto& range : newRanges)
     {
         // Method code range can span over 2 pages (in some weird cases, it could span over more than 2 pages).
@@ -404,7 +416,7 @@ void ManagedCodeCache::AddFunctionRangesToCache(std::vector<CodeRange> newRanges
         {  
             // Check if page exists (with shared lock first - fast path)
             {
-                std::shared_lock<std::shared_mutex> mapLock(_pagesMutex);
+                std::shared_lock<std::shared_timed_mutex> mapLock(_pagesMutex);
                 auto pageIt = _pagesMap.find(page);
                 if (pageIt != _pagesMap.end())
                 {
@@ -414,7 +426,7 @@ void ManagedCodeCache::AddFunctionRangesToCache(std::vector<CodeRange> newRanges
             }
             
             // Page doesn't exist, create it (with exclusive lock)
-            std::unique_lock<std::shared_mutex> mapLock(_pagesMutex);
+            std::unique_lock<std::shared_timed_mutex> mapLock(_pagesMutex);
             
             auto [pageIt, _] = _pagesMap.try_emplace(page);
             InsertCodeRangeIntoPage(pageIt, range);
@@ -424,7 +436,11 @@ void ManagedCodeCache::AddFunctionRangesToCache(std::vector<CodeRange> newRanges
 
 void ManagedCodeCache::AddModuleRangesToCache(std::vector<ModuleCodeRange> moduleCodeRanges)
 {
-    std::unique_lock<std::shared_mutex> moduleLock(_modulesMutex);
+    // Block profiler signals for the whole write so this thread cannot be
+    // interrupted into a signal handler that would deadlock on the same mutex.
+    ScopedProfilerSignalBlocker signalBlocker;
+
+    std::unique_lock<std::shared_timed_mutex> moduleLock(_modulesMutex);
     for (const auto& moduleCodeRange : moduleCodeRanges)
     {
         auto insertPos = std::upper_bound(
@@ -436,100 +452,6 @@ void ManagedCodeCache::AddModuleRangesToCache(std::vector<ModuleCodeRange> modul
             });
         _modulesCodeRanges.insert(insertPos, moduleCodeRange);
     }
-}
-
-void ManagedCodeCache::EnsurePageExists(uint64_t page)
-{
-    // Check if page exists (with shared lock first - fast path)
-    {
-        std::shared_lock<std::shared_mutex> mapLock(_pagesMutex);
-        if (_pagesMap.find(page) != _pagesMap.end())
-        {
-            return;  // Already exists
-        }
-    }
-    
-    // Page doesn't exist, create it (with exclusive lock)
-    std::unique_lock<std::shared_mutex> mapLock(_pagesMutex);
-    
-    // Double-check after acquiring exclusive lock (another thread might have created it)
-    if (_pagesMap.find(page) == _pagesMap.end())
-    {
-        _pagesMap[page] = PageEntry();
-    }
-}
-
-// Template struct for appending ranges work items
-template<typename T>
-struct AppendRangesWork
-{
-    std::vector<T> ranges;
-    
-    explicit AppendRangesWork(std::vector<T> r) 
-        : ranges(std::move(r)) {}
-};
-
-// Type aliases for specific work item types
-using AppendCodeRangesWork = AppendRangesWork<CodeRange>;
-using AppendModuleRangesWork = AppendRangesWork<ModuleCodeRange>;
-
-void ManagedCodeCache::WorkerThread(std::promise<void> startPromise)
-{
-    startPromise.set_value();
-
-    while (!_requestStop)
-    {
-        _workerQueueEvent.Wait();
-
-        if (_requestStop)
-        {
-            break;
-        }
-
-        std::deque<std::function<void()>> workItems;
-        {
-            std::unique_lock<std::mutex> lock(_queueMutex);
-            std::swap(_workerQueue, workItems);
-        }
-
-        for (auto& workItem : workItems)
-        {
-            workItem();
-        }
-    }
-}
-
-// Private helper template
-template<typename WorkType>
-void ManagedCodeCache::EnqueueWork(WorkType work)
-{
-    auto workFunction = [this, work = std::move(work)]() mutable{
-        using T = std::decay_t<WorkType>;
-        
-        if constexpr (std::is_same_v<T, AppendCodeRangesWork>) {
-            AddFunctionRangesToCache(std::move(work.ranges));
-        }
-        else if constexpr (std::is_same_v<T, AppendModuleRangesWork>) {
-            AddModuleRangesToCache(std::move(work.ranges));
-        }
-    };
-
-    {
-        std::unique_lock<std::mutex> lock(_queueMutex);
-        _workerQueue.push_back(std::move(workFunction));
-    }
-    
-    _workerQueueEvent.Set();
-}
-
-void ManagedCodeCache::AddFunctionCodeRangesAsync(std::vector<CodeRange> ranges)
-{
-    EnqueueWork(AppendCodeRangesWork(std::move(ranges)));
-}
-
-void ManagedCodeCache::AddModuleCodeRangesAsync(std::vector<ModuleCodeRange> moduleCodeRanges)
-{
-    EnqueueWork(AppendModuleRangesWork(std::move(moduleCodeRanges)));
 }
 
 std::vector<ModuleCodeRange> ManagedCodeCache::GetModuleCodeRanges(ModuleID moduleId)
