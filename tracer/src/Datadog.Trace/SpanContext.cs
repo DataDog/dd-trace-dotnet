@@ -57,9 +57,8 @@ namespace Datadog.Trace
         private string _rawTraceId;
         private string _rawSpanId;
         private string _origin;
-        private string _additionalW3CTraceState;
 #nullable enable
-        private string? _otelTraceState;
+        private RemoteW3CTraceState? _remoteW3CTraceState;
 #nullable restore
 
         /// <summary>
@@ -278,14 +277,16 @@ namespace Datadog.Trace
         /// </summary>
         internal string AdditionalW3CTraceState
         {
-            get => TraceContext?.AdditionalW3CTraceState ?? _additionalW3CTraceState;
+            get => TraceContext?.AdditionalW3CTraceState ?? _remoteW3CTraceState?.AdditionalW3CTraceState;
             set
             {
-                _additionalW3CTraceState = value;
-
-                if (TraceContext is not null)
+                if (TraceContext is { } traceContext)
                 {
-                    TraceContext.AdditionalW3CTraceState = value;
+                    traceContext.AdditionalW3CTraceState = value;
+                }
+                else if (_remoteW3CTraceState is not null || value is not null)
+                {
+                    (_remoteW3CTraceState ??= new()).AdditionalW3CTraceState = value;
                 }
             }
         }
@@ -298,14 +299,16 @@ namespace Datadog.Trace
 #nullable enable
         internal string? OtelTraceState
         {
-            get => TraceContext?.OtelTraceState ?? _otelTraceState;
+            get => TraceContext?.OtelTraceState ?? _remoteW3CTraceState?.OtelTraceState;
             set
             {
-                _otelTraceState = value;
-
-                if (TraceContext is not null)
+                if (TraceContext is { } traceContext)
                 {
-                    TraceContext.OtelTraceState = value;
+                    traceContext.OtelTraceState = value;
+                }
+                else if (_remoteW3CTraceState is not null || value is not null)
+                {
+                    (_remoteW3CTraceState ??= new()).OtelTraceState = value;
                 }
             }
         }
@@ -541,6 +544,15 @@ namespace Datadog.Trace
         {
             PathwayContext = pathwayContext;
         }
+
+#nullable enable
+        private sealed class RemoteW3CTraceState
+        {
+            public string? AdditionalW3CTraceState { get; set; }
+
+            public string? OtelTraceState { get; set; }
+        }
+#nullable restore
 
         internal static class Keys
         {

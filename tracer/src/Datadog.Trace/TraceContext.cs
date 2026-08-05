@@ -385,9 +385,9 @@ namespace Datadog.Trace
                     Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("0.######", CultureInfo.InvariantCulture));
                 }
 
-                // (for OTel interop) derive/erase the "ot=" tracestate rv/th sub-keys on every root
+                // (for OTel interop) derive/erase the "ot=" tracestate rv/th sub-keys for W3C injection on every root
                 // probability decision, including the "Default" mechanism fallback rate.
-                if (isLocalRoot && sample is { } didSample && RootSpan is { } rootSpan
+                if (isLocalRoot && IsW3CTraceContextInjectionEnabled() && sample is { } didSample && RootSpan is { } rootSpan
                                 && mechanism is Sampling.SamplingMechanism.AgentRate
                                              or Sampling.SamplingMechanism.LocalTraceSamplingRule
                                              or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
@@ -414,15 +414,8 @@ namespace Datadog.Trace
                         rv = th > 0 ? th - 1 : 0;
                     }
 
-                    // overwrites any inherited rv/th outright; keeps unrecognized sub-keys.
-                    OtelTraceState = OtelTraceStateHelpers.SetRvTh(OtelTraceState, rv, th);
-
-                    // rate-limiter demotion: probability decision said keep (didSample), but the
-                    // final priority is a reject (the limiter is what changed the outcome) -> erase th.
-                    if (didSample && SamplingPriorityValues.IsDrop(p))
-                    {
-                        OtelTraceState = OtelTraceStateHelpers.SetRvTh(OtelTraceState, OtelTraceStateHelpers.ExtractRv(OtelTraceState), th: null);
-                    }
+                    // Rate-limiter demotion removes th in the same rewrite.
+                    OtelTraceState = OtelTraceStateHelpers.SetRvTh(OtelTraceState, rv, didSample && SamplingPriorityValues.IsDrop(p) ? null : th);
                 }
             }
             else if (mechanism is Sampling.SamplingMechanism.Manual or Sampling.SamplingMechanism.Asm)
@@ -434,6 +427,20 @@ namespace Datadog.Trace
             {
                 DistributedTracer.Instance.SetSamplingPriority(priority);
             }
+        }
+
+        private bool IsW3CTraceContextInjectionEnabled()
+        {
+            foreach (var style in Tracer.Settings.PropagationStyleInject)
+            {
+                if (string.Equals(style, ContextPropagationHeaderStyle.W3CTraceContext, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(style, ContextPropagationHeaderStyle.Deprecated.W3CTraceContext, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void RunSpanSampler(in SpanCollection spans)
