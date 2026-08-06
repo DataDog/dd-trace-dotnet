@@ -23,8 +23,8 @@ internal static partial class ConfigurationKeys
         public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
 
         /// <summary>
-        /// When enabled, suppresses all Datadog-specific data-point attributes from the traces and OTLP span metrics data points,
-        /// emitting only OpenTelemetry semantic-convention attributes.
+        /// When enabled, OTLP traces suppress Datadog-specific attributes and emit OpenTelemetry semantic-convention attributes.
+        /// OTLP trace metrics ignore this setting and always emit available Datadog attributes.
         /// </summary>
         public const string OtelSemanticsEnabled = "DD_TRACE_OTEL_SEMANTICS_ENABLED";
 
