@@ -27,6 +27,16 @@ namespace Datadog.Trace.Tests.Util
             slice.ToString().Should().Be("cd");
         }
 
+#if NETCOREAPP
+        [Fact]
+        public void AsSpan_UsesSegmentBounds()
+        {
+            var segment = new StringSegment("abcdef", offset: 1, length: 4);
+
+            segment.AsSpan().ToString().Should().Be("bcde");
+        }
+
+#endif
         [Theory]
         [InlineData("  value  ", "value")]
         [InlineData("\tvalue\r\n", "value")]
