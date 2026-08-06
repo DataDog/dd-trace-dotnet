@@ -185,11 +185,11 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
 
     if (_profiler != nullptr)
     {
-        // Modules that were already loaded when Dataflow was created never get another
-        // ModuleLoadFinished, so remember them here. They cannot be resolved yet: this constructor
-        // runs on a managed thread (the RegisterIastAspects P/Invoke), outside any profiler
-        // callback, and there GetAssemblyInfo fails with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE.
-        // The list is drained from the next ModuleLoaded, which does run inside ModuleLoadFinished.
+        // Modules already loaded when Dataflow is created never get another ModuleLoadFinished, so
+        // remember them here and resolve them from the next ModuleLoaded. They cannot be resolved
+        // now: this constructor runs on a managed thread (the RegisterIastAspects P/Invoke), outside
+        // any profiler callback, where GetAssemblyInfo fails with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE.
+        // If no further module ever loads, they are resolved on demand from the JIT callbacks.
         _preLoadedModuleIds = moduleIds;
     }
 }
@@ -386,6 +386,7 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
         DBG("Dataflow::AppDomainShutdown -> AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name, " ] ");
         DEL(it->second);
         _appDomains.erase(appDomainId);
+        _reportedAppDomainFailures.erase(appDomainId);
         return S_OK;
     }
     return S_FALSE;
@@ -401,12 +402,12 @@ HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
     {
         for (auto const& id : _preLoadedModuleIds)
         {
-            ResolveModuleInfo(id);
+            GetModuleInfo(id);
         }
         _preLoadedModuleIds.clear();
     }
 
-    ResolveModuleInfo(moduleId);
+    GetModuleInfo(moduleId);
     return S_OK;
 }
 
@@ -434,6 +435,7 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
             DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " (Not found)");
         }
         _modules.erase(moduleId);
+        _reportedModuleFailures.erase(moduleId);
     }
 
     return S_OK;
@@ -533,7 +535,10 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
     hr = _profiler->GetAppDomainInfo(id, 256, &cchAppDomainName, wszAppDomainName, &pProcID);
     if (FAILED(hr))
     {
-        trace::Logger::Error("Dataflow::GetAppDomain -> GetAppDomainInfo failed for AppDomainId ", id);
+        if (_reportedAppDomainFailures.insert(id).second)
+        {
+            trace::Logger::Error("Dataflow::GetAppDomain -> GetAppDomainInfo failed for AppDomainId ", id);
+        }
         return nullptr;
     }
 
@@ -542,21 +547,10 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
 
     return info;
 }
+// Resolves a module through the profiling API on a cache miss. Every caller is either a profiler
+// callback (ModuleLoaded) or reached from one (the JIT callbacks), which is the context the
+// profiling API requires: GetAssemblyInfo is synchronous-only and fails outside a callback.
 ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
-{
-    CSGUARD(_cs);
-    auto found = _modules.find(id);
-    if (found != _modules.end())
-    {
-        return found->second;
-    }
-
-    return nullptr;
-}
-
-// Resolves a module through the profiling API. Must only be called from inside a profiler
-// callback: GetAssemblyInfo is a synchronous-only method and fails outside one.
-ModuleInfo* Dataflow::ResolveModuleInfo(ModuleID id)
 {
     CSGUARD(_cs);
     if (_profiler == nullptr)
@@ -585,7 +579,10 @@ ModuleInfo* Dataflow::ResolveModuleInfo(ModuleID id)
     HRESULT hr = _profiler->GetModuleInfo2(id, &pbBaseLoadAddr, pathLen, &pathOut, wszPath, &assemblyId, &dwModuleFlags);
     if (FAILED(hr))
     {
-        trace::Logger::Error("Dataflow::ResolveModuleInfo -> GetModuleInfo2 failed for ModuleId ", id, " hr:", Hex(hr));
+        if (_reportedModuleFailures.insert(id).second)
+        {
+            trace::Logger::Error("Dataflow::GetModuleInfo -> GetModuleInfo2 failed for ModuleId ", id, " hr:", Hex(hr));
+        }
         return nullptr;
     }
     if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
@@ -597,23 +594,30 @@ ModuleInfo* Dataflow::ResolveModuleInfo(ModuleID id)
     hr = _profiler->GetAssemblyInfo(assemblyId, pathLen, &pathOut, wszName, &appDomainId, &modIDDummy);
     if (FAILED(hr))
     {
-        trace::Logger::Error("Dataflow::ResolveModuleInfo -> GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ",
-                             assemblyId, " hr:", Hex(hr));
+        if (_reportedModuleFailures.insert(id).second)
+        {
+            trace::Logger::Error("Dataflow::GetModuleInfo -> GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ",
+                                 assemblyId, " hr:", Hex(hr));
+        }
         return nullptr;
     }
 
     AppDomainInfo* appDomain = GetAppDomain(appDomainId);
     if (appDomain == nullptr)
     {
-        trace::Logger::Error("Dataflow::ResolveModuleInfo -> GetAppDomain failed for AppDomainId ", appDomainId);
+        if (_reportedModuleFailures.insert(id).second)
+        {
+            trace::Logger::Error("Dataflow::GetModuleInfo -> GetAppDomain failed for AppDomainId ", appDomainId);
+        }
         return nullptr;
     }
 
     WSTRING moduleName = WSTRING(wszName);
     WSTRING modulePath = WSTRING(wszPath);
     ModuleInfo* moduleInfo = new ModuleInfo(this, appDomain, id, modulePath, assemblyId, moduleName);
-    DBG("Dataflow::ResolveModuleInfo -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
+    DBG("Dataflow::GetModuleInfo -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
 
+    _reportedModuleFailures.erase(id);
     _modules[id] = moduleInfo;
     return moduleInfo;
 }

@@ -17,8 +17,7 @@ RuntimeInformation MakeTestRuntimeInformation()
 TEST(DataflowTests, PreloadedModulesAreNotResolvedFromTheConstructor)
 {
     // The constructor runs on the RegisterIastAspects P/Invoke thread, outside any profiler
-    // callback, where the profiling API rejects the calls ResolveModuleInfo needs. Nothing may be
-    // resolved from here.
+    // callback, where the profiling API rejects the calls resolution needs.
     MockCorProfilerInfo mockProfiler;
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{42};
@@ -26,7 +25,6 @@ TEST(DataflowTests, PreloadedModulesAreNotResolvedFromTheConstructor)
     auto dataflow = new iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
     EXPECT_EQ(0, mockProfiler.getModuleInfo2CallCount);
-    EXPECT_EQ(nullptr, dataflow->GetModuleInfo(42));
 
     delete dataflow;
 }
@@ -43,8 +41,6 @@ TEST(DataflowTests, PreloadedModulesAreResolvedOnTheNextModuleLoaded)
 
     // The preloaded module and the newly loaded one, once each.
     EXPECT_EQ(2, mockProfiler.getModuleInfo2CallCount);
-    EXPECT_NE(nullptr, dataflow->GetModuleInfo(42));
-    EXPECT_NE(nullptr, dataflow->GetModuleInfo(99));
 
     // The preloaded list is drained, so a later ModuleLoaded only resolves its own module.
     dataflow->ModuleLoaded(100);
@@ -53,7 +49,7 @@ TEST(DataflowTests, PreloadedModulesAreResolvedOnTheNextModuleLoaded)
     delete dataflow;
 }
 
-TEST(DataflowTests, ModuleLoadedStillResolvesNewlyLoadedModules)
+TEST(DataflowTests, ModuleLoadedResolvesNewlyLoadedModules)
 {
     MockCorProfilerInfo mockProfiler;
     auto runtimeInfo = MakeTestRuntimeInformation();
@@ -65,6 +61,66 @@ TEST(DataflowTests, ModuleLoadedStillResolvesNewlyLoadedModules)
     dataflow->ModuleLoaded(99);
 
     EXPECT_EQ(1, mockProfiler.getModuleInfo2CallCount);
+
+    delete dataflow;
+}
+
+TEST(DataflowTests, UnresolvedModulesAreResolvedOnDemand)
+{
+    // A process may never load another module after Dataflow is created (short-lived apps on .NET
+    // Framework), so the preloaded list is never drained. Lookups must still resolve, or those
+    // modules would never be instrumented.
+    MockCorProfilerInfo mockProfiler;
+    auto runtimeInfo = MakeTestRuntimeInformation();
+    std::vector<ModuleID> preloadedModules{42};
+
+    auto dataflow = new iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
+
+    auto moduleInfo = dataflow->GetModuleInfo(42);
+
+    EXPECT_NE(nullptr, moduleInfo);
+    EXPECT_EQ(1, mockProfiler.getModuleInfo2CallCount);
+
+    // Served from cache the second time.
+    EXPECT_EQ(moduleInfo, dataflow->GetModuleInfo(42));
+    EXPECT_EQ(1, mockProfiler.getModuleInfo2CallCount);
+
+    delete dataflow;
+}
+
+TEST(DataflowTests, FailedResolutionIsNotCachedAndIsRetried)
+{
+    // A transient failure must not permanently poison the module: the next lookup has to try again.
+    MockCorProfilerInfo mockProfiler;
+    mockProfiler.getAssemblyInfoFailuresLeft = 1;
+    auto runtimeInfo = MakeTestRuntimeInformation();
+    std::vector<ModuleID> preloadedModules{};
+
+    auto dataflow = new iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
+
+    EXPECT_EQ(nullptr, dataflow->GetModuleInfo(42));
+    EXPECT_EQ(1, mockProfiler.getModuleInfo2CallCount);
+
+    EXPECT_NE(nullptr, dataflow->GetModuleInfo(42));
+    EXPECT_EQ(2, mockProfiler.getModuleInfo2CallCount);
+
+    delete dataflow;
+}
+
+TEST(DataflowTests, NothingIsResolvedWhenTheProfilerQueryInterfaceFailed)
+{
+    // QI for ICorProfilerInfo3 failing leaves _profiler null and disables Dataflow; resolution must
+    // not dereference it.
+    MockCorProfilerInfo mockProfiler;
+    mockProfiler.failQueryInterface = true;
+    auto runtimeInfo = MakeTestRuntimeInformation();
+    std::vector<ModuleID> preloadedModules{42};
+
+    auto dataflow = new iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
+
+    EXPECT_EQ(nullptr, dataflow->GetModuleInfo(42));
+    dataflow->ModuleLoaded(99);
+    EXPECT_EQ(0, mockProfiler.getModuleInfo2CallCount);
 
     delete dataflow;
 }

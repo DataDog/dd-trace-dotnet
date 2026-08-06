@@ -29,9 +29,18 @@ public:
     ModuleID moduleIdToServe = 0;
     AssemblyID assemblyIdToServe = 1;
     AppDomainID appDomainIdToServe = 1;
+    // Number of GetAssemblyInfo calls to fail before starting to succeed, so tests can cover
+    // transient resolution failures.
+    int getAssemblyInfoFailuresLeft = 0;
+    // Simulates the ICorProfilerInfo3 QueryInterface failing, which disables Dataflow.
+    bool failQueryInterface = false;
 
     HRESULT STDMETHODCALLTYPE QueryInterface(const IID& riid, void** ppvObject) override
     {
+        if (failQueryInterface)
+        {
+            return E_NOINTERFACE;
+        }
         if (riid == __uuidof(ICorProfilerInfo) || riid == __uuidof(ICorProfilerInfo2) ||
             riid == __uuidof(ICorProfilerInfo3))
         {
@@ -88,6 +97,12 @@ public:
 
     HRESULT STDMETHODCALLTYPE GetAssemblyInfo(AssemblyID assemblyId, ULONG cchName, ULONG* pcchName, WCHAR szName[], AppDomainID* pAppDomainId, ModuleID* pModuleId) override
     {
+        if (getAssemblyInfoFailuresLeft > 0)
+        {
+            getAssemblyInfoFailuresLeft--;
+            return CORPROF_E_UNSUPPORTED_CALL_SEQUENCE;
+        }
+
         const wchar_t* name = L"MockAssembly";
         size_t len = wcslen(name);
         if (pcchName != nullptr)
