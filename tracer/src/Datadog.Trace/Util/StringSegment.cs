@@ -68,10 +68,13 @@ namespace Datadog.Trace.Util
             return new StringSegment(Value, Offset + start, length);
         }
 
+#if NETCOREAPP
+        public ReadOnlySpan<char> AsSpan() => Value.AsSpan(Offset, Length);
+#endif
         public StringSegment Trim()
         {
 #if NETCOREAPP
-            var value = Value.AsSpan(Offset, Length);
+            var value = AsSpan();
             var startTrimmed = value.TrimStart();
             var trimmed = startTrimmed.TrimEnd();
             return Slice(Length - startTrimmed.Length, trimmed.Length);
@@ -101,7 +104,7 @@ namespace Datadog.Trace.Util
             }
 
 #if NETCOREAPP
-            return Value.AsSpan(Offset, Length).Equals(other.AsSpan(), comparisonType);
+            return AsSpan().Equals(other.AsSpan(), comparisonType);
 #else
             return string.Compare(Value, Offset, other, 0, Length, comparisonType) == 0;
 #endif
@@ -115,7 +118,7 @@ namespace Datadog.Trace.Util
             }
 
 #if NETCOREAPP
-            return Value.AsSpan(Offset, Length).StartsWith(prefix.AsSpan(), StringComparison.Ordinal);
+            return AsSpan().StartsWith(prefix.AsSpan(), StringComparison.Ordinal);
 #else
             return string.Compare(Value, Offset, prefix, 0, prefix.Length, StringComparison.Ordinal) == 0;
 #endif
@@ -126,7 +129,7 @@ namespace Datadog.Trace.Util
             var length = count < 0 ? Length - startIndex : count;
 
 #if NETCOREAPP
-            var index = Value.AsSpan(Offset + startIndex, length).IndexOf(character);
+            var index = AsSpan().Slice(startIndex, length).IndexOf(character);
             return index < 0 ? -1 : startIndex + index;
 #else
             var endIndex = startIndex + length;
