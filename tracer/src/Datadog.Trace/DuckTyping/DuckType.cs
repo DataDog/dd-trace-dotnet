@@ -1030,7 +1030,10 @@ namespace Datadog.Trace.DuckTyping
                 {
                     case DuckKind.Property:
                     case DuckKind.PropertyOrField:
-                        PropertyInfo? targetProperty = GetTargetProperty(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
+                        if (GetTargetProperty(targetType, duckAttribute.Name, duckAttribute.BindingFlags, out PropertyInfo? targetProperty) is { } propertyError)
+                        {
+                            return propertyError;
+                        }
 
                         if (duckAttribute.FallbackToBaseTypes)
                         {
@@ -1038,7 +1041,10 @@ namespace Datadog.Trace.DuckTyping
                             while (targetProperty is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
                             {
                                 currentType = currentType.BaseType;
-                                targetProperty = GetTargetProperty(currentType, duckAttribute.Name, duckAttribute.BindingFlags);
+                                if (GetTargetProperty(currentType, duckAttribute.Name, duckAttribute.BindingFlags, out targetProperty) is { } baseTypeError)
+                                {
+                                    return baseTypeError;
+                                }
                             }
                         }
 
@@ -1254,96 +1260,122 @@ namespace Datadog.Trace.DuckTyping
 
             static PropertyInfo? FindPropertyOrIndex(Type targetType, string propertyName, BindingFlags bindingFlags, PropertyInfo proxyPropertyInfo)
             {
-                // Type.GetProperty(name, bindingFlags) throws AmbiguousMatchException when several properties
-                // match, which happens whenever the target declares more than one indexer, so when the proxy member is an indexer,
-                // ask for its exact signature first and avoid the ambiguity altogether.
+                // Avoid calling GetProperty(propertyName, bindingFlags) so that we avoid throwing when we have multiple indexers
+                var candidates = GetPropertyCandidates(targetType, propertyName, bindingFlags);
+
+                if (candidates.Length == 0)
+                {
+                    return null;
+                }
+
+                if (candidates.Length == 1)
+                {
+                    return (PropertyInfo)candidates[0];
+                }
+
+                // More than one property carries this name, which is where Type.GetProperty(name, flags) gives
+                // up by throwing. Can happen if the target declares several indexers, or hides a base property with
+                // a different signature.
                 var indexParameters = proxyPropertyInfo.GetIndexParameters();
-                if (indexParameters.Length > 0)
+                if (indexParameters.Length == 0)
                 {
-                    // Matching a full signature is deterministic, so this cannot be ambiguous. Done by hand
-                    // rather than with GetProperty(name, returnType, types) because that overload only searches
-                    // public members, and a non-public indexer would otherwise fall through to the throwing
-                    // lookup below.
-                    var indexer = FindExactIndexer(targetType, propertyName, proxyPropertyInfo.PropertyType, indexParameters, bindingFlags);
-                    if (indexer is not null)
+                    // fallback, could happen if you use "new", just accept the gap
+                    return targetType.GetProperty(propertyName, proxyPropertyInfo.PropertyType);
+                }
+
+                // Indexers only. Try to find the one with an exact match for parameters
+                foreach (var candidate in candidates)
+                {
+                    var property = (PropertyInfo)candidate;
+                    if (SignatureMatches(property, proxyPropertyInfo.PropertyType, indexParameters))
                     {
-                        return indexer;
+                        return property;
                     }
-
-                    // Fall through: the target's indexer differs from the proxy's in a way that only needs a
-                    // conversion, so the plain lookup below still has to resolve it.
                 }
 
-                try
+                // There wasn't an exact type match despite multiple indexers. Now we just YOLO and except this could throw
+                var parameterTypes = new Type[indexParameters.Length];
+                for (var i = 0; i < indexParameters.Length; i++)
                 {
-                    return targetType.GetProperty(propertyName, bindingFlags);
+                    parameterTypes[i] = indexParameters[i].ParameterType;
                 }
-                catch
-                {
-                    // Several indexers are declared and none matched the proxy's exact signature above.
-                    var parameterTypes = new Type[indexParameters.Length];
-                    for (var i = 0; i < indexParameters.Length; i++)
-                    {
-                        parameterTypes[i] = indexParameters[i].ParameterType;
-                    }
 
-                    return targetType.GetProperty(propertyName, proxyPropertyInfo.PropertyType, parameterTypes);
-                }
+                return targetType.GetProperty(propertyName, proxyPropertyInfo.PropertyType, parameterTypes);
             }
 
-            static PropertyInfo? FindExactIndexer(Type targetType, string propertyName, Type propertyType, ParameterInfo[] indexParameters, BindingFlags bindingFlags)
+            static bool SignatureMatches(PropertyInfo candidate, Type propertyType, ParameterInfo[] indexParameters)
             {
-                foreach (var candidate in targetType.GetProperties(bindingFlags))
+                if (candidate.PropertyType != propertyType)
                 {
-                    if (candidate.Name != propertyName || candidate.PropertyType != propertyType)
-                    {
-                        continue;
-                    }
+                    return false;
+                }
 
-                    var candidateParameters = candidate.GetIndexParameters();
-                    if (candidateParameters.Length != indexParameters.Length)
-                    {
-                        continue;
-                    }
+                var candidateParameters = candidate.GetIndexParameters();
+                if (candidateParameters.Length != indexParameters.Length)
+                {
+                    return false;
+                }
 
-                    var matches = true;
-                    for (var i = 0; i < candidateParameters.Length; i++)
+                for (var i = 0; i < candidateParameters.Length; i++)
+                {
+                    if (candidateParameters[i].ParameterType != indexParameters[i].ParameterType)
                     {
-                        if (candidateParameters[i].ParameterType != indexParameters[i].ParameterType)
-                        {
-                            matches = false;
-                            break;
-                        }
-                    }
-
-                    if (matches)
-                    {
-                        return candidate;
+                        return false;
                     }
                 }
 
-                return null;
+                return true;
             }
         }
 
-        private static PropertyInfo? GetTargetProperty(Type targetType, string propertyName, BindingFlags bindingFlags)
+        private static DuckTypeException? GetTargetProperty(Type targetType, string propertyName, BindingFlags bindingFlags, out PropertyInfo? targetProperty)
         {
             if (propertyName.IndexOf(',') == -1)
             {
-                return targetType.GetProperty(propertyName, bindingFlags);
+                return FindProperty(targetType, propertyName, bindingFlags, out targetProperty);
             }
 
-            PropertyInfo? targetProperty = null;
+            targetProperty = null;
             foreach (var name in propertyName.Split(','))
             {
-                targetProperty = targetType.GetProperty(name, bindingFlags);
+                if (FindProperty(targetType, name, bindingFlags, out targetProperty) is { } error)
+                {
+                    return error;
+                }
+
                 if (targetProperty is not null)
                 {
                     break;
                 }
             }
 
-            return targetProperty;
+            return null;
+
+            static DuckTypeException? FindProperty(Type targetType, string propertyName, BindingFlags bindingFlags, out PropertyInfo? property)
+            {
+                var candidates = GetPropertyCandidates(targetType, propertyName, bindingFlags);
+
+                if (candidates.Length > 1)
+                {
+                    property = null;
+                    return DuckTypeException.Create($"The target type '{targetType.FullName ?? targetType.Name}' declares more than one property called '{propertyName}', so the one to copy from cannot be determined.");
+                }
+
+                property = candidates.Length == 0 ? null : (PropertyInfo)candidates[0];
+                return null;
+            }
+        }
+
+        private static MemberInfo[] GetPropertyCandidates(Type targetType, string propertyName, BindingFlags bindingFlags)
+        {
+            // A trailing '*' means "starts with" to GetMember, whereas Type.GetProperty compares the name literally.
+            // We only support exact matches, so explicitly don't find these members
+            if (propertyName.Length > 0 && propertyName[propertyName.Length - 1] == '*')
+            {
+                return [];
+            }
+
+            return targetType.GetMember(propertyName, MemberTypes.Property, bindingFlags);
         }
 
         private static FieldInfo? GetTargetField(Type targetType, string fieldName, BindingFlags bindingFlags)

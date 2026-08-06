@@ -594,7 +594,16 @@ public int GetMaxConnections(object someObject)
 ```
 
 The above behaviour is often unexpected. It means you need to be particularly careful when accessing duck-chained properties for the first time. Be particularly careful when these are used in code paths that are not _always_ executed, as it's easy to miss these during manual testing and implementation.
- 
+
+#### 4. Reference-type mismatches are not detected when the proxy is created
+
+Duck typing checks that the target has a member with the right name and shape, but it does _not_ check that a reference type on one side can actually be converted to the reference type on the other. That conversion is emitted as a `castclass` and left to the runtime. So a proxy declaring `string Name { get; }` against a target whose `Name` is a `Uri` is considered creatable — `DuckIs<T>()`, `DuckType.CanCreate` and `TryDuckCast<T>` all report success — and the `InvalidCastException` surfaces later:
+
+- for an interface proxy, when that member is first accessed;
+- for a `[DuckCopy]` `struct` proxy, at _cast_ time, because it copies every field eagerly. So `TryDuckCast<T>` _can_ throw for this case, despite its name.
+
+Deferring is necessary for interfaces and generic parameters: a proxy property typed `IEnumerable<T>` against a target member typed `IList<T>` is perfectly satisfiable at runtime, and assignability involving a generic parameter is unknowable when the proxy type is built. 
+
 ### Handling nullability
 
 We have already discussed several different _types_ of duck-typing proxies, each of which can be used for different scenarios to give the best performance. Generally speaking, the following are the most common scenarios:
