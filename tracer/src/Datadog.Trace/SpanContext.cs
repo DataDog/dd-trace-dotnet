@@ -294,7 +294,8 @@ namespace Datadog.Trace
         /// (OpenTelemetry consistent-probability-sampling sub-keys). Null if none was
         /// present on extraction and nothing has derived one locally.
         /// </summary>
-        [MaybeNull, AllowNull]
+        [MaybeNull]
+        [AllowNull]
         internal string OtelTraceState
         {
             get => TraceContext?.OtelTraceState ?? _remoteW3CTraceState?.OtelTraceState;
@@ -310,6 +311,7 @@ namespace Datadog.Trace
                 }
             }
         }
+
         /// <summary>
         /// Gets or sets the last span ID of the most recently seen Datadog span that will be propagated downstream
         /// to allow for the re-parenting of spans in cases where spans in distributed traces have missing spans.
