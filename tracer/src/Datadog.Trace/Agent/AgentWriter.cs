@@ -50,6 +50,8 @@ namespace Datadog.Trace.Agent
 
         private readonly bool _backgroundFlushEnabled;
 
+        private readonly object _flushRequestLock = new();
+
         /// <summary>
         /// The currently active buffer.
         /// Note: Thread-safetiness in this class relies on the fact that only the serialization thread can change the active buffer.
@@ -60,6 +62,8 @@ namespace Datadog.Trace.Agent
         private byte[] _temporaryBuffer = new byte[1024];
 
         private TaskCompletionSource<bool> _forceFlush;
+        private TaskCompletionSource<bool>? _pendingFlushRequest;
+        private bool _flushLoopStopped;
 
         private Task _frontBufferFlushTask;
         private Task _backBufferFlushTask;
@@ -216,37 +220,32 @@ namespace Datadog.Trace.Agent
                 return;
             }
 
+            // Wake up the serialization thread so that it observes _processExit, drains the queue, and exits
             _serializationMutex.Set();
 
-            var delay = Task.Delay(TimeSpan.FromSeconds(20));
+            // One deadline for the whole shutdown, rather than one per stage
+            var delay = Task.Delay(TimeSpan.FromSeconds(30));
 
-            var completedTask = await Task.WhenAny(_serializationTask, delay)
-                .ConfigureAwait(false);
+            var serializationCompleted = await Task.WhenAny(_serializationTask, delay).ConfigureAwait(false) != delay;
 
             _traceKeepRateCalculator.CancelUpdates();
 
             bool success = false;
 
-            if (completedTask != delay)
+            if (serializationCompleted)
             {
-                await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(20)))
-                    .ConfigureAwait(false);
+                // Now that serialization has stopped, nothing else can be written to the buffers, so the
+                // flush loop performs a final flush of both buffers, and exits. Request that flush so that
+                // we can wait for it: if the flush loop got there first, the request completes immediately,
+                // which is equally correct because that final pass flushed everything.
+                var flushed = RequestFullFlushAsync();
 
-                if (_frontBuffer.TraceCount != 0 || _backBuffer.TraceCount != 0)
-                {
-                    // In some situations, the flush thread can exit before flushing all the threads
-                    // Force a flush for the leftover traces
-                    completedTask = await Task.WhenAny(Task.Run(() => FlushBuffers(flushAllBuffers: true)), delay)
-                        .ConfigureAwait(false);
+                success = await Task.WhenAny(flushed, delay).ConfigureAwait(false) != delay;
 
-                    if (completedTask != delay)
-                    {
-                        success = true;
-                    }
-                }
-                else
+                if (success)
                 {
-                    success = true;
+                    // Wait for the loop to unwind so that nothing is still using the API when we dispose it below
+                    await Task.WhenAny(_flushTask, delay).ConfigureAwait(false);
                 }
             }
 
@@ -274,10 +273,12 @@ namespace Datadog.Trace.Agent
 
                 WriteWatermark(() => tcs.TrySetResult(default));
 
-                await tcs.Task.ConfigureAwait(false);
+                // Also wait on the serialization task: if it stops before reaching our watermark (which
+                // can only happen during shutdown) then nobody will ever invoke the callback.
+                await Task.WhenAny(tcs.Task, _serializationTask).ConfigureAwait(false);
             }
 
-            await FlushBuffers(true).ConfigureAwait(false);
+            await RequestFullFlushAsync().ConfigureAwait(false);
         }
 
         [TestingAndPrivateOnly]
@@ -291,7 +292,37 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private void RequestFlush()
+        /// <summary>
+        /// Asks the flush loop to flush both buffers, and waits for that flush to complete. Buffers are
+        /// only ever locked and flushed by the flush loop, so that at most one buffer is unavailable to
+        /// the serialization thread at a time. Concurrent requests share a single flush pass.
+        /// </summary>
+        private Task RequestFullFlushAsync()
+        {
+            TaskCompletionSource<bool> request;
+
+            lock (_flushRequestLock)
+            {
+                if (_flushLoopStopped)
+                {
+                    // The loop has already performed its final flush of both buffers, so there is
+                    // nothing left for it to flush, and nothing left to wait for.
+                    return Task.CompletedTask;
+                }
+
+                request = _pendingFlushRequest ??= new TaskCompletionSource<bool>(TaskOptions);
+            }
+
+            // Don't wait for the next tick of the flush loop
+            WakeFlushLoop();
+
+            return request.Task;
+        }
+
+        /// <summary>
+        /// Wakes up the flush loop, without waiting for the resulting flush.
+        /// </summary>
+        private void WakeFlushLoop()
         {
             Volatile.Read(ref _forceFlush).TrySetResult(default);
         }
@@ -301,29 +332,67 @@ namespace Datadog.Trace.Agent
             Task[] tasks = new Task[3];
             tasks[0] = _serializationTask;
             tasks[1] = _forceFlush.Task;
+            var isFinalPass = false;
 
-            while (true)
+            try
             {
-                tasks[2] = Task.Delay(TimeSpan.FromSeconds(1));
-                await Task.WhenAny(tasks).ConfigureAwait(false);
-                tasks[2] = null!;
-
-                if (_forceFlush.Task.IsCompleted)
+                while (true)
                 {
-                    var forceFlush = new TaskCompletionSource<bool>(TaskOptions);
-                    Volatile.Write(ref _forceFlush, forceFlush);
-                    tasks[1] = forceFlush.Task;
+                    tasks[2] = Task.Delay(TimeSpan.FromSeconds(1));
+                    await Task.WhenAny(tasks).ConfigureAwait(false);
+                    tasks[2] = null!;
+
+                    if (_forceFlush.Task.IsCompleted)
+                    {
+                        var forceFlush = new TaskCompletionSource<bool>(TaskOptions);
+                        Volatile.Write(ref _forceFlush, forceFlush);
+                        tasks[1] = forceFlush.Task;
+                    }
+
+                    // Flush requests made while this pass is running are left for the next one
+                    TaskCompletionSource<bool>? flushRequest;
+
+                    lock (_flushRequestLock)
+                    {
+                        flushRequest = _pendingFlushRequest;
+                        _pendingFlushRequest = null;
+                    }
+
+                    // Once serialization has stopped, nothing new can be written to the buffers
+                    isFinalPass = _serializationTask.IsCompleted;
+                    var flushAllBuffers = flushRequest is not null;
+
+                    if (flushAllBuffers || isFinalPass || _backgroundFlushEnabled)
+                    {
+                        await FlushBuffers(flushAllBuffers: flushAllBuffers || isFinalPass).ConfigureAwait(false);
+                    }
+
+                    flushRequest?.TrySetResult(true);
+
+                    if (isFinalPass)
+                    {
+                        return;
+                    }
+                }
+            }
+            finally
+            {
+                if (!isFinalPass)
+                {
+                    Log.Warning("The trace flush loop stopped unexpectedly, traces will no longer be flushed");
                 }
 
-                if (_backgroundFlushEnabled)
+                TaskCompletionSource<bool>? request;
+
+                lock (_flushRequestLock)
                 {
-                    await FlushBuffers().ConfigureAwait(false);
+                    _flushLoopStopped = true;
+                    request = _pendingFlushRequest;
+                    _pendingFlushRequest = null;
                 }
 
-                if (_serializationTask.IsCompleted)
-                {
-                    return;
-                }
+                // Make sure callers requesting a flush _after_ the loop ends don't hang forever
+                request?.TrySetResult(true);
             }
         }
 
@@ -582,7 +651,7 @@ namespace Datadog.Trace.Agent
             if (buffer != null)
             {
                 // One buffer is full, request an eager flush
-                RequestFlush();
+                WakeFlushLoop();
 
                 writeStatus = buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority);
 
