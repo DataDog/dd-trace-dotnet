@@ -8,6 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.OpenTelemetry;
@@ -51,7 +54,8 @@ public class OtlpExporterTests
                 [ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsProtocol] = "http/protobuf",
                 [ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTimeoutMs] = "100",
             });
-        var exporter = new OtlpExporter(new TracerSettings(source));
+        var handler = new MockHttpMessageHandler();
+        var exporter = new OtlpExporter(new TracerSettings(source), new HttpClient(handler));
         var logs = new List<LogPoint>
         {
             new() { Message = new string('x', MaxBufferSize), LogLevel = 2, CategoryName = "Test" },
@@ -62,10 +66,22 @@ public class OtlpExporterTests
             var result = await exporter.ExportAsync(logs);
 
             result.Should().Be(ExportResult.Success);
+            handler.RequestCount.Should().Be(0);
         }
         finally
         {
             exporter.Shutdown();
+        }
+    }
+
+    private sealed class MockHttpMessageHandler : HttpMessageHandler
+    {
+        public int RequestCount { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            RequestCount++;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
         }
     }
 }

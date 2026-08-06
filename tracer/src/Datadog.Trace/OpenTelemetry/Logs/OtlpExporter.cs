@@ -1,4 +1,4 @@
-﻿// <copyright file="OtlpExporter.cs" company="Datadog">
+// <copyright file="OtlpExporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -46,7 +46,7 @@ internal sealed class OtlpExporter : IOtlpExporter
     private readonly OtlpProtocol _protocol;
     private OtlpLogsSerializer.ResourceTags _resourceTags;
 
-    public OtlpExporter(TracerSettings settings)
+    public OtlpExporter(TracerSettings settings, HttpClient? httpClient = null)
     {
         var endpoint = settings.OtlpLogsEndpoint;
         _headers = settings.OtlpLogsHeaders;
@@ -61,7 +61,7 @@ internal sealed class OtlpExporter : IOtlpExporter
             }
         });
 
-        _httpClient = CreateHttpClient(_timeoutMs, _headers);
+        _httpClient = httpClient ?? CreateHttpClient(_timeoutMs, _headers);
 
         if (_protocol == OtlpProtocol.Grpc)
         {
