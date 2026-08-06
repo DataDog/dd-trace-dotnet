@@ -615,6 +615,18 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void SerializeProtobuf_SpanKind_DefaultsToInternalWhenEmpty()
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(spanKind: string.Empty);
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetProtobufDataPointAttributes(buffer);
+
+            attrs.Should().ContainKey("span.kind").WhoseValue.Should().Be("SPAN_KIND_INTERNAL");
+        }
+
+        [Fact]
         public void SerializeJson_NoRpcMethodAttribute()
         {
             var buffer = CreateBuffer();
