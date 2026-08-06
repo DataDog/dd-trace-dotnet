@@ -505,17 +505,6 @@ namespace Datadog.Trace.Propagators
 
         private static int? SamplingPriorityToInt32(StringSegment samplingPriority)
         {
-#if NETCOREAPP
-            return samplingPriority.AsSpan() switch
-                   {
-                       "2" => 2,
-                       "1" => 1,
-                       "0" => 0,
-                       "-1" => -1,
-                       "" => null,
-                       _ => int.TryParse(samplingPriority.AsSpan(), out var result) ? result : null,
-                   };
-#else
             return samplingPriority.Length switch
                    {
                        0 => null,
@@ -525,7 +514,6 @@ namespace Datadog.Trace.Propagators
                        2 when samplingPriority[0] == '-' && samplingPriority[1] == '1' => -1,
                        _ => int.TryParse(samplingPriority.ToString(), out var result) ? result : null,
                    };
-#endif
         }
 
         public bool TryExtract<TCarrier, TCarrierGetter>(
