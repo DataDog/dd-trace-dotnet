@@ -245,7 +245,7 @@ namespace Datadog.Trace.DuckTyping
                 }
                 catch (DuckTypeException ex)
                 {
-                    return new CreateTypeResult(proxyDefinitionType, null, targetType, null, ExceptionDispatchInfo.Capture(ex));
+                    return Failed(ex);
                 }
                 catch (Exception ex)
                 {
@@ -744,9 +744,9 @@ namespace Datadog.Trace.DuckTyping
                                 proxyMember: proxyProperty,
                                 targetProperty: targetProperty,
                                 instanceField: instanceField,
-                                proxyMethodResult: out var getMethodBuilder,
                                 duckCastInnerToOuterFunc: MethodIlHelper.AddIlToDuckChain,
-                                needsDuckChaining: NeedsDuckChaining) is { } getError)
+                                needsDuckChaining: NeedsDuckChaining,
+                                proxyMethodResult: out var getMethodBuilder) is { } getError)
                             {
                                 return getError;
                             }
@@ -916,9 +916,9 @@ namespace Datadog.Trace.DuckTyping
                         proxyMember: overriddenProperty,
                         targetProperty: implementationProperty,
                         instanceField: instanceField,
-                        proxyMethodResult: out var getMethodBuilder,
                         duckCastInnerToOuterFunc: MethodIlHelper.AddIlToExtractDuckType,
-                        needsDuckChaining: MethodIlHelper.NeedsDuckChainingReverse) is { } getError)
+                        needsDuckChaining: MethodIlHelper.NeedsDuckChainingReverse,
+                        proxyMethodResult: out var getMethodBuilder) is { } getError)
                     {
                         return getError;
                     }
@@ -1072,9 +1072,9 @@ namespace Datadog.Trace.DuckTyping
                             proxyMember: proxyFieldInfo,
                             targetProperty: targetProperty,
                             instanceField: instanceField,
-                            proxyMethodResult: out getMethodBuilder,
                             duckCastInnerToOuterFunc: MethodIlHelper.AddIlToDuckChain,
-                            needsDuckChaining: NeedsDuckChaining) is { } getError)
+                            needsDuckChaining: NeedsDuckChaining,
+                            proxyMethodResult: out getMethodBuilder) is { } getError)
                         {
                             return getError;
                         }
@@ -1358,7 +1358,7 @@ namespace Datadog.Trace.DuckTyping
                 if (candidates.Length > 1)
                 {
                     property = null;
-                    return DuckTypeException.Create($"The target type '{targetType.FullName ?? targetType.Name}' declares more than one property called '{propertyName}', so the one to copy from cannot be determined.");
+                    return DuckTypeTargetPropertyAmbiguousMatchException.Create(targetType, propertyName);
                 }
 
                 property = candidates.Length == 0 ? null : (PropertyInfo)candidates[0];
