@@ -329,8 +329,8 @@ namespace Datadog.Trace.Propagators
                 return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null, otTraceState: null);
             }
 
-            SplitTraceStateValues(new StringSegment(header!).Trim(), out var ddValues, out _, out var otTraceState, out var hasOtTraceState, out var firstAdditionalMembers, out var secondAdditionalMembers, out var thirdAdditionalMembers);
-            var additionalValues = GetAdditionalValues(firstAdditionalMembers, secondAdditionalMembers, thirdAdditionalMembers);
+            SplitTraceStateValues(new StringSegment(header!).Trim(), out var ddValues, out _, out var otTraceState, out var hasOtTraceState, out var otherMembers);
+            var additionalValues = GetAdditionalValues(otherMembers);
 
             if (ddValues.Length < 3)
             {
@@ -450,10 +450,10 @@ namespace Datadog.Trace.Propagators
                 return;
             }
 
-            SplitTraceStateValues(new StringSegment(header).Trim(), out var ddValueSegment, out var hasDdValues, out var otValueSegment, out var hasOtValues, out var firstAdditionalMembers, out var secondAdditionalMembers, out var thirdAdditionalMembers);
+            SplitTraceStateValues(new StringSegment(header).Trim(), out var ddValueSegment, out var hasDdValues, out var otValueSegment, out var hasOtValues, out var otherMembers);
             ddValues = hasDdValues ? ddValueSegment.ToString() : null;
             otValues = hasOtValues ? otValueSegment.ToString() : null;
-            additionalValues = GetAdditionalValues(firstAdditionalMembers, secondAdditionalMembers, thirdAdditionalMembers);
+            additionalValues = GetAdditionalValues(otherMembers);
         }
 
         private static void SplitTraceStateValues(
@@ -462,21 +462,19 @@ namespace Datadog.Trace.Propagators
             out bool hasDdValues,
             out StringSegment otValues,
             out bool hasOtValues,
-            out StringSegment firstAdditionalMembers,
-            out StringSegment secondAdditionalMembers,
-            out StringSegment thirdAdditionalMembers)
+            out List<StringSegment> otherMembers)
         {
-            ExtractMember(header, "dd=", out ddValues, out var precedingMembers, out var succeedingMembers, out hasDdValues);
-            ExtractMember(precedingMembers, "ot=", out otValues, out firstAdditionalMembers, out secondAdditionalMembers, out hasOtValues);
+            ExtractMember(header, "dd=", out ddValues, out var precedingDdMembers, out var succeedingDdMembers, out hasDdValues);
+            ExtractMember(precedingDdMembers, "ot=", out otValues, out var precedingOtMembers, out var succeedingOtMembers, out hasOtValues);
 
             if (hasOtValues)
             {
-                thirdAdditionalMembers = succeedingMembers;
+                otherMembers = GetOtherMembers(precedingOtMembers, succeedingOtMembers, succeedingDdMembers);
                 return;
             }
 
-            ExtractMember(succeedingMembers, "ot=", out otValues, out secondAdditionalMembers, out thirdAdditionalMembers, out hasOtValues);
-            firstAdditionalMembers = precedingMembers;
+            ExtractMember(succeedingDdMembers, "ot=", out otValues, out precedingOtMembers, out succeedingOtMembers, out hasOtValues);
+            otherMembers = GetOtherMembers(precedingDdMembers, precedingOtMembers, succeedingOtMembers);
         }
 
         private static void ExtractMember(StringSegment header, string prefix, out StringSegment value, out StringSegment precedingMembers, out StringSegment succeedingMembers, out bool found)
@@ -518,43 +516,60 @@ namespace Datadog.Trace.Propagators
             succeedingMembers = endIndex == header.Length ? default : header.Slice(endIndex + 1);
         }
 
-        private static string? GetAdditionalValues(StringSegment firstMembers, StringSegment secondMembers, StringSegment thirdMembers)
+        private static List<StringSegment> GetOtherMembers(StringSegment member0, StringSegment member1, StringSegment member2)
         {
-            if (firstMembers.Value is null)
-            {
-                if (secondMembers.Value is null)
-                {
-                    return thirdMembers.Value is null ? null : thirdMembers.ToString();
-                }
+            var otherMembers = new List<StringSegment>(capacity: 3);
 
-                return thirdMembers.Value is null ? secondMembers.ToString() : CombineMembers(secondMembers, thirdMembers);
+            if (member0.Value is not null)
+            {
+                otherMembers.Add(member0);
             }
 
-            if (secondMembers.Value is null)
+            if (member1.Value is not null)
             {
-                return thirdMembers.Value is null ? firstMembers.ToString() : CombineMembers(firstMembers, thirdMembers);
+                otherMembers.Add(member1);
             }
 
-            if (thirdMembers.Value is null)
+            if (member2.Value is not null)
             {
-                return CombineMembers(firstMembers, secondMembers);
+                otherMembers.Add(member2);
             }
 
-            var sb = StringBuilderCache.Acquire(firstMembers.Length + secondMembers.Length + thirdMembers.Length + 2);
-            sb.Append(firstMembers.Value, firstMembers.Offset, firstMembers.Length)
-              .Append(TraceStateHeaderValuesSeparator)
-              .Append(secondMembers.Value, secondMembers.Offset, secondMembers.Length)
-              .Append(TraceStateHeaderValuesSeparator)
-              .Append(thirdMembers.Value, thirdMembers.Offset, thirdMembers.Length);
-            return StringBuilderCache.GetStringAndRelease(sb);
+            return otherMembers;
         }
 
-        private static string CombineMembers(StringSegment firstMembers, StringSegment secondMembers)
+        private static string? GetAdditionalValues(List<StringSegment> otherMembers)
         {
-            var sb = StringBuilderCache.Acquire(firstMembers.Length + secondMembers.Length + 1);
-            sb.Append(firstMembers.Value, firstMembers.Offset, firstMembers.Length)
-              .Append(TraceStateHeaderValuesSeparator)
-              .Append(secondMembers.Value, secondMembers.Offset, secondMembers.Length);
+            if (otherMembers.Count == 0)
+            {
+                return null;
+            }
+
+            if (otherMembers.Count == 1)
+            {
+                return otherMembers[0].ToString();
+            }
+
+            var length = otherMembers.Count - 1;
+
+            foreach (var member in otherMembers)
+            {
+                length += member.Length;
+            }
+
+            var sb = StringBuilderCache.Acquire(length);
+
+            for (var i = 0; i < otherMembers.Count; i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(TraceStateHeaderValuesSeparator);
+                }
+
+                var member = otherMembers[i];
+                sb.Append(member.Value, member.Offset, member.Length);
+            }
+
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
