@@ -128,8 +128,6 @@ namespace Datadog.Trace.Agent
             _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
         }
 
-        internal event Action? Flushed;
-
         private enum TraceDropReason
         {
             TraceTooLarge,
@@ -304,8 +302,6 @@ namespace Datadog.Trace.Agent
                 {
                     return;
                 }
-
-                Flushed?.Invoke();
             }
         }
 
