@@ -262,32 +262,6 @@
                     "stringValue": "http://localhost:00000/Guid_2/redirect"
                   }
                 }
-              ],
-              "events": [
-                {
-                  "timeUnixNano": "0",
-                  "name": "exception",
-                  "attributes": [
-                    {
-                      "key": "exception.type",
-                      "value": {
-                        "stringValue": "System.Net.WebException"
-                      }
-                    },
-                    {
-                      "key": "exception.message",
-                      "value": {
-                        "stringValue": "The remote server returned an error: (302) Found."
-                      }
-                    },
-                    {
-                      "key": "exception.stacktrace",
-                      "value": {
-                        "stringValue": "System.Net.WebException: The remote server returned an error: (302) Found.\n   at System.Net.HttpWebRequest.EndGetResponse(IAsyncResult asyncResult)\n   at System.Net.WebRequest.<>c.<GetResponseAsync>b__68_2(IAsyncResult iar)\n   at System.Threading.Tasks.TaskFactory`1.FromAsyncCoreLogic(IAsyncResult iar, Func`2 endFunction, Action`1 endAction, Task`1 promise, Boolean requiresSynchronization)"
-                      }
-                    }
-                  ]
-                }
               ]
             },
             {

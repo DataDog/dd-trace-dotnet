@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
@@ -30,6 +31,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OpenTelemetryWebRequestTests : TracingIntegrationTest
     {
+        private readonly Regex _exceptionStacktraceOtlp400Regex = new(@"stringValue"": ""System.Net.WebException: The remote server returned an error: \(400\) Bad Request.*""");
+        private readonly Regex _exceptionStacktraceOtlp500Regex = new(@"stringValue"": ""System.Net.WebException: The remote server returned an error: \(500\) Internal Server Error.*""");
+
         public OpenTelemetryWebRequestTests(ITestOutputHelper output)
             : base("OpenTelemetry.WebRequest", output)
         {
@@ -100,8 +104,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             OtlpSnapshotHelper.AddProtobufToJsonScrubbers(settings);
+            settings.AddSimpleScrubber("\\r\\n", "\\n");
+            settings.AddRegexScrubber(_exceptionStacktraceOtlp400Regex, @"stringValue"": ""System.Net.WebException: The remote server returned an error: (400) Bad Request.""");
+            settings.AddRegexScrubber(_exceptionStacktraceOtlp500Regex, @"stringValue"": ""System.Net.WebException: The remote server returned an error: (500) Internal Server Error.""");
 
             var suffix = openTelemetrySemanticsEnabled ? "_OtelSemantics" : string.Empty;
+#if NET5_0_OR_GREATER
+            suffix += "_Net5";
+#elif NETFRAMEWORK
+            suffix += "_NetFramework";
+#endif
             await Verifier.Verify(finalJson, settings)
                           .UseFileName($"{nameof(OpenTelemetryWebRequestTests)}.{nameof(SubmitsOtlpTraces)}{suffix}")
                           .DisableRequireUniquePrefix();
