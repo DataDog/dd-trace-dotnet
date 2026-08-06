@@ -33,13 +33,6 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
     internal const int AttributePerEventCountLimit = 128;
     internal const int AttributePerLinkCountLimit = 128;
 
-    private readonly bool _openTelemetrySemanticsEnabled;
-
-    public OtlpTracesJsonSerializer(bool openTelemetrySemanticsEnabled)
-    {
-        _openTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
-    }
-
     // Cache several strings required for encoding OTLP JSON
     private static ReadOnlySpan<byte> ClosingTracesBytes => "]}]}]}"u8;
 
@@ -525,7 +518,7 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         int droppedAttributesCount = 0;
         writer.WritePropertyName("attributes");
         writer.WriteStartArray();
-        droppedAttributesCount = OtlpMapper.EmitAttributesFromSpan(WriteKeyValue(writer), in spanModel, SpanAttributeCountLimit, _openTelemetrySemanticsEnabled);
+        droppedAttributesCount = OtlpMapper.EmitAttributesFromSpan(WriteKeyValue(writer), in spanModel, SpanAttributeCountLimit);
         writer.WriteEndArray();
 
         // droppedAttributesCount (optional)

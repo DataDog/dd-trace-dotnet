@@ -24,14 +24,22 @@ internal sealed class TagAttribute : System.Attribute
     /// <summary>
     /// Initializes a new instance of the <see cref=""TagAttribute""/> class.
     /// </summary>
-    /// <param name=""tagName"">The name of the datadog tag the property corresponds to</param>
+    /// <param name=""tagName"">The name of the datadog tag the property corresponds to.
+    /// For tags only present in OpenTelemetry semantics, this is the OpenTelemetry tag.</param>
     public TagAttribute(string tagName) =>
         this.TagName = tagName;
 
     /// <summary>
-    /// Gets the name of the datadog tag the property corresponds to
+    /// Gets the name of the datadog tag the property corresponds to.
+    /// For tags only present in OpenTelemetry semantics, this is the OpenTelemetry tag.
     /// </summary>
     public string TagName { get; }
+
+    /// <summary>
+    /// Gets or sets the OpenTelemetry semantic convention name that aliases <see cref=""TagName""/>.
+    /// This is only used when a tag name is present in both Datadog and OpenTelemetry semantics.
+    /// </summary>
+    public string? OtelName { get; set; }
 }
 
 /// <summary>
@@ -118,6 +126,27 @@ namespace ");
                       .Append(@"Bytes => [")
                       .Append(tagByteArray)
                       .AppendLine(@"];");
+
+                    if (property.OtelTagValue is not null)
+                    {
+                        var oTelTagByteArray = string.Join(", ", MessagePackHelper.GetValueInRawMessagePackIEnumerable(property.OtelTagValue));
+
+                        sb.Append(
+                               @"
+        // ")
+                          .Append(property.PropertyName)
+                          .Append(@"OtelBytes = MessagePack.Serialize(""")
+                          .Append(property.OtelTagValue)
+                          .Append(@""");");
+
+                        sb.Append(
+                               @"
+        private static ReadOnlySpan<byte> ")
+                          .Append(property.PropertyName)
+                          .Append(@"OtelBytes => [")
+                          .Append(oTelTagByteArray)
+                          .AppendLine(@"];");
+                    }
                 }
 
                 sb.Append(
@@ -133,7 +162,16 @@ namespace ");
                     var property = tagList.TagProperties[i];
                     sb.Append('"')
                       .Append(property.TagValue)
-                      .Append(@""" => ")
+                      .Append('"');
+
+                    if (property.OtelTagValue is not null)
+                    {
+                        sb.Append(@" or """)
+                          .Append(property.OtelTagValue)
+                          .Append('"');
+                    }
+
+                    sb.Append(" => ")
                       .Append(property.PropertyName);
 
                     switch (property.PropertyType)
@@ -169,11 +207,26 @@ namespace ");
                         continue;
                     }
 
-                    sb.Append(@"case """)
-                      .Append(property.TagValue)
-                      .Append(
-                           @""": 
+                    if (property.OtelTagValue is not null)
+                    {
+                        sb.Append(@"case """)
+                          .Append(property.TagValue)
+                          .Append(@""":")
+                          .Append(@"
+                case """)
+                          .Append(property.OtelTagValue)
+                          .Append(
+                               @""":
                     ");
+                    }
+                    else
+                    {
+                        sb.Append(@"case """)
+                          .Append(property.TagValue)
+                          .Append(
+                               @""": 
+                    ");
+                    }
 
                     if (property.PropertyType is TagListGenerator.PropertyType.NullableInt)
                     {
@@ -223,6 +276,15 @@ namespace ");
                           .Append(
                                @""": 
                 ");
+
+                        if (property.OtelTagValue is not null)
+                        {
+                            sb.Append(@"case """)
+                              .Append(property.OtelTagValue)
+                              .Append(
+                                   @""":
+                ");
+                        }
                     }
                 }
 
@@ -244,7 +306,7 @@ namespace ");
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             ");
                 foreach (var property in tagList.TagProperties)
@@ -256,13 +318,40 @@ namespace ");
                               .Append(property.PropertyName)
                               .Append(@" is not null)
             {
-                processor.Process(new TagItem<int>(""")
+                ");
+
+                            if (property.OtelTagValue is not null)
+                            {
+                                sb.Append(@"if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<int>(""")
+                                  .Append(property.OtelTagValue)
+                                  .Append(@""", ")
+                                  .Append(property.PropertyName)
+                                  .Append(@".Value, ")
+                                  .Append(property.PropertyName)
+                                  .Append(@"OtelBytes));
+                }
+                else
+                {
+                    ");
+                            }
+
+                            sb.Append(@"processor.Process(new TagItem<int>(""")
                               .Append(property.TagValue)
                               .Append(@""", ")
                               .Append(property.PropertyName)
                               .Append(@".Value, ")
                               .Append(property.PropertyName)
-                              .Append(@"Bytes));
+                              .Append(@"Bytes));");
+
+                            if (property.OtelTagValue is not null)
+                            {
+                                sb.Append(@"
+                }");
+                            }
+
+                            sb.Append(@"
             }
 
             ");
@@ -272,13 +361,40 @@ namespace ");
                               .Append(property.PropertyName)
                               .Append(@" is not null)
             {
-                processor.Process(new TagItem<string>(""")
+                ");
+
+                            if (property.OtelTagValue is not null)
+                            {
+                                sb.Append(@"if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<string>(""")
+                                  .Append(property.OtelTagValue)
+                                  .Append(@""", ")
+                                  .Append(property.PropertyName)
+                                  .Append(@", ")
+                                  .Append(property.PropertyName)
+                                  .Append(@"OtelBytes));
+                }
+                else
+                {
+                    ");
+                            }
+
+                            sb.Append(@"processor.Process(new TagItem<string>(""")
                               .Append(property.TagValue)
                               .Append(@""", ")
                               .Append(property.PropertyName)
                               .Append(@", ")
                               .Append(property.PropertyName)
-                              .Append(@"Bytes));
+                              .Append(@"Bytes));");
+
+                            if (property.OtelTagValue is not null)
+                            {
+                                sb.Append(@"
+                }");
+                            }
+
+                            sb.Append(@"
             }
 
             ");
@@ -287,7 +403,7 @@ namespace ");
                 }
 
                 sb.Append(
-                    @"base.EnumerateTags(ref processor);
+                    @"base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

@@ -145,6 +145,52 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
+        public void StronglyTypedStatusCodeAliasesCanBeReadAndWrittenByEitherName()
+        {
+            var tags = new WebTags();
+
+            tags.SetTag(Tags.HttpStatusCode, "200");
+            tags.GetTag(Tags.HttpResponseStatusCode).Should().Be("200");
+
+            tags.SetTag(Tags.HttpResponseStatusCode, "201");
+            tags.GetTag(Tags.HttpStatusCode).Should().Be("201");
+        }
+
+        [Theory]
+        [InlineData(false, Tags.HttpStatusCode)]
+        [InlineData(true, Tags.HttpResponseStatusCode)]
+        public void StronglyTypedStatusCodeAliasEnumeratesSelectedName(bool openTelemetrySemanticsEnabled, string expectedKey)
+        {
+            var tags = new WebTags { HttpStatusCode = 202 };
+
+            var snapshot = GetTagsSnapshot(tags, openTelemetrySemanticsEnabled);
+
+            snapshot
+               .Where(x => x.Key == Tags.HttpStatusCode || x.Key == Tags.HttpResponseStatusCode)
+               .Should()
+               .ContainSingle()
+               .Which
+               .Should()
+               .Be(new KeyValuePair<string, string>(expectedKey, "202"));
+        }
+
+        [Fact]
+        public void StronglyTypedStatusCodeAliasCanBeClearedByEitherName()
+        {
+            var tags = new WebTags();
+
+            tags.SetTag(Tags.HttpStatusCode, "203");
+            tags.SetTag(Tags.HttpResponseStatusCode, null);
+            tags.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            tags.GetTag(Tags.HttpResponseStatusCode).Should().BeNull();
+
+            tags.SetTag(Tags.HttpResponseStatusCode, "204");
+            tags.SetTag(Tags.HttpStatusCode, null);
+            tags.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            tags.GetTag(Tags.HttpResponseStatusCode).Should().BeNull();
+        }
+
+        [Fact]
         public void GetTag_GetMetric_ReturnUpdatedValues()
         {
             var tags = new TagsList();
@@ -465,11 +511,11 @@ namespace Datadog.Trace.Tests.Tagging
             }
         }
 
-        private static List<KeyValuePair<string, string>> GetTagsSnapshot(TagsList tags)
+        private static List<KeyValuePair<string, string>> GetTagsSnapshot(TagsList tags, bool openTelemetrySemanticsEnabled = false)
         {
             var result = new List<KeyValuePair<string, string>>();
             var processor = new TagCollectorProcessor(result);
-            tags.EnumerateTags(ref processor);
+            tags.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
             return result;
         }
 
