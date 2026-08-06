@@ -173,6 +173,85 @@ generate-windows-unit-tests-pipeline:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
 
+build-linux-x64-glibc:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: build
+  image: docker.io/library/docker:27-cli
+  tags: ["docker-in-docker:amd64"]
+  timeout: 90m
+  needs: []
+  variables:
+    DOCKER_BUILDKIT: "1"
+  script:
+    - |
+      set -eu
+
+      debian_image="dd-trace-dotnet/debian-builder:${CI_JOB_ID}"
+      centos_image="dd-trace-dotnet/centos7-builder:${CI_JOB_ID}"
+
+      echo "Building Debian .NET 10 builder image"
+      docker build \
+        --build-arg DOTNETSDK_VERSION=10.0.100 \
+        --tag "$debian_image" \
+        --target builder \
+        --file tracer/build/_build/docker/debian.dockerfile \
+        tracer/build/_build
+
+      echo "Building CentOS 7 .NET 7 native builder image"
+      docker build \
+        --build-arg DOTNETSDK_VERSION=7.0.306 \
+        --tag "$centos_image" \
+        --target builder \
+        --file tracer/build/_build/docker/centos7.dockerfile \
+        tracer/build/_build
+
+      run_nuke() {
+        image="$1"
+        shift
+
+        docker run --rm \
+          --cap-add=SYS_PTRACE \
+          --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
+          --env NugetPackageDirectory=/project/packages \
+          --env artifacts=/project/artifacts/output \
+          --env CI=true \
+          --env CI_JOB_ID \
+          --env CI_PROJECT_NAME \
+          --env CI_JOB_NAME_SLUG \
+          --env CI_COMMIT_SHA \
+          --env CI_COMMIT_BRANCH \
+          --env DD_LOGGER_DD_API_KEY \
+          --env NUKE_TELEMETRY_OPTOUT=1 \
+          --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+          "$image" \
+          dotnet /build/bin/Debug/_build.dll "$@"
+      }
+
+      # Match Azure's Linux x64 glibc build: managed components on Debian,
+      # native tracer and tests on CentOS 7, then compatibility checks on Debian.
+      run_nuke "$debian_image" Clean CompileManagedLoader
+      run_nuke "$centos_image" BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests
+      run_nuke "$debian_image" BuildManagedTracerHome ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths:
+      - artifacts/bin
+      - artifacts/monitoring-home
+      - artifacts/native-symbols
+      - artifacts/obj/**/ref/**/*
+      - artifacts/obj/**/refint/**/*
+      - artifacts/obj/Datadog.Trace.Tools.dd_dotnet/**/apphost
+      - artifacts/build_data/tests
+      - artifacts/build_data/logs
+      - artifacts/build_data/dumps
+    reports:
+      junit:
+        - artifacts/build_data/tests/*.xml
+
 build:
   except:
     variables:
