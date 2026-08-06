@@ -385,10 +385,18 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
     auto it = _appDomains.find(appDomainId);
     if (it != _appDomains.end())
     {
-        DBG("Dataflow::AppDomainShutdown -> AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name, " ] ");
+        // The entry is null when resolution failed and the failure was cached; don't dereference it.
+        if (it->second != nullptr)
+        {
+            DBG("Dataflow::AppDomainShutdown -> AppDomainId = ", Hex((ULONG) appDomainId), " [ ", it->second->Name,
+                " ] ");
+        }
+        else
+        {
+            DBG("Dataflow::AppDomainShutdown -> AppDomainId = ", Hex((ULONG) appDomainId), " (Not resolved)");
+        }
         DEL(it->second);
         _appDomains.erase(appDomainId);
-        _reportedAppDomainFailures.erase(appDomainId);
         return S_OK;
     }
     return S_FALSE;
@@ -429,7 +437,16 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
         auto it = _modules.find(moduleId);
         if (it != _modules.end())
         {
-            DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " [ ", it->second->_appDomain.Name, " ] ", it->second->_name);
+            // The entry is null when resolution failed and the failure was cached; don't dereference it.
+            if (it->second != nullptr)
+            {
+                DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " [ ",
+                    it->second->_appDomain.Name, " ] ", it->second->_name);
+            }
+            else
+            {
+                DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " (Not resolved)");
+            }
             DEL(it->second);
         }
         else
@@ -437,7 +454,6 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
             DBG("Dataflow::ModuleUnloaded -> ModuleID = ", Hex((ULONG) moduleId), " (Not found)");
         }
         _modules.erase(moduleId);
-        _reportedModuleFailures.erase(moduleId);
     }
     // Drop it from the pending preload list too. Otherwise the drain would later call
     // GetModuleInfo2 on a ModuleID the runtime has already torn down.
@@ -544,10 +560,8 @@ AppDomainInfo* Dataflow::GetAppDomain(AppDomainID id)
     hr = _profiler->GetAppDomainInfo(id, 256, &cchAppDomainName, wszAppDomainName, &pProcID);
     if (FAILED(hr))
     {
-        if (_reportedAppDomainFailures.insert(id).second)
-        {
-            trace::Logger::Error("Dataflow::GetAppDomain -> GetAppDomainInfo failed for AppDomainId ", id);
-        }
+        trace::Logger::Error("Dataflow::GetAppDomain -> GetAppDomainInfo failed for AppDomainId ", id);
+        _appDomains[id] = nullptr; // Cache the failure so it is reported and attempted only once
         return nullptr;
     }
 
@@ -588,14 +602,13 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     HRESULT hr = _profiler->GetModuleInfo2(id, &pbBaseLoadAddr, pathLen, &pathOut, wszPath, &assemblyId, &dwModuleFlags);
     if (FAILED(hr))
     {
-        if (_reportedModuleFailures.insert(id).second)
-        {
-            trace::Logger::Error("Dataflow::GetModuleInfo -> GetModuleInfo2 failed for ModuleId ", id, " hr:", Hex(hr));
-        }
+        trace::Logger::Error("Dataflow::GetModuleInfo -> GetModuleInfo2 failed for ModuleId ", id, " hr:", Hex(hr));
+        _modules[id] = nullptr; // Cache the failure so it is reported and attempted only once
         return nullptr;
     }
     if ((dwModuleFlags & COR_PRF_MODULE_WINDOWS_RUNTIME) != 0)
     {
+        _modules[id] = nullptr;
         return nullptr;
     } // Ignore any Windows Runtime modules.  We cannot obtain writeable metadata interfaces on them or instrument their IL
 
@@ -603,21 +616,17 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     hr = _profiler->GetAssemblyInfo(assemblyId, pathLen, &pathOut, wszName, &appDomainId, &modIDDummy);
     if (FAILED(hr))
     {
-        if (_reportedModuleFailures.insert(id).second)
-        {
-            trace::Logger::Error("Dataflow::GetModuleInfo -> GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ",
-                                 assemblyId, " hr:", Hex(hr));
-        }
+        trace::Logger::Error("Dataflow::GetModuleInfo -> GetAssemblyInfo failed for ModuleId ", id, " AssemblyId ",
+                             assemblyId, " hr:", Hex(hr));
+        _modules[id] = nullptr; // Cache the failure so it is reported and attempted only once
         return nullptr;
     }
 
     AppDomainInfo* appDomain = GetAppDomain(appDomainId);
     if (appDomain == nullptr)
     {
-        if (_reportedModuleFailures.insert(id).second)
-        {
-            trace::Logger::Error("Dataflow::GetModuleInfo -> GetAppDomain failed for AppDomainId ", appDomainId);
-        }
+        trace::Logger::Error("Dataflow::GetModuleInfo -> GetAppDomain failed for AppDomainId ", appDomainId);
+        _modules[id] = nullptr; // Cache the failure so it is reported and attempted only once
         return nullptr;
     }
 
@@ -626,7 +635,6 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     ModuleInfo* moduleInfo = new ModuleInfo(this, appDomain, id, modulePath, assemblyId, moduleName);
     DBG("Dataflow::GetModuleInfo -> Loaded Module ", shared::ToString(moduleInfo->GetModuleFullName()));
 
-    _reportedModuleFailures.erase(id);
     _modules[id] = moduleInfo;
     return moduleInfo;
 }
