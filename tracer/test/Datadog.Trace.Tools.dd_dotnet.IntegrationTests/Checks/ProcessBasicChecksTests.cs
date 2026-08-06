@@ -45,6 +45,79 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     {
     }
 
+    [SkippableTheory]
+    [InlineData("/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so")]
+    [InlineData("/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so")]
+    [InlineData("/home/site/wwwroot/datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so")]
+    [InlineData("/home/site/wwwroot/datadog/linux-musl-arm64/Datadog.Trace.ClrProfiler.Native.so")]
+    public void DetectsBundleInAzureAppServiceRootWhenMainModuleIsDotnet(string profilerPath)
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Linux);
+
+        var environmentVariables = new Dictionary<string, string>
+        {
+            ["WEBSITE_SITE_NAME"] = "app",
+            ["CORECLR_PROFILER"] = Utils.Profilerid,
+            ["CORECLR_ENABLE_PROFILING"] = "1",
+            ["CORECLR_PROFILER_PATH"] = profilerPath
+        };
+        var process = new ProcessInfo("dotnet", 1, environmentVariables, "/usr/share/dotnet/dotnet", ["libcoreclr.so"]);
+
+        using var console = ConsoleHelper.Redirect();
+
+        ProcessBasicCheck.Run(process, MockRegistryService([], ProfilerPath));
+
+        console.Output.Should().Contain(TracingWithBundleProfilerPath);
+
+        console.Output.Should().NotContain(TracingWithInstallerLinux);
+    }
+
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [InlineData(@"D:\home\site\wwwroot\datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll")]
+    [InlineData(@"D:\home\site\wwwroot\datadog\win-x86\Datadog.Trace.ClrProfiler.Native.dll")]
+    public void DetectsBundleInAzureAppServiceRootOnWindowsWhenMainModuleIsDotnet(string profilerPath)
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+
+        var environmentVariables = new Dictionary<string, string>
+        {
+            ["WEBSITE_SITE_NAME"] = "app",
+            ["CORECLR_PROFILER"] = Utils.Profilerid,
+            ["CORECLR_ENABLE_PROFILING"] = "1",
+            ["CORECLR_PROFILER_PATH"] = profilerPath
+        };
+        var process = new ProcessInfo("dotnet", 1, environmentVariables, @"C:\Program Files\dotnet\dotnet.exe", ["coreclr.dll"]);
+
+        using var console = ConsoleHelper.Redirect();
+
+        ProcessBasicCheck.Run(process, MockRegistryService([], ProfilerPath));
+
+        console.Output.Should().Contain(TracingWithBundleProfilerPath);
+    }
+
+    [SkippableFact]
+    public void DoesNotDetectBundleInAzureAppServiceRootOutsideAzureAppService()
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Linux);
+
+        const string profilerPath = "/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so";
+        var environmentVariables = new Dictionary<string, string>
+        {
+            ["CORECLR_PROFILER"] = Utils.Profilerid,
+            ["CORECLR_ENABLE_PROFILING"] = "1",
+            ["CORECLR_PROFILER_PATH"] = profilerPath
+        };
+        var process = new ProcessInfo("dotnet", 1, environmentVariables, "/usr/share/dotnet/dotnet", ["libcoreclr.so"]);
+
+        using var console = ConsoleHelper.Redirect();
+
+        ProcessBasicCheck.Run(process, MockRegistryService([], ProfilerPath));
+
+        console.Output.Should().NotContain(TracingWithBundleProfilerPath);
+        console.Output.Should().Contain(TracingWithInstallerLinux);
+    }
+
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
     public async Task DetectRuntime()
