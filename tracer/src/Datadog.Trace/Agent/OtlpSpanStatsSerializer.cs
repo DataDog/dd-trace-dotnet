@@ -270,10 +270,7 @@ namespace Datadog.Trace.Agent
                 }
 
                 WriteBoolKvJson(writer, "datadog.span.top_level", key.IsTopLevel);
-                if (key.IsTraceRoot is { } isTraceRoot)
-                {
-                    WriteBoolKvJson(writer, "datadog.is_trace_root", isTraceRoot);
-                }
+                WriteBoolKvJson(writer, "datadog.is_trace_root", key.IsTraceRoot ?? false);
 
                 if (key.IsSyntheticsRequest)
                 {
@@ -547,10 +544,7 @@ namespace Datadog.Trace.Agent
                 }
 
                 WriteBoolAttribute(writer, "datadog.span.top_level", key.IsTopLevel, FieldNumbers.HistogramDataPointAttributes);
-                if (key.IsTraceRoot is { } isTraceRoot)
-                {
-                    WriteBoolAttribute(writer, "datadog.is_trace_root", isTraceRoot, FieldNumbers.HistogramDataPointAttributes);
-                }
+                WriteBoolAttribute(writer, "datadog.is_trace_root", key.IsTraceRoot ?? false, FieldNumbers.HistogramDataPointAttributes);
 
                 if (key.IsSyntheticsRequest)
                 {

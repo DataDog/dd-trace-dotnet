@@ -169,8 +169,8 @@ namespace Datadog.Trace.Tests.Agent
         [Theory]
         [InlineData(true, "true")]
         [InlineData(false, "false")]
-        [InlineData(null, null)]
-        public void SerializeJson_OtelSemanticsDisabled_EmitsKnownIsTraceRoot(bool? isTraceRoot, string? expected)
+        [InlineData(null, "false")]
+        public void SerializeJson_OtelSemanticsDisabled_EmitsIsTraceRoot(bool? isTraceRoot, string expected)
         {
             var buffer = CreateBuffer();
             var key = CreateKey(isTraceRoot: isTraceRoot);
@@ -178,14 +178,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var attrs = GetDataPointAttributes(SerializeToJson(buffer, otelSemanticsEnabled: false));
 
-            if (expected is null)
-            {
-                attrs.Should().NotContainKey("datadog.is_trace_root");
-            }
-            else
-            {
-                attrs.Should().ContainKey("datadog.is_trace_root").WhoseValue.Should().Be(expected);
-            }
+            attrs.Should().ContainKey("datadog.is_trace_root").WhoseValue.Should().Be(expected);
         }
 
         [Fact]
@@ -201,9 +194,10 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Theory]
-        [InlineData(true, false)]
-        [InlineData(false, true)]
-        public void SerializeJson_DefaultSemantics_UsesBoolValues(bool isTopLevel, bool isTraceRoot)
+        [InlineData(true, false, false)]
+        [InlineData(false, true, true)]
+        [InlineData(true, null, false)]
+        public void SerializeJson_DefaultSemantics_UsesBoolValues(bool isTopLevel, bool? isTraceRoot, bool expectedIsTraceRoot)
         {
             var buffer = CreateBuffer();
             var key = CreateKey(isTopLevel: isTopLevel, isTraceRoot: isTraceRoot);
@@ -216,7 +210,7 @@ namespace Datadog.Trace.Tests.Agent
             topLevelValue["boolValue"]!.Type.Should().Be(JTokenType.Boolean);
             topLevelValue["boolValue"]!.Value<bool>().Should().Be(isTopLevel);
             traceRootValue["boolValue"]!.Type.Should().Be(JTokenType.Boolean);
-            traceRootValue["boolValue"]!.Value<bool>().Should().Be(isTraceRoot);
+            traceRootValue["boolValue"]!.Value<bool>().Should().Be(expectedIsTraceRoot);
         }
 
         [Fact]
@@ -481,8 +475,8 @@ namespace Datadog.Trace.Tests.Agent
         [Theory]
         [InlineData(true, "true")]
         [InlineData(false, "false")]
-        [InlineData(null, null)]
-        public void Serialize_Protobuf_OtelSemanticsDisabled_EmitsKnownIsTraceRoot(bool? isTraceRoot, string? expected)
+        [InlineData(null, "false")]
+        public void Serialize_Protobuf_OtelSemanticsDisabled_EmitsIsTraceRoot(bool? isTraceRoot, string expected)
         {
             var buffer = CreateBuffer();
             var key = CreateKey(isTraceRoot: isTraceRoot);
@@ -490,20 +484,14 @@ namespace Datadog.Trace.Tests.Agent
 
             var attrs = GetProtobufDataPointAttributes(buffer, otelSemanticsEnabled: false);
 
-            if (expected is null)
-            {
-                attrs.Should().NotContainKey("datadog.is_trace_root");
-            }
-            else
-            {
-                attrs.Should().ContainKey("datadog.is_trace_root").WhoseValue.Should().Be(expected);
-            }
+            attrs.Should().ContainKey("datadog.is_trace_root").WhoseValue.Should().Be(expected);
         }
 
         [Theory]
-        [InlineData(true, false)]
-        [InlineData(false, true)]
-        public void Serialize_Protobuf_DefaultSemantics_UsesBoolValues(bool isTopLevel, bool isTraceRoot)
+        [InlineData(true, false, false)]
+        [InlineData(false, true, true)]
+        [InlineData(true, null, false)]
+        public void Serialize_Protobuf_DefaultSemantics_UsesBoolValues(bool isTopLevel, bool? isTraceRoot, bool expectedIsTraceRoot)
         {
             var buffer = CreateBuffer();
             var key = CreateKey(isTopLevel: isTopLevel, isTraceRoot: isTraceRoot);
@@ -514,7 +502,7 @@ namespace Datadog.Trace.Tests.Agent
             GetAnyValueFieldNumber(values["datadog.span.top_level"]).Should().Be(2);
             ReadAnyValue(values["datadog.span.top_level"]).Should().Be(isTopLevel.ToString().ToLowerInvariant());
             GetAnyValueFieldNumber(values["datadog.is_trace_root"]).Should().Be(2);
-            ReadAnyValue(values["datadog.is_trace_root"]).Should().Be(isTraceRoot.ToString().ToLowerInvariant());
+            ReadAnyValue(values["datadog.is_trace_root"]).Should().Be(expectedIsTraceRoot.ToString().ToLowerInvariant());
         }
 
         [Theory]
