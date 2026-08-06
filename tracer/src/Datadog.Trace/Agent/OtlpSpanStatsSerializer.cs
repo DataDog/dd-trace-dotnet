@@ -183,7 +183,6 @@ namespace Datadog.Trace.Agent
         {
             var startTimeUnixNano = (ulong)buffer.Start;
             var endTimeUnixNano = (ulong)(buffer.Start + bucketDurationNs);
-            var defaultService = buffer.Header.Details.DefaultServiceName;
 
             writer.WriteStartObject();
             writer.WritePropertyName("aggregationTemporality");
@@ -199,7 +198,7 @@ namespace Datadog.Trace.Agent
                     continue;
                 }
 
-                WriteDataPointJson(writer, kvp.Key, bucket, startTimeUnixNano, endTimeUnixNano, defaultService);
+                WriteDataPointJson(writer, kvp.Key, bucket, startTimeUnixNano, endTimeUnixNano);
             }
 
             writer.WriteEndArray();
@@ -211,8 +210,7 @@ namespace Datadog.Trace.Agent
             StatsAggregationKey key,
             StatsBucket bucket,
             ulong startTimeUnixNano,
-            ulong endTimeUnixNano,
-            string defaultServiceName)
+            ulong endTimeUnixNano)
         {
             writer.WriteStartObject();
 
@@ -230,7 +228,7 @@ namespace Datadog.Trace.Agent
 
             WriteStringKvJson(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue);
 
-            WriteStringKvJson(writer, "service.name", StringUtil.IsNullOrEmpty(key.Service) ? (StringUtil.IsNullOrEmpty(defaultServiceName) ? "unknown_service:dotnet" : defaultServiceName) : key.Service);
+            WriteStringKvJson(writer, "service.name", key.Service);
 
             if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
             {
@@ -472,7 +470,7 @@ namespace Datadog.Trace.Agent
                     continue;
                 }
 
-                var dataPointData = SerializeDataPoint(kvp.Key, bucket, startTimeUnixNano, endTimeUnixNano, buffer.Header.Details.DefaultServiceName);
+                var dataPointData = SerializeDataPoint(kvp.Key, bucket, startTimeUnixNano, endTimeUnixNano);
                 WriteTag(writer, FieldNumbers.DataPoints, WireTypeLengthDelimited);
                 WriteVarInt(writer, dataPointData.Length);
                 writer.Write(dataPointData);
@@ -489,8 +487,7 @@ namespace Datadog.Trace.Agent
             StatsAggregationKey key,
             StatsBucket bucket,
             ulong startTimeUnixNano,
-            ulong endTimeUnixNano,
-            string defaultServiceName)
+            ulong endTimeUnixNano)
         {
             using var stream = new MemoryStream(256);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
@@ -505,7 +502,7 @@ namespace Datadog.Trace.Agent
 
             WriteAttribute(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue, FieldNumbers.HistogramDataPointAttributes);
 
-            WriteAttribute(writer, "service.name", StringUtil.IsNullOrEmpty(key.Service) ? (StringUtil.IsNullOrEmpty(defaultServiceName) ? "unknown_service:dotnet" : defaultServiceName) : key.Service, FieldNumbers.HistogramDataPointAttributes);
+            WriteAttribute(writer, "service.name", key.Service, FieldNumbers.HistogramDataPointAttributes);
 
             if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
             {
