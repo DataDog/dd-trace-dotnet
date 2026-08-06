@@ -72,6 +72,30 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         console.Output.Should().NotContain(TracingWithInstallerLinux);
     }
 
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [InlineData(@"D:\home\site\wwwroot\datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll")]
+    [InlineData(@"D:\home\site\wwwroot\datadog\win-x86\Datadog.Trace.ClrProfiler.Native.dll")]
+    public void DetectsBundleInAzureAppServiceRootOnWindowsWhenMainModuleIsDotnet(string profilerPath)
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+
+        var environmentVariables = new Dictionary<string, string>
+        {
+            ["WEBSITE_SITE_NAME"] = "app",
+            ["CORECLR_PROFILER"] = Utils.Profilerid,
+            ["CORECLR_ENABLE_PROFILING"] = "1",
+            ["CORECLR_PROFILER_PATH"] = profilerPath
+        };
+        var process = new ProcessInfo("dotnet", 1, environmentVariables, @"C:\Program Files\dotnet\dotnet.exe", ["coreclr.dll"]);
+
+        using var console = ConsoleHelper.Redirect();
+
+        ProcessBasicCheck.Run(process, MockRegistryService([], ProfilerPath));
+
+        console.Output.Should().Contain(TracingWithBundleProfilerPath);
+    }
+
     [SkippableFact]
     public void DoesNotDetectBundleInAzureAppServiceRootOutsideAzureAppService()
     {

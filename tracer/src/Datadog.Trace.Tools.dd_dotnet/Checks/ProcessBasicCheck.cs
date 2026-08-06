@@ -22,7 +22,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         internal const string ClsidKey = @"SOFTWARE\Classes\CLSID\" + Utils.Profilerid + @"\InprocServer32";
         internal const string Clsid32Key = @"SOFTWARE\Classes\Wow6432Node\CLSID\" + Utils.Profilerid + @"\InprocServer32";
         private const string AzureAppServiceSiteNameKey = "WEBSITE_SITE_NAME";
-        internal const string AzureAppServiceRootPath = "/home/site/wwwroot";
+        internal static readonly string AzureAppServiceRootPath = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? @"D:\home\site\wwwroot"
+            : "/home/site/wwwroot";
 
         public static bool Run(ProcessInfo process, IRegistryService? registryService = null)
         {
