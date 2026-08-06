@@ -108,9 +108,12 @@ TEST(DataflowTests, UnresolvedModulesAreResolvedOnDemand)
     delete dataflow;
 }
 
-TEST(DataflowTests, FailedResolutionIsNotCachedAndIsRetried)
+TEST(DataflowTests, FailedResolutionIsCachedAndNotRetried)
 {
-    // A transient failure must not permanently poison the module: the next lookup has to try again.
+    // GetModuleInfo is reached from the JIT callbacks, so a module that cannot be resolved must not
+    // be re-attempted on every JIT: that would mean thousands of CLR calls and error log lines for
+    // one module. The failure modes here are permanent for a given ModuleID (unloading module, dead
+    // id, Windows Runtime), so the failure is cached.
     MockCorProfilerInfo mockProfiler;
     mockProfiler.getAssemblyInfoFailuresLeft = 1;
     auto runtimeInfo = MakeTestRuntimeInformation();
@@ -121,8 +124,26 @@ TEST(DataflowTests, FailedResolutionIsNotCachedAndIsRetried)
     EXPECT_EQ(nullptr, dataflow->GetModuleInfo(42));
     EXPECT_EQ(1, mockProfiler.getModuleInfo2CallCount);
 
-    EXPECT_NE(nullptr, dataflow->GetModuleInfo(42));
-    EXPECT_EQ(2, mockProfiler.getModuleInfo2CallCount);
+    // Served from the cached failure even though the mock would now succeed.
+    EXPECT_EQ(nullptr, dataflow->GetModuleInfo(42));
+    EXPECT_EQ(1, mockProfiler.getModuleInfo2CallCount);
+
+    delete dataflow;
+}
+
+TEST(DataflowTests, UnloadingAModuleWithACachedFailureDoesNotDereferenceIt)
+{
+    // A cached failure stores a null entry; ModuleUnloaded logs the module name, so it must not
+    // dereference it (this crashed with debug logging enabled).
+    MockCorProfilerInfo mockProfiler;
+    mockProfiler.getAssemblyInfoFailuresLeft = 1;
+    auto runtimeInfo = MakeTestRuntimeInformation();
+    std::vector<ModuleID> preloadedModules{};
+
+    auto dataflow = new iast::Dataflow({}, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
+
+    EXPECT_EQ(nullptr, dataflow->GetModuleInfo(42));
+    EXPECT_EQ(S_OK, dataflow->ModuleUnloaded(42));
 
     delete dataflow;
 }
