@@ -55,7 +55,7 @@ namespace Datadog.Trace.Agent
         /// <summary>
         /// The currently active buffer.
         /// Note: Thread-safetiness in this class relies on the fact that only the serialization thread can change the active buffer.
-        /// <see cref="FlushBuffers"/> runs on other threads, so cross-thread accesses use <see cref="Volatile"/>.
+        /// <see cref="FlushBuffers"/> runs on the flush loop thread, so cross-thread accesses use <see cref="Volatile"/>.
         /// </summary>
         private SpanBuffer _activeBuffer;
 
@@ -64,9 +64,6 @@ namespace Datadog.Trace.Agent
         private TaskCompletionSource<bool> _forceFlush;
         private TaskCompletionSource<bool>? _pendingFlushRequest;
         private bool _flushLoopStopped;
-
-        private Task _frontBufferFlushTask;
-        private Task _backBufferFlushTask;
 
         private long _droppedP0Traces;
         private long _droppedP0Spans;
@@ -134,10 +131,6 @@ namespace Datadog.Trace.Agent
             _apmTracingEnabled = apmTracingEnabled;
             _traceMetricsEnabled = initialTracerMetricsEnabled;
             _statsd.SetRequired(StatsdConsumer.AgentWriter, initialTracerMetricsEnabled);
-
-            // Assign before starting the loops: the serialization thread can reach RequestFlush(),
-            // and the flush loop reads these, so they must be initialized first.
-            _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
 
             _serializationTask = Task.Factory.StartNew(SerializeTracesLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             _serializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
@@ -397,7 +390,9 @@ namespace Datadog.Trace.Agent
         }
 
         /// <summary>
-        /// Flush the active buffer, and the fallback buffer if full
+        /// Flush the active buffer, and the fallback buffer if full. Buffers are flushed (and so locked)
+        /// one at a time, and only from <see cref="FlushBuffersTaskLoopAsync"/>, so that the serialization
+        /// thread always has a buffer available to write to.
         /// </summary>
         /// <param name="flushAllBuffers">If set to true, then flush the back buffer even if not full</param>
         /// <returns>Async operation</returns>
@@ -425,101 +420,88 @@ namespace Datadog.Trace.Agent
 
         private async Task FlushBuffer(SpanBuffer buffer)
         {
-            if (buffer == _frontBuffer)
+            // Wait for write operations to complete, then prevent further modifications
+            if (!buffer.Lock())
             {
-                await _frontBufferFlushTask.ConfigureAwait(false);
-                await (_frontBufferFlushTask = InternalBufferFlush()).ConfigureAwait(false);
-            }
-            else
-            {
-                await _backBufferFlushTask.ConfigureAwait(false);
-                await (_backBufferFlushTask = InternalBufferFlush()).ConfigureAwait(false);
+                // The flush loop is the only thing that locks buffers, and it never runs two flushes
+                // at once, so this should be unreachable in production
+                return;
             }
 
-            async Task InternalBufferFlush()
+            try
             {
-                // Wait for write operations to complete, then prevent further modifications
-                if (!buffer.Lock())
+                if (Volatile.Read(ref _traceMetricsEnabled))
                 {
-                    // Buffer is already locked, it's probably being flushed from another thread
-                    return;
-                }
-
-                try
-                {
-                    if (Volatile.Read(ref _traceMetricsEnabled))
+                    using var lease = _statsd.TryGetClientLease();
+                    if (lease.Client is { } statsd)
                     {
-                        using var lease = _statsd.TryGetClientLease();
-                        if (lease.Client is { } statsd)
-                        {
-                            statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, buffer.TraceCount);
-                            statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
-                        }
-                    }
-
-                    var droppedTracesTooLarge = Interlocked.Exchange(ref _droppedTracesTooLarge, 0);
-                    var droppedTracesBufferFull = Interlocked.Exchange(ref _droppedTracesBufferFull, 0);
-                    var droppedTracesBufferFullAndLocked = Interlocked.Exchange(ref _droppedTracesBufferFullAndLocked, 0);
-                    var droppedTracesBuffersLocked = Interlocked.Exchange(ref _droppedTracesBuffersLocked, 0);
-
-                    if (droppedTracesTooLarge > 0 || droppedTracesBufferFull > 0 || droppedTracesBufferFullAndLocked > 0 || droppedTracesBuffersLocked > 0)
-                    {
-                        Log.Warning(
-                            "Traces were dropped since the last flush operation: {TooLargeCount} exceeded the trace buffer limit of {MaxBufferSize} bytes, {BuffersFullCount} found both buffers full, {BufferFullAndLockedCount} found one buffer full and the other unavailable while being flushed, and {BuffersLockedCount} found both buffers unavailable while being flushed.",
-                            new object?[]
-                            {
-                                droppedTracesTooLarge,
-                                _frontBuffer.MaxBufferSize,
-                                droppedTracesBufferFull,
-                                droppedTracesBufferFullAndLocked,
-                                droppedTracesBuffersLocked,
-                            });
-                    }
-
-                    if (buffer.TraceCount > 0)
-                    {
-                        long droppedP0Traces = 0;
-                        long droppedP0Spans = 0;
-
-                        if (CanComputeStats)
-                        {
-                            droppedP0Traces = Interlocked.Exchange(ref _droppedP0Traces, 0);
-                            droppedP0Spans = Interlocked.Exchange(ref _droppedP0Spans, 0);
-                            Log.Debug("Flushing {Spans} spans across {Traces} traces. CanComputeStats is enabled with {DroppedP0Traces} droppedP0Traces and {DroppedP0Spans} droppedP0Spans", buffer.SpanCount, buffer.TraceCount, droppedP0Traces, droppedP0Spans);
-                            // Metrics for unsampled traces/spans already recorded
-                        }
-                        else
-                        {
-                            Log.Debug<int, int>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is disabled.", buffer.SpanCount, buffer.TraceCount);
-                        }
-
-                        var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans, _apmTracingEnabled).ConfigureAwait(false);
-
-                        TelemetryFactory.Metrics.RecordCountTraceChunkSent(buffer.TraceCount);
-                        if (success)
-                        {
-                            _traceKeepRateCalculator.IncrementKeeps(buffer.TraceCount);
-                        }
-                        else
-                        {
-                            TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.ApiError, buffer.TraceCount);
-                            TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.ApiError, buffer.SpanCount);
-                            _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
-                        }
+                        statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, buffer.TraceCount);
+                        statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
                     }
                 }
-                catch (Exception ex)
+
+                var droppedTracesTooLarge = Interlocked.Exchange(ref _droppedTracesTooLarge, 0);
+                var droppedTracesBufferFull = Interlocked.Exchange(ref _droppedTracesBufferFull, 0);
+                var droppedTracesBufferFullAndLocked = Interlocked.Exchange(ref _droppedTracesBufferFullAndLocked, 0);
+                var droppedTracesBuffersLocked = Interlocked.Exchange(ref _droppedTracesBuffersLocked, 0);
+
+                if (droppedTracesTooLarge > 0 || droppedTracesBufferFull > 0 || droppedTracesBufferFullAndLocked > 0 || droppedTracesBuffersLocked > 0)
                 {
-                    Log.Error(ex, "An unhandled error occurred while flushing a buffer");
-                    _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
-                    TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.ApiError, buffer.TraceCount);
-                    TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.ApiError, buffer.SpanCount);
+                    Log.Warning(
+                        "Traces were dropped since the last flush operation: {TooLargeCount} exceeded the trace buffer limit of {MaxBufferSize} bytes, {BuffersFullCount} found both buffers full, {BufferFullAndLockedCount} found one buffer full and the other unavailable while being flushed, and {BuffersLockedCount} found both buffers unavailable while being flushed.",
+                        new object?[]
+                        {
+                            droppedTracesTooLarge,
+                            _frontBuffer.MaxBufferSize,
+                            droppedTracesBufferFull,
+                            droppedTracesBufferFullAndLocked,
+                            droppedTracesBuffersLocked,
+                        });
                 }
-                finally
+
+                if (buffer.TraceCount > 0)
                 {
-                    // Clear and unlock the buffer
-                    buffer.Clear();
+                    long droppedP0Traces = 0;
+                    long droppedP0Spans = 0;
+
+                    if (CanComputeStats)
+                    {
+                        droppedP0Traces = Interlocked.Exchange(ref _droppedP0Traces, 0);
+                        droppedP0Spans = Interlocked.Exchange(ref _droppedP0Spans, 0);
+                        Log.Debug("Flushing {Spans} spans across {Traces} traces. CanComputeStats is enabled with {DroppedP0Traces} droppedP0Traces and {DroppedP0Spans} droppedP0Spans", buffer.SpanCount, buffer.TraceCount, droppedP0Traces, droppedP0Spans);
+                        // Metrics for unsampled traces/spans already recorded
+                    }
+                    else
+                    {
+                        Log.Debug<int, int>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is disabled.", buffer.SpanCount, buffer.TraceCount);
+                    }
+
+                    var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans, _apmTracingEnabled).ConfigureAwait(false);
+
+                    TelemetryFactory.Metrics.RecordCountTraceChunkSent(buffer.TraceCount);
+                    if (success)
+                    {
+                        _traceKeepRateCalculator.IncrementKeeps(buffer.TraceCount);
+                    }
+                    else
+                    {
+                        TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.ApiError, buffer.TraceCount);
+                        TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.ApiError, buffer.SpanCount);
+                        _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "An unhandled error occurred while flushing a buffer");
+                _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
+                TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.ApiError, buffer.TraceCount);
+                TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.ApiError, buffer.SpanCount);
+            }
+            finally
+            {
+                // Clear and unlock the buffer
+                buffer.Clear();
             }
         }
 
