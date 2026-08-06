@@ -99,10 +99,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var finalJson = merged.ToString(Formatting.Indented);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-#if NETCOREAPP
             // different TFMs use different underlying handlers, which we don't really care about for the snapshots
-            settings.AddSimpleScrubber("System.Net.Http.HttpClientHandler", "System.Net.Http.SocketsHttpHandler");
-#endif
+            settings.AddSimpleScrubber("System.Net.Http.SocketsHttpHandler", "System.Net.Http.HttpClientHandler");
             OtlpSnapshotHelper.AddProtobufToJsonScrubbers(settings);
 
             var suffix = openTelemetrySemanticsEnabled ? "_OtelSemantics" : string.Empty;

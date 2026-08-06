@@ -1,4 +1,4 @@
-﻿{
+{
   "resourceSpans": [
     {
       "resource": {
@@ -118,7 +118,7 @@
                 {
                   "key": "http-client-handler-type",
                   "value": {
-                    "stringValue": "System.Net.Http.SocketsHttpHandler"
+                    "stringValue": "System.Net.Http.HttpClientHandler"
                   }
                 },
                 {
@@ -201,7 +201,7 @@
                 {
                   "key": "http-client-handler-type",
                   "value": {
-                    "stringValue": "System.Net.Http.SocketsHttpHandler"
+                    "stringValue": "System.Net.Http.HttpClientHandler"
                   }
                 },
                 {
@@ -284,7 +284,7 @@
                 {
                   "key": "http-client-handler-type",
                   "value": {
-                    "stringValue": "System.Net.Http.SocketsHttpHandler"
+                    "stringValue": "System.Net.Http.HttpClientHandler"
                   }
                 },
                 {
@@ -367,7 +367,7 @@
                 {
                   "key": "http-client-handler-type",
                   "value": {
-                    "stringValue": "System.Net.Http.SocketsHttpHandler"
+                    "stringValue": "System.Net.Http.HttpClientHandler"
                   }
                 },
                 {
@@ -456,7 +456,7 @@
                 {
                   "key": "http-client-handler-type",
                   "value": {
-                    "stringValue": "System.Net.Http.SocketsHttpHandler"
+                    "stringValue": "System.Net.Http.HttpClientHandler"
                   }
                 },
                 {
@@ -543,7 +543,7 @@
                 {
                   "key": "http-client-handler-type",
                   "value": {
-                    "stringValue": "System.Net.Http.SocketsHttpHandler"
+                    "stringValue": "System.Net.Http.HttpClientHandler"
                   }
                 },
                 {
@@ -626,7 +626,7 @@
                 {
                   "key": "http-client-handler-type",
                   "value": {
-                    "stringValue": "System.Net.Http.SocketsHttpHandler"
+                    "stringValue": "System.Net.Http.HttpClientHandler"
                   }
                 },
                 {
