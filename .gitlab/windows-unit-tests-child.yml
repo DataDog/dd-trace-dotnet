@@ -24,10 +24,38 @@
         -e WINDOWS_BUILDER=true `
         -e AWS_NETWORKING=true `
         -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e DD_LOGGER_ENABLED=true `
         -e DD_LOGGER_DD_API_KEY `
+        -e DD_LOGGER_DD_TRACE_LOG_DIRECTORY=c:\mnt\artifacts\build_data\infra_logs `
+        -e "DD_LOGGER_DD_TAGS=test.configuration.job:$env:CI_JOB_NAME" `
         -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+        -e GITLAB_CI `
+        -e CI_PROJECT_URL `
+        -e CI_PIPELINE_ID `
+        -e CI_REPOSITORY_URL `
+        -e CI_COMMIT_SHA `
+        -e CI_COMMIT_BRANCH `
+        -e CI_COMMIT_TAG `
+        -e CI_COMMIT_REF_NAME `
+        -e CI_PROJECT_DIR=c:\mnt `
+        -e CI_PROJECT_PATH `
         -e CI_PROJECT_NAME `
+        -e CI_PIPELINE_IID `
+        -e CI_PIPELINE_URL `
+        -e CI_JOB_URL `
+        -e CI_JOB_NAME `
         -e CI_JOB_NAME_SLUG `
+        -e CI_JOB_STAGE `
+        -e CI_COMMIT_MESSAGE `
+        -e CI_COMMIT_AUTHOR `
+        -e CI_COMMIT_TIMESTAMP `
+        -e CI_RUNNER_ID `
+        -e CI_RUNNER_TAGS `
+        -e CI_MERGE_REQUEST_SOURCE_BRANCH_SHA `
+        -e CI_MERGE_REQUEST_TARGET_BRANCH_SHA `
+        -e CI_MERGE_REQUEST_DIFF_BASE_SHA `
+        -e CI_MERGE_REQUEST_TARGET_BRANCH_NAME `
+        -e CI_MERGE_REQUEST_IID `
         --entrypoint cmd.exe `
         $env:WINDOWS_BUILD_IMAGE `
         /d /s /c `
@@ -42,6 +70,7 @@
     paths:
       - artifacts/build_data/results
       - artifacts/build_data/logs
+      - artifacts/build_data/infra_logs
       - artifacts/build_data/dumps
   id_tokens:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
