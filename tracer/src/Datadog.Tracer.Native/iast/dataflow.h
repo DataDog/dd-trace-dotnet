@@ -65,9 +65,13 @@ namespace iast
         std::map<ModuleID, ModuleInfo*> _modules;
         std::map<AppDomainID, AppDomainInfo*> _appDomains;
 
-        void LoadSecurityControls();
+        // Resolution failures are not cached, so a module that keeps failing is retried on every JIT
+        // callback. These track what has already been reported, to keep one error out of the log per
+        // module/app domain instead of one per JIT.
+        std::set<ModuleID> _reportedModuleFailures;
+        std::set<AppDomainID> _reportedAppDomainFailures;
 
-        ModuleInfo* ResolveModuleInfo(ModuleID id);
+        void LoadSecurityControls();
     protected:
         bool _setILOnJit = false;
 
