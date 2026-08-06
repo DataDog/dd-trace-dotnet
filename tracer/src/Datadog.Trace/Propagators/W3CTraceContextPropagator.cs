@@ -314,25 +314,25 @@ namespace Datadog.Trace.Propagators
                 return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null);
             }
 
-            SplitTraceStateValues(header!, out var ddValues, out var additionalValues);
+            SplitTraceStateValues(new StringSegment(header!).Trim(), out var ddValues, out var precedingMembers, out var succeedingMembers, out _);
+            var additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
 
-            if (ddValues is null or { Length: < 6 })
+            if (ddValues.Length < 3)
             {
                 // "dd" section not found or it is too short
-                // shortest valid length is 6 as in "dd=a:b"
+                // shortest valid length is 3 as in "a:b" ("dd=" prefix already stripped)
                 // note for this case the p will be viewed as 0 if added as a span tag
                 return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues);
             }
 
             int? samplingPriority = null;
-            string? origin = null;
-            string? lastParent = null;
+            StringSegment origin = default;
+            StringSegment lastParent = default;
             var propagatedTagsBuilder = StringBuilderCache.Acquire();
 
             try
             {
-                // skip "dd="
-                var startIndex = 3;
+                var startIndex = 0;
 
                 // name1:value1;
                 //             ^ endIndex
@@ -346,7 +346,6 @@ namespace Datadog.Trace.Propagators
                         break;
                     }
 
-                    // search for next separator semicolon
                     var endIndex = ddValues.IndexOf(TraceStateDatadogPairsSeparator, startIndex);
 
                     if (endIndex < 0)
@@ -369,61 +368,31 @@ namespace Datadog.Trace.Propagators
                         continue;
                     }
 
-#if NETCOREAPP
-                    var name = ddValues.AsSpan(start: startIndex, length: colonIndex - startIndex);
-                    var value = ddValues.AsSpan(start: colonIndex + 1, length: endIndex - colonIndex - 1);
+                    var name = ddValues.Slice(startIndex, colonIndex - startIndex);
+                    var value = ddValues.Slice(colonIndex + 1, endIndex - colonIndex - 1);
 
                     if (name.Equals(TraceStateSamplingPriorityKey, StringComparison.Ordinal))
                     {
-                        // SamplingPriorityToInt32(ReadOnlySpan<char>)
                         samplingPriority = SamplingPriorityToInt32(value);
                     }
                     else if (name.Equals(TraceStateOriginKey, StringComparison.Ordinal))
                     {
-                        origin = value.ToString();
+                        origin = value;
                     }
                     else if (name.Equals(TraceStateLastParentKey, StringComparison.Ordinal))
                     {
-                        lastParent = value.ToString();
-                    }
-                    else if (name.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
-                    {
-                        value = ReplaceCharacters(value, LowerBound, UpperBound, OutOfBoundsReplacement, ExtractPropagatedTagValueReplacements);
-
-                        propagatedTagsBuilder.Append(TagPropagation.PropagatedTagPrefix)
-                                             .Append(name[2..]) // tag name without "t." prefix
-                                             .Append(TagPropagation.KeyValueSeparator)
-                                             .Append(value)
-                                             .Append(TagPropagation.TagPairSeparator);
-                    }
-#else
-                    var name = ddValues.Substring(startIndex: startIndex, length: colonIndex - startIndex);
-                    var value = ddValues.Substring(startIndex: colonIndex + 1, length: endIndex - colonIndex - 1);
-
-                    if (name == TraceStateSamplingPriorityKey)
-                    {
-                        // SamplingPriorityToInt32(string)
-                        samplingPriority = SamplingPriorityToInt32(value);
-                    }
-                    else if (name == TraceStateOriginKey)
-                    {
-                        origin = value;
-                    }
-                    else if (name == TraceStateLastParentKey)
-                    {
                         lastParent = value;
                     }
-                    else if (name.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
+                    else if (name.StartsWith(PropagatedTagPrefix))
                     {
                         value = ReplaceCharacters(value, LowerBound, UpperBound, OutOfBoundsReplacement, ExtractPropagatedTagValueReplacements);
 
                         propagatedTagsBuilder.Append(TagPropagation.PropagatedTagPrefix)
-                                             .Append(name.Substring(2)) // tag name without "t." prefix
+                                             .Append(name.Value, name.Offset + 2, name.Length - 2)
                                              .Append(TagPropagation.KeyValueSeparator)
-                                             .Append(value)
+                                             .Append(value.Value, value.Offset, value.Length)
                                              .Append(TagPropagation.TagPairSeparator);
                     }
-#endif
 
                     // skip past the semicolon
                     startIndex = endIndex + 1;
@@ -447,9 +416,7 @@ namespace Datadog.Trace.Propagators
                     propagatedTags = null;
                 }
 
-                lastParent ??= ZeroLastParent;
-
-                return new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
+                return new W3CTraceState(samplingPriority, origin.IsEmpty ? null : origin.ToString(), lastParent.IsEmpty ? ZeroLastParent : lastParent.ToString(), propagatedTags, additionalValues);
             }
             finally
             {
@@ -468,110 +435,86 @@ namespace Datadog.Trace.Propagators
                 return;
             }
 
-            header = header.Trim();
-            int ddStartIndex;
+            SplitTraceStateValues(new StringSegment(header).Trim(), out var ddValueSegment, out var precedingMembers, out var succeedingMembers, out var hasDdValues);
+            ddValues = hasDdValues ? ddValueSegment.ToString() : null;
+            additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
+        }
 
-            if (header.StartsWith("dd=", StringComparison.Ordinal))
-            {
-                ddStartIndex = 0;
-            }
-            else
-            {
-                // if "dd=" is not at start of header, make sure we find the one preceded by comma
-                // in case there is something like "key1=valuedd=whatisthis,dd=..."
-                //                                                          ^ take this one
-                //                                            ^ ignore this one
-                ddStartIndex = header.IndexOf(",dd=", StringComparison.Ordinal);
+        private static void SplitTraceStateValues(StringSegment header, out StringSegment ddValues, out StringSegment precedingMembers, out StringSegment succeedingMembers, out bool hasDdValues)
+        {
+            ExtractMember(header, "dd=", out ddValues, out precedingMembers, out succeedingMembers, out hasDdValues);
+        }
 
-                if (ddStartIndex >= 0)
+        private static void ExtractMember(StringSegment header, string prefix, out StringSegment value, out StringSegment precedingMembers, out StringSegment succeedingMembers, out bool found)
+        {
+            var startIndex = 0;
+
+            while (startIndex < header.Length && !header.Slice(startIndex).StartsWith(prefix))
+            {
+                var separatorIndex = header.IndexOf(TraceStateHeaderValuesSeparator, startIndex);
+
+                if (separatorIndex < 0)
                 {
-                    // if ",dd=" was found, skip the ','
-                    ddStartIndex++;
+                    value = default;
+                    precedingMembers = header;
+                    succeedingMembers = default;
+                    found = false;
+                    return;
                 }
+
+                startIndex = separatorIndex + 1;
             }
 
-            if (ddStartIndex < 0)
+            if (startIndex == header.Length)
             {
-                // "dd=" was not found in header, the entire header is "additional values"
-                // example tracestate: "foo=bar"
-                //                      ^^^^^^^
-                ddValues = null;
-                additionalValues = header;
+                value = default;
+                precedingMembers = header;
+                succeedingMembers = default;
+                found = false;
                 return;
             }
 
-            // search for end of "dd="
-            var ddEndIndex = header.IndexOf(TraceStateHeaderValuesSeparator, ddStartIndex + 3);
+            var endIndex = header.IndexOf(TraceStateHeaderValuesSeparator, startIndex + prefix.Length);
+            endIndex = endIndex < 0 ? header.Length : endIndex;
 
-            if (ddEndIndex < 0)
-            {
-                // "dd=" reaches the end of header
-                ddEndIndex = header.Length;
-            }
+            value = header.Slice(startIndex + prefix.Length, endIndex - startIndex - prefix.Length);
+            found = true;
 
-            ddValues = header.Substring(ddStartIndex, ddEndIndex - ddStartIndex);
-
-            if (ddStartIndex == 0 && ddEndIndex == header.Length)
-            {
-                // "dd" was the only key, no additional values
-                // example tracestate: "dd=s:1;o:rum"
-                additionalValues = null;
-            }
-            else if (ddStartIndex == 0)
-            {
-                // "dd" first, additional values later
-                // example tracestate: "dd=s:1;o:rum,foo=bar"
-                //                                   ^^^^^^^
-                additionalValues = header.Substring(ddEndIndex + 1, header.Length - ddEndIndex - 1);
-            }
-            else if (ddEndIndex == header.Length)
-            {
-                // additional values first, "dd" later
-                // example tracestate: "foo=bar,dd=s:1;o:rum"
-                //                      ^^^^^^^
-                additionalValues = header.Substring(0, ddStartIndex - 1);
-            }
-            else
-            {
-                // additional values on both sides, "dd" in the middle
-                // example tracestate: "foo1=bar1,dd=s:1;o:rum,foo2=bar2" => "foo1=bar1,foo2=bar2"
-                //                      ^^^^^^^^^              ^^^^^^^^^
-                var otherValuesLeft = header.Substring(0, ddStartIndex - 1);
-                var otherValuesRight = header.Substring(ddEndIndex + 1, header.Length - ddEndIndex - 1);
-
-                var sb = StringBuilderCache.Acquire(otherValuesLeft.Length + otherValuesRight.Length + 1);
-                sb.Append(otherValuesLeft).Append(TraceStateHeaderValuesSeparator).Append(otherValuesRight);
-                additionalValues = StringBuilderCache.GetStringAndRelease(sb);
-            }
+            precedingMembers = startIndex == 0 ? default : header.Slice(0, startIndex - 1);
+            succeedingMembers = endIndex == header.Length ? default : header.Slice(endIndex + 1);
         }
 
-#if NETCOREAPP
-        private static int? SamplingPriorityToInt32(ReadOnlySpan<char> samplingPriority)
+        private static string? GetAdditionalValues(StringSegment precedingMembers, StringSegment succeedingMembers)
         {
-            return samplingPriority switch
+            if (precedingMembers.Value is null)
+            {
+                return succeedingMembers.Value is null ? null : succeedingMembers.ToString();
+            }
+
+            if (succeedingMembers.Value is null)
+            {
+                return precedingMembers.ToString();
+            }
+
+            var sb = StringBuilderCache.Acquire(precedingMembers.Length + succeedingMembers.Length + 1);
+            sb.Append(precedingMembers.Value, precedingMembers.Offset, precedingMembers.Length)
+              .Append(TraceStateHeaderValuesSeparator)
+              .Append(succeedingMembers.Value, succeedingMembers.Offset, succeedingMembers.Length);
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        private static int? SamplingPriorityToInt32(StringSegment samplingPriority)
+        {
+            return samplingPriority.Length switch
                    {
-                       "2" => 2,
-                       "1" => 1,
-                       "0" => 0,
-                       "-1" => -1,
-                       "" => null,
-                       _ => int.TryParse(samplingPriority, out var result) ? result : null
+                       0 => null,
+                       1 when samplingPriority[0] == '2' => 2,
+                       1 when samplingPriority[0] == '1' => 1,
+                       1 when samplingPriority[0] == '0' => 0,
+                       2 when samplingPriority[0] == '-' && samplingPriority[1] == '1' => -1,
+                       _ => int.TryParse(samplingPriority.ToString(), out var result) ? result : null,
                    };
         }
-#else
-        private static int? SamplingPriorityToInt32(string? samplingPriority)
-        {
-            return samplingPriority switch
-                   {
-                       "2" => 2,
-                       "1" => 1,
-                       "0" => 0,
-                       "-1" => -1,
-                       null or "" => null,
-                       not null => int.TryParse(samplingPriority, out var result) ? result : null
-                   };
-        }
-#endif
 
         public bool TryExtract<TCarrier, TCarrierGetter>(
             TCarrier carrier,
@@ -757,22 +700,26 @@ namespace Datadog.Trace.Propagators
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-#if NETCOREAPP
-        public static bool NeedsCharacterReplacement(ReadOnlySpan<char> value, char lowerBound, char upperBound, KeyValuePair<char, char>[] replacements)
-#else
         public static bool NeedsCharacterReplacement(string value, char lowerBound, char upperBound, KeyValuePair<char, char>[] replacements)
-#endif
+            => NeedsCharacterReplacement(new StringSegment(value), lowerBound, upperBound, replacements);
+
+        public static string ReplaceCharacters(string value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
+            => ReplaceCharacters(new StringSegment(value), lowerBound, upperBound, outOfBoundsReplacement, replacements).ToString();
+
+        private static bool NeedsCharacterReplacement(StringSegment value, char lowerBound, char upperBound, KeyValuePair<char, char>[] replacements)
         {
-            foreach (var c in value)
+            for (var index = 0; index < value.Length; index++)
             {
-                if (c < lowerBound || c > upperBound)
+                var character = value[index];
+
+                if (character < lowerBound || character > upperBound)
                 {
                     return true;
                 }
 
                 foreach (var pair in replacements)
                 {
-                    if (c == pair.Key)
+                    if (character == pair.Key)
                     {
                         return true;
                     }
@@ -782,28 +729,21 @@ namespace Datadog.Trace.Propagators
             return false;
         }
 
-#if NETCOREAPP
-        public static ReadOnlySpan<char> ReplaceCharacters(ReadOnlySpan<char> value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
-#else
-        public static string ReplaceCharacters(string value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
-#endif
+        private static StringSegment ReplaceCharacters(StringSegment value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
         {
             if (!NeedsCharacterReplacement(value, lowerBound, upperBound, replacements))
             {
-                // common case, no replacements
                 return value;
             }
 
             var sb = StringBuilderCache.Acquire(value.Length);
-            sb.Append(value);
+            sb.Append(value.Value, value.Offset, value.Length);
 
-            for (var i = 0; i < sb.Length; i++)
+            for (var index = 0; index < sb.Length; index++)
             {
-                var c = value[i];
-
-                if (c < lowerBound || c > upperBound)
+                if (value[index] < lowerBound || value[index] > upperBound)
                 {
-                    sb[i] = outOfBoundsReplacement;
+                    sb[index] = outOfBoundsReplacement;
                 }
             }
 
@@ -812,7 +752,7 @@ namespace Datadog.Trace.Propagators
                 sb.Replace(replacement.Key, replacement.Value);
             }
 
-            return StringBuilderCache.GetStringAndRelease(sb);
+            return new StringSegment(StringBuilderCache.GetStringAndRelease(sb));
         }
 
         internal readonly struct TraceTagAppender : TraceTagCollection.ITagEnumerator
@@ -833,15 +773,14 @@ namespace Datadog.Trace.Propagators
                 if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal) &&
                     !tag.Key.Equals(Tags.Propagated.TraceIdUpper, StringComparison.Ordinal))
                 {
-#if NETCOREAPP
-                    var key = tag.Key.AsSpan(start: 6);
-#else
-                    var key = tag.Key.Substring(startIndex: 6);
-#endif
-
+                    var key = new StringSegment(tag.Key, offset: 6, tag.Key.Length - 6);
                     var tagKey = ReplaceCharacters(key, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagKeyReplacements);
-                    var tagValue = ReplaceCharacters(tag.Value, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagValueReplacements);
-                    _sb.Append(PropagatedTagPrefix).Append(tagKey).Append(TraceStateDatadogKeyValueSeparator).Append(tagValue).Append(TraceStateDatadogPairsSeparator);
+                    var tagValue = ReplaceCharacters(new StringSegment(tag.Value), LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagValueReplacements);
+                    _sb.Append(PropagatedTagPrefix)
+                       .Append(tagKey.Value, tagKey.Offset, tagKey.Length)
+                       .Append(TraceStateDatadogKeyValueSeparator)
+                       .Append(tagValue.Value, tagValue.Offset, tagValue.Length)
+                       .Append(TraceStateDatadogPairsSeparator);
                 }
             }
         }

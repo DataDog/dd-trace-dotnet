@@ -124,6 +124,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 - Prefer modern collection expressions (`[]`)
 - Use `StringUtil.IsNullOrEmpty()` instead of `string.IsNullOrEmpty()` for compatibility across all supported runtimes
 - StyleCop: see `tracer/stylecop.json`; address warnings before pushing
+- Separate adjacent members with a blank line, including when a conditional-compilation block (`#if`/`#endif`) appears between them.
 - Never manually edit generated files (`.g.` in the file extension). Read the file header for regeneration instructions instead.
 
 **C/C++ style:**
