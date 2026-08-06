@@ -20,6 +20,7 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
@@ -111,6 +112,15 @@ namespace Datadog.Trace
         /// (e.g. sampling priority, origin, propagates tags, etc).
         /// </summary>
         internal string? AdditionalW3CTraceState { get; set; }
+
+        /// <summary>
+        /// Gets or sets the raw content of the inbound/rewritten W3C tracestate "ot=" member
+        /// (OpenTelemetry consistent-probability-sampling sub-keys), with no "ot=" prefix.
+        /// Null means there is nothing to emit. Never decoded into typed fields — see
+        /// <see cref="Propagators.OtelTraceStateHelpers"/> for the only code that inspects
+        /// or rewrites its "rv"/"th" sub-keys.
+        /// </summary>
+        internal string? OtelTraceState { get; set; }
 
         /// <summary> Gets the IAST context </summary>
         internal IastRequestContext? IastRequestContext => _iastRequestContext;
@@ -318,7 +328,8 @@ namespace Datadog.Trace
                 samplingDecision.Priority,
                 samplingDecision.Mechanism,
                 samplingDecision.Rate,
-                samplingDecision.LimiterRate);
+                samplingDecision.LimiterRate,
+                sample: samplingDecision.Sample);
 
             return samplingDecision.Priority;
         }
@@ -328,12 +339,15 @@ namespace Datadog.Trace
             string? mechanism = null,
             float? rate = null,
             float? limiterRate = null,
-            bool notifyDistributedTracer = true)
+            bool notifyDistributedTracer = true,
+            bool? sample = null)
         {
             if (priority is not { } p)
             {
                 return;
             }
+
+            var isLocalRoot = SamplingPriority is null;
 
             // priority (keep/drop) can change (manually, ASM, etc)
             SamplingPriority = priority;
@@ -357,21 +371,76 @@ namespace Datadog.Trace
                 Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
             }
 
-            // set Knuth sampling rate as a propagated tag for agent and rule-based sampling.
-            // use TryAddTag to preserve the original rate, consistent with AppliedSamplingRate ??= rate above.
-            if (rate is { } samplingRate && mechanism is Sampling.SamplingMechanism.AgentRate
-                                                      or Sampling.SamplingMechanism.LocalTraceSamplingRule
-                                                      or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
-                                                      or Sampling.SamplingMechanism.RemoteUserSamplingRule)
+            if (rate is { } samplingRate && samplingRate is >= 0f and <= 1f)
             {
-                // format with up to 6 decimal digits, no trailing zeros (per RFC)
-                Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("0.######", CultureInfo.InvariantCulture));
+                // set Knuth sampling rate as a propagated tag for agent and rule-based sampling only:
+                // "Default" means no agent-configured rate has been received yet (client-side fallback),
+                // and must not propagate as _dd.p.ksr, to stay consistent with other tracers.
+                if (mechanism is Sampling.SamplingMechanism.AgentRate
+                              or Sampling.SamplingMechanism.LocalTraceSamplingRule
+                              or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
+                              or Sampling.SamplingMechanism.RemoteUserSamplingRule)
+                {
+                    // format with up to 6 decimal digits, no trailing zeros (per RFC)
+                    Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("0.######", CultureInfo.InvariantCulture));
+                }
+
+                // (for OTel interop) derive/erase the "ot=" tracestate rv/th sub-keys for W3C injection on every root
+                // probability decision, including the "Default" mechanism fallback rate.
+                if (isLocalRoot && IsW3CTraceContextInjectionEnabled() && sample is { } didSample && RootSpan is { } rootSpan
+                                && mechanism is Sampling.SamplingMechanism.AgentRate
+                                             or Sampling.SamplingMechanism.LocalTraceSamplingRule
+                                             or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
+                                             or Sampling.SamplingMechanism.RemoteUserSamplingRule
+                                             or Sampling.SamplingMechanism.Default)
+                {
+                    var h = SamplingHelpers.ComputeKnuthHash(rootSpan.TraceId128.Lower);
+                    var rv = (~h) >> 8;
+                    // round-trip the rate through decimal first: samplingRate is a float, and widening it to
+                    // double directly keeps its 32-bit mantissa noise in the low bits of the 56-bit threshold.
+                    var th = (ulong)Math.Round((1.0 - (double)(decimal)samplingRate) * (1UL << 56), MidpointRounding.AwayFromZero);
+
+                    // clamp th into the valid 56-bit domain: rate=0.0f rounds up to 2^56, one bit out of range.
+                    th = Math.Min(th, (1UL << 56) - 1);
+
+                    // 64<>56-bit imprecision clamp (design doc Decision 2 / RFC §7):
+                    // force agreement between the (rv, th) pair and DD's actual keep/drop decision.
+                    if (didSample && rv < th)
+                    {
+                        rv = th;
+                    }
+                    else if (!didSample && rv >= th)
+                    {
+                        rv = th > 0 ? th - 1 : 0;
+                    }
+
+                    // Rate-limiter demotion removes th in the same rewrite.
+                    OtelTraceState = OtelTraceStateHelpers.SetRvTh(OtelTraceState, rv, didSample && SamplingPriorityValues.IsDrop(p) ? null : th);
+                }
+            }
+            else if (mechanism is Sampling.SamplingMechanism.Manual or Sampling.SamplingMechanism.Asm)
+            {
+                OtelTraceState = OtelTraceStateHelpers.SetRvTh(OtelTraceState, OtelTraceStateHelpers.ExtractRv(OtelTraceState), th: null);
             }
 
             if (notifyDistributedTracer)
             {
                 DistributedTracer.Instance.SetSamplingPriority(priority);
             }
+        }
+
+        private bool IsW3CTraceContextInjectionEnabled()
+        {
+            foreach (var style in Tracer.Settings.PropagationStyleInject)
+            {
+                if (string.Equals(style, ContextPropagationHeaderStyle.W3CTraceContext, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(style, ContextPropagationHeaderStyle.Deprecated.W3CTraceContext, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void RunSpanSampler(in SpanCollection spans)

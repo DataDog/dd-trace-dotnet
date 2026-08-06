@@ -199,6 +199,21 @@ namespace Datadog.Trace.Propagators
                     sb.Length--;
                 }
 
+                // OTel consistent-probability-sampling sub-keys ("ot=rv:...;th:..."), placed
+                // immediately after "dd=" so both survive right-side truncation of a crowded
+                // tracestate (W3C permits dropping members past 32).
+                var otelTraceState = context.OtelTraceState;
+
+                if (!string.IsNullOrWhiteSpace(otelTraceState))
+                {
+                    if (sb.Length > 0)
+                    {
+                        sb.Append(TraceStateHeaderValuesSeparator);
+                    }
+
+                    sb.Append("ot=").Append(otelTraceState);
+                }
+
                 var additionalState = context.AdditionalW3CTraceState;
 
                 if (!string.IsNullOrWhiteSpace(additionalState))
@@ -311,18 +326,18 @@ namespace Datadog.Trace.Propagators
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
             if (string.IsNullOrWhiteSpace(header))
             {
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null, otTraceState: null);
             }
 
-            SplitTraceStateValues(new StringSegment(header!).Trim(), out var ddValues, out var precedingMembers, out var succeedingMembers, out _);
-            var additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
+            SplitTraceStateValues(new StringSegment(header!).Trim(), out var ddValues, out _, out var otTraceState, out var hasOtTraceState, out var otherMembers);
+            var additionalValues = GetAdditionalValues(otherMembers);
 
             if (ddValues.Length < 3)
             {
                 // "dd" section not found or it is too short
                 // shortest valid length is 3 as in "a:b" ("dd=" prefix already stripped)
                 // note for this case the p will be viewed as 0 if added as a span tag
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues, hasOtTraceState ? otTraceState.ToString() : null);
             }
 
             int? samplingPriority = null;
@@ -416,7 +431,7 @@ namespace Datadog.Trace.Propagators
                     propagatedTags = null;
                 }
 
-                return new W3CTraceState(samplingPriority, origin.IsEmpty ? null : origin.ToString(), lastParent.IsEmpty ? ZeroLastParent : lastParent.ToString(), propagatedTags, additionalValues);
+                return new W3CTraceState(samplingPriority, origin.IsEmpty ? null : origin.ToString(), lastParent.IsEmpty ? ZeroLastParent : lastParent.ToString(), propagatedTags, additionalValues, hasOtTraceState ? otTraceState.ToString() : null);
             }
             finally
             {
@@ -424,25 +439,42 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal static void SplitTraceStateValues(string header, out string? ddValues, out string? additionalValues)
+        internal static void SplitTraceStateValues(string header, out string? ddValues, out string? otValues, out string? additionalValues)
         {
-            // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
-
+            // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,ot=rv:...;th:...][,*]"
             if (string.IsNullOrWhiteSpace(header))
             {
                 ddValues = null;
+                otValues = null;
                 additionalValues = null;
                 return;
             }
 
-            SplitTraceStateValues(new StringSegment(header).Trim(), out var ddValueSegment, out var precedingMembers, out var succeedingMembers, out var hasDdValues);
+            SplitTraceStateValues(new StringSegment(header).Trim(), out var ddValueSegment, out var hasDdValues, out var otValueSegment, out var hasOtValues, out var otherMembers);
             ddValues = hasDdValues ? ddValueSegment.ToString() : null;
-            additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
+            otValues = hasOtValues ? otValueSegment.ToString() : null;
+            additionalValues = GetAdditionalValues(otherMembers);
         }
 
-        private static void SplitTraceStateValues(StringSegment header, out StringSegment ddValues, out StringSegment precedingMembers, out StringSegment succeedingMembers, out bool hasDdValues)
+        private static void SplitTraceStateValues(
+            StringSegment header,
+            out StringSegment ddValues,
+            out bool hasDdValues,
+            out StringSegment otValues,
+            out bool hasOtValues,
+            out List<StringSegment> otherMembers)
         {
-            ExtractMember(header, "dd=", out ddValues, out precedingMembers, out succeedingMembers, out hasDdValues);
+            ExtractMember(header, "dd=", out ddValues, out var precedingDdMembers, out var succeedingDdMembers, out hasDdValues);
+            ExtractMember(precedingDdMembers, "ot=", out otValues, out var precedingOtMembers, out var succeedingOtMembers, out hasOtValues);
+
+            if (hasOtValues)
+            {
+                otherMembers = GetOtherMembers(precedingOtMembers, succeedingOtMembers, succeedingDdMembers);
+                return;
+            }
+
+            ExtractMember(succeedingDdMembers, "ot=", out otValues, out precedingOtMembers, out succeedingOtMembers, out hasOtValues);
+            otherMembers = GetOtherMembers(precedingDdMembers, precedingOtMembers, succeedingOtMembers);
         }
 
         private static void ExtractMember(StringSegment header, string prefix, out StringSegment value, out StringSegment precedingMembers, out StringSegment succeedingMembers, out bool found)
@@ -484,22 +516,60 @@ namespace Datadog.Trace.Propagators
             succeedingMembers = endIndex == header.Length ? default : header.Slice(endIndex + 1);
         }
 
-        private static string? GetAdditionalValues(StringSegment precedingMembers, StringSegment succeedingMembers)
+        private static List<StringSegment> GetOtherMembers(StringSegment member0, StringSegment member1, StringSegment member2)
         {
-            if (precedingMembers.Value is null)
+            var otherMembers = new List<StringSegment>(capacity: 3);
+
+            if (member0.Value is not null)
             {
-                return succeedingMembers.Value is null ? null : succeedingMembers.ToString();
+                otherMembers.Add(member0);
             }
 
-            if (succeedingMembers.Value is null)
+            if (member1.Value is not null)
             {
-                return precedingMembers.ToString();
+                otherMembers.Add(member1);
             }
 
-            var sb = StringBuilderCache.Acquire(precedingMembers.Length + succeedingMembers.Length + 1);
-            sb.Append(precedingMembers.Value, precedingMembers.Offset, precedingMembers.Length)
-              .Append(TraceStateHeaderValuesSeparator)
-              .Append(succeedingMembers.Value, succeedingMembers.Offset, succeedingMembers.Length);
+            if (member2.Value is not null)
+            {
+                otherMembers.Add(member2);
+            }
+
+            return otherMembers;
+        }
+
+        private static string? GetAdditionalValues(List<StringSegment> otherMembers)
+        {
+            if (otherMembers.Count == 0)
+            {
+                return null;
+            }
+
+            if (otherMembers.Count == 1)
+            {
+                return otherMembers[0].ToString();
+            }
+
+            var length = otherMembers.Count - 1;
+
+            foreach (var member in otherMembers)
+            {
+                length += member.Length;
+            }
+
+            var sb = StringBuilderCache.Acquire(length);
+
+            for (var i = 0; i < otherMembers.Count; i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(TraceStateHeaderValuesSeparator);
+                }
+
+                var member = otherMembers[i];
+                sb.Append(member.Value, member.Offset, member.Length);
+            }
+
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
@@ -574,6 +644,7 @@ namespace Datadog.Trace.Propagators
 
             spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
+            spanContext.OtelTraceState = traceState.OtTraceState;
             spanContext.LastParentId = traceState.LastParent;
 
             context = new PropagationContext(spanContext, baggage: null);

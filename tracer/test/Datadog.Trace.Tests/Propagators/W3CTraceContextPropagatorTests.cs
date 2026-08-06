@@ -9,6 +9,7 @@ using System.Linq;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Tests.Util;
 using FluentAssertions;
@@ -232,6 +233,32 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
+        public void CreateTraceStateHeader_EmitsOtRightAfterDd_WhenOtelTraceStateIsSet()
+        {
+            var traceContext = new TraceContext(new StubDatadogTracer());
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2)
+            {
+                OtelTraceState = "rv:ef284ace7a91e1;th:e6666666666668",
+                AdditionalW3CTraceState = "congo=t61rcWkgMzE"
+            };
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
+
+            tracestate.Should().Be("dd=s:1;p:0000000000000002,ot=rv:ef284ace7a91e1;th:e6666666666668,congo=t61rcWkgMzE");
+        }
+
+        [Fact]
+        public void CreateTraceStateHeader_OmitsOtMember_WhenOtelTraceStateIsNull()
+        {
+            var traceContext = new TraceContext(new StubDatadogTracer());
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2);
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
+
+            tracestate.Should().NotContain("ot=");
+        }
+
+        [Fact]
         public void Inject_IHeadersCollection()
         {
             var traceContext = new TraceContext(new StubDatadogTracer(), tags: null)
@@ -402,6 +429,29 @@ namespace Datadog.Trace.Tests.Propagators
             var additionalValues = "key1=value1";
             var expected = new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
             traceState.Should().BeEquivalentTo(expected);
+        }
+
+        [Theory]
+        [InlineData("dd=s:1;o:rum", null)]
+        [InlineData("dd=s:1,ot=rv:ef284ace7a91e1;th:e6666666666668", "rv:ef284ace7a91e1;th:e6666666666668")]
+        [InlineData("ot=th:e6666666666668,dd=s:1", "th:e6666666666668")]
+        [InlineData("foo=bar,dd=s:1,ot=rv:1,baz=qux", "rv:1")]
+        [InlineData("dd=s:1,ot=", "")]
+        public void ParseTraceState_CapturesRawOtelTraceState(string header, string expectedOtTraceState)
+        {
+            var traceState = W3CTraceContextPropagator.ParseTraceState(header);
+            traceState.OtTraceState.Should().Be(expectedOtTraceState);
+        }
+
+        [Theory]
+        [InlineData("dd=s:1;o:rum,foo=bar", null, "foo=bar")]
+        [InlineData("dd=s:1,ot=rv:1;th:2,foo=bar", "rv:1;th:2", "foo=bar")]
+        [InlineData("foo=bar,ot=rv:1,dd=s:1,baz=qux", "rv:1", "foo=bar,baz=qux")]
+        public void SplitTraceStateValues_ExtractsOtValues(string header, string expectedOt, string expectedAdditional)
+        {
+            W3CTraceContextPropagator.SplitTraceStateValues(header, out _, out var otValues, out var additionalValues);
+            otValues.Should().Be(expectedOt);
+            additionalValues.Should().Be(expectedAdditional);
         }
 
         [Fact]
@@ -798,6 +848,128 @@ namespace Datadog.Trace.Tests.Propagators
                           LastParentId = ZeroLastParentId,
                       },
                       opts => opts.ExcludingMissingMembers());
+        }
+
+        [Fact]
+        public void Extract_CopiesOtelTraceStateOntoSpanContext()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
+
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:1,ot=rv:ef284ace7a91e1;th:e6666666666668" });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
+            headers.Verify(h => h.GetValues("tracestate"), Times.Once());
+            headers.VerifyNoOtherCalls();
+
+            result.SpanContext!.OtelTraceState.Should().Be("rv:ef284ace7a91e1;th:e6666666666668");
+        }
+
+        [Theory]
+        [InlineData("rv:ef284ace7a91e1;th:e6666666666668")] // A2: full rv;th forwarded unchanged
+        [InlineData("th:e6666666666668")]                   // A2b: th-only forwards th, fabricates no rv
+        public void Continuation_ForwardsOtelTraceStateUnchanged_RegardlessOfLocalRateConfig(string inboundOtelTraceState)
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-00000000000000000000000000000001-0000000000000001-01" });
+
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { $"dd=s:1,ot={inboundOtelTraceState}" });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            result.SpanContext!.OtelTraceState.Should().Be(inboundOtelTraceState);
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(result.SpanContext);
+            tracestate.Should().Contain($"ot={inboundOtelTraceState}");
+        }
+
+        [Fact]
+        public void Continuation_SampledWithoutOtMember_FabricatesNoOtelTraceState()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-00000000000000000000000000000001-0000000000000001-01" });
+
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:1" });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            result.SpanContext!.OtelTraceState.Should().BeNull();
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(result.SpanContext);
+            tracestate.Should().NotContain("ot=");
+        }
+
+        [Theory]
+        [InlineData("th:zz;rv:ef284ace7a91e1")]  // malformed th, well-formed rv
+        [InlineData("th:e6666666666668;rv:zz")]  // well-formed th, malformed rv
+        [InlineData("th:zz;rv:zz")]              // both malformed
+        [InlineData("unknownkey:whatever")]      // unrecognized sub-key entirely
+        public void Continuation_MalformedOrUnknownOtContent_RoundTripsByteForByte(string malformedOtelTraceState)
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-00000000000000000000000000000001-0000000000000001-01" });
+
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { $"dd=s:1,ot={malformedOtelTraceState}" });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(result.SpanContext!);
+            tracestate.Should().Contain($"ot={malformedOtelTraceState}");
+        }
+
+        [Fact]
+        public void Continuation_MultiVendorTracestate_RoundTripsFully_WithDdThenOtOrdering()
+        {
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-00000000000000000000000000000001-0000000000000001-01" });
+
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "foo1=bar1,dd=s:1,ot=rv:ef284ace7a91e1;th:e6666666666668;unknownsubkey:x,congo=t61rcWkgMzE" });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            result.SpanContext!.OtelTraceState.Should().Be("rv:ef284ace7a91e1;th:e6666666666668;unknownsubkey:x");
+            result.SpanContext!.AdditionalW3CTraceState.Should().Be("foo1=bar1,congo=t61rcWkgMzE");
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(result.SpanContext);
+            var ddIndex = tracestate.IndexOf("dd=", StringComparison.Ordinal);
+            var otIndex = tracestate.IndexOf("ot=", StringComparison.Ordinal);
+            ddIndex.Should().BeLessThan(otIndex);
+        }
+
+        [Fact]
+        public void RootTrace_ProbabilityKeepAtKnownRate_EmitsRfcWorkedExampleOtelTraceState()
+        {
+            // Simulates a brand-new root trace (no incoming ot=) sampled at rate=0.1
+            // with trace_id_low64 = 0xfff972474538efff, matching the RFC's worked example.
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
+
+            traceContext.SetSamplingPriority(
+                priority: SamplingPriorityValues.UserKeep,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: 0.1f,
+                sample: true);
+
+            var spanContext = traceContext.RootSpan!.Context;
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
+
+            tracestate.Should().Contain("ot=rv:ef284ace7a91e1;th:e6666666666668");
         }
 
         [Theory]
