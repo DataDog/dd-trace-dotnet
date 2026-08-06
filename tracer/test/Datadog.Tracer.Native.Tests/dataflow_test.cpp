@@ -49,6 +49,25 @@ TEST(DataflowTests, PreloadedModulesAreResolvedOnTheNextModuleLoaded)
     delete dataflow;
 }
 
+TEST(DataflowTests, UnloadedModulesAreDroppedFromThePendingPreloadList)
+{
+    // A preloaded module can unload before the list is drained. Resolving it afterwards would call
+    // GetModuleInfo2 on a ModuleID the runtime has already torn down.
+    MockCorProfilerInfo mockProfiler;
+    auto runtimeInfo = MakeTestRuntimeInformation();
+    std::vector<ModuleID> preloadedModules{42};
+
+    auto dataflow = new iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
+
+    dataflow->ModuleUnloaded(42);
+    dataflow->ModuleLoaded(99);
+
+    // Only the newly loaded module is resolved; the unloaded one is never touched.
+    EXPECT_EQ(1, mockProfiler.getModuleInfo2CallCount);
+
+    delete dataflow;
+}
+
 TEST(DataflowTests, ModuleLoadedResolvesNewlyLoadedModules)
 {
     MockCorProfilerInfo mockProfiler;
