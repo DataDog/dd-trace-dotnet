@@ -90,6 +90,7 @@ namespace Datadog.Trace.Agent
         {
         }
 
+        [TestingAndPrivateOnly]
         internal AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval, bool apmTracingEnabled, bool initialTracerMetricsEnabled)
         {
             _statsAggregator = statsAggregator ?? new NullStatsAggregator();
@@ -136,10 +137,13 @@ namespace Datadog.Trace.Agent
             BuffersLocked,
         }
 
+        [TestingOnly]
         internal SpanBuffer ActiveBuffer => _activeBuffer;
 
+        [TestingOnly]
         internal SpanBuffer FrontBuffer => _frontBuffer;
 
+        [TestingOnly]
         internal SpanBuffer BackBuffer => _backBuffer;
 
         [TestingOnly]
@@ -263,6 +267,7 @@ namespace Datadog.Trace.Agent
             await FlushBuffers(true).ConfigureAwait(false);
         }
 
+        [TestingAndPrivateOnly]
         internal void WriteWatermark(Action watermark, bool wakeUpThread = true)
         {
             _pendingTraces.Enqueue(new WorkItem(watermark));
