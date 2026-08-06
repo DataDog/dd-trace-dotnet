@@ -726,7 +726,7 @@ namespace Datadog.Trace.Agent
         private static bool ShouldWriteAdditionalMetricTag(string key, bool otelSemanticsEnabled)
         {
             return !otelSemanticsEnabled
-                || (!key.StartsWith("datadog.", StringComparison.Ordinal) && !key.StartsWith("_datadog.", StringComparison.Ordinal));
+                || !key.StartsWith("datadog.", StringComparison.Ordinal);
         }
 
         private static void WriteAttribute(BinaryWriter writer, string key, string value, int fieldNumber = FieldNumbers.Attributes)

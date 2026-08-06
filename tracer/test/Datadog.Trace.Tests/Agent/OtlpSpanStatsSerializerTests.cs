@@ -145,7 +145,6 @@ namespace Datadog.Trace.Tests.Agent
             {
                 Encoding.UTF8.GetBytes("team:payments"),
                 Encoding.UTF8.GetBytes("datadog.custom:value"),
-                Encoding.UTF8.GetBytes("_datadog.custom:value"),
             };
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
 
@@ -370,7 +369,6 @@ namespace Datadog.Trace.Tests.Agent
             {
                 Encoding.UTF8.GetBytes("team:payments"),
                 Encoding.UTF8.GetBytes("datadog.custom:value"),
-                Encoding.UTF8.GetBytes("_datadog.custom:value"),
             };
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
 
@@ -378,7 +376,6 @@ namespace Datadog.Trace.Tests.Agent
 
             attrs.Should().ContainKey("team").WhoseValue.Should().Be("payments");
             attrs.Should().ContainKey("datadog.custom").WhoseValue.Should().Be("value");
-            attrs.Should().ContainKey("_datadog.custom").WhoseValue.Should().Be("value");
         }
 
         [Fact]
@@ -417,7 +414,6 @@ namespace Datadog.Trace.Tests.Agent
             {
                 Encoding.UTF8.GetBytes("team:payments"),
                 Encoding.UTF8.GetBytes("datadog.custom:value"),
-                Encoding.UTF8.GetBytes("_datadog.custom:value"),
             };
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
 
@@ -446,7 +442,6 @@ namespace Datadog.Trace.Tests.Agent
             {
                 Encoding.UTF8.GetBytes("team:payments"),
                 Encoding.UTF8.GetBytes("datadog.custom:value"),
-                Encoding.UTF8.GetBytes("_datadog.custom:value"),
             };
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
 
@@ -454,7 +449,6 @@ namespace Datadog.Trace.Tests.Agent
 
             attrs.Should().ContainKey("team").WhoseValue.Should().Be("payments");
             attrs.Should().ContainKey("datadog.custom").WhoseValue.Should().Be("value");
-            attrs.Should().ContainKey("_datadog.custom").WhoseValue.Should().Be("value");
         }
 
         [Theory]
