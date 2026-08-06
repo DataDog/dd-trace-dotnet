@@ -30,8 +30,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class NotifyFaultedIntegration
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NotifyFaultedIntegration));
-
         /// <summary>
         /// OnMethodBegin callback.
         /// </summary>
@@ -50,40 +48,48 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget
         /// <param name="exception">The exception that occurred</param>
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context, TimeSpan duration, string consumerType, Exception exception)
+            => Common.Handle(instance, exception);
+
+        internal static class Common
         {
-            if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.MassTransit))
-            {
-                return CallTargetState.GetDefault();
-            }
+            private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Common));
 
-            // instance IS the ReceiveContext — see MassTransitCommon.PendingSagaProcessScopes.
-            if (instance is not null && MassTransitCommon.PendingSagaProcessScopes.TryGetValue(instance, out var sagaScope))
+            internal static CallTargetState Handle<TTarget>(TTarget instance, Exception exception)
             {
-                MassTransitCommon.PendingSagaProcessScopes.Remove(instance);
-
-                if (exception != null)
+                if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.MassTransit))
                 {
-                    sagaScope.Span.SetException(exception);
+                    return CallTargetState.GetDefault();
                 }
 
-                sagaScope.Span.Finish();
+                // instance IS the ReceiveContext — see MassTransitCommon.PendingSagaProcessScopes.
+                if (instance is not null && MassTransitCommon.PendingSagaProcessScopes.TryGetValue(instance, out var sagaScope))
+                {
+                    MassTransitCommon.PendingSagaProcessScopes.Remove(instance);
+
+                    if (exception != null)
+                    {
+                        sagaScope.Span.SetException(exception);
+                    }
+
+                    sagaScope.Span.Finish();
+                    return CallTargetState.GetDefault();
+                }
+
+                // Set the exception directly on the active scope — AsyncLocal ensures it is exactly
+                // the scope for the faulted operation.
+                var scope = Tracer.Instance.ActiveScope as Scope;
+
+                if (scope != null && exception != null)
+                {
+                    scope.Span.SetException(exception);
+                    Log.Debug(
+                        "NotifyFaultedIntegration.OnMethodBegin: Set exception on span SpanId={SpanId}, ExceptionType={ExceptionType}",
+                        scope.Span.SpanId,
+                        exception.GetType().Name);
+                }
+
                 return CallTargetState.GetDefault();
             }
-
-            // Set the exception directly on the active scope — AsyncLocal ensures it is exactly
-            // the scope for the faulted operation.
-            var scope = Tracer.Instance.ActiveScope as Scope;
-
-            if (scope != null && exception != null)
-            {
-                scope.Span.SetException(exception);
-                Log.Debug(
-                    "NotifyFaultedIntegration.OnMethodBegin: Set exception on span SpanId={SpanId}, ExceptionType={ExceptionType}",
-                    scope.Span.SpanId,
-                    exception.GetType().Name);
-            }
-
-            return CallTargetState.GetDefault();
         }
     }
 }

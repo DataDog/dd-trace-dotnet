@@ -1,6 +1,7 @@
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using RabbitMQ.Client;
 using Samples;
 using Samples.MassTransit;
 using Samples.MassTransit.Contracts;
@@ -39,6 +40,9 @@ switch (transport)
     case "amazonsqs":
     case "sqs":
         await RunAmazonSqs();
+        break;
+    case "receive-deserialization-fault":
+        await RunReceiveDeserializationFaultTest();
         break;
     case "all":
         await RunInMemory();
@@ -115,6 +119,70 @@ async Task RunInMemoryOnlyScenarios()
     await RunExceptionTest();
     await RunHandlerExceptionTest();
     await RunSagaExceptionTest();
+}
+
+async Task RunReceiveDeserializationFaultTest()
+{
+    Console.WriteLine("\n========== Testing RECEIVE DESERIALIZATION FAULT HANDLING ==========");
+
+    var services = new ServiceCollection();
+    services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
+
+    services.AddMassTransit(x =>
+    {
+        x.UsingRabbitMq((context, cfg) =>
+        {
+            var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+            cfg.Host(rabbitHost, "/", h =>
+            {
+                h.Username("guest");
+                h.Password("guest");
+            });
+
+            cfg.ReceiveEndpoint("receive-fault", e =>
+            {
+                e.Handler<HandlerFailingMessage>(ctx =>
+                {
+                    TestSignal.Set(ctx.Message.Value);
+                    return Task.CompletedTask;
+                });
+            });
+        });
+    });
+
+    var serviceProvider = services.BuildServiceProvider();
+    var busControl = serviceProvider.GetRequiredService<IBusControl>();
+
+    try
+    {
+        await busControl.StartAsync();
+        const string signalKey = "fault:receive-deserialization";
+        var receiveObserverHandle = busControl.ConnectReceiveObserver(new ReceiveFaultingObserver(signalKey));
+
+        // Send a normal MassTransit message first so its DiagnosticSource is initialized before
+        // the raw broker message reaches the deserialization failure path.
+        const string initializationSignalKey = "receive-fault:initialization";
+        var sendEndpoint = await busControl.GetSendEndpoint(new Uri("queue:receive-fault"));
+        await sendEndpoint.Send(new HandlerFailingMessage { Value = initializationSignalKey });
+        await TestSignal.WaitAsync(initializationSignalKey, waitTimeout);
+
+        var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+        var factory = new ConnectionFactory { HostName = rabbitHost, UserName = "guest", Password = "guest" };
+        using var connection = factory.CreateConnection();
+        using var channel = connection.CreateModel();
+        var properties = channel.CreateBasicProperties();
+        properties.ContentType = "application/vnd.masstransit+json";
+        channel.BasicPublish(exchange: string.Empty, routingKey: "receive-fault", basicProperties: properties, body: System.Text.Encoding.UTF8.GetBytes("not valid JSON"));
+        await TestSignal.WaitAsync(signalKey, waitTimeout);
+        await FlushTracerAsync("receive-deserialization-fault");
+
+        receiveObserverHandle.Disconnect();
+    }
+    finally
+    {
+        await busControl.StopAsync();
+        await FlushTracerAsync("receive-deserialization-fault-shutdown");
+    }
 }
 
 async Task TryRun(Func<Task> run, string transportName)

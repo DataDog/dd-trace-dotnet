@@ -9769,6 +9769,30 @@
     "TargetMethodName": "NotifyFaulted",
     "TargetReturnType": "System.Threading.Tasks.Task",
     "TargetParameterTypes": [
+      "System.Exception"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 7,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget.NotifyFaultedExceptionIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MassTransit",
+    "AssemblyName": "MassTransit",
+    "TargetTypeName": "MassTransit.Context.BaseReceiveContext",
+    "TargetMethodName": "NotifyFaulted",
+    "TargetReturnType": "System.Threading.Tasks.Task",
+    "TargetParameterTypes": [
       "MassTransit.ConsumeContext`1[!!0]",
       "System.TimeSpan",
       "System.String",

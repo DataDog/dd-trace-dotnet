@@ -457,6 +457,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Log4Net.AppenderAttachedImplIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Log4Net,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget.NotifyConsumedIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget.NotifyFaultedExceptionIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget.NotifyFaultedIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.MassTransit.CallTarget.InMemoryTransportMessageIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.MassTransit,

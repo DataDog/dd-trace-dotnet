@@ -88,6 +88,49 @@ public class MassTransit7Tests : TracingIntegrationTest
         await RunTransportTest(packageVersion, expectedMassTransitSpanCount, "Sqs");
     }
 
+    [SkippableTheory]
+    [MemberData(nameof(GetData))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("DockerGroup", "1")]
+    [Trait("RequiresDockerDependency", "true")]
+    public async Task ReceiveDeserializationFault_MarksReceiveSpanAsError(string packageVersion)
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+        var rabbitHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+        SetEnvironmentVariable("RABBITMQ_HOST", rabbitHost);
+        SetEnvironmentVariable("MASSTRANSIT_TRANSPORT", "receive-deserialization-fault");
+        SetCommonEnvironmentVariables();
+
+        using var telemetry = this.ConfigureTelemetry();
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+        {
+            var spans = await agent.WaitForSpansAsync(4, timeoutInMilliseconds: 10000);
+            var massTransitSpans = spans.Where(span => span.GetTag("component") == "masstransit").ToList();
+
+            massTransitSpans.Count.Should().BeGreaterOrEqualTo(4, "the sample sends one valid message and one malformed message");
+            ValidateIntegrationSpans(massTransitSpans, metadataSchemaVersion: "v0", expectedServiceName: "Samples.MassTransit7", isExternalSpan: false);
+
+            await VerifyHelper.VerifySpans(
+                massTransitSpans,
+                BuildSpanVerifierSettings(),
+                orderSpans: spans => spans
+                    .OrderBy(x => x.Start)
+                    .ThenBy(x => x.GetTag("messaging.operation") switch
+                    {
+                        "send" => 0,
+                        "receive" => 1,
+                        "process" => 2,
+                        _ => 3
+                    }))
+                .DisableRequireUniquePrefix()
+                .UseFileName(nameof(MassTransit7Tests) + "ReceiveDeserializationFault" + GetVersionSuffix(packageVersion));
+        }
+
+        await telemetry.AssertIntegrationEnabledAsync(IntegrationId.MassTransit);
+    }
+
     private static string GetVersionSuffix(string packageVersion)
     {
         if (string.IsNullOrEmpty(packageVersion))
