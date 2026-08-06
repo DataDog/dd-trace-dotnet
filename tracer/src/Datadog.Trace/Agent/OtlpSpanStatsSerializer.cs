@@ -236,29 +236,29 @@ namespace Datadog.Trace.Agent
 
             WriteStringKvJson(writer, "service.name", StringUtil.IsNullOrEmpty(key.Service) ? (StringUtil.IsNullOrEmpty(defaultServiceName) ? "unknown_service:dotnet" : defaultServiceName) : key.Service);
 
+            if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
+            {
+                WriteStringKvJson(writer, "http.request.method", key.HttpMethod);
+            }
+
+            if (key.HttpStatusCode != 0)
+            {
+                WriteIntKvJson(writer, "http.response.status_code", key.HttpStatusCode);
+            }
+
+            if (!StringUtil.IsNullOrEmpty(key.HttpEndpoint))
+            {
+                WriteStringKvJson(writer, "http.route", key.HttpEndpoint);
+            }
+
+            var grpcStatusName = NormalizeGrpcStatusName(key.GrpcStatusCode);
+            if (grpcStatusName is not null)
+            {
+                WriteStringKvJson(writer, "rpc.response.status_code", grpcStatusName);
+            }
+
             if (!otelSemanticsEnabled)
             {
-                if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
-                {
-                    WriteStringKvJson(writer, "http.request.method", key.HttpMethod);
-                }
-
-                if (key.HttpStatusCode != 0)
-                {
-                    WriteIntKvJson(writer, "http.response.status_code", key.HttpStatusCode);
-                }
-
-                if (!StringUtil.IsNullOrEmpty(key.HttpEndpoint))
-                {
-                    WriteStringKvJson(writer, "http.route", key.HttpEndpoint);
-                }
-
-                var grpcStatusName = NormalizeGrpcStatusName(key.GrpcStatusCode);
-                if (grpcStatusName is not null)
-                {
-                    WriteStringKvJson(writer, "rpc.response.status_code", grpcStatusName);
-                }
-
                 if (!StringUtil.IsNullOrEmpty(key.OperationName))
                 {
                     WriteStringKvJson(writer, "datadog.operation.name", key.OperationName);
@@ -279,13 +279,13 @@ namespace Datadog.Trace.Agent
                 {
                     WriteStringKvJson(writer, "datadog.origin", "synthetics");
                 }
+            }
 
-                foreach (var tag in bucket.AdditionalMetricTags)
+            foreach (var tag in bucket.AdditionalMetricTags)
+            {
+                if (TrySplitEncodedTag(tag, out var tagKey, out var tagValue) && ShouldWriteAdditionalMetricTag(tagKey, otelSemanticsEnabled))
                 {
-                    if (TrySplitEncodedTag(tag, out var tagKey, out var tagValue))
-                    {
-                        WriteStringKvJson(writer, tagKey, tagValue);
-                    }
+                    WriteStringKvJson(writer, tagKey, tagValue);
                 }
             }
 
@@ -513,29 +513,29 @@ namespace Datadog.Trace.Agent
 
             WriteAttribute(writer, "service.name", StringUtil.IsNullOrEmpty(key.Service) ? (StringUtil.IsNullOrEmpty(defaultServiceName) ? "unknown_service:dotnet" : defaultServiceName) : key.Service, FieldNumbers.HistogramDataPointAttributes);
 
+            if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
+            {
+                WriteAttribute(writer, "http.request.method", key.HttpMethod, FieldNumbers.HistogramDataPointAttributes);
+            }
+
+            if (key.HttpStatusCode != 0)
+            {
+                WriteIntAttribute(writer, "http.response.status_code", key.HttpStatusCode, FieldNumbers.HistogramDataPointAttributes);
+            }
+
+            if (!StringUtil.IsNullOrEmpty(key.HttpEndpoint))
+            {
+                WriteAttribute(writer, "http.route", key.HttpEndpoint, FieldNumbers.HistogramDataPointAttributes);
+            }
+
+            var grpcStatusNameProto = NormalizeGrpcStatusName(key.GrpcStatusCode);
+            if (grpcStatusNameProto is not null)
+            {
+                WriteAttribute(writer, "rpc.response.status_code", grpcStatusNameProto, FieldNumbers.HistogramDataPointAttributes);
+            }
+
             if (!otelSemanticsEnabled)
             {
-                if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
-                {
-                    WriteAttribute(writer, "http.request.method", key.HttpMethod, FieldNumbers.HistogramDataPointAttributes);
-                }
-
-                if (key.HttpStatusCode != 0)
-                {
-                    WriteIntAttribute(writer, "http.response.status_code", key.HttpStatusCode, FieldNumbers.HistogramDataPointAttributes);
-                }
-
-                if (!StringUtil.IsNullOrEmpty(key.HttpEndpoint))
-                {
-                    WriteAttribute(writer, "http.route", key.HttpEndpoint, FieldNumbers.HistogramDataPointAttributes);
-                }
-
-                var grpcStatusNameProto = NormalizeGrpcStatusName(key.GrpcStatusCode);
-                if (grpcStatusNameProto is not null)
-                {
-                    WriteAttribute(writer, "rpc.response.status_code", grpcStatusNameProto, FieldNumbers.HistogramDataPointAttributes);
-                }
-
                 if (!StringUtil.IsNullOrEmpty(key.OperationName))
                 {
                     WriteAttribute(writer, "datadog.operation.name", key.OperationName, FieldNumbers.HistogramDataPointAttributes);
@@ -556,13 +556,13 @@ namespace Datadog.Trace.Agent
                 {
                     WriteAttribute(writer, "datadog.origin", "synthetics", FieldNumbers.HistogramDataPointAttributes);
                 }
+            }
 
-                foreach (var tag in bucket.AdditionalMetricTags)
+            foreach (var tag in bucket.AdditionalMetricTags)
+            {
+                if (TrySplitEncodedTag(tag, out var tagKey, out var tagValue) && ShouldWriteAdditionalMetricTag(tagKey, otelSemanticsEnabled))
                 {
-                    if (TrySplitEncodedTag(tag, out var tagKey, out var tagValue))
-                    {
-                        WriteAttribute(writer, tagKey, tagValue, FieldNumbers.HistogramDataPointAttributes);
-                    }
+                    WriteAttribute(writer, tagKey, tagValue, FieldNumbers.HistogramDataPointAttributes);
                 }
             }
 
@@ -727,6 +727,12 @@ namespace Datadog.Trace.Agent
             key = decoded.Substring(0, separatorIndex);
             value = decoded.Substring(separatorIndex + 1);
             return true;
+        }
+
+        private static bool ShouldWriteAdditionalMetricTag(string key, bool otelSemanticsEnabled)
+        {
+            return !otelSemanticsEnabled
+                || (!key.StartsWith("datadog.", StringComparison.Ordinal) && !key.StartsWith("_datadog.", StringComparison.Ordinal));
         }
 
         private static void WriteAttribute(BinaryWriter writer, string key, string value, int fieldNumber = FieldNumbers.Attributes)
