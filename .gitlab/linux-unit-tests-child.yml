@@ -1,0 +1,57 @@
+.linux-unit-test-x64:
+  stage: test
+  timeout: 1h
+  # Approved Docker CLI image also used by the Linux build producer.
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
+  tags: ["docker-in-docker:amd64"]
+  needs:
+    - pipeline: "$PARENT_PIPELINE_ID"
+      job: build-linux-tracer-x64
+      artifacts: true
+  variables:
+    DOCKER_BUILDKIT: "1"
+  script:
+    - |
+      set -eu
+
+      tester_image="dd-trace-dotnet/debian-tester:${CI_JOB_ID}"
+      echo "Building Debian test image for ${FRAMEWORK}"
+      docker build \
+        --build-arg DOTNETSDK_VERSION=10.0.100 \
+        --tag "$tester_image" \
+        --target tester \
+        --file tracer/build/_build/docker/debian.dockerfile \
+        tracer/build/_build
+
+      echo "Running managed unit tests for ${FRAMEWORK}"
+      docker run --rm \
+        --cap-add=SYS_PTRACE \
+        --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
+        --env NugetPackageDirectory=/project/packages \
+        --env artifacts=/project/artifacts/output \
+        --env CI=true \
+        --env CI_JOB_ID \
+        --env CI_PROJECT_NAME \
+        --env CI_JOB_NAME_SLUG \
+        --env CI_COMMIT_SHA \
+        --env CI_COMMIT_BRANCH \
+        --env DD_LOGGER_DD_API_KEY \
+        --env NUKE_TELEMETRY_OPTOUT=1 \
+        --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+        "$tester_image" \
+        dotnet /build/bin/Debug/_build.dll \
+        BuildManagedUnitTests RunManagedUnitTests \
+        --framework "$FRAMEWORK" \
+        --IncludeAllTestFrameworks true \
+        --NugetPackageDirectory /project/packages
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    name: "managed-unit-tests-linux-x64-$FRAMEWORK"
+    paths:
+      - artifacts/build_data/results
+      - artifacts/build_data/logs
+      - artifacts/build_data/dumps
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
