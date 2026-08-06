@@ -103,6 +103,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
 
             span.SetHttpStatusCode(statusCode, isServer, settings);
 
+            span.GetHttpStatusCodeString().Should().Be(IntStringCache.ToInvariantString(statusCode));
             span.Error.Should().Be(expectedError);
             span.GetTag(Tags.ErrorType).Should().Be(expectedErrorType);
             span.GetTag(Tags.ErrorMsg).Should().Be(expectedErrorMsg);

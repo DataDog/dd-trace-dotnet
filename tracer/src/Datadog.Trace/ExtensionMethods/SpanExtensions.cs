@@ -129,7 +129,8 @@ namespace Datadog.Trace.ExtensionMethods
             }
             else
             {
-                span.SetTag(Tags.HttpStatusCode, IntStringCache.ToInvariantString(statusCode));
+                var tagName = span.OpenTelemetrySemanticsEnabled ? Tags.HttpResponseStatusCode : Tags.HttpStatusCode;
+                span.SetTag(tagName, IntStringCache.ToInvariantString(statusCode));
             }
 
             // Check the customers http statuses that should be marked as errors
