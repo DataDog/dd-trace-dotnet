@@ -71,6 +71,7 @@ namespace Datadog.Trace.Util
 #if NETCOREAPP
         public ReadOnlySpan<char> AsSpan() => Value.AsSpan(Offset, Length);
 #endif
+
         public StringSegment Trim()
         {
 #if NETCOREAPP
