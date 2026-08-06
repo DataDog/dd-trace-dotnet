@@ -26,7 +26,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Agent
 {
-    public class AgentWriterTests
+    public class AgentWriterTests : IAsyncLifetime
     {
         private readonly ITestOutputHelper _output;
         private readonly AgentWriter _agentWriter;
@@ -38,6 +38,10 @@ namespace Datadog.Trace.Tests.Agent
             _api = new Mock<IApi>();
             _agentWriter = new AgentWriter(_api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp);
         }
+
+        public Task InitializeAsync() => Task.CompletedTask;
+
+        public Task DisposeAsync() => _agentWriter.FlushAndCloseAsync();
 
         [Fact]
         public async Task SpanSampling_CanComputeStats_ShouldNotSend_WhenSpanSamplingDoesNotMatch()
@@ -62,7 +66,7 @@ namespace Datadog.Trace.Tests.Agent
 
             api.Verify(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Never);
 
-            await _agentWriter.FlushAndCloseAsync();
+            await agent.FlushAndCloseAsync();
         }
 
         [Fact]
@@ -104,7 +108,7 @@ namespace Datadog.Trace.Tests.Agent
             actualDroppedP0Traces.Should().Be(expectedDroppedP0Traces);
             actualDroppedP0Spans.Should().Be(expectedDroppedP0Spans);
 
-            await _agentWriter.FlushAndCloseAsync();
+            await agent.FlushAndCloseAsync();
         }
 
         [Fact]
@@ -152,7 +156,7 @@ namespace Datadog.Trace.Tests.Agent
             actualDroppedP0Traces.Should().Be(expectedDroppedP0Traces);
             actualDroppedP0Spans.Should().Be(expectedDroppedP0Spans);
 
-            await _agentWriter.FlushAndCloseAsync();
+            await agent.FlushAndCloseAsync();
         }
 
         [Fact]
@@ -193,11 +197,11 @@ namespace Datadog.Trace.Tests.Agent
             api.Traces.Should().HaveCount(1);
             api.Traces[0].Should().HaveCount(2);
 
-            await _agentWriter.FlushAndCloseAsync();
+            await agentWriter.FlushAndCloseAsync();
         }
 
         [Fact]
-        public void PushStats()
+        public async Task PushStats()
         {
             var spans = CreateTraceChunk(1);
             var statsAggregator = new StubStatsAggregator(shouldKeepTrace: false, x => spans);
@@ -206,6 +210,8 @@ namespace Datadog.Trace.Tests.Agent
             agent.WriteTrace(spans);
 
             statsAggregator.AddedSpans.Should().Contain(spans).Which.Count.Should().Be(1);
+
+            await agent.FlushAndCloseAsync();
         }
 
         [Fact]
@@ -357,10 +363,12 @@ namespace Datadog.Trace.Tests.Agent
             agent.BackBuffer.IsEmpty.Should().BeTrue();
 
             api.Verify(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1, It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Exactly(2));
+
+            await agent.FlushAndCloseAsync();
         }
 
         [Fact]
-        public void DropTraces()
+        public async Task DropTraces()
         {
             // Traces should be dropped when both buffers are full
             var statsd = new Mock<IDogStatsd>();
@@ -418,10 +426,12 @@ namespace Datadog.Trace.Tests.Agent
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.DroppedTraces, 1, 1, null), Times.Once);
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.DroppedSpans, 2, 1, null), Times.Once);
             statsd.VerifyNoOtherCalls();
+
+            await agent.FlushAndCloseAsync();
         }
 
         [Fact]
-        public void DropTraceWhenBothBuffersAreLocked()
+        public async Task DropTraceWhenBothBuffersAreLocked()
         {
             var agent = new AgentWriter(
                 Mock.Of<IApi>(),
@@ -438,10 +448,12 @@ namespace Datadog.Trace.Tests.Agent
             agent.DroppedTracesBufferFullAndLocked.Should().Be(0);
             agent.DroppedTracesBuffersLocked.Should().Be(1);
             agent.DroppedTracesTooLarge.Should().Be(0);
+
+            await agent.FlushAndCloseAsync();
         }
 
         [Fact]
-        public void DropTraceWhenOneBufferIsFullAndOneIsLocked()
+        public async Task DropTraceWhenOneBufferIsFullAndOneIsLocked()
         {
             var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
             var agent = new AgentWriter(
@@ -459,6 +471,8 @@ namespace Datadog.Trace.Tests.Agent
             agent.DroppedTracesBufferFullAndLocked.Should().Be(1);
             agent.DroppedTracesBuffersLocked.Should().Be(0);
             agent.DroppedTracesTooLarge.Should().Be(0);
+
+            await agent.FlushAndCloseAsync();
         }
 
         [Fact]
@@ -490,10 +504,12 @@ namespace Datadog.Trace.Tests.Agent
 
             agent.DroppedTracesBufferFull.Should().Be(0);
             agent.DroppedTracesTooLarge.Should().Be(0);
+
+            await agent.FlushAndCloseAsync();
         }
 
         [Fact]
-        public void DropTraceThatExceedsBufferSizeWhenActiveBufferIsLocked()
+        public async Task DropTraceThatExceedsBufferSizeWhenActiveBufferIsLocked()
         {
             var agent = new AgentWriter(
                 Mock.Of<IApi>(),
@@ -511,6 +527,8 @@ namespace Datadog.Trace.Tests.Agent
             agent.BackBuffer.IsEmpty.Should().BeTrue();
             agent.DroppedTracesBufferFull.Should().Be(0);
             agent.DroppedTracesTooLarge.Should().Be(1);
+
+            await agent.FlushAndCloseAsync();
         }
 
         [Fact]
@@ -586,11 +604,12 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public void AgentWriterEnqueueFlushTasks()
+        public async Task AgentWriterEnqueueFlushTasks()
         {
             var api = new Mock<IApi>();
             var agentWriter = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
             var flushTcs = new TaskCompletionSource<bool>();
+            var firstSendEntered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             int invocation = 0;
 
             api.Setup(i => i.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
@@ -599,6 +618,7 @@ namespace Datadog.Trace.Tests.Agent
                     // One for the front buffer, one for the back buffer
                     if (Interlocked.Increment(ref invocation) <= 2)
                     {
+                        firstSendEntered.TrySetResult(true);
                         return flushTcs.Task;
                     }
 
@@ -610,23 +630,32 @@ namespace Datadog.Trace.Tests.Agent
             // Write trace to the front buffer
             agentWriter.WriteTrace(spans);
 
-            // Flush front buffer
-            _ = agentWriter.FlushTracesAsync();
+            // Flush the front buffer. This blocks inside SendTracesAsync, so the front buffer
+            // stays locked until we complete flushTcs.
+            var firstFlush = agentWriter.FlushTracesAsync();
+            await firstSendEntered.Task;
 
-            // This will swap to the back buffer due front buffer is blocked.
+            // The front buffer is locked, so this swaps to the back buffer.
             agentWriter.WriteTrace(spans);
 
-            // Flush the second buffer
-            _ = agentWriter.FlushTracesAsync();
+            // Flush the back buffer. FlushBuffers() always flushes the front buffer too, so this
+            // queues up behind the first flush.
+            var secondFlush = agentWriter.FlushTracesAsync();
 
-            // This trace will force other buffer swap and then a drop because both buffers are blocked
+            // The back buffer is still unlocked, so this is written to it.
             agentWriter.WriteTrace(spans);
 
             // This will try to flush the front buffer again.
             var thirdFlush = agentWriter.FlushTracesAsync();
 
             // Third flush should wait for the first flush to complete.
-            thirdFlush.IsCompleted.Should().BeFalse();
+            var completed = await Task.WhenAny(thirdFlush, Task.Delay(TimeSpan.FromMilliseconds(100)));
+            completed.Should().NotBeSameAs(thirdFlush);
+
+            // Unblock the API so everything can drain and the writer can shut down.
+            flushTcs.TrySetResult(true);
+            await Task.WhenAll(firstFlush, secondFlush, thirdFlush);
+            await agentWriter.FlushAndCloseAsync();
         }
 
         private static bool WaitForDequeue(AgentWriter agent, bool wakeUpThread = true, int delay = -1)
