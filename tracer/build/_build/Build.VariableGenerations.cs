@@ -48,6 +48,15 @@ partial class Build : NukeBuild
                     isArm64: false,
                     includeAllFrameworks: IncludeAllTestFrameworks)));
 
+    Target GenerateGitlabLinuxUnitTestsPipeline
+        => _ => _
+           .Unlisted()
+           .Executes(() => WriteGitlabLinuxUnitTestsPipeline(
+                GetTestingFrameworks(
+                    PlatformFamily.Linux,
+                    isArm64: false,
+                    includeAllFrameworks: IncludeAllTestFrameworks)));
+
     void WriteGitlabWindowsUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
     {
         var yaml = new StringBuilder(
@@ -73,6 +82,33 @@ partial class Build : NukeBuild
         var outputPath = outputDirectory / "windows-unit-tests.yml";
         File.WriteAllText(outputPath, yaml.ToString());
         Logger.Information("Generated GitLab Windows unit-test child pipeline at {Path}", outputPath);
+    }
+
+    void WriteGitlabLinuxUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
+    {
+        var yaml = new StringBuilder(
+            """
+            include:
+              - local: .gitlab/linux-unit-tests-child.yml
+
+            stages:
+              - test
+
+            """);
+
+        foreach (var framework in frameworks)
+        {
+            yaml.AppendLine($"\"unit-tests-linux-x64:{framework}\":");
+            yaml.AppendLine("  extends: .linux-unit-test-x64");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+        }
+
+        var outputDirectory = RootDirectory / ".gitlab" / "generated";
+        Directory.CreateDirectory(outputDirectory);
+        var outputPath = outputDirectory / "linux-unit-tests.yml";
+        File.WriteAllText(outputPath, yaml.ToString());
+        Logger.Information("Generated GitLab Linux unit-test child pipeline at {Path}", outputPath);
     }
 
     Target GenerateVariables
@@ -206,6 +242,7 @@ partial class Build : NukeBuild
                 if (IsGitlab)
                 {
                     WriteGitlabWindowsUnitTestsPipeline(windowsFrameworks);
+                    WriteGitlabLinuxUnitTestsPipeline(GetTestingFrameworks(PlatformFamily.Linux));
                 }
 
                 void GenerateTfmsMatrix(string name, IEnumerable<TargetFramework> frameworks)

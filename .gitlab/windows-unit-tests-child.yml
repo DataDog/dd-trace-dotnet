@@ -31,7 +31,7 @@
         --entrypoint cmd.exe `
         $env:WINDOWS_BUILD_IMAGE `
         /d /s /c `
-        "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK && c:\entrypoint.bat BuildManagedUnitTests RunManagedUnitTests --framework $env:FRAMEWORK --NugetPackageDirectory c:\mnt\packages"
+        "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK && c:\entrypoint.bat BuildManagedUnitTests RunManagedUnitTests --framework $env:FRAMEWORK --IncludeAllTestFrameworks true --NugetPackageDirectory c:\mnt\packages"
       if ($LASTEXITCODE -ne 0) {
         throw "Managed unit tests for $env:FRAMEWORK exited with code $LASTEXITCODE"
       }
