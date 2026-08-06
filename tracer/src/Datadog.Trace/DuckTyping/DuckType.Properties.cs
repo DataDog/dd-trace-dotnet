@@ -24,9 +24,9 @@ namespace Datadog.Trace.DuckTyping
             MemberInfo proxyMember,
             PropertyInfo targetProperty,
             FieldInfo? instanceField,
-            out MethodBuilder? proxyMethodResult,
             Func<LazyILGenerator, Type, Type, Type> duckCastInnerToOuterFunc,
-            Func<Type, Type, bool> needsDuckChaining)
+            Func<Type, Type, bool> needsDuckChaining,
+            out MethodBuilder? proxyMethodResult)
         {
             proxyMethodResult = null;
 

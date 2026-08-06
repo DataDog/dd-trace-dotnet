@@ -246,6 +246,19 @@ namespace Datadog.Trace.DuckTyping
     }
 
     /// <summary>
+    /// DuckType proxy property has an ambiguous match in the target type exception
+    /// </summary>
+    internal sealed class DuckTypeTargetPropertyAmbiguousMatchException : DuckTypeException
+    {
+        private DuckTypeTargetPropertyAmbiguousMatchException(Type targetType, string propertyName)
+            : base($"The target type '{targetType.FullName ?? targetType.Name}' declares more than one property called '{propertyName}', so the one to copy from cannot be determined.")
+        {
+        }
+
+        internal static DuckTypeTargetPropertyAmbiguousMatchException Create(Type targetType, string propertyName) => new(targetType, propertyName);
+    }
+
+    /// <summary>
     /// DuckType reverse proxy type to derive from is a struct exception
     /// </summary>
     internal sealed class DuckTypeReverseProxyBaseIsStructException : DuckTypeException
