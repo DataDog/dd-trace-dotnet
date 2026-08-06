@@ -337,7 +337,7 @@ namespace Datadog.Trace.Propagators
                 // "dd" section not found or it is too short
                 // shortest valid length is 3 as in "a:b" ("dd=" prefix already stripped)
                 // note for this case the p will be viewed as 0 if added as a span tag
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues, otTraceState);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues, hasOtTraceState ? otTraceState.ToString() : null);
             }
 
             int? samplingPriority = null;
