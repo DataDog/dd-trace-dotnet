@@ -274,7 +274,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
             std::vector<ModuleID> preloadedModuleIds = modules.Ref();
             const auto& profilerModuleIds = GetProfilerAssemblyModuleIds();
             preloadedModuleIds.insert(preloadedModuleIds.end(), profilerModuleIds.begin(), profilerModuleIds.end());
-            _dataflow = new iast::Dataflow(this, info_, rejit_handler, preloadedModuleIds, runtime_information_);
+            _dataflow = new iast::Dataflow(
+                [this](AppDomainID appDomainId) { return GetProfilerAssemblyModuleId(appDomainId); }, info_,
+                rejit_handler, preloadedModuleIds, runtime_information_);
         }
         else
         {
@@ -2110,7 +2112,9 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, size_t aspectsLength, UINT
         std::vector<ModuleID> preloadedModuleIds = modules.Ref();
         const auto& profilerModuleIds = GetProfilerAssemblyModuleIds();
         preloadedModuleIds.insert(preloadedModuleIds.end(), profilerModuleIds.begin(), profilerModuleIds.end());
-        dataflow = new iast::Dataflow(this, info_, rejit_handler, preloadedModuleIds, runtime_information_);
+        dataflow = new iast::Dataflow(
+            [this](AppDomainID appDomainId) { return GetProfilerAssemblyModuleId(appDomainId); }, info_, rejit_handler,
+            preloadedModuleIds, runtime_information_);
     }
 
     if (dataflow != nullptr)

@@ -159,12 +159,12 @@ AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 
 //--------------------
 
-Dataflow::Dataflow(trace::CorProfiler* corProfiler, ICorProfilerInfo* profiler,
+Dataflow::Dataflow(AspectsModuleIdResolver resolveAspectsModuleId, ICorProfilerInfo* profiler,
                    std::shared_ptr<RejitHandler> rejitHandler, std::vector<ModuleID> moduleIds,
                    const RuntimeInformation& runtimeInfo) :
     Rejitter(rejitHandler, RejitterPriority::Low, false)
 {
-    _corProfiler = corProfiler;
+    _resolveAspectsModuleId = std::move(resolveAspectsModuleId);
     m_runtimeType = runtimeInfo.runtime_type;
     m_runtimeVersion = VersionInfo{runtimeInfo.major_version, runtimeInfo.minor_version, runtimeInfo.build_version, 0};
     trace::Logger::Info("Dataflow::Dataflow -> Detected runtime version : ", m_runtimeVersion.ToString());
@@ -634,14 +634,12 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
 ModuleInfo* Dataflow::GetAspectsModule(AppDomainID id)
 {
     CSGUARD(_cs);
-    if (_corProfiler == nullptr)
+    if (!_resolveAspectsModuleId)
     {
         return nullptr;
     }
 
-    // Ask the CorProfiler that owns this Dataflow, never the trace::profiler global: a ModuleID is
-    // only valid for the runtime that produced it, and the global may belong to a different one.
-    ModuleID moduleId = _corProfiler->GetProfilerAssemblyModuleId(id);
+    ModuleID moduleId = _resolveAspectsModuleId(id);
 
     if (moduleId > 0)
     {
