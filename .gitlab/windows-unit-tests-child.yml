@@ -16,6 +16,7 @@
         throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
       }
       $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+      New-Item -ItemType Directory -Force artifacts/build_data/infra_logs | Out-Null
       Write-Output "Running managed unit tests for $env:FRAMEWORK with $env:WINDOWS_BUILD_IMAGE"
 
       docker run --rm -m 20480M `
@@ -26,7 +27,7 @@
         -e NUGET_CERT_REVOCATION_MODE=offline `
         -e DD_LOGGER_ENABLED=true `
         -e DD_LOGGER_DD_API_KEY `
-        -e DD_LOGGER_DD_TRACE_LOG_DIRECTORY=c:\mnt\artifacts\build_data\infra_logs `
+        -e DD_LOGGER_DD_TRACE_LOG_PATH=c:\mnt\artifacts\build_data\infra_logs\ci-visibility.log `
         -e "DD_LOGGER_DD_TAGS=test.configuration.job:$env:CI_JOB_NAME" `
         -e CI_IDENTITIES_GITLAB_ID_TOKEN `
         -e GITLAB_CI `
