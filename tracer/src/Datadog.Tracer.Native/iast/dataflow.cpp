@@ -437,6 +437,13 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
         _modules.erase(moduleId);
         _reportedModuleFailures.erase(moduleId);
     }
+    // Drop it from the pending preload list too. Otherwise the drain would later call
+    // GetModuleInfo2 on a ModuleID the runtime has already torn down.
+    if (!_preLoadedModuleIds.empty())
+    {
+        _preLoadedModuleIds.erase(std::remove(_preLoadedModuleIds.begin(), _preLoadedModuleIds.end(), moduleId),
+                                  _preLoadedModuleIds.end());
+    }
 
     return S_OK;
 }
