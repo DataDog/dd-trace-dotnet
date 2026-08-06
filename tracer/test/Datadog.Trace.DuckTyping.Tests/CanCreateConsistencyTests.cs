@@ -75,10 +75,8 @@ public class CanCreateConsistencyTests
 
             target.DuckIs(duckType).Should().Be(canCreate);
 
-            // Deciding whether a proxy can be built must be exception-free, apart from one remaining case
-            // (see KnownResidual). Allow-listed rather than ignored, so a *new* kind of first-chance
-            // exception still fails here.
-            counter.Exceptions.Should().NotContain(x => !KnownResidual(x));
+            // Deciding whether a proxy can be built must be completely exception-free
+            counter.Exceptions.Should().BeEmpty();
         }
 
         DuckType.GetOrCreateProxyType(duckType, target.GetType())
@@ -144,7 +142,7 @@ public class CanCreateConsistencyTests
 
             instance.TryDuckImplement(typeToImplement, out proxy).Should().Be(canCreate);
 
-            counter.Exceptions.Should().NotContain(x => !KnownResidual(x));
+            counter.Exceptions.Should().BeEmpty();
         }
 
         if (canCreate)
@@ -163,18 +161,6 @@ public class CanCreateConsistencyTests
                      .WithInnerException<DuckTypeException>();
         }
     }
-
-    /// <summary>
-    /// The one first-chance exception source left inside proxy creation.
-    /// <para>
-    /// <c>Type.GetProperty(name, bindingFlags)</c> throws when a target declares several indexers.
-    /// <c>DuckType.FindPropertyOrIndex</c> now resolves the proxy's exact signature up front, which avoids
-    /// the throw whenever such an indexer exists - but when the proxy's indexer matches none of them (the
-    /// <c>WrongReturnType</c> permutations declare <c>string[] this[string]</c> against a target with
-    /// <c>string this[string]</c>), it still falls through to the ambiguous lookup.
-    /// </para>
-    /// </summary>
-    private static bool KnownResidual(Exception exception) => exception is AmbiguousMatchException;
 
     /// <summary>
     /// Runs the throwing entry point and returns the exception it surfaced, unwrapping the

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
+using System.Text;
 using FluentAssertions;
 using Xunit;
 
@@ -119,6 +120,42 @@ public class FirstChanceExceptionTests
 
         counter.Exceptions.Should().BeEmpty();
         copy.Value.Should().Be("ok");
+    }
+
+    [Fact]
+    public void FailingDuckCopyForAmbiguousPropertyRaisesNoFirstChanceException()
+    {
+        Warmup();
+
+        // The target hides a base property with one of a different type, so both survive reflection's
+        // hiding rules and Type.GetProperty(name, bindingFlags) reports them as ambiguous. That used to
+        // throw from inside the Lazy<CreateTypeResult> factory and surface as a general "error creating
+        // duck type"; the pair must still fail, but silently.
+        object target = new AmbiguousPropertyTarget();
+        using var counter = new FirstChanceExceptionCounter();
+
+        var result = target.TryDuckCast<AmbiguousPropertyProxy>(out _);
+
+        counter.Exceptions.Should().BeEmpty();
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public void FailingDuckCastForAmbiguousInterfacePropertyRaisesNoFirstChanceException()
+    {
+        Warmup();
+
+        // Same ambiguity as above, but reaching it through the interface/class leg rather than the
+        // [DuckCopy] one, so the DefaultBinder fallback that resolves it gets deterministic coverage.
+        // Neither candidate is compatible with the proxy's property type, so the binder picks nothing and
+        // the pair fails - it must do so without raising anything.
+        object target = new AmbiguousInterfacePropertyTarget();
+        using var counter = new FirstChanceExceptionCounter();
+
+        var result = target.TryDuckCast<IAmbiguousInterfacePropertyProxy>(out _);
+
+        counter.Exceptions.Should().BeEmpty();
+        result.Should().BeFalse();
     }
 
     [Fact]
@@ -466,6 +503,17 @@ public class FirstChanceExceptionTests
         public string Value;
     }
 
+    [DuckCopy]
+    public struct AmbiguousPropertyProxy
+    {
+        public string Value;
+    }
+
+    public interface IAmbiguousInterfacePropertyProxy
+    {
+        StringBuilder Value { get; }
+    }
+
     // Each failing test needs its own pair too: a cached failure result short-circuits creation just as a
     // cached success does, so a shared pair would measure the cache rather than the code under test.
     public interface IMissingPropertyProxy
@@ -725,6 +773,28 @@ public class FirstChanceExceptionTests
     internal class DuckCopySuccessTarget
     {
         public string Value => "ok";
+    }
+
+    internal class AmbiguousPropertyBaseTarget
+    {
+        public int Value => 42;
+    }
+
+    internal class AmbiguousPropertyTarget : AmbiguousPropertyBaseTarget
+    {
+        // Hides the base property with a different type, so reflection keeps both: hiding is collapsed by
+        // signature, not by name.
+        public new string Value => "ok";
+    }
+
+    internal class AmbiguousInterfacePropertyBaseTarget
+    {
+        public string Value => "ok";
+    }
+
+    internal class AmbiguousInterfacePropertyTarget : AmbiguousInterfacePropertyBaseTarget
+    {
+        public new int Value => 42;
     }
 
     internal class HarnessSentinelException : Exception
