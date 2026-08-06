@@ -185,10 +185,12 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
 
     if (_profiler != nullptr)
     {
-        for (auto const& id : moduleIds)
-        {
-            ResolveModuleInfo(id);
-        }
+        // Modules that were already loaded when Dataflow was created never get another
+        // ModuleLoadFinished, so remember them here. They cannot be resolved yet: this constructor
+        // runs on a managed thread (the RegisterIastAspects P/Invoke), outside any profiler
+        // callback, and there GetAssemblyInfo fails with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE.
+        // The list is drained from the next ModuleLoaded, which does run inside ModuleLoadFinished.
+        _preLoadedModuleIds = moduleIds;
     }
 }
 
@@ -392,6 +394,18 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
 {
     CSGUARD(_cs);
+    // Resolve the modules that were already loaded when Dataflow was created. This is the first
+    // safe opportunity to do so: we are inside ModuleLoadFinished, the profiler-callback context
+    // the profiling API requires for these calls.
+    if (_preLoadedModuleIds.size() > 0)
+    {
+        for (auto const& id : _preLoadedModuleIds)
+        {
+            ResolveModuleInfo(id);
+        }
+        _preLoadedModuleIds.clear();
+    }
+
     ResolveModuleInfo(moduleId);
     return S_OK;
 }
@@ -540,9 +554,16 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
     return nullptr;
 }
 
+// Resolves a module through the profiling API. Must only be called from inside a profiler
+// callback: GetAssemblyInfo is a synchronous-only method and fails outside one.
 ModuleInfo* Dataflow::ResolveModuleInfo(ModuleID id)
 {
     CSGUARD(_cs);
+    if (_profiler == nullptr)
+    {
+        return nullptr;
+    }
+
     auto found = _modules.find(id);
     if (found != _modules.end())
     {

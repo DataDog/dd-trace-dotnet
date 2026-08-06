@@ -266,8 +266,8 @@ public:
     //
     ModuleID GetProfilerAssemblyModuleId(AppDomainID appDomainId);
     // Datadog.Trace.dll's own module is deliberately excluded from module_ids (see TryRejitModule), but
-    // GetAspectsModule resolves it by ModuleID, so Dataflow must preload it separately to avoid resolving
-    // it lazily from inside a JIT callback.
+    // GetAspectsModule looks it up by ModuleID in Dataflow's cache. It must therefore be added to
+    // Dataflow's preloaded list, or nothing would ever resolve it and no aspect could be defined.
     std::vector<ModuleID> GetProfilerAssemblyModuleIds();
 };
 

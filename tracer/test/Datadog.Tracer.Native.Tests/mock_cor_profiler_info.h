@@ -20,8 +20,8 @@ inline void CopyWideString(WCHAR* dest, ULONG destCapacity, const wchar_t* src)
 
 // Minimal ICorProfilerInfo3 test double. Every method fails by default; the handful of
 // methods Dataflow::ResolveModuleInfo/GetAppDomain actually call are overridden below to return
-// canned data and to record how many times they were invoked, so tests can assert on whether
-// a module was resolved eagerly (at Dataflow construction) or lazily (on first use).
+// canned data and to record how many times they were invoked, so tests can assert on when a module
+// is resolved, and that it is never resolved from outside a profiler callback.
 class MockCorProfilerInfo : public ICorProfilerInfo3
 {
 public:
