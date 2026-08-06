@@ -15,6 +15,7 @@
       set -eu
 
       tester_image="dd-trace-dotnet/debian-tester:${CI_JOB_ID}"
+      mkdir -p artifacts/build_data/infra_logs
       echo "Building Debian test image for ${FRAMEWORK}"
       docker build \
         --build-arg DOTNETSDK_VERSION=10.0.100 \
@@ -32,7 +33,7 @@
         --env CI=true \
         --env DD_LOGGER_ENABLED=true \
         --env DD_LOGGER_DD_API_KEY \
-        --env DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs \
+        --env DD_LOGGER_DD_TRACE_LOG_PATH=/project/artifacts/build_data/infra_logs/ci-visibility.log \
         --env "DD_LOGGER_DD_TAGS=test.configuration.job:${CI_JOB_NAME}" \
         --env GITLAB_CI \
         --env CI_PROJECT_URL \

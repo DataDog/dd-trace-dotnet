@@ -1498,16 +1498,43 @@ partial class Build
             var defaultDotNetLogger = DotNetTasks.DotNetLogger;
             if (IsGitlab)
             {
+                var suppressedDatadogTestMessage = new AsyncLocal<string>();
                 DotNetTasks.DotNetLogger = (type, text) =>
                 {
-                    // The Datadog test logger emits two lines for every successful
-                    // test. Preserve failures, skips, diagnostics, and summaries while
-                    // keeping the combined Windows build below GitLab's 4 MiB log limit.
-                    if (!text.Contains(": STARTED:", StringComparison.Ordinal) &&
-                        !text.Contains(": SUCCESS:", StringComparison.Ordinal))
+                    // The Datadog test logger emits STARTED and SUCCESS messages for every
+                    // test. Test arguments can span multiple lines, so suppress their
+                    // continuations too while preserving failures, skips, and diagnostics.
+                    if (text.Contains(": STARTED:", StringComparison.Ordinal))
                     {
-                        defaultDotNetLogger(type, text);
+                        suppressedDatadogTestMessage.Value = text.TrimEnd().EndsWith(")", StringComparison.Ordinal) ? null : "started";
+                        return;
                     }
+
+                    if (text.Contains(": SUCCESS:", StringComparison.Ordinal))
+                    {
+                        suppressedDatadogTestMessage.Value = text.TrimEnd().EndsWith("s)", StringComparison.Ordinal) ? null : "success";
+                        return;
+                    }
+
+                    // A new xUnit event is never a continuation of the suppressed message.
+                    // Reset first so failures and skips cannot be hidden.
+                    if (text.Contains("[xUnit.net ", StringComparison.Ordinal))
+                    {
+                        suppressedDatadogTestMessage.Value = null;
+                    }
+                    else if (suppressedDatadogTestMessage.Value is { } suppressedMessage)
+                    {
+                        var trimmedText = text.TrimEnd();
+                        if ((suppressedMessage == "started" && trimmedText.EndsWith(")", StringComparison.Ordinal)) ||
+                            (suppressedMessage == "success" && trimmedText.EndsWith("s)", StringComparison.Ordinal)))
+                        {
+                            suppressedDatadogTestMessage.Value = null;
+                        }
+
+                        return;
+                    }
+
+                    defaultDotNetLogger(type, text);
                 };
             }
 
