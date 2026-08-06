@@ -17,6 +17,7 @@ using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
@@ -603,17 +604,24 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task AgentWriterEnqueueFlushTasks()
         {
+            // Flushes all run on the flush loop, one at a time, so flushes requested while one is in
+            // flight wait for it. Every trace written below should still be sent, and every flush should
+            // complete, once the blocked API call is released.
             var api = new Mock<IApi>();
             var agentWriter = AgentWriterHelper.CreateWithManualFlush(api.Object);
             var flushTcs = new TaskCompletionSource<bool>();
             var firstSendEntered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            int invocation = 0;
+            var invocation = 0;
+            var sentTraces = 0;
 
             api.Setup(i => i.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
-                .Returns(() =>
+                .Returns((ArraySegment<byte> _, int numberOfTraces, bool _, long _, long _, bool _) =>
                 {
-                    // One for the front buffer, one for the back buffer
-                    if (Interlocked.Increment(ref invocation) <= 2)
+                    Interlocked.Add(ref sentTraces, numberOfTraces);
+
+                    // The first send blocks until we release it below; the flush loop is stuck in it,
+                    // holding the front buffer locked.
+                    if (Interlocked.Increment(ref invocation) == 1)
                     {
                         firstSendEntered.TrySetResult(true);
                         return flushTcs.Task;
@@ -635,23 +643,29 @@ namespace Datadog.Trace.Tests.Agent
             // The front buffer is locked, so this swaps to the back buffer.
             agentWriter.WriteTrace(spans);
 
-            // Flush the back buffer. FlushBuffers() always flushes the front buffer too, so this
-            // queues up behind the first flush.
+            // Queues up behind the in-flight flush.
             var secondFlush = agentWriter.FlushTracesAsync();
 
             // The back buffer is still unlocked, so this is written to it.
             agentWriter.WriteTrace(spans);
 
-            // This will try to flush the front buffer again.
+            // Also queues up behind the in-flight flush, and is batched with the second one.
             var thirdFlush = agentWriter.FlushTracesAsync();
 
-            // Third flush should wait for the first flush to complete.
+            // None of the flushes can complete while the first send is blocked.
             var completed = await Task.WhenAny(thirdFlush, Task.Delay(TimeSpan.FromMilliseconds(100)));
             completed.Should().NotBeSameAs(thirdFlush);
+            firstFlush.IsCompleted.Should().BeFalse();
+            secondFlush.IsCompleted.Should().BeFalse();
 
             // Unblock the API so everything can drain and the writer can shut down.
             flushTcs.TrySetResult(true);
-            await Task.WhenAll(firstFlush, secondFlush, thirdFlush);
+            await Task.WhenAll(firstFlush, secondFlush, thirdFlush).WaitAsync(TimeSpan.FromMilliseconds(30000));
+
+            // Note that we can't assert on the DroppedTraces* counters here, because a flush resets them.
+            // All three traces reaching the API is what proves none of them were dropped.
+            Volatile.Read(ref sentTraces).Should().Be(3);
+
             await agentWriter.FlushAndCloseAsync();
         }
 
@@ -668,6 +682,127 @@ namespace Datadog.Trace.Tests.Agent
 
             // Nothing resets the counter, because the final flush ran before the write above
             agent.DroppedTracesBufferFull.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task ConcurrentFlushTracesAsync_NeverRunsMoreThanOneFlushAtATime()
+        {
+            // Buffers are only ever locked and flushed by the flush loop, so no matter how many callers
+            // are flushing concurrently, a buffer is never sent while another send is in flight.
+            var api = new Mock<IApi>();
+            var concurrentSends = 0;
+            var maxConcurrentSends = 0;
+            var maxLock = new object();
+
+            api.Setup(i => i.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
+                .Returns(async () =>
+                {
+                    var current = Interlocked.Increment(ref concurrentSends);
+
+                    lock (maxLock)
+                    {
+                        maxConcurrentSends = Math.Max(maxConcurrentSends, current);
+                    }
+
+                    // Give any other flush a chance to overlap with this one
+                    await Task.Delay(20);
+
+                    Interlocked.Decrement(ref concurrentSends);
+                    return true;
+                });
+
+            // Buffers big enough for a single trace, so that they fill up and the active buffer keeps
+            // switching while flushes are in flight. Background flushes are enabled too, so those must
+            // not overlap with the requested ones either.
+            var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
+            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, maxBufferSize: (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1, batchInterval: 0);
+
+            var flushes = new List<Task>();
+
+            for (var i = 0; i < 50; i++)
+            {
+                agent.WriteTrace(CreateTraceChunk(1));
+                flushes.Add(agent.FlushTracesAsync());
+            }
+
+            await Task.WhenAll(flushes).WaitAsync(TimeSpan.FromMilliseconds(30000));
+
+            lock (maxLock)
+            {
+                maxConcurrentSends.Should().Be(1);
+            }
+
+            await agent.FlushAndCloseAsync();
+        }
+
+        [Fact]
+        public async Task FlushTracesAsync_SendsTracesWrittenOnTheSameThread()
+        {
+            // A trace written before FlushTracesAsync() is called must have left the pending queue and be
+            // a candidate for that flush, however many times we go around.
+            var api = new MockApi();
+            var agent = new AgentWriter(api, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false, batchInterval: 0);
+
+            for (var i = 1; i <= 20; i++)
+            {
+                agent.WriteTrace(CreateTraceChunk(1, startingId: (ulong)i));
+                await agent.FlushTracesAsync();
+
+                api.Traces.Should().HaveCount(i);
+            }
+
+            await agent.FlushAndCloseAsync();
+        }
+
+        [Fact]
+        public async Task FlushTracesAsync_AfterFlushAndClose_DoesNotHang()
+        {
+            // The flush loop has already performed its final flush and stopped, so there's nothing left
+            // to flush, and nothing to wait for
+            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, statsd: TestStatsdManager.NoOp, batchInterval: 0);
+
+            agent.WriteTrace(CreateTraceChunk(1));
+            await agent.FlushAndCloseAsync();
+
+            await agent.FlushTracesAsync().WaitAsync(TimeSpan.FromMilliseconds(30000));
+        }
+
+        [Fact]
+        public async Task FlushTracesAsync_DuringFinalFlush_DoesNotHang()
+        {
+            // A request that arrives after the final pass took its snapshot of _pendingFlushRequest
+            // can't be completed by that pass, so only the flush loop's finally block can complete it.
+            var api = new Mock<IApi>();
+            var gate = new TaskCompletionSource<bool>();
+            var firstSendEntered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var invocations = 0;
+
+            api.Setup(i => i.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
+                .Returns(() =>
+                {
+                    if (Interlocked.Increment(ref invocations) == 1)
+                    {
+                        firstSendEntered.TrySetResult(true);
+                        return gate.Task;
+                    }
+
+                    return Task.FromResult(true);
+                });
+
+            // No background flushes, so the only send that can happen is the final pass's
+            var agent = AgentWriterHelper.CreateWithManualFlush(api.Object);
+            agent.WriteTrace(CreateTraceChunk(1));
+
+            // Serialization stops, so the flush loop starts its final pass, which blocks in the API
+            var closing = agent.FlushAndCloseAsync();
+            await firstSendEntered.Task;
+
+            var flush = agent.FlushTracesAsync();
+
+            gate.SetResult(true);
+
+            await flush.WaitAsync(TimeSpan.FromMilliseconds(30000));
+            await closing.WaitAsync(TimeSpan.FromMilliseconds(30000));
         }
 
         /// <summary>
