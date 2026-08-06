@@ -5,14 +5,21 @@
 #include "../rejit_handler.h"
 #include "../rejit_preprocessor.h"
 
+#include <functional>
+
 namespace trace
 {
     class FunctionControlWrapper;
-    class CorProfiler;
 }
 
 namespace iast
 {
+    // Returns Datadog.Trace.dll's ModuleID for an AppDomain. Injected so Dataflow resolves through
+    // the CorProfiler that owns it instead of the trace::profiler process-global: that global is
+    // overwritten by whichever CLR initializes last, and a ModuleID is only meaningful to the
+    // runtime that produced it.
+    using AspectsModuleIdResolver = std::function<ModuleID(AppDomainID)>;
+
     class CorProfiler;
     class AppDomainInfo;
     class ModuleInfo;
@@ -53,17 +60,13 @@ namespace iast
         friend class ModuleInfo;
         friend class ModuleAspects;
     public:
-        Dataflow(trace::CorProfiler* corProfiler, ICorProfilerInfo* profiler,
+        Dataflow(AspectsModuleIdResolver resolveAspectsModuleId, ICorProfilerInfo* profiler,
                  std::shared_ptr<RejitHandler> rejitHandler, std::vector<ModuleID> moduleIds,
                  const RuntimeInformation& runtimeInfo);
         virtual ~Dataflow();
     private:
         CS _cs;
-        // The CorProfiler that owns this Dataflow. Must not be replaced by the trace::profiler global:
-        // that global is per-process, so with two runtimes in one process (e.g. IIS hosting a .NET
-        // Framework app and an in-process ASP.NET Core app) it points at whichever CLR initialized
-        // last, and ModuleIDs are only meaningful to the runtime that produced them.
-        trace::CorProfiler* _corProfiler = nullptr;
+        AspectsModuleIdResolver _resolveAspectsModuleId;
         ICorProfilerInfo3* _profiler = nullptr;
         COR_PRF_RUNTIME_TYPE m_runtimeType = COR_PRF_DESKTOP_CLR;
         VersionInfo m_runtimeVersion = VersionInfo{4, 0, 0, 0};

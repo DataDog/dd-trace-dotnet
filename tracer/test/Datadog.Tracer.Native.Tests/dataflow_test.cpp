@@ -3,6 +3,7 @@
 #include "mock_cor_profiler_info.h"
 #include "../../src/Datadog.Tracer.Native/clr_helpers.h"
 #include "../../src/Datadog.Tracer.Native/iast/dataflow.h"
+#include "../../src/Datadog.Tracer.Native/iast/module_info.h"
 
 using namespace trace;
 
@@ -22,7 +23,7 @@ TEST(DataflowTests, PreloadedModulesAreNotResolvedFromTheConstructor)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{42};
 
-    auto dataflow = new iast::Dataflow(nullptr, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = new iast::Dataflow({}, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
     EXPECT_EQ(0, mockProfiler.getModuleInfo2CallCount);
 
@@ -35,7 +36,7 @@ TEST(DataflowTests, PreloadedModulesAreResolvedOnTheNextModuleLoaded)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{42};
 
-    auto dataflow = new iast::Dataflow(nullptr, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = new iast::Dataflow({}, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
     dataflow->ModuleLoaded(99);
 
@@ -57,7 +58,7 @@ TEST(DataflowTests, UnloadedModulesAreDroppedFromThePendingPreloadList)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{42};
 
-    auto dataflow = new iast::Dataflow(nullptr, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = new iast::Dataflow({}, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
     dataflow->ModuleUnloaded(42);
     dataflow->ModuleLoaded(99);
@@ -74,7 +75,7 @@ TEST(DataflowTests, ModuleLoadedResolvesNewlyLoadedModules)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{};
 
-    auto dataflow = new iast::Dataflow(nullptr, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = new iast::Dataflow({}, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
     EXPECT_EQ(0, mockProfiler.getModuleInfo2CallCount);
 
     dataflow->ModuleLoaded(99);
@@ -93,7 +94,7 @@ TEST(DataflowTests, UnresolvedModulesAreResolvedOnDemand)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{42};
 
-    auto dataflow = new iast::Dataflow(nullptr, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = new iast::Dataflow({}, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
     auto moduleInfo = dataflow->GetModuleInfo(42);
 
@@ -115,7 +116,7 @@ TEST(DataflowTests, FailedResolutionIsNotCachedAndIsRetried)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{};
 
-    auto dataflow = new iast::Dataflow(nullptr, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = new iast::Dataflow({}, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
     EXPECT_EQ(nullptr, dataflow->GetModuleInfo(42));
     EXPECT_EQ(1, mockProfiler.getModuleInfo2CallCount);
@@ -126,20 +127,56 @@ TEST(DataflowTests, FailedResolutionIsNotCachedAndIsRetried)
     delete dataflow;
 }
 
-TEST(DataflowTests, GetAspectsModuleUsesTheOwningCorProfiler)
+TEST(DataflowTests, GetAspectsModuleDoesNothingWithoutAResolver)
 {
-    // GetAspectsModule must go through the CorProfiler that owns this Dataflow, not the
-    // trace::profiler global, so it returns nothing rather than reaching for process-wide state.
     MockCorProfilerInfo mockProfiler;
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{};
 
-    auto dataflow = new iast::Dataflow(nullptr, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = new iast::Dataflow({}, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
     EXPECT_EQ(nullptr, dataflow->GetAspectsModule(1));
     EXPECT_EQ(0, mockProfiler.getModuleInfo2CallCount);
 
     delete dataflow;
+}
+
+TEST(DataflowTests, TwoRuntimesEachResolveTheAspectsModuleThroughTheirOwnProfiler)
+{
+    // Two runtimes in one process (IIS hosting a .NET Framework app next to an in-process ASP.NET
+    // Core one) get one CorProfiler and one Dataflow each. A ModuleID is only meaningful to the
+    // runtime that produced it, so each Dataflow must resolve Datadog.Trace.dll through its own
+    // owner. Resolving through shared process state hands one runtime the other's ModuleID, which
+    // is what faulted in PEAssembly::HasPEImage (APPSEC-69538).
+    MockCorProfilerInfo infoA;
+    MockCorProfilerInfo infoB;
+    auto runtimeInfo = MakeTestRuntimeInformation();
+
+    const ModuleID aspectsModuleInA = 1001;
+    const ModuleID aspectsModuleInB = 2002;
+    const AppDomainID appDomainId = 7;
+
+    auto dataflowA = new iast::Dataflow([=](AppDomainID) { return aspectsModuleInA; }, &infoA, nullptr,
+                                        std::vector<ModuleID>{}, runtimeInfo);
+    auto dataflowB = new iast::Dataflow([=](AppDomainID) { return aspectsModuleInB; }, &infoB, nullptr,
+                                        std::vector<ModuleID>{}, runtimeInfo);
+
+    auto aspectsInA = dataflowA->GetAspectsModule(appDomainId);
+    auto aspectsInB = dataflowB->GetAspectsModule(appDomainId);
+
+    ASSERT_NE(nullptr, aspectsInA);
+    ASSERT_NE(nullptr, aspectsInB);
+
+    // Same AppDomainID, different module per runtime: neither borrowed the other's ModuleID.
+    EXPECT_EQ(aspectsModuleInA, aspectsInA->_id);
+    EXPECT_EQ(aspectsModuleInB, aspectsInB->_id);
+
+    // And each resolved against its own ICorProfilerInfo.
+    EXPECT_EQ(1, infoA.getModuleInfo2CallCount);
+    EXPECT_EQ(1, infoB.getModuleInfo2CallCount);
+
+    delete dataflowA;
+    delete dataflowB;
 }
 
 TEST(DataflowTests, NothingIsResolvedWhenTheProfilerQueryInterfaceFailed)
@@ -151,7 +188,7 @@ TEST(DataflowTests, NothingIsResolvedWhenTheProfilerQueryInterfaceFailed)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{42};
 
-    auto dataflow = new iast::Dataflow(nullptr, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = new iast::Dataflow({}, &mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
     EXPECT_EQ(nullptr, dataflow->GetModuleInfo(42));
     dataflow->ModuleLoaded(99);
