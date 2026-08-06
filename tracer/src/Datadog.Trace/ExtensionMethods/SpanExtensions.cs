@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -89,7 +88,30 @@ namespace Datadog.Trace.ExtensionMethods
             }
             else
             {
-                return span.GetTag(Tags.HttpStatusCode) is not null;
+                return span.GetHttpStatusCodeString() is not null;
+            }
+        }
+
+        internal static string GetHttpStatusCodeString(this Span span)
+            => span.OpenTelemetrySemanticsEnabled
+                   ? span.GetTag(Tags.HttpResponseStatusCode)
+                   : span.GetTag(Tags.HttpStatusCode);
+
+        internal static int? GetHttpStatusCode(this Span span)
+        {
+            if (span.Tags is IHasStatusCode statusCodeTags)
+            {
+                return statusCodeTags.HttpStatusCode;
+            }
+            else
+            {
+                var rawHttpStatusCode = span.GetHttpStatusCodeString();
+                if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
+                {
+                    return null;
+                }
+
+                return httpStatusCode;
             }
         }
 
@@ -101,15 +123,14 @@ namespace Datadog.Trace.ExtensionMethods
                 return;
             }
 
-            string statusCodeString = ConvertStatusCodeToString(statusCode);
-
             if (span.Tags is IHasStatusCode statusCodeTags)
             {
-                statusCodeTags.HttpStatusCode = statusCodeString;
+                statusCodeTags.HttpStatusCode = statusCode;
             }
             else
             {
-                span.SetTag(Tags.HttpStatusCode, statusCodeString);
+                var tagName = span.OpenTelemetrySemanticsEnabled ? Tags.HttpResponseStatusCode : Tags.HttpStatusCode;
+                span.SetTag(tagName, IntStringCache.ToInvariantString(statusCode));
             }
 
             // Check the customers http statuses that should be marked as errors
@@ -117,52 +138,22 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 span.Error = true;
 
-                // if an error message already exists (e.g. from a previous exception), don't replace it
-                if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
+                if (span.OpenTelemetrySemanticsEnabled)
                 {
-                    span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {statusCodeString}.");
+                    if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorType)))
+                    {
+                        span.SetTag(Tags.ErrorType, IntStringCache.ToInvariantString(statusCode));
+                    }
+                }
+                else
+                {
+                    // if an error message already exists (e.g. from a previous exception), don't replace it
+                    if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
+                    {
+                        span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {IntStringCache.ToInvariantString(statusCode)}.");
+                    }
                 }
             }
-        }
-
-        private static string ConvertStatusCodeToString(int statusCode)
-        {
-            if (statusCode == 200)
-            {
-                return "200";
-            }
-
-            if (statusCode == 302)
-            {
-                return "302";
-            }
-
-            if (statusCode == 401)
-            {
-                return "401";
-            }
-
-            if (statusCode == 403)
-            {
-                return "403";
-            }
-
-            if (statusCode == 404)
-            {
-                return "404";
-            }
-
-            if (statusCode == 500)
-            {
-                return "500";
-            }
-
-            if (statusCode == 503)
-            {
-                return "503";
-            }
-
-            return statusCode.ToString();
         }
     }
 }

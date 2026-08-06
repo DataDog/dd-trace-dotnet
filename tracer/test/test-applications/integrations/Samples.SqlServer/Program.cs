@@ -68,12 +68,15 @@ namespace Samples.SqlServer
                 }
 
                 await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
+
+                // RunAllAsync produces a single large trace. Flush it before starting the next trace so
+                // it cannot be dropped while competing with the SqlCommandVb trace for the writer's buffers.
+                await SampleHelpers.ForceTracerFlushAsync();
+
                 await RelationalDatabaseTestHarness.RunSingleAsync(connection, commandFactory, commandExecutorVb, cts.Token);
             }
 
-            // Flush the first phase's traces before starting the next phase. The default-provider phase
-            // produces large traces, so draining them first stops them from competing with the next phase
-            // for the writer's buffers (a locally dropped trace here would fail the exact span-count assertion in the test).
+            // Flush the SqlCommandVb trace before starting the next phase.
             await SampleHelpers.ForceTracerFlushAsync();
 
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile

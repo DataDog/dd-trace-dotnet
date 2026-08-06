@@ -31,6 +31,7 @@ internal sealed class BuildkiteEnvironmentValues<TValueProvider>(TValueProvider 
         PipelineId = ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.BuildId);
         PipelineNumber = ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.BuildNumber);
         PipelineName = ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.PipelineSlug);
+        PipelineDisplayName = ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.PipelineName);
         PipelineUrl = ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.BuildUrl);
         JobId = ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.JobId);
         JobUrl = string.Format("{0}#{1}", ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.BuildUrl), ValueProvider.GetValue(PlatformKeys.Ci.Buildkite.JobId));

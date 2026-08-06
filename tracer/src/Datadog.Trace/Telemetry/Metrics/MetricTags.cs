@@ -79,9 +79,11 @@ internal static class MetricTags
     {
         [Description("reason:p0_drop")] P0Drop,
         [Description("reason:overfull_buffer")] OverfullBuffer,
+        [Description("reason:trace_too_large")] TraceTooLarge,
         [Description("reason:serialization_error")] SerializationError,
         [Description("reason:api_error")] ApiError,
         [Description("reason:trace_filter")] TraceFilter,
+        [Description("reason:buffer_locked")] BufferLocked,
     }
 
     internal enum StatusCode

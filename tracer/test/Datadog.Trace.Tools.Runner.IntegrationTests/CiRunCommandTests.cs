@@ -2472,8 +2472,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             CoverageBackfillCapability.ResetCommandLineCacheForTests();
             TestOptimization.Instance.InitializeFromRunner(TestOptimization.Instance.Settings, NullDiscoveryService.Instance, eventPlatformProxyEnabled: true);
 
+            // Run-scoped consumers deliberately ignore unrelated JSON files, so publish the fixture using the production artifact naming protocol.
+            var runToken = GlobalCoverageProtocol.GetRunToken(TestOptimization.Instance.RunId);
+            var processIdentity = GlobalCoverageProtocol.GetProcessIdentity(runToken, processId: 1, nonce: "fixture");
             File.WriteAllText(
-                Path.Combine(coverageDirectory.RootPath, "coverage-input.json"),
+                Path.Combine(coverageDirectory.RootPath, GlobalCoverageProtocol.GetCoverageFileName(processIdentity)),
                 JsonHelper.SerializeObject(CreateGlobalCoverage("src/Calculator.cs")));
             CoverageBackfillDataStore.Persist(TestOptimization.Instance, CreateCoverageBackfillData("src/Other.cs", SimplePassTestCoveredLine));
             CoverageBackfillDataStore.RecordActualItrSkip();

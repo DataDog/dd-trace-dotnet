@@ -154,7 +154,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.50.0
+  ToolVersion: 3.51.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -4776,11 +4776,20 @@ stages:
       env:
         PR_NUMBER: $(System.PullRequest.PullRequestNumber)
         AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
-        GITHUB_TOKEN: $(GITHUB_APP_TOKEN)
 
     - publish: $(System.DefaultWorkingDirectory)/artifacts/build_data/execution_benchmarks/execution_time_report.md
       displayName: Upload report
       artifact: execution_time_report
+
+    # Post the PR comment after the artifact is published so we can link directly to the file.
+    - script: tracer\build.cmd PostExecutionTimeBenchmarkResultsComment
+      displayName: Post PR comment with report link
+      continueOnError: true
+      env:
+        PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+        AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+        GITHUB_TOKEN: $(GITHUB_APP_TOKEN)
+        AZURE_DEVOPS_BUILD_ID: $(Build.BuildId)
 
 - stage: profiler_execution_benchmarks
   dependsOn: [merge_commit_id, build_windows_profiler, build_linux_profiler]

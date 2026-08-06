@@ -207,7 +207,9 @@ public class TelemetryControllerTests
                                             .GetAssemblies()
                                             .Where(x => !x.IsDynamic)
                                             .Select(x => x.GetName())
-                                            .Select(name => new { name.Name, Version = name.Version.ToString() });
+                                            .Select(name => new { name.Name, Version = name.Version.ToString() })
+                                            // zero-version assemblies are excluded by the collector
+                                            .Where(x => x.Version != "0.0.0.0");
 
         // creating a new controller so we have the same list of assemblies
         var controller = new TelemetryController(

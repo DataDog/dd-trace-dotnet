@@ -15,8 +15,10 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.OpenTelemetry.Traces;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
 {
@@ -62,7 +64,10 @@ namespace Datadog.Trace.Agent
         private long _droppedP0Traces;
         private long _droppedP0Spans;
 
-        private long _droppedTraces;
+        private long _droppedTracesBufferFull;
+        private long _droppedTracesBufferFullAndLocked;
+        private long _droppedTracesBuffersLocked;
+        private long _droppedTracesTooLarge;
 
         private bool _traceMetricsEnabled;
 
@@ -125,11 +130,31 @@ namespace Datadog.Trace.Agent
 
         internal event Action? Flushed;
 
+        private enum TraceDropReason
+        {
+            TraceTooLarge,
+            BuffersFull,
+            BufferFullAndLocked,
+            BuffersLocked,
+        }
+
         internal SpanBuffer ActiveBuffer => _activeBuffer;
 
         internal SpanBuffer FrontBuffer => _frontBuffer;
 
         internal SpanBuffer BackBuffer => _backBuffer;
+
+        [TestingOnly]
+        internal long DroppedTracesBufferFull => Volatile.Read(ref _droppedTracesBufferFull);
+
+        [TestingOnly]
+        internal long DroppedTracesBufferFullAndLocked => Volatile.Read(ref _droppedTracesBufferFullAndLocked);
+
+        [TestingOnly]
+        internal long DroppedTracesBuffersLocked => Volatile.Read(ref _droppedTracesBuffersLocked);
+
+        [TestingOnly]
+        internal long DroppedTracesTooLarge => Volatile.Read(ref _droppedTracesTooLarge);
 
         public bool CanComputeStats => _apmTracingEnabled && _statsAggregator.CanComputeStats == true;
 
@@ -345,11 +370,23 @@ namespace Datadog.Trace.Agent
                         }
                     }
 
-                    var droppedTraces = Interlocked.Exchange(ref _droppedTraces, 0);
+                    var droppedTracesTooLarge = Interlocked.Exchange(ref _droppedTracesTooLarge, 0);
+                    var droppedTracesBufferFull = Interlocked.Exchange(ref _droppedTracesBufferFull, 0);
+                    var droppedTracesBufferFullAndLocked = Interlocked.Exchange(ref _droppedTracesBufferFullAndLocked, 0);
+                    var droppedTracesBuffersLocked = Interlocked.Exchange(ref _droppedTracesBuffersLocked, 0);
 
-                    if (droppedTraces > 0)
+                    if (droppedTracesTooLarge > 0 || droppedTracesBufferFull > 0 || droppedTracesBufferFullAndLocked > 0 || droppedTracesBuffersLocked > 0)
                     {
-                        Log.Warning("{Count} traces were dropped since the last flush operation.", droppedTraces);
+                        Log.Warning(
+                            "Traces were dropped since the last flush operation: {TooLargeCount} exceeded the trace buffer limit of {MaxBufferSize} bytes, {BuffersFullCount} found both buffers full, {BufferFullAndLockedCount} found one buffer full and the other unavailable while being flushed, and {BuffersLockedCount} found both buffers unavailable while being flushed.",
+                            new object?[]
+                            {
+                                droppedTracesTooLarge,
+                                _frontBuffer.MaxBufferSize,
+                                droppedTracesBufferFull,
+                                droppedTracesBufferFullAndLocked,
+                                droppedTracesBuffersLocked,
+                            });
                     }
 
                     if (buffer.TraceCount > 0)
@@ -404,21 +441,12 @@ namespace Datadog.Trace.Agent
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
             SpanBuffer? SwapBuffers()
             {
-                if (_activeBuffer == _frontBuffer)
+                var alternateBuffer = _activeBuffer == _frontBuffer ? _backBuffer : _frontBuffer;
+
+                if (!alternateBuffer.IsFull)
                 {
-                    if (!_backBuffer.IsFull)
-                    {
-                        Volatile.Write(ref _activeBuffer, _backBuffer);
-                        return _activeBuffer;
-                    }
-                }
-                else
-                {
-                    if (!_frontBuffer.IsFull)
-                    {
-                        Volatile.Write(ref _activeBuffer, _frontBuffer);
-                        return _activeBuffer;
-                    }
+                    Volatile.Write(ref _activeBuffer, alternateBuffer);
+                    return alternateBuffer;
                 }
 
                 return null;
@@ -510,6 +538,7 @@ namespace Datadog.Trace.Agent
             var buffer = _activeBuffer;
 
             var writeStatus = buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority);
+            var lockedBufferCount = writeStatus == SpanBuffer.WriteStatus.Locked ? 1 : 0;
 
             if (writeStatus == SpanBuffer.WriteStatus.Success)
             {
@@ -520,7 +549,7 @@ namespace Datadog.Trace.Agent
             if (writeStatus == SpanBuffer.WriteStatus.Overflow)
             {
                 // The trace is too big for the buffer, no point in trying again
-                DropTrace(chunk.Count);
+                DropTrace(chunk.Count, TraceDropReason.TraceTooLarge);
                 return;
             }
 
@@ -532,23 +561,68 @@ namespace Datadog.Trace.Agent
                 // One buffer is full, request an eager flush
                 RequestFlush();
 
-                if (buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority) == SpanBuffer.WriteStatus.Success)
+                writeStatus = buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority);
+
+                if (writeStatus == SpanBuffer.WriteStatus.Success)
                 {
                     // Serialization to the secondary buffer succeeded
                     return;
                 }
+
+                if (writeStatus == SpanBuffer.WriteStatus.Overflow)
+                {
+                    // The trace is too big for the buffer
+                    DropTrace(chunk.Count, TraceDropReason.TraceTooLarge);
+                    return;
+                }
+
+                if (writeStatus == SpanBuffer.WriteStatus.Locked)
+                {
+                    lockedBufferCount++;
+                }
             }
 
-            // All the buffers are full :( drop the trace
-            DropTrace(chunk.Count);
+            // Both buffers are full or at least one is locked, so drop the trace
+            var dropReason = lockedBufferCount switch
+            {
+                0 => TraceDropReason.BuffersFull,
+                1 => TraceDropReason.BufferFullAndLocked,
+                _ => TraceDropReason.BuffersLocked,
+            };
+
+            DropTrace(chunk.Count, dropReason);
         }
 
-        private void DropTrace(int count)
+        private void DropTrace(int count, TraceDropReason dropReason)
         {
-            Interlocked.Increment(ref _droppedTraces);
+            MetricTags.DropReason metricDropReason;
+
+            switch (dropReason)
+            {
+                case TraceDropReason.BuffersFull:
+                    Interlocked.Increment(ref _droppedTracesBufferFull);
+                    metricDropReason = MetricTags.DropReason.OverfullBuffer;
+                    break;
+                case TraceDropReason.BufferFullAndLocked:
+                    Interlocked.Increment(ref _droppedTracesBufferFullAndLocked);
+                    metricDropReason = MetricTags.DropReason.BufferLocked;
+                    break;
+                case TraceDropReason.BuffersLocked:
+                    Interlocked.Increment(ref _droppedTracesBuffersLocked);
+                    metricDropReason = MetricTags.DropReason.BufferLocked;
+                    break;
+                case TraceDropReason.TraceTooLarge:
+                    Interlocked.Increment(ref _droppedTracesTooLarge);
+                    metricDropReason = MetricTags.DropReason.TraceTooLarge;
+                    break;
+                default:
+                    ThrowHelper.ThrowArgumentOutOfRangeException(nameof(dropReason), dropReason, "Unexpected trace drop reason");
+                    return;
+            }
+
             _traceKeepRateCalculator.IncrementDrops(1);
-            TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.OverfullBuffer, count);
-            TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.OverfullBuffer);
+            TelemetryFactory.Metrics.RecordCountSpanDropped(metricDropReason, count);
+            TelemetryFactory.Metrics.RecordCountTraceChunkDropped(metricDropReason);
 
             if (Volatile.Read(ref _traceMetricsEnabled))
             {

@@ -23,7 +23,7 @@ internal static partial class ConfigurationKeys
         public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
 
         /// <summary>
-        /// When true, suppresses all datadog.* data-point attributes from the OTLP span metrics export,
+        /// When enabled, suppresses all Datadog-specific data-point attributes from the traces and OTLP span metrics data points,
         /// emitting only OpenTelemetry semantic-convention attributes.
         /// </summary>
         public const string OtelSemanticsEnabled = "DD_TRACE_OTEL_SEMANTICS_ENABLED";
@@ -237,7 +237,10 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Tri-state gate for OTLP span metrics export (traces.span.sdk.metrics.duration).
         /// When unset, auto-enables iff OTEL_TRACES_EXPORTER=otlp and DD_METRICS_OTEL_ENABLED=true.
-        /// When true, always enables span metrics export regardless of other settings.
+        /// When true, enables span metrics export, unless traces aren't actually exported using
+        /// OTLP encoding, in which case the setting is forced back to false (with a warning
+        /// logged and the calculated value reported in telemetry), since OTLP span metrics
+        /// require OTLP trace export.
         /// When false, always disables span metrics export.
         /// </summary>
         public const string TracesSpanMetricsEnabled = "OTEL_TRACES_SPAN_METRICS_ENABLED";

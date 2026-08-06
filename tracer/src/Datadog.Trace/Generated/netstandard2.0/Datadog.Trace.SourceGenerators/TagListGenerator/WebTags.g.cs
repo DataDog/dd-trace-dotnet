@@ -32,6 +32,9 @@ namespace Datadog.Trace.Tagging
         // HttpStatusCodeBytes = MessagePack.Serialize("http.status_code");
         private static ReadOnlySpan<byte> HttpStatusCodeBytes => [176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
 
+        // HttpStatusCodeOtelBytes = MessagePack.Serialize("http.response.status_code");
+        private static ReadOnlySpan<byte> HttpStatusCodeOtelBytes => [185, 104, 116, 116, 112, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
+
         // NetworkClientIpBytes = MessagePack.Serialize("network.client.ip");
         private static ReadOnlySpan<byte> NetworkClientIpBytes => [177, 110, 101, 116, 119, 111, 114, 107, 46, 99, 108, 105, 101, 110, 116, 46, 105, 112];
 
@@ -47,7 +50,7 @@ namespace Datadog.Trace.Tagging
                 "http.method" => HttpMethod,
                 "http.request.headers.host" => HttpRequestHeadersHost,
                 "http.url" => HttpUrl,
-                "http.status_code" => HttpStatusCode,
+                "http.status_code" or "http.response.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
                 "network.client.ip" => NetworkClientIp,
                 "http.client_ip" => HttpClientIp,
                 _ => base.GetTag(key),
@@ -70,8 +73,17 @@ namespace Datadog.Trace.Tagging
                 case "http.url": 
                     HttpUrl = value;
                     break;
-                case "http.status_code": 
-                    HttpStatusCode = value;
+                case "http.status_code":
+                case "http.response.status_code":
+                    if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedHttpStatusCode))
+                    {
+                        HttpStatusCode = parsedHttpStatusCode;
+                    }
+                    else
+                    {
+                        HttpStatusCode = null;
+                    }
+
                     break;
                 case "network.client.ip": 
                     NetworkClientIp = value;
@@ -88,7 +100,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (SpanKind is not null)
             {
@@ -117,7 +129,14 @@ namespace Datadog.Trace.Tagging
 
             if (HttpStatusCode is not null)
             {
-                processor.Process(new TagItem<string>("http.status_code", HttpStatusCode, HttpStatusCodeBytes));
+                if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<int>("http.response.status_code", HttpStatusCode.Value, HttpStatusCodeOtelBytes));
+                }
+                else
+                {
+                    processor.Process(new TagItem<int>("http.status_code", HttpStatusCode.Value, HttpStatusCodeBytes));
+                }
             }
 
             if (NetworkClientIp is not null)
@@ -130,7 +149,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("http.client_ip", HttpClientIp, HttpClientIpBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -173,7 +192,7 @@ namespace Datadog.Trace.Tagging
             if (HttpStatusCode is not null)
             {
                 sb.Append("http.status_code (tag):")
-                  .Append(HttpStatusCode)
+                  .Append(HttpStatusCode.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
                   .Append(',');
             }
 

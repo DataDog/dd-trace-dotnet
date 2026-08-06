@@ -29,9 +29,10 @@ public sealed class Test
 {
     private static readonly AsyncLocal<Test?> CurrentTest = new();
     private static readonly HashSet<Test> OpenedTests = new();
-
     private readonly ITestOptimization _testOptimization;
     private readonly Scope _scope;
+    private readonly Test? _priorTest;
+    private Coverage.CoverageSessionHandle? _coverageSessionHandle;
     private int _finished;
     private List<Action<Test>>? _onCloseActions;
 
@@ -44,59 +45,96 @@ public sealed class Test
     {
         Suite = suite;
         var module = suite.Module;
-
-        var tags = new TestSpanTags(Suite.Tags, name);
-        var tracer = Tracer.Instance;
-        var span = tracer.StartSpan(
-            string.IsNullOrEmpty(module.Framework) ? "test" : $"{module.Framework!.ToLowerInvariant()}.test",
-            tags: tags,
-            startTime: startDate,
-            traceId: traceId,
-            spanId: spanId);
-        var scope = tracer.TracerManager.ScopeManager.Activate(span, true);
-
-        scope.Span.Type = SpanTypes.Test;
-        scope.Span.ResourceName = $"{suite.Name}.{name}";
-        scope.Span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.Manual);
-        scope.Span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
-        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
-
-        _scope = scope;
+        _priorTest = CurrentTest.Value;
         _testOptimization = TestOptimization.Instance;
 
-        if (_testOptimization.Settings.CodeCoverageEnabled == true)
+        Scope? activatedScope = null;
+        Coverage.CoverageSessionHandle? coverageSessionHandle = null;
+        try
         {
-            Coverage.CoverageReporter.Handler.StartSession(module.Framework);
+            var tags = new TestSpanTags(Suite.Tags, name);
+            var tracer = Tracer.Instance;
+            var span = tracer.StartSpan(
+                StringUtil.IsNullOrEmpty(module.Framework) ? "test" : $"{module.Framework!.ToLowerInvariant()}.test",
+                tags: tags,
+                startTime: startDate,
+                traceId: traceId,
+                spanId: spanId);
+            activatedScope = tracer.TracerManager.ScopeManager.Activate(span, true);
+            _scope = activatedScope;
+
+            activatedScope.Span.Type = SpanTypes.Test;
+            activatedScope.Span.ResourceName = $"{suite.Name}.{name}";
+            activatedScope.Span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.Manual);
+            activatedScope.Span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
+
+            if (_testOptimization.Settings.CodeCoverageEnabled == true)
+            {
+                coverageSessionHandle = Coverage.CoverageReporter.Handler.StartSession(module.Framework);
+            }
+
+            // Capabilities tags (yes they are strings, this is because previously the values were "true" or "false" and we changed the format in attempt_to_fix-v2)
+            tags.CapabilitiesTestImpactAnalysis = "1";
+            tags.CapabilitiesEarlyFlakeDetection = "1";
+            tags.CapabilitiesAutoTestRetries = "1";
+            tags.CapabilitiesTestManagementQuarantine = "1";
+            tags.CapabilitiesTestManagementDisable = "1";
+            tags.CapabilitiesTestManagementAttemptToFix = "4";
+
+            CurrentTest.Value = this;
+            lock (OpenedTests)
+            {
+                OpenedTests.Add(this);
+            }
+
+            _testOptimization.Log.Debug("######### New Test Created: {Name} ({Suite} | {Module})", Name, Suite.Name, Suite.Module.Name);
+
+            if (startDate is null)
+            {
+                // If a test doesn't have a fixed start time we reset it before running the test code
+                activatedScope.Span.ResetStartTime();
+            }
+
+            // Record EventCreate telemetry metric
+            if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(
+                    MetricTags.CIVisibilityTestingEventType.Test,
+                    module.Framework == CommonTags.TestingFrameworkNameBenchmarkDotNet) is { } eventTypeWithMetadata)
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityEventCreated(TelemetryHelper.GetTelemetryTestingFrameworkEnum(module.Framework), eventTypeWithMetadata);
+            }
+
+            _coverageSessionHandle = coverageSessionHandle;
         }
-
-        // Capabilities tags (yes they are strings, this is because previously the values were "true" or "false" and we changed the format in attempt_to_fix-v2)
-        tags.CapabilitiesTestImpactAnalysis = "1";
-        tags.CapabilitiesEarlyFlakeDetection = "1";
-        tags.CapabilitiesAutoTestRetries = "1";
-        tags.CapabilitiesTestManagementQuarantine = "1";
-        tags.CapabilitiesTestManagementDisable = "1";
-        tags.CapabilitiesTestManagementAttemptToFix = "4";
-
-        CurrentTest.Value = this;
-        lock (OpenedTests)
+        catch
         {
-            OpenedTests.Add(this);
-        }
+            try
+            {
+                (coverageSessionHandle ?? _coverageSessionHandle)?.AbortIncomplete(Coverage.GlobalCoverageFailureReason.TestConstructionFailed);
+            }
+            catch
+            {
+            }
 
-        _testOptimization.Log.Debug("######### New Test Created: {Name} ({Suite} | {Module})", Name, Suite.Name, Suite.Module.Name);
+            try
+            {
+                activatedScope?.Dispose();
+            }
+            catch
+            {
+            }
 
-        if (startDate is null)
-        {
-            // If a test doesn't have a fixed start time we reset it before running the test code
-            scope.Span.ResetStartTime();
-        }
+            if (ReferenceEquals(CurrentTest.Value, this))
+            {
+                CurrentTest.Value = _priorTest;
+            }
 
-        // Record EventCreate telemetry metric
-        if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(
-                MetricTags.CIVisibilityTestingEventType.Test,
-                module.Framework == CommonTags.TestingFrameworkNameBenchmarkDotNet) is { } eventTypeWithMetadata)
-        {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityEventCreated(TelemetryHelper.GetTelemetryTestingFrameworkEnum(module.Framework), eventTypeWithMetadata);
+            lock (OpenedTests)
+            {
+                OpenedTests.Remove(this);
+            }
+
+            throw;
         }
     }
 
@@ -472,24 +510,39 @@ public sealed class Test
         var tags = (TestSpanTags)scope.Span.Tags;
 
         // Calculate duration beforehand
-        duration ??= _scope.Span.Context.TraceContext.Clock.ElapsedSince(scope.Span.StartTime);
+        duration ??= scope.Span.Context.TraceContext.Clock.ElapsedSince(scope.Span.StartTime);
 
-        // Set coverage
-        if (_testOptimization.Settings.CodeCoverageEnabled == true)
+        // The immutable coverage handle must be claimed once because Close() may be called concurrently.
+        var coverageSessionHandle = Interlocked.Exchange(ref _coverageSessionHandle, null);
+        var coverageEnded = coverageSessionHandle is null || !coverageSessionHandle.IsValid;
+        try
         {
-            if (Coverage.CoverageReporter.Handler.EndSession() is Coverage.Models.Tests.TestCoverage testCoverage)
+            // Set coverage through the exact handler/context captured when the test was constructed.
+            if (coverageSessionHandle is { IsValid: true })
             {
-                testCoverage.SessionId = tags.SessionId;
-                testCoverage.SuiteId = tags.SuiteId;
-                testCoverage.SpanId = _scope.Span.SpanId;
+                var coverageResult = coverageSessionHandle.Owner.EndSession(coverageSessionHandle);
+                coverageEnded = true;
+                if (coverageResult is Coverage.Models.Tests.TestCoverage testCoverage)
+                {
+                    testCoverage.SessionId = tags.SessionId;
+                    testCoverage.SuiteId = tags.SuiteId;
+                    testCoverage.SpanId = scope.Span.SpanId;
 
-                _testOptimization.Log.Debug("Coverage data for SessionId={SessionId}, SuiteId={SuiteId} and SpanId={SpanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
-                _testOptimization.TracerManagement?.Manager?.WriteEvent(testCoverage);
+                    _testOptimization.Log.Debug("Coverage data for SessionId={SessionId}, SuiteId={SuiteId} and SpanId={SpanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
+                    _testOptimization.TracerManagement?.Manager?.WriteEvent(testCoverage);
+                }
+                else if (status != TestStatus.Skip)
+                {
+                    var testName = scope.Span.ResourceName;
+                    _testOptimization.Log.Warning("Coverage data for test: {TestName} with Status: {Status} is empty. File: {File}", testName, status, tags.SourceFile);
+                }
             }
-            else if (status != TestStatus.Skip)
+        }
+        finally
+        {
+            if (!coverageEnded)
             {
-                var testName = scope.Span.ResourceName;
-                _testOptimization.Log.Warning("Coverage data for test: {TestName} with Status: {Status} is empty. File: {File}", testName, status, tags.SourceFile);
+                coverageSessionHandle?.AbortIncomplete(Coverage.GlobalCoverageFailureReason.TestCloseBeforeCoverage);
             }
         }
 
@@ -532,7 +585,6 @@ public sealed class Test
             TelemetryFactory.Metrics.RecordCountCIVisibilityITRForcedRun(MetricTags.CIVisibilityTestingEventType.Test);
         }
 
-        // Call close actions
         if (_onCloseActions is not null)
         {
             foreach (var action in _onCloseActions)
@@ -543,17 +595,15 @@ public sealed class Test
             _onCloseActions.Clear();
         }
 
-        // Finish
         scope.Span.Finish(duration.Value);
         scope.Dispose();
 
-        // Record EventFinished telemetry metric
         if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
                 MetricTags.CIVisibilityTestingEventType.Test,
                 tags.Type == TestTags.TypeBenchmark,
                 tags.TestIsNew == "true",
                 tags.EarlyFlakeDetectionTestAbortReason == "slow",
-                !string.IsNullOrEmpty(tags.BrowserDriver),
+                !StringUtil.IsNullOrEmpty(tags.BrowserDriver),
                 tags.IsRumActive == "true") is { } eventTypeWithMetadata)
         {
             var retryReasonTag = tags.TestRetryReason switch
