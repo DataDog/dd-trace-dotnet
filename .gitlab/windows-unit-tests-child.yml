@@ -21,8 +21,30 @@
       New-Item -ItemType Directory -Force artifacts/build_data/infra_logs | Out-Null
 
       if (-not $env:DD_LOGGER_DD_API_KEY) {
+        Write-Output "Trying to retrieve the CI Visibility API key using the runner's ambient AWS credentials"
+        try {
+          $apiKey = aws ssm get-parameter `
+            --name "ci.dd-trace-dotnet.dd_api_key-prod" `
+            --with-decryption `
+            --query "Parameter.Value" `
+            --output text `
+            --region us-east-1
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($apiKey)) {
+            throw "Ambient AWS credentials could not retrieve the CI API key from SSM"
+          }
+
+          $env:DD_LOGGER_DD_API_KEY = $apiKey.Trim()
+          Write-Output "CI Visibility API key configured using ambient AWS credentials"
+        }
+        catch {
+          Write-Warning $_.Exception.Message
+        }
+      }
+
+      if (-not $env:DD_LOGGER_DD_API_KEY) {
         $ciIdentitiesClient = Join-Path $env:TEMP "ci-identities-gitlab-job-client-$env:CI_JOB_ID.exe"
         try {
+          Write-Output "Falling back to the repository CI Identity"
           if (-not $env:CI_IDENTITIES_CLIENT_URL) {
             throw "CI_IDENTITIES_CLIENT_URL is not set"
           }
@@ -44,11 +66,11 @@
             --output text `
             --region us-east-1
           if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($apiKey)) {
-            throw "Failed to retrieve the CI API key from SSM"
+            throw "The repository CI Identity could not retrieve the CI API key from SSM"
           }
 
           $env:DD_LOGGER_DD_API_KEY = $apiKey.Trim()
-          Write-Output "CI Visibility API key configured"
+          Write-Output "CI Visibility API key configured using the repository CI Identity"
         }
         catch {
           Write-Warning "CI Visibility API key is unavailable; test telemetry and retry metrics may not be submitted. $($_.Exception.Message)"
