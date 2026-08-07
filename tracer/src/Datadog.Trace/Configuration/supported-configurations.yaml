@@ -1130,7 +1130,7 @@ supportedConfigurations:
     documentation: CI Visibility environment variable for git tag.
   DD_HOSTNAME:
   - implementation: A
-    scope: native
+    scope: managed, native
     type: string
     default: null
     product: Profiler
