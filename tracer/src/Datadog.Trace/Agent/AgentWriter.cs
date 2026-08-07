@@ -48,9 +48,12 @@ namespace Datadog.Trace.Agent
 
         private readonly bool _apmTracingEnabled;
 
+        private readonly bool _backgroundFlushEnabled;
+
         /// <summary>
         /// The currently active buffer.
-        /// Note: Thread-safetiness in this class relies on the fact that only the serialization thread can change the active buffer
+        /// Note: Thread-safetiness in this class relies on the fact that only the serialization thread can change the active buffer.
+        /// <see cref="FlushBuffers"/> runs on other threads, so cross-thread accesses use <see cref="Volatile"/>.
         /// </summary>
         private SpanBuffer _activeBuffer;
 
@@ -90,9 +93,9 @@ namespace Datadog.Trace.Agent
         {
         }
 
-        // Passing automaticFlush: false makes the writer synchronous: traces are serialized on the
-        // calling thread, and neither the serialization loop nor the flush loop is started.
-        // That is only safe in tests, so production code must use the overload above.
+        // Passing automaticFlush: false stops the flush loop performing flushes nobody asked
+        // for, so that buffer and drop-counter state stays stable for assertions. Both loops still
+        // run, and flushes a caller is awaiting are unaffected. Production always passes true.
         [TestingOnly]
         internal AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, bool automaticFlush, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool apmTracingEnabled = true, bool initialTracerMetricsEnabled = false)
         : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval, apmTracingEnabled, initialTracerMetricsEnabled)
@@ -108,6 +111,7 @@ namespace Datadog.Trace.Agent
             _statsd = statsd;
             _batchInterval = batchInterval;
             _traceKeepRateCalculator = traceKeepRateCalculator;
+            _backgroundFlushEnabled = automaticFlush;
 
             ISpanBufferSerializer CreateSpanSerializer() => api.TracesEncoding switch
             {
@@ -127,15 +131,15 @@ namespace Datadog.Trace.Agent
             _traceMetricsEnabled = initialTracerMetricsEnabled;
             _statsd.SetRequired(StatsdConsumer.AgentWriter, initialTracerMetricsEnabled);
 
-            _serializationTask = automaticFlush
-                                     ? Task.Factory.StartNew(SerializeTracesLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)
-                                     : Task.CompletedTask;
+            // Assign before starting the loops: the serialization thread can reach RequestFlush(),
+            // and the flush loop reads these, so they must be initialized first.
+            _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
+
+            _serializationTask = Task.Factory.StartNew(SerializeTracesLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             _serializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
 
-            _flushTask = automaticFlush ? Task.Run(FlushBuffersTaskLoopAsync) : Task.CompletedTask;
+            _flushTask = Task.Run(FlushBuffersTaskLoopAsync);
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
-
-            _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
         }
 
         private enum TraceDropReason
@@ -181,17 +185,17 @@ namespace Datadog.Trace.Agent
 
             if (_serializationTask.IsCompleted)
             {
-                // Serialization thread is not running, serialize the trace in the current thread
-                SerializeTrace(trace);
+                // The serialization loop has stopped, so nothing will ever dequeue this trace.
+                // Drop it rather than retaining it in the queue for the lifetime of the process.
+                DropTrace(trace.Count, TraceDropReason.BuffersFull);
+                return;
             }
-            else
-            {
-                _pendingTraces.Enqueue(new WorkItem(in trace));
 
-                if (!_serializationMutex.IsSet)
-                {
-                    _serializationMutex.Set();
-                }
+            _pendingTraces.Enqueue(new WorkItem(in trace));
+
+            if (!_serializationMutex.IsSet)
+            {
+                _serializationMutex.Set();
             }
 
             if (Volatile.Read(ref _traceMetricsEnabled))
@@ -311,7 +315,10 @@ namespace Datadog.Trace.Agent
                     tasks[1] = forceFlush.Task;
                 }
 
-                await FlushBuffers().ConfigureAwait(false);
+                if (_backgroundFlushEnabled)
+                {
+                    await FlushBuffers().ConfigureAwait(false);
+                }
 
                 if (_serializationTask.IsCompleted)
                 {
@@ -447,6 +454,11 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        /// <summary>
+        /// Serializes a trace chunk into the active buffer. Not thread safe: it mutates
+        /// <see cref="_temporaryBuffer"/> and swaps <see cref="_activeBuffer"/>, so it must only
+        /// ever be called from <see cref="SerializeTracesLoop"/>.
+        /// </summary>
         private void SerializeTrace(in SpanCollection spans)
         {
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
