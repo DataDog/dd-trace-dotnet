@@ -3390,14 +3390,6 @@ supportedConfigurations:
       Configuration key for setting the number of traces allowed
       to be submitted per second.
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.MaxTracesSubmittedPerSecond"/>
-  DD_TRACE_REPORT_HOSTNAME:
-  - implementation: A
-    scope: managed
-    type: boolean
-    default: 'false'
-    const_name: ReportHostname
-    documentation: |-
-      Configuration key for enabling or disabling hostname reporting on OTLP trace metrics.
   DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED:
   - implementation: A
     scope: managed

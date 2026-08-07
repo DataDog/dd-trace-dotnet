@@ -318,21 +318,6 @@ namespace Datadog.Trace.Tests.Agent
             resourceAttrs.Should().ContainKey("service.name").WhoseValue.Should().Be("my-service");
         }
 
-        [Theory]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void Serialize_ResourceHostnameHonorsReportingSetting(bool useJson)
-        {
-            var buffer = CreateBuffer(hostName: "test-host");
-            AddHit(buffer);
-
-            var enabledAttributes = GetResourceAttributes(buffer, useJson, reportHostname: true);
-            var disabledAttributes = GetResourceAttributes(buffer, useJson, reportHostname: false);
-
-            enabledAttributes.Should().ContainKey("host.name").WhoseValue.Should().Be("test-host");
-            disabledAttributes.Should().NotContainKey("host.name");
-        }
-
         [Fact]
         public void SerializeJson_ResourceIncludesRuntimeId()
         {
@@ -495,7 +480,7 @@ namespace Datadog.Trace.Tests.Agent
             topLevelValues.Should().Contain("false");
         }
 
-        private static StatsBuffer CreateBuffer(string service = "my-service", string env = "prod", string version = "1.0", string? hostName = null)
+        private static StatsBuffer CreateBuffer(string service = "my-service", string env = "prod", string version = "1.0")
         {
             var settings = MutableSettings.CreateForTesting(
                 new(),
@@ -505,7 +490,7 @@ namespace Datadog.Trace.Tests.Agent
                     { ConfigurationKeys.Environment, env },
                     { ConfigurationKeys.ServiceVersion, version },
                 });
-            return new StatsBuffer(new ClientStatsPayload(settings) { HostName = hostName }, new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance));
+            return new StatsBuffer(new ClientStatsPayload(settings), new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance));
         }
 
         private static StatsAggregationKey CreateKey(
@@ -568,22 +553,6 @@ namespace Datadog.Trace.Tests.Agent
         {
             return GetProtobufDataPointAttributeValues(buffer)
                   .ToDictionary(kvp => kvp.Key, kvp => ReadAnyValue(kvp.Value));
-        }
-
-        private static Dictionary<string, string> GetResourceAttributes(StatsBuffer buffer, bool useJson, bool reportHostname)
-        {
-            if (useJson)
-            {
-                var bytes = OtlpSpanStatsSerializer.SerializeJson(buffer, BucketDurationNs, reportHostname)!;
-                return GetResourceAttributes(JObject.Parse(Encoding.UTF8.GetString(bytes)));
-            }
-
-            var request = OtlpSpanStatsSerializer.Serialize(buffer, BucketDurationNs, reportHostname)!;
-            var resourceMetrics = GetLengthDelimitedFields(request, 1).Single();
-            var resource = GetLengthDelimitedFields(resourceMetrics, 1).Single();
-            return GetLengthDelimitedFields(resource, 1)
-                  .Select(KeyValue.Parser.ParseFrom)
-                  .ToDictionary(attribute => attribute.Key, attribute => ReadAnyValue(attribute.Value));
         }
 
         private static Dictionary<string, AnyValue> GetProtobufDataPointAttributeValues(StatsBuffer buffer)

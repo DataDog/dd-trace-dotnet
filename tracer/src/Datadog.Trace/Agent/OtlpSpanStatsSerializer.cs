@@ -68,7 +68,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        public static byte[]? Serialize(StatsBuffer buffer, long bucketDurationNs, bool reportHostname = false)
+        public static byte[]? Serialize(StatsBuffer buffer, long bucketDurationNs)
         {
             if (!buffer.HasHits())
             {
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Agent
             using var stream = new MemoryStream(1024);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
 
-            var resourceMetricsData = SerializeResourceMetrics(buffer, bucketDurationNs, reportHostname);
+            var resourceMetricsData = SerializeResourceMetrics(buffer, bucketDurationNs);
             WriteTag(writer, FieldNumbers.ResourceMetrics, WireTypeLengthDelimited);
             WriteVarInt(writer, resourceMetricsData.Length);
             writer.Write(resourceMetricsData);
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Agent
             return stream.ToArray();
         }
 
-        public static byte[]? SerializeJson(StatsBuffer buffer, long bucketDurationNs, bool reportHostname = false)
+        public static byte[]? SerializeJson(StatsBuffer buffer, long bucketDurationNs)
         {
             if (!buffer.HasHits())
             {
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Agent
             writer.WriteStartObject();
             writer.WritePropertyName("resourceMetrics");
             writer.WriteStartArray();
-            WriteResourceMetricsJson(writer, buffer, bucketDurationNs, reportHostname);
+            WriteResourceMetricsJson(writer, buffer, bucketDurationNs);
             writer.WriteEndArray();
             writer.WriteEndObject();
 
@@ -110,12 +110,12 @@ namespace Datadog.Trace.Agent
             return memoryStream.ToArray();
         }
 
-        private static void WriteResourceMetricsJson(JsonTextWriter writer, StatsBuffer buffer, long bucketDurationNs, bool reportHostname)
+        private static void WriteResourceMetricsJson(JsonTextWriter writer, StatsBuffer buffer, long bucketDurationNs)
         {
             writer.WriteStartObject();
 
             writer.WritePropertyName("resource");
-            WriteResourceJson(writer, buffer, reportHostname);
+            WriteResourceJson(writer, buffer);
 
             writer.WritePropertyName("scopeMetrics");
             writer.WriteStartArray();
@@ -125,7 +125,7 @@ namespace Datadog.Trace.Agent
             writer.WriteEndObject();
         }
 
-        private static void WriteResourceJson(JsonTextWriter writer, StatsBuffer buffer, bool reportHostname)
+        private static void WriteResourceJson(JsonTextWriter writer, StatsBuffer buffer)
         {
             var details = buffer.Header.Details;
 
@@ -143,11 +143,6 @@ namespace Datadog.Trace.Agent
             if (!StringUtil.IsNullOrEmpty(details.Environment))
             {
                 WriteStringKvJson(writer, "deployment.environment.name", details.Environment!);
-            }
-
-            if (reportHostname && !StringUtil.IsNullOrEmpty(buffer.Header.HostName))
-            {
-                WriteStringKvJson(writer, "host.name", buffer.Header.HostName!);
             }
 
             WriteStringKvJson(writer, "telemetry.sdk.name", TracerConstants.TelemetrySdkName);
@@ -370,12 +365,12 @@ namespace Datadog.Trace.Agent
             writer.WriteEndObject();
         }
 
-        private static byte[] SerializeResourceMetrics(StatsBuffer buffer, long bucketDurationNs, bool reportHostname)
+        private static byte[] SerializeResourceMetrics(StatsBuffer buffer, long bucketDurationNs)
         {
             using var stream = new MemoryStream(512);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
 
-            var resourceData = SerializeResource(buffer, reportHostname);
+            var resourceData = SerializeResource(buffer);
             WriteTag(writer, FieldNumbers.Resource, WireTypeLengthDelimited);
             WriteVarInt(writer, resourceData.Length);
             writer.Write(resourceData);
@@ -389,7 +384,7 @@ namespace Datadog.Trace.Agent
             return stream.ToArray();
         }
 
-        private static byte[] SerializeResource(StatsBuffer buffer, bool reportHostname)
+        private static byte[] SerializeResource(StatsBuffer buffer)
         {
             using var stream = new MemoryStream(256);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
@@ -406,11 +401,6 @@ namespace Datadog.Trace.Agent
             if (!StringUtil.IsNullOrEmpty(details.Environment))
             {
                 WriteAttribute(writer, "deployment.environment.name", details.Environment!);
-            }
-
-            if (reportHostname && !StringUtil.IsNullOrEmpty(buffer.Header.HostName))
-            {
-                WriteAttribute(writer, "host.name", buffer.Header.HostName!);
             }
 
             WriteAttribute(writer, "telemetry.sdk.name", TracerConstants.TelemetrySdkName);
