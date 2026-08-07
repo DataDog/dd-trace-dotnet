@@ -8,6 +8,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Amazon;
+using Amazon.SimpleSystemsManagement;
 using CodeGenerators;
 using ICSharpCode.SharpZipLib.Zip;
 using LogParsing;
@@ -1495,6 +1497,26 @@ partial class Build
             testProjects.ForEach(EnsureResultsDirectory);
             var filter = string.IsNullOrWhiteSpace(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter;
             var exceptions = new List<Exception>();
+            if (IsGitlab && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY")))
+            {
+                try
+                {
+                    using var ssmClient = new AmazonSimpleSystemsManagementClient(RegionEndpoint.USEast1);
+                    var response = ssmClient.GetParameterAsync(
+                        new Amazon.SimpleSystemsManagement.Model.GetParameterRequest
+                        {
+                            Name = "ci.dd-trace-dotnet.dd_api_key-prod",
+                            WithDecryption = true,
+                        }).GetAwaiter().GetResult();
+                    Environment.SetEnvironmentVariable("DD_LOGGER_DD_API_KEY", response.Parameter.Value);
+                    Logger.Information("CI Visibility API key configured");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "CI Visibility API key is unavailable; test telemetry and retry metrics may not be submitted");
+                }
+            }
+
             var defaultDotNetLogger = DotNetTasks.DotNetLogger;
             if (IsGitlab)
             {

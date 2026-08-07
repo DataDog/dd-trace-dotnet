@@ -15,6 +15,7 @@
       set -eu
 
       tester_image="dd-trace-dotnet/debian-tester:${CI_JOB_ID}"
+      tester_with_identity_image="dd-trace-dotnet/debian-tester-ci-identities:${CI_JOB_ID}"
       mkdir -p artifacts/build_data/infra_logs
       echo "Building Debian test image for ${FRAMEWORK}"
       docker build \
@@ -23,6 +24,13 @@
         --target tester \
         --file tracer/build/_build/docker/debian.dockerfile \
         tracer/build/_build
+
+      echo "Adding the CI Identities client to the test image"
+      docker build \
+        --build-arg "TESTER_IMAGE=${tester_image}" \
+        --tag "$tester_with_identity_image" \
+        --file .gitlab/linux-unit-tests-with-ci-identities.dockerfile \
+        .gitlab
 
       echo "Running managed unit tests for ${FRAMEWORK}"
       docker run --rm \
@@ -63,14 +71,20 @@
         --env CI_MERGE_REQUEST_DIFF_BASE_SHA \
         --env CI_MERGE_REQUEST_TARGET_BRANCH_NAME \
         --env CI_MERGE_REQUEST_IID \
+        --env CI_IDENTITIES_GITLAB_ID_TOKEN \
         --env NUKE_TELEMETRY_OPTOUT=1 \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
-        "$tester_image" \
-        dotnet /build/bin/Debug/_build.dll \
-        BuildManagedUnitTests RunManagedUnitTests \
-        --framework "$FRAMEWORK" \
-        --IncludeAllTestFrameworks true \
-        --NugetPackageDirectory /project/packages
+        "$tester_with_identity_image" \
+        sh -c '
+          if ! ci-identities-gitlab-job-client assume-role; then
+            echo "WARNING: Unable to assume the CI Identity AWS role; test telemetry and retry metrics may not be submitted." >&2
+          fi
+          exec dotnet /build/bin/Debug/_build.dll \
+            BuildManagedUnitTests RunManagedUnitTests \
+            --framework "$FRAMEWORK" \
+            --IncludeAllTestFrameworks true \
+            --NugetPackageDirectory /project/packages
+        '
   artifacts:
     when: always
     expire_in: 2 weeks
