@@ -26,5 +26,6 @@ internal static class AgentWriterHelper
             statsd ?? TestStatsdManager.NoOp,
             automaticFlush: false,
             maxBufferSize,
+            batchInterval: 0,
             initialTracerMetricsEnabled: initialTracerMetricsEnabled);
 }
