@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var settings = new TracerSettings();
             _testApi = new MockApi();
-            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+            var agentWriter = AgentWriterHelper.CreateWithManualFlush(_testApi);
             _tracer = TracerHelper.Create(settings, agentWriter);
         }
 
