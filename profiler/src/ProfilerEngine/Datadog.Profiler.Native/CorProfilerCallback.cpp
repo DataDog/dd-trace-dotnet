@@ -1583,6 +1583,25 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Configure which profiler callbacks we want to receive by setting the event mask:
     DWORD eventMask = COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT | COR_PRF_MONITOR_APPDOMAIN_LOADS;
 
+    // Prefer the low-overhead COR_PRF_HIGH_BASIC_GC callbacks over the EventPipe
+    // KEYWORD_GC stream when ONLY GC profiling is enabled (allocation/heap profiling
+    // still need the GC keyword). BASIC_GC (.NET 8+) fires GarbageCollectionStarted/
+    // Finished once per collection and does not disable concurrent GC, unlike the
+    // legacy COR_PRF_MONITOR_GC. See PROF-15622.
+    _useGcCallbacks =
+        _pConfiguration->IsGarbageCollectionProfilingEnabled() &&
+        !_pConfiguration->IsAllocationProfilingEnabled() &&
+        !_pConfiguration->IsHeapProfilingEnabled() &&
+        (_pCorProfilerInfoEvents != nullptr) && // SetEventMask2 (ICorProfilerInfo5+) required for the high mask
+        (major >= 8);
+
+    if (_useGcCallbacks)
+    {
+        // COR_PRF_MONITOR_SUSPENDS gives RuntimeSuspend/Resume callbacks used to
+        // measure GC pause (suspension) time; BASIC_GC is added to the high mask below.
+        eventMask |= COR_PRF_MONITOR_SUSPENDS;
+    }
+
     if (_pConfiguration->UseManagedCodeCache())
     {
         eventMask |= COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_ENABLE_REJIT;
@@ -1608,6 +1627,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     {
         // listen to CLR events via ICorProfilerCallback
         DWORD highMask = COR_PRF_HIGH_MONITOR_EVENT_PIPE;
+        if (_useGcCallbacks)
+        {
+            highMask |= COR_PRF_HIGH_BASIC_GC;
+        }
         hr = _pCorProfilerInfo->SetEventMask2(eventMask, highMask);
         if (FAILED(hr))
         {
@@ -1649,8 +1672,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
                 Log::Debug("Listen to AllocationTick event");
             }
         }
-        if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
+        if (_pConfiguration->IsGarbageCollectionProfilingEnabled() && !_useGcCallbacks)
         {
+            // When _useGcCallbacks is set, GC lifecycle comes from the BASIC_GC
+            // callbacks instead, so we avoid the per-collection KEYWORD_GC event
+            // serialization (including one GCPerHeapHistory per heap under server GC).
             activatedKeywords |= ClrEventsParser::KEYWORD_GC;
         }
         if (_pConfiguration->IsContentionProfilingEnabled())
@@ -2440,6 +2466,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ManagedToUnmanagedTransition(Func
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeSuspendStarted(COR_PRF_SUSPEND_REASON suspendReason)
 {
+    if (_useGcCallbacks)
+    {
+        OnGcCallbackSuspendStarted(suspendReason);
+    }
     return S_OK;
 }
 
@@ -2460,6 +2490,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeResumeStarted()
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::RuntimeResumeFinished()
 {
+    if (_useGcCallbacks)
+    {
+        OnGcCallbackResumeFinished();
+    }
     return S_OK;
 }
 
@@ -2606,6 +2640,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionCLRCatcherExecute()
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::GarbageCollectionStarted(int cGenerations, BOOL generationCollected[], COR_PRF_GC_REASON reason)
 {
+    if (_useGcCallbacks)
+    {
+        OnGcCallbackStarted(cGenerations, generationCollected, reason);
+    }
     return S_OK;
 }
 
@@ -2616,7 +2654,164 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::SurvivingReferences(ULONG cSurviv
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::GarbageCollectionFinished()
 {
+    if (_useGcCallbacks)
+    {
+        OnGcCallbackFinished();
+    }
     return S_OK;
+}
+
+// --- Low-overhead GC path (COR_PRF_HIGH_BASIC_GC) ---------------------------
+// These callbacks replace the EventPipe KEYWORD_GC stream when only GC profiling
+// is enabled. They fire once per collection (not once per heap), and feed the same
+// GarbageCollectionProvider / StopTheWorldGCProvider listeners the event path uses.
+// State is tiny and touched ~once per collection, so a plain mutex is sufficient;
+// the profiling-API reason is coarse (Induced vs other) and compaction / memory
+// pressure / background-vs-foreground type are not available here (see PROF-15622).
+
+void CorProfilerCallback::OnGcCallbackSuspendStarted(COR_PRF_SUSPEND_REASON suspendReason)
+{
+    if ((suspendReason != COR_PRF_SUSPEND_FOR_GC) && (suspendReason != COR_PRF_SUSPEND_FOR_GC_PREP))
+    {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(_gcCallbackLock);
+    _gcSuspensionStart = OpSysTools::GetHighPrecisionTimestamp();
+}
+
+void CorProfilerCallback::OnGcCallbackResumeFinished()
+{
+    auto timestamp = OpSysTools::GetHighPrecisionTimestamp();
+
+    int32_t number;
+    uint32_t generation;
+    std::chrono::nanoseconds duration;
+    {
+        std::lock_guard<std::mutex> lock(_gcCallbackLock);
+        if (_gcSuspensionStart == std::chrono::nanoseconds::zero())
+        {
+            return;
+        }
+        duration = timestamp - _gcSuspensionStart;
+        _gcPauseDuration += duration;
+        _gcSuspensionStart = std::chrono::nanoseconds::zero();
+
+        // _gcNumber/_gcGeneration are kept as the last-seen GC (not cleared on
+        // finish) so the suspension that closes a blocking GC still attributes to it.
+        number = _gcNumber;
+        generation = _gcGeneration;
+    }
+
+    if ((number != 0) && (_pStopTheWorldProvider != nullptr))
+    {
+        _pStopTheWorldProvider->OnSuspension(timestamp, number, generation, duration);
+    }
+}
+
+void CorProfilerCallback::OnGcCallbackStarted(int cGenerations, BOOL generationCollected[], COR_PRF_GC_REASON reason)
+{
+    auto timestamp = OpSysTools::GetHighPrecisionTimestamp();
+
+    // Highest collected generation.
+    uint32_t generation = 0;
+    for (int i = 0; i < cGenerations; i++)
+    {
+        if (generationCollected[i])
+        {
+            generation = static_cast<uint32_t>(i);
+        }
+    }
+
+    GCReason gcReason = (reason == COR_PRF_GC_INDUCED) ? GCReason::Induced : GCReason::AllocSmall;
+
+    int32_t number;
+    {
+        std::lock_guard<std::mutex> lock(_gcCallbackLock);
+        _gcNumber++;
+        _gcGeneration = generation;
+        _gcReason = gcReason;
+        _gcStartTimestamp = timestamp;
+        _gcPauseDuration = std::chrono::nanoseconds::zero();
+        _gcInProgress = true;
+        number = _gcNumber;
+    }
+
+    if (_pGarbageCollectionProvider != nullptr)
+    {
+        _pGarbageCollectionProvider->OnGarbageCollectionStart(
+            timestamp, number, generation, gcReason, GCType::NonConcurrentGC);
+    }
+}
+
+void CorProfilerCallback::OnGcCallbackFinished()
+{
+    auto timestamp = OpSysTools::GetHighPrecisionTimestamp();
+
+    int32_t number;
+    uint32_t generation;
+    GCReason gcReason;
+    std::chrono::nanoseconds totalDuration;
+    std::chrono::nanoseconds pauseDuration;
+    {
+        std::lock_guard<std::mutex> lock(_gcCallbackLock);
+        if (!_gcInProgress)
+        {
+            return;
+        }
+        number = _gcNumber;
+        generation = _gcGeneration;
+        gcReason = _gcReason;
+        totalDuration = timestamp - _gcStartTimestamp;
+        // For a blocking GC the closing resume happens after this callback, so add
+        // the still-open suspension window to what has already been accumulated.
+        pauseDuration = _gcPauseDuration;
+        if (_gcSuspensionStart != std::chrono::nanoseconds::zero())
+        {
+            pauseDuration += timestamp - _gcSuspensionStart;
+        }
+        _gcInProgress = false;
+    }
+
+    // Generation sizes from the current generation bounds (once per collection).
+    uint64_t gen2Size = 0;
+    uint64_t lohSize = 0;
+    uint64_t pohSize = 0;
+    ULONG rangeCount = 0;
+    if (SUCCEEDED(_pCorProfilerInfo->GetGenerationBounds(0, &rangeCount, nullptr)) && (rangeCount != 0))
+    {
+        std::vector<COR_PRF_GC_GENERATION_RANGE> ranges(rangeCount);
+        if (SUCCEEDED(_pCorProfilerInfo->GetGenerationBounds(rangeCount, &rangeCount, ranges.data())))
+        {
+            for (ULONG i = 0; i < rangeCount; i++)
+            {
+                switch (ranges[i].generation)
+                {
+                    case COR_PRF_GC_GEN_2: gen2Size += ranges[i].rangeLength; break;
+                    case COR_PRF_GC_LARGE_OBJECT_HEAP: lohSize += ranges[i].rangeLength; break;
+                    case COR_PRF_GC_PINNED_OBJECT_HEAP: pohSize += ranges[i].rangeLength; break;
+                    default: break;
+                }
+            }
+        }
+    }
+
+    if (_pGarbageCollectionProvider != nullptr)
+    {
+        _pGarbageCollectionProvider->OnGarbageCollectionEnd(
+            number,
+            generation,
+            gcReason,
+            GCType::NonConcurrentGC,
+            /* isCompacting */ false,
+            pauseDuration,
+            totalDuration,
+            timestamp,
+            gen2Size,
+            lohSize,
+            pohSize,
+            /* memPressure */ 0);
+    }
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::FinalizeableObjectQueued(DWORD finalizerFlags, ObjectID objectID)
