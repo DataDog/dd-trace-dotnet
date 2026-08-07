@@ -32,6 +32,7 @@
    <assembly fullname="HotChocolate.Execution" />
    <assembly fullname="HotChocolate.Types" />
    <assembly fullname="log4net" />
+   <assembly fullname="MassTransit" />
    <assembly fullname="Microsoft.AspNetCore.Authentication.Abstractions" />
    <assembly fullname="Microsoft.AspNetCore.Diagnostics" />
    <assembly fullname="Microsoft.AspNetCore.Html.Abstractions" />
