@@ -697,6 +697,11 @@ internal static partial class ConfigurationKeys
     public const string RemoveClientServiceNamesEnabled = "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED";
 
     /// <summary>
+    /// Configuration key for enabling or disabling hostname reporting on OTLP trace metrics.
+    /// </summary>
+    public const string ReportHostname = "DD_TRACE_REPORT_HOSTNAME";
+
+    /// <summary>
     /// Configuration key for setting the global rate for the sampler.
     /// </summary>
     public const string GlobalSamplingRate = "DD_TRACE_SAMPLE_RATE";
