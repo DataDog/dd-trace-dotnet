@@ -97,9 +97,12 @@ namespace Datadog.Trace.Tests.Agent
             traceContext.SetSamplingPriority(priority: SamplingPriorityValues.UserReject, mechanism: SamplingMechanism.Manual, rate: null, limiterRate: null);
             span.Finish();
             var traceChunk = new SpanCollection([span]);
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(traceChunk, SamplingPriorityValues.UserKeep, isFirstChunkInPayload: true), SpanFormatterResolver.Instance);
 
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
+
+            // Build the expectation after the flush: serializing the chunk sets TraceContext.TracesKeepRate,
+            // which TraceChunkModel snapshots, so a model built earlier would be missing _dd.tracer_kr.
+            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(traceChunk, SamplingPriorityValues.UserKeep, isFirstChunkInPayload: true), SpanFormatterResolver.Instance);
 
             var expectedDroppedP0Traces = 1;
             var expectedDroppedP0Spans = 0;
@@ -144,10 +147,12 @@ namespace Datadog.Trace.Tests.Agent
             keptChildSpan.Finish();
 
             var expectedChunk = new SpanCollection([rootSpan, keptChildSpan]);
-            // var size = ComputeSize(expectedChunk);
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep, isFirstChunkInPayload: true), SpanFormatterResolver.Instance);
 
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
+
+            // Build the expectation after the flush: serializing the chunk sets TraceContext.TracesKeepRate,
+            // which TraceChunkModel snapshots, so a model built earlier would be missing _dd.tracer_kr.
+            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(new TraceChunkModel(expectedChunk, SamplingPriorityValues.UserKeep, isFirstChunkInPayload: true), SpanFormatterResolver.Instance);
 
             var expectedDroppedP0Traces = 1;
             var expectedDroppedP0Spans = 0;
@@ -207,7 +212,7 @@ namespace Datadog.Trace.Tests.Agent
             var statsAggregator = new StubStatsAggregator(shouldKeepTrace: false, x => spans);
             var agent = AgentWriterHelper.CreateWithManualFlush(Mock.Of<IApi>(), statsAggregator);
 
-            agent.WriteTrace(spans);
+            WriteTraceAndWait(agent, spans);
 
             statsAggregator.AddedSpans.Should().Contain(spans).Which.Count.Should().Be(1);
 
@@ -346,8 +351,8 @@ namespace Datadog.Trace.Tests.Agent
             // Make the buffer size big enough for a single trace
             var agent = AgentWriterHelper.CreateWithManualFlush(api.Object, maxBufferSize: (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1);
 
-            agent.WriteTrace(CreateTraceChunk(1));
-            agent.WriteTrace(CreateTraceChunk(1));
+            WriteTraceAndWait(agent, CreateTraceChunk(1));
+            WriteTraceAndWait(agent, CreateTraceChunk(1));
 
             agent.ActiveBuffer.Should().BeSameAs(agent.BackBuffer);
 
@@ -383,8 +388,8 @@ namespace Datadog.Trace.Tests.Agent
                 initialTracerMetricsEnabled: true);
 
             // Fill the two buffers
-            agent.WriteTrace(CreateTraceChunk(1));
-            agent.WriteTrace(CreateTraceChunk(1));
+            WriteTraceAndWait(agent, CreateTraceChunk(1));
+            WriteTraceAndWait(agent, CreateTraceChunk(1));
 
             // Buffers should have swapped
             agent.ActiveBuffer.Should().BeSameAs(agent.BackBuffer);
@@ -405,7 +410,7 @@ namespace Datadog.Trace.Tests.Agent
             statsd.Invocations.Clear();
 
             // Both buffers are at capacity, write a new trace
-            agent.WriteTrace(CreateTraceChunk(2));
+            WriteTraceAndWait(agent, CreateTraceChunk(2));
 
             // Buffers shouldn't have swapped since the reserve buffer was full
             agent.ActiveBuffer.Should().BeSameAs(agent.BackBuffer);
@@ -442,7 +447,7 @@ namespace Datadog.Trace.Tests.Agent
             agent.FrontBuffer.Lock().Should().BeTrue();
             agent.BackBuffer.Lock().Should().BeTrue();
 
-            agent.WriteTrace(CreateTraceChunk(1));
+            WriteTraceAndWait(agent, CreateTraceChunk(1));
 
             agent.DroppedTracesBufferFull.Should().Be(0);
             agent.DroppedTracesBufferFullAndLocked.Should().Be(0);
@@ -461,8 +466,8 @@ namespace Datadog.Trace.Tests.Agent
                 maxBufferSize: (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1);
 
             agent.FrontBuffer.Lock().Should().BeTrue();
-            agent.WriteTrace(CreateTraceChunk(1));
-            agent.WriteTrace(CreateTraceChunk(2));
+            WriteTraceAndWait(agent, CreateTraceChunk(1));
+            WriteTraceAndWait(agent, CreateTraceChunk(2));
 
             agent.DroppedTracesBufferFull.Should().Be(0);
             agent.DroppedTracesBufferFullAndLocked.Should().Be(1);
@@ -482,7 +487,7 @@ namespace Datadog.Trace.Tests.Agent
                 maxBufferSize: SpanBufferMessagePackSerializer.HeaderSizeConst,
                 initialTracerMetricsEnabled: true);
 
-            agent.WriteTrace(CreateTraceChunk(1));
+            WriteTraceAndWait(agent, CreateTraceChunk(1));
 
             agent.FrontBuffer.IsEmpty.Should().BeTrue();
             agent.BackBuffer.IsEmpty.Should().BeTrue();
@@ -512,7 +517,7 @@ namespace Datadog.Trace.Tests.Agent
 
             agent.ActiveBuffer.Lock().Should().BeTrue();
 
-            agent.WriteTrace(CreateTraceChunk(2));
+            WriteTraceAndWait(agent, CreateTraceChunk(2));
 
             agent.ActiveBuffer.Should().BeSameAs(agent.BackBuffer);
             agent.FrontBuffer.IsLocked.Should().BeTrue();
@@ -570,11 +575,11 @@ namespace Datadog.Trace.Tests.Agent
             var agent = new AgentWriter(api, statsAggregator: null, statsd: TestStatsdManager.NoOp, calculator, automaticFlush: false, (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1, batchInterval: 0, apmTracingEnabled: true, initialTracerMetricsEnabled: false);
 
             // Fill both buffers
-            agent.WriteTrace(spans);
-            agent.WriteTrace(spans);
+            WriteTraceAndWait(agent, spans);
+            WriteTraceAndWait(agent, spans);
 
             // Drop one
-            agent.WriteTrace(spans);
+            WriteTraceAndWait(agent, spans);
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             // Write another one
@@ -648,6 +653,34 @@ namespace Datadog.Trace.Tests.Agent
             flushTcs.TrySetResult(true);
             await Task.WhenAll(firstFlush, secondFlush, thirdFlush);
             await agentWriter.FlushAndCloseAsync();
+        }
+
+        [Fact]
+        public async Task WriteTrace_AfterFlushAndClose_DropsTheTrace()
+        {
+            // The serialization loop has stopped, so nothing would ever dequeue the trace. It has to
+            // be dropped, otherwise it sits in the queue for the lifetime of the process.
+            var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, statsd: TestStatsdManager.NoOp, batchInterval: 0);
+
+            await agent.FlushAndCloseAsync();
+
+            agent.WriteTrace(CreateTraceChunk(1));
+
+            // Nothing resets the counter, because the final flush ran before the write above
+            agent.DroppedTracesBufferFull.Should().Be(1);
+        }
+
+        /// <summary>
+        /// Writes a trace and blocks until the serialization thread has serialized it. The
+        /// watermark is enqueued after the trace and the queue has a single consumer, so the
+        /// callback firing proves the trace has been written to a buffer.
+        /// </summary>
+        private static void WriteTraceAndWait(AgentWriter agent, SpanCollection trace)
+        {
+            agent.WriteTrace(trace);
+
+            WaitForDequeue(agent, delay: 30_000)
+                .Should().BeTrue("the serialization thread should have serialized the trace");
         }
 
         private static bool WaitForDequeue(AgentWriter agent, bool wakeUpThread = true, int delay = -1)
