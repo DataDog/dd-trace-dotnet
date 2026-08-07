@@ -77,10 +77,12 @@ public class FeatureFlagsModuleTests
 
     private static TracerSettings CreateSettings()
     {
+#pragma warning disable 618 // superseded by DD_FEATURE_FLAGS_ENABLED, but still honoured for existing adopters
         var collection = new NameValueCollection
         {
             { ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "true" }
         };
+#pragma warning restore 618
 
         return new TracerSettings(new NameValueConfigurationSource(collection));
     }

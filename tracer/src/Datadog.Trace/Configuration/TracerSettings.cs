@@ -769,8 +769,10 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
+#pragma warning disable 618 // superseded by DD_FEATURE_FLAGS_ENABLED, but still honoured for existing adopters
             IsFlaggingProviderEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled)
                                                        .AsBool(false);
+#pragma warning restore 618
 
             IsSpanEnrichmentEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled)
                                                        .AsBool(false);
