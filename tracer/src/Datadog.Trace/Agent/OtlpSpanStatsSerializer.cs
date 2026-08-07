@@ -151,8 +151,6 @@ namespace Datadog.Trace.Agent
 
             WriteStringKvJson(writer, "datadog.runtime_id", Tracer.RuntimeId);
 
-            // TODO: emit datadog.process_tags from details.ProcessTags (not yet wired into OTLP output).
-
             writer.WriteEndArray();
             writer.WriteEndObject();
         }
@@ -218,17 +216,14 @@ namespace Datadog.Trace.Agent
             writer.WritePropertyName("attributes");
             writer.WriteStartArray();
 
+            WriteStringKvJson(writer, "service.name", key.Service);
+            WriteStringKvJson(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue);
+            WriteStringKvJson(writer, "span.kind", CanonicalizeSpanKind(key.SpanKind));
+
             if (!StringUtil.IsNullOrEmpty(key.Resource))
             {
                 WriteStringKvJson(writer, "span.name", key.Resource);
             }
-
-            var spanKindJson = CanonicalizeSpanKind(key.SpanKind);
-            WriteStringKvJson(writer, "span.kind", spanKindJson);
-
-            WriteStringKvJson(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue);
-
-            WriteStringKvJson(writer, "service.name", key.Service);
 
             if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
             {
@@ -251,19 +246,11 @@ namespace Datadog.Trace.Agent
                 WriteStringKvJson(writer, "rpc.response.status_code", grpcStatusName);
             }
 
-            if (!StringUtil.IsNullOrEmpty(key.OperationName))
-            {
-                WriteStringKvJson(writer, "datadog.operation.name", key.OperationName);
-            }
+            WriteStringKvJson(writer, "datadog.operation.name", key.OperationName);
 
             if (!StringUtil.IsNullOrEmpty(key.Type))
             {
                 WriteStringKvJson(writer, "datadog.span.type", key.Type);
-            }
-
-            if (!StringUtil.IsNullOrEmpty(key.ServiceSource))
-            {
-                WriteStringKvJson(writer, "datadog.svc_src", key.ServiceSource);
             }
 
             WriteBoolKvJson(writer, "datadog.span.top_level", key.IsTopLevel);
@@ -277,6 +264,11 @@ namespace Datadog.Trace.Agent
                 WriteStringKvJson(writer, "datadog.origin", "synthetics");
             }
 
+            if (!StringUtil.IsNullOrEmpty(key.ServiceSource))
+            {
+                WriteStringKvJson(writer, "datadog.svc_src", key.ServiceSource);
+            }
+
             foreach (var tag in bucket.AdditionalMetricTags)
             {
                 if (TrySplitEncodedTag(tag, out var tagKey, out var tagValue))
@@ -284,8 +276,6 @@ namespace Datadog.Trace.Agent
                     WriteStringKvJson(writer, tagKey, tagValue);
                 }
             }
-
-            // TODO: emit datadog.peer_tags from bucket.PeerTags (not yet wired into OTLP output; mirror the legacy MessagePack shape in StatsBuffer.cs as a single combined arrayValue).
 
             writer.WriteEndArray();
 
@@ -492,17 +482,14 @@ namespace Datadog.Trace.Agent
             using var stream = new MemoryStream(256);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
 
+            WriteAttribute(writer, "service.name", key.Service, FieldNumbers.HistogramDataPointAttributes);
+            WriteAttribute(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue, FieldNumbers.HistogramDataPointAttributes);
+            WriteAttribute(writer, "span.kind", CanonicalizeSpanKind(key.SpanKind), FieldNumbers.HistogramDataPointAttributes);
+
             if (!StringUtil.IsNullOrEmpty(key.Resource))
             {
                 WriteAttribute(writer, "span.name", key.Resource, FieldNumbers.HistogramDataPointAttributes);
             }
-
-            var spanKindProto = CanonicalizeSpanKind(key.SpanKind);
-            WriteAttribute(writer, "span.kind", spanKindProto, FieldNumbers.HistogramDataPointAttributes);
-
-            WriteAttribute(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue, FieldNumbers.HistogramDataPointAttributes);
-
-            WriteAttribute(writer, "service.name", key.Service, FieldNumbers.HistogramDataPointAttributes);
 
             if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
             {
@@ -525,19 +512,11 @@ namespace Datadog.Trace.Agent
                 WriteAttribute(writer, "rpc.response.status_code", grpcStatusNameProto, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            if (!StringUtil.IsNullOrEmpty(key.OperationName))
-            {
-                WriteAttribute(writer, "datadog.operation.name", key.OperationName, FieldNumbers.HistogramDataPointAttributes);
-            }
+            WriteAttribute(writer, "datadog.operation.name", key.OperationName, FieldNumbers.HistogramDataPointAttributes);
 
             if (!StringUtil.IsNullOrEmpty(key.Type))
             {
                 WriteAttribute(writer, "datadog.span.type", key.Type, FieldNumbers.HistogramDataPointAttributes);
-            }
-
-            if (!StringUtil.IsNullOrEmpty(key.ServiceSource))
-            {
-                WriteAttribute(writer, "datadog.svc_src", key.ServiceSource, FieldNumbers.HistogramDataPointAttributes);
             }
 
             WriteBoolAttribute(writer, "datadog.span.top_level", key.IsTopLevel, FieldNumbers.HistogramDataPointAttributes);
@@ -549,6 +528,11 @@ namespace Datadog.Trace.Agent
             if (key.IsSyntheticsRequest)
             {
                 WriteAttribute(writer, "datadog.origin", "synthetics", FieldNumbers.HistogramDataPointAttributes);
+            }
+
+            if (!StringUtil.IsNullOrEmpty(key.ServiceSource))
+            {
+                WriteAttribute(writer, "datadog.svc_src", key.ServiceSource, FieldNumbers.HistogramDataPointAttributes);
             }
 
             foreach (var tag in bucket.AdditionalMetricTags)
@@ -709,9 +693,8 @@ namespace Datadog.Trace.Agent
         {
             var decoded = EncodingHelpers.Utf8NoBom.GetString(encodedTag);
             var separatorIndex = decoded.IndexOf(':');
-            if (separatorIndex < 0)
+            if (separatorIndex <= 0)
             {
-                // TODO: Preserve the cardinality-limit sentinel once its OTLP representation is defined.
                 key = string.Empty;
                 value = string.Empty;
                 return false;
