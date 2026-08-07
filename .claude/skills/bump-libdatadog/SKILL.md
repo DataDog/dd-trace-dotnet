@@ -23,8 +23,8 @@ There are **two version pins** to update, both from the same libdatadog-dotnet r
 
 | Platform | File | Hash type | Version format |
 |----------|------|-----------|----------------|
-| Linux/macOS | `build/cmake/FindLibdatadog.cmake` | SHA-256 | `v<MAJOR>.<MINOR>.<PATCH>` |
-| Windows | `build/vcpkg_local_ports/libdatadog/vcpkg.json` + `portfile.cmake` | SHA-512 | `<MAJOR>.<MINOR>.<PATCH>` (no `v` prefix) |
+| Linux/macOS | `build/cmake/FindLibdatadog.cmake` | SHA-512 | `v<MAJOR>.<MINOR>.<PATCH>` |
+| Windows | `build/vcpkg_local_ports/libdatadog/vcpkg.json` + `portfile.cmake` | SHA-256 | `<MAJOR>.<MINOR>.<PATCH>` (no `v` prefix) |
 
 A libdatadog-dotnet release builds all 8 platform artifacts together, so the two pins should normally
 move to the **same** version in lockstep. Confirm with the user if they intend otherwise.
@@ -54,7 +54,7 @@ Artifact filenames (from GitHub releases):
 
 Two files:
 - **`vcpkg.json`** — update `"version-string"` (no `v` prefix)
-- **`portfile.cmake`** — update SHA-512 hashes for x64 and x86 Windows zips
+- **`portfile.cmake`** — update SHA-256 hashes for x64 and x86 Windows zips
 
 Artifact filenames:
 - `libdatadog-x64-windows.zip`
@@ -71,7 +71,7 @@ https://github.com/DataDog/libdatadog-dotnet/releases
 
 ### Step 2: Get hashes from the release page
 
-SHA-256 and SHA-512 checksums are published directly in the GitHub release notes. Either:
+SHA-512 and SHA-256 checksums are published directly in the GitHub release notes. Either:
 
 1. Visit `https://github.com/DataDog/libdatadog-dotnet/releases/tag/v<VERSION>` and copy from the checksums sections, or
 2. Run the helper script which fetches them via the GitHub API:
@@ -83,13 +83,13 @@ bash .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh <VERSION>
 Where `<VERSION>` is without the `v` prefix (e.g. `1.3.5`).
 
 The release notes contain:
-- **SHA256 checksums** section → for `FindLibdatadog.cmake` (6 Linux/macOS artifacts)
-- **SHA512 checksums** section → for `portfile.cmake` (2 Windows artifacts)
+- **SHA512 checksums** section → for `FindLibdatadog.cmake` (6 Linux/macOS artifacts)
+- **SHA256 checksums** section → for `portfile.cmake` (2 Windows artifacts)
 
 ### Step 3: Update `build/cmake/FindLibdatadog.cmake`
 
 1. Update `LIBDATADOG_VERSION` to `"v<VERSION>"`
-2. Replace each `SHA256_LIBDATADOG*` value with the new SHA-256 hash from the script output
+2. Replace each `SHA256_LIBDATADOG*` value with the new SHA-512 hash from the script output
 
 ### Step 4: Update `build/vcpkg_local_ports/libdatadog/vcpkg.json`
 
@@ -97,18 +97,18 @@ Update `"version-string"` to the new version (no `v` prefix).
 
 ### Step 5: Update `build/vcpkg_local_ports/libdatadog/portfile.cmake`
 
-Replace the SHA-512 hashes for x64 and x86 Windows builds.
+Replace the SHA-256 hashes for x64 and x86 Windows builds.
 
 ### Step 6: Verify
 
-- Confirm all 8 hashes were updated (6 for CMake SHA-256, 2 for vcpkg SHA-512)
+- Confirm all 8 hashes were updated (6 for CMake SHA-512, 2 for vcpkg SHA-256)
 - Confirm version strings match in both files
 - Run the Nuke build targets to validate hashes:
   ```bash
-  # Linux — validates CMake SHA-256 hashes during configure
+  # Linux — validates CMake SHA-512 hashes during configure
   ./tracer/build.sh CompileProfilerNativeSrc
 
-  # Windows — validates vcpkg SHA-512 hashes during install
+  # Windows — validates vcpkg SHA-256 hashes during install
   .\tracer\build.cmd CompileProfilerNativeSrc
   ```
 
@@ -144,7 +144,7 @@ Several files under `tracer/src/Datadog.Trace/LibDatadog/` have XML doc comments
 
 ## Important Notes
 
-- The CMake file uses **SHA-256** hashes; the vcpkg portfile uses **SHA-512** hashes. Both are published in the libdatadog-dotnet GitHub release notes (under `## Checksums`).
+- The CMake file uses **SHA-512** hashes; the vcpkg portfile uses **SHA-256** hashes. Both are published in the libdatadog-dotnet GitHub release notes (under `## Checksums`).
 - The CMake version has a `v` prefix (`v1.3.5`); vcpkg does not (`1.3.5`).
 - If a release doesn't have all platform artifacts, the bump may need to wait or be partial.
 - After bumping, CI will validate the hashes on all platforms. Hash mismatches cause clear build failures.
