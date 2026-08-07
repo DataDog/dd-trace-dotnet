@@ -131,11 +131,18 @@ namespace Datadog.Trace.PlatformHelpers
             kernelVersion = null;
         }
 
-        private static string? GetHostInternal()
+        [TestingAndPrivateOnly]
+        internal static string? GetHostInternal()
         {
             try
             {
-                var host = EnvironmentHelpers.GetMachineName();
+                var host = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Hostname);
+                if (!StringUtil.IsNullOrEmpty(host))
+                {
+                    return host;
+                }
+
+                host = EnvironmentHelpers.GetMachineName();
                 if (!string.IsNullOrEmpty(host))
                 {
                     return host;

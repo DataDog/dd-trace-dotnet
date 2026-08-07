@@ -745,6 +745,8 @@ namespace Datadog.Trace
 
         internal const string RuntimeId = "runtime-id";
 
+        internal const string Hostname = "_dd.hostname";
+
         internal const string AerospikeKey = "aerospike.key";
 
         internal const string AerospikeNamespace = "aerospike.namespace";

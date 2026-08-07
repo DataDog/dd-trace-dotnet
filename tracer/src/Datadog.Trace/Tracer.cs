@@ -18,6 +18,7 @@ using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
@@ -430,6 +431,14 @@ namespace Datadog.Trace
                 {
                     span.SetTag(entry.Key, entry.Value);
                 }
+            }
+
+            if (addToTraceContext &&
+                spanContext.TraceContext?.RootSpan is null &&
+                Settings.Manager.InitialExporterSettings.ReportHostname &&
+                HostMetadata.Instance.Hostname is { Length: > 0 } hostname)
+            {
+                span.SetTag(Tags.Hostname, hostname);
             }
 
             if (addToTraceContext)
