@@ -6,8 +6,6 @@
     - pipeline: "$PARENT_PIPELINE_ID"
       job: build
       artifacts: true
-  variables:
-    AWS_SHARED_CREDENTIALS_FILE: ${CI_PROJECT_DIR}\.aws\credentials-by-job-id\${CI_JOB_ID}
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
@@ -21,42 +19,19 @@
       New-Item -ItemType Directory -Force artifacts/build_data/infra_logs | Out-Null
 
       if (-not $env:DD_LOGGER_DD_API_KEY) {
-        $ciIdentitiesClient = Join-Path $env:TEMP "ci-identities-gitlab-job-client-$env:CI_JOB_ID.exe"
-        try {
-          Write-Output "Trying to retrieve the CI Visibility API key using the repository CI Identity"
-          if (-not $env:CI_IDENTITIES_CLIENT_URL) {
-            throw "CI_IDENTITIES_CLIENT_URL is not set"
-          }
-
-          aws s3 cp --only-show-errors $env:CI_IDENTITIES_CLIENT_URL $ciIdentitiesClient
-          if ($LASTEXITCODE -ne 0) {
-            throw "Failed to download the CI Identities client"
-          }
-
-          & $ciIdentitiesClient assume-role
-          if ($LASTEXITCODE -ne 0) {
-            throw "The CI Identities client failed to assume the AWS role"
-          }
-
-          $apiKey = aws ssm get-parameter `
-            --name "ci.dd-trace-dotnet.dd_api_key-prod" `
-            --with-decryption `
-            --query "Parameter.Value" `
-            --output text `
-            --region us-east-1
-          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($apiKey)) {
-            throw "The repository CI Identity could not retrieve the CI API key from SSM"
-          }
-
-          $env:DD_LOGGER_DD_API_KEY = $apiKey.Trim()
-          Write-Output "CI Visibility API key configured using the repository CI Identity"
+        if (-not $env:DD_STS_OIDC_TOKEN) {
+          throw "DD_STS_OIDC_TOKEN is unavailable"
         }
-        catch {
-          Write-Warning "CI Visibility API key is unavailable; test telemetry and retry metrics may not be submitted. $($_.Exception.Message)"
+
+        $response = Invoke-RestMethod `
+          -Uri "https://dd-sts.us1.ddbuild.io/sts/datadog/exchange?policy=apm-sdks-api-key" `
+          -Headers @{ Authorization = "Bearer $env:DD_STS_OIDC_TOKEN" }
+        if (-not $response.api_key) {
+          throw "The dd-sts response did not contain an API key"
         }
-        finally {
-          Remove-Item -LiteralPath $ciIdentitiesClient -Force -ErrorAction SilentlyContinue
-        }
+
+        $env:DD_LOGGER_DD_API_KEY = $response.api_key
+        Write-Output "CI Visibility API key configured using dd-sts"
       }
 
       Write-Output "Running managed unit tests for $env:FRAMEWORK with $env:WINDOWS_BUILD_IMAGE"
@@ -72,7 +47,6 @@
         -e DD_LOGGER_DD_SERVICE=dd-trace-dotnet `
         -e DD_LOGGER_DD_TRACE_LOG_PATH=c:\mnt\artifacts\build_data\infra_logs\ci-visibility.log `
         -e "DD_LOGGER_DD_TAGS=test.configuration.job:$env:CI_JOB_NAME" `
-        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
         -e GITLAB_CI `
         -e CI_PROJECT_URL `
         -e CI_PIPELINE_ID `
@@ -117,5 +91,5 @@
       - artifacts/build_data/infra_logs
       - artifacts/build_data/dumps
   id_tokens:
-    CI_IDENTITIES_GITLAB_ID_TOKEN:
-      aud: ci-identities
+    DD_STS_OIDC_TOKEN:
+      aud: rapid-seceng-sit
