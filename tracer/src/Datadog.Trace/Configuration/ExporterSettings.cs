@@ -307,7 +307,7 @@ namespace Datadog.Trace.Configuration
         internal int OtlpMetricsTimeoutMs { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the hostname should be reported on OTLP trace metrics.
+        /// Gets a value indicating whether the hostname should be reported.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ReportHostname"/>
         internal bool ReportHostname { get; }
@@ -744,7 +744,7 @@ namespace Datadog.Trace.Configuration
             internal int OtlpMetricsTimeoutMs { get; }
 
             /// <summary>
-            /// Gets a value indicating whether the hostname should be reported on OTLP trace metrics.
+            /// Gets a value indicating whether the hostname should be reported.
             /// </summary>
             /// <seealso cref="ConfigurationKeys.ReportHostname"/>
             internal bool ReportHostname { get; }

@@ -136,7 +136,7 @@ namespace Datadog.Trace.PlatformHelpers
         {
             try
             {
-                var host = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Profiler.Hostname);
+                var host = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Hostname);
                 if (!StringUtil.IsNullOrEmpty(host))
                 {
                     return host;

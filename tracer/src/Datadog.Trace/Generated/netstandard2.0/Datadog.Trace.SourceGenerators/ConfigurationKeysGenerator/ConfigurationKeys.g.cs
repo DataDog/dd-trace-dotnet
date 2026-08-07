@@ -157,6 +157,11 @@ internal static partial class ConfigurationKeys
     public const string PropagateProcessTags = "DD_EXPERIMENTAL_PROPAGATE_PROCESS_TAGS_ENABLED";
 
     /// <summary>
+    /// Overrides the hostname reported to Datadog. When set, replaces the auto-detected hostname.
+    /// </summary>
+    public const string Hostname = "DD_HOSTNAME";
+
+    /// <summary>
     /// Configuration key for the application's client http statuses to set spans as errors by.
     /// When DD_TRACE_OTEL_SEMANTICS_ENABLED is true, the default is <c>400-599</c>.
     /// </summary>
@@ -697,7 +702,7 @@ internal static partial class ConfigurationKeys
     public const string RemoveClientServiceNamesEnabled = "DD_TRACE_REMOVE_INTEGRATION_SERVICE_NAMES_ENABLED";
 
     /// <summary>
-    /// Configuration key for enabling or disabling hostname reporting on OTLP trace metrics.
+    /// Configuration key for enabling or disabling hostname reporting on traces and OTLP trace metrics.
     /// </summary>
     public const string ReportHostname = "DD_TRACE_REPORT_HOSTNAME";
 

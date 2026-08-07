@@ -18,11 +18,6 @@ internal static partial class ConfigurationKeys
     internal static class Profiler
     {
         /// <summary>
-        /// Overrides the hostname reported to Datadog. When set, replaces the auto-detected hostname.
-        /// </summary>
-        public const string Hostname = "DD_HOSTNAME";
-
-        /// <summary>
         /// Enables or disables code hotspots collection for the continuous profiler. When disabled, profiling data is not linked to tracing context for hotspot attribution
         /// </summary>
         public const string CodeHotspotsEnabled = "DD_PROFILING_CODEHOTSPOTS_ENABLED";

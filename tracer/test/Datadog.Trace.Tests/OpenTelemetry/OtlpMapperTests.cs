@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.OpenTelemetry.Common;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
@@ -86,6 +87,39 @@ public class OtlpMapperTests
         OtlpMapper.EmitResourceAttributesFromTraceChunk(in traceChunk, kv => attributes.Add(kv));
 
         attributes.Should().NotContain(kv => kv.Key == "deployment.environment.name");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task EmitResourceAttributes_HostnameMatchesRootSpan(bool reportHostname)
+    {
+        var configSource = new DictionaryConfigurationSource(new Dictionary<string, string>
+        {
+            { ConfigurationKeys.ReportHostname, reportHostname.ToString() },
+        });
+        await using var tracer = TracerHelper.Create(new TracerSettings(configSource));
+        using var rootScope = tracer.StartActive("root");
+        using var childScope = tracer.StartActive("child");
+        var root = (Span)rootScope.Span;
+        var child = (Span)childScope.Span;
+        var traceChunk = new TraceChunkModel(new SpanCollection([root, child]));
+        var attributes = new List<KeyValue>();
+
+        OtlpMapper.EmitResourceAttributesFromTraceChunk(in traceChunk, kv => attributes.Add(kv));
+
+        var expectedHostname = reportHostname ? HostMetadata.Instance.Hostname : null;
+        root.GetTag(Tags.Hostname).Should().Be(expectedHostname);
+        child.GetTag(Tags.Hostname).Should().BeNull();
+
+        if (expectedHostname is null)
+        {
+            attributes.Should().NotContain(kv => kv.Key == "host.name");
+        }
+        else
+        {
+            attributes.Should().Contain(kv => kv.Key == "host.name" && (string)kv.Value! == expectedHostname);
+        }
     }
 
     [Fact]

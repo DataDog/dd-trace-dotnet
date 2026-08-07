@@ -46,6 +46,8 @@ internal readonly struct TraceChunkModel
 
     public readonly string? Environment = null;
 
+    public readonly string? Hostname = null;
+
     public readonly string? ServiceVersion = null;
 
     public readonly string? GitRepositoryUrl = null;
@@ -105,6 +107,7 @@ internal readonly struct TraceChunkModel
             RateLimiterRate = traceContext.RateLimiterRate;
             TracesKeepRate = traceContext.TracesKeepRate;
             Environment = traceContext.Environment;
+            Hostname = traceContext.RootSpan?.GetTag(Trace.Tags.Hostname);
             ServiceVersion = traceContext.ServiceVersion;
             Origin = traceContext.Origin;
             Tags = traceContext.Tags;

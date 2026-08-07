@@ -53,6 +53,11 @@ internal static class OtlpMapper
             writeKeyValue(ref state, new KeyValue("deployment.environment.name", environment));
         }
 
+        if (traceChunk.Hostname is string hostname)
+        {
+            writeKeyValue(ref state, new KeyValue("host.name", hostname));
+        }
+
         // Write telemetry SDK attributes
         writeKeyValue(ref state, new KeyValue("telemetry.sdk.name", TracerConstants.TelemetrySdkName));
         writeKeyValue(ref state, new KeyValue("telemetry.sdk.language", TracerConstants.Language));

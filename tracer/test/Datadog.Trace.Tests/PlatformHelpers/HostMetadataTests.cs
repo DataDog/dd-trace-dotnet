@@ -15,7 +15,7 @@ using Xunit;
 namespace Datadog.Trace.Tests.PlatformHelpers
 {
     [Collection(nameof(EnvironmentVariablesTestCollection))]
-    [EnvironmentRestorer(ConfigurationKeys.Profiler.Hostname)]
+    [EnvironmentRestorer(ConfigurationKeys.Hostname)]
     public class HostMetadataTests
     {
         [Fact]
@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         {
             // Initialize the singleton before mutating process state so this test cannot affect other consumers.
             _ = HostMetadata.Instance;
-            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Profiler.Hostname, "configured-host");
+            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Hostname, "configured-host");
 
             HostMetadata.GetHostInternal().Should().Be("configured-host");
         }
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         [InlineData("")]
         public void MachineNameIsUsedWhenConfiguredHostnameIsEmpty(string configuredHostname)
         {
-            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Profiler.Hostname, configuredHostname);
+            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Hostname, configuredHostname);
             var machineName = EnvironmentHelpers.GetMachineName();
             var expected = StringUtil.IsNullOrEmpty(machineName)
                                ? EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.ComputerNameKey)
