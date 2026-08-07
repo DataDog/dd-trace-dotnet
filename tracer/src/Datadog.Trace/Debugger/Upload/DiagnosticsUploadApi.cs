@@ -19,23 +19,36 @@ namespace Datadog.Trace.Debugger.Upload
 
         private DiagnosticsUploadApi(
             IApiRequestFactory apiRequestFactory,
-            IDiscoveryService discoveryService,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
+            IDiscoveryService? discoveryService,
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            string? staticEndpoint)
             : base(apiRequestFactory, gitMetadataTagsProvider)
         {
-            discoveryService.SubscribeToChanges(c =>
+            if (!StringUtil.IsNullOrEmpty(staticEndpoint))
             {
-                Endpoint = c.DebuggerDiagnosticsUploadEndpoint;
-                Log.Debug("DiagnosticsUploadApi: Updated endpoint to {Endpoint}", Endpoint);
-            });
+                Endpoint = staticEndpoint;
+            }
+            else if (discoveryService is not null)
+            {
+                discoveryService.SubscribeToChanges(c =>
+                {
+                    Endpoint = c.DebuggerDiagnosticsUploadEndpoint;
+                    Log.Debug("DiagnosticsUploadApi: Updated endpoint to {Endpoint}", Endpoint);
+                });
+            }
+            else
+            {
+                Log.Warning("DiagnosticsUploadApi: No discovery service or static endpoint available. Diagnostics will not be uploaded until an endpoint is configured.");
+            }
         }
 
         public static DiagnosticsUploadApi Create(
             IApiRequestFactory apiRequestFactory,
-            IDiscoveryService discoveryService,
-            IGitMetadataTagsProvider gitMetadataTagsProvider)
+            IDiscoveryService? discoveryService,
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            string? staticEndpoint = null)
         {
-            return new DiagnosticsUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
+            return new DiagnosticsUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider, staticEndpoint);
         }
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> data)
@@ -43,7 +56,7 @@ namespace Datadog.Trace.Debugger.Upload
             var uri = BuildUri();
             if (string.IsNullOrEmpty(uri))
             {
-                Log.Warning("Failed to upload diagnostics: debugger endpoint not yet retrieved from discovery service");
+                Log.Warning("Failed to upload diagnostics: debugger diagnostics upload endpoint is not configured");
                 return false;
             }
 

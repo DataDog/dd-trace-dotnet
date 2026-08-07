@@ -33,5 +33,39 @@ namespace Datadog.Trace.Tests.Debugger
             requestUri.GetLeftPart(UriPartial.Path).Should().Be("https://debugger-intake.example/api/v2/debugger");
             requestUri.Query.Should().Contain("ddtags=");
         }
+
+        [Fact]
+        public async Task LogUploadApiUsesStaticEndpointWhenProvided()
+        {
+            var factory = new TestRequestFactory(new Uri("https://debugger-intake.example/"));
+            var gitMetadataProvider = new NullGitMetadataProvider();
+            var logApi = LogUploadApi.Create(factory, discoveryService: null, gitMetadataProvider, staticEndpoint: "/api/v2/debugger");
+
+            var payload = new ArraySegment<byte>(new byte[] { 1, 2, 3 });
+            var success = await logApi.SendBatchAsync(payload);
+
+            success.Should().BeTrue();
+            factory.RequestsSent.Should().ContainSingle();
+            var requestUri = factory.RequestsSent[0].Endpoint;
+            requestUri.GetLeftPart(UriPartial.Path).Should().Be("https://debugger-intake.example/api/v2/debugger");
+            requestUri.Query.Should().Contain("ddtags=");
+        }
+
+        [Fact]
+        public async Task DiagnosticsUploadApiUsesStaticEndpointWhenProvided()
+        {
+            var factory = new TestRequestFactory(new Uri("https://debugger-intake.example/"));
+            var gitMetadataProvider = new NullGitMetadataProvider();
+            var diagnosticsApi = DiagnosticsUploadApi.Create(factory, discoveryService: null, gitMetadataProvider, staticEndpoint: "/api/v2/debugger");
+
+            var payload = new ArraySegment<byte>(new byte[] { 1, 2, 3 });
+            var success = await diagnosticsApi.SendBatchAsync(payload);
+
+            success.Should().BeTrue();
+            factory.RequestsSent.Should().ContainSingle();
+            var requestUri = factory.RequestsSent[0].Endpoint;
+            requestUri.GetLeftPart(UriPartial.Path).Should().Be("https://debugger-intake.example/api/v2/debugger");
+            requestUri.Query.Should().Contain("ddtags=");
+        }
     }
 }

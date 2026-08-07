@@ -1002,6 +1002,81 @@ public class DynamicInstrumentationTests
             GetFileProbes(debugger).Should().NotBeNull();
         }
 
+        [Fact]
+        public async Task ProbeFile_AgentlessLocalMode_AppliesOnlyMethodLogProbes()
+        {
+            var probeJson = @"[
+                {
+                    ""id"": ""method-log-probe"",
+                    ""language"": ""dotnet"",
+                    ""type"": ""LOG_PROBE"",
+                    ""where"": { ""typeName"": ""MyClass"", ""methodName"": ""MyMethod"" },
+                    ""template"": ""Hello"",
+                    ""captureSnapshot"": false
+                },
+                {
+                    ""id"": ""line-log-probe"",
+                    ""language"": ""dotnet"",
+                    ""type"": ""LOG_PROBE"",
+                    ""where"": { ""sourceFile"": ""file-only.cs"", ""lines"": [""10""] },
+                    ""captureSnapshot"": true
+                },
+                {
+                    ""id"": ""method-log-probe-without-type-name"",
+                    ""language"": ""dotnet"",
+                    ""type"": ""LOG_PROBE"",
+                    ""where"": { ""methodName"": ""MyMethod"" },
+                    ""captureSnapshot"": false
+                },
+                {
+                    ""id"": ""method-log-probe-without-method-name"",
+                    ""language"": ""dotnet"",
+                    ""type"": ""LOG_PROBE"",
+                    ""where"": { ""typeName"": ""MyClass"" },
+                    ""captureSnapshot"": false
+                },
+                {
+                    ""id"": ""metric-probe"",
+                    ""language"": ""dotnet"",
+                    ""type"": ""METRIC_PROBE"",
+                    ""where"": { ""typeName"": ""MyClass"", ""methodName"": ""MyMethod"" },
+                    ""kind"": ""COUNT"",
+                    ""metricName"": ""my.metric""
+                },
+                {
+                    ""id"": ""span-probe"",
+                    ""language"": ""dotnet"",
+                    ""type"": ""SPAN_PROBE"",
+                    ""where"": { ""typeName"": ""MyClass"", ""methodName"": ""MyMethod"" }
+                }
+            ]";
+
+            var tempFile = CreateTempProbeFile(probeJson);
+
+            var settings = DebuggerSettings.FromSource(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "1" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationAgentlessEnabled, "1" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile, tempFile },
+                    { ConfigurationKeys.ApiKey, "test-key" }
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            var debugger = CreateDebugger(settings, new DiscoveryServiceWithoutRcmMock());
+            debugger.Initialize();
+            await WaitUntilAsync(() => GetFileProbes(debugger) is not null);
+            await WaitUntilAsync(() => GetCurrentConfiguration(debugger).LogProbes.Any(probe => probe.Id == "method-log-probe"));
+
+            var fileProbes = GetFileProbes(debugger);
+            fileProbes.Should().NotBeNull();
+            fileProbes!.LogProbes.Should().ContainSingle(probe => probe.Id == "method-log-probe");
+            fileProbes.MetricProbes.Should().BeEmpty();
+            fileProbes.SpanProbes.Should().BeEmpty();
+            fileProbes.SpanDecorationProbes.Should().BeEmpty();
+            GetCurrentConfiguration(debugger).LogProbes.Should().ContainSingle(probe => probe.Id == "method-log-probe");
+        }
+
         private static LineProbeResolveErrorKey SourceMismatchKey(LineProbeFallbackFailureReason fallbackFailureReason = LineProbeFallbackFailureReason.NoQualifiedSuffixMatch)
         {
             return new LineProbeResolveErrorKey(

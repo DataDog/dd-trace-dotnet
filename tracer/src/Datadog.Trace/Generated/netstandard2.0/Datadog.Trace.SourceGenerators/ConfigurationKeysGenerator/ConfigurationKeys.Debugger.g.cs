@@ -30,6 +30,12 @@ internal static partial class ConfigurationKeys
         public const string CodeOriginMaxUserFrames = "DD_CODE_ORIGIN_FOR_SPANS_MAX_USER_FRAMES";
 
         /// <summary>
+        /// Configuration key for enabling or disabling agentless Dynamic Instrumentation uploads.
+        /// Default value is false.
+        /// </summary>
+        public const string DynamicInstrumentationAgentlessEnabled = "DD_DYNAMIC_INSTRUMENTATION_AGENTLESS_ENABLED";
+
+        /// <summary>
         /// Configuration key for the interval (in seconds) between sending probe statuses.
         /// Default value is 3600.
         /// </summary>

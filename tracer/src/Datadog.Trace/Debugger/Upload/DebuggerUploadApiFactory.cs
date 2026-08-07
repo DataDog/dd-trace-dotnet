@@ -18,14 +18,14 @@ namespace Datadog.Trace.Debugger.Upload
             return SnapshotUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider, staticEndpoint);
         }
 
-        internal static IBatchUploadApi CreateLogUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider)
+        internal static IBatchUploadApi CreateLogUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService? discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider, string? staticEndpoint = null)
         {
-            return LogUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
+            return LogUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider, staticEndpoint);
         }
 
-        internal static IBatchUploadApi CreateDiagnosticsUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider)
+        internal static IBatchUploadApi CreateDiagnosticsUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService? discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider, string? staticEndpoint = null)
         {
-            return DiagnosticsUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
+            return DiagnosticsUploadApi.Create(apiRequestFactory, discoveryService, gitMetadataTagsProvider, staticEndpoint);
         }
 
         internal static ISymbolUploadApi CreateSymbolsUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, IGitMetadataTagsProvider gitMetadataTagsProvider, bool enableCompression)

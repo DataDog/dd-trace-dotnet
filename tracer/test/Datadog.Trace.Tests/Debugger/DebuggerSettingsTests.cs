@@ -356,6 +356,38 @@ namespace Datadog.Trace.Tests.Debugger
             settings.ProbeFile.Should().BeEmpty();
         }
 
+        [Fact]
+        public void DynamicInstrumentationAgentless_ParsesCorrectly()
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationAgentlessEnabled, "true" },
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile, "probes.json" },
+                    { ConfigurationKeys.ApiKey, "test-key" },
+                    { ConfigurationKeys.Site, "datadoghq.eu" }
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.DynamicInstrumentationAgentlessEnabled.Should().BeTrue();
+            settings.DynamicInstrumentationAgentlessApiKey.Should().Be("test-key");
+            settings.DynamicInstrumentationAgentlessSite.Should().Be("datadoghq.eu");
+            settings.IsDynamicInstrumentationAgentlessLocalMode.Should().BeTrue();
+        }
+
+        [Fact]
+        public void DynamicInstrumentationAgentlessLocalMode_RequiresProbeFile()
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationAgentlessEnabled, "true" }
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.IsDynamicInstrumentationAgentlessLocalMode.Should().BeFalse();
+        }
+
         public class DebuggerSettingsCodeOriginTests
         {
             [Theory]
