@@ -73,7 +73,8 @@ namespace Benchmarks.Trace
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            _agentWriter.FlushAndCloseAsync();
+            _agentWriter.FlushAndCloseAsync().GetAwaiter().GetResult();
+            _agentWriterNoOpFlush.FlushAndCloseAsync().GetAwaiter().GetResult();
         }
 
         /// <summary>
