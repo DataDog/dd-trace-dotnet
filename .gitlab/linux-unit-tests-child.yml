@@ -1,0 +1,98 @@
+.linux-unit-test-x64:
+  stage: test
+  timeout: 1h
+  # Approved Docker CLI image also used by the Linux build producer.
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
+  tags: ["docker-in-docker:amd64"]
+  needs:
+    - pipeline: "$PARENT_PIPELINE_ID"
+      job: build-linux-tracer-x64
+      artifacts: true
+  variables:
+    DOCKER_BUILDKIT: "1"
+  script:
+    - |
+      set -eu
+
+      tester_image="dd-trace-dotnet/debian-tester:${CI_JOB_ID}"
+      tester_with_ca_certs_image="dd-trace-dotnet/debian-tester-ca-certs:${CI_JOB_ID}"
+      mkdir -p artifacts/build_data/infra_logs
+      echo "Building Debian test image for ${FRAMEWORK}"
+      docker build \
+        --build-arg DOTNETSDK_VERSION=10.0.100 \
+        --tag "$tester_image" \
+        --target tester \
+        --file tracer/build/_build/docker/debian.dockerfile \
+        tracer/build/_build
+
+      echo "Adding Datadog CA certificates to the test image"
+      docker build \
+        --build-arg "TESTER_IMAGE=${tester_image}" \
+        --tag "$tester_with_ca_certs_image" \
+        --file .gitlab/linux-unit-tests.dockerfile \
+        .gitlab
+
+      echo "Running managed unit tests for ${FRAMEWORK}"
+      docker run --rm \
+        --cap-add=SYS_PTRACE \
+        --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
+        --env NugetPackageDirectory=/project/packages \
+        --env artifacts=/project/artifacts/output \
+        --env CI=true \
+        --env FRAMEWORK \
+        --env DD_LOGGER_ENABLED=true \
+        --env DD_LOGGER_DD_API_KEY \
+        --env DD_LOGGER_DD_SERVICE=dd-trace-dotnet \
+        --env DD_LOGGER_DD_TRACE_LOG_PATH=/project/artifacts/build_data/infra_logs/ci-visibility.log \
+        --env "DD_LOGGER_DD_TAGS=test.configuration.job:${CI_JOB_NAME}" \
+        --env GITLAB_CI \
+        --env CI_PROJECT_URL \
+        --env CI_PIPELINE_ID \
+        --env CI_JOB_ID \
+        --env CI_REPOSITORY_URL \
+        --env CI_COMMIT_SHA \
+        --env CI_COMMIT_BRANCH \
+        --env CI_COMMIT_TAG \
+        --env CI_COMMIT_REF_NAME \
+        --env CI_PROJECT_DIR=/project \
+        --env CI_PROJECT_PATH \
+        --env CI_PROJECT_NAME \
+        --env CI_PIPELINE_IID \
+        --env CI_PIPELINE_URL \
+        --env CI_JOB_URL \
+        --env CI_JOB_NAME \
+        --env CI_JOB_NAME_SLUG \
+        --env CI_JOB_STAGE \
+        --env CI_COMMIT_MESSAGE \
+        --env CI_COMMIT_AUTHOR \
+        --env CI_COMMIT_TIMESTAMP \
+        --env CI_RUNNER_ID \
+        --env CI_RUNNER_TAGS \
+        --env CI_MERGE_REQUEST_SOURCE_BRANCH_SHA \
+        --env CI_MERGE_REQUEST_TARGET_BRANCH_SHA \
+        --env CI_MERGE_REQUEST_DIFF_BASE_SHA \
+        --env CI_MERGE_REQUEST_TARGET_BRANCH_NAME \
+        --env CI_MERGE_REQUEST_IID \
+        --env DD_STS_OIDC_TOKEN \
+        --env NUKE_TELEMETRY_OPTOUT=1 \
+        --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+        "$tester_with_ca_certs_image" \
+        sh -c '
+          exec dotnet /build/bin/Debug/_build.dll \
+            BuildManagedUnitTests RunManagedUnitTests \
+            --framework "$FRAMEWORK" \
+            --IncludeAllTestFrameworks true \
+            --NugetPackageDirectory /project/packages
+        '
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    name: "managed-unit-tests-linux-x64-$FRAMEWORK"
+    paths:
+      - artifacts/build_data/results
+      - artifacts/build_data/logs
+      - artifacts/build_data/infra_logs
+      - artifacts/build_data/dumps
+  id_tokens:
+    DD_STS_OIDC_TOKEN:
+      aud: rapid-seceng-sit

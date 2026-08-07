@@ -276,6 +276,7 @@ partial class Build : NukeBuild
         .Description("Builds the managed unit tests")
         .After(Clean, BuildTracerHome, BuildProfilerHome)
         .DependsOn(CreateRequiredDirectories)
+        .DependsOn(RestoreManagedUnitTestPackages)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CompileManagedUnitTests);
 
