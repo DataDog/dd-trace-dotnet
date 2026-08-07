@@ -289,7 +289,7 @@ namespace Datadog.Trace.Agent
 
         private void RequestFlush()
         {
-            _forceFlush.TrySetResult(default);
+            Volatile.Read(ref _forceFlush).TrySetResult(default);
         }
 
         private async Task FlushBuffersTaskLoopAsync()
@@ -306,8 +306,9 @@ namespace Datadog.Trace.Agent
 
                 if (_forceFlush.Task.IsCompleted)
                 {
-                    _forceFlush = new TaskCompletionSource<bool>(TaskOptions);
-                    tasks[1] = _forceFlush.Task;
+                    var forceFlush = new TaskCompletionSource<bool>(TaskOptions);
+                    Volatile.Write(ref _forceFlush, forceFlush);
+                    tasks[1] = forceFlush.Task;
                 }
 
                 await FlushBuffers().ConfigureAwait(false);
