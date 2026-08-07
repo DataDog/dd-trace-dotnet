@@ -76,9 +76,7 @@
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
         "$tester_with_identity_image" \
         sh -c '
-          if ! ci-identities-ci-job-client assume-role; then
-            echo "WARNING: Unable to assume the CI Identity AWS role; test telemetry and retry metrics may not be submitted." >&2
-          fi
+          echo "Trying to retrieve the CI Visibility API key using ambient AWS credentials"
           exec dotnet /build/bin/Debug/_build.dll \
             BuildManagedUnitTests RunManagedUnitTests \
             --framework "$FRAMEWORK" \
