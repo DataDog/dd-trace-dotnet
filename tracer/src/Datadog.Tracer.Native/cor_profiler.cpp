@@ -271,7 +271,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         if (isIastEnabled || isRaspEnabled)
         {
             auto modules = module_ids.Get();
-            _dataflow = new iast::Dataflow(this, rejit_handler, modules.Ref(), runtime_information_);
+            _dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref(), runtime_information_);
         }
         else
         {
@@ -2104,7 +2104,7 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, size_t aspectsLength, UINT
     {
         Logger::Debug("Creating Dataflow.");
         auto modules = module_ids.Get();
-        dataflow = new iast::Dataflow(this, rejit_handler, modules.Ref(), runtime_information_);
+        dataflow = new iast::Dataflow(info_, rejit_handler, modules.Ref(), runtime_information_);
     }
 
     if (dataflow != nullptr)
@@ -2457,11 +2457,6 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
     return loadedAppDomains->find(app_domain_id) != loadedAppDomains->end();
 }
 
-ICorProfilerInfo* CorProfiler::GetCorProfilerInfo()
-{
-    return info_;
-}
-
 ModuleID CorProfiler::GetProfilerAssemblyModuleId(AppDomainID appDomainId)
 {
     if (managed_profiler_domain_neutral_module_id > 0)
@@ -2477,23 +2472,6 @@ ModuleID CorProfiler::GetProfilerAssemblyModuleId(AppDomainID appDomainId)
     }
 
     return 0;
-}
-
-std::vector<ModuleID> CorProfiler::GetProfilerAssemblyModuleIds()
-{
-    if (managed_profiler_domain_neutral_module_id > 0)
-    {
-        return {managed_profiler_domain_neutral_module_id};
-    }
-
-    std::vector<ModuleID> moduleIds;
-    auto loadedAppDomains = managed_profiler_loaded_app_domains.Get();
-    moduleIds.reserve(loadedAppDomains->size());
-    for (const auto& [appDomainId, moduleId] : loadedAppDomains.Ref())
-    {
-        moduleIds.push_back(moduleId);
-    }
-    return moduleIds;
 }
 
 
