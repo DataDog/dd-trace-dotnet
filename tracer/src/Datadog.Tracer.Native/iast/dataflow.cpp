@@ -159,12 +159,11 @@ AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 
 //--------------------
 
-Dataflow::Dataflow(AspectsModuleIdResolver resolveAspectsModuleId, ICorProfilerInfo* profiler,
-                   std::shared_ptr<RejitHandler> rejitHandler, std::vector<ModuleID> moduleIds,
-                   const RuntimeInformation& runtimeInfo) :
+Dataflow::Dataflow(trace::CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejitHandler,
+                   std::vector<ModuleID> moduleIds, const RuntimeInformation& runtimeInfo) :
     Rejitter(rejitHandler, RejitterPriority::Low, false)
 {
-    _resolveAspectsModuleId = std::move(resolveAspectsModuleId);
+    _corProfiler = corProfiler;
     m_runtimeType = runtimeInfo.runtime_type;
     m_runtimeVersion = VersionInfo{runtimeInfo.major_version, runtimeInfo.minor_version, runtimeInfo.build_version, 0};
     trace::Logger::Info("Dataflow::Dataflow -> Detected runtime version : ", m_runtimeVersion.ToString());
@@ -176,6 +175,13 @@ Dataflow::Dataflow(AspectsModuleIdResolver resolveAspectsModuleId, ICorProfilerI
             "Dataflow detected Edit and Continue feature (COMPLUS_ForceEnc != 0) : Enabling SetILCode in JIT event.");
     }
 
+    auto profiler = _corProfiler != nullptr ? _corProfiler->GetCorProfilerInfo() : nullptr;
+    if (profiler == nullptr)
+    {
+        trace::Logger::Error("Dataflow::Dataflow -> No owning CorProfiler to resolve through. Disabling Dataflow.");
+        return;
+    }
+
     HRESULT hr = profiler->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &_profiler);
     if (FAILED(hr))
     {
@@ -183,17 +189,21 @@ Dataflow::Dataflow(AspectsModuleIdResolver resolveAspectsModuleId, ICorProfilerI
         trace::Logger::Error("Dataflow::Dataflow -> Something very wrong happened, as QI on ICorProfilerInfo3 failed. "
                              "Disabling Dataflow. HRESULT : ",
                              Hex(hr));
+        return;
     }
 
-    if (_profiler != nullptr)
-    {
-        // Modules already loaded when Dataflow is created never get another ModuleLoadFinished, so
-        // remember them here and resolve them from the next ModuleLoaded. They cannot be resolved
-        // now: this constructor runs on a managed thread (the RegisterIastAspects P/Invoke), outside
-        // any profiler callback, where GetAssemblyInfo fails with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE.
-        // If no further module ever loads, they are resolved on demand from the JIT callbacks.
-        _preLoadedModuleIds = moduleIds;
-    }
+    // Modules already loaded when Dataflow is created never get another ModuleLoadFinished, so
+    // remember them here and resolve them from the next ModuleLoaded. They cannot be resolved
+    // now: this constructor runs on a managed thread (the RegisterIastAspects P/Invoke), outside
+    // any profiler callback, where GetAssemblyInfo fails with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE.
+    // If no further module ever loads, they are resolved on demand from the JIT callbacks.
+    _preLoadedModuleIds = std::move(moduleIds);
+
+    // Datadog.Trace.dll's own module is deliberately excluded from the profiler's module list (see
+    // TryRejitModule), but GetAspectsModule looks it up by ModuleID in _modules. It must therefore be
+    // preloaded here, or nothing would ever resolve it and no aspect could be defined.
+    const auto aspectsModuleIds = _corProfiler->GetProfilerAssemblyModuleIds();
+    _preLoadedModuleIds.insert(_preLoadedModuleIds.end(), aspectsModuleIds.begin(), aspectsModuleIds.end());
 }
 
 Dataflow::~Dataflow()
@@ -642,12 +652,12 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
 ModuleInfo* Dataflow::GetAspectsModule(AppDomainID id)
 {
     CSGUARD(_cs);
-    if (!_resolveAspectsModuleId)
+    if (_corProfiler == nullptr)
     {
         return nullptr;
     }
 
-    ModuleID moduleId = _resolveAspectsModuleId(id);
+    ModuleID moduleId = _corProfiler->GetProfilerAssemblyModuleId(id);
 
     if (moduleId > 0)
     {
