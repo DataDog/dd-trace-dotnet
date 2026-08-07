@@ -262,11 +262,9 @@ public:
     bool IsCallTargetBubbleUpFunctionAvailable() const;
 
     //
-    // Dataflow helper methods. Virtual so the native unit tests can stand in for a runtime.
+    // Dataflow helper methods
     //
-    virtual ICorProfilerInfo* GetCorProfilerInfo();
-    virtual ModuleID GetProfilerAssemblyModuleId(AppDomainID appDomainId);
-    virtual std::vector<ModuleID> GetProfilerAssemblyModuleIds();
+    ModuleID GetProfilerAssemblyModuleId(AppDomainID appDomainId);
 };
 
 // Note: Generally you should not have a single, global callback implementation,

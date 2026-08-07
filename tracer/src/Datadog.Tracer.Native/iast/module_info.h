@@ -58,12 +58,21 @@ namespace iast
         CS _cs;
         Dataflow* _dataflow = nullptr;
         IMetaDataImport2* _metadataImport = nullptr;
-        IMetaDataEmit2* _metadataEmit = nullptr;
         IMetaDataAssemblyImport* _assemblyImport = nullptr;
+        // Only ever populated through GetMetaDataEmit/GetAssemblyEmit: opening a module's metadata for
+        // writing has side effects on the running module, so we don't do it until we actually emit
+        // into it. Never touch these two directly.
+        IMetaDataEmit2* _metadataEmit = nullptr;
         IMetaDataAssemblyEmit* _assemblyEmit = nullptr;
+        bool _emitInterfacesRequested = false;
 
         bool _isExcluded = false;
 
+        // Acquire (once) the writable metadata interfaces for this module. Returns nullptr if the
+        // runtime refused, in which case this module cannot be instrumented.
+        bool EnsureEmitInterfaces();
+        IMetaDataEmit2* GetMetaDataEmit();
+        IMetaDataAssemblyEmit* GetAssemblyEmit();
 
         HRESULT GetTypeDef(const WSTRING& typeName, mdTypeDef* pTypeDef);
         HRESULT GetMethodDef(mdTypeDef typeDef, const WSTRING& methodName, PCCOR_SIGNATURE pSignature, ULONG nSignature, mdMethodDef* pMethodDef);

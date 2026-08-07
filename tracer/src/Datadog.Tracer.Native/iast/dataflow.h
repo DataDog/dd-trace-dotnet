@@ -7,7 +7,6 @@
 
 namespace trace
 {
-    class CorProfiler;
     class FunctionControlWrapper;
 }
 
@@ -53,17 +52,11 @@ namespace iast
         friend class ModuleInfo;
         friend class ModuleAspects;
     public:
-        // corProfiler is the CorProfiler that owns this Dataflow: it supplies both the
-        // ICorProfilerInfo to talk to and the aspects module (Datadog.Trace.dll). Going through the
-        // owner rather than the trace::profiler process-global matters: that global is overwritten by
-        // whichever CLR initializes last, and a ModuleID is only meaningful to the runtime that
-        // produced it.
-        Dataflow(trace::CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejitHandler,
-                 std::vector<ModuleID> moduleIds, const RuntimeInformation& runtimeInfo);
+        Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler, std::vector<ModuleID> moduleIds,
+                 const RuntimeInformation& runtimeInfo);
         virtual ~Dataflow();
     private:
         CS _cs;
-        trace::CorProfiler* _corProfiler = nullptr;
         ICorProfilerInfo3* _profiler = nullptr;
         COR_PRF_RUNTIME_TYPE m_runtimeType = COR_PRF_DESKTOP_CLR;
         VersionInfo m_runtimeVersion = VersionInfo{4, 0, 0, 0};
@@ -95,9 +88,11 @@ namespace iast
 
         ICorProfilerInfo* GetCorProfilerInfo();
 
-        HRESULT GetModuleInterfaces(ModuleID moduleID, IMetaDataImport2** ppMetadataImport,
-                                    IMetaDataEmit2** ppMetadataEmit, IMetaDataAssemblyImport** ppAssemblyImport,
-                                    IMetaDataAssemblyEmit** ppAssemblyEmit);
+        // Split in two on purpose: only the modules we rewrite get their metadata opened for writing.
+        HRESULT GetModuleImportInterfaces(ModuleID moduleID, IMetaDataImport2** ppMetadataImport,
+                                         IMetaDataAssemblyImport** ppAssemblyImport);
+        HRESULT GetModuleEmitInterfaces(ModuleID moduleID, IMetaDataEmit2** ppMetadataEmit,
+                                        IMetaDataAssemblyEmit** ppAssemblyEmit);
 
         bool IsAppDomainExcluded(const WSTRING& appDomainName, MatchResult* includedMatch = nullptr,
                                  MatchResult* excludedMatch = nullptr);

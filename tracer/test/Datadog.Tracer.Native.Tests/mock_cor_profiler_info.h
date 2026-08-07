@@ -2,6 +2,7 @@
 #include <corhlpr.h>
 #include <corprof.h>
 #include <cstring>
+#include <vector>
 
 namespace
 {
@@ -34,6 +35,21 @@ public:
     int getAssemblyInfoFailuresLeft = 0;
     // Simulates the ICorProfilerInfo3 QueryInterface failing, which disables Dataflow.
     bool failQueryInterface = false;
+    // dwOpenFlags of every GetModuleMetaData call, so tests can assert we never ask for write access
+    // on a module we only read.
+    std::vector<DWORD> moduleMetaDataOpenFlags;
+
+    bool AskedForWriteAccess() const
+    {
+        for (auto flags : moduleMetaDataOpenFlags)
+        {
+            if ((flags & ofWrite) != 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
     HRESULT STDMETHODCALLTYPE QueryInterface(const IID& riid, void** ppvObject) override
     {
@@ -71,7 +87,13 @@ public:
     HRESULT STDMETHODCALLTYPE SetFunctionIDMapper(FunctionIDMapper* pFunc) override { return E_FAIL; }
     HRESULT STDMETHODCALLTYPE GetTokenAndMetaDataFromFunction(FunctionID functionId, const IID& riid, IUnknown** ppImport, mdToken* pToken) override { return E_FAIL; }
     HRESULT STDMETHODCALLTYPE GetModuleInfo(ModuleID moduleId, LPCBYTE* ppBaseLoadAddr, ULONG cchName, ULONG* pcchName, WCHAR szName[], AssemblyID* pAssemblyId) override { return E_FAIL; }
-    HRESULT STDMETHODCALLTYPE GetModuleMetaData(ModuleID moduleId, DWORD dwOpenFlags, const IID& riid, IUnknown** ppOut) override { return E_FAIL; }
+    // Records the requested access and then fails: handing out a usable IMetaDataImport2 is out of
+    // scope for this double, and Dataflow tolerates the failure (the module just gets no interfaces).
+    HRESULT STDMETHODCALLTYPE GetModuleMetaData(ModuleID moduleId, DWORD dwOpenFlags, const IID& riid, IUnknown** ppOut) override
+    {
+        moduleMetaDataOpenFlags.push_back(dwOpenFlags);
+        return E_FAIL;
+    }
     HRESULT STDMETHODCALLTYPE GetILFunctionBody(ModuleID moduleId, mdMethodDef methodId, LPCBYTE* ppMethodHeader, ULONG* pcbMethodSize) override { return E_FAIL; }
     HRESULT STDMETHODCALLTYPE GetILFunctionBodyAllocator(ModuleID moduleId, IMethodMalloc** ppMalloc) override { return E_FAIL; }
     HRESULT STDMETHODCALLTYPE SetILFunctionBody(ModuleID moduleId, mdMethodDef methodid, LPCBYTE pbNewILMethodHeader) override { return E_FAIL; }

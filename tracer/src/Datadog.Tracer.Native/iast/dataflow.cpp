@@ -159,11 +159,10 @@ AspectFilter* ModuleAspects::GetFilter(DataflowAspectFilterValue filterValue)
 
 //--------------------
 
-Dataflow::Dataflow(trace::CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejitHandler,
+Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rejitHandler,
                    std::vector<ModuleID> moduleIds, const RuntimeInformation& runtimeInfo) :
     Rejitter(rejitHandler, RejitterPriority::Low, false)
 {
-    _corProfiler = corProfiler;
     m_runtimeType = runtimeInfo.runtime_type;
     m_runtimeVersion = VersionInfo{runtimeInfo.major_version, runtimeInfo.minor_version, runtimeInfo.build_version, 0};
     trace::Logger::Info("Dataflow::Dataflow -> Detected runtime version : ", m_runtimeVersion.ToString());
@@ -173,13 +172,6 @@ Dataflow::Dataflow(trace::CorProfiler* corProfiler, std::shared_ptr<RejitHandler
     {
         trace::Logger::Info(
             "Dataflow detected Edit and Continue feature (COMPLUS_ForceEnc != 0) : Enabling SetILCode in JIT event.");
-    }
-
-    auto profiler = _corProfiler != nullptr ? _corProfiler->GetCorProfilerInfo() : nullptr;
-    if (profiler == nullptr)
-    {
-        trace::Logger::Error("Dataflow::Dataflow -> No owning CorProfiler to resolve through. Disabling Dataflow.");
-        return;
     }
 
     HRESULT hr = profiler->QueryInterface(__uuidof(ICorProfilerInfo3), (void**) &_profiler);
@@ -198,12 +190,6 @@ Dataflow::Dataflow(trace::CorProfiler* corProfiler, std::shared_ptr<RejitHandler
     // any profiler callback, where GetAssemblyInfo fails with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE.
     // If no further module ever loads, they are resolved on demand from the JIT callbacks.
     _preLoadedModuleIds = std::move(moduleIds);
-
-    // Datadog.Trace.dll's own module is deliberately excluded from the profiler's module list (see
-    // TryRejitModule), but GetAspectsModule looks it up by ModuleID in _modules. It must therefore be
-    // preloaded here, or nothing would ever resolve it and no aspect could be defined.
-    const auto aspectsModuleIds = _corProfiler->GetProfilerAssemblyModuleIds();
-    _preLoadedModuleIds.insert(_preLoadedModuleIds.end(), aspectsModuleIds.begin(), aspectsModuleIds.end());
 }
 
 Dataflow::~Dataflow()
@@ -476,15 +462,23 @@ HRESULT Dataflow::ModuleUnloaded(ModuleID moduleId)
     return S_OK;
 }
 
-HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMetadataImport,
-                                      IMetaDataEmit2** ppMetadataEmit, IMetaDataAssemblyImport** ppAssemblyImport,
-                                      IMetaDataAssemblyEmit** ppAssemblyEmit)
+// Read-only metadata, for every module we resolve.
+//
+// Deliberately ofRead and not ofRead|ofWrite: asking for write access forces the runtime to
+// materialize a writable copy of that module's metadata, swapping out the PEImage the running code
+// was built against. Doing that to a module we only ever read is at best wasted work -- most modules
+// we resolve are excluded from instrumentation -- and at worst fatal: we read Datadog.Trace.dll's
+// metadata to resolve aspects while its own code is running, and making it writable faulted the
+// runtime in PEAssembly::HasPEImage (APPSEC-69538). Write access is acquired separately, and only
+// for the modules we actually rewrite. See GetModuleEmitInterfaces.
+HRESULT Dataflow::GetModuleImportInterfaces(ModuleID moduleId, IMetaDataImport2** ppMetadataImport,
+                                            IMetaDataAssemblyImport** ppAssemblyImport)
 {
     HRESULT hr = S_OK;
     if (hr == S_OK)
     {
         IUnknown* piUnk = nullptr;
-        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport2, &piUnk);
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, &piUnk);
         if (hr == S_OK)
         {
             hr = piUnk->QueryInterface(IID_IMetaDataImport2, (void**) ppMetadataImport);
@@ -494,20 +488,30 @@ HRESULT Dataflow::GetModuleInterfaces(ModuleID moduleId, IMetaDataImport2** ppMe
     if (hr == S_OK)
     {
         IUnknown* piUnk = nullptr;
+        hr = _profiler->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataAssemblyImport, &piUnk);
+        if (hr == S_OK)
+        {
+            hr = piUnk->QueryInterface(IID_IMetaDataAssemblyImport, (void**) ppAssemblyImport);
+            REL(piUnk);
+        }
+    }
+    return hr;
+}
+
+// Writable metadata, acquired lazily by ModuleInfo::EnsureEmitInterfaces the first time we emit into
+// a module. Callers reach this from the JIT/ReJIT callbacks, which is where the rest of the tracer
+// asks for write access too, and only for modules being instrumented.
+HRESULT Dataflow::GetModuleEmitInterfaces(ModuleID moduleId, IMetaDataEmit2** ppMetadataEmit,
+                                          IMetaDataAssemblyEmit** ppAssemblyEmit)
+{
+    HRESULT hr = S_OK;
+    if (hr == S_OK)
+    {
+        IUnknown* piUnk = nullptr;
         hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataEmit2, &piUnk);
         if (hr == S_OK)
         {
             hr = piUnk->QueryInterface(IID_IMetaDataEmit2, (void**) ppMetadataEmit);
-            REL(piUnk);
-        }
-    }
-    if (hr == S_OK)
-    {
-        IUnknown* piUnk = nullptr;
-        hr = _profiler->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataAssemblyImport, &piUnk);
-        if (hr == S_OK)
-        {
-            hr = piUnk->QueryInterface(IID_IMetaDataAssemblyImport, (void**) ppAssemblyImport);
             REL(piUnk);
         }
     }
@@ -652,12 +656,7 @@ ModuleInfo* Dataflow::GetModuleInfo(ModuleID id)
 ModuleInfo* Dataflow::GetAspectsModule(AppDomainID id)
 {
     CSGUARD(_cs);
-    if (_corProfiler == nullptr)
-    {
-        return nullptr;
-    }
-
-    ModuleID moduleId = _corProfiler->GetProfilerAssemblyModuleId(id);
+    ModuleID moduleId = trace::profiler->GetProfilerAssemblyModuleId(id);
 
     if (moduleId > 0)
     {
