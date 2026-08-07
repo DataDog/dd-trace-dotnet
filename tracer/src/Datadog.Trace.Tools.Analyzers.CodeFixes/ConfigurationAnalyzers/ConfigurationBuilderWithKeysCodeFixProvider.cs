@@ -12,9 +12,13 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
 {
+    /// <summary>
+    /// Provides fixes that replace configuration accessors with redacted equivalents.
+    /// </summary>
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConfigurationBuilderWithKeysCodeFixProvider))]
     [Shared]
     public class ConfigurationBuilderWithKeysCodeFixProvider : CodeFixProvider
@@ -41,30 +45,133 @@ namespace Datadog.Trace.Tools.Analyzers.ConfigurationAnalyzers
                 node = node.Parent;
             }
 
-            if (node is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax memberAccess } invocation
-             || memberAccess.Name.Identifier.ValueText != "AsString"
-             || invocation.ArgumentList.Arguments.Count != 0)
+            if (node is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax memberAccess } invocation)
+            {
+                return;
+            }
+
+            var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+            if (semanticModel?.GetOperation(invocation, context.CancellationToken) is not IInvocationOperation operation
+             || !TryGetRedactedInvocation(invocation, memberAccess, operation, out var redactedInvocation, out var redactedAccessor))
             {
                 return;
             }
 
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    title: "Use AsRedactedString",
-                    createChangedDocument: cancellationToken => UseRedactedStringAsync(context.Document, invocation, memberAccess, cancellationToken),
+                    title: $"Use {redactedAccessor}",
+                    createChangedDocument: cancellationToken => UseRedactedAccessorAsync(context.Document, invocation, redactedInvocation, cancellationToken),
                     equivalenceKey: nameof(ConfigurationBuilderWithKeysCodeFixProvider)),
                 diagnostic);
         }
 
-        private static async Task<Document> UseRedactedStringAsync(
-            Document document,
+        private static bool TryGetRedactedInvocation(
             InvocationExpressionSyntax invocation,
             MemberAccessExpressionSyntax memberAccess,
+            IInvocationOperation operation,
+            out InvocationExpressionSyntax redactedInvocation,
+            out string redactedAccessor)
+        {
+            if (operation.TargetMethod.IsStatic
+             || operation.Instance?.Type is not { } instanceType
+             || !SymbolEqualityComparer.Default.Equals(operation.TargetMethod.ContainingType, instanceType))
+            {
+                redactedInvocation = null!;
+                redactedAccessor = null!;
+                return false;
+            }
+
+            switch (operation.TargetMethod.Name)
+            {
+                case "AsString" when operation.TargetMethod.Parameters.Length == 0
+                                       || (operation.TargetMethod.Parameters.Length == 1
+                                        && operation.TargetMethod.Parameters[0].Type.SpecialType == SpecialType.System_String):
+                    redactedAccessor = "AsRedactedString";
+                    redactedInvocation = RenameAccessor(invocation, memberAccess, redactedAccessor);
+                    return true;
+
+                case "AsStringResult":
+                    redactedAccessor = "AsRedactedStringResult";
+                    var stringArguments = invocation.ArgumentList.Arguments;
+                    foreach (var argument in operation.Arguments)
+                    {
+                        if (argument.Parameter?.Name == "recordValue" && argument.Syntax is ArgumentSyntax argumentSyntax)
+                        {
+                            if (argument.Value.ConstantValue is not { HasValue: true, Value: true })
+                            {
+                                redactedInvocation = null!;
+                                redactedAccessor = null!;
+                                return false;
+                            }
+
+                            stringArguments = stringArguments.Remove(argumentSyntax);
+                            break;
+                        }
+                    }
+
+                    redactedInvocation = RenameAccessor(invocation.WithArgumentList(invocation.ArgumentList.WithArguments(stringArguments)), memberAccess, redactedAccessor);
+                    return true;
+
+                case "AsDictionaryResult":
+                    redactedAccessor = "AsRedactedDictionaryResult";
+                    var dictionaryArguments = invocation.ArgumentList.Arguments;
+                    var hasSeparator = false;
+                    foreach (var argument in operation.Arguments)
+                    {
+                        if (argument.Parameter?.Name == "separator")
+                        {
+                            hasSeparator = true;
+                        }
+                        else if (argument.Parameter?.Name == "allowOptionalMappings"
+                              && argument.Value.ConstantValue is { HasValue: true, Value: false }
+                              && argument.Syntax is ArgumentSyntax optionalMappingsSyntax)
+                        {
+                            dictionaryArguments = dictionaryArguments.Remove(optionalMappingsSyntax);
+                        }
+                        else
+                        {
+                            redactedInvocation = null!;
+                            redactedAccessor = null!;
+                            return false;
+                        }
+                    }
+
+                    if (!hasSeparator)
+                    {
+                        var separator = SyntaxFactory.Argument(
+                            nameColon: SyntaxFactory.NameColon(SyntaxFactory.IdentifierName("separator"))
+                                                     .WithColonToken(SyntaxFactory.Token(SyntaxKind.ColonToken).WithTrailingTrivia(SyntaxFactory.Space)),
+                            refKindKeyword: default,
+                            expression: SyntaxFactory.LiteralExpression(SyntaxKind.CharacterLiteralExpression, SyntaxFactory.Literal(':')));
+                        dictionaryArguments = dictionaryArguments.Add(separator);
+                    }
+
+                    redactedInvocation = RenameAccessor(invocation.WithArgumentList(invocation.ArgumentList.WithArguments(dictionaryArguments)), memberAccess, redactedAccessor);
+                    return true;
+
+                default:
+                    redactedInvocation = null!;
+                    redactedAccessor = null!;
+                    return false;
+            }
+        }
+
+        private static InvocationExpressionSyntax RenameAccessor(
+            InvocationExpressionSyntax invocation,
+            MemberAccessExpressionSyntax memberAccess,
+            string redactedAccessor)
+        {
+            var redactedName = SyntaxFactory.IdentifierName(redactedAccessor).WithTriviaFrom(memberAccess.Name);
+            return invocation.WithExpression(memberAccess.WithName(redactedName));
+        }
+
+        private static async Task<Document> UseRedactedAccessorAsync(
+            Document document,
+            InvocationExpressionSyntax invocation,
+            InvocationExpressionSyntax redactedInvocation,
             CancellationToken cancellationToken)
         {
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-            var redactedName = SyntaxFactory.IdentifierName("AsRedactedString").WithTriviaFrom(memberAccess.Name);
-            var redactedInvocation = invocation.WithExpression(memberAccess.WithName(redactedName));
             return document.WithSyntaxRoot(root!.ReplaceNode(invocation, redactedInvocation));
         }
     }
