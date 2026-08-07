@@ -510,7 +510,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // Write span tags
             var tagWriter = new TagWriter(this, tagProcessors, bytes, offset);
-            span.Tags.EnumerateTags(ref tagWriter);
+            span.Tags.EnumerateTags(ref tagWriter, span.OpenTelemetrySemanticsEnabled);
             bytes = tagWriter.Bytes;
             offset = tagWriter.Offset;
             count += tagWriter.Count;

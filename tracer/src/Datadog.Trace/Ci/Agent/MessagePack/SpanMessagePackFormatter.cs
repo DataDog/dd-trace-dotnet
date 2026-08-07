@@ -220,7 +220,7 @@ internal sealed class SpanMessagePackFormatter : IMessagePackFormatter<Span>
 
         // Write span tags
         var tagWriter = new TagWriter(this, tagProcessors, bytes, offset);
-        tags.EnumerateTags(ref tagWriter);
+        tags.EnumerateTags(ref tagWriter, span.OpenTelemetrySemanticsEnabled);
         bytes = tagWriter.Bytes;
         offset = tagWriter.Offset;
         count += tagWriter.Count;

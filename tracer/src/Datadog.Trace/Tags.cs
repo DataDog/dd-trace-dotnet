@@ -72,6 +72,11 @@ namespace Datadog.Trace
         public const string HttpStatusCode = "http.status_code";
 
         /// <summary>
+        /// The OpenTelemetry semantic convention status code of an HTTP response
+        /// </summary>
+        public const string HttpResponseStatusCode = "http.response.status_code";
+
+        /// <summary>
         /// The error message of an exception
         /// </summary>
         public const string ErrorMsg = "error.msg";

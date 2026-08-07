@@ -72,7 +72,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (Component is not null)
             {
@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("cmd.truncated", Truncated, TruncatedBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

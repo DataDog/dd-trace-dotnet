@@ -1363,6 +1363,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.10.9" },
                 new object[] { "8.4.0" },
                 new object[] { "9.7.0" },
+                new object[] { "26.7.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "6.10.9" },
@@ -1376,36 +1377,43 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.10.9" },
                 new object[] { "8.4.0" },
                 new object[] { "9.7.0" },
+                new object[] { "26.7.0" },
 #endif
 #if NET5_0
                 new object[] { "6.10.9" },
                 new object[] { "8.4.0" },
                 new object[] { "9.7.0" },
+                new object[] { "26.7.0" },
 #endif
 #if NET6_0
                 new object[] { "6.10.9" },
                 new object[] { "8.4.0" },
                 new object[] { "9.7.0" },
+                new object[] { "26.7.0" },
 #endif
 #if NET7_0
                 new object[] { "6.10.9" },
                 new object[] { "8.4.0" },
                 new object[] { "9.7.0" },
+                new object[] { "26.7.0" },
 #endif
 #if NET8_0
                 new object[] { "6.10.9" },
                 new object[] { "8.4.0" },
                 new object[] { "9.7.0" },
+                new object[] { "26.7.0" },
 #endif
 #if NET9_0
                 new object[] { "6.10.9" },
                 new object[] { "8.4.0" },
                 new object[] { "9.7.0" },
+                new object[] { "26.7.0" },
 #endif
 #if NET10_0
                 new object[] { "6.10.9" },
                 new object[] { "8.4.0" },
                 new object[] { "9.7.0" },
+                new object[] { "26.7.0" },
 #endif
 #endif
             };
@@ -1742,6 +1750,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET10_0
                 new object[] { "3.14.0" },
                 new object[] { "4.6.1" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> NUnitGlobalCoverageMemoryCoverlet =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET8_0
+                new object[] { "3.2.0" },
+                new object[] { "6.0.4" },
+                new object[] { "8.0.1" },
+                new object[] { "10.0.1" },
+#endif
+#if NET10_0
+                new object[] { "3.2.0" },
+                new object[] { "6.0.4" },
+                new object[] { "8.0.1" },
+                new object[] { "10.0.1" },
 #endif
 #endif
             };
@@ -2803,14 +2833,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET8_0
                 new object[] { "23.4.3" },
                 new object[] { "24.1.0" },
+                new object[] { "25.0.0" },
 #endif
 #if NET9_0
                 new object[] { "23.4.3" },
                 new object[] { "24.1.0" },
+                new object[] { "25.0.0" },
 #endif
 #if NET10_0
                 new object[] { "23.4.3" },
                 new object[] { "24.1.0" },
+                new object[] { "25.0.0" },
 #endif
 #endif
             };

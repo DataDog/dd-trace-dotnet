@@ -46,7 +46,7 @@ namespace Datadog.Trace.ServiceFabric
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (PeerService is not null)
             {
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ServiceFabric
                 processor.Process(new TagItem<string>("_dd.peer.service.source", PeerServiceSource, PeerServiceSourceBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

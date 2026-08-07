@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using Google.Protobuf;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Agent
@@ -30,7 +31,7 @@ namespace Datadog.Trace.Tests.Agent
             var key = CreateKey();
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 0 });
 
-            OtlpSpanStatsSerializer.Serialize(buffer, BucketDurationNs, false).Should().BeNull();
+            OtlpSpanStatsSerializer.Serialize(buffer, BucketDurationNs).Should().BeNull();
         }
 
         [Fact]
@@ -40,7 +41,7 @@ namespace Datadog.Trace.Tests.Agent
             var key = CreateKey();
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 0 });
 
-            OtlpSpanStatsSerializer.SerializeJson(buffer, BucketDurationNs, false).Should().BeNull();
+            OtlpSpanStatsSerializer.SerializeJson(buffer, BucketDurationNs).Should().BeNull();
         }
 
         [Fact]
@@ -50,7 +51,7 @@ namespace Datadog.Trace.Tests.Agent
             var key = CreateKey();
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 5, Duration = 100_000_000 });
 
-            OtlpSpanStatsSerializer.Serialize(buffer, BucketDurationNs, false).Should().NotBeNull();
+            OtlpSpanStatsSerializer.Serialize(buffer, BucketDurationNs).Should().NotBeNull();
         }
 
         [Fact]
@@ -60,7 +61,7 @@ namespace Datadog.Trace.Tests.Agent
             var key = CreateKey();
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 5, Duration = 100_000_000 });
 
-            OtlpSpanStatsSerializer.SerializeJson(buffer, BucketDurationNs, false).Should().NotBeNull();
+            OtlpSpanStatsSerializer.SerializeJson(buffer, BucketDurationNs).Should().NotBeNull();
         }
 
         [Fact]
@@ -121,13 +122,13 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public void SerializeJson_OtelSemanticsDisabled_IncludesDatadogAttributes()
+        public void SerializeJson_IncludesDatadogAttributes()
         {
             var buffer = CreateBuffer();
             var key = CreateKey(operationName: "http.request", type: "web");
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
-            var json = SerializeToJson(buffer, otelSemanticsEnabled: false);
+            var json = SerializeToJson(buffer);
             var attrs = GetDataPointAttributes(json);
 
             attrs.Should().ContainKey("datadog.operation.name");
@@ -136,44 +137,78 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public void SerializeJson_OtelSemanticsEnabled_ExcludesDatadogAttributes()
+        public void SerializeJson_IncludesOtelAndAdditionalDatadogAttributes()
         {
             var buffer = CreateBuffer();
-            var key = CreateKey(operationName: "http.request", type: "web");
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
+            var key = CreateKey(operationName: "http.request", type: "web", grpcStatusCode: "5");
+            var additionalMetricTags = new List<byte[]>
+            {
+                Encoding.UTF8.GetBytes("team:payments"),
+                Encoding.UTF8.GetBytes("datadog.custom:value"),
+            };
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
 
-            var json = SerializeToJson(buffer, otelSemanticsEnabled: true);
+            var json = SerializeToJson(buffer);
             var attrs = GetDataPointAttributes(json);
 
-            attrs.Should().NotContainKey("datadog.operation.name");
-            attrs.Should().NotContainKey("datadog.span.type");
-            attrs.Should().NotContainKey("datadog.span.top_level");
+            attrs.Should().BeEquivalentTo(new Dictionary<string, string>
+            {
+                ["service.name"] = "my-service",
+                ["span.name"] = "GET /",
+                ["span.kind"] = "SPAN_KIND_SERVER",
+                ["status.code"] = "STATUS_CODE_OK",
+                ["http.request.method"] = "GET",
+                ["http.response.status_code"] = "200",
+                ["http.route"] = "/api/v1",
+                ["rpc.response.status_code"] = "NOT_FOUND",
+                ["team"] = "payments",
+                ["datadog.operation.name"] = "http.request",
+                ["datadog.span.type"] = "web",
+                ["datadog.span.top_level"] = "true",
+                ["datadog.is_trace_root"] = "true",
+                ["datadog.custom"] = "value",
+            });
         }
 
         [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void SerializeJson_OtelSemanticsDisabled_IncludesIsTraceRoot(bool isTraceRoot)
+        [InlineData(true, "true")]
+        [InlineData(false, "false")]
+        [InlineData(null, null)]
+        public void SerializeJson_EmitsKnownIsTraceRoot(bool? isTraceRoot, string? expected)
         {
             var buffer = CreateBuffer();
             var key = CreateKey(isTraceRoot: isTraceRoot);
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
-            var attrs = GetDataPointAttributes(SerializeToJson(buffer, otelSemanticsEnabled: false));
+            var attrs = GetDataPointAttributes(SerializeToJson(buffer));
 
-            attrs.Should().ContainKey("datadog.is_trace_root").WhoseValue.Should().Be(isTraceRoot.ToString().ToLowerInvariant());
+            if (expected is null)
+            {
+                attrs.Should().NotContainKey("datadog.is_trace_root");
+            }
+            else
+            {
+                attrs.Should().ContainKey("datadog.is_trace_root").WhoseValue.Should().Be(expected);
+            }
         }
 
-        [Fact]
-        public void SerializeJson_OtelSemanticsEnabled_ExcludesIsTraceRoot()
+        [Theory]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        public void SerializeJson_UsesBoolValues(bool isTopLevel, bool isTraceRoot)
         {
             var buffer = CreateBuffer();
-            var key = CreateKey(isTraceRoot: true);
+            var key = CreateKey(isTopLevel: isTopLevel, isTraceRoot: isTraceRoot);
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
-            var attrs = GetDataPointAttributes(SerializeToJson(buffer, otelSemanticsEnabled: true));
+            var json = SerializeToJson(buffer);
+            var topLevelValue = GetJsonDataPointAttributeValue(json, "datadog.span.top_level");
+            var traceRootValue = GetJsonDataPointAttributeValue(json, "datadog.is_trace_root");
 
-            attrs.Should().NotContainKey("datadog.is_trace_root");
+            topLevelValue["boolValue"]!.Type.Should().Be(JTokenType.Boolean);
+            topLevelValue["boolValue"]!.Value<bool>().Should().Be(isTopLevel);
+            traceRootValue["boolValue"]!.Type.Should().Be(JTokenType.Boolean);
+            traceRootValue["boolValue"]!.Value<bool>().Should().Be(isTraceRoot);
         }
 
         [Fact]
@@ -200,6 +235,30 @@ namespace Datadog.Trace.Tests.Agent
             var attrs = GetDataPointAttributes(json);
 
             attrs.Should().ContainKey("service.name").WhoseValue.Should().Be("other-service");
+        }
+
+        [Theory]
+        [InlineData("component", "component")]
+        [InlineData("", null)]
+        public void SerializeJson_ServiceSource_IsStringWhenPresentAndAbsentWhenEmpty(string serviceSource, string? expected)
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(serviceSource: serviceSource);
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var json = SerializeToJson(buffer);
+            var attrs = GetDataPointAttributes(json);
+
+            if (expected is null)
+            {
+                attrs.Should().NotContainKey("datadog.svc_src");
+                return;
+            }
+
+            attrs.Should().ContainKey("datadog.svc_src").WhoseValue.Should().Be(expected);
+            var value = GetJsonDataPointAttributeValue(json, "datadog.svc_src");
+            value["stringValue"]!.Type.Should().Be(JTokenType.String);
+            value["stringValue"]!.Value<string>().Should().Be(expected);
         }
 
         [Fact]
@@ -301,62 +360,43 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public void SerializeJson_OtelSemanticsDisabled_ResourceIncludesRuntimeId()
+        public void SerializeJson_ResourceIncludesRuntimeId()
         {
             var buffer = CreateBuffer();
             AddHit(buffer);
 
-            var json = SerializeToJson(buffer, otelSemanticsEnabled: false);
+            var json = SerializeToJson(buffer);
             var resourceAttrs = GetResourceAttributes(json);
 
             resourceAttrs.Should().ContainKey("datadog.runtime_id");
         }
 
         [Fact]
-        public void SerializeJson_OtelSemanticsEnabled_ResourceExcludesRuntimeId()
+        public void SerializeJson_ResourceIncludesProcessTags()
         {
             var buffer = CreateBuffer();
             AddHit(buffer);
 
-            var json = SerializeToJson(buffer, otelSemanticsEnabled: true);
-            var resourceAttrs = GetResourceAttributes(json);
-
-            resourceAttrs.Should().NotContainKey("datadog.runtime_id");
-        }
-
-        [Fact]
-        public void SerializeJson_OtelSemanticsDisabled_ResourceIncludesProcessTags()
-        {
-            var buffer = CreateBuffer();
-            AddHit(buffer);
-
-            var processTagValues = GetResourceArrayAttribute(SerializeToJson(buffer, otelSemanticsEnabled: false), "datadog.process_tags");
+            var processTagValues = GetResourceArrayAttribute(SerializeToJson(buffer), "datadog.process_tags");
 
             processTagValues.Should().NotBeEmpty();
         }
 
-        [Fact]
-        public void SerializeJson_OtelSemanticsEnabled_ResourceExcludesProcessTags()
-        {
-            var buffer = CreateBuffer();
-            AddHit(buffer);
-
-            var resourceAttrs = GetResourceAttributes(SerializeToJson(buffer, otelSemanticsEnabled: true));
-
-            resourceAttrs.Should().NotContainKey("datadog.process_tags");
-        }
-
-        [Fact]
-        public void SerializeJson_AdditionalMetricTags_EmittedAsUnprefixedAttributes_RegardlessOfOtelSemantics()
+        public void SerializeJson_EmitsAllAdditionalMetricTags()
         {
             var buffer = CreateBuffer();
             var key = CreateKey();
-            var additionalMetricTags = new List<byte[]> { Encoding.UTF8.GetBytes("team:payments") };
+            var additionalMetricTags = new List<byte[]>
+            {
+                Encoding.UTF8.GetBytes("team:payments"),
+                Encoding.UTF8.GetBytes("datadog.custom:value"),
+            };
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
 
-            var attrs = GetDataPointAttributes(SerializeToJson(buffer, otelSemanticsEnabled: true));
+            var attrs = GetDataPointAttributes(SerializeToJson(buffer));
 
             attrs.Should().ContainKey("team").WhoseValue.Should().Be("payments");
+            attrs.Should().ContainKey("datadog.custom").WhoseValue.Should().Be("value");
         }
 
         [Fact]
@@ -396,7 +436,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public void Serialize_ProducesBytes_NotEmpty()
         {
-            var bytes = OtlpSpanStatsSerializer.Serialize(CreateBufferWithOneHit(), BucketDurationNs, false);
+            var bytes = OtlpSpanStatsSerializer.Serialize(CreateBufferWithOneHit(), BucketDurationNs);
 
             bytes.Should().NotBeNullOrEmpty();
             bytes!.Length.Should().BeGreaterThan(10);
@@ -406,9 +446,136 @@ namespace Datadog.Trace.Tests.Agent
         public void Serialize_Protobuf_StartsWithResourceMetricsFieldTag()
         {
             // ExportMetricsServiceRequest field 1, wire type 2 (length-delimited) → tag byte = (1 << 3) | 2 = 0x0A
-            var bytes = OtlpSpanStatsSerializer.Serialize(CreateBufferWithOneHit(), BucketDurationNs, false)!;
+            var bytes = OtlpSpanStatsSerializer.Serialize(CreateBufferWithOneHit(), BucketDurationNs)!;
 
             bytes[0].Should().Be(0x0A);
+        }
+
+        [Fact]
+        public void Serialize_Protobuf_IncludesOtelAndAdditionalDatadogAttributes()
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(operationName: "http.request", type: "web", grpcStatusCode: "5");
+            var additionalMetricTags = new List<byte[]>
+            {
+                Encoding.UTF8.GetBytes("team:payments"),
+                Encoding.UTF8.GetBytes("datadog.custom:value"),
+            };
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetProtobufDataPointAttributes(buffer);
+
+            attrs.Should().BeEquivalentTo(new Dictionary<string, string>
+            {
+                ["service.name"] = "my-service",
+                ["span.name"] = "GET /",
+                ["span.kind"] = "SPAN_KIND_SERVER",
+                ["status.code"] = "STATUS_CODE_OK",
+                ["http.request.method"] = "GET",
+                ["http.response.status_code"] = "200",
+                ["http.route"] = "/api/v1",
+                ["rpc.response.status_code"] = "NOT_FOUND",
+                ["team"] = "payments",
+                ["datadog.operation.name"] = "http.request",
+                ["datadog.span.type"] = "web",
+                ["datadog.span.top_level"] = "true",
+                ["datadog.is_trace_root"] = "true",
+                ["datadog.custom"] = "value",
+            });
+        }
+
+        [Fact]
+        public void Serialize_Protobuf_EmitsAllAdditionalMetricTags()
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey();
+            var additionalMetricTags = new List<byte[]>
+            {
+                Encoding.UTF8.GetBytes("team:payments"),
+                Encoding.UTF8.GetBytes("datadog.custom:value"),
+            };
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetProtobufDataPointAttributes(buffer);
+
+            attrs.Should().ContainKey("team").WhoseValue.Should().Be("payments");
+            attrs.Should().ContainKey("datadog.custom").WhoseValue.Should().Be("value");
+        }
+
+        [Theory]
+        [InlineData(false, "STATUS_CODE_OK")]
+        [InlineData(true, "STATUS_CODE_ERROR")]
+        public void Serialize_Protobuf_IncludesStatusCode(bool isError, string expected)
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(isError: isError);
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetProtobufDataPointAttributes(buffer);
+
+            attrs.Should().ContainKey("status.code").WhoseValue.Should().Be(expected);
+            attrs.Should().ContainKey("service.name").WhoseValue.Should().Be("my-service");
+        }
+
+        [Theory]
+        [InlineData(true, "true")]
+        [InlineData(false, "false")]
+        [InlineData(null, null)]
+        public void Serialize_Protobuf_EmitsKnownIsTraceRoot(bool? isTraceRoot, string? expected)
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(isTraceRoot: isTraceRoot);
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetProtobufDataPointAttributes(buffer);
+
+            if (expected is null)
+            {
+                attrs.Should().NotContainKey("datadog.is_trace_root");
+            }
+            else
+            {
+                attrs.Should().ContainKey("datadog.is_trace_root").WhoseValue.Should().Be(expected);
+            }
+        }
+
+        [Theory]
+        [InlineData(true, false)]
+        [InlineData(false, true)]
+        public void Serialize_Protobuf_UsesBoolValues(bool isTopLevel, bool isTraceRoot)
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(isTopLevel: isTopLevel, isTraceRoot: isTraceRoot);
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var values = GetProtobufDataPointAttributeValues(buffer);
+
+            GetAnyValueFieldNumber(values["datadog.span.top_level"]).Should().Be(2);
+            ReadAnyValue(values["datadog.span.top_level"]).Should().Be(isTopLevel.ToString().ToLowerInvariant());
+            GetAnyValueFieldNumber(values["datadog.is_trace_root"]).Should().Be(2);
+            ReadAnyValue(values["datadog.is_trace_root"]).Should().Be(isTraceRoot.ToString().ToLowerInvariant());
+        }
+
+        [Theory]
+        [InlineData("component", "component")]
+        [InlineData("", null)]
+        public void Serialize_Protobuf_ServiceSource_IsStringWhenPresentAndAbsentWhenEmpty(string serviceSource, string? expected)
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(serviceSource: serviceSource);
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var values = GetProtobufDataPointAttributeValues(buffer);
+
+            if (expected is null)
+            {
+                values.Should().NotContainKey("datadog.svc_src");
+                return;
+            }
+
+            values.Should().ContainKey("datadog.svc_src");
+            GetAnyValueFieldNumber(values["datadog.svc_src"]).Should().Be(1);
+            ReadAnyValue(values["datadog.svc_src"]).Should().Be(expected);
         }
 
         [Theory]
@@ -468,16 +635,30 @@ namespace Datadog.Trace.Tests.Agent
             attrs.Should().ContainKey("span.kind").WhoseValue.Should().Be(expected);
         }
 
-        [Fact]
-        public void SerializeJson_SpanKind_AbsentWhenUnknown()
+        [Theory]
+        [InlineData("")]
+        [InlineData("not-a-real-kind")]
+        public void SerializeJson_SpanKind_DefaultsToInternalWhenUnknown(string spanKind)
         {
             var buffer = CreateBuffer();
-            var key = CreateKey(spanKind: "not-a-real-kind");
+            var key = CreateKey(spanKind: spanKind);
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
             var attrs = GetDataPointAttributes(SerializeToJson(buffer));
 
-            attrs.Should().NotContainKey("span.kind");
+            attrs.Should().ContainKey("span.kind").WhoseValue.Should().Be("SPAN_KIND_INTERNAL");
+        }
+
+        [Fact]
+        public void SerializeProtobuf_SpanKind_DefaultsToInternalWhenEmpty()
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey(spanKind: string.Empty);
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = GetProtobufDataPointAttributes(buffer);
+
+            attrs.Should().ContainKey("span.kind").WhoseValue.Should().Be("SPAN_KIND_INTERNAL");
         }
 
         [Fact]
@@ -501,7 +682,7 @@ namespace Datadog.Trace.Tests.Agent
             buffer.Buckets.Add(topKey, new StatsBucket(topKey, EmptyPeerTags, []) { Hits = 1, Duration = 1_000_000 });
             buffer.Buckets.Add(nonTopKey, new StatsBucket(nonTopKey, EmptyPeerTags, []) { Hits = 1, Duration = 1_000_000 });
 
-            var json = SerializeToJson(buffer, otelSemanticsEnabled: false);
+            var json = SerializeToJson(buffer);
             var dataPoints = json.SelectToken("$.resourceMetrics[0].scopeMetrics[0].metrics[0].histogram.dataPoints")!;
 
             dataPoints.Should().HaveCount(2);
@@ -539,7 +720,7 @@ namespace Datadog.Trace.Tests.Agent
             string spanKind = "server",
             bool isError = false,
             bool isTopLevel = true,
-            bool isTraceRoot = true,
+            bool? isTraceRoot = true,
             string httpMethod = "GET",
             string httpEndpoint = "/api/v1",
             string grpcStatusCode = "",
@@ -579,16 +760,94 @@ namespace Datadog.Trace.Tests.Agent
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
         }
 
-        private static JObject SerializeToJson(StatsBuffer buffer, bool otelSemanticsEnabled = false)
+        private static JObject SerializeToJson(StatsBuffer buffer)
         {
-            var bytes = OtlpSpanStatsSerializer.SerializeJson(buffer, BucketDurationNs, otelSemanticsEnabled)!;
+            var bytes = OtlpSpanStatsSerializer.SerializeJson(buffer, BucketDurationNs)!;
             return JObject.Parse(Encoding.UTF8.GetString(bytes));
+        }
+
+        private static Dictionary<string, string> GetProtobufDataPointAttributes(StatsBuffer buffer)
+        {
+            return GetProtobufDataPointAttributeValues(buffer)
+                  .ToDictionary(kvp => kvp.Key, kvp => ReadAnyValue(kvp.Value));
+        }
+
+        private static Dictionary<string, byte[]> GetProtobufDataPointAttributeValues(StatsBuffer buffer)
+        {
+            var request = OtlpSpanStatsSerializer.Serialize(buffer, BucketDurationNs)!;
+            var resourceMetrics = GetLengthDelimitedFields(request, 1).Single();
+            var scopeMetrics = GetLengthDelimitedFields(resourceMetrics, 2).Single();
+            var metric = GetLengthDelimitedFields(scopeMetrics, 2).Single();
+            var histogram = GetLengthDelimitedFields(metric, 9).Single();
+            var dataPoint = GetLengthDelimitedFields(histogram, 1).Single();
+            var result = new Dictionary<string, byte[]>();
+
+            foreach (var attribute in GetLengthDelimitedFields(dataPoint, 9))
+            {
+                var key = Encoding.UTF8.GetString(GetLengthDelimitedFields(attribute, 1).Single());
+                var value = GetLengthDelimitedFields(attribute, 2).Single();
+                result[key] = value;
+            }
+
+            return result;
+        }
+
+        private static int GetAnyValueFieldNumber(byte[] message)
+        {
+            var input = new CodedInputStream(message);
+            return WireFormat.GetTagFieldNumber(input.ReadTag());
+        }
+
+        private static List<byte[]> GetLengthDelimitedFields(byte[] message, int fieldNumber)
+        {
+            var fields = new List<byte[]>();
+            var input = new CodedInputStream(message);
+
+            while (true)
+            {
+                var tag = input.ReadTag();
+                if (tag == 0)
+                {
+                    break;
+                }
+
+                if (WireFormat.GetTagFieldNumber(tag) == fieldNumber && WireFormat.GetTagWireType(tag) == WireFormat.WireType.LengthDelimited)
+                {
+                    fields.Add(input.ReadBytes().ToByteArray());
+                }
+                else
+                {
+                    input.SkipLastField();
+                }
+            }
+
+            return fields;
+        }
+
+        private static string ReadAnyValue(byte[] message)
+        {
+            var input = new CodedInputStream(message);
+            var tag = input.ReadTag();
+
+            return WireFormat.GetTagFieldNumber(tag) switch
+            {
+                1 => input.ReadString(),
+                2 => input.ReadBool().ToString().ToLowerInvariant(),
+                3 => input.ReadInt64().ToString(),
+                _ => string.Empty,
+            };
         }
 
         private static Dictionary<string, string> GetDataPointAttributes(JObject json)
         {
             var dp = json.SelectToken("$.resourceMetrics[0].scopeMetrics[0].metrics[0].histogram.dataPoints[0]") as JObject;
             return GetDataPointAttributesFromToken(dp);
+        }
+
+        private static JObject GetJsonDataPointAttributeValue(JObject json, string key)
+        {
+            var attributes = json.SelectToken("$.resourceMetrics[0].scopeMetrics[0].metrics[0].histogram.dataPoints[0].attributes")!;
+            return (JObject)attributes.Single(attribute => attribute["key"]!.Value<string>() == key)["value"]!;
         }
 
         private static Dictionary<string, string> GetDataPointAttributesFromToken(JObject? dataPoint)
