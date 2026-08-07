@@ -25,6 +25,11 @@ internal class MockRcmSubscriptionManager : IRcmSubscriptionManager
 
     public ISubscription? LastSubscription { get; private set; }
 
+    /// <summary>
+    /// Gets the capabilities that were set, so tests can assert which ones are advertised.
+    /// </summary>
+    public IDictionary<BigInteger, bool> Capabilities { get; } = new Dictionary<BigInteger, bool>();
+
     public void SubscribeToChanges(ISubscription subscription)
     {
         LastSubscription = subscription;
@@ -49,6 +54,7 @@ internal class MockRcmSubscriptionManager : IRcmSubscriptionManager
 
     public void SetCapability(BigInteger index, bool available)
     {
+        Capabilities[index] = available;
     }
 
     public byte[] GetCapabilities() => [];
