@@ -26,17 +26,73 @@ internal static class OtlpLogsSerializer
     private const int TraceIdSize = 16;
     private const int SpanIdSize = 8;
 
+    private const int InitialBufferSize = 64 * 1024;
+
+    // Upper bound for a serialized batch. The buffer grows up to this cap; a batch that still
+    // doesn't fit is dropped rather than allocating without bound. Matches the 3MB payload cap
+    // used by our own direct log submission (DirectSubmissionLogSink.MaxTotalSizeBytes).
+    private const int MaxBufferSize = 3 * 1024 * 1024;
+
     /// <summary>
-    /// Serializes logs to OTLP LogsData binary format using vendored protobuf serializer
+    /// Serializes logs to OTLP LogsData binary format using vendored protobuf serializer.
     /// </summary>
-    public static byte[] SerializeLogs(IReadOnlyList<LogPoint> logs, ResourceTags settings, int startPosition = 0)
+    /// <param name="logs">The batch of logs to serialize.</param>
+    /// <param name="settings">Resource-level tags applied to the payload.</param>
+    /// <param name="startPosition">Offset at which to start writing (e.g. a reserved gRPC frame header).</param>
+    /// <returns>
+    /// The serialized payload, an empty array when there is nothing to serialize, or <c>null</c>
+    /// when the batch is too large to fit within <see cref="MaxBufferSize"/>.
+    /// </returns>
+    public static byte[]? SerializeLogs(IReadOnlyList<LogPoint> logs, ResourceTags settings, int startPosition = 0)
     {
         if (logs.Count == 0)
         {
             return Array.Empty<byte>();
         }
 
-        var buffer = new byte[64 * 1024];
+        var buffer = new byte[InitialBufferSize];
+
+        // The batch may not fit in the initial buffer. On overflow, grow the buffer (doubling,
+        // up to MaxBufferSize) and retry from the start. If it's already at the cap and still
+        // overflows, return null so the caller drops the batch instead of growing without bound.
+        while (true)
+        {
+            try
+            {
+                return SerializeLogs(buffer, logs, settings, startPosition);
+            }
+            catch (ArgumentException)
+            {
+                // A span/array write ran past the end of the buffer.
+                if (!TryGrowBuffer(ref buffer))
+                {
+                    return null;
+                }
+            }
+            catch (IndexOutOfRangeException)
+            {
+                // Same overflow condition, surfaced as an index-based write past the end.
+                if (!TryGrowBuffer(ref buffer))
+                {
+                    return null;
+                }
+            }
+        }
+    }
+
+    private static bool TryGrowBuffer(ref byte[] buffer)
+    {
+        if (buffer.Length >= MaxBufferSize)
+        {
+            return false;
+        }
+
+        buffer = new byte[Math.Min(buffer.Length * 2, MaxBufferSize)];
+        return true;
+    }
+
+    private static byte[] SerializeLogs(byte[] buffer, IReadOnlyList<LogPoint> logs, ResourceTags settings, int startPosition)
+    {
         int writePosition = startPosition;
 
         writePosition = ProtobufSerializer.WriteTag(buffer, writePosition, LogsData_Resource_Logs, ProtobufWireType.LEN);
