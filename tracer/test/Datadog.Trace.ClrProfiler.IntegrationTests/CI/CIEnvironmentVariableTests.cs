@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     [CollectionDefinition(nameof(CIEnvironmentVariableTests), DisableParallelization = true)]
     [Collection(nameof(CIEnvironmentVariableTests))]
+    [Trait("Area", "CiVisibility")]
     public class CIEnvironmentVariableTests
     {
         private IDictionary _originalEnvVars;

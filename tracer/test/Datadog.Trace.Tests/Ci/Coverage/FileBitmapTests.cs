@@ -8,7 +8,7 @@ using Datadog.Trace.Ci.Coverage.Util;
 using FluentAssertions;
 using Xunit;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Coverage;
+namespace Datadog.Trace.Tests.Ci.Coverage;
 
 public class FileBitmapTests
 {

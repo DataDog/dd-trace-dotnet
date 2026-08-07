@@ -26,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 #if NET8_0_OR_GREATER
 [UsesVerify]
+[Trait("Area", "CiVisibility")]
 public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
 {
     private const string TestBundleName = "Samples.XUnitTestsV3";

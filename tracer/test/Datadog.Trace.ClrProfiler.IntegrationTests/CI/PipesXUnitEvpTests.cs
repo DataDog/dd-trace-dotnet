@@ -13,6 +13,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 [Collection(nameof(TransportTestsCollection))]
+[Trait("Area", "CiVisibility")]
 public class PipesXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
 {
     [SkippableTheory(Skip = "These are currently very flaky - revisit once we move to aspnetcore-based mock agent")]

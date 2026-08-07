@@ -15,6 +15,7 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CiVisibility")]
     public class CIVisibilityTests
     {
         private static readonly ITestOptimizationTracerManagement TracerManagement = new TestOptimizationTracerManagement(TestOptimizationSettings.FromDefaultSources());

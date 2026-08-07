@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Ipc;
 
+[Trait("Area", "CiVisibility")]
 public class IpcTests : TestingFrameworkEvpTest
 {
     public IpcTests(ITestOutputHelper output)
