@@ -69,6 +69,7 @@
         -e NUGET_CERT_REVOCATION_MODE=offline `
         -e DD_LOGGER_ENABLED=true `
         -e DD_LOGGER_DD_API_KEY `
+        -e DD_LOGGER_DD_SERVICE=dd-trace-dotnet `
         -e DD_LOGGER_DD_TRACE_LOG_PATH=c:\mnt\artifacts\build_data\infra_logs\ci-visibility.log `
         -e "DD_LOGGER_DD_TAGS=test.configuration.job:$env:CI_JOB_NAME" `
         -e CI_IDENTITIES_GITLAB_ID_TOKEN `
