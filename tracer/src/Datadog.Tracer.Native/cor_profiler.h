@@ -262,13 +262,11 @@ public:
     bool IsCallTargetBubbleUpFunctionAvailable() const;
 
     //
-    // Dataflow helper methods
+    // Dataflow helper methods. Virtual so the native unit tests can stand in for a runtime.
     //
-    ModuleID GetProfilerAssemblyModuleId(AppDomainID appDomainId);
-    // Datadog.Trace.dll's own module is deliberately excluded from module_ids (see TryRejitModule), but
-    // GetAspectsModule looks it up by ModuleID in Dataflow's cache. It must therefore be added to
-    // Dataflow's preloaded list, or nothing would ever resolve it and no aspect could be defined.
-    std::vector<ModuleID> GetProfilerAssemblyModuleIds();
+    virtual ICorProfilerInfo* GetCorProfilerInfo();
+    virtual ModuleID GetProfilerAssemblyModuleId(AppDomainID appDomainId);
+    virtual std::vector<ModuleID> GetProfilerAssemblyModuleIds();
 };
 
 // Note: Generally you should not have a single, global callback implementation,

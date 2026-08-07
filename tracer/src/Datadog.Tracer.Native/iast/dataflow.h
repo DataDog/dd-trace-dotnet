@@ -5,21 +5,14 @@
 #include "../rejit_handler.h"
 #include "../rejit_preprocessor.h"
 
-#include <functional>
-
 namespace trace
 {
+    class CorProfiler;
     class FunctionControlWrapper;
 }
 
 namespace iast
 {
-    // Returns Datadog.Trace.dll's ModuleID for an AppDomain. Injected so Dataflow resolves through
-    // the CorProfiler that owns it instead of the trace::profiler process-global: that global is
-    // overwritten by whichever CLR initializes last, and a ModuleID is only meaningful to the
-    // runtime that produced it.
-    using AspectsModuleIdResolver = std::function<ModuleID(AppDomainID)>;
-
     class CorProfiler;
     class AppDomainInfo;
     class ModuleInfo;
@@ -60,13 +53,17 @@ namespace iast
         friend class ModuleInfo;
         friend class ModuleAspects;
     public:
-        Dataflow(AspectsModuleIdResolver resolveAspectsModuleId, ICorProfilerInfo* profiler,
-                 std::shared_ptr<RejitHandler> rejitHandler, std::vector<ModuleID> moduleIds,
-                 const RuntimeInformation& runtimeInfo);
+        // corProfiler is the CorProfiler that owns this Dataflow: it supplies both the
+        // ICorProfilerInfo to talk to and the aspects module (Datadog.Trace.dll). Going through the
+        // owner rather than the trace::profiler process-global matters: that global is overwritten by
+        // whichever CLR initializes last, and a ModuleID is only meaningful to the runtime that
+        // produced it.
+        Dataflow(trace::CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejitHandler,
+                 std::vector<ModuleID> moduleIds, const RuntimeInformation& runtimeInfo);
         virtual ~Dataflow();
     private:
         CS _cs;
-        AspectsModuleIdResolver _resolveAspectsModuleId;
+        trace::CorProfiler* _corProfiler = nullptr;
         ICorProfilerInfo3* _profiler = nullptr;
         COR_PRF_RUNTIME_TYPE m_runtimeType = COR_PRF_DESKTOP_CLR;
         VersionInfo m_runtimeVersion = VersionInfo{4, 0, 0, 0};

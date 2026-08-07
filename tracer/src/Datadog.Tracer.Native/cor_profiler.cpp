@@ -271,12 +271,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         if (isIastEnabled || isRaspEnabled)
         {
             auto modules = module_ids.Get();
-            std::vector<ModuleID> preloadedModuleIds = modules.Ref();
-            const auto& profilerModuleIds = GetProfilerAssemblyModuleIds();
-            preloadedModuleIds.insert(preloadedModuleIds.end(), profilerModuleIds.begin(), profilerModuleIds.end());
-            _dataflow = new iast::Dataflow(
-                [this](AppDomainID appDomainId) { return GetProfilerAssemblyModuleId(appDomainId); }, info_,
-                rejit_handler, preloadedModuleIds, runtime_information_);
+            _dataflow = new iast::Dataflow(this, rejit_handler, modules.Ref(), runtime_information_);
         }
         else
         {
@@ -2109,12 +2104,7 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, size_t aspectsLength, UINT
     {
         Logger::Debug("Creating Dataflow.");
         auto modules = module_ids.Get();
-        std::vector<ModuleID> preloadedModuleIds = modules.Ref();
-        const auto& profilerModuleIds = GetProfilerAssemblyModuleIds();
-        preloadedModuleIds.insert(preloadedModuleIds.end(), profilerModuleIds.begin(), profilerModuleIds.end());
-        dataflow = new iast::Dataflow(
-            [this](AppDomainID appDomainId) { return GetProfilerAssemblyModuleId(appDomainId); }, info_, rejit_handler,
-            preloadedModuleIds, runtime_information_);
+        dataflow = new iast::Dataflow(this, rejit_handler, modules.Ref(), runtime_information_);
     }
 
     if (dataflow != nullptr)
@@ -2465,6 +2455,11 @@ bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_i
 
     auto loadedAppDomains = managed_profiler_loaded_app_domains.Get();
     return loadedAppDomains->find(app_domain_id) != loadedAppDomains->end();
+}
+
+ICorProfilerInfo* CorProfiler::GetCorProfilerInfo()
+{
+    return info_;
 }
 
 ModuleID CorProfiler::GetProfilerAssemblyModuleId(AppDomainID appDomainId)
