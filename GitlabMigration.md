@@ -229,77 +229,21 @@ This must be distinguished from test visibility:
 | --- | --- | --- | --- |
 | Pipeline, stage/job status, duration, branch, and links | Server-side GitLab integration/webhooks | No | Already visible for default and non-default branches |
 | DDCI orchestration around a GitLab pipeline | Server-side DDCI integration | No | Available for pipelines triggered through DDCI; may appear alongside the GitLab record |
-| Managed test sessions, modules, suites, individual tests, and test traces | In-process `DatadogTestLogger` | Yes, unless a reachable Datadog Agent provides intake | Logger is enabled, but agentless submission is blocked while the key is unavailable |
-| `dd_trace_dotnet.ci.tests.retries` and related build-side metrics | Test/build process | Yes | Explicitly skipped when `DD_LOGGER_DD_API_KEY` is absent |
+| Managed test sessions, modules, suites, individual tests, and test traces | In-process `DatadogTestLogger` | Yes, unless a reachable Datadog Agent provides intake | Linux ingestion is confirmed; dd-sts supplies a temporary key to both Linux and Windows jobs |
+| `dd_trace_dotnet.ci.tests.retries` and related build-side metrics | Test/build process | Yes | dd-sts supplies the temporary key; validate retry metrics in the next run |
 | GitLab test-result artifacts | GitLab artifact/report upload | No Datadog key | TRX files are retained as ordinary artifacts; conversion to GitLab JUnit reports remains pending |
 
 The existing Pipeline Executions data therefore does not prove that test events are being submitted. Validate test ingestion separately in the CI Visibility test views by filtering on a known GitLab pipeline or job ID and looking for test sessions and individual tests. The pipeline provider should be `GitLab`; DDCI-triggered work can additionally have a `DDCI` provider record.
 
-Test-level GitLab ingestion is already proven for the existing microbenchmark pipeline. CI Visibility contains tens of thousands of benchmark test runs from the `run-benchmarks` job on both `master` and the non-protected `nacho/testNativeTestsGitlab` branch. That job uses a different credential path from the migrated unit tests:
+Test-level GitLab ingestion is proven for both the existing microbenchmark pipeline and the migrated Linux unit-test jobs. The unit-test events were initially missed because the UI was filtered on the wrong service; they are present under `@test.service:dd-trace-dotnet` for the feature branch and corresponding child jobs.
 
-1. The Kubernetes benchmark job directly calls `aws ssm get-parameter` for `ci.dd-trace-dotnet.dd_api_key-prod` using the runner's ambient AWS credentials.
-2. It forwards the value as `DD_API_KEY` to the ephemeral Windows benchmark VM.
-3. `run-benchmarks.ps1` sets `DD_CIVISIBILITY_AGENTLESS_ENABLED=1`, causing the in-process tracer to submit benchmark test events directly to Datadog intake.
+The initial SSM experiment exposed an important platform difference. Linux could read `ci.dd-trace-dotnet.dd_api_key-prod` through broad ambient runner credentials, while both the Windows runner role and the repository's untrusted CI Identity received `AccessDeniedException`. Extending the inherited CI Identity policy would expose the reusable production key to branch-controlled untrusted jobs, so the proposed `cloud-inventory` permission is not the correct solution. The benchmark pipeline's ambient SSM access is legacy behavior to migrate later, not a model to expand.
 
-This proves that the SSM value and Datadog intake path are valid, but it does not prove that the repository's CI Identities can read the parameter. The current `cloud-inventory` policy for both `ci@datadog@dd-trace-dotnet@trusted-jobs` and `@untrusted-jobs` grants only the existing S3 write permission and no `ssm:GetParameter`. The observed untrusted-job `AccessDeniedException` is therefore expected.
+The shared APM SDK GitLab pipeline already provides the appropriate mechanism. Its `apm-sdks-api-key` dd-sts policy accepts GitLab OIDC subjects matching `DataDog/apm-reliability/.*` branches and tags, which includes this repository. Jobs request `DD_STS_OIDC_TOKEN` with audience `rapid-seceng-sit` and exchange it at `https://dd-sts.us1.ddbuild.io/sts/datadog/exchange?policy=apm-sdks-api-key`. The response contains a temporary Datadog API key, so no long-lived project variable, SSM grant, new Vault path, or new policy is required.
 
-The top-level `microbenchmarks` bridge runs on every non-tag pipeline, and the child `run-benchmarks` rules also permit non-protected branches. Its successful branch test events prove that the `arch:amd64` benchmark runner's ambient AWS role can read the shared SSM parameter from branch-controlled CI code. This is an existing legacy credential exposure and weakens the benefit of protecting the same shared key through a new mechanism. It should be audited and eventually migrated to CI Identities with dedicated trusted and untrusted credentials. Do not assume that the same ambient permission exists on Windows or Docker-in-Docker runners, and do not expand dependence on broad runner credentials merely to unblock unit tests.
+The Windows child jobs perform the exchange on the runner and pass only `DD_LOGGER_DD_API_KEY` into the test container. Linux forwards the OIDC token into its short-lived tester container, whose Datadog CA bundle allows NUKE to perform the same exchange immediately before launching tests. Neither the OIDC token nor the returned key is logged. The old CI Identities client and SSM fallback have been removed from these paths.
 
-A temporary unit-test experiment checks that assumption without printing the secret. Windows attempts the SSM read with the runner's ambient credentials before assuming the repository CI Identity; if it fails, the existing CI Identity attempt remains as a fallback. Linux no longer assumes the restricted repository role before launching NUKE, allowing the existing AWS SDK lookup in `RunManagedUnitTests` to test the nested container's ambient credential chain.
-
-The first Linux experiment succeeded: NUKE logged `CI Visibility API key configured` and then launched the test process. This confirms that the nested Docker-in-Docker test container can retrieve and decrypt the SSM value through ambient credentials on a non-protected branch. The run also exposed that `FRAMEWORK` had not been forwarded into the nested container. NUKE received `--framework ""`, warned that the empty value could not be converted, and continued into an unintended framework selection. The Linux child template now explicitly passes `--env FRAMEWORK`; validate that each generated job invokes only its named TFM on the next run.
-
-The Windows experiment failed through both credential chains. The ambient identity was `dd-runner-windows-profile` and was denied `ssm:GetParameter`; after assuming `ci@datadog@dd-trace-dotnet@untrusted-jobs`, the repository identity was denied the same action. Windows therefore cannot submit unit-test telemetry yet. The temporary ambient attempt has been removed because it is guaranteed to fail and granting the shared Windows runner profile access would expose the key to unrelated workloads. A narrowly scoped `cloud-inventory` change granting the `dd-trace-dotnet` CI Identities `ssm:GetParameter` on only `ci.dd-trace-dotnet.dd_api_key-prod` is the smallest short-term unblock. Because untrusted jobs require telemetry, the permission must cover the untrusted identity; the current untrusted policy inherits the trusted policy, so one shared statement would affect both. Vault with dedicated keys remains the preferred long-term design.
-
-The authoritative telemetry check remains that individual unit-test events appear in CI Visibility for the corresponding framework job and branch. This experiment should not become the permanent authorization model merely because it succeeds.
-
-The migration only needs to solve secure key delivery to the unit-test processes; no new Datadog-side CI Visibility integration is required. The benchmark implementation can be reused as evidence for the parameter, site, and agentless intake behavior, while CI Identities/Vault should provide the authorization boundary. A dedicated unit-test key also allows the benchmark runner's legacy access to be removed later without coupling both workloads to one credential.
-
-Azure supplies CI Visibility credentials through the secret pipeline variable `DD_API_KEY_PROD`, exposed to test processes as `DD_LOGGER_DD_API_KEY`. Azure secret-variable values are intentionally not recoverable through the pipeline definition or normal UI/API reads after they have been stored. Do not add a cross-CI mechanism that extracts the Azure secret. If its value is already available to an authorized maintainer, it can be copied manually for a short-lived experiment; otherwise create a new Datadog API key.
-
-The current GitLab Windows and Linux child jobs forward `DD_LOGGER_DD_API_KEY` into their test containers. They also attempt to obtain a key through CI Identities when the variable is absent. The CI Identities bootstrap itself succeeds and assigns non-default-branch jobs the `ci@datadog@dd-trace-dotnet@untrusted-jobs` identity, but that identity is currently denied `ssm:GetParameter` for `ci.dd-trace-dotnet.dd_api_key-prod`. This is an external AWS policy boundary, not a repository-code defect. Granting access to that SSM parameter requires an infrastructure policy change and cannot be completed entirely in `dd-trace-dotnet`.
-
-The quickest project-local option is a GitLab project CI/CD variable. A project Maintainer can add it under **Settings > CI/CD > Variables** without GitLab administrator support:
-
-| Setting | Value |
-| --- | --- |
-| Key | `DD_LOGGER_DD_API_KEY` |
-| Type | `Variable` |
-| Environment scope | `*` |
-| Visibility | `Masked and hidden` |
-| Expand variable reference | Disabled |
-| Protect variable | Disabled, if telemetry is required on non-protected branches |
-
-GitLab stores an existing value here; it does not create a Datadog API key. Creating a dedicated key still requires the appropriate permission in the Datadog organization. Child pipelines should inherit the project variable, and the current jobs already pass it to their nested containers, so this option does not require another CI-code change.
-
-As of 2026-08-07, the migration owner and the other tracer-team members have the Developer role and cannot see the project variable control. GitLab requires the Maintainer role to manage project CI/CD variables. An existing project Maintainer would therefore have to add and later rotate or remove the variable, making this route operationally dependent on another team. Instance-level GitLab administrator involvement is not required, but the Vault solution below is a better ownership model for the tracer team.
-
-An unprotected variable is a deliberate security trade-off. Masking and hiding reduce accidental disclosure in the UI and logs, but they cannot prevent eligible branch or merge-request CI code from sending the value elsewhere. Fork pipelines do not receive parent-project variables by default, but any pipeline that does receive the variable must be treated as capable of exfiltrating it. Do not reuse a broadly shared production credential as the permanent solution.
-
-The recommended long-term design is a dedicated CI Visibility ingestion key retrieved with CI Identities from the repository's Vault namespace. Trusted and untrusted jobs should preferably use independently rotatable keys stored at:
-
-```text
-kv/ci/datadog/dd-trace-dotnet/trusted-jobs/dd-api-key
-kv/ci/datadog/dd-trace-dotnet/untrusted-jobs/dd-api-key
-```
-
-The corresponding job retrieves its key with the CI Identities client, for example on Windows:
-
-```powershell
-$env:DD_LOGGER_DD_API_KEY = & .\ci-identities-ci-job-client.exe secrets read "dd-api-key" "value"
-```
-
-CI Identities encourages teams to self-onboard. The CI Identities inspector was queried for `dd-trace-dotnet` on 2026-08-07 and confirms that repository onboarding is complete: CI Identities is enabled, `master` is the protected branch, trusted and untrusted Vault entities exist and belong to the required Vault group, both IAM roles exist, AWS IAM and AWS-through-Vault are enabled, and the inspector reports no problems.
-
-Human write access to seed the repository's Vault paths is not currently evident. The active `vault-config` contains the repository activation entries but no `kv-ci-datadog-dd-trace-dotnet-admin.hcl` policy or equivalent path-specific policy. The likely .NET team groups—`team-apmclientlibraries-dotnet`, `team-apmdotnet`, and `team-apmintegrations-dotnet`—currently have empty policy lists. This differs from an onboarded example such as `dd-trace-py`, which has a dedicated `kv-ci-datadog-dd-trace-py-admin` policy attached to `team-languageplatform`. Unless an individual inherits a broader administrative policy, the tracer team therefore needs a small `vault-config` change that creates the `dd-trace-dotnet` path policy and attaches it to the current owning team's pack. The tracer team can prepare that PR, but it requires the normal Vault-admin review and merge.
-
-Recommended rollout:
-
-1. Add the missing `dd-trace-dotnet` CI-secret write policy to `vault-config` and attach it to the current .NET team pack; confirm the exact pack with the team before editing.
-2. Create dedicated Datadog CI Visibility API keys for trusted and untrusted jobs where practical.
-3. Store the keys in the corresponding trusted and untrusted Vault paths.
-4. Change the jobs to use `secrets read` instead of SSM and validate retrieval on both Windows and Linux.
-5. Remove the obsolete SSM fallback. Use a GitLab project variable only as a short-lived fallback if a Maintainer explicitly agrees to own its creation and removal.
+Validate the next run by checking for `CI Visibility API key configured using dd-sts` and then confirming individual tests in CI Visibility with `@test.service:dd-trace-dotnet`, the feature branch, and the relevant GitLab child-job name. The existing `cloud-inventory` draft that adds SSM access should be closed or revised because it is no longer needed for unit-test telemetry.
 
 The producer publishes `artifacts/bin`, `artifacts/monitoring-home`, and only the managed intermediate `ref`/`refint` assemblies needed by `dotnet build --no-dependencies`; broad `obj` trees are not transferred. The `dd_dotnet` apphost is also included because its net7 test project copies that intermediate executable. Each consumer restores its own package and MSBuild metadata, builds only projects that declare its requested test TFM, and runs that framework. This filtering is required because some unit-test projects intentionally target only one runtime, such as `Datadog.Trace.Tools.dd_dotnet.Tests` on `net7.0`. During matrix validation, jobs for .NET 3.0, 3.1, 5.0, 6.0, and 7.0 install only their requested runtime inside the container, allowing the existing image to remain usable. Once the runtime set is verified, these runtimes should be baked into and published as a new Windows image.
 

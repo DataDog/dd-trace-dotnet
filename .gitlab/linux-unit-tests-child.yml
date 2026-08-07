@@ -15,7 +15,7 @@
       set -eu
 
       tester_image="dd-trace-dotnet/debian-tester:${CI_JOB_ID}"
-      tester_with_identity_image="dd-trace-dotnet/debian-tester-ci-identities:${CI_JOB_ID}"
+      tester_with_ca_certs_image="dd-trace-dotnet/debian-tester-ca-certs:${CI_JOB_ID}"
       mkdir -p artifacts/build_data/infra_logs
       echo "Building Debian test image for ${FRAMEWORK}"
       docker build \
@@ -25,11 +25,11 @@
         --file tracer/build/_build/docker/debian.dockerfile \
         tracer/build/_build
 
-      echo "Adding the CI Identities client to the test image"
+      echo "Adding Datadog CA certificates to the test image"
       docker build \
         --build-arg "TESTER_IMAGE=${tester_image}" \
-        --tag "$tester_with_identity_image" \
-        --file .gitlab/linux-unit-tests-with-ci-identities.dockerfile \
+        --tag "$tester_with_ca_certs_image" \
+        --file .gitlab/linux-unit-tests.dockerfile \
         .gitlab
 
       echo "Running managed unit tests for ${FRAMEWORK}"
@@ -73,12 +73,11 @@
         --env CI_MERGE_REQUEST_DIFF_BASE_SHA \
         --env CI_MERGE_REQUEST_TARGET_BRANCH_NAME \
         --env CI_MERGE_REQUEST_IID \
-        --env CI_IDENTITIES_GITLAB_ID_TOKEN \
+        --env DD_STS_OIDC_TOKEN \
         --env NUKE_TELEMETRY_OPTOUT=1 \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
-        "$tester_with_identity_image" \
+        "$tester_with_ca_certs_image" \
         sh -c '
-          echo "Trying to retrieve the CI Visibility API key using ambient AWS credentials"
           exec dotnet /build/bin/Debug/_build.dll \
             BuildManagedUnitTests RunManagedUnitTests \
             --framework "$FRAMEWORK" \
@@ -95,5 +94,5 @@
       - artifacts/build_data/infra_logs
       - artifacts/build_data/dumps
   id_tokens:
-    CI_IDENTITIES_GITLAB_ID_TOKEN:
-      aud: ci-identities
+    DD_STS_OIDC_TOKEN:
+      aud: rapid-seceng-sit
