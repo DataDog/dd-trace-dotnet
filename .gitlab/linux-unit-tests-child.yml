@@ -39,6 +39,7 @@
         --env NugetPackageDirectory=/project/packages \
         --env artifacts=/project/artifacts/output \
         --env CI=true \
+        --env FRAMEWORK \
         --env DD_LOGGER_ENABLED=true \
         --env DD_LOGGER_DD_API_KEY \
         --env DD_LOGGER_DD_TRACE_LOG_PATH=/project/artifacts/build_data/infra_logs/ci-visibility.log \
