@@ -592,7 +592,7 @@ namespace Datadog.Trace.Configuration
                     .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs)
                     .AsInt32(10_000, value => value > 0)
                     .Value;
-                OtlpHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders).AsString()?.Trim();
+                OtlpHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders).AsRedactedString()?.Trim();
 
                 OtlpMetricsProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsProtocol).AsString()?.Trim();
                 OtlpMetricsEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsEndpoint).AsString()?.Trim();
@@ -600,7 +600,7 @@ namespace Datadog.Trace.Configuration
                     .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs)
                     .AsInt32(OtlpTimeoutMs, value => value > 0)
                     .Value;
-                OtlpMetricsHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders).AsString()?.Trim();
+                OtlpMetricsHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders).AsRedactedString()?.Trim();
 
                 OtlpTracesProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol).AsString()?.Trim();
                 OtlpTracesEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint).AsString()?.Trim();
@@ -608,7 +608,7 @@ namespace Datadog.Trace.Configuration
                     .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesTimeoutMs)
                     .AsInt32(OtlpTimeoutMs, value => value > 0)
                     .Value;
-                OtlpTracesHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders).AsString()?.Trim();
+                OtlpTracesHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesHeaders).AsRedactedString()?.Trim();
             }
 
             /// <summary>
