@@ -403,7 +403,7 @@ namespace Datadog.Trace.ClrProfiler
 #if NET6_0_OR_GREATER
             try
             {
-                if (Tracer.Instance.Settings.OpenTelemetryMetricsEnabled is true && Tracer.Instance.Settings.OtelMetricsExporterEnabled is true)
+                if (Tracer.Instance.Settings.OtlpMetricsExportEnabled)
                 {
                     Log.Debug("Initializing Opentelemetry Protocol Metrics collection.");
                     OpenTelemetry.Metrics.MetricsRuntime.Start(Tracer.Instance.Settings);
