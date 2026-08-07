@@ -142,6 +142,7 @@ namespace Datadog.Trace.Configuration
             var otlpMetricsSettings = GetOtlpMetricsTransport(signalEndpoint: rawSettings.OtlpMetricsEndpoint, generalEndpoint: rawSettings.OtlpEndpoint, signalProtocol: rawSettings.OtlpMetricsProtocol, generalProtocol: rawSettings.OtlpProtocol, agentHost: rawSettings.TraceAgentHost);
             OtlpMetricsEndpoint = otlpMetricsSettings.OtlpSignalEndpoint;
             OtlpMetricsProtocol = otlpMetricsSettings.OtlpProtocol;
+            ReportHostname = rawSettings.ReportHostname;
             var metricsHeaders = StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpMetricsHeaders, allowOptionalMappings: false, separator: '=')
                                 ?? StringConfigurationSource.ParseCustomKeyValues(rawSettings.OtlpHeaders, allowOptionalMappings: false, separator: '=');
             OtlpMetricsHeaders = metricsHeaders?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value)).ToArray() ?? [];
@@ -304,6 +305,12 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs"/>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpTimeoutMs"/>
         internal int OtlpMetricsTimeoutMs { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the hostname should be reported on OTLP trace metrics.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ReportHostname"/>
+        internal bool ReportHostname { get; }
 
         /// <summary>
         /// Gets the agent host to use when <see cref="MetricsTransport"/> is <see cref="TransportType.UDP"/>
@@ -601,6 +608,7 @@ namespace Datadog.Trace.Configuration
                     .AsInt32(OtlpTimeoutMs, value => value > 0)
                     .Value;
                 OtlpMetricsHeaders = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders).AsString()?.Trim();
+                ReportHostname = config.WithKeys(ConfigurationKeys.ReportHostname).AsBool(defaultValue: false);
 
                 OtlpTracesProtocol = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesProtocol).AsString()?.Trim();
                 OtlpTracesEndpoint = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpTracesEndpoint).AsString()?.Trim();
@@ -734,6 +742,12 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs"/>
             internal int OtlpMetricsTimeoutMs { get; }
+
+            /// <summary>
+            /// Gets a value indicating whether the hostname should be reported on OTLP trace metrics.
+            /// </summary>
+            /// <seealso cref="ConfigurationKeys.ReportHostname"/>
+            internal bool ReportHostname { get; }
 
             /// <summary>
             /// Gets the OTLP protocol for traces export with fallback behavior.
