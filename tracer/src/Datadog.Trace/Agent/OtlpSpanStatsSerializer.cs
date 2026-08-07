@@ -222,13 +222,9 @@ namespace Datadog.Trace.Agent
             writer.WriteStartArray();
 
             WriteStringKvJson(writer, "service.name", key.Service);
+            WriteStringKvJson(writer, "span.name", key.Resource);
             WriteStringKvJson(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue);
             WriteStringKvJson(writer, "span.kind", CanonicalizeSpanKind(key.SpanKind));
-
-            if (!StringUtil.IsNullOrEmpty(key.Resource))
-            {
-                WriteStringKvJson(writer, "span.name", key.Resource);
-            }
 
             if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
             {
@@ -492,13 +488,10 @@ namespace Datadog.Trace.Agent
             using var stream = new MemoryStream(256);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
 
+            WriteAttribute(writer, "span.name", key.Resource, FieldNumbers.HistogramDataPointAttributes);
             WriteAttribute(writer, "service.name", key.Service, FieldNumbers.HistogramDataPointAttributes);
             WriteAttribute(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue, FieldNumbers.HistogramDataPointAttributes);
             WriteAttribute(writer, "span.kind", CanonicalizeSpanKind(key.SpanKind), FieldNumbers.HistogramDataPointAttributes);
-
-            if (!StringUtil.IsNullOrEmpty(key.Resource))
-            {
-                WriteAttribute(writer, "span.name", key.Resource, FieldNumbers.HistogramDataPointAttributes);
             }
 
             if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
