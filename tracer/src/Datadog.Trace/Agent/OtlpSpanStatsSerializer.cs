@@ -151,7 +151,10 @@ namespace Datadog.Trace.Agent
 
             WriteStringKvJson(writer, "datadog.runtime_id", Tracer.RuntimeId);
 
-            // TODO: emit datadog.process_tags from details.ProcessTags (not yet wired into OTLP output).
+            if (details.ProcessTags?.TagsList is { Count: > 0 } processTags)
+            {
+                WriteStringArrayKvJson(writer, "datadog.process_tags", processTags);
+            }
 
             writer.WriteEndArray();
             writer.WriteEndObject();
@@ -285,7 +288,10 @@ namespace Datadog.Trace.Agent
                 }
             }
 
-            // TODO: emit datadog.peer_tags from bucket.PeerTags (not yet wired into OTLP output; mirror the legacy MessagePack shape in StatsBuffer.cs as a single combined arrayValue).
+            if (bucket.PeerTags.Count > 0)
+            {
+                WriteStringArrayKvJson(writer, "datadog.peer_tags", DecodePeerTags(bucket.PeerTags));
+            }
 
             writer.WriteEndArray();
 
@@ -375,6 +381,31 @@ namespace Datadog.Trace.Agent
             writer.WriteEndObject();
         }
 
+        private static void WriteStringArrayKvJson(JsonTextWriter writer, string key, List<string> values)
+        {
+            writer.WriteStartObject();
+            writer.WritePropertyName("key");
+            writer.WriteValue(key);
+            writer.WritePropertyName("value");
+            writer.WriteStartObject();
+            writer.WritePropertyName("arrayValue");
+            writer.WriteStartObject();
+            writer.WritePropertyName("values");
+            writer.WriteStartArray();
+            foreach (var value in values)
+            {
+                writer.WriteStartObject();
+                writer.WritePropertyName("stringValue");
+                writer.WriteValue(value);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+        }
+
         private static byte[] SerializeResourceMetrics(StatsBuffer buffer, long bucketDurationNs)
         {
             using var stream = new MemoryStream(512);
@@ -418,6 +449,11 @@ namespace Datadog.Trace.Agent
             WriteAttribute(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
 
             WriteAttribute(writer, "datadog.runtime_id", Tracer.RuntimeId);
+
+            if (details.ProcessTags?.TagsList is { Count: > 0 } processTags)
+            {
+                WriteStringArrayAttribute(writer, "datadog.process_tags", processTags);
+            }
 
             writer.Flush();
             return stream.ToArray();
@@ -557,6 +593,11 @@ namespace Datadog.Trace.Agent
                 {
                     WriteAttribute(writer, tagKey, tagValue, FieldNumbers.HistogramDataPointAttributes);
                 }
+            }
+
+            if (bucket.PeerTags.Count > 0)
+            {
+                WriteStringArrayAttribute(writer, "datadog.peer_tags", DecodePeerTags(bucket.PeerTags), FieldNumbers.HistogramDataPointAttributes);
             }
 
             WriteTag(writer, FieldNumbers.HistogramDataPointStartTimeUnixNano, WireTypeFixed64);
@@ -722,6 +763,17 @@ namespace Datadog.Trace.Agent
             return true;
         }
 
+        private static List<string> DecodePeerTags(List<byte[]> peerTags)
+        {
+            var decoded = new List<string>(peerTags.Count);
+            foreach (var peerTag in peerTags)
+            {
+                decoded.Add(EncodingHelpers.Utf8NoBom.GetString(peerTag));
+            }
+
+            return decoded;
+        }
+
         private static void WriteAttribute(BinaryWriter writer, string key, string value, int fieldNumber = FieldNumbers.Attributes)
         {
             var kv = SerializeKeyValue(key, value);
@@ -811,6 +863,55 @@ namespace Datadog.Trace.Agent
             return stream.ToArray();
         }
 
+        private static void WriteStringArrayAttribute(BinaryWriter writer, string key, List<string> values, int fieldNumber = FieldNumbers.Attributes)
+        {
+            var kv = SerializeStringArrayKeyValue(key, values);
+            WriteTag(writer, fieldNumber, WireTypeLengthDelimited);
+            WriteVarInt(writer, kv.Length);
+            writer.Write(kv);
+        }
+
+        private static byte[] SerializeStringArrayKeyValue(string key, List<string> values)
+        {
+            using var stream = new MemoryStream(64);
+            using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
+
+            WriteStringField(writer, FieldNumbers.Key, key);
+
+            using var arrayStream = new MemoryStream(64);
+            using var arrayWriter = new BinaryWriter(arrayStream, Encoding.UTF8, leaveOpen: true);
+            foreach (var value in values)
+            {
+                using var elementStream = new MemoryStream(32);
+                using var elementWriter = new BinaryWriter(elementStream, Encoding.UTF8, leaveOpen: true);
+                WriteStringField(elementWriter, AnyValueFieldNumbers.StringValue, value);
+                elementWriter.Flush();
+                var elementData = elementStream.ToArray();
+
+                WriteTag(arrayWriter, ArrayValueFieldNumbers.Values, WireTypeLengthDelimited);
+                WriteVarInt(arrayWriter, elementData.Length);
+                arrayWriter.Write(elementData);
+            }
+
+            arrayWriter.Flush();
+            var arrayData = arrayStream.ToArray();
+
+            using var anyStream = new MemoryStream(arrayData.Length + 8);
+            using var anyWriter = new BinaryWriter(anyStream, Encoding.UTF8, leaveOpen: true);
+            WriteTag(anyWriter, AnyValueFieldNumbers.ArrayValue, WireTypeLengthDelimited);
+            WriteVarInt(anyWriter, arrayData.Length);
+            anyWriter.Write(arrayData);
+            anyWriter.Flush();
+            var anyData = anyStream.ToArray();
+
+            WriteTag(writer, FieldNumbers.Value, WireTypeLengthDelimited);
+            WriteVarInt(writer, anyData.Length);
+            writer.Write(anyData);
+
+            writer.Flush();
+            return stream.ToArray();
+        }
+
         private static void WriteStringField(BinaryWriter writer, int fieldNumber, string value)
         {
             if (!StringUtil.IsNullOrEmpty(value))
@@ -887,6 +988,12 @@ namespace Datadog.Trace.Agent
             public const int StringValue = 1;
             public const int BoolValue = 2;
             public const int IntValue = 3;
+            public const int ArrayValue = 5;
+        }
+
+        private static class ArrayValueFieldNumbers
+        {
+            public const int Values = 1;
         }
     }
 }
