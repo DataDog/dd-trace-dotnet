@@ -10,6 +10,7 @@ using System;
 using System.Reflection;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
@@ -256,19 +257,30 @@ namespace Datadog.Trace.DiagnosticListeners
                     // No need to ToLowerInvariant() these strings, as we lower case
                     // the whole route later
 
-                    var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
-                        routePattern,
-                        routeValues,
-                        _tracer.Settings.ExpandRouteTemplatesEnabled);
+                    var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
 
-                    // If we have a PathBase, then we need to do a bunch of encoding etc which requires allocating buffers
-                    // and various other things. We could look at optimizing that later by inlining ToUriComponent and using a ValueStringBuilder,
-                    // but for now, we just fast-path the no-path base case
-                    rootSpan.ResourceName = !request.PathBase.HasValue && tags.HttpMethod.Length + 1 + resourcePathName.Length <= 1024
-                                                ? string.Create(null, stackalloc char[1024], $"{tags.HttpMethod} {resourcePathName}")
-                                                : $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    if (_tracer.Settings.OtelSemanticsEnabled)
+                    {
+                        // The OTel span name must be "{method} {http.route}", so use the route verbatim
+                        // instead of the Datadog simplified route pattern.
+                        rootSpan.ResourceName = $"{HttpOtelHelper.GetSpanNameMethod(tags.HttpMethod)} {normalizedRoute}";
+                    }
+                    else
+                    {
+                        var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+                            routePattern,
+                            routeValues,
+                            _tracer.Settings.ExpandRouteTemplatesEnabled);
 
-                    tags.AspNetCoreRoute = routePattern.RawText?.ToLowerInvariant();
+                        // If we have a PathBase, then we need to do a bunch of encoding etc which requires allocating buffers
+                        // and various other things. We could look at optimizing that later by inlining ToUriComponent and using a ValueStringBuilder,
+                        // but for now, we just fast-path the no-path base case
+                        rootSpan.ResourceName = !request.PathBase.HasValue && tags.HttpMethod.Length + 1 + resourcePathName.Length <= 1024
+                                                    ? string.Create(null, stackalloc char[1024], $"{tags.HttpMethod} {resourcePathName}")
+                                                    : $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    }
+
+                    tags.AspNetCoreRoute = normalizedRoute;
                 }
 
                 // We check appsec enabled in here, but this avoids the method call if it's not needed

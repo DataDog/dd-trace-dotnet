@@ -39,6 +39,11 @@ namespace Datadog.Trace.TestHelpers
             (new(@"process_id: \d+\.0", RegOptions), "process_id: 0"),
             (new(@"http.client_ip: (.)*(?=,)", RegOptions), "http.client_ip: 127.0.0.1"),
             (new(@"http.useragent: grpc-dotnet\/(.)*(?=,)", RegOptions), "http.useragent: grpc-dotnet/123"),
+            // OpenTelemetry semantic convention equivalents of the above (DD_TRACE_OTEL_SEMANTICS_ENABLED=true)
+            (new(@"client.address: (.)*(?=,)", RegOptions), "client.address: 127.0.0.1"),
+            (new(@"network.peer.address: (.)*(?=,)", RegOptions), "network.peer.address: 127.0.0.1"),
+            (new(@"user_agent.original: grpc-dotnet\/(.)*(?=,)", RegOptions), "user_agent.original: grpc-dotnet/123"),
+            (new(@"server.port: \d+", RegOptions), "server.port: 00000"),
             (new(@"git.commit.sha: [0-9a-f]{40}", RegOptions), "git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb"),
             (new(@"_dd\.p\.tid: [0-9a-f]{16}", RegOptions), "_dd.p.tid: 1234567890abcdef"),
             (new(@"(_dd\.code_origin\.frames\.\d+\.line:\s*)\d+", RegOptions), "${1}0"),
@@ -47,6 +52,24 @@ namespace Datadog.Trace.TestHelpers
         };
 
         private static readonly Regex CodeOriginFilePathRegex = new(@"(?<prefix>_dd\.code_origin\.frames\.\d+\.file:\s*)(?<path>[^,\r\n]+)", RegOptions);
+
+        private static readonly Regex SpanEventTimeRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)", RegOptions);
+
+        private static readonly Regex SpanEventStackTraceRegex = new(@"""exception\.stacktrace"":""(?:\\.|[^""\\])*""", RegOptions);
+
+        /// <summary>
+        /// Scrubs the non-deterministic parts of span events: the event timestamp and, for
+        /// <c>exception</c> events, the stack trace. This is opt-in rather than part of
+        /// <see cref="SpanScrubbers"/> because existing snapshots record the real stack trace under
+        /// <c>error.stack</c>. Needed by tests that record exceptions as span events, i.e. with
+        /// <c>DD_TRACE_OTEL_SEMANTICS_ENABLED=true</c>.
+        /// </summary>
+        /// <param name="settings">The verifier settings to add the scrubbers to.</param>
+        public static void AddSpanEventScrubbers(VerifySettings settings)
+        {
+            settings.AddRegexScrubber(SpanEventTimeRegex, @"time_unix_nano"":<DateTimeOffset.Now>");
+            settings.AddRegexScrubber(SpanEventStackTraceRegex, @"""exception.stacktrace"":""<stacktrace>""");
+        }
 
         /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.

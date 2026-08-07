@@ -49,6 +49,7 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsAspNetCore(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags = null) =>
             metadataSchemaVersion switch
             {
+                "otel" => span.IsAspNetCoreOTel(excludeTags),
                 "v1" => span.IsAspNetCoreV1(excludeTags),
                 _ => span.IsAspNetCoreV0(excludeTags),
             };
