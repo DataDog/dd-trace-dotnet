@@ -2946,6 +2946,228 @@
               "doLog": true
             }
           ]
+        },
+        "semver-comparison-test": {
+          "key": "semver-comparison-test",
+          "enabled": true,
+          "variationType": "STRING",
+          "variations": {
+            "legacy": {
+              "key": "legacy",
+              "value": "legacy"
+            },
+            "stable": {
+              "key": "stable",
+              "value": "stable"
+            },
+            "beta": {
+              "key": "beta",
+              "value": "beta"
+            },
+            "launch": {
+              "key": "launch",
+              "value": "launch"
+            },
+            "future": {
+              "key": "future",
+              "value": "future"
+            },
+            "maximum": {
+              "key": "maximum",
+              "value": "maximum"
+            }
+          },
+          "allocations": [
+            {
+              "key": "maximum-version",
+              "rules": [
+                {
+                  "conditions": [
+                    {
+                      "attribute": "app_version",
+                      "operator": "SEMVER_EQ",
+                      "value": "9007199254740991.9007199254740991.9007199254740991"
+                    }
+                  ]
+                }
+              ],
+              "splits": [
+                {
+                  "variationKey": "maximum",
+                  "shards": []
+                }
+              ],
+              "doLog": true
+            },
+            {
+              "key": "legacy-versions",
+              "rules": [
+                {
+                  "conditions": [
+                    {
+                      "attribute": "app_version",
+                      "operator": "SEMVER_LTE",
+                      "value": "1.2.3-alpha.4"
+                    }
+                  ]
+                },
+                {
+                  "conditions": [
+                    {
+                      "attribute": "app_version",
+                      "operator": "SEMVER_GT",
+                      "value": "1.2.3-alpha.4"
+                    },
+                    {
+                      "attribute": "app_version",
+                      "operator": "SEMVER_LT",
+                      "value": "2.3.4"
+                    }
+                  ]
+                }
+              ],
+              "splits": [
+                {
+                  "variationKey": "legacy",
+                  "shards": []
+                }
+              ],
+              "doLog": true
+            },
+            {
+              "key": "stable-versions",
+              "rules": [
+                {
+                  "conditions": [
+                    {
+                      "attribute": "app_version",
+                      "operator": "SEMVER_GTE",
+                      "value": "2.3.4"
+                    },
+                    {
+                      "attribute": "app_version",
+                      "operator": "SEMVER_LT",
+                      "value": "3.4.5-beta.2"
+                    }
+                  ]
+                }
+              ],
+              "splits": [
+                {
+                  "variationKey": "stable",
+                  "shards": []
+                }
+              ],
+              "doLog": true
+            },
+            {
+              "key": "beta-versions",
+              "rules": [
+                {
+                  "conditions": [
+                    {
+                      "attribute": "app_version",
+                      "operator": "SEMVER_GTE",
+                      "value": "3.4.5-beta.2"
+                    },
+                    {
+                      "attribute": "app_version",
+                      "operator": "SEMVER_LT",
+                      "value": "4.5.6-rc.1"
+                    }
+                  ]
+                }
+              ],
+              "splits": [
+                {
+                  "variationKey": "beta",
+                  "shards": []
+                }
+              ],
+              "doLog": true
+            },
+            {
+              "key": "launch-version",
+              "rules": [
+                {
+                  "conditions": [
+                    {
+                      "attribute": "app_version",
+                      "operator": "SEMVER_EQ",
+                      "value": "4.5.6-rc.1"
+                    }
+                  ]
+                }
+              ],
+              "splits": [
+                {
+                  "variationKey": "launch",
+                  "shards": []
+                }
+              ],
+              "doLog": true
+            },
+            {
+              "key": "future-versions",
+              "rules": [
+                {
+                  "conditions": [
+                    {
+                      "attribute": "app_version",
+                      "operator": "SEMVER_GT",
+                      "value": "4.5.6-rc.1"
+                    },
+                    {
+                      "attribute": "app_version",
+                      "operator": "SEMVER_NEQ",
+                      "value": "5.6.7"
+                    }
+                  ]
+                }
+              ],
+              "splits": [
+                {
+                  "variationKey": "future",
+                  "shards": []
+                }
+              ],
+              "doLog": true
+            }
+          ]
+        },
+        "semver-invalid-comparand-test": {
+          "key": "semver-invalid-comparand-test",
+          "enabled": true,
+          "variationType": "STRING",
+          "variations": {
+            "matched": {
+              "key": "matched",
+              "value": "matched"
+            }
+          },
+          "allocations": [
+            {
+              "key": "invalid-comparand",
+              "rules": [
+                {
+                  "conditions": [
+                    {
+                      "attribute": "app_version",
+                      "operator": "SEMVER_EQ",
+                      "value": "18446744073709551616.0.0"
+                    }
+                  ]
+                }
+              ],
+              "splits": [
+                {
+                  "variationKey": "matched",
+                  "shards": []
+                }
+              ],
+              "doLog": true
+            }
+          ]
         }
       }
     }
