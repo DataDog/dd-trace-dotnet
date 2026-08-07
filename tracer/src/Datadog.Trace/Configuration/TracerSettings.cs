@@ -15,6 +15,7 @@ using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
@@ -769,10 +770,7 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
-#pragma warning disable 618 // superseded by DD_FEATURE_FLAGS_ENABLED, but still honoured for existing adopters
-            IsFlaggingProviderEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled)
-                                                       .AsBool(false);
-#pragma warning restore 618
+            FeatureFlags = new FeatureFlagsSettings(source, telemetry);
 
             IsSpanEnrichmentEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled)
                                                        .AsBool(false);
@@ -1487,12 +1485,12 @@ namespace Datadog.Trace.Configuration
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
 
         /// <summary>
-        /// Gets a value indicating whether remote Feature Flags Provider is enabled
+        /// Gets the Feature Flags configuration, including which delivery source is selected.
         /// </summary>
-        internal bool IsFlaggingProviderEnabled { get; }
+        internal FeatureFlagsSettings FeatureFlags { get; }
 
         /// <summary>
-        /// Gets a value indicating whether APM span enrichment is enabled; see <see cref="IsFlaggingProviderEnabled"/>.
+        /// Gets a value indicating whether APM span enrichment is enabled; see <see cref="FeatureFlags"/>.
         /// </summary>
         internal bool IsSpanEnrichmentEnabled { get; }
 

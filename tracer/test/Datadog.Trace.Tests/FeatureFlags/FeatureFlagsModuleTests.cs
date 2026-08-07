@@ -24,11 +24,97 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 public class FeatureFlagsModuleTests
 {
     [Fact]
+    public void Create_WhenDisabled_ReturnsNull()
+    {
+        var settings = CreateSettings((ConfigurationKeys.FeatureFlags.FeatureFlagsEnabled, "false"));
+
+        FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager()).Should().BeNull();
+    }
+
+    [Fact]
+    public void Create_ByDefault_SelectsAgentlessWithoutRemoteConfiguration()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+
+        using var module = FeatureFlagsModule.Create(CreateSettings(), rcmManager);
+
+        module.Should().NotBeNull();
+        module!.Settings.Source.Should().Be(FeatureFlagsSource.Agentless);
+
+        // Subscribing would advertise the FFE capability and start a billed Remote Configuration
+        // subscription, which must not happen for a source that never uses it.
+        rcmManager.HasAnySubscription.Should().BeFalse();
+        rcmManager.ProductKeys.Should().NotContain(RcmProducts.FfeFlags);
+        rcmManager.Capabilities.Should().NotContainKey(RcmCapabilitiesIndices.FfeFlagConfigurationRules);
+    }
+
+    [Fact]
+    public void Create_WithRemoteConfigSource_SubscribesAndAdvertisesCapability()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        var settings = CreateSettings((ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config"));
+
+        using var module = FeatureFlagsModule.Create(settings, rcmManager);
+
+        module.Should().NotBeNull();
+        module!.Settings.Source.Should().Be(FeatureFlagsSource.RemoteConfig);
+        rcmManager.ProductKeys.Should().Contain(RcmProducts.FfeFlags);
+        rcmManager.Capabilities.Should().ContainKey(RcmCapabilitiesIndices.FfeFlagConfigurationRules)
+                  .WhoseValue.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Dispose_WithRemoteConfigSource_Unsubscribes()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        var settings = CreateSettings((ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config"));
+
+        var module = FeatureFlagsModule.Create(settings, rcmManager);
+        rcmManager.HasAnySubscription.Should().BeTrue();
+
+        module!.Dispose();
+
+        rcmManager.HasAnySubscription.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Activate_IsIdempotent()
+    {
+        using var module = FeatureFlagsModule.Create(CreateSettings(), new MockRcmSubscriptionManager());
+
+        module!.Activate();
+        module.Activate();
+
+        // Nothing is delivered yet in agentless mode, so the provider cannot be ready.
+        module.FirstConfigReceived.IsCompleted.Should().BeFalse();
+    }
+
+    [Fact]
+    public void FirstConfigReceived_CompletesWhenConfigurationApplied()
+    {
+        using var module = FeatureFlagsModule.Create(CreateSettings(), new MockRcmSubscriptionManager());
+
+        module!.FirstConfigReceived.IsCompleted.Should().BeFalse();
+
+        module.ApplyConfiguration(new ServerConfiguration
+        {
+            Flags = new Dictionary<string, Flag>
+            {
+                ["test-flag"] = new Flag { Key = "test-flag", Enabled = true, VariationType = FeatureFlagsValueType.Boolean }
+            }
+        }).Should().BeTrue();
+
+        module.FirstConfigReceived.IsCompleted.Should().BeTrue();
+        module.Evaluate("test-flag", FeatureFlagsValueType.Boolean, false, "user-1", null)
+              .Error.Should().NotBe("PROVIDER_NOT_READY");
+    }
+
+    [Fact]
     public void UpdateRemoteConfig_WithEmptyList_InvokesCallbackAndReturnsProviderNotReady()
     {
         // Arrange
         var rcmManager = new MockRcmSubscriptionManager();
-        var settings = CreateSettings();
+        var settings = CreateSettings((ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config"));
         var module = new FeatureFlagsModule(settings, rcmManager);
 
         var callbackInvoked = false;
@@ -75,14 +161,13 @@ public class FeatureFlagsModuleTests
         result.Reason.Should().Be(EvaluationReason.Error);
     }
 
-    private static TracerSettings CreateSettings()
+    private static TracerSettings CreateSettings(params (string Key, string Value)[] settings)
     {
-#pragma warning disable 618 // superseded by DD_FEATURE_FLAGS_ENABLED, but still honoured for existing adopters
-        var collection = new NameValueCollection
+        var collection = new NameValueCollection();
+        foreach (var (key, value) in settings)
         {
-            { ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "true" }
-        };
-#pragma warning restore 618
+            collection[key] = value;
+        }
 
         return new TracerSettings(new NameValueConfigurationSource(collection));
     }
