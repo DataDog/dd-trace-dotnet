@@ -29,6 +29,10 @@ internal ref struct ExpressionEvaluationResult
 
     internal bool HasConditionError { get; set; }
 
+    internal EvaluationBudget EvaluationBudget { get; set; }
+
+    internal bool HasEvaluationBudget { get; set; }
+
     internal readonly bool HasError => Errors is { Count: > 0 };
 
     internal readonly bool HasCaptureExpressions => CaptureExpressionCount > 0;
