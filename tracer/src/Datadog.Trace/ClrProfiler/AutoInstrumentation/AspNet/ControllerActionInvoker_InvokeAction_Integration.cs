@@ -87,10 +87,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         {
                             codeOrigin.SetCodeOriginForEntrySpan(rootSpan, type, method);
                         }
-                        else
-                        {
-                            Log.Debug("Could not extract type and method from ActionDescriptor type {ActionDescriptorType}", actionDescriptor?.GetType());
-                        }
                     }
                 }
             }
