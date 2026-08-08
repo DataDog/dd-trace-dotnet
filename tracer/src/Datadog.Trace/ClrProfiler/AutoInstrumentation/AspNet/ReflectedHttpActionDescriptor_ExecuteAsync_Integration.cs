@@ -77,9 +77,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             try
             {
                 var codeOrigin = DebuggerManager.Instance.CodeOrigin;
-                if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true })
+                if (codeOrigin is { Settings.CodeOriginForSpansEnabled: true }
+                && HttpContext.Current is { } httpContext)
                 {
-                    var httpContext = HttpContext.Current;
                     if (SharedItems.TryPeekScope(httpContext, AspNetWebApi2Integration.HttpContextKey) is { Root.Span: { } rootSpan } &&
                         !codeOrigin.HasCodeOrigin(rootSpan))
                     {
