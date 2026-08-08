@@ -9,7 +9,7 @@
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
     /// <summary>
     /// Duck type for MVC/Web API descriptors that expose a MethodInfo.
