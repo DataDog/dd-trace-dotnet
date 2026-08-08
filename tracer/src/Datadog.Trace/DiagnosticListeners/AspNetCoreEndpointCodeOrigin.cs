@@ -5,21 +5,19 @@
 
 #nullable enable
 
+#if !NETFRAMEWORK
+
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Datadog.Trace.DuckTyping;
-#if !NETFRAMEWORK
 using Datadog.Trace.Logging;
-#endif
 
 namespace Datadog.Trace.DiagnosticListeners;
 
 internal static class AspNetCoreEndpointCodeOrigin
 {
-#if !NETFRAMEWORK
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetCoreEndpointCodeOrigin));
-#endif
 
     internal static bool TryGetTypeAndMethod(RouteEndpoint routeEndpoint, [NotNullWhen(true)] out Type? type, [NotNullWhen(true)] out MethodInfo? method)
     {
@@ -61,7 +59,6 @@ internal static class AspNetCoreEndpointCodeOrigin
         return false;
     }
 
-#if !NETFRAMEWORK
     internal static bool TryGetTypeAndMethod(AspNetCoreDiagnosticObserver.BeforeActionStruct beforeAction, [NotNullWhen(true)] out Type? type, [NotNullWhen(true)] out MethodInfo? method)
     {
         try
@@ -102,5 +99,6 @@ internal static class AspNetCoreEndpointCodeOrigin
         method = null;
         return false;
     }
-#endif
 }
+
+#endif
