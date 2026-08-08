@@ -17,7 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
     [DuckCopy]
     internal struct ActionDescriptorWithMethodInfo
     {
-        [Duck]
         public MethodInfo? MethodInfo;
     }
 }
