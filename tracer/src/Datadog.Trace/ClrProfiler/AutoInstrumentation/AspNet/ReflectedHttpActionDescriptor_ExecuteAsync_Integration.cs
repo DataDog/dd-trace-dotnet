@@ -87,16 +87,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         {
                             codeOrigin.SetCodeOriginForEntrySpan(rootSpan, type, method);
                         }
-                        else
-                        {
-                            Log.Debug("Could not extract type and method from HttpActionDescriptor type {ActionDescriptorType}", instance?.GetType());
-                        }
                     }
                 }
             }
             catch (Exception ex) when (BlockException.GetBlockException(ex) is null)
             {
-                Log.Error(ex, "Error adding code origin for spans in {MethodName}", "System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
+                Log.Error(ex, "Error adding code origin for spans in System.Web.Http.Controllers.ReflectedHttpActionDescriptor.ExecuteAsync()");
             }
 
             return CallTargetState.GetDefault();

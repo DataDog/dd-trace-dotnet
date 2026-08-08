@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error adding code origin for spans in {MethodName}", "System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod()");
+                Log.Error(ex, "Error adding code origin for spans in System.Web.Mvc.ControllerActionInvoker.InvokeActionMethod()");
             }
 
             return CallTargetState.GetDefault();
