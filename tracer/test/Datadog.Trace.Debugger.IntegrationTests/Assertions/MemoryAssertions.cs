@@ -10,7 +10,9 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using Xunit;
 using Xunit.Abstractions;
+using ClrDiagnosticsException = Microsoft.Diagnostics.Runtime.ClrDiagnosticsException;
 
 namespace Datadog.Trace.Debugger.IntegrationTests.Assertions;
 
@@ -68,6 +70,7 @@ internal class MemoryAssertions
     /// <param name="output">The test output helper</param>
     /// <param name="timeout">Timeout for the memory snapshot operation</param>
     /// <returns>MemoryAssertions or null if the operation timed out</returns>
+    /// <exception cref="SkipException">Thrown to skip the test when ClrMD cannot capture or analyze the heap.</exception>
     public static async Task<MemoryAssertions?> TryCaptureSnapshotToAssertOn(Process process, ITestOutputHelper output, TimeSpan timeout)
     {
         try
@@ -83,6 +86,16 @@ internal class MemoryAssertions
         {
             output?.WriteLine($"Memory assertion operation timed out after {timeout.TotalSeconds} seconds.");
             return null;
+        }
+        catch (ClrDiagnosticsException ex)
+        {
+            output?.WriteLine($"Skipping memory assertion because ClrMD failed to capture or analyze the heap: {ex}");
+            throw new SkipException($"ClrMD failed to capture or analyze the heap: {ex.Message}");
+        }
+        catch (InvalidOperationException ex) when (IsClrMdStackRootEnumerationFailure(ex))
+        {
+            output?.WriteLine($"Skipping memory assertion because ClrMD failed while enumerating stack roots: {ex}");
+            throw new SkipException($"ClrMD failed while enumerating stack roots: {ex.Message}");
         }
     }
 
@@ -136,6 +149,14 @@ internal class MemoryAssertions
         {
             throw new MemoryAssertionException($"Expected {typeof(T).Name} objects in memory, but not found.", GetDumpDetails());
         }
+    }
+
+    private static bool IsClrMdStackRootEnumerationFailure(Exception exception)
+    {
+        var stackTrace = exception.StackTrace;
+        return stackTrace is not null &&
+               stackTrace.IndexOf("Microsoft.Diagnostics.Runtime", StringComparison.Ordinal) >= 0 &&
+               stackTrace.IndexOf("EnumerateStackRoots", StringComparison.Ordinal) >= 0;
     }
 
     private string GetDumpDetails()
