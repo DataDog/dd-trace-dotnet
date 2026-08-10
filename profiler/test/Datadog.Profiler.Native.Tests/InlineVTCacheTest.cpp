@@ -157,6 +157,29 @@ TEST(InlineVTCacheTest, TypeMetSeveralTimesDuringTraversalIsQueuedOnce)
     ASSERT_EQ(static_cast<size_t>(0), profilerInfo.InspectedClassCount);
 }
 
+// Queuing a type also records a "nothing to attribute" cache entry, so the other objects
+// of that type stop at the cache lookup instead of probing the queue again for each one
+// while the runtime is suspended.
+TEST(InlineVTCacheTest, QueuedTypeIsAlsoCachedSoLaterObjectsOnlyCostALookup)
+{
+    CoreLibMockProfilerInfo profilerInfo;
+    FakeMethodTable methodTable;
+
+    auto cache = CreateCache(profilerInfo, nullptr);
+
+    ASSERT_EQ(static_cast<size_t>(0), cache.GetCachedTypeCount());
+
+    cache.GetInlineVTInfo(methodTable.GetClassID());
+
+    ASSERT_EQ(static_cast<size_t>(1), cache.GetCachedTypeCount());
+    ASSERT_EQ(static_cast<size_t>(1), cache.GetPendingTypeCount());
+
+    // The placeholder must not be mistaken for a real verdict: the type is still
+    // inspected once the dump is over.
+    ASSERT_EQ(static_cast<size_t>(1), cache.ResolvePendingTypes());
+    ASSERT_EQ(static_cast<size_t>(1), profilerInfo.InspectedClassCount);
+}
+
 TEST(InlineVTCacheTest, QueuedTypeIsInspectedAfterTheDump)
 {
     CoreLibMockProfilerInfo profilerInfo;

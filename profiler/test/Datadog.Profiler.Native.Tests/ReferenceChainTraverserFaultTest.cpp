@@ -11,9 +11,12 @@
 #include "VisitedObjectSet.h"
 #include "IFrameStore.h"
 #include "GCDescReader.h"
+#include "GCHeapRangeSet.h"
 
 #include <cstdint>
 #include <cstring>
+#include <new>
+#include <stdexcept>
 #include <unordered_map>
 #include <utility>
 
@@ -132,6 +135,18 @@ public:
 
 private:
     std::unordered_map<uintptr_t, std::pair<ClassID, SIZE_T>> _objects;
+};
+
+// Throws from a profiling API call made deep inside the guarded traversal. Stands in for
+// anything that is not a memory access fault: std::bad_alloc from our own containers, or
+// a CLR exception surfacing through the profiling API.
+class ThrowingMockProfiler : public GraphMockProfiler
+{
+public:
+    HRESULT STDMETHODCALLTYPE GetClassFromObject(ObjectID /*objectId*/, ClassID* /*pClassId*/) override
+    {
+        throw std::bad_alloc();
+    }
 };
 
 // Drives the GCDesc self-test to a Failed verdict: not an array (IsArrayClass != S_OK),
@@ -278,7 +293,146 @@ TEST(ReferenceChainTraverserFaultTest, VisitedSetIsFullyClearedAfterFault)
     ASSERT_FALSE(visited.IsVisited(0x123000));
 }
 
+namespace
+{
+// root -> child through a single reference slot at offset 0. Returns the root's RootInfo;
+// rootObj/childObj are owned by the caller.
+struct TwoObjectGraph
+{
+    alignas(64) std::uint8_t rootMt[4096]{};
+    alignas(64) std::uint8_t childMt[4096]{};
+    alignas(8) std::uint8_t rootObj[64]{};
+    alignas(8) std::uint8_t childObj[64]{};
+
+    ClassID rootClass = 0;
+    ClassID childClass = 0;
+
+    void Build(GraphMockProfiler& profiler)
+    {
+        rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), 1, 64);
+        childClass = BuildFakeMethodTableNoPointers(childMt, sizeof(childMt));
+
+        *reinterpret_cast<uintptr_t*>(rootObj) = reinterpret_cast<uintptr_t>(childObj);
+        profiler.AddObject(reinterpret_cast<uintptr_t>(childObj), childClass, 64);
+    }
+
+    RootInfo GetRoot() const
+    {
+        return RootInfo(reinterpret_cast<uintptr_t>(rootObj), RootCategory::Stack, rootClass, 64);
+    }
+};
+} // namespace
+
+// A reference whose address falls outside the seeded GC heap ranges is dropped before it
+// is dereferenced. This is the whole point of the filter, and nothing else exercises the
+// pHeapRanges constructor parameter.
+TEST(ReferenceChainTraverserFaultTest, ReferenceOutsideTheHeapRangesIsRejected)
+{
+    GraphMockProfiler profiler;
+    TwoObjectGraph graph;
+    graph.Build(profiler);
+
+    // Flipping a bit well above BlockSize lands the range in a block that provably does
+    // not contain the child, whatever the pointer width or where the stack happens to be.
+    GCHeapRangeSet ranges;
+    ranges.AddRange(reinterpret_cast<uintptr_t>(graph.childObj) ^ (GCHeapRangeSet::BlockSize * 4), 0x1000);
+
+    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
+    NullFrameStore frameStore;
+    TypeReferenceTree tree;
+    InlineVTCache vtCache(pInfo, &frameStore, nullptr);
+    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16, &ranges);
+
+    traverser.TraverseFromSingleRoot(graph.GetRoot());
+
+    EXPECT_EQ(traverser.GetRefsRejectedByRangeFilter(), 1u);
+    EXPECT_EQ(traverser.GetFaultCount(), 0u);
+
+    RootKey key{graph.rootClass, RootCategory::Stack};
+    auto it = tree._roots.find(key);
+    ASSERT_NE(it, tree._roots.end());
+    EXPECT_EQ(it->second->node.GetChild(graph.childClass), nullptr);
+}
+
+// Same graph, but the child's address is covered: the filter must let it through.
+TEST(ReferenceChainTraverserFaultTest, ReferenceInsideTheHeapRangesIsAccepted)
+{
+    GraphMockProfiler profiler;
+    TwoObjectGraph graph;
+    graph.Build(profiler);
+
+    GCHeapRangeSet ranges;
+    ranges.AddRange(reinterpret_cast<uintptr_t>(graph.childObj), sizeof(graph.childObj));
+
+    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
+    NullFrameStore frameStore;
+    TypeReferenceTree tree;
+    InlineVTCache vtCache(pInfo, &frameStore, nullptr);
+    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16, &ranges);
+
+    traverser.TraverseFromSingleRoot(graph.GetRoot());
+
+    EXPECT_EQ(traverser.GetRefsRejectedByRangeFilter(), 0u);
+
+    RootKey key{graph.rootClass, RootCategory::Stack};
+    auto it = tree._roots.find(key);
+    ASSERT_NE(it, tree._roots.end());
+    EXPECT_NE(it->second->node.GetChild(graph.childClass), nullptr);
+}
+
+// An exception thrown deep inside the guarded traversal must not escape into the EventPipe
+// callback that drives the dump, must not be miscounted as a memory access fault, and must
+// stop this dump's traversal without distrusting the GCDesc layout model.
+TEST(ReferenceChainTraverserFaultTest, ExceptionEscapingTheGuardAbortsTheDumpWithoutCountingAFault)
+{
+    ThrowingMockProfiler profiler;
+    TwoObjectGraph graph;
+    graph.Build(profiler);
+
+    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
+    NullFrameStore frameStore;
+    TypeReferenceTree tree;
+    InlineVTCache vtCache(pInfo, &frameStore, nullptr);
+    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+
+    EXPECT_NO_THROW(traverser.TraverseFromSingleRoot(graph.GetRoot()));
+
+    EXPECT_TRUE(traverser.WasAbortedByFaults());
+    EXPECT_EQ(traverser.GetFaultCount(), 0u);
+    EXPECT_TRUE(traverser.IsGCDescTrusted());
+}
+
 #if defined(DD_TEST)
+
+// The guard only recovers from memory access faults, so a C++ exception must pass straight
+// through it. On Windows that means the SEH filter no longer swallows exception code
+// 0xE06D7363; on Linux it means the "in guarded traversal" flag is cleared while unwinding,
+// without which the next fault on this thread would siglongjmp into a dead frame.
+TEST(ReferenceChainTraverserFaultTest, ExceptionUnderGuardPropagatesAndLeavesTheGuardUsable)
+{
+    void* badPage = MapInaccessiblePage();
+    ASSERT_NE(badPage, nullptr);
+
+    TraversalFaultMockProfiler profiler;
+    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
+    NullFrameStore frameStore;
+    TypeReferenceTree tree;
+    InlineVTCache vtCache(pInfo, &frameStore, nullptr);
+    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+
+    EXPECT_THROW(traverser.Test_ThrowUnderGuard(), std::runtime_error);
+
+    // The exception was not mistaken for an unreadable address.
+    EXPECT_EQ(traverser.GetFaultCount(), 0u);
+
+    // A real fault afterwards is still recovered rather than crashing the process,
+    // which is only true if the guard left no state behind.
+    traverser.Test_FaultReadUnderGuard(badPage);
+    EXPECT_EQ(traverser.GetFaultCount(), 1u);
+    EXPECT_TRUE(traverser.IsGCDescTrusted());
+
+    UnmapPage(badPage);
+}
 
 TEST(ReferenceChainTraverserFaultTest, TestFaultReadUnderGuardIncrementsFaultCountButKeepsGCDescTrusted)
 {

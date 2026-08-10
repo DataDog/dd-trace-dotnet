@@ -87,7 +87,16 @@ public:
     }
 
     size_t GetMemorySize() const;
+
+    // Number of cached types that actually have inline value types to attribute.
     size_t GetEntryCount() const;
+
+    // Number of types the cache can answer for without touching the pending queue,
+    // including the ones whose verdict is "nothing to attribute".
+    size_t GetCachedTypeCount() const
+    {
+        return _cache.size();
+    }
 
 private:
     std::optional<InlineVTInfo> BuildInlineVTInfo(ClassID classID);
@@ -166,7 +175,10 @@ private:
     CoreLibModuleProvider* _pCoreLibModuleProvider;
 
     // Cache: ClassID -> optional<InlineVTInfo>.
-    // std::nullopt = type was inspected but has no inline VTs (sentinel to avoid re-checking).
+    // std::nullopt = nothing to attribute for this type, either because it was inspected
+    // and has no inline VTs, or because it is still queued in _pendingClassIDs and has
+    // not been inspected yet. Both cases behave identically during a traversal, and
+    // ResolvePendingTypes erases the queued ones before inspecting them.
     // InlineVTInfo with non-empty fields = type has inline VTs.
     std::unordered_map<ClassID, std::optional<InlineVTInfo>> _cache;
 

@@ -6,10 +6,37 @@
 #include "OpSysTools.h"
 
 #include <cstdint>
+#include <stdexcept>
 
-#ifndef _WINDOWS
+#ifdef _WINDOWS
+#include <Windows.h>
+
+namespace
+{
+// Only the faults a raw object graph read can actually produce are recovered from.
+// EXCEPTION_EXECUTE_HANDLER would also swallow stack overflow (leaving the guard page
+// unreset for the rest of the process), CLR exceptions and C++ exceptions such as
+// std::bad_alloc -- none of which mean "that object address was unreadable", and all
+// of which the resume loop would otherwise retry.
+int MemoryFaultFilter(DWORD exceptionCode)
+{
+    switch (exceptionCode)
+    {
+        case EXCEPTION_ACCESS_VIOLATION:
+        case EXCEPTION_DATATYPE_MISALIGNMENT:
+        case EXCEPTION_IN_PAGE_ERROR:
+            return EXCEPTION_EXECUTE_HANDLER;
+
+        default:
+            return EXCEPTION_CONTINUE_SEARCH;
+    }
+}
+} // namespace
+
+#else
 #include <csetjmp>
 #include <csignal>
+#include <pthread.h>
 
 #include "ProfilerSignalManager.h"
 
@@ -30,6 +57,40 @@ namespace
 {
 thread_local sigjmp_buf t_traversalJmpBuf;
 thread_local volatile sig_atomic_t t_inGuardedTraversal = 0;
+
+// Clears the flag on every way out of the guarded body that still unwinds C++ frames:
+// a normal return and, crucially, an escaping exception. Left set, the flag would
+// arm the handler for the whole life of the thread, so the next SIGSEGV -- including
+// one the CLR would have handled itself -- would siglongjmp into a dead frame.
+// The siglongjmp path skips destructors, so the recovery branch clears it by hand.
+struct InGuardedTraversalScope
+{
+    InGuardedTraversalScope()
+    {
+        t_inGuardedTraversal = 1;
+    }
+
+    ~InGuardedTraversalScope()
+    {
+        t_inGuardedTraversal = 0;
+    }
+};
+
+// The guard is entered at least twice per root, and sigsetjmp with savemask = 1 costs
+// an rt_sigprocmask syscall every time. Using savemask = 0 instead moves that cost to
+// the (rare) recovery path: undo the handler's mask change here so a later fault is
+// still deliverable. ProfilerSignalManager installs its handlers without SA_NODEFER
+// and with an sa_mask holding only the handled signal, so unblocking SIGSEGV and
+// SIGBUS restores exactly what was blocked. This runs after the handler frame has
+// been abandoned, i.e. in normal context, so pthread_sigmask is safe to call.
+void UnblockFaultSignals()
+{
+    sigset_t faultSignals;
+    sigemptyset(&faultSignals);
+    sigaddset(&faultSignals, SIGSEGV);
+    sigaddset(&faultSignals, SIGBUS);
+    pthread_sigmask(SIG_UNBLOCK, &faultSignals, nullptr);
+}
 
 // ProfilerSignalManager: return false to chain to the CLR's previous SIGSEGV/SIGBUS handler.
 // When in guarded traversal we siglongjmp and do not return.
@@ -74,7 +135,61 @@ ReferenceChainTraverser::ReferenceChainTraverser(
 #endif
 }
 
+template <typename TBody>
+bool ReferenceChainTraverser::RunGuarded(TBody&& body)
+{
+    // IMPORTANT: this function must own no local object requiring C++ unwinding, and
+    // neither must body or anything it calls. On Windows /EHsc, SEH unwinding does not
+    // run the destructors of intervening frames; on Linux, siglongjmp does not run
+    // destructors at all. (InGuardedTraversalScope below is the one exception: it is
+    // there precisely to cover the paths that DO unwind, and the recovery branch
+    // reproduces its effect for the path that does not.)
+#ifdef _WINDOWS
+    __try
+    {
+        body();
+    }
+    __except (MemoryFaultFilter(GetExceptionCode()))
+    {
+        OnTraversalFault();
+        return false;
+    }
+#else
+    if (sigsetjmp(t_traversalJmpBuf, 0) != 0)
+    {
+        UnblockFaultSignals();
+        t_inGuardedTraversal = 0;
+        OnTraversalFault();
+        return false;
+    }
+
+    InGuardedTraversalScope guardScope;
+    body();
+#endif
+
+    return true;
+}
+
 void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
+{
+    // The guards below only recover from memory access faults. Anything else -- a
+    // std::bad_alloc from the tree or the visited set, a CLR exception surfacing
+    // through one of the profiling API calls -- would otherwise escape into the
+    // EventPipe callback driving the dump. Stop this dump's traversal instead.
+    try
+    {
+        TraverseFromSingleRootCore(root);
+    }
+    catch (...)
+    {
+        OnTraversalAborted();
+    }
+
+    // Reported from here rather than from inside the guard: see LogPendingSelfTestFailure.
+    LogPendingSelfTestFailure();
+}
+
+void ReferenceChainTraverser::TraverseFromSingleRootCore(const RootInfo& root)
 {
     // If the GCDesc reader failed its self-test, skip all GCDesc-based traversal
     // (permanent). If faults have exhausted the per-dump budget, skip the rest of
@@ -129,36 +244,7 @@ void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
 
 bool ReferenceChainTraverser::SeedRootGuarded(const RootInfo& root)
 {
-    uint32_t faultsBefore = _faultCount;
-
-#ifdef _WINDOWS
-    __try
-    {
-        SeedRoot(root);
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        OnTraversalFault();
-    }
-#else
-    // Linux: recover from SIGSEGV/SIGBUS via a signal handler + siglongjmp.
-    // savemask = 1 so the mask that blocked SIGSEGV/SIGBUS in the handler is
-    // restored on the recovery path; otherwise a second fault would be fatal.
-    // (macOS is not supported; see the comment at the top of this file.)
-    if (sigsetjmp(t_traversalJmpBuf, 1) == 0)
-    {
-        t_inGuardedTraversal = 1;
-        SeedRoot(root);
-        t_inGuardedTraversal = 0;
-    }
-    else
-    {
-        t_inGuardedTraversal = 0;
-        OnTraversalFault();
-    }
-#endif
-
-    return _faultCount == faultsBefore;
+    return RunGuarded([this, &root] { SeedRoot(root); });
 }
 
 void ReferenceChainTraverser::SeedRoot(const RootInfo& root)
@@ -177,33 +263,7 @@ void ReferenceChainTraverser::SeedRoot(const RootInfo& root)
 
 void ReferenceChainTraverser::DrainTraversalStackGuarded()
 {
-    // IMPORTANT: this function must contain no local objects requiring C++ unwinding.
-    // On Windows /EHsc, SEH unwinding does not run destructors of intervening frames;
-    // on Linux, siglongjmp does not run destructors at all. Keep the guarded body a
-    // plain call so a fault cannot leak or corrupt anything owned by this frame.
-#ifdef _WINDOWS
-    __try
-    {
-        DrainTraversalStack();
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        OnTraversalFault();
-    }
-#else
-    // savemask = 1: see the note in SeedRootGuarded.
-    if (sigsetjmp(t_traversalJmpBuf, 1) == 0)
-    {
-        t_inGuardedTraversal = 1;
-        DrainTraversalStack();
-        t_inGuardedTraversal = 0;
-    }
-    else
-    {
-        t_inGuardedTraversal = 0;
-        OnTraversalFault();
-    }
-#endif
+    RunGuarded([this] { DrainTraversalStack(); });
 }
 
 void ReferenceChainTraverser::OnTraversalFault()
@@ -229,6 +289,38 @@ void ReferenceChainTraverser::OnTraversalFault()
             "See the per-dump fault count in the traversal statistics.");
 }
 
+void ReferenceChainTraverser::OnTraversalAborted()
+{
+    // Something threw rather than faulted, so retrying makes no sense: stop traversing
+    // for the rest of this dump. As with a fault, this says nothing about whether the
+    // GCDesc/MethodTable layout model is correct, so _gcDescTrusted stays untouched.
+    _faultBudgetExhausted = true;
+
+    // The traversal was interrupted at an arbitrary point, so the visited set may hold
+    // an address whose bucket was never recorded in _dirtyIndices.
+    _visited.MarkPossiblyInconsistent();
+
+    LogOnce(Warn,
+            "Reference-chain traversal was aborted by an unexpected exception. "
+            "Traversal is skipped for the rest of this heap snapshot. "
+            "The class histogram is unaffected.");
+}
+
+void ReferenceChainTraverser::LogPendingSelfTestFailure()
+{
+    if (_selfTestFailedClassID == 0 || _selfTestFailureLogged)
+    {
+        return;
+    }
+
+    _selfTestFailureLogged = true;
+
+    Log::Warn("GCDesc reference-chain self-test failed for class ", GetClassName(_selfTestFailedClassID),
+              " (classID=", _selfTestFailedClassID, "): the CLR MethodTable/GCDesc layout does not match expectations. ",
+              "Disabling reference-chain traversal for the rest of the process. ",
+              "The class histogram is unaffected.");
+}
+
 #ifdef DD_TEST
 void ReferenceChainTraverser::Test_FaultReadUnderGuard(const volatile void* ptr)
 {
@@ -237,28 +329,12 @@ void ReferenceChainTraverser::Test_FaultReadUnderGuard(const volatile void* ptr)
         return;
     }
 
-#ifdef _WINDOWS
-    __try
-    {
-        (void)*reinterpret_cast<const volatile char*>(ptr);
-    }
-    __except (EXCEPTION_EXECUTE_HANDLER)
-    {
-        OnTraversalFault();
-    }
-#else
-    if (sigsetjmp(t_traversalJmpBuf, 1) == 0)
-    {
-        t_inGuardedTraversal = 1;
-        (void)*reinterpret_cast<const volatile char*>(ptr);
-        t_inGuardedTraversal = 0;
-    }
-    else
-    {
-        t_inGuardedTraversal = 0;
-        OnTraversalFault();
-    }
-#endif
+    RunGuarded([ptr] { (void)*reinterpret_cast<const volatile char*>(ptr); });
+}
+
+void ReferenceChainTraverser::Test_ThrowUnderGuard()
+{
+    RunGuarded([] { throw std::runtime_error("Test_ThrowUnderGuard"); });
 }
 #endif
 
@@ -370,10 +446,13 @@ void ReferenceChainTraverser::DrainTraversalStack()
             {
                 _gcDescTrusted = false;
                 _selfTest = GCDesc::SelfTestResult::Failed;
-                Log::Warn("GCDesc reference-chain self-test failed for class ", GetClassName(classID),
-                          " (classID=", classID, "): the CLR MethodTable/GCDesc layout does not match expectations. ",
-                          "Disabling reference-chain traversal for the rest of the process. ",
-                          "The class histogram is unaffected.");
+
+                // Only record the class here. Resolving its name takes the FrameStore
+                // lock and logging takes the logger lock; a fault while either is held
+                // would leave it held for good, because neither siglongjmp nor SEH
+                // unwinding runs destructors. LogPendingSelfTestFailure reports it from
+                // outside the guard.
+                _selfTestFailedClassID = classID;
                 return;
             }
             else if (result == GCDesc::SelfTestResult::Passed)

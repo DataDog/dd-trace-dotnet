@@ -71,8 +71,13 @@ public:
     }
 
 private:
-    // Drop the namespace of the outer type while keeping the generic parameters,
-    // like FrameStore does when it caches Type + Parameters.
+    // Approximates the short name FrameStore caches (Type + Parameters) by dropping
+    // everything up to the last dot that precedes the generic parameters.
+    //
+    // It is only an approximation: FrameStore joins a nested type to its enclosing types
+    // with a dot and keeps them in Type, so for "MyApp.Outer.Inner" it returns
+    // "Outer.Inner" where this returns "Inner". The tests below only use non-nested
+    // names, where the two agree.
     static std::string BuildShortName(const std::string& typeName)
     {
         auto genericStart = typeName.find('<');
@@ -1183,10 +1188,10 @@ TEST(TypeReferenceTreeJsonSerializerTest, LeafRootOmitsChildrenArray)
 }
 
 // ============================================================================
-// Edge Case: Serializer — Unresolvable type is skipped
+// Edge Case: Serializer — Unresolvable type name
 // ============================================================================
 
-TEST(TypeReferenceTreeJsonSerializerTest, UnresolvableTypeSkipped)
+TEST(TypeReferenceTreeJsonSerializerTest, UnresolvableTypeIsNamedQuestionMark)
 {
     TypeReferenceTree tree;
     MockFrameStore frameStore;
@@ -1202,21 +1207,52 @@ TEST(TypeReferenceTreeJsonSerializerTest, UnresolvableTypeSkipped)
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
-    ASSERT_NE(json.find("\"KnownType\""), std::string::npos);
+    // The unresolvable type is not skipped: it takes a type table slot like any other,
+    // named "?". Asserting the whole table also catches a missing separator, which a
+    // brace-balance check would not.
+    ASSERT_NE(json.find("\"tt\":[\"KnownType\",\"?\"]"), std::string::npos) << json;
 
-    // The unknown type ID should not appear in the type table,
-    // but the JSON should still be valid
-    int braces = 0, brackets = 0;
-    for (char c : json)
-    {
-        if (c == '{') braces++;
-        if (c == '}') braces--;
-        if (c == '[') brackets++;
-        if (c == ']') brackets--;
-    }
-    ASSERT_EQ(braces, 0) << "Unclosed braces in: " << json;
-    ASSERT_EQ(brackets, 0) << "Unclosed brackets in: " << json;
+    // ...and the child node points at that slot rather than at the known type.
+    ASSERT_NE(json.find("\"ch\":[{\"t\":1,"), std::string::npos) << json;
 }
+
+// ============================================================================
+// Serializer — a node's type index is the position of its name in the type table
+// ============================================================================
+
+// A linear chain keeps the registration order deterministic (the children maps are
+// unordered), so the DFS registration order can be asserted exactly. Nothing else
+// checks that a "t" index and the type table agree: swapping them would still produce
+// structurally valid output.
+TEST(TypeReferenceTreeJsonSerializerTest, NodeTypeIndexMatchesTypeTablePosition)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID rootType = 100, middleType = 200, leafType = 300;
+    frameStore.RegisterType(rootType, "MyApp.Root");
+    frameStore.RegisterType(middleType, "MyApp.Middle");
+    frameStore.RegisterType(leafType, "MyApp.Leaf");
+
+    TypeTreeNode* root = tree.AddRoot(rootType, RootCategory::Stack, 64);
+    TypeTreeNode* middle = root->GetOrCreateChild(middleType);
+    middle->AddInstance(32);
+    TypeTreeNode* leaf = middle->GetOrCreateChild(leafType);
+    leaf->AddInstance(16);
+
+    auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
+
+    ASSERT_EQ(
+        json,
+        "{\"v\":1,\"tt\":[\"MyApp.Root\",\"MyApp.Middle\",\"MyApp.Leaf\"],"
+        "\"r\":[{\"t\":0,\"c\":\"K\",\"ic\":1,\"ts\":64,"
+        "\"ch\":[{\"t\":1,\"ic\":1,\"ts\":32,"
+        "\"ch\":[{\"t\":2,\"ic\":1,\"ts\":16}]}]}]}")
+        << json;
+}
+
+// The binary counterparts of the two tests above live with the other binary tests,
+// after the BinReader helper they need.
 
 // ============================================================================
 // Edge Case: Serializer — Wide tree with many children types
@@ -1528,7 +1564,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, MergedChildrenCountsSerialize)
 // Edge Case: Serializer — Only unresolvable types produces minimal JSON
 // ============================================================================
 
-TEST(TypeReferenceTreeJsonSerializerTest, AllUnresolvableTypesProduceMinimalJson)
+TEST(TypeReferenceTreeJsonSerializerTest, AllUnresolvableTypesStillProduceRoots)
 {
     TypeReferenceTree tree;
     MockFrameStore frameStore;
@@ -1539,20 +1575,14 @@ TEST(TypeReferenceTreeJsonSerializerTest, AllUnresolvableTypesProduceMinimalJson
 
     auto json = TypeReferenceTreeJsonSerializer::Serialize(tree, &frameStore);
 
-    // Should have version and empty roots (types couldn't be resolved so roots are skipped)
-    ASSERT_NE(json.find("\"v\":1"), std::string::npos);
-    ASSERT_NE(json.find("\"r\":["), std::string::npos);
+    ASSERT_NE(json.find("\"v\":1"), std::string::npos) << json;
 
-    int braces = 0, brackets = 0;
-    for (char c : json)
-    {
-        if (c == '{') braces++;
-        if (c == '}') braces--;
-        if (c == '[') brackets++;
-        if (c == ']') brackets--;
-    }
-    ASSERT_EQ(braces, 0);
-    ASSERT_EQ(brackets, 0);
+    // Roots whose type name cannot be resolved are NOT dropped: each type still gets its
+    // own table slot, named "?", and both roots are emitted. Only the names are lost.
+    ASSERT_NE(json.find("\"tt\":[\"?\",\"?\"]"), std::string::npos) << json;
+    ASSERT_NE(json.find("\"c\":\"K\""), std::string::npos) << json;
+    ASSERT_NE(json.find("\"c\":\"H\""), std::string::npos) << json;
+    ASSERT_EQ(json.find("\"r\":[]"), std::string::npos) << json;
 }
 
 // ============================================================================
@@ -1707,6 +1737,102 @@ TEST(TypeReferenceTreeBinarySerializerTest, RootWithChildrenRoundTrip)
     ASSERT_EQ(reader.ReadVarint(), 1u);  // ic
     ASSERT_EQ(reader.ReadVarint(), 64u); // ts
     ASSERT_EQ(reader.ReadVarint(), 0u);  // child_count
+
+    ASSERT_TRUE(reader.AtEnd());
+}
+
+TEST(TypeReferenceTreeBinarySerializerTest, UnresolvableTypeIsNamedQuestionMark)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID typeA = 100;
+    ClassID typeUnknown = 999;
+    frameStore.RegisterType(typeA, "KnownType");
+    // typeUnknown is NOT registered in frameStore
+
+    TypeTreeNode* root = tree.AddRoot(typeA, RootCategory::Stack, 64);
+    TypeTreeNode* child = root->GetOrCreateChild(typeUnknown);
+    child->AddInstance(32);
+
+    auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
+    BinReader reader(bin);
+
+    uint8_t magic[4];
+    reader.ReadFixedBytes(magic, 4);
+    reader.ReadVarint();                // version
+    ASSERT_EQ(reader.ReadVarint(), 2u); // type_count: the unresolvable type still gets a slot
+    ASSERT_EQ(reader.ReadVarint(), 1u); // root_count
+
+    ASSERT_EQ(reader.ReadString(), "KnownType");
+    ASSERT_EQ(reader.ReadString(), "?");
+
+    ASSERT_EQ(reader.ReadVarint(), 0u); // root type_index
+    ASSERT_EQ(reader.ReadByte(), static_cast<uint8_t>(RootCategory::Stack));
+    ASSERT_EQ(reader.ReadVarint(), 1u);  // ic
+    ASSERT_EQ(reader.ReadVarint(), 64u); // ts
+    ASSERT_EQ(reader.ReadVarint(), 0u);  // field_len
+    ASSERT_EQ(reader.ReadVarint(), 1u);  // child_count
+
+    ASSERT_EQ(reader.ReadVarint(), 1u);  // child type_index -> "?"
+    ASSERT_EQ(reader.ReadVarint(), 1u);  // ic
+    ASSERT_EQ(reader.ReadVarint(), 32u); // ts
+    ASSERT_EQ(reader.ReadVarint(), 0u);  // child_count
+
+    ASSERT_TRUE(reader.AtEnd());
+}
+
+// Binary counterpart of NodeTypeIndexMatchesTypeTablePosition: a node's type index must
+// resolve to that node's own name in the string table.
+TEST(TypeReferenceTreeBinarySerializerTest, NodeTypeIndexMatchesStringTablePosition)
+{
+    TypeReferenceTree tree;
+    MockFrameStore frameStore;
+
+    ClassID rootType = 100, middleType = 200, leafType = 300;
+    frameStore.RegisterType(rootType, "MyApp.Root");
+    frameStore.RegisterType(middleType, "MyApp.Middle");
+    frameStore.RegisterType(leafType, "MyApp.Leaf");
+
+    TypeTreeNode* root = tree.AddRoot(rootType, RootCategory::Stack, 64);
+    TypeTreeNode* middle = root->GetOrCreateChild(middleType);
+    middle->AddInstance(32);
+    TypeTreeNode* leaf = middle->GetOrCreateChild(leafType);
+    leaf->AddInstance(16);
+
+    auto bin = TypeReferenceTreeBinarySerializer::Serialize(tree, &frameStore);
+    BinReader reader(bin);
+
+    uint8_t magic[4];
+    reader.ReadFixedBytes(magic, 4);
+    reader.ReadVarint();                // version
+    ASSERT_EQ(reader.ReadVarint(), 3u); // type_count
+    ASSERT_EQ(reader.ReadVarint(), 1u); // root_count
+
+    std::vector<std::string> stringTable{reader.ReadString(), reader.ReadString(), reader.ReadString()};
+    ASSERT_EQ(stringTable[0], "MyApp.Root");
+    ASSERT_EQ(stringTable[1], "MyApp.Middle");
+    ASSERT_EQ(stringTable[2], "MyApp.Leaf");
+
+    auto rootIndex = static_cast<size_t>(reader.ReadVarint());
+    ASSERT_EQ(reader.ReadByte(), static_cast<uint8_t>(RootCategory::Stack));
+    reader.ReadVarint();                // ic
+    reader.ReadVarint();                // ts
+    reader.ReadVarint();                // field_len
+    ASSERT_EQ(reader.ReadVarint(), 1u); // child_count
+    ASSERT_EQ(stringTable[rootIndex], "MyApp.Root");
+
+    auto middleIndex = static_cast<size_t>(reader.ReadVarint());
+    reader.ReadVarint();                // ic
+    reader.ReadVarint();                // ts
+    ASSERT_EQ(reader.ReadVarint(), 1u); // child_count
+    ASSERT_EQ(stringTable[middleIndex], "MyApp.Middle");
+
+    auto leafIndex = static_cast<size_t>(reader.ReadVarint());
+    reader.ReadVarint();                // ic
+    reader.ReadVarint();                // ts
+    ASSERT_EQ(reader.ReadVarint(), 0u); // child_count
+    ASSERT_EQ(stringTable[leafIndex], "MyApp.Leaf");
 
     ASSERT_TRUE(reader.AtEnd());
 }

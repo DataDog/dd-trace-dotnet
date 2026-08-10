@@ -40,6 +40,13 @@ const InlineVTCache::InlineVTInfo* InlineVTCache::GetInlineVTInfo(ClassID classI
     // Inspecting the type here would mean resolving its fields types while the runtime is
     // suspended for the dump: this is done later, once the dump is over.
     _pendingClassIDs.insert(classID);
+
+    // Record a "nothing to attribute" placeholder so the remaining objects of this type
+    // stop at the cache lookup above instead of probing the queue again, once per object,
+    // while the runtime is suspended. ResolvePendingTypes drops it before inspecting the
+    // type for real.
+    _cache.emplace(classID, std::nullopt);
+
     return nullptr;
 }
 
@@ -78,6 +85,14 @@ size_t InlineVTCache::ResolvePendingTypes()
     // iterate over a copy of the queue instead of the queue itself.
     std::unordered_set<ClassID> pendingClassIDs;
     pendingClassIDs.swap(_pendingClassIDs);
+
+    // Drop the placeholders GetInlineVTInfo left behind before inspecting anything: a
+    // type inspected below can pull in a base type that is queued too, and it must see
+    // that base type rebuilt rather than its "nothing to attribute" placeholder.
+    for (ClassID classID : pendingClassIDs)
+    {
+        _cache.erase(classID);
+    }
 
     for (ClassID classID : pendingClassIDs)
     {

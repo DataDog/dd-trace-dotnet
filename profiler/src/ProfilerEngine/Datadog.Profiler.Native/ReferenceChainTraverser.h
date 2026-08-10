@@ -74,13 +74,41 @@ public:
     // traverser (and a fresh budget) unless the manager decides otherwise.
     bool WasAbortedByFaults() const { return _faultBudgetExhausted; }
 
+    // Candidate references dropped by the GC heap-range filter. Diagnostic only: a
+    // non-zero value means the filter is rejecting addresses, which costs real edges
+    // when the seeded ranges do not cover the whole heap.
+    uint64_t GetRefsRejectedByRangeFilter() const { return _refsRejectedByRangeFilter; }
+
 #ifdef DD_TEST
     // Unit tests only: perform a guarded read of one byte from ptr using the same
     // SIGSEGV/SIGBUS (Linux) or SEH (Windows) machinery as TraverseFromSingleRoot.
     void Test_FaultReadUnderGuard(const volatile void* ptr);
+
+    // Unit tests only: throw a C++ exception from inside the guard. The exception is
+    // expected to escape (the guard only recovers from memory access faults) without
+    // leaving any guard state behind.
+    void Test_ThrowUnderGuard();
 #endif
 
 private:
+    // Everything TraverseFromSingleRoot does, minus the "an exception escaped" safety
+    // net that wraps it.
+    void TraverseFromSingleRootCore(const RootInfo& root);
+
+    // Runs body under the platform memory access fault guard: SEH on Windows,
+    // a SIGSEGV/SIGBUS handler plus siglongjmp on Linux. Returns false when a fault
+    // was recovered from, in which case OnTraversalFault has already run.
+    //
+    // C++ exceptions are deliberately NOT caught here: they propagate to
+    // TraverseFromSingleRoot, the single place that decides what an unexpected
+    // exception means for the dump.
+    //
+    // IMPORTANT: neither body nor anything it calls may own something that needs
+    // destruction. SEH unwinding skips the destructors of intervening frames and
+    // siglongjmp does not unwind at all.
+    template <typename TBody>
+    bool RunGuarded(TBody&& body);
+
     // Prepare the per-root state and push the root frame onto _traversalStack.
     // Unguarded: does not read object graph memory beyond the root's MethodTable
     // (see SeedRootGuarded for the fault-protected entry point).
@@ -148,6 +176,15 @@ private:
 
     void OnTraversalFault();
 
+    // A C++ exception escaped the traversal. Unlike a memory access fault this is not
+    // a data-level event, so it stops the dump instead of being counted and retried.
+    void OnTraversalAborted();
+
+    // Emits the self-test failure recorded by DrainTraversalStack. Called from outside
+    // the fault guard because resolving a class name and logging both take locks that
+    // a fault would leave held for good (siglongjmp does not unwind).
+    void LogPendingSelfTestFailure();
+
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
     TypeReferenceTree& _tree;
@@ -194,6 +231,10 @@ private:
     bool _gcDescTrusted = true;
     GCDesc::SelfTestResult _selfTest = GCDesc::SelfTestResult::Pending;
     uint32_t _selfTestObjectsChecked = 0;
+
+    // Class that failed the self-test, reported once from outside the fault guard.
+    ClassID _selfTestFailedClassID = 0;
+    bool _selfTestFailureLogged = false;
 
     // ---- Per-dump, data-level state (reset with the traverser each dump) ----
     // Beyond this many recovered faults the heap is unstable enough (or our reads

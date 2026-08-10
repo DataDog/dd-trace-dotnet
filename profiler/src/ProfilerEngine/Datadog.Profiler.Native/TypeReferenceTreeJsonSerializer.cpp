@@ -17,14 +17,8 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
 
     // B4: Single-pass -- types are collected lazily during OutputNode.
     // The type table is emitted after the tree (roots first, then type table).
-    std::unordered_map<ClassID, uint32_t> typeToIndex;
-
-    // The type table entries are escaped as types are discovered so that no per-type
-    // string is retained: the same scratch buffer is reused for every name resolution.
-    std::string typeTableJson;
-    typeTableJson.reserve(2048);
-    uint32_t typeCount = 0;
-    std::string scratch;
+    // Entries are escaped as types are discovered so that no per-type string is retained.
+    TypeTable types(pFrameStore);
 
     // B1: Use std::string buffer instead of std::stringstream.
     std::string out;
@@ -39,7 +33,7 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
     for (const auto& [key, rootNode] : tree._roots)
     {
         // Lazily register root type
-        auto typeIndex = RegisterType(key.typeID, typeToIndex, typeTableJson, typeCount, scratch, pFrameStore);
+        auto typeIndex = RegisterType(types, key.typeID);
 
         if (!firstRoot)
         {
@@ -79,7 +73,7 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
                     rootsJson += ',';
                 }
                 firstChild = false;
-                OutputNode(*childNode, typeToIndex, typeTableJson, typeCount, scratch, pFrameStore, rootsJson);
+                OutputNode(*childNode, types, rootsJson);
             }
             rootsJson += ']';
         }
@@ -91,10 +85,10 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
     // Phase 2: assemble final JSON -- type table first (now fully populated), then roots
     out += "{\"v\":1";
 
-    if (typeCount > 0)
+    if (types.count > 0)
     {
         out += ",\"tt\":[";
-        out += typeTableJson;
+        out += types.json;
         out += ']';
     }
 
@@ -106,58 +100,53 @@ std::string TypeReferenceTreeJsonSerializer::Serialize(const TypeReferenceTree& 
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
 
     Log::Debug("Reference tree JSON serialization completed: ", duration, "ms, ",
-               out.size(), " bytes, ", typeCount, " types, ",
+               out.size(), " bytes, ", types.count, " types, ",
                tree._roots.size(), " roots");
 
     return out;
 }
 
-uint32_t TypeReferenceTreeJsonSerializer::RegisterType(
-    ClassID typeID,
-    std::unordered_map<ClassID, uint32_t>& typeToIndex,
-    std::string& typeTableJson,
-    uint32_t& typeCount,
-    std::string& scratch,
-    IFrameStore* pFrameStore)
+TypeReferenceTreeJsonSerializer::TypeTable::TypeTable(IFrameStore* frameStore) :
+    pFrameStore(frameStore)
 {
-    auto [it, inserted] = typeToIndex.try_emplace(typeID, typeCount);
+    json.reserve(2048);
+}
+
+uint32_t TypeReferenceTreeJsonSerializer::RegisterType(TypeTable& types, ClassID typeID)
+{
+    auto [it, inserted] = types.typeToIndex.try_emplace(typeID, types.count);
     if (inserted)
     {
-        if (typeCount > 0)
+        if (types.count > 0)
         {
-            typeTableJson += ',';
+            types.json += ',';
         }
-        typeTableJson += '"';
+        types.json += '"';
 
         // The std::string overload returns the namespace qualified name, so the type
-        // names here match the ones emitted in the class histogram.
-        if (pFrameStore->GetTypeName(typeID, scratch))
+        // names here match the ones emitted in the class histogram. It builds that name
+        // into a temporary and move-assigns it, so scratch saves declaring a local per
+        // call but its buffer is replaced on every resolution.
+        if (types.pFrameStore->GetTypeName(typeID, types.scratch))
         {
-            AppendEscapedJson(typeTableJson, scratch);
+            AppendEscapedJson(types.json, types.scratch);
         }
         else
         {
-            typeTableJson += '?';
+            types.json += '?';
         }
 
-        typeTableJson += '"';
-        typeCount++;
+        types.json += '"';
+        types.count++;
     }
 
     return it->second;
 }
 
-void TypeReferenceTreeJsonSerializer::OutputNode(
-    const TypeTreeNode& node,
-    std::unordered_map<ClassID, uint32_t>& typeToIndex,
-    std::string& typeTableJson,
-    uint32_t& typeCount,
-    std::string& scratch,
-    IFrameStore* pFrameStore,
-    std::string& out)
+void TypeReferenceTreeJsonSerializer::OutputNode(const TypeTreeNode& node, TypeTable& types, std::string& out)
 {
     // B3+B4: Lazily register type on first encounter (single lookup via try_emplace)
-    auto typeIndex = RegisterType(node.typeID, typeToIndex, typeTableJson, typeCount, scratch, pFrameStore);
+    auto typeIndex = RegisterType(types, node.typeID);
 
     out += "{\"t\":";
     AppendUInt32(out, typeIndex);
@@ -184,7 +173,7 @@ void TypeReferenceTreeJsonSerializer::OutputNode(
                 out += ',';
             }
             firstChild = false;
-            OutputNode(*childNode, typeToIndex, typeTableJson, typeCount, scratch, pFrameStore, out);
+            OutputNode(*childNode, types, out);
         }
         out += ']';
     }
