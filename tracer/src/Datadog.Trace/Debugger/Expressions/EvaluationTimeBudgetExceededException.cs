@@ -17,4 +17,9 @@ internal sealed class EvaluationTimeBudgetExceededException : Exception
         : base(ErrorMessage)
     {
     }
+
+    public EvaluationTimeBudgetExceededException(Exception innerException)
+        : base(ErrorMessage, innerException)
+    {
+    }
 }

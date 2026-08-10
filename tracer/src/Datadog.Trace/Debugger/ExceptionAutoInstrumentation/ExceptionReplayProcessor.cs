@@ -253,7 +253,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             shadowStack.Leave(snapshotCreator.TrackedStackFrameNode);
         }
 
-        public IProbeProcessor UpdateProbeProcessor(ProbeDefinition probe, int? maxEvaluationTimeInMilliseconds = null)
+        public IProbeProcessor UpdateProbeProcessor(ProbeDefinition probe, int maxEvaluationTimeInMilliseconds)
         {
             return this;
         }

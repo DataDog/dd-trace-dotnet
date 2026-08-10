@@ -19,6 +19,7 @@ using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions
@@ -32,7 +33,6 @@ namespace Datadog.Trace.Debugger.Expressions
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeProcessor));
 
         private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
-        private readonly int _maxEvaluationTimeInMilliseconds;
         private volatile ProbeProcessorState _state;
 
         /// <summary>
@@ -50,9 +50,11 @@ namespace Datadog.Trace.Debugger.Expressions
         internal ProbeProcessor(ProbeDefinition probe, int maxEvaluationTimeInMilliseconds, IDebuggerGlobalRateLimiter globalRateLimiter)
         {
             _globalRateLimiter = globalRateLimiter ?? throw new ArgumentNullException(nameof(globalRateLimiter));
-            _maxEvaluationTimeInMilliseconds = maxEvaluationTimeInMilliseconds;
             _state = ProbeProcessorState.Create(probe, maxEvaluationTimeInMilliseconds);
         }
+
+        [TestingOnly]
+        internal int EvaluatorMaxEvaluationTimeInMilliseconds => _state.GetOrCreateEvaluator().MaxEvaluationTimeInMilliseconds;
 
         private static DebuggerExpression? ToDebuggerExpression(SnapshotSegment? segment)
         {
@@ -63,9 +65,9 @@ namespace Datadog.Trace.Debugger.Expressions
         {
         }
 
-        public IProbeProcessor UpdateProbeProcessor(ProbeDefinition probe, int? maxEvaluationTimeInMilliseconds = null)
+        public IProbeProcessor UpdateProbeProcessor(ProbeDefinition probe, int maxEvaluationTimeInMilliseconds)
         {
-            _state = ProbeProcessorState.Create(probe, maxEvaluationTimeInMilliseconds ?? _maxEvaluationTimeInMilliseconds);
+            _state = ProbeProcessorState.Create(probe, maxEvaluationTimeInMilliseconds);
             return this;
         }
 

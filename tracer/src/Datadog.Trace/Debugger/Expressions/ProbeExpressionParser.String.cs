@@ -23,10 +23,10 @@ internal partial class ProbeExpressionParser<T>
         {
             return Regex.IsMatch(source, pattern, RegexOptions.None, budget.GetRemainingTimeout());
         }
-        catch (RegexMatchTimeoutException)
+        catch (RegexMatchTimeoutException ex)
         {
             budget.MarkTimedOut();
-            throw new EvaluationTimeBudgetExceededException();
+            throw new EvaluationTimeBudgetExceededException(ex);
         }
     }
 

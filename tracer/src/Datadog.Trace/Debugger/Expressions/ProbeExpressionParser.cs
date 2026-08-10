@@ -49,7 +49,7 @@ internal partial class ProbeExpressionParser<T>
 
     private static T DefaultValue(ScopeMember invocationTarget, ScopeMember returnValue, ScopeMember duration, Exception exception, ScopeMember[] members, ref EvaluationBudget budget)
     {
-        budget.ThrowIfExceeded();
+        budget.ThrowIfExceededImmediately();
         if (typeof(T) == typeof(bool))
         {
             return (T)(object)true;
@@ -620,7 +620,7 @@ internal partial class ProbeExpressionParser<T>
         AddLocalAndArgs(argsOrLocals, scopeMembers, expressions, argsOrLocalsParameterExpression);
 
         _evaluationBudgetParameterExpression = Expression.Parameter(typeof(EvaluationBudget).MakeByRefType(), "evaluationBudget");
-        expressions.Add(BudgetCheck());
+        expressions.Add(BudgetCheck(checkImmediately: true));
 
         var result = Expression.Variable(typeof(T), "$dd_el_result");
         scopeMembers.Add(result);
@@ -677,10 +677,13 @@ internal partial class ProbeExpressionParser<T>
         return parameterExpression;
     }
 
-    private MethodCallExpression BudgetCheck()
+    private MethodCallExpression BudgetCheck(bool checkImmediately = false)
     {
         return Expression.Call(
-            ProbeExpressionParserHelper.GetMethodByReflection(typeof(EvaluationBudget), nameof(EvaluationBudget.ThrowIfExceeded), [typeof(EvaluationBudget).MakeByRefType()]),
+            ProbeExpressionParserHelper.GetMethodByReflection(
+                typeof(EvaluationBudget),
+                checkImmediately ? nameof(EvaluationBudget.ThrowIfExceededImmediately) : nameof(EvaluationBudget.ThrowIfExceeded),
+                [typeof(EvaluationBudget).MakeByRefType()]),
             _evaluationBudgetParameterExpression);
     }
 

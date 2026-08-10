@@ -416,13 +416,14 @@ internal partial class ProbeExpressionParser<T>
         var instanceOfMethod = ProbeExpressionParserHelper.GetMethodByReflection(
             typeof(InstanceOfHelper),
             nameof(InstanceOfHelper.IsInstanceOf),
-            [value.Type, typeof(string)],
+            [value.Type, typeof(string), typeof(EvaluationBudget).MakeByRefType()],
             [value.Type]);
         var isInstanceOfExpression = Expression.Call(
             null,
             instanceOfMethod,
             value,
-            Expression.Constant(typeName));
+            Expression.Constant(typeName),
+            _evaluationBudgetParameterExpression);
 
         return RedactDictionaryOperation(value, isInstanceOfExpression);
     }
