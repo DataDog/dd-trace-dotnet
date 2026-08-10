@@ -510,7 +510,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // Write span tags
             var tagWriter = new TagWriter(this, tagProcessors, bytes, offset);
-            span.Tags.EnumerateTags(ref tagWriter);
+            span.Tags.EnumerateTags(ref tagWriter, span.OpenTelemetrySemanticsEnabled);
             bytes = tagWriter.Bytes;
             offset = tagWriter.Offset;
             count += tagWriter.Count;
@@ -1005,7 +1005,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
         }
 
-        internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>
+        internal struct TagWriter : IItemProcessor<string>, IItemProcessor<int>, IItemProcessor<double>, IItemProcessor<byte[]>
         {
             private readonly SpanMessagePackFormatter _formatter;
             private readonly ITagProcessor[] _tagProcessors;
@@ -1034,6 +1034,24 @@ namespace Datadog.Trace.Agent.MessagePack
                 else
                 {
                     _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, item.Value, _tagProcessors);
+                }
+
+                Count++;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Process(TagItem<int> item)
+            {
+                // int-backed tags are serialized as strings; IntStringCache keeps this allocation-free
+                var value = IntStringCache.ToInvariantString(item.Value);
+
+                if (item.SerializedKey.IsEmpty)
+                {
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.Key, value, _tagProcessors);
+                }
+                else
+                {
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, value, _tagProcessors);
                 }
 
                 Count++;

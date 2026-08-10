@@ -41,6 +41,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     ReturnTypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]",
     ParameterTypeNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement", "System.Collections.Generic.IDictionary`2[System.String,System.Object]", "Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger"],
     MinimumVersion = "4.2.1",
+    MaximumVersion = "4.3.2",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[InstrumentMethod(
+    AssemblyNames = ["MSTestAdapter.PlatformServices"],
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
+    MethodName = "RunSingleTest",
+    ReturnTypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement", "System.Collections.Generic.IDictionary`2[System.String,System.Object]", "System.Collections.Generic.IDictionary`2[System.String,System.Object]", "Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger"],
+    MinimumVersion = "4.3.3",
     MaximumVersion = "4.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
