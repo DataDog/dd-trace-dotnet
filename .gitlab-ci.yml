@@ -151,7 +151,7 @@ generate-unit-tests-pipelines:
                            -or [bool]$hasIntegrationChanges `
                            -or $snapshotChangeCount -gt 100
 
-      Write-Output "Generating Windows and Linux unit-test child pipelines (target=$targetBranch, includeAll=$includeAllFrameworks)"
+      Write-Output "Generating Windows, Linux, and macOS unit-test child pipelines (target=$targetBranch, includeAll=$includeAllFrameworks)"
       docker run --rm -m 20480M `
         -v "$(Get-Location):c:\mnt" `
         -e CI=true `
@@ -167,7 +167,7 @@ generate-unit-tests-pipelines:
         --entrypoint cmd.exe `
         $env:WINDOWS_BUILD_IMAGE `
         /d /s /c `
-        "c:\entrypoint.bat GenerateGitlabWindowsUnitTestsPipeline GenerateGitlabLinuxUnitTestsPipeline --IncludeAllTestFrameworks $includeAllFrameworks"
+        "c:\entrypoint.bat GenerateGitlabWindowsUnitTestsPipeline GenerateGitlabLinuxUnitTestsPipeline GenerateGitlabMacosUnitTestsPipeline --IncludeAllTestFrameworks $includeAllFrameworks"
       if ($LASTEXITCODE -ne 0) {
         throw "GitLab child-pipeline generation exited with code $LASTEXITCODE"
       }
@@ -176,6 +176,7 @@ generate-unit-tests-pipelines:
     paths:
       - .gitlab/generated/windows-unit-tests.yml
       - .gitlab/generated/linux-unit-tests.yml
+      - .gitlab/generated/macos-unit-tests.yml
   id_tokens:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
@@ -330,38 +331,6 @@ build-macos-tracer-amd64:
       - artifacts/obj/Datadog.Trace.Tools.dd_dotnet/**/apphost
       - artifacts/build_data/logs
       - artifacts/build_data/dumps
-
-"unit-tests-macos-amd64:net10.0":
-  extends: .macos-amd64
-  except:
-    variables:
-      - $DEPLOY_TO_REL_ENV == "true"
-      - $CI_COMMIT_TAG
-  stage: test
-  timeout: 90m
-  needs:
-    - job: build-macos-tracer-amd64
-      artifacts: true
-  variables:
-    DD_LOGGER_ENABLED: "true"
-    DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-    DD_LOGGER_DD_TRACE_LOG_PATH: "$CI_PROJECT_DIR/artifacts/build_data/infra_logs/ci-visibility.log"
-    DD_LOGGER_DD_TAGS: "test.configuration.job:$CI_JOB_NAME"
-  script:
-    - mkdir -p artifacts/build_data/infra_logs
-    - ./tracer/build.sh BuildManagedUnitTests RunManagedUnitTests --framework net10.0 --IncludeAllTestFrameworks true --NugetPackageDirectory "$NUGET_PACKAGES"
-  artifacts:
-    when: always
-    expire_in: 2 weeks
-    name: "managed-unit-tests-macos-amd64-net10.0"
-    paths:
-      - artifacts/build_data/results
-      - artifacts/build_data/logs
-      - artifacts/build_data/infra_logs
-      - artifacts/build_data/dumps
-  id_tokens:
-    DD_STS_OIDC_TOKEN:
-      aud: rapid-seceng-sit
 
 build:
   except:
@@ -592,6 +561,25 @@ unit-tests-linux-x64:
   trigger:
     include:
       - artifact: .gitlab/generated/linux-unit-tests.yml
+        job: generate-unit-tests-pipelines
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+unit-tests-macos-amd64:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: test
+  needs:
+    - job: build-macos-tracer-amd64
+      artifacts: false
+    - job: generate-unit-tests-pipelines
+      artifacts: false
+  trigger:
+    include:
+      - artifact: .gitlab/generated/macos-unit-tests.yml
         job: generate-unit-tests-pipelines
     strategy: depend
   variables:
