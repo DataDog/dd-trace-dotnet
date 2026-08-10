@@ -99,7 +99,11 @@ partial class Build : NukeBuild
         foreach (var framework in frameworks)
         {
             yaml.AppendLine($"\"unit-tests-linux-x64:{framework}\":");
-            yaml.AppendLine("  extends: .linux-unit-test-x64");
+            yaml.AppendLine("  extends: .linux-unit-test-x64-glibc");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+            yaml.AppendLine($"\"unit-tests-linux-musl-x64:{framework}\":");
+            yaml.AppendLine("  extends: .linux-unit-test-x64-musl");
             yaml.AppendLine("  variables:");
             yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
         }
