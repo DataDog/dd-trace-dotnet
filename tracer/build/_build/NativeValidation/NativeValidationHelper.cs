@@ -59,7 +59,7 @@ public class NativeValidationHelper
         
         Version FindMaxGlibcVersion(AbsolutePath libraryPath, IEnumerable<string> allowedSymbols)
         {
-            var output = Nm.Value($"--with-symbol-versions -D {libraryPath} ").Select(x => x.Text).ToList();
+            var output = Nm.Value($"--with-symbol-versions -D {libraryPath} ", logOutput: false).Select(x => x.Text).ToList();
 
             // Gives output similar to this:
             // 0000000000170498 T SetGitMetadataForApplication
@@ -90,7 +90,7 @@ public class NativeValidationHelper
 
     public void ValidateNativeSymbols(AbsolutePath libraryPath, string snapshotNamePrefix)
     {
-        var output = Nm.Value($"-D {libraryPath}").Select(x => x.Text).ToList();
+        var output = Nm.Value($"-D {libraryPath}", logOutput: false).Select(x => x.Text).ToList();
 
         // Gives output similar to this:
         // 0000000000006bc8 D DdDotnetFolder
@@ -116,7 +116,7 @@ public class NativeValidationHelper
         //
         // We only care about the Undefined symbols - we don't want to accidentally add more of them
 
-        Logger.Debug("NM output: {Output}", string.Join(Environment.NewLine, output));
+        Logger.Debug("Read {SymbolCount} dynamic symbols from {LibraryPath}", output.Count, libraryPath);
 
         var symbols = output
                      .Select(x => x.Trim())
@@ -165,7 +165,7 @@ public class NativeValidationHelper
             var received = string.Join(Environment.NewLine, symbols);
             var verifiedPath = BuildProjectDirectory / nameof(NativeValidation) / $"{snapshotNamePrefix}.verified.txt";
             var verified = File.Exists(verifiedPath)
-                               ? File.ReadAllText(verifiedPath)
+                               ? File.ReadAllText(verifiedPath).TrimEnd()
                                : string.Empty;
 
             Logger.Information("Comparing snapshot of Undefined symbols in the {LibraryName} using {Path}...", libraryName, verifiedPath);
