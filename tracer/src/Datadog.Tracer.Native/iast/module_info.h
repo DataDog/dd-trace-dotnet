@@ -149,7 +149,7 @@ namespace iast
         bool AreSameTypes(mdTypeRef typeRef1, mdTypeRef typeRef2);
 
         HRESULT FindMemberRefsByName(mdTypeRef typeRef, const WSTRING& memberName, std::vector<mdMemberRef>& members);
-        HRESULT GetAssemblyTypeRef(const WSTRING& assemblyName, const WSTRING& typeName, mdTypeRef* typeRef);
+        HRESULT GetAssemblyTypeRef(const WSTRING& assemblyName, const WSTRING& typeName, mdTypeRef* typeRef, bool create = false);
 
         std::vector<WSTRING> GetCustomAttributes(mdToken token);
     };

@@ -278,13 +278,13 @@ bool ModuleInfo::AreSameTypes(mdTypeRef typeRef1, mdTypeRef typeRef2)
     return false;
 }
 
-HRESULT ModuleInfo::GetAssemblyTypeRef(const WSTRING& assemblyName, const WSTRING& typeName, mdTypeRef* typeRef)
+HRESULT ModuleInfo::GetAssemblyTypeRef(const WSTRING& assemblyName, const WSTRING& typeName, mdTypeRef* typeRef, bool create)
 {
     HRESULT hr = S_OK;
 
     mdAssemblyRef assemblyRef;
-    IfFailRet(GetAssemblyRef(assemblyName, &assemblyRef));
-    IfFailRet(GetTypeRef(assemblyRef, typeName, typeRef));
+    IfFailRet(GetAssemblyRef(assemblyName, &assemblyRef, create));
+    IfFailRet(GetTypeRef(assemblyRef, typeName, typeRef, create));
     return hr;
 }
 
@@ -588,8 +588,10 @@ HRESULT ModuleInfo::GetAssemblyRef(const WSTRING& assemblyName, const ASSEMBLYME
 
         hr = assemblyEmit->DefineAssemblyRef(pPublicKeyToken, nPublicKeyToken, assemblyName.c_str(), assemblyMetadata,
                                              nullptr, 0, 0, assemblyRef);
+        return hr;
     }
-    return hr;
+    // Not found and not creating: *assemblyRef is left unset, so this must fail rather than return S_OK.
+    return E_FAIL;
 }
 HRESULT ModuleInfo::GetSystemCoreAssemblyRef(mdAssemblyRef* assemblyRef)
 {
