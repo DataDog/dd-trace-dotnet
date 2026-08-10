@@ -16,13 +16,17 @@ internal struct EvaluationBudget
     private const int OperationsBeforeTimeCheck = 32;
     private static readonly double StopwatchTicksPerMillisecond = Stopwatch.Frequency / 1000.0;
 
-    private readonly long _deadlineTimestamp;
+    // Stores an absolute deadline while running and remaining ticks while paused.
+    // Reusing one field keeps this hot-path struct compact.
+    private long _deadlineOrRemainingStopwatchTicks;
     private int _operationsUntilTimeCheck;
+    private bool _isPaused;
 
     private EvaluationBudget(long deadlineTimestamp)
     {
-        _deadlineTimestamp = deadlineTimestamp;
+        _deadlineOrRemainingStopwatchTicks = deadlineTimestamp;
         _operationsUntilTimeCheck = OperationsBeforeTimeCheck;
+        _isPaused = false;
         TimedOut = false;
     }
 
@@ -39,6 +43,11 @@ internal struct EvaluationBudget
     internal static void ThrowIfExceeded(ref EvaluationBudget budget)
     {
         budget.ThrowIfExceeded();
+    }
+
+    internal static void ThrowIfExceededImmediately(ref EvaluationBudget budget)
+    {
+        budget.ThrowIfExceededImmediately();
     }
 
     private static long ToStopwatchTicks(int milliseconds)
@@ -73,11 +82,47 @@ internal struct EvaluationBudget
         ThrowIfTimeExceeded();
     }
 
+    internal void ThrowIfExceededImmediately()
+    {
+        ThrowIfTimeExceeded();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void Pause()
+    {
+        if (_isPaused || TimedOut)
+        {
+            return;
+        }
+
+        _deadlineOrRemainingStopwatchTicks -= Stopwatch.GetTimestamp();
+        _isPaused = true;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void Resume()
+    {
+        if (!_isPaused || TimedOut)
+        {
+            return;
+        }
+
+        var remainingStopwatchTicks = _deadlineOrRemainingStopwatchTicks;
+        var now = Stopwatch.GetTimestamp();
+        _deadlineOrRemainingStopwatchTicks =
+            remainingStopwatchTicks <= 0
+                ? now
+                : long.MaxValue - now <= remainingStopwatchTicks
+                    ? long.MaxValue
+                    : now + remainingStopwatchTicks;
+        _isPaused = false;
+    }
+
     internal TimeSpan GetRemainingTimeout()
     {
         ThrowIfTimeExceeded();
 
-        var remainingStopwatchTicks = _deadlineTimestamp - Stopwatch.GetTimestamp();
+        var remainingStopwatchTicks = _deadlineOrRemainingStopwatchTicks - Stopwatch.GetTimestamp();
         if (remainingStopwatchTicks <= 0)
         {
             MarkTimedOutAndThrow();
@@ -95,8 +140,9 @@ internal struct EvaluationBudget
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ThrowIfTimeExceeded()
     {
+        Debug.Assert(!_isPaused, "The evaluation budget must be resumed before checking its deadline.");
         _operationsUntilTimeCheck = OperationsBeforeTimeCheck;
-        if (TimedOut || Stopwatch.GetTimestamp() >= _deadlineTimestamp)
+        if (TimedOut || Stopwatch.GetTimestamp() >= _deadlineOrRemainingStopwatchTicks)
         {
             MarkTimedOutAndThrow();
         }
