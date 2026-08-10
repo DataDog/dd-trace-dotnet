@@ -1,9 +1,8 @@
-.linux-unit-test-x64:
+.linux-unit-test:
   stage: test
   timeout: 1h
   # Approved Docker CLI image also used by the Linux build producer.
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
-  tags: ["docker-in-docker:amd64"]
   variables:
     DOCKER_BUILDKIT: "1"
   script:
@@ -93,6 +92,10 @@
     DD_STS_OIDC_TOKEN:
       aud: rapid-seceng-sit
 
+.linux-unit-test-x64:
+  extends: .linux-unit-test
+  tags: ["docker-in-docker:amd64"]
+
 .linux-unit-test-x64-glibc:
   extends: .linux-unit-test-x64
   needs:
@@ -112,3 +115,27 @@
   variables:
     BASE_IMAGE: alpine
     ARTIFACT_SUFFIX: linux-musl-x64
+
+.linux-unit-test-arm64:
+  extends: .linux-unit-test
+  tags: ["docker-in-docker:arm64"]
+
+.linux-unit-test-arm64-glibc:
+  extends: .linux-unit-test-arm64
+  needs:
+    - pipeline: "$PARENT_PIPELINE_ID"
+      job: build-linux-tracer-arm64
+      artifacts: true
+  variables:
+    BASE_IMAGE: debian
+    ARTIFACT_SUFFIX: linux-arm64
+
+.linux-unit-test-arm64-musl:
+  extends: .linux-unit-test-arm64
+  needs:
+    - pipeline: "$PARENT_PIPELINE_ID"
+      job: build-linux-tracer-arm64-musl
+      artifacts: true
+  variables:
+    BASE_IMAGE: alpine
+    ARTIFACT_SUFFIX: linux-musl-arm64

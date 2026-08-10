@@ -167,7 +167,7 @@ generate-unit-tests-pipelines:
         --entrypoint cmd.exe `
         $env:WINDOWS_BUILD_IMAGE `
         /d /s /c `
-        "c:\entrypoint.bat GenerateGitlabWindowsUnitTestsPipeline GenerateGitlabLinuxUnitTestsPipeline GenerateGitlabMacosUnitTestsPipeline --IncludeAllTestFrameworks $includeAllFrameworks"
+        "c:\entrypoint.bat GenerateGitlabWindowsUnitTestsPipeline GenerateGitlabLinuxUnitTestsPipeline GenerateGitlabLinuxArm64UnitTestsPipeline GenerateGitlabMacosUnitTestsPipeline --IncludeAllTestFrameworks $includeAllFrameworks"
       if ($LASTEXITCODE -ne 0) {
         throw "GitLab child-pipeline generation exited with code $LASTEXITCODE"
       }
@@ -176,12 +176,13 @@ generate-unit-tests-pipelines:
     paths:
       - .gitlab/generated/windows-unit-tests.yml
       - .gitlab/generated/linux-unit-tests.yml
+      - .gitlab/generated/linux-arm64-unit-tests.yml
       - .gitlab/generated/macos-unit-tests.yml
   id_tokens:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
 
-.build-linux-tracer-x64:
+.build-linux-tracer:
   except:
     variables:
       - $DEPLOY_TO_REL_ENV == "true"
@@ -189,7 +190,6 @@ generate-unit-tests-pipelines:
   stage: build
   # Approved Docker CLI image also used by dd-trace-java image-building jobs.
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
-  tags: ["docker-in-docker:amd64"]
   timeout: 90m
   needs: []
   variables:
@@ -243,9 +243,12 @@ generate-unit-tests-pipelines:
           dotnet /build/bin/Debug/_build.dll "$@"
       }
 
-      # Match Azure's Linux x64 builds: Debian/CentOS for glibc and Alpine for musl.
       run_nuke "$managed_image" Clean CompileManagedLoader
-      run_nuke "$native_image" BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests
+      if [ "$RUN_NATIVE_TESTS" = "true" ]; then
+        run_nuke "$native_image" BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests
+      else
+        run_nuke "$native_image" BuildNativeTracerHome
+      fi
       run_nuke "$managed_image" BuildManagedTracerHome ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility
   artifacts:
     when: always
@@ -265,20 +268,44 @@ generate-unit-tests-pipelines:
         - artifacts/build_data/tests/*.xml
 
 build-linux-tracer-x64:
-  extends: .build-linux-tracer-x64
+  extends: .build-linux-tracer
+  tags: ["docker-in-docker:amd64"]
   variables:
     MANAGED_BASE_IMAGE: debian
     MANAGED_DOTNET_SDK_VERSION: "10.0.100"
     NATIVE_BASE_IMAGE: centos7
     NATIVE_DOTNET_SDK_VERSION: "7.0.306"
+    RUN_NATIVE_TESTS: "true"
 
 build-linux-tracer-x64-musl:
-  extends: .build-linux-tracer-x64
+  extends: .build-linux-tracer
+  tags: ["docker-in-docker:amd64"]
   variables:
     MANAGED_BASE_IMAGE: alpine
     MANAGED_DOTNET_SDK_VERSION: "10.0.100"
     NATIVE_BASE_IMAGE: alpine
     NATIVE_DOTNET_SDK_VERSION: "10.0.100"
+    RUN_NATIVE_TESTS: "true"
+
+build-linux-tracer-arm64:
+  extends: .build-linux-tracer
+  tags: ["docker-in-docker:arm64"]
+  variables:
+    MANAGED_BASE_IMAGE: debian
+    MANAGED_DOTNET_SDK_VERSION: "10.0.100"
+    NATIVE_BASE_IMAGE: debian
+    NATIVE_DOTNET_SDK_VERSION: "10.0.100"
+    RUN_NATIVE_TESTS: "false"
+
+build-linux-tracer-arm64-musl:
+  extends: .build-linux-tracer
+  tags: ["docker-in-docker:arm64"]
+  variables:
+    MANAGED_BASE_IMAGE: alpine
+    MANAGED_DOTNET_SDK_VERSION: "10.0.100"
+    NATIVE_BASE_IMAGE: alpine
+    NATIVE_DOTNET_SDK_VERSION: "10.0.100"
+    RUN_NATIVE_TESTS: "false"
 
 .macos-amd64:
   tags: ["macos:sonoma-amd64"]
@@ -561,6 +588,27 @@ unit-tests-linux-x64:
   trigger:
     include:
       - artifact: .gitlab/generated/linux-unit-tests.yml
+        job: generate-unit-tests-pipelines
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+unit-tests-linux-arm64:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: test
+  needs:
+    - job: build-linux-tracer-arm64
+      artifacts: false
+    - job: build-linux-tracer-arm64-musl
+      artifacts: false
+    - job: generate-unit-tests-pipelines
+      artifacts: false
+  trigger:
+    include:
+      - artifact: .gitlab/generated/linux-arm64-unit-tests.yml
         job: generate-unit-tests-pipelines
     strategy: depend
   variables:

@@ -57,6 +57,15 @@ partial class Build : NukeBuild
                     isArm64: false,
                     includeAllFrameworks: IncludeAllTestFrameworks)));
 
+    Target GenerateGitlabLinuxArm64UnitTestsPipeline
+        => _ => _
+           .Unlisted()
+           .Executes(() => WriteGitlabLinuxArm64UnitTestsPipeline(
+                GetTestingFrameworks(
+                    PlatformFamily.Linux,
+                    isArm64: true,
+                    includeAllFrameworks: IncludeAllTestFrameworks)));
+
     Target GenerateGitlabMacosUnitTestsPipeline
         => _ => _
            .Unlisted()
@@ -122,6 +131,37 @@ partial class Build : NukeBuild
         var outputPath = outputDirectory / "linux-unit-tests.yml";
         File.WriteAllText(outputPath, yaml.ToString());
         Logger.Information("Generated GitLab Linux unit-test child pipeline at {Path}", outputPath);
+    }
+
+    void WriteGitlabLinuxArm64UnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
+    {
+        var yaml = new StringBuilder(
+            """
+            include:
+              - local: .gitlab/linux-unit-tests-child.yml
+
+            stages:
+              - test
+
+            """);
+
+        foreach (var framework in frameworks)
+        {
+            yaml.AppendLine($"\"unit-tests-linux-arm64:{framework}\":");
+            yaml.AppendLine("  extends: .linux-unit-test-arm64-glibc");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+            yaml.AppendLine($"\"unit-tests-linux-musl-arm64:{framework}\":");
+            yaml.AppendLine("  extends: .linux-unit-test-arm64-musl");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+        }
+
+        var outputDirectory = RootDirectory / ".gitlab" / "generated";
+        Directory.CreateDirectory(outputDirectory);
+        var outputPath = outputDirectory / "linux-arm64-unit-tests.yml";
+        File.WriteAllText(outputPath, yaml.ToString());
+        Logger.Information("Generated GitLab Linux ARM64 unit-test child pipeline at {Path}", outputPath);
     }
 
     void WriteGitlabMacosUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
@@ -283,6 +323,7 @@ partial class Build : NukeBuild
                 {
                     WriteGitlabWindowsUnitTestsPipeline(windowsFrameworks);
                     WriteGitlabLinuxUnitTestsPipeline(GetTestingFrameworks(PlatformFamily.Linux));
+                    WriteGitlabLinuxArm64UnitTestsPipeline(GetTestingFrameworks(PlatformFamily.Linux, isArm64: true));
                     WriteGitlabMacosUnitTestsPipeline(GetTestingFrameworks(PlatformFamily.OSX));
                 }
 
