@@ -93,40 +93,36 @@ Expression: (
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
     var $dd_el_result = (this.String.Length > 2) && ((CollectionLocal.Count > 2) ||
     {
-        IEnumerator<string> enumerator;
-        string @string;
-        var enumerable = (IEnumerable<string>)IEnumerator<string> enumerator;
-        string @string;
-        enumerable = (IEnumerable<string>)CollectionLocal;
-        enumerator = enumerable.GetEnumerator();
+        string @string, iterator2;
+        var enumerable2 = (IEnumerable<string>)CollectionLocal;
+        var enumerator2 = enumerable2.GetEnumerator();
         var filterResult = new List<string>();
         try
         {
             while (true)
             {
-                if (!enumerator.MoveNext())
+                if (!enumerator2.MoveNext())
                 {
                     break;
                 }
 
-                @string = enumerator.Current;
+                iterator2 = enumerator2.Current;
 
-                if (@string.Length > 4)
+                if (iterator2.Length > 4)
                 {
-                    filterResult.Add(@string);
+                    filterResult.Add(iterator2);
                 }
             }
         }
         finally
         {
-            if (enumerator != null)
+            if (enumerator2 != null)
             {
-                enumerator.Dispose();
+                enumerator2.Dispose();
             }
         }
-
-        return filterResult;;
-        enumerator = enumerable.GetEnumerator();
+        var enumerable = (IEnumerable<string>)filterResult;
+        var enumerator = enumerable.GetEnumerator();
         var anyResult = false;
         try
         {

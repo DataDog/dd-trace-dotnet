@@ -72,17 +72,14 @@ public class ProbeProcessorTests
     [Fact]
     public void UsesConfiguredEvaluationTimeBudget()
     {
-        const int maxEvaluationTimeInMilliseconds = 123;
-        var processor = new ProbeProcessor(CreateConditionalLogProbe("probe-id", FalseConditionJson, captureSnapshot: false), maxEvaluationTimeInMilliseconds);
-        var sampler = new TestAdaptiveSampler(true);
-        var probeData = new ProbeData("probe-id", sampler, processor);
-        var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.Execute))!;
-        var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        var probe = CreateConditionalLogProbe("probe-id", FalseConditionJson, captureSnapshot: false);
+        var processor = new ProbeProcessor(probe, maxEvaluationTimeInMilliseconds: 123);
 
-        Assert.True(ProcessEntryStart(processor, snapshotCreator, in probeData, method));
-        ProcessEntryEnd(processor, snapshotCreator, in probeData, method);
+        Assert.Equal(123, processor.EvaluatorMaxEvaluationTimeInMilliseconds);
 
-        Assert.Equal(maxEvaluationTimeInMilliseconds, GetEvaluator(processor).MaxEvaluationTimeInMilliseconds);
+        processor.UpdateProbeProcessor(probe, maxEvaluationTimeInMilliseconds: 456);
+
+        Assert.Equal(456, processor.EvaluatorMaxEvaluationTimeInMilliseconds);
     }
 
     [Fact]
@@ -202,7 +199,7 @@ public class ProbeProcessorTests
         Assert.True(ProcessEntryStart(processor, firstSnapshotCreator, in probeData, method));
         Assert.True(ProcessEntryEnd(processor, firstSnapshotCreator, in probeData, method));
 
-        processor.UpdateProbeProcessor(CreateConditionalLogProbe("probe-id", UpdatedInvalidConditionJson, captureSnapshot: false));
+        processor.UpdateProbeProcessor(CreateConditionalLogProbe("probe-id", UpdatedInvalidConditionJson, captureSnapshot: false), DefaultMaxEvaluationTimeInMilliseconds);
 
         var secondSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
         Assert.True(ProcessEntryStart(processor, secondSnapshotCreator, in probeData, method));
@@ -278,7 +275,7 @@ public class ProbeProcessorTests
         var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
         var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.ExecuteWithValue))!;
 
-        processor.UpdateProbeProcessor(CreateVersionedCaptureExpressionProbe("probe-id", version: 2, captureName: "missingValue"));
+        processor.UpdateProbeProcessor(CreateVersionedCaptureExpressionProbe("probe-id", version: 2, captureName: "missingValue"), DefaultMaxEvaluationTimeInMilliseconds);
 
         Assert.True(ProcessExitStart(processor, snapshotCreator, in probeData, method));
         Assert.True(ProcessLogArg(processor, snapshotCreator, in probeData, method, "inputValue", "testValue"));
@@ -667,18 +664,6 @@ public class ProbeProcessorTests
             memberKind: ScopeMemberKind.This);
 
         return snapshotCreator.FinalizeMethodSnapshot(probeId, 0, ref captureInfo);
-    }
-
-    private static ProbeExpressionEvaluator GetEvaluator(ProbeProcessor processor)
-    {
-        var state = typeof(ProbeProcessor)
-                   .GetField("_state", BindingFlags.Instance | BindingFlags.NonPublic)!
-                   .GetValue(processor)!;
-
-        return (ProbeExpressionEvaluator)state
-                                        .GetType()
-                                        .GetField("_evaluator", BindingFlags.Instance | BindingFlags.NonPublic)!
-                                        .GetValue(state)!;
     }
 
     private static bool CapturesContainData(JToken captures)

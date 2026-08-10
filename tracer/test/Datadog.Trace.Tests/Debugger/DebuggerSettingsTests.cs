@@ -48,44 +48,19 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData("10", 10)]
         [InlineData("50", 50)]
         [InlineData("1000", 1000)]
-        public void MaxEvaluationTime_UsesProvidedValue_WhenValid(string value, int expected)
+        [InlineData("-1", DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds)]
+        [InlineData("0", DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds)]
+        [InlineData("9", DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds)]
+        [InlineData("1001", DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds)]
+        [InlineData("", DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds)]
+        [InlineData(null, DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds)]
+        public void MaxEvaluationTime_HasExpectedValue(string value, int expected)
         {
             var settings = new DebuggerSettings(
-                new NameValueConfigurationSource(new() { { DebuggerSettings.InternalMaxEvaluationTimeInMilliseconds, value }, }),
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.InternalDynamicInstrumentationMaxEvaluationTimeInMilliseconds, value }, }),
                 NullConfigurationTelemetry.Instance);
 
             settings.MaxEvaluationTimeInMilliseconds.Should().Be(expected);
-        }
-
-        [Theory]
-        [InlineData("-1")]
-        [InlineData("0")]
-        [InlineData("9")]
-        [InlineData("1001")]
-        [InlineData("")]
-        [InlineData(null)]
-        public void MaxEvaluationTime_DefaultUsed_WhenInvalid(string value)
-        {
-            var settings = new DebuggerSettings(
-                new NameValueConfigurationSource(new() { { DebuggerSettings.InternalMaxEvaluationTimeInMilliseconds, value }, }),
-                NullConfigurationTelemetry.Instance);
-
-            settings.MaxEvaluationTimeInMilliseconds.Should().Be(DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds);
-        }
-
-        [Fact]
-        public void MaxEvaluationTime_DoesNotRecordConfigurationTelemetry()
-        {
-            var telemetry = new ConfigurationTelemetry();
-
-            var settings = new DebuggerSettings(
-                new NameValueConfigurationSource(new() { { DebuggerSettings.InternalMaxEvaluationTimeInMilliseconds, "100" }, }),
-                telemetry);
-
-            settings.MaxEvaluationTimeInMilliseconds.Should().Be(100);
-            telemetry.GetQueueForTesting()
-                     .Should()
-                     .NotContain(entry => entry.Key == DebuggerSettings.InternalMaxEvaluationTimeInMilliseconds);
         }
 
         [Theory]

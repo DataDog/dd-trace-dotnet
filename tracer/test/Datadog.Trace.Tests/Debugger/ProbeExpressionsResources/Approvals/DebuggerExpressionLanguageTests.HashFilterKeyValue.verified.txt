@@ -60,40 +60,36 @@ Expression: (
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
     var $dd_el_result =
     {
-        IEnumerator<KeyValuePair<string, string>> enumerator;
-        KeyValuePair<string, string> stringStringKeyValuePair;
-        var enumerable = (IEnumerable<KeyValuePair<string, string>>)IEnumerator<KeyValuePair<string, string>> enumerator;
-        KeyValuePair<string, string> stringStringKeyValuePair;
-        enumerable = (IEnumerable<KeyValuePair<string, string>>)DictionaryLocal;
-        enumerator = enumerable.GetEnumerator();
+        KeyValuePair<string, string> stringStringKeyValuePair, iterator2;
+        var enumerable2 = (IEnumerable<KeyValuePair<string, string>>)DictionaryLocal;
+        var enumerator2 = enumerable2.GetEnumerator();
         var filterResult = new List<KeyValuePair<string, string>>();
         try
         {
             while (true)
             {
-                if (!enumerator.MoveNext())
+                if (!enumerator2.MoveNext())
                 {
                     break;
                 }
 
-                stringStringKeyValuePair = enumerator.Current;
+                iterator2 = enumerator2.Current;
 
-                if (stringStringKeyValuePair.Key == "hello")
+                if (iterator2.Key == "hello")
                 {
-                    filterResult.Add(stringStringKeyValuePair);
+                    filterResult.Add(iterator2);
                 }
             }
         }
         finally
         {
-            if (enumerator != null)
+            if (enumerator2 != null)
             {
-                enumerator.Dispose();
+                enumerator2.Dispose();
             }
         }
-
-        return filterResult;;
-        enumerator = enumerable.GetEnumerator();
+        var enumerable = (IEnumerable<KeyValuePair<string, string>>)filterResult;
+        var enumerator = enumerable.GetEnumerator();
         var anyResult = false;
         try
         {

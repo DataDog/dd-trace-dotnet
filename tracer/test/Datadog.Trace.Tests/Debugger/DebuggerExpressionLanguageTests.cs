@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using AgileObjects.ReadableExpressions;
 using Datadog.Trace.Debugger;
@@ -2884,14 +2885,63 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
-        public void ProbeExpressionEvaluator_CaptureExpressionsReuseEvaluationBudget()
+        public void EvaluationBudget_PauseExcludesPausedWallTime()
+        {
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                var budget = EvaluationBudget.Create(100);
+
+                budget.Pause();
+                Thread.Sleep(250);
+                budget.Resume();
+
+                try
+                {
+                    budget.ThrowIfExceededImmediately();
+                    return;
+                }
+                catch (EvaluationTimeBudgetExceededException) when (attempt < 2)
+                {
+                    // A scheduler or GC pause after Resume can legitimately consume the active budget.
+                }
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_CaptureExpressionsResumePausedSharedBudget()
         {
             var scopeMembers = CreateScopeMembers();
-            scopeMembers.AddMember(new ScopeMember("LargeCollectionLocal", typeof(List<int>), Enumerable.Range(1, 10_000).ToList(), ScopeMemberKind.Local));
             var evaluator = new ProbeExpressionEvaluator(
                 templates: null,
-                condition: new DebuggerExpression(string.Empty, @"{""all"":[{""ref"":""LargeCollectionLocal""},{""gt"":[""@it"",0]}]}", null),
+                condition: null,
                 metric: null,
+                spanDecorations: null,
+                captureExpressions:
+                [
+                    new CaptureExpressionDefinition("value", new DebuggerExpression(string.Empty, @"{""ref"":""StringArg""}", null), default)
+                ],
+                maxEvaluationTimeInMilliseconds: 100);
+
+            var result = evaluator.Evaluate(scopeMembers, out var entry);
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers, entry);
+
+            result.CaptureExpressionCount.Should().Be(1);
+            result.CaptureExpressions.Should().ContainSingle().Which.Value.Should().Be("Hello world!");
+            result.Errors.Should().BeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_TimeoutStopsRemainingExpressionsAndCapture()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var evaluator = new ProbeExpressionEvaluator(
+                templates:
+                [
+                    new DebuggerExpression(string.Empty, @"{""ref"":""StringLocal""}", null),
+                    new DebuggerExpression(string.Empty, @"{""ref"":""StringLocal""}", null)
+                ],
+                condition: new DebuggerExpression(string.Empty, @"{""ref"":""BooleanValue""}", null),
+                metric: new DebuggerExpression(string.Empty, @"{""ref"":""DoubleLocal""}", null),
                 spanDecorations: null,
                 captureExpressions:
                 [
@@ -2902,8 +2952,12 @@ namespace Datadog.Trace.Tests.Debugger
             var result = evaluator.Evaluate(scopeMembers, out var entry);
             evaluator.EvaluateCaptureExpressions(ref result, scopeMembers, entry);
 
+            result.Template.Should().BeEmpty();
+            result.Condition.Should().BeTrue();
+            result.HasConditionError.Should().BeTrue();
+            result.Metric.Should().BeNull();
             result.CaptureExpressionCount.Should().Be(0);
-            result.Errors.Should().Contain(error => error.Message == EvaluationTimeBudgetExceededException.ErrorMessage);
+            result.Errors.Should().ContainSingle().Which.Message.Should().Be(EvaluationTimeBudgetExceededException.ErrorMessage);
         }
 
         [Fact]
@@ -2931,6 +2985,127 @@ namespace Datadog.Trace.Tests.Debugger
                 ref budget);
 
             act.Should().Throw<EvaluationTimeBudgetExceededException>();
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_ExpiredBudgetAtRoot_ThrowsBeforeEvaluatingTrivialExpression()
+        {
+            var scopeMembers = CreateScopeMembers();
+            const string json = """
+                                {
+                                  "ref": "StringLocal"
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var budget = EvaluationBudget.Create(0);
+            var act = () => compiled.BudgetedDelegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members,
+                ref budget);
+
+            act.Should().Throw<EvaluationTimeBudgetExceededException>();
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_ExpiredBudgetAtFallbackRoot_ThrowsBeforeReturningDefault()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var compiled = ProbeExpressionParser<bool>.ParseExpression("{", scopeMembers);
+            var budget = EvaluationBudget.Create(0);
+            var act = () => compiled.BudgetedDelegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members,
+                ref budget);
+
+            compiled.Errors.Should().NotBeNullOrEmpty();
+            act.Should().Throw<EvaluationTimeBudgetExceededException>();
+        }
+
+        [Fact]
+        public void InstanceOfHelper_ExpiredBudgetStopsBeforeAssemblyScan()
+        {
+            var assemblyProviderCalled = false;
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(
+                    () =>
+                    {
+                        assemblyProviderCalled = true;
+                        return AppDomain.CurrentDomain.GetAssemblies();
+                    });
+                var budget = EvaluationBudget.Create(0);
+
+                var act = () => InstanceOfHelper.ResolveType("Unknown.Namespace.Type", ref budget);
+
+                act.Should().Throw<EvaluationTimeBudgetExceededException>();
+                assemblyProviderCalled.Should().BeFalse();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void InstanceOfHelper_ExpiredBudgetStopsGenericArgumentAssemblyScan()
+        {
+            var assemblyProviderCalled = false;
+            try
+            {
+                InstanceOfHelper.SetAssemblyProviderForTests(
+                    () =>
+                    {
+                        assemblyProviderCalled = true;
+                        return AppDomain.CurrentDomain.GetAssemblies();
+                    });
+                var typeName = $"{typeof(List<>).FullName}[[Unknown.Namespace.Type, Unknown.Assembly]], {typeof(List<>).Assembly.GetName().Name}";
+                var budget = EvaluationBudget.Create(0);
+
+                var act = () => InstanceOfHelper.ResolveType(typeName, ref budget);
+
+                act.Should().Throw<EvaluationTimeBudgetExceededException>();
+                assemblyProviderCalled.Should().BeFalse();
+            }
+            finally
+            {
+                InstanceOfHelper.ResetForTests();
+            }
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_RegexTimeout_PreservesInnerException()
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("RegexInputLocal", typeof(string), new string('a', 20_000) + "!", ScopeMemberKind.Local));
+            const string json = """
+                                {
+                                  "matches": [
+                                    { "ref": "RegexInputLocal" },
+                                    "^(a+)+$"
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            var budget = EvaluationBudget.Create(25);
+            var act = () => compiled.BudgetedDelegate(
+                scopeMembers.InvocationTarget,
+                scopeMembers.Return,
+                scopeMembers.Duration,
+                scopeMembers.Exception,
+                scopeMembers.Members,
+                ref budget);
+
+            act.Should().Throw<EvaluationTimeBudgetExceededException>()
+               .Which.InnerException.Should().BeOfType<RegexMatchTimeoutException>();
+            budget.TimedOut.Should().BeTrue();
         }
 
         [Fact]
@@ -3467,6 +3642,7 @@ namespace Datadog.Trace.Tests.Debugger
             string pattern = @",(?=\d*d\b)";
             expression = Regex.Replace(expression, pattern, ".");
             expression = Regex.Replace(expression, @",\s*ref EvaluationBudget evaluationBudget", string.Empty);
+            expression = Regex.Replace(expression, @",\s*ref evaluationBudget", string.Empty);
             expression = Regex.Replace(expression, @"[ \t]*EvaluationBudget\.ThrowIfExceeded\(ref evaluationBudget\);\r?\n", string.Empty);
             expression = Regex.Replace(expression, @"\bScopeMember scopeMember\b", "scopeMember");
             expression = Regex.Replace(expression, @"\bException exception\b", "exception");
@@ -3545,6 +3721,7 @@ namespace Datadog.Trace.Tests.Debugger
 
             // The expression.ToString returns different string depend on runtime version
             error.Expression = error.Expression.Replace("Convert(CollectionLocal.get_Item(100), String))", "Convert(CollectionLocal.get_Item(100)))");
+            error.Expression = error.Expression.Replace(", ref evaluationBudget", string.Empty);
             return error;
         }
 
@@ -3751,12 +3928,36 @@ namespace Datadog.Trace.Tests.Debugger
 
         private class BudgetExpressionRenderingVisitor : System.Linq.Expressions.ExpressionVisitor
         {
-            private static readonly BudgetExpressionRenderingVisitor Instance = new();
             private static readonly System.Linq.Expressions.Expression EmptyBudgetCheck = System.Linq.Expressions.Expression.Empty();
+
+            private readonly Dictionary<System.Linq.Expressions.ParameterExpression, System.Linq.Expressions.ParameterExpression> _renamedVariables = new();
+            private readonly Dictionary<string, int> _variableNameCounts = new(StringComparer.Ordinal);
+            private readonly HashSet<System.Linq.Expressions.ParameterExpression> _encounteredVariables = [];
 
             internal static System.Linq.Expressions.Expression Strip(System.Linq.Expressions.Expression expression)
             {
-                return Instance.Visit(expression);
+                return new BudgetExpressionRenderingVisitor().Visit(expression);
+            }
+
+            internal static bool TryFlattenAssignedBlock(
+                System.Linq.Expressions.Expression expression,
+                out IReadOnlyList<System.Linq.Expressions.ParameterExpression> variables,
+                out IEnumerable<System.Linq.Expressions.Expression> expressions,
+                out System.Linq.Expressions.Expression assignment)
+            {
+                if (expression is System.Linq.Expressions.BinaryExpression { NodeType: System.Linq.Expressions.ExpressionType.Assign } assign &&
+                    assign.Right is System.Linq.Expressions.UnaryExpression { NodeType: System.Linq.Expressions.ExpressionType.Convert, Operand: System.Linq.Expressions.BlockExpression block } conversion)
+                {
+                    variables = block.Variables;
+                    expressions = block.Expressions.Take(block.Expressions.Count - 1);
+                    assignment = assign.Update(assign.Left, assign.Conversion, conversion.Update(block.Expressions[block.Expressions.Count - 1]));
+                    return true;
+                }
+
+                variables = [];
+                expressions = [];
+                assignment = null;
+                return false;
             }
 
             protected override System.Linq.Expressions.Expression VisitLambda<T>(System.Linq.Expressions.Expression<T> node)
@@ -3767,25 +3968,90 @@ namespace Datadog.Trace.Tests.Debugger
 
             protected override System.Linq.Expressions.Expression VisitBlock(System.Linq.Expressions.BlockExpression node)
             {
-                var expressions = node.Expressions.Select(Visit).Where(expression => !ReferenceEquals(expression, EmptyBudgetCheck)).ToArray();
-                if (expressions.Length == 0)
+                var variables = new List<System.Linq.Expressions.ParameterExpression>(node.Variables.Count);
+                for (var i = 0; i < node.Variables.Count; i++)
                 {
-                    return EmptyBudgetCheck;
+                    var variable = node.Variables[i];
+                    variables.Add(RenameIfDuplicate(variable));
                 }
 
-                return node.Variables.Count == 0 && expressions.Length == 1
-                           ? expressions[0]
-                           : System.Linq.Expressions.Expression.Block(node.Variables, expressions);
+                try
+                {
+                    var expressions = new List<System.Linq.Expressions.Expression>(node.Expressions.Count);
+                    foreach (var nodeExpression in node.Expressions)
+                    {
+                        var expression = Visit(nodeExpression);
+                        if (ReferenceEquals(expression, EmptyBudgetCheck))
+                        {
+                            continue;
+                        }
+
+                        if (TryFlattenAssignedBlock(expression, out var nestedVariables, out var nestedExpressions, out var assignment))
+                        {
+                            variables.AddRange(nestedVariables);
+                            expressions.AddRange(nestedExpressions);
+                            expressions.Add(assignment);
+                        }
+                        else
+                        {
+                            expressions.Add(expression);
+                        }
+                    }
+
+                    if (expressions.Count == 0)
+                    {
+                        return EmptyBudgetCheck;
+                    }
+
+                    return variables.Count == 0 && expressions.Count == 1
+                               ? expressions[0]
+                               : System.Linq.Expressions.Expression.Block(variables, expressions);
+                }
+                finally
+                {
+                    foreach (var variable in node.Variables)
+                    {
+                        _renamedVariables.Remove(variable);
+                    }
+                }
             }
 
             protected override System.Linq.Expressions.Expression VisitMethodCall(System.Linq.Expressions.MethodCallExpression node)
             {
-                if (node.Method.DeclaringType == typeof(EvaluationBudget) && node.Method.Name == nameof(EvaluationBudget.ThrowIfExceeded))
+                if (node.Method.DeclaringType == typeof(EvaluationBudget) &&
+                    node.Method.Name is nameof(EvaluationBudget.ThrowIfExceeded) or nameof(EvaluationBudget.ThrowIfExceededImmediately))
                 {
                     return EmptyBudgetCheck;
                 }
 
                 return base.VisitMethodCall(node);
+            }
+
+            protected override System.Linq.Expressions.Expression VisitParameter(System.Linq.Expressions.ParameterExpression node)
+            {
+                return _renamedVariables.TryGetValue(node, out var replacement) ? replacement : node;
+            }
+
+            private System.Linq.Expressions.ParameterExpression RenameIfDuplicate(System.Linq.Expressions.ParameterExpression variable)
+            {
+                if (!_encounteredVariables.Add(variable))
+                {
+                    return _renamedVariables.TryGetValue(variable, out var existingReplacement) ? existingReplacement : variable;
+                }
+
+                var name = variable.Name;
+                var nameKey = name ?? "<unnamed:" + variable.Type.AssemblyQualifiedName + ">";
+
+                if (!_variableNameCounts.TryGetValue(nameKey, out var count))
+                {
+                    _variableNameCounts[nameKey] = 1;
+                    return variable;
+                }
+
+                var renamedVariable = System.Linq.Expressions.Expression.Variable(variable.Type, name is null ? "iterator" + (++count) : name + (++count));
+                _variableNameCounts[nameKey] = count;
+                _renamedVariables[variable] = renamedVariable;
+                return renamedVariable;
             }
         }
 
