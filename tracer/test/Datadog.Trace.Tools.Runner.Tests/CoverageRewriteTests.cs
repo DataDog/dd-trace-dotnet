@@ -7,9 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Attributes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -19,6 +21,7 @@ using FluentAssertions;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.CSharp;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
@@ -202,6 +205,115 @@ public class CoverageRewriteTests
         var transVerifySettings = new VerifySettings();
         transVerifySettings.UseFileName($"{targetSnapshot}.{coverageMode}");
         await Verifier.Verify(transCode, transVerifySettings);
+    }
+
+    [Fact]
+    public void RewrittenExceptionPathReleasesTheContextBufferAtSessionEnd()
+    {
+        var tempFileName = GetTempFile();
+        var previousHandler = CoverageReporter.Handler;
+        try
+        {
+            using (var assembly = AssemblyDefinition.ReadAssembly(tempFileName, new ReaderParameters { ReadSymbols = true, InMemory = true }))
+            {
+                var main = assembly.MainModule.Types.Single(type => type.Name == "Class1").Methods.Single(method => method.Name == "Main");
+                var firstInstruction = main.Body.Instructions[0];
+                var constructor = assembly.MainModule.ImportReference(typeof(InvalidOperationException).GetConstructor(Type.EmptyTypes)!);
+                var processor = main.Body.GetILProcessor();
+                processor.InsertBefore(firstInstruction, processor.Create(OpCodes.Newobj, constructor));
+                processor.InsertBefore(firstInstruction, processor.Create(OpCodes.Throw));
+                AssemblyProcessor.WriteTargetAssembly(assembly, tempFileName, strongNameKeyBlob: null);
+            }
+
+            var asmProcessor = new AssemblyProcessor(tempFileName, new CoverageSettings(null, string.Empty));
+            asmProcessor.Process();
+            var rewrittenAssembly = Assembly.Load(File.ReadAllBytes(tempFileName));
+            var instance = Activator.CreateInstance(rewrittenAssembly.GetType("CoverageRewriterAssembly.Class1")!);
+            var mainMethod = instance!.GetType().GetMethod("Main")!;
+            var handler = new DefaultWithGlobalCoverageEventHandler();
+            CoverageReporter.Handler = handler;
+            var handle = handler.StartSession("xunit");
+
+            var invoke = () => mainMethod.Invoke(instance, null);
+            invoke.Should().Throw<TargetInvocationException>().WithInnerException<InvalidOperationException>();
+            var module = handler.Container!.SnapshotModules().Should().ContainSingle().Subject;
+
+            handler.EndSession(handle);
+
+            module.FilesLines.Should().Be(IntPtr.Zero);
+            module.AllocatedByteLength.Should().Be(0);
+        }
+        finally
+        {
+            CoverageReporter.Handler = previousHandler;
+            File.Delete(tempFileName);
+            File.Delete(Path.ChangeExtension(tempFileName, ".pdb"));
+        }
+    }
+
+    [Fact]
+    public void TailCallMethodKeepsTheExistingCounterInstrumentationShape()
+    {
+        var tempFileName = GetTempFile();
+        try
+        {
+            using (var assembly = AssemblyDefinition.ReadAssembly(tempFileName, new ReaderParameters { ReadSymbols = true, InMemory = true }))
+            {
+                var type = assembly.MainModule.Types.Single(candidate => candidate.Name == "Class1");
+                var templateSequencePoint = type.Methods
+                                                .SelectMany(method => method.DebugInformation.SequencePoints)
+                                                .First(sequencePoint => !sequencePoint.IsHidden && sequencePoint.Document is not null);
+                var method = new MethodDefinition(
+                    "TailCountdown",
+                    Mono.Cecil.MethodAttributes.Public | Mono.Cecil.MethodAttributes.Static,
+                    assembly.MainModule.TypeSystem.Int32);
+                method.Parameters.Add(new ParameterDefinition("value", Mono.Cecil.ParameterAttributes.None, assembly.MainModule.TypeSystem.Int32));
+                type.Methods.Add(method);
+
+                var processor = method.Body.GetILProcessor();
+                var firstInstruction = processor.Create(OpCodes.Ldarg_0);
+                var recurse = processor.Create(OpCodes.Ldarg_0);
+                processor.Append(firstInstruction);
+                processor.Append(processor.Create(OpCodes.Brtrue, recurse));
+                processor.Append(processor.Create(OpCodes.Ldc_I4_0));
+                processor.Append(processor.Create(OpCodes.Ret));
+                processor.Append(recurse);
+                processor.Append(processor.Create(OpCodes.Ldc_I4_1));
+                processor.Append(processor.Create(OpCodes.Sub));
+                processor.Append(processor.Create(OpCodes.Tail));
+                processor.Append(processor.Create(OpCodes.Call, method));
+                processor.Append(processor.Create(OpCodes.Ret));
+                method.DebugInformation.SequencePoints.Add(
+                    new SequencePoint(firstInstruction, templateSequencePoint.Document)
+                    {
+                        StartLine = templateSequencePoint.StartLine,
+                        StartColumn = templateSequencePoint.StartColumn,
+                        EndLine = templateSequencePoint.EndLine,
+                        EndColumn = templateSequencePoint.EndColumn,
+                    });
+
+                AssemblyProcessor.WriteTargetAssembly(assembly, tempFileName, strongNameKeyBlob: null);
+            }
+
+            var assemblyProcessor = new AssemblyProcessor(tempFileName, new CoverageSettings(null, string.Empty));
+            assemblyProcessor.Process();
+
+            using var rewritten = AssemblyDefinition.ReadAssembly(tempFileName, new ReaderParameters { ReadSymbols = true, InMemory = true });
+            var tailMethod = rewritten.MainModule.Types.Single(type => type.Name == "Class1").Methods.Single(method => method.Name == "TailCountdown");
+            var tailInstruction = tailMethod.Body.Instructions.Should().ContainSingle(instruction => instruction.OpCode == OpCodes.Tail).Subject;
+            tailMethod.Body.Instructions[tailMethod.Body.Instructions.IndexOf(tailInstruction) + 1].OpCode.Should().Be(OpCodes.Call);
+            var calledMethods = tailMethod.Body.Instructions
+                                          .Where(instruction => instruction.Operand is MethodReference)
+                                          .Select(instruction => ((MethodReference)instruction.Operand).Name);
+            calledMethods.Should().Contain("GetFileCounter");
+            calledMethods.Should().NotContain("AcquireFileCounter");
+            tailMethod.Body.ExceptionHandlers.Should().BeEmpty("coverage instrumentation must not rewrite the method control flow");
+        }
+        finally
+        {
+            File.Delete(tempFileName);
+            File.Delete(Path.ChangeExtension(tempFileName, ".pdb"));
+        }
     }
 
     [Theory]

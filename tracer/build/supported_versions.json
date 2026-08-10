@@ -266,8 +266,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.5.3",
-        "maxVersionSupportedInclusive": "4.0.102.1",
-        "maxVersionAvailableInclusive": "4.0.102.1",
+        "maxVersionSupportedInclusive": "4.0.103",
+        "maxVersionAvailableInclusive": "4.0.103",
         "maxVersionTestedInclusive": "4.0.102.1"
       }
     ]
@@ -334,8 +334,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.3.0",
         "minVersionTestedInclusive": "3.3.113.2",
-        "maxVersionSupportedInclusive": "4.0.101.6",
-        "maxVersionAvailableInclusive": "4.0.101.6",
+        "maxVersionSupportedInclusive": "4.0.101.7",
+        "maxVersionAvailableInclusive": "4.0.101.7",
         "maxVersionTestedInclusive": "4.0.101.6"
       }
     ]
@@ -549,8 +549,18 @@
     "integrationName": "DotnetTest",
     "assemblyName": "coverlet.core",
     "minAssemblyVersionInclusive": "3.0.0",
-    "maxAssemblyVersionInclusive": "6.65535.65535",
-    "packages": []
+    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "packages": [
+      {
+        "name": "coverlet.collector",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "3.0.0",
+        "minVersionTestedInclusive": "3.2.0",
+        "maxVersionSupportedInclusive": "10.0.1",
+        "maxVersionAvailableInclusive": "10.0.1",
+        "maxVersionTestedInclusive": "10.0.1"
+      }
+    ]
   },
   {
     "integrationName": "DotnetTest",
@@ -768,16 +778,16 @@
     "integrationName": "HttpMessageHandler",
     "assemblyName": "Ocelot",
     "minAssemblyVersionInclusive": "23.0.0",
-    "maxAssemblyVersionInclusive": "24.65535.65535",
+    "maxAssemblyVersionInclusive": "25.65535.65535",
     "packages": [
       {
         "name": "Ocelot",
         "minVersionAvailableInclusive": "0.0.1",
         "minVersionSupportedInclusive": "23.0.0",
         "minVersionTestedInclusive": "23.0.0",
-        "maxVersionSupportedInclusive": "24.1.0",
+        "maxVersionSupportedInclusive": "25.0.0",
         "maxVersionAvailableInclusive": "25.0.0",
-        "maxVersionTestedInclusive": "24.1.0"
+        "maxVersionTestedInclusive": "25.0.0"
       }
     ]
   },
@@ -1080,16 +1090,16 @@
     "integrationName": "MySql",
     "assemblyName": "MySql.Data",
     "minAssemblyVersionInclusive": "6.7.0",
-    "maxAssemblyVersionInclusive": "9.65535.65535",
+    "maxAssemblyVersionInclusive": "26.65535.65535",
     "packages": [
       {
         "name": "MySql.Data",
         "minVersionAvailableInclusive": "5.1.7",
         "minVersionSupportedInclusive": "6.7.4",
         "minVersionTestedInclusive": "6.7.9",
-        "maxVersionSupportedInclusive": "9.7.0",
+        "maxVersionSupportedInclusive": "26.7.0",
         "maxVersionAvailableInclusive": "26.7.0",
-        "maxVersionTestedInclusive": "9.7.0"
+        "maxVersionTestedInclusive": "26.7.0"
       }
     ]
   },
@@ -1394,8 +1404,8 @@
         "minVersionAvailableInclusive": "1.0.66.1",
         "minVersionSupportedInclusive": "1.0.66.1",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "2.0.3",
-        "maxVersionAvailableInclusive": "2.0.3",
+        "maxVersionSupportedInclusive": "2.0.4",
+        "maxVersionAvailableInclusive": "2.0.4",
         "maxVersionTestedInclusive": null
       }
     ]
