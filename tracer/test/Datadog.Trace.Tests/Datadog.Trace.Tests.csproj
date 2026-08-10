@@ -85,6 +85,7 @@
   <ItemGroup>
     <EmbeddedResource Include="FeatureFlags\ffe-system-test-data\ufc-config.json" />
     <EmbeddedResource Include="FeatureFlags\ffe-system-test-data\evaluation-cases\*.json" />
+    <EmbeddedResource Include="FeatureFlags\ffe-system-test-data\regex-conformance\targeting-regex-conformance.json" />
     <None Remove="Telemetry\telemetry_*.json" />
     <EmbeddedResource Include="Telemetry\telemetry_*.json" />
     <None Remove="Telemetry\Metrics\*.json" />

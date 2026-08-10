@@ -25,6 +25,7 @@ public partial class FeatureFlagsEvaluatorTests
 #pragma warning disable SA1500 // Braces for multi-line statements should not share line
 #pragma warning disable SA1401 // Fields should be private
     public static List<object[]> TestData = GetTestData();
+    public static List<object[]> RegexConformanceTestData = GetRegexConformanceTestData();
     internal static ServerConfiguration _config = ReadConfig();
 #pragma warning restore SA1401 // Fields should be private
 
@@ -99,6 +100,48 @@ public partial class FeatureFlagsEvaluatorTests
             {
                 Assert.Equal<object>(expected, obj);
             }
+        }
+    }
+
+    [Fact]
+    public void RegexConformanceFixtureShape()
+    {
+        var cases = ReadRegexConformanceFixture().Cases!;
+
+        Assert.Equal(75, cases.Count);
+        Assert.Equal(67, cases.Count(static testCase => testCase.ExpectedCompile.HasValue));
+        Assert.Equal(51, cases.Count(static testCase => testCase.ExpectedMatch.HasValue));
+    }
+
+    [Theory]
+    [MemberData(nameof(RegexConformanceTestData))]
+    public void RegexConformance(RegexConformanceCase testCase)
+    {
+        Assert.NotNull(testCase.Id);
+        Assert.NotNull(testCase.RawPattern);
+        Assert.NotNull(testCase.Input);
+        Assert.NotNull(testCase.ExpectedCompile);
+
+        // UFC supplies the raw pattern. ConditionConfiguration is the production normalization boundary
+        // before System.Text.RegularExpressions.Regex compiles and evaluates it.
+        var evaluator = new FeatureFlagsEvaluator(null, CreateRegexConfiguration(testCase.RawPattern!));
+        var context = new EvaluationContext(
+            testCase.Id!,
+            new Dictionary<string, object?> { ["input"] = testCase.Input });
+
+        var result = evaluator.Evaluate("regex-conformance", Trace.FeatureFlags.ValueType.Boolean, false, context);
+
+        if (testCase.ExpectedCompile == false)
+        {
+            Assert.Equal(EvaluationReason.Error, result.Reason);
+            Assert.Equal("PARSE_ERROR", result.Error);
+            return;
+        }
+
+        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        if (testCase.ExpectedMatch.HasValue)
+        {
+            Assert.Equal(testCase.ExpectedMatch.Value, result.Value);
         }
     }
 
@@ -183,6 +226,66 @@ public partial class FeatureFlagsEvaluatorTests
         return testData;
     }
 
+    private static List<object[]> GetRegexConformanceTestData()
+    {
+        var testData = new List<object[]>();
+        foreach (var testCase in ReadRegexConformanceFixture().Cases!)
+        {
+            if (testCase.ExpectedCompile.HasValue)
+            {
+                testData.Add([testCase]);
+            }
+        }
+
+        return testData;
+    }
+
+    private static RegexConformanceFixture ReadRegexConformanceFixture()
+    {
+        var fixtureContent = ResourceHelper.ReadAllText<FeatureFlagsEvaluatorTests>(
+            "ffe_system_test_data.regex_conformance.targeting-regex-conformance.json");
+        var fixture = JsonConvert.DeserializeObject<RegexConformanceFixture>(fixtureContent);
+        Assert.NotNull(fixture);
+        Assert.NotNull(fixture.Cases);
+        return fixture;
+    }
+
+    private static ServerConfiguration CreateRegexConfiguration(string pattern)
+    {
+        var flag = new Flag
+        {
+            Key = "regex-conformance",
+            Enabled = true,
+            VariationType = Trace.FeatureFlags.ValueType.Boolean,
+            Variations = new Dictionary<string, Variant>
+            {
+                ["matched"] = new Variant { Key = "matched", Value = true },
+                ["not-matched"] = new Variant { Key = "not-matched", Value = false },
+            },
+            Allocations =
+            [
+                CreateRegexAllocation("matched", ConditionOperator.MATCHES, pattern),
+                CreateRegexAllocation("not-matched", ConditionOperator.NOT_MATCHES, pattern),
+            ],
+        };
+
+        return new ServerConfiguration
+        {
+            Flags = new Dictionary<string, Flag> { ["regex-conformance"] = flag },
+        };
+    }
+
+    private static Allocation CreateRegexAllocation(string key, ConditionOperator conditionOperator, string pattern)
+    {
+        return new Allocation
+        {
+            Key = key,
+            Rules = [new Rule([new ConditionConfiguration { Attribute = "input", Operator = conditionOperator, Value = pattern }])],
+            Splits = [new Split { VariationKey = key, Shards = [] }],
+            DoLog = false,
+        };
+    }
+
     private static CanonicalEvaluationReason ToCanonicalReason(EvaluationReason reason)
     {
         return reason switch
@@ -225,6 +328,24 @@ public partial class FeatureFlagsEvaluatorTests
 
             public Dictionary<string, string>? FlagMetadata { get; set; }
         }
+    }
+
+    public class RegexConformanceFixture
+    {
+        public List<RegexConformanceCase>? Cases { get; set; }
+    }
+
+    public class RegexConformanceCase
+    {
+        public string? Id { get; set; }
+
+        public string? RawPattern { get; set; }
+
+        public string? Input { get; set; }
+
+        public bool? ExpectedCompile { get; set; }
+
+        public bool? ExpectedMatch { get; set; }
     }
 
     /*
