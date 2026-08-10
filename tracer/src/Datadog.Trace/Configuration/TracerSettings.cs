@@ -818,14 +818,25 @@ namespace Datadog.Trace.Configuration
                 .WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled)
                 .AsBool(defaultValue: false);
 
-            if (OtelSemanticsEnabled && MetadataSchemaVersion != SchemaVersion.V0)
+            if (OtelSemanticsEnabled)
             {
                 // OpenTelemetry semantics mode already fully replaces Datadog attribute naming and values,
                 // so the V1 schema's Datadog-only attributes (e.g. peer.service) must not be layered on top.
-                Log.Warning(
-                    $"{ConfigurationKeys.MetadataSchemaVersion} is set to a version other than v0, but {ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled} is enabled. Using v0 instead.");
-                MetadataSchemaVersion = SchemaVersion.V0;
-                telemetry.Record(ConfigurationKeys.MetadataSchemaVersion, "v0", recordValue: true, ConfigurationOrigins.Calculated);
+                if (MetadataSchemaVersion != SchemaVersion.V0)
+                {
+                    Log.Warning(
+                        $"{ConfigurationKeys.MetadataSchemaVersion} is set to a version other than v0, but {ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled} is enabled. Using v0 instead.");
+                    MetadataSchemaVersion = SchemaVersion.V0;
+                    telemetry.Record(ConfigurationKeys.MetadataSchemaVersion, "v0", recordValue: true, ConfigurationOrigins.Calculated);
+                }
+
+                if (PeerServiceTagsEnabled)
+                {
+                    Log.Warning(
+                        $"{ConfigurationKeys.PeerServiceDefaultsEnabled} is set to true, but {ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled} is enabled. Using false instead.");
+                    PeerServiceTagsEnabled = false;
+                    telemetry.Record(ConfigurationKeys.PeerServiceDefaultsEnabled, false, ConfigurationOrigins.Calculated);
+                }
             }
 
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();

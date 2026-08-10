@@ -130,12 +130,16 @@ public class ScopeFactoryTests
     // TracerSettings), because OpenTelemetry semantics already fully replace Datadog attribute naming
     // and values, so the V1 schema's Datadog-only attributes (e.g. peer.service) must not coexist with them.
     [Theory]
-    [InlineData("v1")]
-    [InlineData("v0")]
-    [InlineData(null)]
-    public async Task CreateOutboundHttpScope_WithOpenTelemetrySemantics_NeverUsesV1SchemaTags(string requestedSchemaVersion)
+    [InlineData("v1", true)]
+    [InlineData("v1", false)]
+    [InlineData("v1", null)]
+    [InlineData("v0", true)]
+    [InlineData("v0", false)]
+    [InlineData("v0", null)]
+    [InlineData(null, null)]
+    public async Task CreateOutboundHttpScope_WithOpenTelemetrySemantics_NeverUsesV1SchemaTags(string requestedSchemaVersion, bool? peerServiceDefaultsEnabled)
     {
-        await using var tracer = CreateTracer(otelSemanticsEnabled: true, schemaVersion: requestedSchemaVersion);
+        await using var tracer = CreateTracer(otelSemanticsEnabled: true, schemaVersion: requestedSchemaVersion, peerServiceDefaultsEnabled: peerServiceDefaultsEnabled);
         using var parent = StartParentScope(tracer);
 
         using var scope = ScopeFactory.CreateOutboundHttpScope(tracer, "GET", RequestUri, IntegrationId.HttpMessageHandler, out var tags);
@@ -153,7 +157,7 @@ public class ScopeFactoryTests
         return tracer.StartActiveInternal("parent");
     }
 
-    private static ScopedTracer CreateTracer(bool otelSemanticsEnabled, string schemaVersion = null)
+    private static ScopedTracer CreateTracer(bool otelSemanticsEnabled, string schemaVersion = null, bool? peerServiceDefaultsEnabled = null)
     {
         var collection = new NameValueCollection
         {
@@ -163,6 +167,11 @@ public class ScopeFactoryTests
         if (schemaVersion is not null)
         {
             collection.Add(ConfigurationKeys.MetadataSchemaVersion, schemaVersion);
+        }
+
+        if (peerServiceDefaultsEnabled is not null)
+        {
+            collection.Add(ConfigurationKeys.PeerServiceDefaultsEnabled, peerServiceDefaultsEnabled.Value ? "true" : "false");
         }
 
         var settings = new TracerSettings(new NameValueConfigurationSource(collection));
