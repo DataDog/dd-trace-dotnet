@@ -279,6 +279,90 @@ build-linux-tracer-x64-musl:
     NATIVE_BASE_IMAGE: alpine
     NATIVE_DOTNET_SDK_VERSION: "10.0.100"
 
+.macos-amd64:
+  tags: ["macos:sonoma-amd64"]
+  variables:
+    DOTNET_SDK_VERSION: "10.0.100"
+    DOTNET_CLI_HOME: "$CI_PROJECT_DIR/.dotnet_cli_home"
+    NUGET_PACKAGES: "$CI_PROJECT_DIR/packages"
+    NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: "true"
+    NUKE_TELEMETRY_OPTOUT: "1"
+  before_script:
+    - |
+      set -eu
+      export DOTNET_ROOT="${CI_PROJECT_DIR}/.dotnet"
+      export PATH="${DOTNET_ROOT}:${PATH}"
+      mkdir -p "$DOTNET_ROOT" "$DOTNET_CLI_HOME" "$NUGET_PACKAGES"
+
+      dotnet_install_script="${TMPDIR:-/tmp}/dd-trace-dotnet-${CI_JOB_ID}-dotnet-install.sh"
+      trap 'rm -f "$dotnet_install_script"' EXIT
+      curl --fail --silent --show-error --location --retry 5 \
+        --output "$dotnet_install_script" \
+        https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh
+      bash "$dotnet_install_script" \
+        --version "$DOTNET_SDK_VERSION" \
+        --install-dir "$DOTNET_ROOT" \
+        --no-path
+      dotnet --info
+
+build-macos-tracer-amd64:
+  extends: .macos-amd64
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: build
+  timeout: 1h
+  needs: []
+  script:
+    # Azure builds these pieces in two jobs and merges their artifacts. The GitLab
+    # PoC keeps the same targets in one workspace and publishes the combined result.
+    - ./tracer/build.sh Clean CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome --NugetPackageDirectory "$NUGET_PACKAGES"
+    - ./tracer/build.sh BuildManagedTracerHome BuildNativeLoader --skip CreateTrimmingFile --NugetPackageDirectory "$NUGET_PACKAGES"
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths:
+      - artifacts/bin
+      - artifacts/monitoring-home
+      - artifacts/obj/**/ref/**/*
+      - artifacts/obj/**/refint/**/*
+      - artifacts/obj/Datadog.Trace.Tools.dd_dotnet/**/apphost
+      - artifacts/build_data/logs
+      - artifacts/build_data/dumps
+
+"unit-tests-macos-amd64:net10.0":
+  extends: .macos-amd64
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: test
+  timeout: 90m
+  needs:
+    - job: build-macos-tracer-amd64
+      artifacts: true
+  variables:
+    DD_LOGGER_ENABLED: "true"
+    DD_LOGGER_DD_SERVICE: dd-trace-dotnet
+    DD_LOGGER_DD_TRACE_LOG_PATH: "$CI_PROJECT_DIR/artifacts/build_data/infra_logs/ci-visibility.log"
+    DD_LOGGER_DD_TAGS: "test.configuration.job:$CI_JOB_NAME"
+  script:
+    - mkdir -p artifacts/build_data/infra_logs
+    - ./tracer/build.sh BuildManagedUnitTests RunManagedUnitTests --framework net10.0 --IncludeAllTestFrameworks true --NugetPackageDirectory "$NUGET_PACKAGES"
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    name: "managed-unit-tests-macos-amd64-net10.0"
+    paths:
+      - artifacts/build_data/results
+      - artifacts/build_data/logs
+      - artifacts/build_data/infra_logs
+      - artifacts/build_data/dumps
+  id_tokens:
+    DD_STS_OIDC_TOKEN:
+      aud: rapid-seceng-sit
+
 build:
   except:
     variables:
