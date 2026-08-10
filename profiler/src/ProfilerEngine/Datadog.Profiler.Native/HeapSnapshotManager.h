@@ -17,7 +17,6 @@
 #include "MetricsRegistry.h"
 #include "ProxyMetric.h"
 #include "InlineVTCache.h"
-#include "GCHeapRangeSet.h"
 #include "SnapshotCooldown.h"
 
 #include "corprof.h"
@@ -75,6 +74,10 @@ public:
 
     // used for debugging purpose
     std::string GetHeapSnapshotText();
+
+    // Called from ModuleUnloadStarted: the types met during a dump are inspected after it,
+    // so their ClassIDs must not be trusted once the module defining them is gone.
+    void OnModuleUnloaded();
 
     // Reference tree output (separate from histogram)
     std::vector<FileEntry> GetAndClearReferenceTreeContent() override;
@@ -166,11 +169,6 @@ private:
     // in progress because it may load types (see InlineVTCache::ResolvePendingTypes).
     void ResolvePendingInlineValueTypes();
 
-    // Rebuilds _gcHeapRanges from GetGenerationBounds. MUST be called outside a GC
-    // (i.e. before the dump's EventPipe session starts). Fails open: on any error
-    // the range set is left empty, which the traverser treats as "accept everything".
-    void SeedHeapRanges();
-
     // Logs (once) the detected runtime type/version and whether it falls within
     // the range the GCDesc reader has been validated against. This is a soft
     // signal for diagnostics only; it never disables the feature.
@@ -256,12 +254,6 @@ private:
 
     // Persisted across heap dumps to avoid re-inspecting types for inline VT fields.
     std::unique_ptr<InlineVTCache> _pInlineVTCache;
-
-    // Coarse GC-heap plausibility filter used by the traverser to reject candidate
-    // references that fall outside the heap before dereferencing them. Seeded from
-    // GetGenerationBounds at the start of each dump and grown from validated root
-    // addresses during the dump. Rebuilt each dump.
-    GCHeapRangeSet _gcHeapRanges;
 
     // Persisted across dumps to pre-size the visited set, avoiding repeated Grow() calls.
     size_t _visitedSetHighWatermark = 512;

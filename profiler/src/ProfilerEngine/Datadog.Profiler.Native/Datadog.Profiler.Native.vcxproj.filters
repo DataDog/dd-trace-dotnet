@@ -513,10 +513,10 @@
     <ClInclude Include="GCDescReader.h">
       <Filter>HeapSnapshot</Filter>
     </ClInclude>
-    <ClInclude Include="GCHeapRangeSet.h">
+    <ClInclude Include="InlineVTCache.h">
       <Filter>HeapSnapshot</Filter>
     </ClInclude>
-    <ClInclude Include="InlineVTCache.h">
+    <ClInclude Include="MemoryFaultGuard.h">
       <Filter>HeapSnapshot</Filter>
     </ClInclude>
     <ClInclude Include="ReferenceChainTraverser.h">

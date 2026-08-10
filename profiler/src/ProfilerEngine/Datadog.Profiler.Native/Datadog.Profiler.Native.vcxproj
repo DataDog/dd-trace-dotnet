@@ -255,8 +255,8 @@
     <ClInclude Include="FileHelper.h" />
     <ClInclude Include="FrameworkThreadInfo.h" />
     <ClInclude Include="GCDescReader.h" />
-    <ClInclude Include="GCHeapRangeSet.h" />
     <ClInclude Include="InlineVTCache.h" />
+    <ClInclude Include="MemoryFaultGuard.h" />
     <ClInclude Include="HeapSnapshotManager.h" />
     <ClInclude Include="SnapshotCooldown.h" />
     <ClInclude Include="IGCDumpListener.h" />

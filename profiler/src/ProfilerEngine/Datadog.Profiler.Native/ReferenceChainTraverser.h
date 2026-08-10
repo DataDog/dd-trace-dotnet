@@ -7,7 +7,6 @@
 #include "corprof.h"
 #include "InlineVTCache.h"
 #include "GCDescReader.h"
-#include "GCHeapRangeSet.h"
 #include "TypeReferenceTree.h"
 #include "VisitedObjectSet.h"
 #include "ReferenceChainTypes.h"
@@ -44,8 +43,7 @@ public:
         IFrameStore* pFrameStore,
         TypeReferenceTree& tree,
         InlineVTCache& inlineVTCache,
-        size_t visitedSetInitialCapacity = 512,
-        const GCHeapRangeSet* pHeapRanges = nullptr);
+        size_t visitedSetInitialCapacity = 512);
 
     // Traverse from a single root (called from OnBulkRoot* event handlers).
     // A fresh VisitedObjectSet is used per root for cycle detection within that root's graph.
@@ -74,11 +72,6 @@ public:
     // traverser (and a fresh budget) unless the manager decides otherwise.
     bool WasAbortedByFaults() const { return _faultBudgetExhausted; }
 
-    // Candidate references dropped by the GC heap-range filter. Diagnostic only: a
-    // non-zero value means the filter is rejecting addresses, which costs real edges
-    // when the seeded ranges do not cover the whole heap.
-    uint64_t GetRefsRejectedByRangeFilter() const { return _refsRejectedByRangeFilter; }
-
 #ifdef DD_TEST
     // Unit tests only: perform a guarded read of one byte from ptr using the same
     // SIGSEGV/SIGBUS (Linux) or SEH (Windows) machinery as TraverseFromSingleRoot.
@@ -95,17 +88,15 @@ private:
     // net that wraps it.
     void TraverseFromSingleRootCore(const RootInfo& root);
 
-    // Runs body under the platform memory access fault guard: SEH on Windows,
-    // a SIGSEGV/SIGBUS handler plus siglongjmp on Linux. Returns false when a fault
-    // was recovered from, in which case OnTraversalFault has already run.
+    // Runs body under MemoryFaultGuard and counts the faults it recovers from.
+    // Returns false when body faulted, in which case OnTraversalFault has already run.
     //
-    // C++ exceptions are deliberately NOT caught here: they propagate to
+    // C++ exceptions are deliberately NOT caught: they propagate to
     // TraverseFromSingleRoot, the single place that decides what an unexpected
     // exception means for the dump.
     //
     // IMPORTANT: neither body nor anything it calls may own something that needs
-    // destruction. SEH unwinding skips the destructors of intervening frames and
-    // siglongjmp does not unwind at all.
+    // destruction, and guarded regions must not nest (see MemoryFaultGuard.h).
     template <typename TBody>
     bool RunGuarded(TBody&& body);
 
@@ -171,7 +162,7 @@ private:
         ClassID classID,
         SIZE_T objectSize);
 
-    bool IsValidObjectAddress(uintptr_t address);
+    static bool IsValidObjectAddress(uintptr_t address);
     std::string GetClassName(ClassID classID) const;
 
     void OnTraversalFault();
@@ -189,10 +180,6 @@ private:
     IFrameStore* _pFrameStore;
     TypeReferenceTree& _tree;
     InlineVTCache& _inlineVTCache;
-
-    // Coarse GC-heap plausibility filter (nullable). When null or empty, every
-    // candidate address is accepted, matching the pre-filter behaviour.
-    const GCHeapRangeSet* _pHeapRanges;
 
     // Per-root cycle detection.
     // Cleared between roots to avoid reallocating the bucket array.
@@ -214,10 +201,6 @@ private:
     uint64_t _rootsProcessed;
     uint64_t _rootCategoryCounts[RootCategoryCount] = {};
     std::chrono::nanoseconds _totalTraversalDuration{0};
-
-    // Count of candidate references rejected by the GC heap-range filter
-    // (see IsValidObjectAddress). Diagnostic only.
-    uint64_t _refsRejectedByRangeFilter = 0;
 
     static constexpr size_t MinStackReserve = 64;
     size_t _traversalStackHighWatermark = MinStackReserve;

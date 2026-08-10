@@ -75,7 +75,6 @@
     <ClCompile Include="ExporterTest.cpp" />
     <ClCompile Include="FakeSamples.cpp" />
     <ClCompile Include="FrameStoreHelper.cpp" />
-    <ClCompile Include="GCHeapRangeSetTest.cpp" />
     <ClCompile Include="IMetricsSenderFactoryTest.cpp" />
     <ClCompile Include="InlineVTCacheTest.cpp" />
     <ClCompile Include="LinkedListTest.cpp" />

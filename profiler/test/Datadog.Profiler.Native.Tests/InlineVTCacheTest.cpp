@@ -49,6 +49,14 @@ public:
         return reinterpret_cast<ClassID>(&_flags);
     }
 
+    // Stands in for "this address no longer describes what it described during the dump".
+    // A freed MethodTable cannot be simulated (reading one is undefined), so the flag the
+    // cache used to read first is simply turned off.
+    void ClearContainsPointers()
+    {
+        _flags = 0;
+    }
+
 private:
     uint32_t _flags;
 };
@@ -210,6 +218,63 @@ TEST(InlineVTCacheTest, InspectedTypeIsNotQueuedAgain)
     ASSERT_EQ(static_cast<size_t>(0), cache.GetPendingTypeCount());
     ASSERT_EQ(static_cast<size_t>(0), cache.ResolvePendingTypes());
     ASSERT_EQ(static_cast<size_t>(1), profilerInfo.InspectedClassCount);
+}
+
+// A type is queued while the runtime is suspended and inspected once it has resumed, by
+// which time a collectible AssemblyLoadContext may have freed its MethodTable. Reading
+// that MethodTable to decide whether the type is worth inspecting would fault on a thread
+// the CLR knows nothing about, so the runtime is asked to vouch for the ClassID first.
+TEST(InlineVTCacheTest, DeferredTypeIsValidatedByTheRuntimeBeforeItsMethodTableIsRead)
+{
+    CoreLibMockProfilerInfo profilerInfo;
+    FakeMethodTable methodTable;
+
+    auto cache = CreateCache(profilerInfo, nullptr);
+
+    cache.GetInlineVTInfo(methodTable.GetClassID());
+
+    methodTable.ClearContainsPointers();
+
+    // reaching the runtime means the MethodTable was not what decided to give up
+    ASSERT_EQ(static_cast<size_t>(1), cache.ResolvePendingTypes());
+    ASSERT_EQ(static_cast<size_t>(1), profilerInfo.InspectedClassCount);
+}
+
+TEST(InlineVTCacheTest, ModuleUnloadDropsEverythingBeforeTheNextResolution)
+{
+    CoreLibMockProfilerInfo profilerInfo;
+    FakeMethodTable methodTable;
+
+    auto cache = CreateCache(profilerInfo, nullptr);
+
+    cache.GetInlineVTInfo(methodTable.GetClassID());
+    ASSERT_EQ(static_cast<size_t>(1), cache.GetPendingTypeCount());
+
+    cache.OnModuleUnloaded();
+
+    // there is no telling which ClassIDs the unloaded module defined, so none is used
+    ASSERT_EQ(static_cast<size_t>(0), cache.ResolvePendingTypes());
+    ASSERT_EQ(static_cast<size_t>(0), cache.GetPendingTypeCount());
+    ASSERT_EQ(static_cast<size_t>(0), cache.GetCachedTypeCount());
+    ASSERT_EQ(static_cast<size_t>(0), profilerInfo.InspectedClassCount);
+}
+
+TEST(InlineVTCacheTest, TheUnloadNotificationIsConsumedOnceAndOnlyWhenRaised)
+{
+    CoreLibMockProfilerInfo profilerInfo;
+    FakeMethodTable methodTable;
+
+    auto cache = CreateCache(profilerInfo, nullptr);
+    cache.GetInlineVTInfo(methodTable.GetClassID());
+
+    // the cache is meant to survive the dumps: without an unload nothing is thrown away
+    ASSERT_FALSE(cache.DropCacheIfModuleUnloaded());
+    ASSERT_EQ(static_cast<size_t>(1), cache.GetPendingTypeCount());
+
+    cache.OnModuleUnloaded();
+
+    ASSERT_TRUE(cache.DropCacheIfModuleUnloaded());
+    ASSERT_FALSE(cache.DropCacheIfModuleUnloaded());
 }
 
 TEST(InlineVTCacheTest, NothingIsInspectedWithoutTraversal)

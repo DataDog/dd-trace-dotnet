@@ -3,171 +3,40 @@
 
 #include "ReferenceChainTraverser.h"
 #include "Log.h"
+#include "MemoryFaultGuard.h"
 #include "OpSysTools.h"
 
 #include <cstdint>
 #include <stdexcept>
-
-#ifdef _WINDOWS
-#include <Windows.h>
-
-namespace
-{
-// Only the faults a raw object graph read can actually produce are recovered from.
-// EXCEPTION_EXECUTE_HANDLER would also swallow stack overflow (leaving the guard page
-// unreset for the rest of the process), CLR exceptions and C++ exceptions such as
-// std::bad_alloc -- none of which mean "that object address was unreadable", and all
-// of which the resume loop would otherwise retry.
-int MemoryFaultFilter(DWORD exceptionCode)
-{
-    switch (exceptionCode)
-    {
-        case EXCEPTION_ACCESS_VIOLATION:
-        case EXCEPTION_DATATYPE_MISALIGNMENT:
-        case EXCEPTION_IN_PAGE_ERROR:
-            return EXCEPTION_EXECUTE_HANDLER;
-
-        default:
-            return EXCEPTION_CONTINUE_SEARCH;
-    }
-}
-} // namespace
-
-#else
-#include <csetjmp>
-#include <csignal>
-#include <pthread.h>
-
-#include "ProfilerSignalManager.h"
-
-// NOTE (macOS): macOS is not a supported profiler build today
-// (profiler/src/CMakeLists.txt fails with "MACOS builds are not supported yet").
-// If it is ever enabled, this guard needs a macOS path because ProfilerSignalManager
-// lives in the Linux-only project and does not exist there. A macOS port would:
-//   - install its own sigaction() for SIGSEGV and SIGBUS (saving the previous actions),
-//   - in the handler, siglongjmp when t_inGuardedTraversal is set, otherwise manually
-//     chain to the saved previous sa_sigaction/sa_handler (or restore SIG_DFL + re-raise
-//     when there was none) so real faults keep their original crash semantics,
-//   - register once (e.g. std::call_once) so re-creating the traverser does not save our
-//     own handler as the "previous" one.
-// The TLS recovery machinery (t_traversalJmpBuf / t_inGuardedTraversal / sigsetjmp in the
-// wrapper) is portable and would be shared as-is.
-
-namespace
-{
-thread_local sigjmp_buf t_traversalJmpBuf;
-thread_local volatile sig_atomic_t t_inGuardedTraversal = 0;
-
-// Clears the flag on every way out of the guarded body that still unwinds C++ frames:
-// a normal return and, crucially, an escaping exception. Left set, the flag would
-// arm the handler for the whole life of the thread, so the next SIGSEGV -- including
-// one the CLR would have handled itself -- would siglongjmp into a dead frame.
-// The siglongjmp path skips destructors, so the recovery branch clears it by hand.
-struct InGuardedTraversalScope
-{
-    InGuardedTraversalScope()
-    {
-        t_inGuardedTraversal = 1;
-    }
-
-    ~InGuardedTraversalScope()
-    {
-        t_inGuardedTraversal = 0;
-    }
-};
-
-// The guard is entered at least twice per root, and sigsetjmp with savemask = 1 costs
-// an rt_sigprocmask syscall every time. Using savemask = 0 instead moves that cost to
-// the (rare) recovery path: undo the handler's mask change here so a later fault is
-// still deliverable. ProfilerSignalManager installs its handlers without SA_NODEFER
-// and with an sa_mask holding only the handled signal, so unblocking SIGSEGV and
-// SIGBUS restores exactly what was blocked. This runs after the handler frame has
-// been abandoned, i.e. in normal context, so pthread_sigmask is safe to call.
-void UnblockFaultSignals()
-{
-    sigset_t faultSignals;
-    sigemptyset(&faultSignals);
-    sigaddset(&faultSignals, SIGSEGV);
-    sigaddset(&faultSignals, SIGBUS);
-    pthread_sigmask(SIG_UNBLOCK, &faultSignals, nullptr);
-}
-
-// ProfilerSignalManager: return false to chain to the CLR's previous SIGSEGV/SIGBUS handler.
-// When in guarded traversal we siglongjmp and do not return.
-bool TraversalFaultHandler(int /*signal*/, siginfo_t* /*info*/, void* /*context*/)
-{
-    if (t_inGuardedTraversal != 0)
-    {
-        siglongjmp(t_traversalJmpBuf, 1);
-    }
-    return false;
-}
-} // namespace
-#endif
+#include <utility>
 
 ReferenceChainTraverser::ReferenceChainTraverser(
     ICorProfilerInfo12* pCorProfilerInfo,
     IFrameStore* pFrameStore,
     TypeReferenceTree& tree,
     InlineVTCache& inlineVTCache,
-    size_t visitedSetInitialCapacity,
-    const GCHeapRangeSet* pHeapRanges)
+    size_t visitedSetInitialCapacity)
     : _pCorProfilerInfo(pCorProfilerInfo),
       _pFrameStore(pFrameStore),
       _tree(tree),
       _inlineVTCache(inlineVTCache),
-      _pHeapRanges(pHeapRanges),
       _visited(visitedSetInitialCapacity),
       _objectsTraversed(0),
       _rootsProcessed(0)
 {
-#ifndef _WINDOWS
-    auto* segv = ProfilerSignalManager::Get(SIGSEGV);
-    if (segv != nullptr)
-    {
-        segv->RegisterHandler(&TraversalFaultHandler);
-    }
-    auto* bus = ProfilerSignalManager::Get(SIGBUS);
-    if (bus != nullptr)
-    {
-        bus->RegisterHandler(&TraversalFaultHandler);
-    }
-#endif
+    MemoryFaultGuard::EnsureInstalled();
 }
 
 template <typename TBody>
 bool ReferenceChainTraverser::RunGuarded(TBody&& body)
 {
-    // IMPORTANT: this function must own no local object requiring C++ unwinding, and
-    // neither must body or anything it calls. On Windows /EHsc, SEH unwinding does not
-    // run the destructors of intervening frames; on Linux, siglongjmp does not run
-    // destructors at all. (InGuardedTraversalScope below is the one exception: it is
-    // there precisely to cover the paths that DO unwind, and the recovery branch
-    // reproduces its effect for the path that does not.)
-#ifdef _WINDOWS
-    __try
+    if (MemoryFaultGuard::Run(std::forward<TBody>(body)))
     {
-        body();
-    }
-    __except (MemoryFaultFilter(GetExceptionCode()))
-    {
-        OnTraversalFault();
-        return false;
-    }
-#else
-    if (sigsetjmp(t_traversalJmpBuf, 0) != 0)
-    {
-        UnblockFaultSignals();
-        t_inGuardedTraversal = 0;
-        OnTraversalFault();
-        return false;
+        return true;
     }
 
-    InGuardedTraversalScope guardScope;
-    body();
-#endif
-
-    return true;
+    OnTraversalFault();
+    return false;
 }
 
 void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
@@ -353,8 +222,7 @@ void ReferenceChainTraverser::LogStats() const
               _objectsTraversed, " objects traversed, ",
               "stack high watermark: ", _traversalStackHighWatermark, ", ",
               "memory access faults: ", _faultCount,
-              (_faultBudgetExhausted ? " (fault budget exhausted; traversal aborted for this dump)" : ""),
-              ", refs rejected by heap-range filter: ", _refsRejectedByRangeFilter);
+              (_faultBudgetExhausted ? " (fault budget exhausted; traversal aborted for this dump)" : ""));
 
     Log::Debug("  VisitedObjectSet: ",
               _visited.Size(), " current / ",
@@ -751,15 +619,6 @@ bool ReferenceChainTraverser::IsValidObjectAddress(uintptr_t address)
 
     if ((address % sizeof(void*)) != 0)
     {
-        return false;
-    }
-
-    // Coarse GC-heap plausibility check. The set is empty (accepts everything) when
-    // the bounds could not be captured, so this never becomes a hard gate. A false
-    // reject silently drops a real edge, so this stays intentionally permissive.
-    if (_pHeapRanges != nullptr && !_pHeapRanges->Contains(address))
-    {
-        _refsRejectedByRangeFilter++;
         return false;
     }
 

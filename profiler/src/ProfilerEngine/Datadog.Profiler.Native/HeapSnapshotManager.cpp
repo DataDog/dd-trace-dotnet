@@ -216,6 +216,14 @@ void HeapSnapshotManager::ResolvePendingInlineValueTypes()
     }
 }
 
+void HeapSnapshotManager::OnModuleUnloaded()
+{
+    if (_pInlineVTCache != nullptr)
+    {
+        _pInlineVTCache->OnModuleUnloaded();
+    }
+}
+
 std::string HeapSnapshotManager::GetAndClearHeapSnapshotText()
 {
     // this should be protected by a lock because both the dedicated thread and the exporter thread
@@ -435,11 +443,6 @@ void HeapSnapshotManager::OnBulkRootEdges(
         successCount++;
         RootInfo rootInfo(root.RootedNodeAddress, category, rootClassID, size);
 
-        // Self-calibrate the heap-range filter: this address just survived
-        // GetClassFromObject + GetObjectSize2, so it is a real live object at its
-        // post-GC location. Feeding it in covers any region the (pre-GC) seed missed.
-        _gcHeapRanges.AddAddress(static_cast<uintptr_t>(root.RootedNodeAddress));
-
         // Traverse the object graph from this root immediately (while still in GC callback context)
         if (_pReferenceChainTraverser)
         {
@@ -470,9 +473,6 @@ void HeapSnapshotManager::OnBulkRootStaticVar(const GCBulkRootStaticVarValue& ro
     }
 
     RootInfo rootInfo(root.ObjectID, RootCategory::StaticVariable, root.TypeID, size, fieldName);
-
-    // Self-calibrate the heap-range filter from this validated live root address.
-    _gcHeapRanges.AddAddress(static_cast<uintptr_t>(root.ObjectID));
 
     // Traverse the object graph from this root immediately (while still in GC callback context)
     if (_pReferenceChainTraverser)
@@ -654,52 +654,6 @@ void HeapSnapshotManager::LogRuntimeVersionRangeOnce()
                     "the GCDesc self-test will determine whether reference-chain traversal stays enabled.");
 }
 
-void HeapSnapshotManager::SeedHeapRanges()
-{
-    _gcHeapRanges.Clear();
-
-    if (_pCorProfilerInfo == nullptr)
-    {
-        return;
-    }
-
-    // Two-call pattern: first ask for the count, then fill.
-    ULONG count = 0;
-    HRESULT hr = _pCorProfilerInfo->GetGenerationBounds(0, &count, nullptr);
-    if (FAILED(hr) || count == 0)
-    {
-        // Fail open: empty set accepts everything. If this consistently returns
-        // CORPROF_E_UNSUPPORTED_CALL_SEQUENCE the filter degrades to root-only
-        // self-calibration (addresses added during OnBulkRoot* handling).
-        return;
-    }
-
-    std::vector<COR_PRF_GC_GENERATION_RANGE> ranges(count);
-    ULONG written = 0;
-    hr = _pCorProfilerInfo->GetGenerationBounds(count, &written, ranges.data());
-    if (FAILED(hr))
-    {
-        _gcHeapRanges.Clear();
-        return;
-    }
-
-    // Include every generation (gen0..gen2, LOH, POH): roots point into all of them.
-    // Use rangeLengthReserved so the whole reservation is covered, not just the
-    // currently committed part.
-    for (ULONG i = 0; i < written; i++)
-    {
-        const auto& r = ranges[i];
-        uintptr_t start = static_cast<uintptr_t>(r.rangeStart);
-        size_t length = static_cast<size_t>(r.rangeLengthReserved != 0 ? r.rangeLengthReserved : r.rangeLength);
-        _gcHeapRanges.AddRange(start, length);
-    }
-
-    _gcHeapRanges.Finalize();
-
-    Log::Debug("HeapSnapshotManager: seeded GC heap-range filter with ", _gcHeapRanges.GetRangeCount(),
-               " merged range(s) from ", written, " generation bound(s).");
-}
-
 void HeapSnapshotManager::StartGCDump()
 {
     if (_session != 0)
@@ -710,13 +664,14 @@ void HeapSnapshotManager::StartGCDump()
 
     LogRuntimeVersionRangeOnce();
 
-    // Seed the coarse GC-heap plausibility filter BEFORE starting the EventPipe
-    // session. GetGenerationBounds is illegal while a GC is in progress (i.e. during
-    // the induced dump GC and its OnBulkRoot* callbacks), so this is the only safe
-    // point to call it. The captured ranges are pre-GC and may be slightly stale;
-    // the filter widens them and grows from validated root addresses during the dump.
-    // On any failure the set stays empty, which means "accept everything".
-    SeedHeapRanges();
+    // The cache outlives a dump, so a module unloaded since the last one leaves it with
+    // ClassIDs pointing to freed MethodTables. Dropping them here, before any traversal
+    // can look one up, also avoids attributing a freshly loaded type to whatever used
+    // to live at the same address.
+    if (_pInlineVTCache != nullptr && _pInlineVTCache->DropCacheIfModuleUnloaded())
+    {
+        Log::Debug("InlineVTCache: cleared after a module unload.");
+    }
 
     // reset the class histogram and reference tree
     {
@@ -738,7 +693,7 @@ void HeapSnapshotManager::StartGCDump()
         {
             _pReferenceChainTraverser = std::make_unique<ReferenceChainTraverser>(
                 _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree, *_pInlineVTCache,
-                _visitedSetHighWatermark, &_gcHeapRanges);
+                _visitedSetHighWatermark);
         }
 
         _cachedItemsSize.store(0, std::memory_order_relaxed);

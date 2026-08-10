@@ -4,6 +4,7 @@
 #include "InlineVTCache.h"
 #include "CoreLibModuleProvider.h"
 #include "Log.h"
+#include "MemoryFaultGuard.h"
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
@@ -16,6 +17,7 @@ InlineVTCache::InlineVTCache(
     _pFrameStore(pFrameStore),
     _pCoreLibModuleProvider(pCoreLibModuleProvider)
 {
+    MemoryFaultGuard::EnsureInstalled();
 }
 
 const InlineVTCache::InlineVTInfo* InlineVTCache::GetInlineVTInfo(ClassID classID)
@@ -57,11 +59,10 @@ const InlineVTCache::InlineVTInfo* InlineVTCache::GetOrBuildInlineVTInfo(ClassID
         return nullptr;
     }
 
-    if (!GCDesc::ContainsGCPointers(classID))
-    {
-        return nullptr;
-    }
-
+    // Unlike GetInlineVTInfo, this runs after the dump, on a ClassID that may have died
+    // in the meantime: reading its MethodTable to skip the types without GC pointers
+    // early is exactly what must not be done before the runtime has vouched for it.
+    // BuildInlineVTInfo does that check once the type has been validated.
     auto it = _cache.find(classID);
     if (it == _cache.end())
     {
@@ -74,8 +75,26 @@ const InlineVTCache::InlineVTInfo* InlineVTCache::GetOrBuildInlineVTInfo(ClassID
     return it->second.has_value() ? &it->second.value() : nullptr;
 }
 
+bool InlineVTCache::DropCacheIfModuleUnloaded()
+{
+    if (!_moduleUnloaded.exchange(false, std::memory_order_acq_rel))
+    {
+        return false;
+    }
+
+    Clear();
+    return true;
+}
+
 size_t InlineVTCache::ResolvePendingTypes()
 {
+    // A module unloaded since the last dump: the queued ClassIDs may be dangling and
+    // there is no way to tell which ones, so none of them gets inspected.
+    if (DropCacheIfModuleUnloaded())
+    {
+        return 0;
+    }
+
     if (_pendingClassIDs.empty())
     {
         return 0;
@@ -94,11 +113,33 @@ size_t InlineVTCache::ResolvePendingTypes()
         _cache.erase(classID);
     }
 
+    size_t faultedCount = 0;
+
     for (ClassID classID : pendingClassIDs)
     {
         // Types without inline VTs are cached as "nothing to attribute" so they don't
         // come back in the queue at the next dump.
-        GetOrBuildInlineVTInfo(classID);
+        //
+        // Guarded one type at a time so that a ClassID which died since the dump costs
+        // its own attribution instead of the process: this thread has no CLR frame to
+        // turn a fault into an exception. The whole inspection is guarded, not just the
+        // MethodTable read, because the metadata calls take the same stale pointer.
+        if (!MemoryFaultGuard::Run([this, classID] { GetOrBuildInlineVTInfo(classID); }))
+        {
+            faultedCount++;
+
+            // Cached as "nothing to attribute" so the next dumps stop at the lookup
+            // instead of faulting on this type again, dump after dump.
+            _cache.insert_or_assign(classID, std::nullopt);
+        }
+    }
+
+    // Logged after the loop: a Log call inside the guard would keep its lock on a fault.
+    if (faultedCount > 0)
+    {
+        Log::Warn("InlineVTCache: ", faultedCount, " type(s) could not be inspected because "
+                  "their description was no longer readable. Their inline value types will "
+                  "not be attributed in the reference tree.");
     }
 
     return pendingClassIDs.size();
@@ -187,18 +228,21 @@ bool InlineVTCache::TryGetTypeDefAndMetadata(
 
 std::optional<InlineVTCache::InlineVTInfo> InlineVTCache::BuildInlineVTInfo(ClassID classID)
 {
-    if (!GCDesc::ContainsGCPointers(classID))
-    {
-        return std::nullopt;
-    }
-
     ModuleID moduleID = 0;
     mdTypeDef typeDef = mdTokenNil;
     ClassID parentClassID = 0;
     std::vector<ClassID> typeArgs;
     ComPtr<IMetaDataImport> pMetadataImport;
 
+    // Deliberately the first thing done with the type: GetClassIDInfo2 (called from here)
+    // is validated by the runtime and fails with an error code for a ClassID it no longer
+    // knows, where the MethodTable read below would fault on freed memory.
     if (!TryGetTypeDefAndMetadata(classID, moduleID, typeDef, pMetadataImport, &parentClassID, &typeArgs))
+    {
+        return std::nullopt;
+    }
+
+    if (!GCDesc::ContainsGCPointers(classID))
     {
         return std::nullopt;
     }

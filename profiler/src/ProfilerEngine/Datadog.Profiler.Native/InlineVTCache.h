@@ -10,6 +10,7 @@
 
 #include "shared/src/native-src/com_ptr.h"
 
+#include <atomic>
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
@@ -72,7 +73,38 @@ public:
     // which may trigger a type load and a garbage collection. The runtime forbids it from a
     // callback that runs with the EE suspended: it throws EETypeLoadException or crashes in
     // the type loader instead of failing with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE.
+    //
+    // The flip side of deferring is that a queued ClassID is no longer guaranteed to be
+    // alive: the runtime reported it during the dump, but the module defining it may have
+    // been collected since (a collectible AssemblyLoadContext going away), which frees its
+    // MethodTables. Reading one from here would fault on a thread the CLR knows nothing
+    // about, i.e. take the application down. Three things keep that from happening:
+    //   - a module unload drops everything held here (see OnModuleUnloaded),
+    //   - the first thing done with a queued type is GetClassIDInfo2, which the runtime
+    //     validates, instead of a raw MethodTable read,
+    //   - each type is inspected under MemoryFaultGuard, so a fault costs that one type's
+    //     attribution rather than the process.
+    // The window left open is an unload starting after the queue has been checked and
+    // while this loop is running: the guard is what covers it.
     size_t ResolvePendingTypes();
+
+    // Records that a module has been unloaded, i.e. that the ClassIDs held here may now
+    // point to freed MethodTables.
+    //
+    // Called from ModuleUnloadStarted, on whichever thread triggered the unload, so it
+    // only raises a flag: the containers are read and written by the snapshot threads and
+    // clearing them from here would be a data race. DropCacheIfModuleUnloaded consumes it.
+    void OnModuleUnloaded()
+    {
+        _moduleUnloaded.store(true, std::memory_order_release);
+    }
+
+    // Drops everything when a module has been unloaded since the last call, and returns
+    // whether it did. Coarse (a single unload throws away types that are still alive) but
+    // unloads are rare, whereas the cache is kept across dumps for the life of the process.
+    //
+    // MUST be called from the snapshot thread, outside a dump.
+    bool DropCacheIfModuleUnloaded();
 
     size_t GetPendingTypeCount() const
     {
@@ -190,4 +222,7 @@ private:
 
     // Cache: CorElementType -> ClassID for primitive types (e.g. int → System.Int32).
     std::unordered_map<CorElementType, ClassID> _primitiveClassIDs;
+
+    // Set from ModuleUnloadStarted, consumed by the snapshot thread (see OnModuleUnloaded).
+    std::atomic<bool> _moduleUnloaded{false};
 };

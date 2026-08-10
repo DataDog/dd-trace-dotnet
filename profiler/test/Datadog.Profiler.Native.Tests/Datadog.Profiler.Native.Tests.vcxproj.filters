@@ -205,9 +205,6 @@
     <ClCompile Include="InlineVTCacheTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="GCHeapRangeSetTest.cpp">
-      <Filter>Tests</Filter>
-    </ClCompile>
     <ClCompile Include="ReferenceChainTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>

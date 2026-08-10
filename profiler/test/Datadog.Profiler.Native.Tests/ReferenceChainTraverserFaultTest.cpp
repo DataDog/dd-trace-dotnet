@@ -11,7 +11,6 @@
 #include "VisitedObjectSet.h"
 #include "IFrameStore.h"
 #include "GCDescReader.h"
-#include "GCHeapRangeSet.h"
 
 #include <cstdint>
 #include <cstring>
@@ -322,63 +321,6 @@ struct TwoObjectGraph
     }
 };
 } // namespace
-
-// A reference whose address falls outside the seeded GC heap ranges is dropped before it
-// is dereferenced. This is the whole point of the filter, and nothing else exercises the
-// pHeapRanges constructor parameter.
-TEST(ReferenceChainTraverserFaultTest, ReferenceOutsideTheHeapRangesIsRejected)
-{
-    GraphMockProfiler profiler;
-    TwoObjectGraph graph;
-    graph.Build(profiler);
-
-    // Flipping a bit well above BlockSize lands the range in a block that provably does
-    // not contain the child, whatever the pointer width or where the stack happens to be.
-    GCHeapRangeSet ranges;
-    ranges.AddRange(reinterpret_cast<uintptr_t>(graph.childObj) ^ (GCHeapRangeSet::BlockSize * 4), 0x1000);
-
-    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
-    NullFrameStore frameStore;
-    TypeReferenceTree tree;
-    InlineVTCache vtCache(pInfo, &frameStore, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16, &ranges);
-
-    traverser.TraverseFromSingleRoot(graph.GetRoot());
-
-    EXPECT_EQ(traverser.GetRefsRejectedByRangeFilter(), 1u);
-    EXPECT_EQ(traverser.GetFaultCount(), 0u);
-
-    RootKey key{graph.rootClass, RootCategory::Stack};
-    auto it = tree._roots.find(key);
-    ASSERT_NE(it, tree._roots.end());
-    EXPECT_EQ(it->second->node.GetChild(graph.childClass), nullptr);
-}
-
-// Same graph, but the child's address is covered: the filter must let it through.
-TEST(ReferenceChainTraverserFaultTest, ReferenceInsideTheHeapRangesIsAccepted)
-{
-    GraphMockProfiler profiler;
-    TwoObjectGraph graph;
-    graph.Build(profiler);
-
-    GCHeapRangeSet ranges;
-    ranges.AddRange(reinterpret_cast<uintptr_t>(graph.childObj), sizeof(graph.childObj));
-
-    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
-    NullFrameStore frameStore;
-    TypeReferenceTree tree;
-    InlineVTCache vtCache(pInfo, &frameStore, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16, &ranges);
-
-    traverser.TraverseFromSingleRoot(graph.GetRoot());
-
-    EXPECT_EQ(traverser.GetRefsRejectedByRangeFilter(), 0u);
-
-    RootKey key{graph.rootClass, RootCategory::Stack};
-    auto it = tree._roots.find(key);
-    ASSERT_NE(it, tree._roots.end());
-    EXPECT_NE(it->second->node.GetChild(graph.childClass), nullptr);
-}
 
 // An exception thrown deep inside the guarded traversal must not escape into the EventPipe
 // callback that drives the dump, must not be miscounted as a memory access fault, and must
