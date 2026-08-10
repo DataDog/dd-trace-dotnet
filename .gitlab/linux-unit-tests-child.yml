@@ -4,25 +4,21 @@
   # Approved Docker CLI image also used by the Linux build producer.
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
   tags: ["docker-in-docker:amd64"]
-  needs:
-    - pipeline: "$PARENT_PIPELINE_ID"
-      job: build-linux-tracer-x64
-      artifacts: true
   variables:
     DOCKER_BUILDKIT: "1"
   script:
     - |
       set -eu
 
-      tester_image="dd-trace-dotnet/debian-tester:${CI_JOB_ID}"
-      tester_with_ca_certs_image="dd-trace-dotnet/debian-tester-ca-certs:${CI_JOB_ID}"
+      tester_image="dd-trace-dotnet/${BASE_IMAGE}-tester:${CI_JOB_ID}"
+      tester_with_ca_certs_image="dd-trace-dotnet/${BASE_IMAGE}-tester-ca-certs:${CI_JOB_ID}"
       mkdir -p artifacts/build_data/infra_logs
-      echo "Building Debian test image for ${FRAMEWORK}"
+      echo "Building ${BASE_IMAGE} test image for ${FRAMEWORK}"
       docker build \
         --build-arg DOTNETSDK_VERSION=10.0.100 \
         --tag "$tester_image" \
         --target tester \
-        --file tracer/build/_build/docker/debian.dockerfile \
+        --file "tracer/build/_build/docker/${BASE_IMAGE}.dockerfile" \
         tracer/build/_build
 
       echo "Adding Datadog CA certificates to the test image"
@@ -87,7 +83,7 @@
   artifacts:
     when: always
     expire_in: 2 weeks
-    name: "managed-unit-tests-linux-x64-$FRAMEWORK"
+    name: "managed-unit-tests-$ARTIFACT_SUFFIX-$FRAMEWORK"
     paths:
       - artifacts/build_data/results
       - artifacts/build_data/logs
@@ -96,3 +92,23 @@
   id_tokens:
     DD_STS_OIDC_TOKEN:
       aud: rapid-seceng-sit
+
+.linux-unit-test-x64-glibc:
+  extends: .linux-unit-test-x64
+  needs:
+    - pipeline: "$PARENT_PIPELINE_ID"
+      job: build-linux-tracer-x64
+      artifacts: true
+  variables:
+    BASE_IMAGE: debian
+    ARTIFACT_SUFFIX: linux-x64
+
+.linux-unit-test-x64-musl:
+  extends: .linux-unit-test-x64
+  needs:
+    - pipeline: "$PARENT_PIPELINE_ID"
+      job: build-linux-tracer-x64-musl
+      artifacts: true
+  variables:
+    BASE_IMAGE: alpine
+    ARTIFACT_SUFFIX: linux-musl-x64
