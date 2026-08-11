@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Datadog.Trace.Logging;
@@ -49,15 +48,6 @@ namespace Datadog.Trace.Agent
             "FAILED_PRECONDITION", "ABORTED", "OUT_OF_RANGE", "UNIMPLEMENTED",
             "INTERNAL", "UNAVAILABLE", "DATA_LOSS", "UNAUTHENTICATED",
         ];
-
-        private static readonly Dictionary<string, string> SpanKindNames = new(StringComparer.OrdinalIgnoreCase)
-        {
-            [SpanKinds.Client] = "SPAN_KIND_CLIENT",
-            [SpanKinds.Server] = "SPAN_KIND_SERVER",
-            [SpanKinds.Producer] = "SPAN_KIND_PRODUCER",
-            [SpanKinds.Consumer] = "SPAN_KIND_CONSUMER",
-            [SpanKinds.Internal] = "SPAN_KIND_INTERNAL",
-        };
 
         static OtlpSpanStatsSerializer()
         {
@@ -263,14 +253,6 @@ namespace Datadog.Trace.Agent
             if (!StringUtil.IsNullOrEmpty(key.ServiceSource))
             {
                 WriteStringKvJson(writer, "datadog.svc_src", key.ServiceSource);
-            }
-
-            foreach (var tag in bucket.AdditionalMetricTags)
-            {
-                if (TrySplitEncodedTag(tag, out var tagKey, out var tagValue))
-                {
-                    WriteStringKvJson(writer, tagKey, tagValue);
-                }
             }
 
             writer.WriteEndArray();
@@ -527,14 +509,6 @@ namespace Datadog.Trace.Agent
                 WriteAttribute(writer, "datadog.svc_src", key.ServiceSource, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            foreach (var tag in bucket.AdditionalMetricTags)
-            {
-                if (TrySplitEncodedTag(tag, out var tagKey, out var tagValue))
-                {
-                    WriteAttribute(writer, tagKey, tagValue, FieldNumbers.HistogramDataPointAttributes);
-                }
-            }
-
             WriteTag(writer, FieldNumbers.HistogramDataPointStartTimeUnixNano, WireTypeFixed64);
             writer.Write(startTimeUnixNano);
 
@@ -630,12 +604,27 @@ namespace Datadog.Trace.Agent
 
         private static string CanonicalizeSpanKind(string spanKind)
         {
-            if (StringUtil.IsNullOrEmpty(spanKind))
+            if (string.Equals(spanKind, SpanKinds.Client, StringComparison.OrdinalIgnoreCase))
             {
-                return "SPAN_KIND_INTERNAL";
+                return "SPAN_KIND_CLIENT";
             }
 
-            return SpanKindNames.TryGetValue(spanKind, out var canonical) ? canonical : "SPAN_KIND_INTERNAL";
+            if (string.Equals(spanKind, SpanKinds.Server, StringComparison.OrdinalIgnoreCase))
+            {
+                return "SPAN_KIND_SERVER";
+            }
+
+            if (string.Equals(spanKind, SpanKinds.Producer, StringComparison.OrdinalIgnoreCase))
+            {
+                return "SPAN_KIND_PRODUCER";
+            }
+
+            if (string.Equals(spanKind, SpanKinds.Consumer, StringComparison.OrdinalIgnoreCase))
+            {
+                return "SPAN_KIND_CONSUMER";
+            }
+
+            return "SPAN_KIND_INTERNAL";
         }
 
         private static string? NormalizeGrpcStatusName(string grpcStatusCode)
@@ -679,22 +668,6 @@ namespace Datadog.Trace.Agent
             }
 
             return null;
-        }
-
-        private static bool TrySplitEncodedTag(byte[] encodedTag, out string key, out string value)
-        {
-            var decoded = EncodingHelpers.Utf8NoBom.GetString(encodedTag);
-            var separatorIndex = decoded.IndexOf(':');
-            if (separatorIndex <= 0)
-            {
-                key = string.Empty;
-                value = string.Empty;
-                return false;
-            }
-
-            key = decoded.Substring(0, separatorIndex);
-            value = decoded.Substring(separatorIndex + 1);
-            return true;
         }
 
         private static void WriteAttribute(BinaryWriter writer, string key, string value, int fieldNumber = FieldNumbers.Attributes)

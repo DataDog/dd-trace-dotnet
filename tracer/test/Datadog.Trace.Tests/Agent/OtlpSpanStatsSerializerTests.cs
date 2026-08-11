@@ -129,32 +129,10 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey(isSyntheticsRequest: true, grpcStatusCode: "5", serviceSource: "component");
-            var additionalMetricTags = new List<byte[]>
-            {
-                Encoding.UTF8.GetBytes("team:payments"),
-                Encoding.UTF8.GetBytes("_datadog.custom:value"),
-            };
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, []) { Hits = 1, Duration = 5_000_000 });
 
             var attrs = useJson ? GetDataPointAttributes(SerializeToJson(buffer)) : GetProtobufDataPointAttributes(buffer);
 
-            attrs.Keys.Should().Equal(
-                "service.name",
-                "status.code",
-                "span.kind",
-                "span.name",
-                "http.request.method",
-                "http.response.status_code",
-                "http.route",
-                "rpc.response.status_code",
-                "datadog.operation.name",
-                "datadog.span.type",
-                "datadog.span.top_level",
-                "datadog.is_trace_root",
-                "datadog.origin",
-                "datadog.svc_src",
-                "team",
-                "_datadog.custom");
             attrs.Should().BeEquivalentTo(new Dictionary<string, string>
             {
                 ["service.name"] = "my-service",
@@ -171,8 +149,6 @@ namespace Datadog.Trace.Tests.Agent
                 ["datadog.is_trace_root"] = "true",
                 ["datadog.origin"] = "synthetics",
                 ["datadog.svc_src"] = "component",
-                ["team"] = "payments",
-                ["_datadog.custom"] = "value",
             });
         }
 
