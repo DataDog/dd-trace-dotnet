@@ -1939,7 +1939,7 @@ partial class Build
 
                 foreach (var project in directDatadogTraceReferences)
                 {
-                    DotnetBuild(project, framework: Framework);
+                    DotnetBuild(project, framework: Framework, noRestore: !IsGitlab);
                 }
             }
         });
