@@ -1,4 +1,4 @@
-// <copyright file="StringSegment.cs" company="Datadog">
+// <copyright file="StringSlice.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,21 +6,30 @@
 #nullable enable
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Util
 {
-    internal readonly struct StringSegment
+    internal readonly ref struct StringSlice
     {
         public readonly string Value;
         public readonly int Offset;
         public readonly int Length;
 
-        public StringSegment(string value)
+        public StringSlice(string value)
             : this(value, offset: 0, value?.Length ?? 0)
         {
         }
 
-        public StringSegment(string value, int offset, int length)
+        // unchecked constructor
+        private StringSlice(string value, int offset, int length, byte ignored)
+        {
+            Value = value;
+            Offset = offset;
+            Length = length;
+        }
+
+        public StringSlice(string value, int offset, int length)
         {
             if (value is null)
             {
@@ -48,31 +57,50 @@ namespace Datadog.Trace.Util
                                           ? Value[Offset + index]
                                           : throw new ArgumentOutOfRangeException(nameof(index));
 
-        public StringSegment Slice(int start)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static StringSlice FromValidatedSlice(string value, int offset, int length)
         {
-            return Slice(start, Length - start);
+            return new StringSlice(value, offset, length, default(byte));
         }
 
-        public StringSegment Slice(int start, int length)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public StringSlice Slice(int start)
         {
-            if (start < 0 || start > Length)
+            if (start < 0 || (uint)start > (uint)Length)
             {
                 throw new ArgumentOutOfRangeException(nameof(start));
             }
 
-            if (length < 0 || length > Length - start)
+            return new StringSlice(Value, Offset + start, Length - start, default(byte));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public StringSlice Slice(int start, int length)
+        {
+            if ((uint)start > (uint)Length || (uint)length > (uint)(Length - start))
             {
-                throw new ArgumentOutOfRangeException(nameof(length));
+                throw new ArgumentOutOfRangeException(start < 0 || start > Length ? nameof(start) : nameof(length));
             }
 
-            return new StringSegment(Value, Offset + start, length);
+            return new StringSlice(Value, Offset + start, length, default(byte));
         }
 
 #if NETCOREAPP
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySpan<char> AsSpan() => Value.AsSpan(Offset, Length);
 #endif
 
-        public StringSegment Trim()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryParseInt32(out int value)
+        {
+#if NETCOREAPP
+            return int.TryParse(AsSpan(), out value);
+#else
+            return int.TryParse(ToString(), out value);
+#endif
+        }
+
+        public StringSlice Trim()
         {
 #if NETCOREAPP
             var value = AsSpan();
@@ -97,6 +125,7 @@ namespace Datadog.Trace.Util
 #endif
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(string? other, StringComparison comparisonType)
         {
             if (other is not { Length: var length } || length != Length)
@@ -111,6 +140,7 @@ namespace Datadog.Trace.Util
 #endif
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool StartsWith(string prefix)
         {
             if (prefix.Length > Length)
@@ -125,6 +155,7 @@ namespace Datadog.Trace.Util
 #endif
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int IndexOf(char character, int startIndex = 0, int count = -1)
         {
             var length = count < 0 ? Length - startIndex : count;
@@ -147,6 +178,7 @@ namespace Datadog.Trace.Util
 #endif
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override string ToString()
         {
             return Value.Substring(Offset, Length);

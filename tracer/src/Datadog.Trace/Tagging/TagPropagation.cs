@@ -93,7 +93,7 @@ internal static class TagPropagation
                 if (separatorIndex > PropagatedTagPrefixLength &&
                     separatorIndex < headerTag.Length - 1)
                 {
-                    // TODO: implement something like StringSegment to avoid allocating new (sub)strings?
+                    // TODO: implement something like StringSlice to avoid allocating new (sub)strings?
                     var key = headerTag.Substring(0, separatorIndex);
 
                     if (key.Equals("_dd.p.upstream_services", StringComparison.OrdinalIgnoreCase))
