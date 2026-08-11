@@ -17,6 +17,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -62,11 +63,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var tracer = Tracer.Instance;
                 if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
                 {
-                    var newResourceNamesEnabled = tracer.Settings.RouteTemplateResourceNamesEnabled;
+                    var otelSemanticsEnabled = tracer.Settings.OtelSemanticsEnabled;
+
+                    // The OpenTelemetry HTTP span specification requires the low-cardinality route
+                    // template, which is only tracked when route-template resource names are enabled.
+                    var newResourceNamesEnabled = tracer.Settings.RouteTemplateResourceNamesEnabled || otelSemanticsEnabled;
                     string host = httpContext.Request.Headers.Get("Host");
                     var userAgent = httpContext.Request.Headers.Get(HttpHeaderNames.UserAgent);
-                    string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
-                    var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                    string datadogHttpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
                     string resourceName = null;
 
                     RouteData routeData = controllerContext.RouteData;
@@ -103,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     if ((wasAttributeRouted || newResourceNamesEnabled) && string.IsNullOrEmpty(resourceName) && !string.IsNullOrEmpty(routeUrl))
                     {
                         resourceName = AspNetResourceNameHelper.CalculateResourceName(
-                            httpMethod: httpMethod,
+                            httpMethod: datadogHttpMethod,
                             routeTemplate: routeUrl,
                             routeValues,
                             defaults: wasAttributeRouted ? null : route.Defaults,
@@ -120,16 +124,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                     }
 
-                    if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
+                    if (!otelSemanticsEnabled)
                     {
-                        var cleanUri = UriHelpers.GetCleanUriPath(httpContext.Request.Url, httpContext.Request.ApplicationPath);
-                        resourceName = $"{httpMethod} {cleanUri.ToLowerInvariant()}";
+                        if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
+                        {
+                            var cleanUri = UriHelpers.GetCleanUriPath(httpContext.Request.Url, httpContext.Request.ApplicationPath);
+                            resourceName = $"{datadogHttpMethod} {cleanUri.ToLowerInvariant()}";
+                        }
+
+                        if (string.IsNullOrEmpty(resourceName))
+                        {
+                            // Keep the legacy resource name, just to have something
+                            resourceName = $"{datadogHttpMethod} {controllerName}.{actionName}";
+                        }
                     }
 
-                    if (string.IsNullOrEmpty(resourceName))
+                    // A request must produce a single HTTP server span, so when the ASP.NET integration
+                    // has already created one we enrich it instead of nesting an aspnet-mvc.request span
+                    // inside it. The tags it would have needed are therefore not collected.
+                    if (otelSemanticsEnabled && HttpSemanticConventions.GetActiveHttpServerSpan(tracer) is { } existingServerSpan)
                     {
-                        // Keep the legacy resource name, just to have something
-                        resourceName = $"{httpMethod} {controllerName}.{actionName}";
+                        // The OpenTelemetry HTTP semantic conventions describe a single server span per
+                        // request, so hand the route information to the ASP.NET span and don't create a
+                        // nested one. The aspnet.controller / aspnet.action / aspnet.route tags this span
+                        // would have carried have no OpenTelemetry equivalent and are not reported.
+                        //
+                        // The name and the route are applied together, and only by the first action to
+                        // run: the span name must stay "{method} {http.route}", so a child action must
+                        // not contribute its own route to a request that was already named without one.
+                        if (string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
+                        {
+                            // set the resource name in the HttpContext so TracingHttpModule can update root span
+                            httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
+                            existingServerSpan.ResourceName = resourceName;
+                            HttpSemanticConventions.SetHttpRoute(existingServerSpan, routeUrl);
+                        }
+
+                        return null;
                     }
 
                     PropagationContext extractedContext = default;
@@ -171,13 +202,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                     span = scope.Span;
 
-                    span.DecorateWebServerSpan(
-                        resourceName: resourceName,
-                        method: httpMethod,
-                        host: host,
-                        httpUrl: url,
-                        userAgent: userAgent,
-                        tags);
+                    if (otelSemanticsEnabled)
+                    {
+                        // Only reached when the ASP.NET integration did not create a server span, so this
+                        // is the only HTTP server span for the request and carries the request attributes.
+                        string httpMethod = httpContext.Request.HttpMethod;
+
+                        // The OpenTelemetry span name must be "{method} {http.route}", so use the route
+                        // template verbatim rather than the Datadog simplified route, and fall back to
+                        // just the method rather than to the URI path. Child actions keep the name that
+                        // was already computed for the request itself.
+                        if (!isChildAction || string.IsNullOrEmpty(resourceName))
+                        {
+                            resourceName = HttpSemanticConventions.GetServerResourceName(httpMethod, routeUrl);
+                        }
+
+                        HttpSemanticConventions.SetHttpServerRequestValues(
+                            span,
+                            tags,
+                            resourceName: resourceName,
+                            originalMethod: httpMethod,
+                            userAgent: userAgent,
+                            protocol: RequestDataHelper.GetServerProtocol(httpContext.Request),
+                            hostHeader: host,
+                            requestUri: httpContext.Request.Url,
+                            queryStringManager: tracer.TracerManager.QueryStringManager);
+                    }
+                    else
+                    {
+                        var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                        span.DecorateWebServerSpan(
+                            resourceName: resourceName,
+                            method: datadogHttpMethod,
+                            host: host,
+                            httpUrl: url,
+                            userAgent: userAgent,
+                            tags);
+                    }
 
                     if (headers is not null)
                     {
