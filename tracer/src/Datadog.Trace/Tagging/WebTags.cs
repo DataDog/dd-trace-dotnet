@@ -7,7 +7,7 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal partial class WebTags : InstrumentationTags, IHasStatusCode
+    internal partial class WebTags : InstrumentationTags, IHasStatusCode, IHasHttpMethod
     {
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
