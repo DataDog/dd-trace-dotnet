@@ -35,6 +35,7 @@ internal static class GcMemoryLoadCalculator
     // high_memory_load_th is fixed for the lifetime of the GC configuration it was resolved from, so the
     // configured override (if any) only needs to be read once.
     private static readonly Lazy<int?> ConfiguredHighMemoryLoadPercent = new(ReadConfiguredHighMemoryLoadPercent);
+    private static readonly Func<int?> GetTotalProcessorCount = () => TotalProcessorCount.Value;
 
     private static bool _unableToResolveLogged;
 
@@ -43,17 +44,16 @@ internal static class GcMemoryLoadCalculator
     /// </summary>
     public static double? TryGetMemoryLoadPercentage(in GCMemoryInfo info)
     {
-        // ProcessorCount is incorrect here, we need the number of processors on the machine, not the number visible to the process
         return TryCalculate(
             info.MemoryLoadBytes,
             info.HighMemoryLoadThresholdBytes,
             info.TotalAvailableMemoryBytes,
             ConfiguredHighMemoryLoadPercent.Value,
-            Environment.ProcessorCount);
+            GetTotalProcessorCount);
     }
 
     [TestingAndPrivateOnly]
-    internal static double? TryCalculate(long memoryLoadBytes, long highMemoryLoadThresholdBytes, long totalAvailableMemoryBytes, int? configuredHighPercent, int processorCount)
+    internal static double? TryCalculate(long memoryLoadBytes, long highMemoryLoadThresholdBytes, long totalAvailableMemoryBytes, int? configuredHighPercent, Func<int?> getTotalProcessorCount)
     {
         if (highMemoryLoadThresholdBytes <= 0 || totalAvailableMemoryBytes <= 0)
         {
@@ -61,35 +61,42 @@ internal static class GcMemoryLoadCalculator
             return null;
         }
 
-        var highPercent = ResolveHighMemoryLoadThresholdPercent(highMemoryLoadThresholdBytes, configuredHighPercent, processorCount);
+        var highPercent = ResolveHighMemoryLoadThresholdPercent(highMemoryLoadThresholdBytes, configuredHighPercent, getTotalProcessorCount);
+        if (highPercent is null)
+        {
+            return null;
+        }
 
-        // heap_hard_limit (TotalAvailableMemoryBytes) can never exceed total_physical_mem. If the total we'd
-        // imply from our resolved threshold is smaller than TotalAvailableMemoryBytes, the threshold is wrong -
-        // bail out rather than publish a skewed value.
-        var impliedTotalPhysicalMem = highMemoryLoadThresholdBytes * 100.0 / highPercent;
+        // heap_hard_limit (TotalAvailableMemoryBytes) can never exceed total_physical_mem. If the implied total
+        // from our resolved threshold is smaller than TotalAvailableMemoryBytes, then we got something wrong in our
+        // calculations, so bail out rather than publish a skewed value.
+        // This should never be violated, it's just a safety check
+        var impliedTotalPhysicalMem = highMemoryLoadThresholdBytes * 100.0 / highPercent.Value;
         if (impliedTotalPhysicalMem < totalAvailableMemoryBytes * 0.99)
         {
             if (!Volatile.Read(ref _unableToResolveLogged))
             {
                 Volatile.Write(ref _unableToResolveLogged, true);
-                Log.Debug<long, long, long, int?, int>(
-                    "Unable to resolve GC memory load percentage (MemoryLoadBytes={MemoryLoadBytes}, HighMemoryLoadThresholdBytes={HighMemoryLoadThresholdBytes}, TotalAvailableMemoryBytes={TotalAvailableMemoryBytes}, ConfiguredHighPercent={ConfiguredHighPercent}, ProcessorCount={ProcessorCount})",
-                    memoryLoadBytes,
-                    highMemoryLoadThresholdBytes,
-                    totalAvailableMemoryBytes,
-                    configuredHighPercent,
-                    processorCount);
+                Log.Warning(
+                    "Unable to resolve GC memory load percentage, implied total {ImpliedTotal} is less than total available bytes {TotalAvailableMemoryBytes} (MemoryLoadBytes={MemoryLoadBytes}, HighMemoryLoadThresholdBytes={HighMemoryLoadThresholdBytes}, ConfiguredHighPercent={ConfiguredHighPercent})",
+                    [
+                        impliedTotalPhysicalMem,
+                        totalAvailableMemoryBytes,
+                        memoryLoadBytes,
+                        highMemoryLoadThresholdBytes,
+                        configuredHighPercent
+                    ]);
             }
 
             return null;
         }
 
-        var memoryLoad = Math.Round(memoryLoadBytes * (double)highPercent / highMemoryLoadThresholdBytes);
+        var memoryLoad = Math.Round(memoryLoadBytes * (double)highPercent.Value / highMemoryLoadThresholdBytes);
         return Math.Min(100d, Math.Max(0d, memoryLoad));
     }
 
     [TestingAndPrivateOnly]
-    internal static int ResolveHighMemoryLoadThresholdPercent(long highMemoryLoadThresholdBytes, int? configuredHighPercent, int processorCount)
+    internal static int? ResolveHighMemoryLoadThresholdPercent(long highMemoryLoadThresholdBytes, int? configuredHighPercent, Func<int?> getTotalProcessorCount)
     {
         // We need to recreate this flow from the GC: https://github.com/dotnet/runtime/blob/2cc068d0008c898c67578f2868bd5b17a64c6366/src/coreclr/gc/init.cpp#L1488C59-L1519
 
@@ -107,6 +114,24 @@ internal static class GcMemoryLoadCalculator
             return 90;
         }
 
+        // If we know we're > 80GB, but we can't get the processor count, then we can't accurately
+        // calculate the high memory load threshold percent
+        if (getTotalProcessorCount() is not { } processorCount)
+        {
+            // If that processor count couldn't be reliably determined, we don't guess, we bail out.
+            if (!Volatile.Read(ref _unableToResolveLogged))
+            {
+                Volatile.Write(ref _unableToResolveLogged, true);
+                Log.Warning(
+                    "Unable to resolve GC memory load percentage: total machine processor count is unknown (HighMemoryLoadThresholdBytes={HighMemoryLoadThresholdBytes}, ConfiguredHighPercent={ConfiguredHighPercent})",
+                    highMemoryLoadThresholdBytes,
+                    configuredHighPercent);
+            }
+
+            return null;
+        }
+
+        // Calculating from https://github.com/dotnet/runtime/blob/2cc068d0008c898c67578f2868bd5b17a64c6366/src/coreclr/gc/init.cpp#L1508
         var availableMemThreshold = Math.Min(10, 3 + (int)(47f / Math.Max(1, processorCount)));
         return 100 - availableMemThreshold;
     }

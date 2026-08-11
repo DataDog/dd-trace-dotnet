@@ -19,6 +19,7 @@ public class GcMemoryLoadCalculatorTests
     private const long Total8GiB = 8L * 1024 * 1024 * 1024;
     private const long Total79GiB = 79L * 1024 * 1024 * 1024;
     private const long Total96GiB = 96L * 1024 * 1024 * 1024;
+    private static readonly Func<int?> GetTotalProcessorCount = () => 4;
 
     [Fact]
     public void Calculate_NoHardLimit_RecoversTrueLoad()
@@ -27,7 +28,12 @@ public class GcMemoryLoadCalculatorTests
         var totalAvailableMemoryBytes = Total8GiB;
         var memoryLoadBytes = Encode(Total8GiB, 42);
 
-        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes, highMemoryLoadThresholdBytes, totalAvailableMemoryBytes, configuredHighPercent: null, processorCount: 4);
+        var result = GcMemoryLoadCalculator.TryCalculate(
+            memoryLoadBytes,
+            highMemoryLoadThresholdBytes,
+            totalAvailableMemoryBytes,
+            configuredHighPercent: null,
+            GetTotalProcessorCount);
 
         result.Should().Be(42);
     }
@@ -46,7 +52,7 @@ public class GcMemoryLoadCalculatorTests
         var totalAvailableMemoryBytes = Encode(Total8GiB, 75);
         var memoryLoadBytes = Encode(Total8GiB, loadPercent);
 
-        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes, highMemoryLoadThresholdBytes, totalAvailableMemoryBytes, configuredHighPercent: null, processorCount: 4);
+        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes, highMemoryLoadThresholdBytes, totalAvailableMemoryBytes, configuredHighPercent: null, GetTotalProcessorCount);
 
         result.Should().Be(loadPercent);
     }
@@ -62,7 +68,7 @@ public class GcMemoryLoadCalculatorTests
         var totalAvailableMemoryBytes = Encode(Total8GiB, 50);
         var memoryLoadBytes = Encode(Total8GiB, 42);
 
-        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes, highMemoryLoadThresholdBytes, totalAvailableMemoryBytes, configuredHighPercent, processorCount: 4);
+        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes, highMemoryLoadThresholdBytes, totalAvailableMemoryBytes, configuredHighPercent, GetTotalProcessorCount);
 
         result.Should().Be(42);
     }
@@ -80,7 +86,7 @@ public class GcMemoryLoadCalculatorTests
         var totalAvailableMemoryBytes = Encode(Total8GiB, 50);
         var memoryLoadBytes = Encode(Total8GiB, 42);
 
-        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes, highMemoryLoadThresholdBytes, totalAvailableMemoryBytes, configuredHighPercent, processorCount: 4);
+        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes, highMemoryLoadThresholdBytes, totalAvailableMemoryBytes, configuredHighPercent, GetTotalProcessorCount);
 
         result.Should().Be(42);
     }
@@ -197,42 +203,59 @@ public class GcMemoryLoadCalculatorTests
         result.Should().Be(expected);
     }
 
-    [Fact]
-    public void ResolveHighMemoryLoadThresholdPercent_HostAtOrAboveEightyGiB_UsesProcessorAdjustedDefault()
+    [Theory]
+    [InlineData(96, 97, 48, 97)] // min(10, 3 + (int)(47 / 48)) == 3 -> th == 97
+    [InlineData(82, 90, 4, 90)] // min(10, 3 + (int)(47 / 4)) == min(10, 14) == 10 -> th == 90
+    [InlineData(96, 97, null, null)] // needs the host-wide processor count; if it couldn't be reliably determined, bail out
+    public void ResolveHighMemoryLoadThresholdPercent_HostAtOrAboveEightyGiB_DependsOnProcessorCount(int totalGiB, int thresholdPercent, int? processorCount, int? expected)
     {
-        var highMemoryLoadThresholdBytes = Encode(Total96GiB, 97);
+        var totalBytes = totalGiB * 1024L * 1024 * 1024;
+        var highMemoryLoadThresholdBytes = Encode(totalBytes, thresholdPercent);
 
-        // min(10, 3 + (int)(47 / 48)) == 3 -> th == 97
-        var result = GcMemoryLoadCalculator.ResolveHighMemoryLoadThresholdPercent(highMemoryLoadThresholdBytes, configuredHighPercent: null, processorCount: 48);
+        var result = GcMemoryLoadCalculator.ResolveHighMemoryLoadThresholdPercent(highMemoryLoadThresholdBytes, configuredHighPercent: null, () => processorCount);
 
-        result.Should().Be(97);
+        result.Should().Be(expected);
     }
 
-    [Fact]
-    public void ResolveHighMemoryLoadThresholdPercent_HostAtOrAboveEightyGiB_LowProcessorCount_CapsAtNinety()
-    {
-        var highMemoryLoadThresholdBytes = Encode(Total82GiB, 90);
-
-        // min(10, 3 + (int)(47 / 4)) == min(10, 14) == 10 -> th == 90
-        var result = GcMemoryLoadCalculator.ResolveHighMemoryLoadThresholdPercent(highMemoryLoadThresholdBytes, configuredHighPercent: null, processorCount: 4);
-
-        result.Should().Be(90);
-    }
-
-    [Fact]
-    public void ResolveHighMemoryLoadThresholdPercent_HostJustBelowEightyGiB_UsesFixedDefault()
+    [Theory]
+    [InlineData(4, 90)]
+    [InlineData(null, 90)] // the flat-90 branch never needs the processor count, so an unknown count shouldn't stop it resolving
+    public void ResolveHighMemoryLoadThresholdPercent_HostJustBelowEightyGiB_UsesFixedDefaultRegardlessOfProcessorCount(int? processorCount, int? expected)
     {
         var highMemoryLoadThresholdBytes = Encode(Total79GiB, 90);
 
-        var result = GcMemoryLoadCalculator.ResolveHighMemoryLoadThresholdPercent(highMemoryLoadThresholdBytes, configuredHighPercent: null, processorCount: 4);
+        var result = GcMemoryLoadCalculator.ResolveHighMemoryLoadThresholdPercent(highMemoryLoadThresholdBytes, configuredHighPercent: null, () => processorCount);
 
-        result.Should().Be(90);
+        result.Should().Be(expected);
+    }
+
+    [Fact]
+    public void ResolveHighMemoryLoadThresholdPercent_ConfiguredOverride_UnknownProcessorCountStillResolves()
+    {
+        // A configured override never needs the processor count either.
+        var highMemoryLoadThresholdBytes = Encode(Total96GiB, 70);
+
+        var result = GcMemoryLoadCalculator.ResolveHighMemoryLoadThresholdPercent(highMemoryLoadThresholdBytes, configuredHighPercent: 70, () => null);
+
+        result.Should().Be(70);
+    }
+
+    [Fact]
+    public void Calculate_HostAtOrAboveEightyGiB_UnknownProcessorCount_ReturnsNull()
+    {
+        var highMemoryLoadThresholdBytes = Encode(Total96GiB, 97);
+        var totalAvailableMemoryBytes = Total96GiB;
+        var memoryLoadBytes = Encode(Total96GiB, 42);
+
+        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes, highMemoryLoadThresholdBytes, totalAvailableMemoryBytes, configuredHighPercent: null, () => null);
+
+        result.Should().BeNull();
     }
 
     [Fact]
     public void Calculate_HighMemoryLoadThresholdBytesIsZero_ReturnsNull()
     {
-        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes: 500, highMemoryLoadThresholdBytes: 0, totalAvailableMemoryBytes: Total8GiB, configuredHighPercent: null, processorCount: 4);
+        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes: 500, highMemoryLoadThresholdBytes: 0, totalAvailableMemoryBytes: Total8GiB, configuredHighPercent: null, GetTotalProcessorCount);
 
         result.Should().BeNull();
     }
@@ -242,7 +265,7 @@ public class GcMemoryLoadCalculatorTests
     {
         // A tiny highMemoryLoadThresholdBytes next to a huge totalAvailableMemoryBytes can never be consistent -
         // TotalAvailableMemoryBytes (heap_hard_limit) can never exceed total_physical_mem.
-        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes: 500, highMemoryLoadThresholdBytes: 1000, totalAvailableMemoryBytes: Total8GiB, configuredHighPercent: null, processorCount: 4);
+        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes: 500, highMemoryLoadThresholdBytes: 1000, totalAvailableMemoryBytes: Total8GiB, configuredHighPercent: null, GetTotalProcessorCount);
 
         result.Should().BeNull();
     }
@@ -263,7 +286,7 @@ public class GcMemoryLoadCalculatorTests
         var totalAvailableMemoryBytes = Encode(Total8GiB, 93.75);
         var memoryLoadBytes = Encode(Total8GiB, loadPercent);
 
-        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes, highMemoryLoadThresholdBytes, totalAvailableMemoryBytes, configuredHighPercent: null, processorCount: 4);
+        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes, highMemoryLoadThresholdBytes, totalAvailableMemoryBytes, configuredHighPercent: null, GetTotalProcessorCount);
 
         result.Should().Be(loadPercent);
     }
@@ -277,7 +300,7 @@ public class GcMemoryLoadCalculatorTests
         var totalAvailableMemoryBytes = Encode(Total8GiB, 75);
         var memoryLoadBytes = Encode(Total8GiB, 42);
 
-        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes, highMemoryLoadThresholdBytes, totalAvailableMemoryBytes, configuredHighPercent: 70, processorCount: 4);
+        var result = GcMemoryLoadCalculator.TryCalculate(memoryLoadBytes, highMemoryLoadThresholdBytes, totalAvailableMemoryBytes, configuredHighPercent: 70, GetTotalProcessorCount);
 
         result.Should().Be(42);
     }
@@ -325,7 +348,11 @@ public class GcMemoryLoadCalculatorTests
         var measured = TryMeasureHighMemoryLoadThresholdPercent(info.HighMemoryLoadThresholdBytes, info.TotalAvailableMemoryBytes);
         Skip.If(measured is null, "Could not measure high_memory_load_th on this host (a hard limit may be in play despite no knob being detected, or the C#/C++ rounding didn't round-trip).");
 
-        var predicted = GcMemoryLoadCalculator.ResolveHighMemoryLoadThresholdPercent(info.HighMemoryLoadThresholdBytes, configuredHighPercent: null, Environment.ProcessorCount);
+        // Unlike the hard-limit knobs above, GCHighMemPercent doesn't invalidate the measurement - it only changes
+        // the expected threshold - so instead of requiring its absence, resolve it through the same production
+        // parsers used at runtime.
+        var configuredHighPercent = GcMemoryLoadCalculator.ReadConfiguredHighMemoryLoadPercent();
+        var predicted = GcMemoryLoadCalculator.ResolveHighMemoryLoadThresholdPercent(info.HighMemoryLoadThresholdBytes, configuredHighPercent, () => TotalProcessorCount.Value);
 
         measured.Should().Be(predicted);
         // The ratio-inference removed from production, kept only as a measurement tool for the drift canary above:
