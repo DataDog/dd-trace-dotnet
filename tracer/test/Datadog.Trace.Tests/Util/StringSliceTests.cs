@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tests.Util
             slice.ToString().Should().Be("cd");
         }
 
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
         [Fact]
         public void AsSpan_UsesSegmentBounds()
         {
