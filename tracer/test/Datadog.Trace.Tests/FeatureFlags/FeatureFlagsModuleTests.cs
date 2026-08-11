@@ -7,6 +7,8 @@
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
@@ -110,6 +112,61 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
+    public async Task InitializeAsync_WhenConfigurationAlreadyApplied_ReturnsImmediately()
+    {
+        var settings = CreateInitializationSettings("60000");
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+
+        module!.ApplyConfiguration(new ServerConfiguration()).Should().BeTrue();
+
+        // Would block for the initialization timeout if the already-received configuration
+        // was not honoured.
+        await module.InitializeAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task InitializeAsync_WhenConfigurationArrivesWhileWaiting_Returns()
+    {
+        var settings = CreateInitializationSettings("60000");
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+
+        var initialization = module!.InitializeAsync(CancellationToken.None);
+        initialization.IsCompleted.Should().BeFalse();
+
+        module.ApplyConfiguration(new ServerConfiguration()).Should().BeTrue();
+
+        await initialization;
+    }
+
+    [Fact]
+    public async Task InitializeAsync_OnTimeout_ReturnsWithoutThrowing()
+    {
+        var settings = CreateInitializationSettings("1");
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+
+        // Initialization commonly runs at application startup, where throwing would take the
+        // application down, so a missing configuration is only reported through evaluations.
+        await module!.InitializeAsync(CancellationToken.None);
+
+        module.FirstConfigReceived.IsCompleted.Should().BeFalse();
+        module.Evaluate("test-flag", FeatureFlagsValueType.Boolean, false, "user-1", null)
+              .Error.Should().Be("PROVIDER_NOT_READY");
+    }
+
+    [Fact]
+    public async Task InitializeAsync_OnCancellation_ReturnsWithoutThrowing()
+    {
+        var settings = CreateInitializationSettings("60000");
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+        using var cancellation = new CancellationTokenSource();
+
+        var initialization = module!.InitializeAsync(cancellation.Token);
+        cancellation.Cancel();
+
+        await initialization;
+    }
+
+    [Fact]
     public void UpdateRemoteConfig_WithEmptyList_InvokesCallbackAndReturnsProviderNotReady()
     {
         // Arrange
@@ -160,6 +217,13 @@ public class FeatureFlagsModuleTests
         result.Error.Should().Be("PROVIDER_NOT_READY");
         result.Reason.Should().Be(EvaluationReason.Error);
     }
+
+    // Remote Configuration is picked so that activation cannot issue an agentless request: these
+    // tests cover the wait, not the delivery source.
+    private static TracerSettings CreateInitializationSettings(string timeoutMs)
+        => CreateSettings(
+            (ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config"),
+            (ConfigurationKeys.FeatureFlags.FlaggingProviderInitializationTimeoutMs, timeoutMs));
 
     private static TracerSettings CreateSettings(params (string Key, string Value)[] settings)
     {
