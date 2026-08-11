@@ -228,7 +228,7 @@ internal sealed partial class SecurityReporter
                 traceContext.AppSecRequestContext.AddWafSecurityEvents(result.Data);
             }
 
-            var clientIp = _span.GetTag(Tags.HttpClientIp);
+            var clientIp = _span.GetHttpClientIp();
             if (!string.IsNullOrEmpty(clientIp))
             {
                 _span.SetTag(Tags.ActorIp, clientIp);
