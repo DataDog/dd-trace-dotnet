@@ -137,7 +137,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
 
         using var intermediate = _encoder.Encode(target, applySafetyLimits: true);
 
-        intermediate.ResultDdwafObject.NbEntries.Should().Be((ulong)expectedLength);
+        intermediate.ResultDdwafObject.Size.Should().Be((ushort)expectedLength);
 
         var result = intermediate.ResultDdwafObject.Decode() as List<object>;
         result.Should().NotBeNull();
@@ -172,12 +172,12 @@ public class EncoderUnitTests : WafLibraryRequiredTest
 
         using var intermediate = _encoder.Encode(target, applySafetyLimits: true);
 
-        // Invariant 1: NbEntries reflects the count *after* skipping invalid keys.
-        // Under the bug, NbEntries remained at the original count (3) because the caller's
+        // Invariant 1: Size reflects the count *after* skipping invalid keys.
+        // Under the bug, Size remained at the original count (3) because the caller's
         // childrenCount was never decremented.
-        intermediate.ResultDdwafObject.NbEntries.Should().Be(2UL);
+        intermediate.ResultDdwafObject.Size.Should().Be((ushort)2);
 
-        // Invariant 2: the encoded slots [0, NbEntries) contain exactly the valid entries with
+        // Invariant 2: the encoded slots [0, Size) contain exactly the valid entries with
         // their values intact. Under the bug, the decoder either threw (reading a zeroed slot
         // as a null key) or surfaced stale/shifted data from beyond the valid entries.
         var result = intermediate.ResultDdwafObject.Decode() as Dictionary<string, object>;
@@ -192,7 +192,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
     public void DictionaryEntriesWithEmptyKeysAreSkipped_ObjectValues_EmptyKeyAtEnd()
     {
         // Empty key at the end exercises the worst case under the bug: the final slot is never
-        // written, so a decode that reads NbEntries=count slots reads uninitialized memory.
+        // written, so a decode that reads Size=count slots reads uninitialized memory.
         var target = new Dictionary<string, object>
         {
             { "key1", "value1" },
@@ -202,7 +202,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
 
         using var intermediate = _encoder.Encode(target, applySafetyLimits: true);
 
-        intermediate.ResultDdwafObject.NbEntries.Should().Be(2UL);
+        intermediate.ResultDdwafObject.Size.Should().Be((ushort)2);
 
         var result = intermediate.ResultDdwafObject.Decode() as Dictionary<string, object>;
         result.Should().NotBeNull();

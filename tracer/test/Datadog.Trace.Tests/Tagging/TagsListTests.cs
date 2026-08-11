@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -99,6 +100,94 @@ namespace Datadog.Trace.Tests.Tagging
                 new("k3", null));
 
             GetBackingTagsList(tags).Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(typeof(HttpTags))]
+        [InlineData(typeof(HttpV1Tags))]
+        [InlineData(typeof(WebTags))]
+        [InlineData(typeof(AspNetCoreTags))]
+        [InlineData(typeof(AwsSqsTags))]
+        [InlineData(typeof(InferredProxyTags))]
+        public void SetTag_WithNullValue_RemovesIntBackedTag(Type tagsType)
+        {
+            var tags = (TagsList)Activator.CreateInstance(tagsType);
+
+            tags.SetTag(Tags.HttpStatusCode, "200");
+
+            ((IHasStatusCode)tags).HttpStatusCode.Should().Be(200);
+            tags.GetTag(Tags.HttpStatusCode).Should().Be("200");
+
+            tags.SetTag(Tags.HttpStatusCode, null);
+
+            ((IHasStatusCode)tags).HttpStatusCode.Should().BeNull();
+            tags.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            GetTagsSnapshot(tags).Select(x => x.Key).Should().NotContain(Tags.HttpStatusCode);
+        }
+
+        [Theory]
+        [InlineData(typeof(HttpTags))]
+        [InlineData(typeof(HttpV1Tags))]
+        [InlineData(typeof(WebTags))]
+        [InlineData(typeof(AspNetCoreTags))]
+        [InlineData(typeof(AwsSqsTags))]
+        [InlineData(typeof(InferredProxyTags))]
+        public void SetTag_WithUnparseableValue_RemovesIntBackedTag(Type tagsType)
+        {
+            var tags = (TagsList)Activator.CreateInstance(tagsType);
+
+            tags.SetTag(Tags.HttpStatusCode, "200");
+            tags.SetTag(Tags.HttpStatusCode, "not-an-int");
+
+            ((IHasStatusCode)tags).HttpStatusCode.Should().BeNull();
+            tags.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            GetTagsSnapshot(tags).Select(x => x.Key).Should().NotContain(Tags.HttpStatusCode);
+        }
+
+        [Fact]
+        public void StronglyTypedStatusCodeAliasesCanBeReadAndWrittenByEitherName()
+        {
+            var tags = new WebTags();
+
+            tags.SetTag(Tags.HttpStatusCode, "200");
+            tags.GetTag(Tags.HttpResponseStatusCode).Should().Be("200");
+
+            tags.SetTag(Tags.HttpResponseStatusCode, "201");
+            tags.GetTag(Tags.HttpStatusCode).Should().Be("201");
+        }
+
+        [Theory]
+        [InlineData(false, Tags.HttpStatusCode)]
+        [InlineData(true, Tags.HttpResponseStatusCode)]
+        public void StronglyTypedStatusCodeAliasEnumeratesSelectedName(bool openTelemetrySemanticsEnabled, string expectedKey)
+        {
+            var tags = new WebTags { HttpStatusCode = 202 };
+
+            var snapshot = GetTagsSnapshot(tags, openTelemetrySemanticsEnabled);
+
+            snapshot
+               .Where(x => x.Key == Tags.HttpStatusCode || x.Key == Tags.HttpResponseStatusCode)
+               .Should()
+               .ContainSingle()
+               .Which
+               .Should()
+               .Be(new KeyValuePair<string, string>(expectedKey, "202"));
+        }
+
+        [Fact]
+        public void StronglyTypedStatusCodeAliasCanBeClearedByEitherName()
+        {
+            var tags = new WebTags();
+
+            tags.SetTag(Tags.HttpStatusCode, "203");
+            tags.SetTag(Tags.HttpResponseStatusCode, null);
+            tags.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            tags.GetTag(Tags.HttpResponseStatusCode).Should().BeNull();
+
+            tags.SetTag(Tags.HttpResponseStatusCode, "204");
+            tags.SetTag(Tags.HttpStatusCode, null);
+            tags.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            tags.GetTag(Tags.HttpResponseStatusCode).Should().BeNull();
         }
 
         [Fact]
@@ -422,11 +511,11 @@ namespace Datadog.Trace.Tests.Tagging
             }
         }
 
-        private static List<KeyValuePair<string, string>> GetTagsSnapshot(TagsList tags)
+        private static List<KeyValuePair<string, string>> GetTagsSnapshot(TagsList tags, bool openTelemetrySemanticsEnabled = false)
         {
             var result = new List<KeyValuePair<string, string>>();
             var processor = new TagCollectorProcessor(result);
-            tags.EnumerateTags(ref processor);
+            tags.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
             return result;
         }
 
@@ -437,7 +526,7 @@ namespace Datadog.Trace.Tests.Tagging
             return field.GetValue(tags);
         }
 
-        private readonly struct TagCollectorProcessor : IItemProcessor<string>
+        private readonly struct TagCollectorProcessor : IItemProcessor<string>, IItemProcessor<int>
         {
             private readonly List<KeyValuePair<string, string>> _items;
 
@@ -449,6 +538,11 @@ namespace Datadog.Trace.Tests.Tagging
             public void Process(TagItem<string> item)
             {
                 _items.Add(new(item.Key, item.Value));
+            }
+
+            public void Process(TagItem<int> item)
+            {
+                _items.Add(new(item.Key, item.Value.ToString(CultureInfo.InvariantCulture)));
             }
         }
     }

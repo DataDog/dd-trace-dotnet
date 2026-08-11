@@ -396,6 +396,7 @@ namespace Datadog.Trace.PlatformHelpers
              || tagName == Tags.HttpMethod
              || tagName == Tags.HttpUrl
              || tagName == Tags.HttpStatusCode
+             || tagName == Tags.HttpResponseStatusCode
              || tagName == Tags.NetworkClientIp
              || tagName == Tags.HttpClientIp;
         }

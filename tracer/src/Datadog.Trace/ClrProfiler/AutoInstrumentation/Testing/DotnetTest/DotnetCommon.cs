@@ -288,45 +288,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             // Note: we also write the total global code coverage to the `session-coverage-{date}.json` file
             if (!StringUtil.IsNullOrEmpty(codeCoveragePath))
             {
-                try
-                {
-                    var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}.json");
-                    if (CoverageUtils.TryCombineAndGetTotalCoverage(codeCoveragePath, outputPath, out var globalCoverage) &&
-                        globalCoverage is not null)
-                    {
-                        var backfillResult = TryApplyItrCoverageBackfill(session, globalCoverage);
-                        if (!backfillResult.CanPublishCoverage)
-                        {
-                            Log.Warning("RunCiCommand: ITR coverage backfill could not match backend coverage to Datadog internal coverage. The coverage result will not be published.");
-                            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
-                            TryDeleteFile(outputPath);
-                        }
-                        else
-                        {
-                            if (backfillResult.Backfilled)
-                            {
-                                File.WriteAllText(outputPath, JsonHelper.SerializeObject(globalCoverage));
-                            }
-
-                            // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
-                            if (EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage)?.ToBoolean() == true)
-                            {
-                                var data = globalCoverage.Data;
-                                session.RecordCodeCoverage(
-                                    CodeCoverageReportSource.DatadogInternal,
-                                    globalCoverage.GetTotalPercentage(),
-                                    backfillResult.Backfilled,
-                                    executableLines: data[1],
-                                    coveredLines: data[2]);
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "RunCiCommand: Error while reading or backfilling Datadog internal code coverage.");
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
-                }
+                TryFinalizeDatadogInternalCoverage(session, codeCoveragePath!);
             }
 
             try
@@ -367,6 +329,59 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
             FinalizeCoverageResultsBeforeSessionClose(session);
 
             session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
+        }
+
+        private static void TryFinalizeDatadogInternalCoverage(TestSession? session, string codeCoveragePath)
+        {
+            try
+            {
+                var outputPath = Path.Combine(codeCoveragePath, $"session-coverage-{DateTime.UtcNow:yyyy-MM-dd_HH_mm_ss_fffffff}-{Guid.NewGuid():N}.json");
+                var runId = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId) ?? TestOptimization.Instance.RunId;
+                var runToken = GlobalCoverageProtocol.GetRunToken(runId);
+                if (!CoverageUtils.TryReadAndCombine(codeCoveragePath, outputPath, runToken, out var globalCoverage) ||
+                    globalCoverage is null)
+                {
+                    return;
+                }
+
+                var canPublishCoverage = true;
+                var backfilled = false;
+                if (session is not null)
+                {
+                    var backfillResult = TryApplyItrCoverageBackfill(session, globalCoverage);
+                    canPublishCoverage = backfillResult.CanPublishCoverage;
+                    backfilled = backfillResult.Backfilled;
+                }
+
+                if (!canPublishCoverage)
+                {
+                    Log.Warning("RunCiCommand: ITR coverage backfill could not match backend coverage to Datadog internal coverage. The coverage result will not be published.");
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+                    return;
+                }
+
+                var writer = new GlobalCoverageArtifactWriter();
+                using var stagedOutput = writer.StageReplace(outputPath, globalCoverage);
+                stagedOutput.Commit();
+
+                // We only report the code coverage percentage if the customer manually sets the 'DD_CIVISIBILITY_CODE_COVERAGE_ENABLED' environment variable according to the new spec.
+                if (session is not null &&
+                    EnvironmentHelpers.GetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.CodeCoverage)?.ToBoolean() == true)
+                {
+                    var data = globalCoverage.Data;
+                    session.RecordCodeCoverage(
+                        CodeCoverageReportSource.DatadogInternal,
+                        globalCoverage.GetTotalPercentage(),
+                        backfilled,
+                        executableLines: data[1],
+                        coveredLines: data[2]);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "RunCiCommand: Error while reading or backfilling Datadog internal code coverage.");
+                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+            }
         }
 
         internal static void FinalizeCoverageResultsBeforeSessionClose(TestSession session)
@@ -2323,7 +2338,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
             var isCollectIndex = -1;
             var isTestAdapterPathIndex = -1;
-            var msbuildArgsList = msbuildArgs as List<string> ?? [..msbuildArgs];
+            var msbuildArgsList = msbuildArgs as List<string> ?? [.. msbuildArgs];
             for (var i = 0; i < msbuildArgsList.Count; i++)
             {
                 var arg = msbuildArgsList[i];

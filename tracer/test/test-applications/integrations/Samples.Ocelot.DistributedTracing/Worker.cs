@@ -144,13 +144,11 @@ namespace Samples.Ocelot.DistributedTracing
                 throw new Exception($"Failed to create Ocelot configuration: {string.Join(", ", response.Errors.Select(e => e.Message))}");
             }
 
-            // Update the internal configuration repository
-            var addOrReplaceResponse = configRepo.AddOrReplace(response.Data);
-            if (addOrReplaceResponse.IsError)
-            {
-                _logger.LogError("Failed to update Ocelot configuration: {Errors}", string.Join(", ", addOrReplaceResponse.Errors.Select(e => e.Message)));
-                throw new Exception($"Failed to update Ocelot configuration: {string.Join(", ", addOrReplaceResponse.Errors.Select(e => e.Message))}");
-            }
+            // Update the internal configuration repository.
+            // AddOrReplace's return type changed from Response to string in Ocelot 25.0.0; both
+            // implementations always succeed here, so the result is ignored for compatibility
+            // across all supported versions.
+            configRepo.AddOrReplace(response.Data);
 
             _logger.LogInformation("Updated Ocelot internal configuration with address: {Address}", address);
         }

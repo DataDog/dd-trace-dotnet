@@ -188,7 +188,8 @@
       <DOTNET-TRACER-REPO-ROOT-PATH>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)/ ))</DOTNET-TRACER-REPO-ROOT-PATH>
       <SHARED-LIB-PATH>$(DOTNET-TRACER-REPO-ROOT-PATH)shared\src\native-lib\</SHARED-LIB-PATH>
       <CORECLR-PATH>$(SHARED-LIB-PATH)coreclr\src</CORECLR-PATH>
-      <SHARED-LIB-INCLUDES>$(SHARED-LIB-PATH)fmt\include;$(SHARED-LIB-PATH)spdlog\include</SHARED-LIB-INCLUDES>
+      <!-- Suppress warnings from vendored headers without suppressing warnings in Datadog code. -->
+      <ExternalIncludePath>$(SHARED-LIB-PATH)fmt\include;$(SHARED-LIB-PATH)spdlog\include;$(ExternalIncludePath)</ExternalIncludePath>
       <!-- VCPKG setup -->
       <VcpkgEnableManifest>true</VcpkgEnableManifest>
       <VcpkgUseStatic>false</VcpkgUseStatic>
@@ -207,6 +208,7 @@
                PatchSpdlogFile in tracer/build/_build/UpdateVendors/VendoredDependency.cs).
                Defined here on Windows for consistency. -->
         <PreprocessorDefinitions>%(PreprocessorDefinitions);MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS=1;FMT_UNICODE=0;DD_SPDLOG_NO_MDC</PreprocessorDefinitions>
+        <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
 	      <BuildStlModules>false</BuildStlModules>
 	      <EnableModules>false</EnableModules>
       </ClCompile>

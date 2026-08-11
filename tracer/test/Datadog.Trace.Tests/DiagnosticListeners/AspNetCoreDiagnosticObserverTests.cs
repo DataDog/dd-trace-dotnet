@@ -314,6 +314,26 @@ namespace Datadog.Trace.Tests.DiagnosticListeners
 
             Assert.Equal("GET /home/?/action", span.ResourceName);
         }
+
+        [Theory]
+        [CombinatorialData]
+        public async Task HttpRequestIn_Stop_ClearsTheHttpContextStore(bool singleSpan)
+        {
+            await using var tracer = GetTracer();
+            var (security, iast) = GetSecurity();
+            var spanCodeOrigin = GetSpanCodeOrigin();
+
+            IObserver<KeyValuePair<string, object>> observer = singleSpan
+                ? new SingleSpanAspNetCoreDiagnosticObserver(tracer, security, iast, spanCodeOrigin)
+                : new AspNetCoreDiagnosticObserver(tracer, security, iast, spanCodeOrigin);
+
+            var context = new HostingApplication.Context { HttpContext = GetHttpContext() };
+            CoreHttpContextStore.Instance.Set(context.HttpContext);
+
+            observer.OnNext(new KeyValuePair<string, object>("Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop", context));
+
+            CoreHttpContextStore.Instance.Get().Should().BeNull();
+        }
 #endif
 
         private static ScopedTracer GetTracer(bool hasResourceBasedSamplingRules = false)

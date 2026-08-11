@@ -43,7 +43,8 @@
     <CORECLR_PATH>..\..\..\shared\src\native-lib\coreclr</CORECLR_PATH>
     <ProjectName>Datadog.Tracer.Native</ProjectName>
     <LIB_PATH>..\..\..\shared\src\native-lib\</LIB_PATH>
-    <LIB_INCLUDES>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(LIB_PATH)spdlog\include</LIB_INCLUDES>
+    <LIB_INCLUDES>$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath)</LIB_INCLUDES>
+    <ExternalIncludePath>$(LIB_PATH)spdlog\include;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -119,6 +120,8 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
+      <!-- Suppress warnings from vendored headers without suppressing warnings in Datadog code. -->
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <!-- spdlog 1.17 (and the bundled fmt 11+) need two build flags:
            - FMT_UNICODE=0: fmt 11+ static_asserts that narrow string literals are UTF-8.
              We don't compile with /utf-8 (would change the encoding of every narrow string in
