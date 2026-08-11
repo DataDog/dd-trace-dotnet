@@ -131,6 +131,24 @@ namespace Datadog.Trace.ExtensionMethods
                    ? httpMethodTags.HttpMethod
                    : span.GetTag(span.OpenTelemetrySemanticsEnabled ? Tags.HttpRequestMethod : Tags.HttpMethod);
 
+        /// <summary>
+        /// Gets the client IP extracted from the request headers, reading the strongly-typed <see cref="WebTags"/>
+        /// property when available.
+        /// </summary>
+        internal static string GetHttpClientIp(this Span span)
+            => span.Tags is WebTags webTags
+                   ? webTags.HttpClientIp
+                   : span.GetTag(span.OpenTelemetrySemanticsEnabled ? Tags.ClientAddress : Tags.HttpClientIp);
+
+        /// <summary>
+        /// Gets the peer IP of the socket connection, reading the strongly-typed <see cref="WebTags"/>
+        /// property when available.
+        /// </summary>
+        internal static string GetNetworkClientIp(this Span span)
+            => span.Tags is WebTags webTags
+                   ? webTags.NetworkClientIp
+                   : span.GetTag(span.OpenTelemetrySemanticsEnabled ? Tags.NetworkPeerAddress : Tags.NetworkClientIp);
+
         internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, MutableSettings tracerSettings)
         {
             if (statusCode < 100 || statusCode >= 600)
