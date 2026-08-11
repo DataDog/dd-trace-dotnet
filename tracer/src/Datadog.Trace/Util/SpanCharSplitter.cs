@@ -15,30 +15,54 @@ internal readonly ref struct SpanCharSplitter
     private readonly string _source;
     private readonly char _separator;
     private readonly int _count;
+    private readonly int _startIndex;
+    private readonly int _endIndex;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SpanCharSplitter(string source, char separator, int count)
+        : this(source, separator, startIndex: 0, length: source?.Length ?? 0, count)
     {
-        _source = source ?? throw new ArgumentNullException(nameof(source));
-        _separator = separator;
-        _count = count;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public SpanSplitEnumerator GetEnumerator() => new(_source, _separator, _count);
+    public SpanCharSplitter(string source, char separator, int startIndex, int length, int count)
+    {
+        _source = source ?? throw new ArgumentNullException(nameof(source));
+
+        if ((uint)startIndex > (uint)source.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(startIndex));
+        }
+
+        if ((uint)length > (uint)(source.Length - startIndex))
+        {
+            throw new ArgumentOutOfRangeException(nameof(length));
+        }
+
+        _separator = separator;
+        _count = count;
+        _startIndex = startIndex;
+        _endIndex = startIndex + length;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public SpanSplitEnumerator GetEnumerator() => new(_source, _separator, _startIndex, _endIndex, _count);
 
     internal ref struct SpanSplitEnumerator
     {
         private readonly char _separator;
         private readonly string _source;
-        private int _nextStartIndex = 0;
+        private readonly int _endIndex;
+        private int _nextStartIndex;
         private int _count;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SpanSplitEnumerator(string source, char separator, int count)
+        public SpanSplitEnumerator(string source, char separator, int startIndex, int endIndex, int count)
         {
             _source = source;
             _separator = separator;
+            _endIndex = endIndex;
+            _nextStartIndex = startIndex;
             _count = count;
         }
 
@@ -46,14 +70,16 @@ internal readonly ref struct SpanCharSplitter
 
         public bool MoveNext()
         {
-            if (_nextStartIndex > _source.Length)
+            if (_nextStartIndex > _endIndex)
             {
                 return false;
             }
 
             var foundIndex = _source.IndexOf(_separator, _nextStartIndex);
 
-            var length = _count > 1 && foundIndex >= 0 ? foundIndex - _nextStartIndex : _source.Length - _nextStartIndex;
+            var length = _count > 1 && foundIndex >= 0 && foundIndex < _endIndex
+                             ? foundIndex - _nextStartIndex
+                             : _endIndex - _nextStartIndex;
 
             Current = new SpanSplitValue
             {

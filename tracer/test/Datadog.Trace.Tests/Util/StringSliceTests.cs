@@ -1,4 +1,4 @@
-// <copyright file="StringSegmentTests.cs" company="Datadog">
+// <copyright file="StringSliceTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,12 +12,12 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Util
 {
-    public class StringSegmentTests
+    public class StringSliceTests
     {
         [Fact]
         public void Slice_UsesOriginalString()
         {
-            var segment = new StringSegment("abcdef", offset: 1, length: 4);
+            var segment = new StringSlice("abcdef", offset: 1, length: 4);
 
             var slice = segment.Slice(start: 1, length: 2);
 
@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tests.Util
         [Fact]
         public void AsSpan_UsesSegmentBounds()
         {
-            var segment = new StringSegment("abcdef", offset: 1, length: 4);
+            var segment = new StringSlice("abcdef", offset: 1, length: 4);
 
             segment.AsSpan().ToString().Should().Be("bcde");
         }
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("value", "value")]
         public void Trim_UsesSegmentBounds(string value, string expected)
         {
-            var segment = new StringSegment($"prefix{value}suffix", offset: 6, length: value.Length);
+            var segment = new StringSlice($"prefix{value}suffix", offset: 6, length: value.Length);
 
             var trimmed = segment.Trim();
 
@@ -58,9 +58,22 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("ab", StringComparison.Ordinal, true)]
         public void Equals_UsesComparisonType(string value, StringComparison comparisonType, bool expected)
         {
-            var segment = new StringSegment("abc", offset: 0, length: 2);
+            var segment = new StringSlice("abc", offset: 0, length: 2);
 
             segment.Equals(value, comparisonType).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("42", true, 42)]
+        [InlineData("-1", true, -1)]
+        [InlineData("invalid", false, 0)]
+        [InlineData("2147483648", false, 0)]
+        public void TryParseInt32_UsesSegmentBounds(string value, bool expected, int expectedResult)
+        {
+            var segment = new StringSlice($"prefix{value}suffix", offset: 6, length: value.Length);
+
+            segment.TryParseInt32(out var result).Should().Be(expected);
+            result.Should().Be(expectedResult);
         }
     }
 }
