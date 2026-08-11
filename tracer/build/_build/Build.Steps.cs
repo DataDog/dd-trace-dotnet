@@ -2285,7 +2285,10 @@ partial class Build
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
-            DotnetBuild(Solution.GetProject(Projects.DdDotnetIntegrationTests), noRestore: false);
+            DotnetBuild(
+                Solution.GetProject(Projects.DdDotnetIntegrationTests),
+                framework: IsGitlab ? Framework : null,
+                noRestore: false);
         });
 
     Target RunLinuxDdDotnetIntegrationTests => _ => _
