@@ -58,6 +58,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             // Make sure to box the controllerContext proxy only once
             var boxedControllerContext = (IHttpControllerContext)controllerContext;
+            var tracer = Tracer.Instance;
+
+            if (AspNetWebApi2Integration.UsesExistingServerSpan(tracer))
+            {
+                // With OpenTelemetry semantics a request has a single HTTP server span, so enrich the
+                // ASP.NET one instead of nesting an aspnet-webapi.request span inside it. The controller
+                // context is carried through so the route can be refreshed once the action has run.
+                AspNetWebApi2Integration.UpdateExistingServerSpan(tracer, boxedControllerContext);
+                return new CallTargetState(scope: null, state: boxedControllerContext);
+            }
 
             var scope = AspNetWebApi2Integration.CreateScope(boxedControllerContext, out _);
 
@@ -90,6 +100,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
             if (scope is null)
             {
+                if (state.State is IHttpControllerContext existingSpanContext)
+                {
+                    // No span of our own: the route information belongs on the ASP.NET server span, and
+                    // this is the first point at which the executed route is guaranteed to be resolved.
+                    AspNetWebApi2Integration.UpdateExistingServerSpan(Tracer.Instance, existingSpanContext);
+                }
+
                 return responseMessage;
             }
 
