@@ -1792,7 +1792,8 @@ partial class Build
               {
                   // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
                   DotNetBuild(config => config.SetConfiguration(BuildConfiguration)
-                                              .SetTargetPlatformAnyCPU()
+                                              .When(string.IsNullOrWhiteSpace(SampleName), x => x.SetProperty("Platform", "Any CPU"))
+                                              .When(!string.IsNullOrWhiteSpace(SampleName), x => x.SetTargetPlatformAnyCPU())
                                               .SetProperty("BuildInParallel", "true")
                                               .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                                               .When(Framework is not null, x => x.SetFramework(Framework))
