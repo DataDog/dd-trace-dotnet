@@ -122,6 +122,15 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
+        /// <summary>
+        /// Gets the HTTP request method, reading the strongly-typed <see cref="IHasHttpMethod"/> property when
+        /// available so that the caller doesn't have to know which of the Datadog/OpenTelemetry tag names is in use.
+        /// </summary>
+        internal static string GetHttpMethod(this Span span)
+            => span.Tags is IHasHttpMethod httpMethodTags
+                   ? httpMethodTags.HttpMethod
+                   : span.GetTag(span.OpenTelemetrySemanticsEnabled ? Tags.HttpRequestMethod : Tags.HttpMethod);
+
         internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, MutableSettings tracerSettings)
         {
             if (statusCode < 100 || statusCode >= 600)
