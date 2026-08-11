@@ -7,6 +7,7 @@
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
@@ -73,6 +74,76 @@ public class FeatureFlagsModuleTests
         var result = module.Evaluate("test-flag", FeatureFlagsValueType.Boolean, false, "user-1", null);
         result.Error.Should().Be("PROVIDER_NOT_READY");
         result.Reason.Should().Be(EvaluationReason.Error);
+    }
+
+    [Fact]
+    public void UpdateRemoteConfig_ReplacesActiveAndRejectedFlagsForExistingPath()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        var module = new FeatureFlagsModule(CreateSettings(), rcmManager);
+        var configPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");
+
+        const string FirstConfig =
+            """
+            {
+              "flags": {
+                "rejected-then-active": {
+                  "key": "rejected-then-active",
+                  "enabled": true,
+                  "variationType": "STRING",
+                  "variations": { "on": { "key": "on", "value": "on" } },
+                  "allocations": "invalid"
+                },
+                "removed-active": {
+                  "key": "removed-active",
+                  "enabled": false,
+                  "variationType": "STRING",
+                  "variations": {}
+                }
+              }
+            }
+            """;
+        ApplyConfig(version: 1, FirstConfig);
+
+        module.Evaluate("rejected-then-active", FeatureFlagsValueType.String, "fallback", "user-1", null).Error.Should().Be("PARSE_ERROR");
+        module.Evaluate("removed-active", FeatureFlagsValueType.String, "fallback", "user-1", null).Reason.Should().Be(EvaluationReason.Disabled);
+
+        const string SecondConfig =
+            """
+            {
+              "flags": {
+                "rejected-then-active": {
+                  "key": "rejected-then-active",
+                  "enabled": false,
+                  "variationType": "STRING",
+                  "variations": {}
+                },
+                "newly-rejected": {
+                  "key": "newly-rejected",
+                  "enabled": true,
+                  "variationType": "STRING",
+                  "variations": { "on": { "key": "on", "value": "on" } },
+                  "allocations": "invalid"
+                }
+              }
+            }
+            """;
+        ApplyConfig(version: 2, SecondConfig);
+
+        module.Evaluate("rejected-then-active", FeatureFlagsValueType.String, "fallback", "user-1", null).Reason.Should().Be(EvaluationReason.Disabled);
+        module.Evaluate("newly-rejected", FeatureFlagsValueType.String, "fallback", "user-1", null).Error.Should().Be("PARSE_ERROR");
+        module.Evaluate("removed-active", FeatureFlagsValueType.String, "fallback", "user-1", null).Error.Should().Be("FLAG_NOT_FOUND");
+
+        void ApplyConfig(long version, string configJson)
+        {
+            var contents = Encoding.UTF8.GetBytes(configJson);
+            rcmManager.LastSubscription!.Invoke(
+                new Dictionary<string, List<RemoteConfiguration>>
+                {
+                    [RcmProducts.FfeFlags] = [new RemoteConfiguration(configPath, contents, contents.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, version)]
+                },
+                null);
+        }
     }
 
     private static TracerSettings CreateSettings()

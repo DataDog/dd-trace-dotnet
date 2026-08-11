@@ -17,5 +17,5 @@ internal sealed class Shard
 
     public List<ShardRange>? Ranges { get; set; }
 
-    public int TotalShards { get; set; }
+    public long TotalShards { get; set; }
 }

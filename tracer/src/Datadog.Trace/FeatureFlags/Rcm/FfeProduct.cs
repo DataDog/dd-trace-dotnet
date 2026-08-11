@@ -51,6 +51,7 @@ internal sealed class FfeProduct
                     var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>();
                     if (serverConfigFile.TypedFile is not null)
                     {
+                        _serverConfigurations.RemoveAll(x => x.Key == ffeConfig.Path.Path);
                         _serverConfigurations.Add(new KeyValuePair<string, ServerConfiguration>(ffeConfig.Path.Path, serverConfigFile.TypedFile));
                         res.Add(ApplyDetails.FromOk(ffeConfig.Path.Path));
                         apply = true;

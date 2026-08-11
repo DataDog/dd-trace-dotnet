@@ -13,7 +13,7 @@ namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
 internal sealed class ShardRange
 {
-    public int Start { get; set; }
+    public long Start { get; set; }
 
-    public int End { get; set; }
+    public long End { get; set; }
 }

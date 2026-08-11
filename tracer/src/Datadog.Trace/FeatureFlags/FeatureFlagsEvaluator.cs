@@ -70,7 +70,7 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
-                if (config.Flags is null || !config.Flags.TryGetValue(flagKey, out var flag) || flag is null)
+                if (config.Flags is null || !config.Flags.TryGetValue(flagKey, out var flag))
                 {
                     return new Evaluation(
                         flagKey,
@@ -80,6 +80,19 @@ namespace Datadog.Trace.FeatureFlags
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "FLAG_NOT_FOUND"
+                        });
+                }
+
+                if (flag is null)
+                {
+                    return new Evaluation(
+                        flagKey,
+                        defaultValue,
+                        EvaluationReason.Error,
+                        error: "PARSE_ERROR",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "PARSE_ERROR"
                         });
                 }
 
@@ -158,12 +171,18 @@ namespace Datadog.Trace.FeatureFlags
                             if (allShardsMatch)
                             {
                                 // Determine reason based on how the flag was resolved.
-                                // Per the FFE spec, SPLIT takes precedence over TARGETING_MATCH:
-                                // - Split: Resolved via percentage split (shards present)
-                                // - TargetingMatch: Allocation had targeting rules that matched (no shards)
+                                // - TargetingMatch: Allocation had targeting rules that matched
+                                // - Default: A temporal allocation with one unsharded split matched
+                                // - Split: Resolved via percentage split without targeting rules
                                 // - Static: No rules, no shards - simple static value
-                                var reason = hadShards ? EvaluationReason.Split
-                                           : hadRules ? EvaluationReason.TargetingMatch
+                                var isTemporalDefault = !hadRules &&
+                                                        !hadShards &&
+                                                        allocation.Splits.Count == 1 &&
+                                                        (!StringUtil.IsNullOrEmpty(allocation.StartAt) ||
+                                                         !StringUtil.IsNullOrEmpty(allocation.EndAt));
+                                var reason = hadRules ? EvaluationReason.TargetingMatch
+                                           : isTemporalDefault ? EvaluationReason.Default
+                                           : hadShards ? EvaluationReason.Split
                                            : EvaluationReason.Static;
 
                                 return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context);
@@ -302,6 +321,13 @@ namespace Datadog.Trace.FeatureFlags
                     return CompareNumber(attributeValue, condition.Value, (a, b) => a <= b);
                 case ConditionOperator.LT:
                     return CompareNumber(attributeValue, condition.Value, (a, b) => a < b);
+                case ConditionOperator.SEMVER_EQ:
+                case ConditionOperator.SEMVER_NEQ:
+                case ConditionOperator.SEMVER_LT:
+                case ConditionOperator.SEMVER_LTE:
+                case ConditionOperator.SEMVER_GT:
+                case ConditionOperator.SEMVER_GTE:
+                    return CompareSemanticVersion(condition.Operator.Value, attributeValue, condition.Value);
                 default:
                     throw new FormatException($"Unknown condition operator {condition.Operator.ToString()}");
             }
@@ -371,6 +397,27 @@ namespace Datadog.Trace.FeatureFlags
             return comparator(a, b);
         }
 
+        private static bool CompareSemanticVersion(ConditionOperator operation, object attributeValue, object? conditionValue)
+        {
+            if (!SemanticVersion.TryParse(attributeValue, out var attributeVersion)
+             || !SemanticVersion.TryParse(conditionValue, out var comparand))
+            {
+                return false;
+            }
+
+            var comparison = attributeVersion!.CompareTo(comparand);
+            return operation switch
+            {
+                ConditionOperator.SEMVER_EQ => comparison == 0,
+                ConditionOperator.SEMVER_NEQ => comparison != 0,
+                ConditionOperator.SEMVER_LT => comparison < 0,
+                ConditionOperator.SEMVER_LTE => comparison <= 0,
+                ConditionOperator.SEMVER_GT => comparison > 0,
+                ConditionOperator.SEMVER_GTE => comparison >= 0,
+                _ => false,
+            };
+        }
+
         private static bool MatchesShard(Shard shard, string? targetingKey)
         {
             if (shard.Ranges is null)
@@ -391,7 +438,7 @@ namespace Datadog.Trace.FeatureFlags
         }
 
         [TestingAndPrivateOnly]
-        internal static int GetShard(string salt, string? targetingKey, int totalShards)
+        internal static long GetShard(string salt, string? targetingKey, long totalShards)
         {
             if (StringUtil.IsNullOrEmpty(targetingKey))
             {
@@ -434,12 +481,7 @@ namespace Datadog.Trace.FeatureFlags
             // Special case "id": if not present, use targeting key
             if (name == "id" && !context.Attributes.ContainsKey(name))
             {
-                if (StringUtil.IsNullOrEmpty(context.TargetingKey))
-                {
-                    throw new MissingTargetingKeyException();
-                }
-
-                return context.TargetingKey;
+                return StringUtil.IsNullOrEmpty(context.TargetingKey) ? null : context.TargetingKey;
             }
 
             return context.GetAttribute(name);
