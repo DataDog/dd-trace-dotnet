@@ -464,7 +464,8 @@ partial class Build : NukeBuild
         {
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdTrace))
-                .EnableNoRestore()
+                .When(!IsGitlab, settings => settings.EnableNoRestore())
+                .When(IsGitlab && Framework is not null, settings => settings.SetFramework(Framework))
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
