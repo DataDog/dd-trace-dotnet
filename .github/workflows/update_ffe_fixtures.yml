@@ -44,16 +44,14 @@ jobs:
 
       - name: Create Pull Request
         if: steps.fixtures.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        uses: ./.github/actions/create-signed-pull-request
         with:
           token: ${{ steps.octo-sts.outputs.token }}
-          sign-commits: true
           branch: bot/ffe-fixtures-update
           commit-message: "test(ffe): update canonical fixtures"
           base: master
           title: "test(ffe): update canonical fixtures"
           draft: true
-          delete-branch: true
           labels: "area:dependabot,dependencies"
           body: |
             ## Motivation

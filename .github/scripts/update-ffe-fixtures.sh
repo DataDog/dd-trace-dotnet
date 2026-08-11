@@ -13,22 +13,27 @@ cleanup() {
 }
 trap cleanup EXIT
 
-destination_dir="${repo_root}/${fixture_destination}"
 source_dir="${work_dir}/source"
 snapshot_dir="${work_dir}/snapshot"
 
-if [[ -z "${fixture_destination}" || "${fixture_destination}" == "." || "${fixture_destination}" == "/" ]]; then
+if [[ -z "${fixture_destination}" || "${fixture_destination}" == "." || "${fixture_destination}" == "/" || "${fixture_destination}" == /* ]]; then
   echo "Refusing to update unsafe fixture destination: ${fixture_destination}" >&2
   exit 1
 fi
 
-case "${destination_dir}" in
-  "${repo_root}"/*) ;;
-  *)
-    echo "Refusing to update fixture destination outside the repository: ${destination_dir}" >&2
-    exit 1
-    ;;
-esac
+destination_dir="$(
+  python3 - "${repo_root}/${fixture_destination}" <<'PY'
+import pathlib
+import sys
+
+print(pathlib.Path(sys.argv[1]).resolve(strict=False))
+PY
+)"
+
+if [[ "${destination_dir}" == "${repo_root}" || "${destination_dir}" != "${repo_root}/"* ]]; then
+  echo "Refusing to update fixture destination outside the repository: ${destination_dir}" >&2
+  exit 1
+fi
 
 GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null git init --quiet "${source_dir}"
 GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null git -C "${source_dir}" remote add origin "https://github.com/${fixture_repository}.git"
