@@ -48,23 +48,14 @@ internal readonly ref struct SpanCharSplitter
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SpanSplitEnumerator GetEnumerator() => new(_source, _separator, _startIndex, _endIndex, _count);
 
-    internal ref struct SpanSplitEnumerator
+    [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal ref struct SpanSplitEnumerator(string source, char separator, int startIndex, int endIndex, int count)
     {
-        private readonly char _separator;
-        private readonly string _source;
-        private readonly int _endIndex;
-        private int _nextStartIndex;
-        private int _count;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SpanSplitEnumerator(string source, char separator, int startIndex, int endIndex, int count)
-        {
-            _source = source;
-            _separator = separator;
-            _endIndex = endIndex;
-            _nextStartIndex = startIndex;
-            _count = count;
-        }
+        private readonly char _separator = separator;
+        private readonly string _source = source;
+        private readonly int _endIndex = endIndex;
+        private int _nextStartIndex = startIndex;
+        private int _count = count;
 
         public SpanSplitValue Current { get; private set; }
 
