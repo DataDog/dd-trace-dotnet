@@ -23,8 +23,10 @@ internal sealed class FeatureFlagsSettings
     internal const string AgentlessSourceName = "agentless";
     internal const string RemoteConfigSourceName = "remote_config";
 
+    internal const string DefaultSite = "datadoghq.com";
+
     internal const double DefaultPollIntervalSeconds = 30;
-    internal const double DefaultRequestTimeoutSeconds = 5;
+    internal const double DefaultRequestTimeoutSeconds = 2;
     internal const int DefaultInitializationTimeoutMs = 30_000;
 
     // An interval above this is indistinguishable from "never poll" and is more likely a
@@ -77,6 +79,14 @@ internal sealed class FeatureFlagsSettings
                 DefaultRequestTimeoutSeconds,
                 maximumSeconds: null));
 
+        Site = config
+              .WithKeys(ConfigurationKeys.Site)
+              .AsString(DefaultSite, site => !StringUtil.IsNullOrEmpty(site?.Trim()));
+
+        Env = config.WithKeys(ConfigurationKeys.Environment).AsString();
+
+        ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+
         var initializationTimeoutMs = config
                                      .WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderInitializationTimeoutMs)
                                      .AsInt32(DefaultInitializationTimeoutMs, timeout => timeout > 0)
@@ -98,6 +108,21 @@ internal sealed class FeatureFlagsSettings
     /// Gets the configured override for the agentless endpoint, or <c>null</c> to derive it from the site.
     /// </summary>
     public string? AgentlessBaseUrl { get; }
+
+    /// <summary>
+    /// Gets the Datadog site the managed agentless endpoint is derived from.
+    /// </summary>
+    public string Site { get; }
+
+    /// <summary>
+    /// Gets the configured environment, sent to the agentless endpoint as <c>dd_env</c>.
+    /// </summary>
+    public string? Env { get; }
+
+    /// <summary>
+    /// Gets the API key, required by the managed agentless endpoint.
+    /// </summary>
+    public string? ApiKey { get; }
 
     /// <summary>
     /// Gets how often the agentless source polls for configuration.

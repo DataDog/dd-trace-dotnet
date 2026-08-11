@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.FeatureFlags.Rcm;
@@ -36,7 +37,9 @@ namespace Datadog.Trace.FeatureFlags
 
         private Action? _onNewConfigEventHander;
         private FeatureFlagsEvaluator? _evaluator;
+        private AgentlessConfigurationSource? _agentlessSource;
         private int _activated;
+        private int _disposed;
 
         internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
         {
@@ -87,11 +90,14 @@ namespace Datadog.Trace.FeatureFlags
 
         public void Dispose()
         {
+            Interlocked.Exchange(ref _disposed, 1);
+
             if (_rcmSubscriptionManager is not null && _rcmSubscription is not null)
             {
                 _rcmSubscriptionManager.Unsubscribe(_rcmSubscription);
             }
 
+            Interlocked.Exchange(ref _agentlessSource, null)?.Dispose();
             _exposureApi.Dispose();
         }
 
@@ -114,7 +120,22 @@ namespace Datadog.Trace.FeatureFlags
                     Log.Debug("FeatureFlagsModule::Activate -> Remote Configuration source is already subscribed");
                     break;
                 case FeatureFlagsSource.Agentless:
-                    Log.Debug("FeatureFlagsModule::Activate -> Agentless source is not yet wired up");
+                    // Polling is billable, so it starts here rather than at construction.
+                    var source = AgentlessConfigurationSource.Create(_settings, ApplyConfiguration);
+                    if (source is null)
+                    {
+                        break;
+                    }
+
+                    Interlocked.Exchange(ref _agentlessSource, source);
+                    if (Volatile.Read(ref _disposed) == 1)
+                    {
+                        // Disposed while we were creating it.
+                        Interlocked.Exchange(ref _agentlessSource, null)?.Dispose();
+                        break;
+                    }
+
+                    source.Start();
                     break;
             }
         }

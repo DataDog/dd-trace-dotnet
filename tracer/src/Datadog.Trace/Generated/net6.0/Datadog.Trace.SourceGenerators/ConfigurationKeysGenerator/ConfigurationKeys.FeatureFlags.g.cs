@@ -65,7 +65,7 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Configuration key for the request timeout, in seconds, used by the <c>agentless</c> configuration
         /// source.
-        /// Default value is <c>5</c>. Non-positive values are rejected and the default is used.
+        /// Default value is <c>2</c>. Non-positive values are rejected and the default is used.
         /// </summary>
         public const string FeatureFlagsConfigurationSourceAgentlessRequestTimeoutSeconds = "DD_FEATURE_FLAGS_CONFIGURATION_SOURCE_AGENTLESS_REQUEST_TIMEOUT_SECONDS";
 

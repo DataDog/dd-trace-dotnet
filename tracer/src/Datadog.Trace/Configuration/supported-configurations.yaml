@@ -3212,13 +3212,13 @@ supportedConfigurations:
   - implementation: A
     scope: managed
     type: decimal
-    default: '5'
+    default: '2'
     product: FeatureFlags
     const_name: FeatureFlagsConfigurationSourceAgentlessRequestTimeoutSeconds
     documentation: |-
       Configuration key for the request timeout, in seconds, used by the <c>agentless</c> configuration
       source.
-      Default value is <c>5</c>. Non-positive values are rejected and the default is used.
+      Default value is <c>2</c>. Non-positive values are rejected and the default is used.
   DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED:
   - implementation: A
     scope: managed
