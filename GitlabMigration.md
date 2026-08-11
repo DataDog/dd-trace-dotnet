@@ -1,6 +1,6 @@
 # GitLab CI migration plan and findings
 
-Last updated: 2026-08-07
+Last updated: 2026-08-11
 
 ## Purpose
 
@@ -211,11 +211,15 @@ The first end-to-end run of the generated child pipeline completed successfully.
 
 The next migration slice added a `build-linux-tracer-x64` producer on the `docker-in-docker:amd64` runner. The name follows Azure's `build_linux_tracer` stage and its `x64` matrix cell; x64 implies glibc here, while musl carries an explicit suffix. It mirrors Azure's three-part build: `Clean CompileManagedLoader` in the Debian .NET 10 builder, `BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests` in the CentOS 7 .NET 7 builder, and `BuildManagedTracerHome ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility` back in Debian. The job publishes a selective artifact for managed-unit-test consumers instead of Azure's entire working directory: monitoring home, managed binaries and reference assemblies, native symbols, and test diagnostics.
 
-The same build template now creates `build-linux-tracer-x64-musl`, matching Azure's Alpine matrix cell. Because both its managed and native phases use the Alpine .NET 10 builder, the job builds that image once and reuses it for all three sequential NUKE invocations. It produces an independent musl monitoring home, managed build state, native symbols, and tracer native-test results. Profiler, native-loader/native-wrapper tests, and packaging remain outside this producer.
+The same build template now creates `build-linux-tracer-x64-musl`, matching Azure's Alpine matrix cell. Because both its managed and native phases use the Alpine .NET 10 builder, the job builds that image once and reuses it for all three sequential NUKE invocations. It produces an independent musl monitoring home, managed build state, native symbols, and tracer native-test results. Profiler, native-loader/native-wrapper tests, and packaging remain outside this tracer producer.
 
 The first attempt used `docker.io/library/docker:27-cli` as the job image and was rejected while Kubernetes prepared the pod: the `third-party-registry` admission policy allows only approved registries. The Java tracer provides the applicable precedent: Docker-requiring jobs use `docker-in-docker:amd64`, and its image-building job uses the approved `486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1` image. The Linux producer now uses the same pinned ECR image. Java otherwise runs builds and tests directly in prebuilt GHCR builder images, while libdatadog uses approved ECR/`registry.ddbuild.io` images or delegates its internal build; this reinforces the planned follow-up to publish content-addressed .NET Linux builder images instead of rebuilding Debian and CentOS on every pipeline.
 
 The first complete Linux producer run was green in approximately 16:56. Repository and runner preparation took about 0:58, the Debian and CentOS builder images took about 2:25 and 4:31 respectively, the three NUKE phases took 0:11, 3:59, and 4:26, and artifact publication took about 0:19. All 76 tracer native tests passed, glibc compatibility validation and debug extraction succeeded, and both the selective archive and JUnit report uploaded successfully. As a short-term optimization, build the independent Debian and CentOS Docker images concurrently while keeping all NUKE invocations sequential because they share the mounted workspace and artifact directories. This could save up to roughly 2:25 on a cold run, subject to CPU, network, and Docker-daemon contention. Prebuilt content-addressed builder images remain the preferred long-term solution.
+
+The Linux integration-test prerequisites are now implemented as independent GitLab build producers. `build-linux-profiler-x64` mirrors Azure's CentOS 7 native build plus Debian compatibility-validation phases, while `build-linux-profiler-x64-musl` builds and validates in Alpine. Both run the profiler, native-wrapper, and native-loader native suites and retain the profiler monitoring home, native symbols, XML test results, logs, and dumps. `build-linux-universal-x64` uses the existing universal builder to produce and validate the native loader/wrapper outputs consumed by both x64 libc variants.
+
+Sample artifacts also mirror Azure's producer boundary. `build-samples-standalone` publishes `artifacts/bin`, while the ten-cell `build-samples-multi-version` matrix publishes `artifacts/publish` independently for `net48`, `netcoreapp2.1`, `netcoreapp3.0`, `netcoreapp3.1`, and .NET 5 through .NET 10. These jobs use the content-addressed Windows build image because Azure also builds the cross-platform sample artifacts on Windows. The prefilled `perform_comprehensive_testing` variable controls whether minor dependency-package versions are included. The two profiler cells, universal producer, standalone samples, and ten multi-version sample cells are implemented but require their first GitLab validation run before integration-test consumers are added.
 
 Linux managed unit tests use the same generated child-pipeline architecture as Windows. `GenerateGitlabLinuxUnitTestsPipeline` reads `GetTestingFrameworks(PlatformFamily.Linux)` and emits paired x64 glibc and musl jobs for every selected TFM: six jobs (`netcoreapp3.1`, `net9.0`, and `net10.0` on both libc variants) for a normal merge request and sixteen jobs for a thorough run. Existing `unit-tests-linux-x64:*` names remain the Debian/glibc cells; `unit-tests-linux-musl-x64:*` cells use Alpine.
 
@@ -233,6 +237,21 @@ The first consumer, `unit-tests-macos-amd64:net10.0`, was green. It validated ac
 
 Each macOS child installs the pinned 10.0.100 SDK under the checkout's `.dotnet` directory and, for older TFMs, installs only the requested x64 runtime into that same directory. Checkout-local CLI home and NuGet package directories avoid modifying the persistent shared runner globally. Every child retains TRX results, tracer/CI Visibility logs, and dumps, and requests the same short-lived dd-sts API key used by the Windows and Linux unit jobs. The generated default matrix (`netcoreapp3.1`, `net9.0`, and `net10.0`) is green; the thorough eight-framework macOS matrix remains to be validated.
 
+### Unit-test parity with Azure
+
+The GitLab managed-unit-test architecture now covers every platform, architecture, libc variant, and framework selected by Azure's unit-test matrices. Both systems derive their framework lists from `GetTestingFrameworks()`, and GitLab runs the same `BuildManagedUnitTests` and `RunManagedUnitTests` targets for each generated cell. Azure's macOS managed tests run on amd64 only; producing a universal native macOS artifact does not add a separate ARM64 unit-test matrix.
+
+| Managed matrix | Normal cells | Thorough cells | GitLab validation |
+| --- | ---: | ---: | --- |
+| Windows x64 | 4 | 9 | Normal and thorough green |
+| Linux x64, glibc and musl | 6 | 16 | Normal and thorough green |
+| Linux ARM64, glibc and musl | 8 | 12 | Normal green; thorough pending |
+| macOS amd64 | 3 | 8 | Normal green; thorough pending |
+
+This is managed-unit-test matrix parity. Windows already matches Azure by running the tracer, native-loader, and profiler native tests. Linux x64 runs the tracer native tests in both glibc and musl producers, and the newly added profiler producers run Azure's profiler, native-wrapper, and native-loader suites on both libc variants. Those new jobs still require CI validation. Azure and GitLab both omit explicit native-test targets from the Linux ARM64 and macOS build paths.
+
+Code-coverage parity is also pending. Azure passes `CodeCoverageEnabled` into managed unit tests when `run_code_coverage=true`; GitLab does not yet translate that variable or aggregate coverage artifacts. Consequently, the current milestone establishes ordinary managed-test coverage parity, while validation of the new Linux native producers, the two unvalidated thorough matrices, and coverage-mode execution remain follow-up work.
+
 ### Azure queue-time variable compatibility
 
 Azure exposes several queue-time variables used to expand coverage, force conditional stages, or diagnose failures. Do not add a variable to GitLab's prefilled **New pipeline** form until its complete behavior is wired and tested. A visible but unused control would imply coverage that the pipeline does not provide. Preserve the Azure name where practical during parallel validation, even when GitLab must translate it to a differently cased environment variable inside a container.
@@ -247,11 +266,11 @@ Azure exposes several queue-time variables used to expand coverage, force condit
 | `force_ssi_run` | No consumer exists in the current repository YAML, scripts, or NUKE code. | No effect. | Do not migrate or prefill. Confirm whether an external/retired pipeline once consumed it, then remove it from Azure if obsolete. |
 | `ForceDebugRun` | Sets `DD_TRACE_DEBUG=true` globally and makes NUKE enable debug tracing for test processes. NUKE also enables this for the Azure schedule named `Daily Debug Run`. Default `false`. | Not forwarded into current test containers. | Add as a diagnostic `false`/`true` option after log-volume behavior is validated in GitLab. Scheduled behavior must use `CI_PIPELINE_SOURCE` or an explicit schedule input. |
 | `GIT_PROFILER_REF` | No consumer exists in the current repository YAML, scripts, or NUKE code. | No effect. | Do not migrate or prefill. Confirm whether it is a remnant of an older profiler checkout workflow. |
-| `perform_comprehensive_testing` | Includes minor package versions in sample, integration, debugger, and profiler test builds. Default `false`. | Current build and unit-test jobs do not consume it. | Add when package-version integration/exploration coverage migrates. |
+| `perform_comprehensive_testing` | Includes minor package versions in sample, integration, debugger, and profiler test builds. Default `false`. | Implemented as a prefilled `false`/`true` variable and forwarded to the multi-version sample producer. Integration, debugger, and profiler consumers have not migrated. | Validate the expanded sample artifacts, then forward the same value when those test families migrate. |
 | `push_artifacts_to_azure_storage` | Tri-state release control: `true` uploads from any eligible run, `false` disables upload, and unset uploads only from main/release branches. Requires Azure storage credentials. | Not applicable to the current GitLab PoC. | Keep Azure-only during parallel validation. Replace it with an explicit GitLab release/publication policy rather than exposing an Azure-specific control prematurely. |
 | `random_seed` | Azure exposes it to scripts as `RANDOM_SEED`; the custom xUnit framework uses an integer seed to reproduce randomized collection and test ordering. Unset chooses a new random seed and logs it. | Not forwarded into current test containers. | High-value diagnostic candidate. Add a prefilled free-text value only after mapping it explicitly to `RANDOM_SEED` in Windows and Linux containers. |
 | `run_all_installer_tests` | Forces installer-related smoke stages that otherwise run on main/release or the automated Docker-image-bump PR. Default `false`. | Installer smoke stages have not migrated. | Add with installer smoke tests. |
-| `run_all_test_frameworks` | Expands NUKE's reduced TFM set to every supported framework. Main/release/hotfix non-scheduled Azure runs also expand automatically. Default `false` for ordinary PRs. | Implemented. The parent generator accepts the Azure-compatible lowercase name (and uppercase alias), and expands both Windows and Linux child pipelines. | Already exposed as a prefilled `false`/`true` dropdown. Validate one thorough run: 9 Windows jobs plus 8 glibc and 8 musl Linux jobs. |
+| `run_all_test_frameworks` | Expands NUKE's reduced TFM set to every supported framework. Main/release/hotfix non-scheduled Azure runs also expand automatically. Default `false` for ordinary PRs. | Implemented. The parent generators accept the Azure-compatible lowercase name (and uppercase alias), and expand the Windows, Linux x64, Linux ARM64, and macOS child pipelines. | Already exposed as a prefilled `false`/`true` dropdown. Windows and Linux x64 thorough runs are green; validate the 12-cell Linux ARM64 and 8-cell macOS thorough matrices. |
 | `run_code_coverage` | Sets Azure's `CodeCoverageEnabled`, which NUKE passes to managed, integration, debugger, and profiler test targets. Default `false`; coverage can break tests that inspect IL. | Not translated to NUKE's `CodeCoverageEnabled`, and no merged coverage artifact/report flow exists. | Migrate as a complete coverage feature—not just a visible boolean—after defining artifact aggregation, reporting, duration, and exclusions. |
 
 Suggested exposure order after `run_all_test_frameworks`: `random_seed`, `enable_crash_dumps`, and `ForceDebugRun` are useful diagnostics; `run_code_coverage` requires a dedicated coverage slice; area-force, comprehensive-package, and installer controls should land with the stages they affect. `force_ssi_run`, `GIT_PROFILER_REF`, and `push_artifacts_to_azure_storage` should not be added to the GitLab form under the current design.
@@ -322,7 +341,7 @@ Structural differences remain:
 
 - Azure runs tracer/loader tests in the Windows tracer build job and profiler tests in a separate Windows profiler build job. GitLab runs all three suites after its unified Windows build in the same job.
 - Azure retries each native-test command once. GitLab now forwards `DD_LOGGER_DD_API_KEY` to the test container but does not yet provide Azure's task-level retry.
-- GitLab now runs the tracer native tests inline in both Linux x64 producers: CentOS 7 for glibc and Alpine for musl. Azure's Linux profiler jobs additionally run profiler, native-loader, and native-wrapper tests; those suites have not yet moved to GitLab.
+- GitLab runs tracer native tests inline in both Linux x64 producers and now has separate glibc and musl profiler producers for the profiler, native-loader, and native-wrapper suites. The profiler producers await their first CI validation.
 - Azure's Linux ARM64 and macOS build stages do not currently invoke these native unit-test targets.
 
 ## Active Windows image work and findings
@@ -791,7 +810,7 @@ After deployment:
 - Rename the existing Windows `build` job to `build-windows-tracer-x64` after updating and validating every artifact, packaging, publishing, and child-pipeline consumer.
 - Confirm the concurrent-job and runner-capacity budget with CI Infrastructure.
 - Confirm whether recursive submodules are required.
-- Map the remaining Azure Linux x64 native-test and native-wrapper commands to explicit GitLab jobs; the Windows mapping is complete and green.
+- Validate the new Linux x64 profiler/native-loader/native-wrapper producers and their artifacts; the Windows mapping is complete and green.
 - Define the minimum artifact set for each downstream test job.
 - Confirm GitLab `needs` behavior and artifact naming for parallel matrices.
 - Decide whether Linux needs every proposed image variant in Phase 1.
