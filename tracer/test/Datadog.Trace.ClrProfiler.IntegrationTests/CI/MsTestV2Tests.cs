@@ -20,8 +20,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CiVisibility")]
     public class MsTestV2Tests(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests", output, pre224TestCount: 20, post224TestCount: 22);
 
+    [Trait("Area", "CiVisibility")]
     public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output, pre224TestCount: 19, post224TestCount: 21);
 
     [Collection("MsTestV2Tests")]

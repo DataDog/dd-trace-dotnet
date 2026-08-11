@@ -21,6 +21,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     [UsesVerify]
+    [Trait("Area", "CiVisibility")]
     public class MsTestV2EvpTests : TestingFrameworkEvpTest
     {
         private const string TestSuiteName = "Samples.MSTestTests.TestSuite";

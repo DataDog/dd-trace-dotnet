@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CiVisibility")]
     public class CodeOwnersTests
     {
         private readonly CodeOwners _githubCodeOwners;
