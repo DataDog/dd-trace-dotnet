@@ -73,7 +73,7 @@ public class FeatureFlagsSettingsTests
         var settings = CreateSettings(null, null, null);
 
         settings.PollInterval.Should().Be(TimeSpan.FromSeconds(30));
-        settings.RequestTimeout.Should().Be(TimeSpan.FromSeconds(2));
+        settings.RequestTimeout.Should().Be(TimeSpan.FromSeconds(5));
         settings.InitializationTimeout.Should().Be(TimeSpan.FromMilliseconds(30_000));
         settings.AgentlessBaseUrl.Should().BeNull();
     }
@@ -101,8 +101,8 @@ public class FeatureFlagsSettingsTests
 
     [Theory]
     [InlineData("1", 1)]
-    [InlineData("0", 2)]
-    [InlineData("-2", 2)]
+    [InlineData("0", 5)]
+    [InlineData("-2", 5)]
     public void ReadsRequestTimeout(string configured, double expectedSeconds)
     {
         var settings = CreateSettings(

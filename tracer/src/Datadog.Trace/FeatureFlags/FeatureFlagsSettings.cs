@@ -26,7 +26,7 @@ internal sealed class FeatureFlagsSettings
     internal const string DefaultSite = "datadoghq.com";
 
     internal const double DefaultPollIntervalSeconds = 30;
-    internal const double DefaultRequestTimeoutSeconds = 2;
+    internal const double DefaultRequestTimeoutSeconds = 5;
     internal const int DefaultInitializationTimeoutMs = 30_000;
 
     // An interval above this is indistinguishable from "never poll" and is more likely a
