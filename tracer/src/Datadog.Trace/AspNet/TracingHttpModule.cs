@@ -18,6 +18,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
@@ -82,8 +83,54 @@ namespace Datadog.Trace.AspNet
         {
         }
 
+        /// <summary>
+        /// Runs the AppSec and IAST request hooks against the span tracking the request. Shared by the
+        /// usual path and by a transferred request, which reuses the span of the request it came from.
+        /// </summary>
+        private static void ReportToSecurityAndIast(Scope scope, HttpContext httpContext, HttpRequest httpRequest)
+        {
+            var security = Security.Instance;
+            if (security.AppsecEnabled)
+            {
+                var securityCoordinator = SecurityCoordinator.Get(security, scope.Span, httpContext);
+                securityCoordinator.Reporter.ReportWafInitInfoOnce(security.WafInitResult);
+
+                // request args
+                var args = securityCoordinator.GetBasicRequestArgsForWaf();
+
+                // body args
+                if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
+                {
+                    var bodyArgs = securityCoordinator.GetBodyFromRequest();
+                    if (bodyArgs is not null)
+                    {
+                        args.Add(AddressesConstants.RequestBody, bodyArgs);
+                    }
+                }
+
+                securityCoordinator.BlockAndReport(args, isInHttpTracingModule: true);
+            }
+
+            var iastInstance = Iast.Iast.Instance;
+            if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
+            {
+                var traceContext = scope.Span?.Context?.TraceContext;
+                traceContext?.EnableIastInRequest();
+                traceContext?.IastRequestContext?.AddRequestData(httpRequest);
+            }
+        }
+
         private static string BuildResourceName(Tracer tracer, HttpRequest httpRequest)
         {
+            if (tracer.Settings.OtelSemanticsEnabled)
+            {
+                // The OpenTelemetry HTTP span specification requires the span name to be
+                // "{method} {http.route}", or just "{method}" when no route is available. Falling back
+                // to the URI path is explicitly not allowed, as it makes the name high-cardinality.
+                // The route is added later by the MVC / Web API integrations, if the request matched one.
+                return HttpSemanticConventions.GetServerResourceNameFromRawMethod(httpRequest.HttpMethod);
+            }
+
             var url = tracer.Settings.BypassHttpRequestUrlCachingEnabled
                                ? RequestDataHelper.BuildUrl(httpRequest)
                                : RequestDataHelper.GetUrl(httpRequest);
@@ -180,10 +227,24 @@ namespace Datadog.Trace.AspNet
                     }
                 }
 
+                var otelSemanticsEnabled = tracer.Settings.OtelSemanticsEnabled;
+
+                // HttpServerUtility.TransferRequest re-runs the pipeline with a fresh HttpContext but
+                // the same ExecutionContext, so the span the original request started is still active.
+                // The OpenTelemetry conventions describe a single HTTP server span per inbound request,
+                // so track the transferred request against that span rather than nesting a second
+                // server span inside it. This pipeline still produces the response the client sees, and
+                // its EndRequest runs first, so it is the one that stamps the status code onto the span.
+                if (otelSemanticsEnabled && HttpSemanticConventions.GetActiveHttpServerScope(tracer) is { } reusedScope)
+                {
+                    httpContext.Items[_httpContextScopeKey] = new ScopeContainer(reusedScope, proxyScope: null, ownsScope: false);
+                    shouldDisposeScope = false;
+                    ReportToSecurityAndIast(reusedScope, httpContext, httpRequest);
+                    return;
+                }
+
                 string host = requestHeaders.Get("Host");
                 var userAgent = requestHeaders.Get(HttpHeaderNames.UserAgent);
-                string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
-                var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
                 var tags = new WebTags();
                 // FIXME: InstrumentationName should be added to InstrumentationTags
                 tags.SetTag("component", "aspnet");
@@ -194,7 +255,31 @@ namespace Datadog.Trace.AspNet
                 var resourceName = tracer.CurrentTraceSettings.HasResourceBasedSamplingRule
                                        ? BuildResourceName(tracer, httpRequest)
                                        : null;
-                scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags);
+
+                if (otelSemanticsEnabled)
+                {
+                    var requestUri = tracer.Settings.BypassHttpRequestUrlCachingEnabled
+                                                            ? RequestDataHelper.BuildUrl(httpRequest)
+                                                            : RequestDataHelper.GetUrl(httpRequest);
+
+                    HttpSemanticConventions.SetHttpServerRequestValues(
+                        scope.Span,
+                        tags,
+                        resourceName: resourceName,
+                        originalMethod: httpRequest.HttpMethod,
+                        userAgent: userAgent,
+                        protocol: RequestDataHelper.GetServerProtocol(httpRequest),
+                        hostHeader: host,
+                        requestUri: requestUri,
+                        queryStringManager: tracer.TracerManager.QueryStringManager);
+                }
+                else
+                {
+                    var httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
+                    var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
+                    scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags);
+                }
+
                 tracer.TracerManager.SpanContextPropagator.AddHeadersToSpanAsTags(scope.Span, headers, tracer.CurrentTraceSettings.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpRequestHeadersTagPrefix);
                 tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(scope.Span, headers);
                 if (inferredProxyScope?.Span is { } proxySpan)
@@ -237,35 +322,7 @@ namespace Datadog.Trace.AspNet
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
-                var security = Security.Instance;
-                if (security.AppsecEnabled)
-                {
-                    var securityCoordinator = SecurityCoordinator.Get(security, scope.Span, httpContext);
-                    securityCoordinator.Reporter.ReportWafInitInfoOnce(security.WafInitResult);
-
-                    // request args
-                    var args = securityCoordinator.GetBasicRequestArgsForWaf();
-
-                    // body args
-                    if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
-                    {
-                        var bodyArgs = securityCoordinator.GetBodyFromRequest();
-                        if (bodyArgs is not null)
-                        {
-                            args.Add(AddressesConstants.RequestBody, bodyArgs);
-                        }
-                    }
-
-                    securityCoordinator.BlockAndReport(args, isInHttpTracingModule: true);
-                }
-
-                var iastInstance = Iast.Iast.Instance;
-                if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
-                {
-                    var traceContext = scope.Span?.Context?.TraceContext;
-                    traceContext?.EnableIastInRequest();
-                    traceContext?.IastRequestContext?.AddRequestData(httpRequest);
-                }
+                ReportToSecurityAndIast(scope, httpContext, httpRequest);
             }
             catch (Exception ex)
             {
@@ -427,31 +484,40 @@ namespace Datadog.Trace.AspNet
                             AddHeaderTagsFromHttpResponse(app.Context, proxyScope);
                         }
 
-                        if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
-                         && !string.IsNullOrEmpty(resourceName))
+                        // A transferred request must not rename the span of the request that
+                        // transferred to it: the name describes the request the client made.
+                        if (container.OwnsScope)
                         {
-                            currentSpan.ResourceName = resourceName;
-                        }
-                        else
-                        {
-                            currentSpan.ResourceName = BuildResourceName(tracer, app.Request);
+                            if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
+                             && !string.IsNullOrEmpty(resourceName))
+                            {
+                                currentSpan.ResourceName = resourceName;
+                            }
+                            else
+                            {
+                                currentSpan.ResourceName = BuildResourceName(tracer, app.Request);
+                            }
                         }
                     }
                     finally
                     {
-                        try
+                        if (container.OwnsScope)
                         {
-                            if (scope.Span.ResourceName is null)
+                            try
                             {
-                                scope.Span.ResourceName = BuildResourceName(tracer, app.Request);
+                                if (scope.Span.ResourceName is null)
+                                {
+                                    scope.Span.ResourceName = BuildResourceName(tracer, app.Request);
+                                }
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Debug(ex, "Unable to set fallback resource name.");
+                            catch (Exception ex)
+                            {
+                                Log.Debug(ex, "Unable to set fallback resource name.");
+                            }
+
+                            scope.Dispose();
                         }
 
-                        scope.Dispose();
                         proxyScope?.Dispose();
                         // Clear the context to make sure another TracingHttpModule doesn't try to close the same scope
                         TryClearContext(app.Context);
@@ -536,13 +602,22 @@ namespace Datadog.Trace.AspNet
         /// </summary>
         internal sealed class ScopeContainer
         {
-            public ScopeContainer(Scope scope, Scope proxyScope = null)
+            public ScopeContainer(Scope scope, Scope proxyScope = null, bool ownsScope = true)
             {
                 Scope = scope;
                 ProxyScope = proxyScope;
+                OwnsScope = ownsScope;
             }
 
             public Scope Scope { get; }
+
+            /// <summary>
+            /// Gets a value indicating whether this request started the scope, and is therefore the
+            /// one that names and finishes it. <c>false</c> for a request produced by
+            /// <see cref="HttpServerUtility.TransferRequest(string)"/> under OpenTelemetry semantics,
+            /// where the span belongs to the request that transferred to this one.
+            /// </summary>
+            public bool OwnsScope { get; }
 
             /// <summary>
             /// Gets the inferred proxy scope. Only present when inferred proxy spans are enabled
