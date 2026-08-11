@@ -47,6 +47,26 @@ namespace Datadog.Trace.AspNet
 
         internal static Scope? TryPeekScope(HttpContext? context, string key) => ExtractScope(context, key, Peek);
 
+        /// <summary>
+        /// Gets the scope an AppSec check should report against. With OpenTelemetry semantics the MVC
+        /// and Web API integrations don't create a span of their own -- a request has a single HTTP
+        /// server span -- so there is nothing under <paramref name="key"/> and the active span, which is
+        /// that server span, is used instead.
+        /// </summary>
+        /// <param name="context">The context of the current request</param>
+        /// <param name="key">The <see cref="HttpContext.Items"/> key the integration pushes its scope under</param>
+        internal static Scope? TryPeekScopeOrServerScope(HttpContext? context, string key)
+        {
+            var scope = TryPeekScope(context, key);
+            if (scope is not null)
+            {
+                return scope;
+            }
+
+            var tracer = Tracer.Instance;
+            return tracer.Settings.OtelSemanticsEnabled ? tracer.InternalActiveScope : null;
+        }
+
         private static Scope? ExtractScope(HttpContext? context, string key, Func<Stack<Scope>, Scope> getter)
         {
             var item = context?.Items[key];

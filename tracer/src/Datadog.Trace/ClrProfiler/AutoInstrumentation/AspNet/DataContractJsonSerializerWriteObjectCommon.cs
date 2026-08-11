@@ -127,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
             response = httpContext.Response;
             scope = SharedItems.TryPeekScope(httpContext, AspNetMvcIntegration.HttpContextKey)
-                 ?? SharedItems.TryPeekScope(httpContext, AspNetWebApi2Integration.HttpContextKey);
+                 ?? SharedItems.TryPeekScopeOrServerScope(httpContext, AspNetWebApi2Integration.HttpContextKey);
             return scope is not null;
         }
 
