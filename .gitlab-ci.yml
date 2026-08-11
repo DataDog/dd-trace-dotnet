@@ -857,6 +857,204 @@ unit-tests-linux-x64:
   variables:
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
+integration-tests-linux-x64-net10:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: test
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
+  tags: ["docker-in-docker:amd64"]
+  timeout: 90m
+  needs:
+    - job: build-linux-tracer-x64
+      artifacts: true
+    - job: build-linux-profiler-x64
+      artifacts: true
+    - job: build-linux-universal-x64
+      artifacts: true
+    - job: build-samples-standalone
+      artifacts: true
+    - job: build-samples-multi-version
+      parallel:
+        matrix:
+          - FRAMEWORK: [net10.0]
+      artifacts: true
+  variables:
+    DOCKER_BUILDKIT: "1"
+    FRAMEWORK: net10.0
+    BASE_IMAGE: debian
+    DOTNET_SDK_VERSION: "10.0.100"
+  script:
+    - |
+      set -eu
+
+      base_tester_image="dd-trace-dotnet/${BASE_IMAGE}-integration-base:${CI_JOB_ID}"
+      tester_image="dd-trace-dotnet/${BASE_IMAGE}-tester:${DOTNET_SDK_VERSION}"
+      compose_project="dd-trace-dotnet-${CI_JOB_ID}"
+      include_minor_package_versions=false
+      include_all_test_frameworks=false
+      if [ "${perform_comprehensive_testing:-false}" = "true" ]; then
+        include_minor_package_versions=true
+      fi
+      if [ "${run_all_test_frameworks:-false}" = "true" ]; then
+        include_all_test_frameworks=true
+      fi
+
+      # Azure publishes the universal loader/wrapper from linux-musl-x64 and
+      # downloads it into the target runtime folder. Recreate that merge after
+      # GitLab downloads the independent producer artifacts.
+      mkdir -p artifacts/monitoring-home/linux-x64 artifacts/build_data/infra_logs
+      cp -a artifacts/monitoring-home/linux-musl-x64/. artifacts/monitoring-home/linux-x64/
+
+      echo "Building ${BASE_IMAGE} integration-test image for ${FRAMEWORK}"
+      docker build \
+        --build-arg "DOTNETSDK_VERSION=${DOTNET_SDK_VERSION}" \
+        --tag "$base_tester_image" \
+        --target tester \
+        --file "tracer/build/_build/docker/${BASE_IMAGE}.dockerfile" \
+        tracer/build/_build
+
+      echo "Adding Datadog CA certificates to the integration-test image"
+      docker build \
+        --build-arg "TESTER_IMAGE=${base_tester_image}" \
+        --tag "$tester_image" \
+        --file .gitlab/linux-unit-tests.dockerfile \
+        .gitlab
+
+      if [ -z "${DD_LOGGER_DD_API_KEY:-}" ]; then
+        if [ -z "${DD_STS_OIDC_TOKEN:-}" ]; then
+          echo "DD_STS_OIDC_TOKEN is unavailable" >&2
+          exit 1
+        fi
+
+        DD_LOGGER_DD_API_KEY="$(
+          docker run --rm \
+            --env DD_STS_OIDC_TOKEN \
+            "$tester_image" \
+            sh -eu -c '
+              response="$(curl --fail --silent --show-error \
+                --header "Authorization: Bearer ${DD_STS_OIDC_TOKEN}" \
+                "https://dd-sts.us1.ddbuild.io/sts/datadog/exchange?policy=apm-sdks-api-key")"
+              printf "%s" "$response" | sed -n '\''s/.*"api_key"[[:space:]]*:[[:space:]]*"\([^" ]*\)".*/\1/p'\''
+            '
+        )"
+        if [ -z "$DD_LOGGER_DD_API_KEY" ]; then
+          echo "The dd-sts response did not contain an API key" >&2
+          exit 1
+        fi
+
+        export DD_LOGGER_DD_API_KEY
+        echo "CI Visibility API key configured using dd-sts"
+      fi
+
+      echo "Building non-Docker Tracer integration tests for ${FRAMEWORK}"
+      docker run --rm \
+        --cap-add=SYS_PTRACE \
+        --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
+        --env NugetPackageDirectory=/project/packages \
+        --env artifacts=/project/artifacts/output \
+        --env CI=true \
+        --env DD_LOGGER_DD_API_KEY \
+        --env "IncludeAllTestFrameworks=${include_all_test_frameworks}" \
+        --env NUKE_TELEMETRY_OPTOUT=1 \
+        --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+        "$tester_image" \
+        dotnet /build/bin/Debug/_build.dll \
+        BuildIntegrationTests CompileTrimmingSamples \
+        --framework "$FRAMEWORK" \
+        --IncludeTestsRequiringDocker false \
+        --TestAllPackageVersions true \
+        --IncludeMinorPackageVersions "$include_minor_package_versions" \
+        --NugetPackageDirectory /project/packages
+
+      cleanup() {
+        baseImage="$BASE_IMAGE" framework="$FRAMEWORK" \
+          docker compose -f docker-compose.yml -p "$compose_project" down --remove-orphans || true
+      }
+      trap cleanup EXIT
+
+      echo "Running non-Docker Tracer integration tests for ${FRAMEWORK}"
+      test_exit_code=0
+      baseImage="$BASE_IMAGE" framework="$FRAMEWORK" \
+        docker compose -f docker-compose.yml -p "$compose_project" \
+          run --no-deps --rm \
+          -e baseImage="$BASE_IMAGE" \
+          -e framework="$FRAMEWORK" \
+          -e CodeCoverageEnabled=false \
+          -e IncludeTestsRequiringDocker=false \
+          -e IncludeAllTestFrameworks="$include_all_test_frameworks" \
+          -e TestAllPackageVersions=true \
+          -e IncludeMinorPackageVersions="$include_minor_package_versions" \
+          -e Area=Tracer \
+          -e enable_crash_dumps=true \
+          -e DD_LOGGER_ENABLED=true \
+          -e DD_LOGGER_DD_API_KEY \
+          -e DD_LOGGER_DD_SERVICE=dd-trace-dotnet \
+          -e DD_LOGGER_DD_TRACE_LOG_PATH=/project/artifacts/build_data/infra_logs/integration-ci-visibility.log \
+          -e "DD_LOGGER_DD_TAGS=test.configuration.job:${CI_JOB_NAME}" \
+          -e GITLAB_CI \
+          -e CI_PROJECT_URL \
+          -e CI_PIPELINE_ID \
+          -e CI_JOB_ID \
+          -e CI_REPOSITORY_URL \
+          -e CI_COMMIT_SHA \
+          -e CI_COMMIT_BRANCH \
+          -e CI_COMMIT_TAG \
+          -e CI_COMMIT_REF_NAME \
+          -e CI_PROJECT_DIR=/project \
+          -e CI_PROJECT_PATH \
+          -e CI_PROJECT_NAME \
+          -e CI_PIPELINE_IID \
+          -e CI_PIPELINE_URL \
+          -e CI_JOB_URL \
+          -e CI_JOB_NAME \
+          -e CI_JOB_NAME_SLUG \
+          -e CI_JOB_STAGE \
+          -e CI_COMMIT_MESSAGE \
+          -e CI_COMMIT_AUTHOR \
+          -e CI_COMMIT_TIMESTAMP \
+          -e CI_RUNNER_ID \
+          -e CI_RUNNER_TAGS \
+          -e CI_MERGE_REQUEST_SOURCE_BRANCH_SHA \
+          -e CI_MERGE_REQUEST_TARGET_BRANCH_SHA \
+          -e CI_MERGE_REQUEST_DIFF_BASE_SHA \
+          -e CI_MERGE_REQUEST_TARGET_BRANCH_NAME \
+          -e CI_MERGE_REQUEST_IID \
+          IntegrationTests || test_exit_code=$?
+
+      log_check_exit_code=0
+      docker run --rm \
+        --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
+        --env NugetPackageDirectory=/project/packages \
+        --env artifacts=/project/artifacts/output \
+        --env CI=true \
+        "$tester_image" \
+        dotnet /build/bin/Debug/_build.dll CheckBuildLogsForErrors || log_check_exit_code=$?
+
+      if [ "$test_exit_code" -ne 0 ]; then
+        echo "Integration tests exited with code ${test_exit_code}" >&2
+        exit "$test_exit_code"
+      fi
+
+      if [ "$log_check_exit_code" -ne 0 ]; then
+        echo "Build-log validation exited with code ${log_check_exit_code}" >&2
+        exit "$log_check_exit_code"
+      fi
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    name: "integration-tests-linux-x64-$FRAMEWORK"
+    paths:
+      - artifacts/build_data/results
+      - artifacts/build_data/logs
+      - artifacts/build_data/infra_logs
+      - artifacts/build_data/dumps
+      - tracer/test/snapshots
+  id_tokens:
+    DD_STS_OIDC_TOKEN:
+      aud: rapid-seceng-sit
+
 unit-tests-linux-arm64:
   except:
     variables:
