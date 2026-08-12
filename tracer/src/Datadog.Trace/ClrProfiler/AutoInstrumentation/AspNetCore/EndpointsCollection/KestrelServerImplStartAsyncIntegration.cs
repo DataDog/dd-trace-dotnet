@@ -57,7 +57,12 @@ public sealed class KestrelServerImplStartAsyncIntegration
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "API Security: Failed to collect endpoints.");
+            // Reading EndpointDataSource.Endpoints runs third-party code that can throw for reasons
+            // outside our control (e.g. the Azure Functions worker builds its endpoints lazily and
+            // rejects a malformed route template). Endpoints collection is best-effort, so a failure
+            // here degrades the feature without affecting the application: warn rather than report
+            // an error to telemetry.
+            Log.Warning(ex, "API Security: Failed to collect endpoints.");
         }
 
         return CallTargetState.GetDefault();
