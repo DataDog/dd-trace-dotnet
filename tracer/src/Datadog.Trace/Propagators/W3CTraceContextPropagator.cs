@@ -314,14 +314,19 @@ namespace Datadog.Trace.Propagators
                 return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null);
             }
 
-            SplitTraceStateValues(new StringSlice(header!).Trim(), out var ddValues, out var precedingMembers, out var succeedingMembers, out _);
+            SplitTraceStateValues(
+                header!.AsSpan().Trim(),
+                out var ddValues,
+                out var precedingMembers,
+                out var succeedingMembers,
+                out _);
             var additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
 
             return ParseDdMember(ddValues, additionalValues);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static W3CTraceState ParseDdMember(StringSlice ddValues, string? additionalValues)
+        private static W3CTraceState ParseDdMember(ReadOnlySpan<char> ddValues, string? additionalValues)
         {
             if (ddValues.Length < 3)
             {
@@ -332,39 +337,39 @@ namespace Datadog.Trace.Propagators
             }
 
             int? samplingPriority = null;
-            StringSlice origin = default;
-            StringSlice lastParent = default;
+            ReadOnlySpan<char> origin = default;
+            ReadOnlySpan<char> lastParent = default;
             var propagatedTagsBuilder = StringBuilderCache.Acquire();
 
             try
             {
-                foreach (var member in new SpanCharSplitter(ddValues.Value!, TraceStateDatadogPairsSeparator, ddValues.Offset, ddValues.Length, count: int.MaxValue))
+                foreach (var member in new SpanCharSplitter(ddValues, TraceStateDatadogPairsSeparator, count: int.MaxValue))
                 {
-                    if (!ExtractKeyValue(member.Source, member.StartIndex, member.Length, out var name, out var value))
+                    if (!ExtractKeyValue(member.AsSpan(), out var name, out var value))
                     {
                         continue;
                     }
 
-                    if (name.Equals(TraceStateSamplingPriorityKey, StringComparison.Ordinal))
+                    if (name.Equals(TraceStateSamplingPriorityKey.AsSpan(), StringComparison.Ordinal))
                     {
                         samplingPriority = SamplingPriorityToInt32(value);
                     }
-                    else if (name.Equals(TraceStateOriginKey, StringComparison.Ordinal))
+                    else if (name.Equals(TraceStateOriginKey.AsSpan(), StringComparison.Ordinal))
                     {
                         origin = value;
                     }
-                    else if (name.Equals(TraceStateLastParentKey, StringComparison.Ordinal))
+                    else if (name.Equals(TraceStateLastParentKey.AsSpan(), StringComparison.Ordinal))
                     {
                         lastParent = value;
                     }
-                    else if (name.StartsWith(PropagatedTagPrefix))
+                    else if (name.StartsWith(PropagatedTagPrefix.AsSpan(), StringComparison.Ordinal))
                     {
                         value = ReplaceCharacters(value, LowerBound, UpperBound, OutOfBoundsReplacement, ExtractPropagatedTagValueReplacements);
 
                         propagatedTagsBuilder.Append(TagPropagation.PropagatedTagPrefix)
-                                             .Append(name.Value, name.Offset + 2, name.Length - 2)
+                                             .Append(name.Slice(2))
                                              .Append(TagPropagation.KeyValueSeparator)
-                                             .Append(value.Value, value.Offset, value.Length)
+                                             .Append(value)
                                              .Append(TagPropagation.TagPairSeparator);
                     }
                 }
@@ -396,19 +401,19 @@ namespace Datadog.Trace.Propagators
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool ExtractKeyValue(string source, int startIndex, int length, out StringSlice name, out StringSlice value)
+        private static bool ExtractKeyValue(ReadOnlySpan<char> source, out ReadOnlySpan<char> name, out ReadOnlySpan<char> value)
         {
-            var colonIndex = source.AsSpan(startIndex, length).IndexOf(TraceStateDatadogKeyValueSeparator);
+            var colonIndex = source.IndexOf(TraceStateDatadogKeyValueSeparator);
 
-            if (colonIndex <= 0 || colonIndex >= length - 1)
+            if (colonIndex <= 0 || colonIndex >= source.Length - 1)
             {
                 name = default;
                 value = default;
                 return false;
             }
 
-            name = StringSlice.FromValidatedSlice(source, startIndex, colonIndex);
-            value = StringSlice.FromValidatedSlice(source, startIndex + colonIndex + 1, length - colonIndex - 1);
+            name = source.Slice(0, colonIndex);
+            value = source.Slice(colonIndex + 1);
             return true;
         }
 
@@ -423,23 +428,39 @@ namespace Datadog.Trace.Propagators
                 return;
             }
 
-            SplitTraceStateValues(new StringSlice(header).Trim(), out var ddValueSegment, out var precedingMembers, out var succeedingMembers, out var hasDdValues);
+            SplitTraceStateValues(
+                header.AsSpan().Trim(),
+                out var ddValueSegment,
+                out var precedingMembers,
+                out var succeedingMembers,
+                out var hasDdValues);
             ddValues = hasDdValues ? ddValueSegment.ToString() : null;
             additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
         }
 
-        private static void SplitTraceStateValues(StringSlice header, out StringSlice ddValues, out StringSlice precedingMembers, out StringSlice succeedingMembers, out bool hasDdValues)
+        private static void SplitTraceStateValues(
+            ReadOnlySpan<char> header,
+            out ReadOnlySpan<char> ddValues,
+            out ReadOnlySpan<char> precedingMembers,
+            out ReadOnlySpan<char> succeedingMembers,
+            out bool hasDdValues)
         {
             ExtractMember(header, "dd=", out ddValues, out precedingMembers, out succeedingMembers, out hasDdValues);
         }
 
-        private static void ExtractMember(StringSlice header, string prefix, out StringSlice value, out StringSlice precedingMembers, out StringSlice succeedingMembers, out bool found)
+        private static void ExtractMember(
+            ReadOnlySpan<char> header,
+            string prefix,
+            out ReadOnlySpan<char> value,
+            out ReadOnlySpan<char> precedingMembers,
+            out ReadOnlySpan<char> succeedingMembers,
+            out bool found)
         {
             var startIndex = 0;
 
-            while (startIndex < header.Length && !header.Slice(startIndex).StartsWith(prefix))
+            while (startIndex < header.Length && !header.Slice(startIndex).StartsWith(prefix.AsSpan(), StringComparison.Ordinal))
             {
-                var separatorIndex = header.IndexOf(TraceStateHeaderValuesSeparator, startIndex);
+                var separatorIndex = header.Slice(startIndex).IndexOf(TraceStateHeaderValuesSeparator);
 
                 if (separatorIndex < 0)
                 {
@@ -450,7 +471,7 @@ namespace Datadog.Trace.Propagators
                     return;
                 }
 
-                startIndex = separatorIndex + 1;
+                startIndex += separatorIndex + 1;
             }
 
             if (startIndex == header.Length)
@@ -462,7 +483,8 @@ namespace Datadog.Trace.Propagators
                 return;
             }
 
-            var endIndex = header.IndexOf(TraceStateHeaderValuesSeparator, startIndex + prefix.Length);
+            var endIndex = header.Slice(startIndex + prefix.Length).IndexOf(TraceStateHeaderValuesSeparator);
+            endIndex = endIndex < 0 ? -1 : startIndex + prefix.Length + endIndex;
             endIndex = endIndex < 0 ? header.Length : endIndex;
 
             value = header.Slice(startIndex + prefix.Length, endIndex - startIndex - prefix.Length);
@@ -472,26 +494,28 @@ namespace Datadog.Trace.Propagators
             succeedingMembers = endIndex == header.Length ? default : header.Slice(endIndex + 1);
         }
 
-        private static string? GetAdditionalValues(StringSlice precedingMembers, StringSlice succeedingMembers)
+        private static string? GetAdditionalValues(
+            ReadOnlySpan<char> precedingMembers,
+            ReadOnlySpan<char> succeedingMembers)
         {
-            if (precedingMembers.Value is null)
+            if (precedingMembers.IsEmpty)
             {
-                return succeedingMembers.Value is null ? null : succeedingMembers.ToString();
+                return succeedingMembers.IsEmpty ? null : succeedingMembers.ToString();
             }
 
-            if (succeedingMembers.Value is null)
+            if (succeedingMembers.IsEmpty)
             {
                 return precedingMembers.ToString();
             }
 
             var sb = StringBuilderCache.Acquire(precedingMembers.Length + succeedingMembers.Length + 1);
-            sb.Append(precedingMembers.Value, precedingMembers.Offset, precedingMembers.Length)
+            sb.Append(precedingMembers)
               .Append(TraceStateHeaderValuesSeparator)
-              .Append(succeedingMembers.Value, succeedingMembers.Offset, succeedingMembers.Length);
+              .Append(succeedingMembers);
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        private static int? SamplingPriorityToInt32(StringSlice samplingPriority)
+        private static int? SamplingPriorityToInt32(ReadOnlySpan<char> samplingPriority)
         {
             return samplingPriority.Length switch
                    {
@@ -500,7 +524,11 @@ namespace Datadog.Trace.Propagators
                        1 when samplingPriority[0] == '1' => 1,
                        1 when samplingPriority[0] == '0' => 0,
                        2 when samplingPriority[0] == '-' && samplingPriority[1] == '1' => -1,
-                       _ => samplingPriority.TryParseInt32(out var result) ? result : null,
+#if NETCOREAPP
+                       _ => int.TryParse(samplingPriority, out var result) ? result : null,
+#else
+                       _ => int.TryParse(samplingPriority.ToString(), out var result) ? result : null,
+#endif
                    };
         }
 
@@ -689,12 +717,12 @@ namespace Datadog.Trace.Propagators
         }
 
         public static bool NeedsCharacterReplacement(string value, char lowerBound, char upperBound, KeyValuePair<char, char>[] replacements)
-            => NeedsCharacterReplacement(new StringSlice(value), lowerBound, upperBound, replacements);
+            => NeedsCharacterReplacement(value.AsSpan(), lowerBound, upperBound, replacements);
 
         public static string ReplaceCharacters(string value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
-            => ReplaceCharacters(new StringSlice(value), lowerBound, upperBound, outOfBoundsReplacement, replacements).ToString();
+            => ReplaceCharacters(value.AsSpan(), lowerBound, upperBound, outOfBoundsReplacement, replacements).ToString();
 
-        private static bool NeedsCharacterReplacement(StringSlice value, char lowerBound, char upperBound, KeyValuePair<char, char>[] replacements)
+        private static bool NeedsCharacterReplacement(ReadOnlySpan<char> value, char lowerBound, char upperBound, KeyValuePair<char, char>[] replacements)
         {
             for (var index = 0; index < value.Length; index++)
             {
@@ -717,7 +745,7 @@ namespace Datadog.Trace.Propagators
             return false;
         }
 
-        private static StringSlice ReplaceCharacters(StringSlice value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
+        private static ReadOnlySpan<char> ReplaceCharacters(ReadOnlySpan<char> value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
         {
             if (!NeedsCharacterReplacement(value, lowerBound, upperBound, replacements))
             {
@@ -725,7 +753,7 @@ namespace Datadog.Trace.Propagators
             }
 
             var sb = StringBuilderCache.Acquire(value.Length);
-            sb.Append(value.Value, value.Offset, value.Length);
+            sb.Append(value);
 
             for (var index = 0; index < sb.Length; index++)
             {
@@ -740,7 +768,7 @@ namespace Datadog.Trace.Propagators
                 sb.Replace(replacement.Key, replacement.Value);
             }
 
-            return new StringSlice(StringBuilderCache.GetStringAndRelease(sb));
+            return StringBuilderCache.GetStringAndRelease(sb).AsSpan();
         }
 
         internal readonly struct TraceTagAppender : TraceTagCollection.ITagEnumerator
@@ -761,13 +789,13 @@ namespace Datadog.Trace.Propagators
                 if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal) &&
                     !tag.Key.Equals(Tags.Propagated.TraceIdUpper, StringComparison.Ordinal))
                 {
-                    var key = new StringSlice(tag.Key, offset: 6, tag.Key.Length - 6);
+                    var key = tag.Key.AsSpan(6);
                     var tagKey = ReplaceCharacters(key, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagKeyReplacements);
-                    var tagValue = ReplaceCharacters(new StringSlice(tag.Value), LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagValueReplacements);
+                    var tagValue = ReplaceCharacters(tag.Value.AsSpan(), LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagValueReplacements);
                     _sb.Append(PropagatedTagPrefix)
-                       .Append(tagKey.Value, tagKey.Offset, tagKey.Length)
+                       .Append(tagKey)
                        .Append(TraceStateDatadogKeyValueSeparator)
-                       .Append(tagValue.Value, tagValue.Offset, tagValue.Length)
+                       .Append(tagValue)
                        .Append(TraceStateDatadogPairsSeparator);
                 }
             }
