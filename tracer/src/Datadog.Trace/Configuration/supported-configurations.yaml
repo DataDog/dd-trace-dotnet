@@ -3148,7 +3148,7 @@ supportedConfigurations:
       Enables APM span enrichment with feature-flag evaluation metadata (Experimental).
       Default value is <c>false</c> (disabled).
   DD_EXPERIMENTAL_FLAGGING_PROVIDER_INITIALIZATION_TIMEOUT_MS:
-  - implementation: A
+  - implementation: B
     scope: managed
     type: int
     default: '10000'
