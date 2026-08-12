@@ -1,0 +1,54 @@
+.windows-integration-sample-build:
+  stage: build
+  timeout: 60m
+  tags: ["windows-v2:2022"]
+  needs: []
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  before_script:
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+
+      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+      docker manifest inspect $env:WINDOWS_BUILD_IMAGE
+      if ($LASTEXITCODE -ne 0) {
+        throw "Windows build image not found at $env:WINDOWS_BUILD_IMAGE"
+      }
+  script:
+    - .gitlab/build-multi-version-samples.ps1
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    name: "samples-multi-version-$FRAMEWORK"
+    paths:
+      - artifacts/publish
+      - artifacts/build_data/logs
+      - artifacts/build_data/dumps
+
+.linux-integration-test-x64:
+  stage: test
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
+  tags: ["docker-in-docker:amd64"]
+  timeout: 90m
+  variables:
+    DOCKER_BUILDKIT: "1"
+    DOTNET_SDK_VERSION: "10.0.100"
+  script:
+    - sh .gitlab/run-linux-integration-tests.sh
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    name: "integration-tests-$ARTIFACT_SUFFIX-$FRAMEWORK"
+    paths:
+      - artifacts/build_data/results
+      - artifacts/build_data/logs
+      - artifacts/build_data/infra_logs
+      - artifacts/build_data/dumps
+      - tracer/test/snapshots
+  id_tokens:
+    DD_STS_OIDC_TOKEN:
+      aud: rapid-seceng-sit
