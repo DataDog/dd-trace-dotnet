@@ -1716,6 +1716,15 @@ supportedConfigurations:
     product: Profiler
     documentation: |-
       Minimum HTTP request duration in milliseconds required to record a request in profiles.
+  DD_INTERNAL_PROFILING_LIBRARIES_CACHE_START_TIMEOUT:
+  - implementation: A
+    scope: native
+    type: int
+    default: '2000'
+    product: Profiler
+    documentation: |-
+      Test-only override, in milliseconds, for how long the profiler waits for the libraries info cache
+      to be populated at startup. Longer values help on slow or heavily loaded machines.
   DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD:
   - implementation: A
     scope: native
