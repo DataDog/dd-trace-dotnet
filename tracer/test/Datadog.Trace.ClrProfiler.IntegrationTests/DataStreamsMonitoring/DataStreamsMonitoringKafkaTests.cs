@@ -7,8 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -19,15 +21,16 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
-[Collection(nameof(KafkaTests.KafkaTestsCollection))]
+[Collection(KafkaCollection.Name)]
 [Trait("RequiresDockerDependency", "true")]
 [Trait("DockerGroup", "1")]
 public class DataStreamsMonitoringKafkaTests : TestHelper
 {
-    public DataStreamsMonitoringKafkaTests(ITestOutputHelper output)
+    public DataStreamsMonitoringKafkaTests(ITestOutputHelper output, KafkaFixture kafkaFixture)
         : base("DataStreams.Kafka", output)
     {
         SetServiceVersion("1.0.0");
+        ConfigureContainers(kafkaFixture);
     }
 
     public static IEnumerable<object[]> GetKafkaTestData()

@@ -7,8 +7,10 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -22,12 +24,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 [UsesVerify]
 [Trait("RequiresDockerDependency", "true")]
 [Trait("DockerGroup", "1")]
+[Collection(RabbitMqCollection.Name)]
 public class DataStreamsMonitoringRabbitMQTests : TestHelper
 {
-    public DataStreamsMonitoringRabbitMQTests(ITestOutputHelper output)
+    public DataStreamsMonitoringRabbitMQTests(ITestOutputHelper output, RabbitMqFixture rabbitMqFixture)
         : base("DataStreams.RabbitMQ", output)
     {
         SetServiceVersion("1.0.0");
+        ConfigureContainers(rabbitMqFixture);
     }
 
     [SkippableTheory]
