@@ -151,13 +151,21 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             }
         }
 
+        if (_shutdown.IsCancellationRequested)
+        {
+            // A shutdown during the final attempt leaves the response unusable for state
+            // transitions: keep last-known-good and the current ETag.
+            return;
+        }
+
         await ApplyAsync(result).ConfigureAwait(false);
     }
 
     public void Dispose()
     {
         // The request in flight is bounded by the request timeout, and the loop is never joined,
-        // so a shutdown does not wait for it.
+        // so a shutdown does not wait for it. A poll that completes after disposal is prevented
+        // from applying its result by the shutdown check in PollAsync.
         try
         {
             _shutdown.Cancel();

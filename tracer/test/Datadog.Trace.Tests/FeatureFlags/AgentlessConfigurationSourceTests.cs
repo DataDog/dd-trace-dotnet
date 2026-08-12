@@ -187,6 +187,25 @@ public class AgentlessConfigurationSourceTests
         applied.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task DoesNotApplyWhenDisposedAfterRequestSucceeds()
+    {
+        var applied = new List<ServerConfiguration>();
+        AgentlessConfigurationSource? sourceRef = null;
+        var factory = new TestRequestFactory(uri =>
+        {
+            var request = new DisposingApiRequest(uri, Body);
+            request.Source = sourceRef;
+            return request;
+        });
+        using var source = CreateSource(factory, applied);
+        sourceRef = source;
+
+        await source.PollAsync();
+
+        applied.Should().BeEmpty();
+    }
+
     private static AgentlessConfigurationSource CreateSource(TestRequestFactory factory, List<ServerConfiguration> applied)
         => new(
             Endpoint,
@@ -242,6 +261,19 @@ public class AgentlessConfigurationSourceTests
 
             compressed.Position = 0;
             return Task.FromResult<Stream>(compressed);
+        }
+    }
+
+    private class DisposingApiRequest(Uri endpoint, string body) : TestApiRequest(endpoint, responseContent: body)
+    {
+        public AgentlessConfigurationSource? Source { get; set; }
+
+        public override Task<IApiResponse> GetAsync()
+        {
+            var response = base.GetAsync();
+            // Simulate a shutdown arriving after the request completes but before ApplyAsync.
+            Source?.Dispose();
+            return response;
         }
     }
 }
