@@ -208,10 +208,10 @@ internal sealed class FeatureFlagsSettings
         }
 
         var value = configured.Value;
-        if (value <= 0 || (maximumSeconds is { } maximum && value > maximum))
+        if (double.IsNaN(value) || double.IsInfinity(value) || value <= 0 || (maximumSeconds is { } maximum && value > maximum))
         {
-            // A non-positive interval would turn polling into a tight loop against the endpoint,
-            // so an out-of-range value is rejected rather than honoured.
+            // A non-positive or non-finite interval would turn polling into a tight loop or throw
+            // during tracer startup, so an out-of-range value is rejected rather than honoured.
             Log.Warning<string, double, double>(
                 "Invalid value {Key}={Value}. Using {Default} seconds instead.",
                 key,
