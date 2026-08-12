@@ -33,10 +33,6 @@ services:
 
   rabbitmq_arm64:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
-    command: rabbitmq-server
-    ports:
-      - "5672"
-      - "15672"
 
   servicestackredis_arm64:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
@@ -70,11 +66,6 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
-    profiles: ["group1"]
-    command: rabbitmq-server
-    ports:
-      - "127.0.0.1:5672:5672"
-      - "127.0.0.1:15672:15672"
 
   servicestackredis:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
@@ -207,50 +198,11 @@ services:
     ports:
     - "127.0.0.1:8585:8585"
 
-  # See https://github.com/confluentinc/cp-all-in-one/blob/6.1.1-post/cp-all-in-one/docker-compose.yml
-  # For original definitions
   kafka-zookeeper:
     image: confluentinc/cp-zookeeper:6.1.1@sha256:a7c0a20dce46a705300cd464e511e9c70ac55ec7e62c024867470a19ce210563
-    profiles: ["group1"]
-    hostname: kafka-zookeeper
-    container_name: kafka-zookeeper
-    ports:
-      - "2181:2181"
-    restart: unless-stopped
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
 
   kafka-broker:
     image: confluentinc/cp-server:6.1.1@sha256:4a1ff92bd03e361759ba339c97b4c4b7dbb52d7cea478dda22d034261a8991e4
-    profiles: ["group1"]
-    hostname: kafka-broker
-    container_name: kafka-broker
-    depends_on:
-      - kafka-zookeeper
-    ports:
-      - "9092:9092"
-      - "9101:9101"
-    restart: unless-stopped
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'kafka-zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_METRIC_REPORTERS: io.confluent.metrics.reporter.ConfluentMetricsReporter
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_JMX_PORT: 9101
-      KAFKA_JMX_HOSTNAME: localhost
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: kafka-broker:29092
-      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-      CONFLUENT_METRICS_ENABLE: 'true'
-      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
 
   openldap:
     image: osixia/openldap:latest@sha256:3f68751292b43564a2586fc29fb7337573e2dad692b92d4e78e49ad5c22e567b
@@ -355,8 +307,6 @@ services:
       - ELASTICSEARCH7_HOST=elasticsearch7:9200
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
-      - RABBITMQ_HOST=rabbitmq
-      - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SDK_HOST=localstack:4566
       - ORACLE_HOST=oracle
       - COUCHBASE_HOST=couchbase
@@ -561,14 +511,11 @@ services:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
     profiles: ["group1"]
     depends_on:
-      - rabbitmq
-      - kafka-broker
-      - kafka-zookeeper
       - couchbase
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
+    command: couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
 
   StartDependencies.Group2:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
@@ -623,7 +570,6 @@ services:
       - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
-      - RABBITMQ_HOST=rabbitmq_arm64
       - AWS_SDK_HOST=localstack_arm64:4566
       - COSMOSDB_ENDPOINT=https://cosmosdb-emulator_arm64:8081
       - DD_LOGGER_DD_API_KEY
@@ -657,7 +603,6 @@ services:
     depends_on:
       - elasticsearch7_arm64
       - mongo_arm64
-      - rabbitmq_arm64
       - localstack_arm64
       - test-agent
       - cosmosdb-emulator_arm64
@@ -667,13 +612,12 @@ services:
     depends_on:
       - elasticsearch7_arm64
       - mongo_arm64
-      - rabbitmq_arm64
       - localstack_arm64
       - test-agent
       - cosmosdb-emulator_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch7_arm64:9200 mongo_arm64:27017 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
+    command: elasticsearch7_arm64:9200 mongo_arm64:27017 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
 
   IntegrationTests.ARM64.Debugger:
     build:
@@ -748,11 +692,10 @@ services:
     depends_on:
       - elasticsearch7_osx_arm64
       - mongo_osx_arm64
-      - rabbitmq_osx_arm64
       - localstack_osx_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch7_osx_arm64:9200 mongo_osx_arm64:27017 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
+    command: elasticsearch7_osx_arm64:9200 mongo_osx_arm64:27017 localstack_osx_arm64:4566
 
   # OSX ARM64 dependencies
 
@@ -791,10 +734,6 @@ services:
 
   rabbitmq_osx_arm64:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
-    command: rabbitmq-server
-    ports:
-      - "5672:5672"
-      - "15672:15672"
 
   servicestackredis_osx_arm64:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
