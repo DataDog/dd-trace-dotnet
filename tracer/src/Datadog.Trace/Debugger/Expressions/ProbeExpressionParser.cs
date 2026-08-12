@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq.Expressions;
+using System.Reflection;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Logging;
@@ -35,9 +36,13 @@ internal partial class ProbeExpressionParser<T>
     /// This, Return, Exception, LocalsAndArgs
     /// </summary>
     private static readonly CompiledExpressionDelegate<T> DefaultDelegate;
+    private static readonly Type EvaluationBudgetByRefType = typeof(EvaluationBudget).MakeByRefType();
+    private static readonly MethodInfo ThrowIfExceededMethod = GetMethodByReflection(typeof(EvaluationBudget), nameof(EvaluationBudget.ThrowIfExceeded), [EvaluationBudgetByRefType]);
+    private static readonly MethodInfo ThrowIfExceededImmediatelyMethod = GetMethodByReflection(typeof(EvaluationBudget), nameof(EvaluationBudget.ThrowIfExceededImmediately), [EvaluationBudgetByRefType]);
 
     private List<EvaluationError> _errors;
     private int _arrayStack;
+    private MethodCallExpression _budgetCheckExpression;
     private ParameterExpression _evaluationBudgetParameterExpression;
     private ParserContext _parserContext;
     private CaptureLimitInfo? _captureLimitInfo;
@@ -619,7 +624,7 @@ internal partial class ProbeExpressionParser<T>
         var argsOrLocalsParameterExpression = Expression.Parameter(argsOrLocals.GetType());
         AddLocalAndArgs(argsOrLocals, scopeMembers, expressions, argsOrLocalsParameterExpression);
 
-        _evaluationBudgetParameterExpression = Expression.Parameter(typeof(EvaluationBudget).MakeByRefType(), "evaluationBudget");
+        _evaluationBudgetParameterExpression = Expression.Parameter(EvaluationBudgetByRefType, "evaluationBudget");
         expressions.Add(BudgetCheck(checkImmediately: true));
 
         var result = Expression.Variable(typeof(T), "$dd_el_result");
@@ -679,12 +684,9 @@ internal partial class ProbeExpressionParser<T>
 
     private MethodCallExpression BudgetCheck(bool checkImmediately = false)
     {
-        return Expression.Call(
-            ProbeExpressionParserHelper.GetMethodByReflection(
-                typeof(EvaluationBudget),
-                checkImmediately ? nameof(EvaluationBudget.ThrowIfExceededImmediately) : nameof(EvaluationBudget.ThrowIfExceeded),
-                [typeof(EvaluationBudget).MakeByRefType()]),
-            _evaluationBudgetParameterExpression);
+        return checkImmediately
+                   ? Expression.Call(ThrowIfExceededImmediatelyMethod, _evaluationBudgetParameterExpression)
+                   : _budgetCheckExpression ??= Expression.Call(ThrowIfExceededMethod, _evaluationBudgetParameterExpression);
     }
 
     internal static CompiledExpression<T> ParseExpression(JObject expressionJson, MethodScopeMembers scopeMembers)
