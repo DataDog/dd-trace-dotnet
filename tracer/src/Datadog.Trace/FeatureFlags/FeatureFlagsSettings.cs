@@ -178,7 +178,10 @@ internal sealed class FeatureFlagsSettings
             }
         }
 
-        if (legacyEnabled is not null)
+        // The legacy key only grandfathers adopters who have not migrated: an explicit new-key
+        // value (true or false) takes precedence, so the legacy key is consulted only when the
+        // new key was left unset.
+        if (enabled is null && legacyEnabled is not null)
         {
             return legacyEnabled.Value ? FeatureFlagsSource.RemoteConfig : FeatureFlagsSource.Disabled;
         }

@@ -35,6 +35,10 @@ public class FeatureFlagsSettingsTests
     // The legacy key grandfathers existing adopters, who opted in when RC was the only source.
     [InlineData(null, null, "true", FeatureFlagsSource.RemoteConfig)]
     [InlineData(null, null, "false", FeatureFlagsSource.Disabled)]
+    // An explicit new-key value takes precedence over the legacy key, so a stale legacy disable
+    // does not silently keep Feature Flags off during migration.
+    [InlineData("true", null, "false", FeatureFlagsSource.Agentless)]
+    [InlineData("true", null, "true", FeatureFlagsSource.Agentless)]
     // An unrecognised source fails closed rather than guessing a billed delivery path.
     [InlineData(null, "invalid", null, FeatureFlagsSource.Disabled)]
     [InlineData(null, "invalid", "true", FeatureFlagsSource.Disabled)]
