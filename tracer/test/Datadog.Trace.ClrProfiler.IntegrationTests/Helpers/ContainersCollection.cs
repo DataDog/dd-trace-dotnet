@@ -53,6 +53,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     {
         public const string Name = "Kafka";
     }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class CouchbaseCollection : ICollectionFixture<CouchbaseFixture>
+    {
+        public const string Name = "Couchbase";
+    }
 }
 
 #pragma warning restore SA1649 // File name should match first type name
