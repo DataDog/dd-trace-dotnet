@@ -227,6 +227,14 @@ partial class Build
 
     bool RequiresThoroughTesting()
     {
+        // GitLab computes this from the complete runner checkout before entering any
+        // test container. The mounted checkout may use an alternates path from the
+        // runner's Git cache that is intentionally unavailable inside the container.
+        if (IsGitlab)
+        {
+            return IncludeAllTestFrameworks;
+        }
+
         if (IsLocalBuild && !IsGitlab)
         {
             // we should always run all tests locally
@@ -343,6 +351,9 @@ partial class Build
                 .SetVerbosity(DotNetVerbosity.Minimal)
                 .SetProperty("configuration", BuildConfiguration.ToString())
                 .SetProperty("Platform", "Any CPU")
+                // Multiple macOS TFM jobs already run concurrently. Avoid also fanning out
+                // this solution-wide restore after observing dotnet exit with SIGSEGV (139).
+                .When(IsOsx, o => o.EnableDisableParallel())
                 .SetPackageDirectory(NugetPackageDirectory));
         });
 
