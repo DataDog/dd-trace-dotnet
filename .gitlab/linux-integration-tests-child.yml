@@ -51,4 +51,4 @@
       - tracer/test/snapshots
   id_tokens:
     DD_STS_OIDC_TOKEN:
-      aud: rapid-seceng-sit
+      aud: dd-sts
