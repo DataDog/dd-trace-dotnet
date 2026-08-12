@@ -2056,6 +2056,7 @@ partial class Build
                     // Apply Docker and area restrictions without requiring the auto-instrumentation platform traits.
                     .When(!string.IsNullOrWhiteSpace(parallelFilter), c => c.SetFilter(parallelFilter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                    .When(IsWin && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING")), o => o.SetProcessEnvironmentVariable("SQLSERVER_CONNECTION_STRING", @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(parallelJobs, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -2079,6 +2080,7 @@ partial class Build
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                    .When(IsWin && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING")), o => o.SetProcessEnvironmentVariable("SQLSERVER_CONNECTION_STRING", @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -2245,6 +2247,7 @@ partial class Build
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
+                    .When(IsWin && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING")), o => o.SetProcessEnvironmentVariable("SQLSERVER_CONNECTION_STRING", @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;Connection Timeout=60"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
