@@ -448,8 +448,9 @@ partial class Build
             CMake.Value(
                 arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} -DCMAKE_OSX_SYSROOT={sdkPath}",
                 environmentVariables: envVariables);
+            var parallelism = IsGitlab ? Math.Min(4, Environment.ProcessorCount) : Environment.ProcessorCount;
             CMake.Value(
-                arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}",
+                arguments: $"--build {buildDirectory} --parallel {parallelism} --target {FileNames.NativeTracer}",
                 environmentVariables: envVariables);
 
             var sourceFile = GetNativeOutputDirectory(NativeTracerProject.Name) / $"{NativeTracerProject.Name}.dylib";
