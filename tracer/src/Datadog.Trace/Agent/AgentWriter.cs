@@ -85,11 +85,21 @@ namespace Datadog.Trace.Agent
             });
         }
 
-        public AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool apmTracingEnabled = true, bool initialTracerMetricsEnabled = false)
+        public AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool apmTracingEnabled = true, bool initialTracerMetricsEnabled = false)
+        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush: true, maxBufferSize, batchInterval, apmTracingEnabled, initialTracerMetricsEnabled)
+        {
+        }
+
+        // Passing automaticFlush: false makes the writer synchronous: traces are serialized on the
+        // calling thread, and neither the serialization loop nor the flush loop is started.
+        // That is only safe in tests, so production code must use the overload above.
+        [TestingOnly]
+        internal AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, bool automaticFlush, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool apmTracingEnabled = true, bool initialTracerMetricsEnabled = false)
         : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval, apmTracingEnabled, initialTracerMetricsEnabled)
         {
         }
 
+        [TestingAndPrivateOnly]
         internal AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval, bool apmTracingEnabled, bool initialTracerMetricsEnabled)
         {
             _statsAggregator = statsAggregator ?? new NullStatsAggregator();
@@ -128,8 +138,6 @@ namespace Datadog.Trace.Agent
             _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
         }
 
-        internal event Action? Flushed;
-
         private enum TraceDropReason
         {
             TraceTooLarge,
@@ -138,10 +146,13 @@ namespace Datadog.Trace.Agent
             BuffersLocked,
         }
 
+        [TestingOnly]
         internal SpanBuffer ActiveBuffer => _activeBuffer;
 
+        [TestingOnly]
         internal SpanBuffer FrontBuffer => _frontBuffer;
 
+        [TestingOnly]
         internal SpanBuffer BackBuffer => _backBuffer;
 
         [TestingOnly]
@@ -265,6 +276,7 @@ namespace Datadog.Trace.Agent
             await FlushBuffers(true).ConfigureAwait(false);
         }
 
+        [TestingAndPrivateOnly]
         internal void WriteWatermark(Action watermark, bool wakeUpThread = true)
         {
             _pendingTraces.Enqueue(new WorkItem(watermark));
@@ -304,8 +316,6 @@ namespace Datadog.Trace.Agent
                 {
                     return;
                 }
-
-                Flushed?.Invoke();
             }
         }
 
