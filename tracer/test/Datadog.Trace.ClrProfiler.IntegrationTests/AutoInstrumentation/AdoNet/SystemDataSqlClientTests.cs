@@ -12,6 +12,7 @@ using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -22,12 +23,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
     [UsesVerify]
+    [Collection(SqlServerCollection.Name)]
     public class SystemDataSqlClientTests : TracingIntegrationTest
     {
-        public SystemDataSqlClientTests(ITestOutputHelper output)
+        private readonly SqlServerFixture _sqlServerFixture;
+
+        public SystemDataSqlClientTests(ITestOutputHelper output, SqlServerFixture sqlServerFixture)
             : base("SqlServer", output)
         {
+            _sqlServerFixture = sqlServerFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(sqlServerFixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsSqlClient(metadataSchemaVersion);
@@ -96,6 +102,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 builder.Clear();
                 builder.Append(filtered);
             });
+
+            if (_sqlServerFixture.HostAndPort is { } hostAndPort)
+            {
+                settings.AddSimpleScrubber($"out.host: {hostAndPort}", "out.host: sqlserver");
+                settings.AddSimpleScrubber($"peer.service: {hostAndPort}", "peer.service: sqlserver");
+            }
 
             settings.AddSimpleScrubber("out.host: localhost", "out.host: sqlserver");
             settings.AddSimpleScrubber("out.host: (localdb)\\MSSQLLocalDB", "out.host: sqlserver");
