@@ -28,7 +28,7 @@ internal sealed class FeatureFlagsSettings
 
     internal const double DefaultPollIntervalSeconds = 30;
     internal const double DefaultRequestTimeoutSeconds = 5;
-    internal const int DefaultInitializationTimeoutMs = 30_000;
+    internal const int DefaultInitializationTimeoutMs = 10_000;
 
     // An interval above this is indistinguishable from "never poll" and is more likely a
     // misconfiguration (for example milliseconds passed as seconds) than an intent.

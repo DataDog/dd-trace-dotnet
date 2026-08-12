@@ -76,7 +76,7 @@ public class FeatureFlagsSettingsTests
 
         settings.PollInterval.Should().Be(TimeSpan.FromSeconds(30));
         settings.RequestTimeout.Should().Be(TimeSpan.FromSeconds(5));
-        settings.InitializationTimeout.Should().Be(TimeSpan.FromMilliseconds(30_000));
+        settings.InitializationTimeout.Should().Be(TimeSpan.FromMilliseconds(10_000));
         settings.AgentlessBaseUrl.Should().BeNull();
     }
 
@@ -118,8 +118,8 @@ public class FeatureFlagsSettingsTests
 
     [Theory]
     [InlineData("1000", 1000)]
-    [InlineData("0", 30_000)]
-    [InlineData("-1", 30_000)]
+    [InlineData("0", 10_000)]
+    [InlineData("-1", 10_000)]
     public void ReadsInitializationTimeout(string configured, int expectedMs)
     {
         var settings = CreateSettings(
