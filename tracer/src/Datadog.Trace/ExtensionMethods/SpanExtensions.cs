@@ -88,9 +88,14 @@ namespace Datadog.Trace.ExtensionMethods
             }
             else
             {
-                return span.GetTag(Tags.HttpStatusCode) is not null;
+                return span.GetHttpStatusCodeString() is not null;
             }
         }
+
+        internal static string GetHttpStatusCodeString(this Span span)
+            => span.OpenTelemetrySemanticsEnabled
+                   ? span.GetTag(Tags.HttpResponseStatusCode)
+                   : span.GetTag(Tags.HttpStatusCode);
 
         internal static int? GetHttpStatusCode(this Span span)
         {
@@ -100,7 +105,7 @@ namespace Datadog.Trace.ExtensionMethods
             }
             else
             {
-                var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
+                var rawHttpStatusCode = span.GetHttpStatusCodeString();
                 if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
                 {
                     return null;
@@ -124,7 +129,8 @@ namespace Datadog.Trace.ExtensionMethods
             }
             else
             {
-                span.SetTag(Tags.HttpStatusCode, IntStringCache.ToInvariantString(statusCode));
+                var tagName = span.OpenTelemetrySemanticsEnabled ? Tags.HttpResponseStatusCode : Tags.HttpStatusCode;
+                span.SetTag(tagName, IntStringCache.ToInvariantString(statusCode));
             }
 
             // Check the customers http statuses that should be marked as errors

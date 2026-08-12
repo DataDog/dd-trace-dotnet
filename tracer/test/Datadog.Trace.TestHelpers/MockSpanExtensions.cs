@@ -19,7 +19,7 @@ namespace Datadog.Trace.TestHelpers
         /// </remarks>
         /// <param name="span">The span to read the status code from.</param>
         /// <returns>The HTTP status code, or <c>null</c> if the span doesn't have one.</returns>
-        public static string GetHttpStatusCode(this MockSpan span)
-            => span.GetTag(Tags.HttpStatusCode);
+        public static string GetHttpStatusCodeString(this MockSpan span)
+            => span.GetTag(Tags.HttpStatusCode) ?? span.GetTag(Tags.HttpResponseStatusCode);
     }
 }
