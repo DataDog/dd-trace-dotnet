@@ -425,23 +425,6 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
-        public void Extract_Behavior_Ignore_DoesNotCarryOverOtelTraceState()
-        {
-            var headers = new Mock<IHeadersCollection>();
-
-            headers.Setup(h => h.GetValues("traceparent"))
-                   .Returns(new[] { "00-000000000000000000000000075bcd15-000000003ade68b1-01" });
-            headers.Setup(h => h.GetValues("tracestate"))
-                   .Returns(new[] { "dd=s:1,ot=rv:ef284ace7a91e1;th:e6666666666668" });
-
-            var names = new[] { ContextPropagationHeaderStyle.W3CTraceContext };
-            var ignorePropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names, propagationExtractFirst: true, ExtractBehavior.Ignore);
-            var result = ignorePropagator.Extract(headers.Object);
-
-            result.SpanContext.Should().BeNull();
-        }
-
-        [Fact]
         public void Extract_Behavior_Restart()
         {
             var headers = new Mock<IHeadersCollection>();

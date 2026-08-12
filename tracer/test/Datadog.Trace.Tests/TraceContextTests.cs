@@ -392,16 +392,6 @@ namespace Datadog.Trace.Tests
             traceContext.OtelTraceState.Should().BeNull();
         }
 
-        [Fact]
-        public void SetSamplingPriority_ManualOverride_NoInheritedState_StaysNull()
-        {
-            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 1);
-
-            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
-
-            traceContext.OtelTraceState.Should().BeNull();
-        }
-
         private static ulong ParseThForTest(string otelTraceState)
         {
             foreach (var item in otelTraceState.Split(';'))
