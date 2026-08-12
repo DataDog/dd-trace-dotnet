@@ -65,10 +65,10 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.51.0";
+    readonly string Version = "3.50.1";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
-    readonly bool IsPrerelease = false;
+    readonly bool IsPrerelease = true;
 
     [Parameter("The new build version to set")]
     readonly string NewVersion;
