@@ -12,7 +12,7 @@ namespace Datadog.Trace.Util;
 
 internal readonly ref struct SpanCharSplitter
 {
-    private readonly string _source;
+    private readonly ReadOnlySpan<char> _source;
     private readonly char _separator;
     private readonly int _count;
     private readonly int _startIndex;
@@ -20,14 +20,26 @@ internal readonly ref struct SpanCharSplitter
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SpanCharSplitter(string source, char separator, int count)
-        : this(source, separator, startIndex: 0, length: source?.Length ?? 0, count)
+        : this(source is null ? throw new ArgumentNullException(nameof(source)) : source.AsSpan(), separator, count)
     {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SpanCharSplitter(string source, char separator, int startIndex, int length, int count)
+        : this(source is null ? throw new ArgumentNullException(nameof(source)) : source.AsSpan(), separator, startIndex, length, count)
     {
-        _source = source ?? throw new ArgumentNullException(nameof(source));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public SpanCharSplitter(ReadOnlySpan<char> source, char separator, int count)
+        : this(source, separator, startIndex: 0, source.Length, count)
+    {
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public SpanCharSplitter(ReadOnlySpan<char> source, char separator, int startIndex, int length, int count)
+    {
+        _source = source;
 
         if ((uint)startIndex > (uint)source.Length)
         {
@@ -49,10 +61,10 @@ internal readonly ref struct SpanCharSplitter
     public SpanSplitEnumerator GetEnumerator() => new(_source, _separator, _startIndex, _endIndex, _count);
 
     [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref struct SpanSplitEnumerator(string source, char separator, int startIndex, int endIndex, int count)
+    internal ref struct SpanSplitEnumerator(ReadOnlySpan<char> source, char separator, int startIndex, int endIndex, int count)
     {
         private readonly char _separator = separator;
-        private readonly string _source = source;
+        private readonly ReadOnlySpan<char> _source = source;
         private readonly int _endIndex = endIndex;
         private int _nextStartIndex = startIndex;
         private int _count = count;
@@ -66,10 +78,11 @@ internal readonly ref struct SpanCharSplitter
                 return false;
             }
 
-            var foundIndex = _source.IndexOf(_separator, _nextStartIndex);
+            var remainder = _source.Slice(_nextStartIndex, _endIndex - _nextStartIndex);
+            var foundIndex = remainder.IndexOf(_separator);
 
-            var length = _count > 1 && foundIndex >= 0 && foundIndex < _endIndex
-                             ? foundIndex - _nextStartIndex
+            var length = _count > 1 && foundIndex >= 0
+                             ? foundIndex
                              : _endIndex - _nextStartIndex;
 
             Current = new SpanSplitValue
@@ -92,11 +105,11 @@ internal readonly ref struct SpanCharSplitter
 
             public int Length { get; init; }
 
-            public string Source { get; init; }
+            public ReadOnlySpan<char> Source { get; init; }
 
             public static implicit operator ReadOnlySpan<char>(SpanSplitValue value) => value.AsSpan();
 
-            public ReadOnlySpan<char> AsSpan() => Source.AsSpan().Slice(StartIndex, Length);
+            public ReadOnlySpan<char> AsSpan() => Source.Slice(StartIndex, Length);
         }
     }
 }
