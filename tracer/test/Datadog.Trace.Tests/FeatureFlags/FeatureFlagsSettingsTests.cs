@@ -85,7 +85,6 @@ public class FeatureFlagsSettingsTests
     }
 
     [Theory]
-    [InlineData("0.2", 0.2)]
     [InlineData("60", 60)]
     [InlineData("3600", 3600)]
     // Out of range values are rejected in favour of the default: a non-positive interval would
@@ -94,11 +93,7 @@ public class FeatureFlagsSettingsTests
     [InlineData("-1", 30)]
     [InlineData("3601", 30)]
     [InlineData("not-a-number", 30)]
-    // Non-finite values would throw inside TimeSpan.FromSeconds during tracer startup.
-    [InlineData("NaN", 30)]
-    [InlineData("Infinity", 30)]
-    [InlineData("-Infinity", 30)]
-    public void ReadsPollInterval(string configured, double expectedSeconds)
+    public void ReadsPollInterval(string configured, int expectedSeconds)
     {
         var settings = CreateSettings(
             null,
@@ -113,10 +108,7 @@ public class FeatureFlagsSettingsTests
     [InlineData("1", 1)]
     [InlineData("0", 5)]
     [InlineData("-2", 5)]
-    [InlineData("NaN", 5)]
-    [InlineData("Infinity", 5)]
-    [InlineData("-Infinity", 5)]
-    public void ReadsRequestTimeout(string configured, double expectedSeconds)
+    public void ReadsRequestTimeout(string configured, int expectedSeconds)
     {
         var settings = CreateSettings(
             null,

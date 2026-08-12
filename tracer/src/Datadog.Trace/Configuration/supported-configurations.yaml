@@ -3200,7 +3200,7 @@ supportedConfigurations:
   DD_FEATURE_FLAGS_CONFIGURATION_SOURCE_AGENTLESS_POLL_INTERVAL_SECONDS:
   - implementation: A
     scope: managed
-    type: decimal
+    type: int
     default: '30'
     product: FeatureFlags
     const_name: FeatureFlagsConfigurationSourceAgentlessPollIntervalSeconds
@@ -3211,7 +3211,7 @@ supportedConfigurations:
   DD_FEATURE_FLAGS_CONFIGURATION_SOURCE_AGENTLESS_REQUEST_TIMEOUT_SECONDS:
   - implementation: A
     scope: managed
-    type: decimal
+    type: int
     default: '5'
     product: FeatureFlags
     const_name: FeatureFlagsConfigurationSourceAgentlessRequestTimeoutSeconds

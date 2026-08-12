@@ -26,13 +26,13 @@ internal sealed class FeatureFlagsSettings
 
     internal const string DefaultSite = "datadoghq.com";
 
-    internal const double DefaultPollIntervalSeconds = 30;
-    internal const double DefaultRequestTimeoutSeconds = 5;
+    internal const int DefaultPollIntervalSeconds = 30;
+    internal const int DefaultRequestTimeoutSeconds = 5;
     internal const int DefaultInitializationTimeoutMs = 10_000;
 
     // An interval above this is indistinguishable from "never poll" and is more likely a
     // misconfiguration (for example milliseconds passed as seconds) than an intent.
-    private const double MaxPollIntervalSeconds = 3600;
+    private const int MaxPollIntervalSeconds = 3600;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsSettings));
 
@@ -68,14 +68,14 @@ internal sealed class FeatureFlagsSettings
 
         PollInterval = TimeSpan.FromSeconds(
             InRangeOrDefault(
-                config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessPollIntervalSeconds).AsDouble(),
+                config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessPollIntervalSeconds).AsInt32(),
                 ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessPollIntervalSeconds,
                 DefaultPollIntervalSeconds,
                 MaxPollIntervalSeconds));
 
         RequestTimeout = TimeSpan.FromSeconds(
             InRangeOrDefault(
-                config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessRequestTimeoutSeconds).AsDouble(),
+                config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessRequestTimeoutSeconds).AsInt32(),
                 ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessRequestTimeoutSeconds,
                 DefaultRequestTimeoutSeconds,
                 maximumSeconds: null));
@@ -203,7 +203,7 @@ internal sealed class FeatureFlagsSettings
         return normalized.Length == 0 ? null : normalized;
     }
 
-    internal static double InRangeOrDefault(double? configured, string key, double defaultSeconds, double? maximumSeconds)
+    internal static int InRangeOrDefault(int? configured, string key, int defaultSeconds, int? maximumSeconds)
     {
         if (configured is null)
         {
@@ -211,11 +211,11 @@ internal sealed class FeatureFlagsSettings
         }
 
         var value = configured.Value;
-        if (double.IsNaN(value) || double.IsInfinity(value) || value <= 0 || (maximumSeconds is { } maximum && value > maximum))
+        if (value <= 0 || (maximumSeconds is { } maximum && value > maximum))
         {
-            // A non-positive or non-finite interval would turn polling into a tight loop or throw
-            // during tracer startup, so an out-of-range value is rejected rather than honoured.
-            Log.Warning<string, double, double>(
+            // A non-positive interval would turn polling into a tight loop against the endpoint,
+            // so an out-of-range value is rejected rather than honoured.
+            Log.Warning<string, int, int>(
                 "Invalid value {Key}={Value}. Using {Default} seconds instead.",
                 key,
                 value,
