@@ -20,7 +20,7 @@ internal sealed class ServerConfiguration
     public Environment? Environment { get; set; }
 
     [JsonConverter(typeof(FlagDictionaryJsonConverter))]
-    public Dictionary<string, Flag>? Flags { get; set; }
+    public Dictionary<string, Flag?>? Flags { get; set; }
 
     internal void Merge(ServerConfiguration other)
     {
@@ -41,7 +41,7 @@ internal sealed class ServerConfiguration
 
         if (Flags is null)
         {
-            Flags = new Dictionary<string, Flag>();
+            Flags = new Dictionary<string, Flag?>();
         }
 
         if (other.Flags is not null)

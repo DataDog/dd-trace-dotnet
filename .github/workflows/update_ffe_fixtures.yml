@@ -19,8 +19,6 @@ jobs:
   update_ffe_fixtures:
     runs-on: ubuntu-latest
     permissions:
-      actions: read
-      contents: read
       id-token: write
 
     steps:
@@ -40,7 +38,7 @@ jobs:
         id: fixtures
         env:
           FFE_FIXTURE_REF: ${{ inputs.fixture_ref || 'main' }}
-        run: bash .github/scripts/update-ffe-fixtures.sh
+        run: ./tracer/build.sh UpdateFfeFixtures --FfeFixtureRef "$FFE_FIXTURE_REF"
 
       - name: Create Pull Request
         if: steps.fixtures.outputs.changed == 'true'
@@ -52,22 +50,28 @@ jobs:
           base: master
           title: "test(ffe): update canonical fixtures"
           draft: true
-          labels: "area:dependabot,dependencies"
+          labels: "area:tests,feature_flags"
           body: |
-            ## Motivation
+            ## Summary of changes
+
+            Updates the FFE tests to commit ${{ steps.fixtures.outputs.source_commit }}.
+
+            ## Reason for change
 
             Keep dd-trace-dotnet synchronized with the canonical FFE evaluator fixtures. New fixtures may intentionally make unit tests fail when they expose evaluator bugs that must be addressed before this update is merged.
 
             Canonical source: https://github.com/DataDog/ffe-system-test-data
             Source commit: ${{ steps.fixtures.outputs.source_commit }}
 
-            ## Changes
+            ## Implementation details
 
             - Refresh the checked-in FFE fixture snapshot from the canonical repository.
             - Load ${{ steps.fixtures.outputs.fixture_count }} canonical JSON fixture cases.
 
-            ## Decisions
+            ## Test coverage
 
-            - Keep local and CI unit tests network-independent by checking in the generated snapshot.
-            - Use a scheduled dependency PR instead of a git submodule.
-            - Address evaluator failures in this update PR before merging it.
+            The existing FFE unit tests run against the refreshed canonical fixtures.
+
+            ## Other details
+
+            Address evaluator failures in this update PR before merging it.

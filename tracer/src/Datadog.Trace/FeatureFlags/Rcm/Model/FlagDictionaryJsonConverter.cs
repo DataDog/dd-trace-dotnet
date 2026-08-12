@@ -12,12 +12,12 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
-internal sealed class FlagDictionaryJsonConverter : JsonConverter<Dictionary<string, Flag>>
+internal sealed class FlagDictionaryJsonConverter : JsonConverter<Dictionary<string, Flag?>>
 {
-    public override Dictionary<string, Flag>? ReadJson(
+    public override Dictionary<string, Flag?>? ReadJson(
         JsonReader reader,
         Type objectType,
-        Dictionary<string, Flag>? existingValue,
+        Dictionary<string, Flag?>? existingValue,
         bool hasExistingValue,
         JsonSerializer serializer)
     {
@@ -26,25 +26,25 @@ internal sealed class FlagDictionaryJsonConverter : JsonConverter<Dictionary<str
             return null;
         }
 
-        var result = existingValue ?? new Dictionary<string, Flag>();
+        var result = existingValue ?? new Dictionary<string, Flag?>();
         var flags = JObject.Load(reader);
         foreach (var property in flags.Properties())
         {
             try
             {
                 var flag = property.Value.ToObject<Flag>(serializer);
-                result[property.Name] = flag is not null && IsValid(flag) ? flag : null!;
+                result[property.Name] = flag is not null && IsValid(flag) ? flag : null;
             }
             catch (JsonException)
             {
-                result[property.Name] = null!;
+                result[property.Name] = null;
             }
         }
 
         return result;
     }
 
-    public override void WriteJson(JsonWriter writer, Dictionary<string, Flag>? value, JsonSerializer serializer)
+    public override void WriteJson(JsonWriter writer, Dictionary<string, Flag?>? value, JsonSerializer serializer)
     {
         serializer.Serialize(writer, value);
     }
