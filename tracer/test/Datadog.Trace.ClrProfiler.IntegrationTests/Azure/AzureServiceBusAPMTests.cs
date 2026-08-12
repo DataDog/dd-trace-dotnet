@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -27,9 +28,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
     [Collection(AzureMessagingEmulatorTestsCollection.Name)]
     public class AzureServiceBusAPMTests : TracingIntegrationTest
     {
-        public AzureServiceBusAPMTests(ITestOutputHelper output)
+        public AzureServiceBusAPMTests(ITestOutputHelper output, AzureServiceBusFixture serviceBusFixture)
             : base("AzureServiceBus.APM", output)
         {
+            ConfigureContainers(serviceBusFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
