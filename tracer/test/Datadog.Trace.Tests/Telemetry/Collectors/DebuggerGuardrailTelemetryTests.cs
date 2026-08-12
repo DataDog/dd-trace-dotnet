@@ -20,7 +20,8 @@ namespace Datadog.Trace.Tests.Telemetry.Collectors;
 
 public class DebuggerGuardrailTelemetryTests
 {
-    private static readonly string[] EventTypeTags = ["event_type:snapshot", "event_type:log", "event_type:metric", "event_type:span", "event_type:diagnostic"];
+    private static readonly string[] SkippedEventTypeTags = ["event_type:snapshot", "event_type:log", "event_type:metric", "event_type:span"];
+    private static readonly string[] CaptureEventTypeTags = ["event_type:snapshot", "event_type:log"];
     private static readonly string[] EventsSkippedReasonTags = ["reason:rateLimitGlobal", "reason:rateLimitProbe", "reason:evaluationTimeout"];
     private static readonly string[] EventsDroppedReasonTags = ["reason:queueFull", "reason:payloadTooLarge"];
     private static readonly string[] CaptureIncompleteReasonTags = ["reason:runtimeError", "reason:timeout", "reason:depth", "reason:fieldCount", "reason:collectionSize", "reason:stringLength", "reason:payloadTooLarge", "reason:other"];
@@ -40,13 +41,13 @@ public class DebuggerGuardrailTelemetryTests
 
         foreach (var reason in GetEnumValues<MetricTags.DebuggerEventsDroppedReason>())
         {
-            foreach (var eventType in GetEnumValues<MetricTags.DebuggerEventType>())
+            foreach (var eventType in GetEnumValues<MetricTags.DebuggerCaptureEventType>())
             {
                 collector.RecordCountDebuggerEventsDropped(reason, eventType);
             }
         }
 
-        foreach (var eventType in GetEnumValues<MetricTags.DebuggerEventType>())
+        foreach (var eventType in GetEnumValues<MetricTags.DebuggerCaptureEventType>())
         {
             foreach (var reason in GetEnumValues<MetricTags.DebuggerCaptureIncompleteReason>())
             {
@@ -59,7 +60,7 @@ public class DebuggerGuardrailTelemetryTests
 
         using (new AssertionScope())
         {
-            metrics.Should().HaveCount(65);
+            metrics.Should().HaveCount(32);
             metrics.Should().OnlyContain(
                 metric => metric.Namespace == MetricNamespaceConstants.Debugger
                        && metric.Common
@@ -69,13 +70,13 @@ public class DebuggerGuardrailTelemetryTests
 
             GetTagCombinations(metrics, "events.skipped")
                .Should()
-               .BeEquivalentTo(GetExpectedCombinations(EventsSkippedReasonTags, EventTypeTags));
+               .BeEquivalentTo(GetExpectedCombinations(EventsSkippedReasonTags, SkippedEventTypeTags));
             GetTagCombinations(metrics, "events.dropped")
                .Should()
-               .BeEquivalentTo(GetExpectedCombinations(EventsDroppedReasonTags, EventTypeTags));
+               .BeEquivalentTo(GetExpectedCombinations(EventsDroppedReasonTags, CaptureEventTypeTags));
             GetTagCombinations(metrics, "capture.incomplete")
                .Should()
-               .BeEquivalentTo(GetExpectedCombinations(EventTypeTags, CaptureIncompleteReasonTags));
+               .BeEquivalentTo(GetExpectedCombinations(CaptureEventTypeTags, CaptureIncompleteReasonTags));
         }
 
         await collector.DisposeAsync();

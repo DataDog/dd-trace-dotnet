@@ -248,12 +248,12 @@ internal enum Count
     /// <summary>
     /// The number of debugger events dropped after capture, tagged by reason and event type.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerEventsDroppedReason, MetricTags.DebuggerEventType>("events.dropped", isCommon: true, NS.Debugger)] DebuggerEventsDropped,
+    [TelemetryMetric<MetricTags.DebuggerEventsDroppedReason, MetricTags.DebuggerCaptureEventType>("events.dropped", isCommon: true, NS.Debugger)] DebuggerEventsDropped,
 
     /// <summary>
     /// The number of incomplete debugger captures, tagged by event type and reason.
     /// </summary>
-    [TelemetryMetric<MetricTags.DebuggerEventType, MetricTags.DebuggerCaptureIncompleteReason>("capture.incomplete", isCommon: true, NS.Debugger)] DebuggerCaptureIncomplete,
+    [TelemetryMetric<MetricTags.DebuggerCaptureEventType, MetricTags.DebuggerCaptureIncompleteReason>("capture.incomplete", isCommon: true, NS.Debugger)] DebuggerCaptureIncomplete,
 #endregion
 #region AppSec Namespace
 

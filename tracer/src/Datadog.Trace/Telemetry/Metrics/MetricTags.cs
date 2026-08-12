@@ -241,7 +241,12 @@ internal static class MetricTags
         [Description("event_type:log")] Log = 1,
         [Description("event_type:metric")] Metric = 2,
         [Description("event_type:span")] Span = 3,
-        [Description("event_type:diagnostic")] Diagnostic = 4,
+    }
+
+    internal enum DebuggerCaptureEventType
+    {
+        [Description("event_type:snapshot")] Snapshot = 0,
+        [Description("event_type:log")] Log = 1,
     }
 
     internal enum DebuggerEventsSkippedReason
