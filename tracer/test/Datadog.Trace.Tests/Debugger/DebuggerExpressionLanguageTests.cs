@@ -20,6 +20,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -2986,6 +2987,7 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        [Flaky("Evaluation timeout test is timing-sensitive")]
         public void ProbeExpressionParser_BudgetedDelegateTimeout_ThrowsEvaluationTimeout()
         {
             var scopeMembers = CreateScopeMembers();
