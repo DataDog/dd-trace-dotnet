@@ -61,6 +61,7 @@ internal struct EvaluationBudget
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
+    [DoesNotReturn]
     private static void ThrowTimedOut()
     {
         throw new EvaluationTimeBudgetExceededException();
