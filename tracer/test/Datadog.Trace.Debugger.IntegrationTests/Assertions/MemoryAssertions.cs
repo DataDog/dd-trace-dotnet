@@ -92,10 +92,10 @@ internal class MemoryAssertions
             output?.WriteLine($"Skipping memory assertion because ClrMD failed to capture or analyze the heap: {ex}");
             throw new SkipException($"ClrMD failed to capture or analyze the heap: {ex.Message}");
         }
-        catch (InvalidOperationException ex) when (IsClrMdStackRootEnumerationFailure(ex))
+        catch (Exception ex) when (IsClrMdFailure(ex))
         {
-            output?.WriteLine($"Skipping memory assertion because ClrMD failed while enumerating stack roots: {ex}");
-            throw new SkipException($"ClrMD failed while enumerating stack roots: {ex.Message}");
+            output?.WriteLine($"Skipping memory assertion because ClrMD failed to capture or analyze the heap: {ex}");
+            throw new SkipException($"ClrMD failed to capture or analyze the heap: {ex.Message}");
         }
     }
 
@@ -151,12 +151,23 @@ internal class MemoryAssertions
         }
     }
 
-    private static bool IsClrMdStackRootEnumerationFailure(Exception exception)
+    private static bool IsClrMdFailure(Exception exception)
     {
-        var stackTrace = exception.StackTrace;
-        return stackTrace is not null &&
-               stackTrace.IndexOf("Microsoft.Diagnostics.Runtime", StringComparison.Ordinal) >= 0 &&
-               stackTrace.IndexOf("EnumerateStackRoots", StringComparison.Ordinal) >= 0;
+        // ClrMD can leak BCL exceptions from its internals.
+        var hasClrMdFrame = false;
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is OutOfMemoryException or StackOverflowException or AccessViolationException)
+            {
+                return false;
+            }
+
+            var stackTrace = current.StackTrace;
+            hasClrMdFrame |= stackTrace is not null &&
+                             stackTrace.IndexOf("Microsoft.Diagnostics.Runtime", StringComparison.Ordinal) >= 0;
+        }
+
+        return hasClrMdFrame;
     }
 
     private string GetDumpDetails()
