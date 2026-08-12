@@ -50,9 +50,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // solution to the snapshot testing
                 settings.AddSimpleScrubber("aspnet_core.endpoint: / HTTP: GET", "aspnet_core.endpoint: HTTP: GET /");
 
-                // server.port is a dynamic port that changes between runs
-                settings.AddRegexScrubber(new System.Text.RegularExpressions.Regex(@"server\.port: \d+\.0"), "server.port: 00000");
-
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(nameof(OcelotDistributedTracingTests))
                                   .DisableRequireUniquePrefix();
