@@ -23,6 +23,14 @@ public class W3CTraceContextPropagatorBenchmark
         "t.usr.id:12345~,ot=rv:ef284ace7a91e1;th:e6666666666668," +
         "rojo=00f067aa0ba902b7";
 
+    private const string DatadogAndOtelTraceState =
+        "dd=s:2;o:rum;p:0123456789abcdef;t.dm:-4;t.usr.id:12345~," +
+        "ot=rv:ef284ace7a91e1;th:e6666666666668";
+
+    private const string OtelAndDatadogTraceState =
+        "ot=rv:ef284ace7a91e1;th:e6666666666668," +
+        "dd=s:2;o:rum;p:0123456789abcdef;t.dm:-4;t.usr.id:12345~";
+
     [Benchmark]
     public string ParseTraceStateWithSingleVendor()
         => W3CTraceContextPropagator.ParseTraceState(SingleVendorTraceState)
@@ -41,5 +49,15 @@ public class W3CTraceContextPropagatorBenchmark
     [Benchmark]
     public string ParseTraceStateWithMultipleVendorsAndOtelTraceState()
         => W3CTraceContextPropagator.ParseTraceState(MultipleVendorsWithOtelTraceState)
+                                     .LastParent;
+
+    [Benchmark]
+    public string ParseTraceStateWithDatadogBeforeOtel()
+        => W3CTraceContextPropagator.ParseTraceState(DatadogAndOtelTraceState)
+                                     .LastParent;
+
+    [Benchmark]
+    public string ParseTraceStateWithOtelBeforeDatadog()
+        => W3CTraceContextPropagator.ParseTraceState(OtelAndDatadogTraceState)
                                      .LastParent;
 }
