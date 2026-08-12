@@ -14,12 +14,7 @@ internal sealed class EvaluationTimeBudgetExceededException : Exception
     internal const string ErrorMessage = "Expression evaluation timed out";
 
     public EvaluationTimeBudgetExceededException()
-        : base(ErrorMessage)
-    {
-    }
-
-    public EvaluationTimeBudgetExceededException(Exception innerException)
-        : base(ErrorMessage, innerException)
-    {
-    }
+internal sealed class EvaluationTimeBudgetExceededException() : Exception(ErrorMessage)
+{
+    internal const string ErrorMessage = "Expression evaluation timed out";
 }
