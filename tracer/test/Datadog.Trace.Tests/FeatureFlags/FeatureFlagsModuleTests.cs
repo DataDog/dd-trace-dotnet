@@ -7,6 +7,7 @@
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -164,6 +165,25 @@ public class FeatureFlagsModuleTests
         cancellation.Cancel();
 
         await initialization;
+    }
+
+    [Fact]
+    public async Task InitializeAsync_WhenAgentlessSourceCannotStart_ReturnsImmediately()
+    {
+        // Agentless without an API key cannot start the poller. Initialization should return
+        // immediately instead of waiting the full timeout for a configuration that will never arrive.
+        var settings = CreateSettings(
+            (ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"),
+            (ConfigurationKeys.FeatureFlags.FlaggingProviderInitializationTimeoutMs, "60000"));
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+
+        var stopwatch = Stopwatch.StartNew();
+        await module!.InitializeAsync(CancellationToken.None);
+        stopwatch.Stop();
+
+        // Should return near-instantly, not after the 60s timeout.
+        stopwatch.Elapsed.Should().BeLessThan(System.TimeSpan.FromSeconds(5));
+        module.FirstConfigReceived.IsCompleted.Should().BeFalse();
     }
 
     [Fact]

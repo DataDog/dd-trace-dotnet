@@ -40,6 +40,7 @@ namespace Datadog.Trace.FeatureFlags
         private AgentlessConfigurationSource? _agentlessSource;
         private int _activated;
         private int _disposed;
+        private bool _deliveryStarted;
 
         internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
         {
@@ -117,6 +118,7 @@ namespace Datadog.Trace.FeatureFlags
                 case FeatureFlagsSource.RemoteConfig:
                     // Remote Configuration delivery is driven by the Agent, so the subscription set up
                     // in the constructor is all that is needed; activation only marks intent.
+                    _deliveryStarted = true;
                     Log.Debug("FeatureFlagsModule::Activate -> Remote Configuration source is already subscribed");
                     break;
                 case FeatureFlagsSource.Agentless:
@@ -136,6 +138,7 @@ namespace Datadog.Trace.FeatureFlags
                     }
 
                     source.Start();
+                    _deliveryStarted = true;
                     break;
             }
         }
@@ -150,6 +153,14 @@ namespace Datadog.Trace.FeatureFlags
             Activate();
 
             if (_firstConfigReceived.Task.IsCompleted)
+            {
+                return;
+            }
+
+            // When activation could not start any delivery source (for example, agentless without
+            // an API key), waiting would only delay startup for a configuration that will never
+            // arrive. The provider stays not-ready, which is the correct state.
+            if (!_deliveryStarted)
             {
                 return;
             }

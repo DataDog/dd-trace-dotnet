@@ -319,6 +319,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
                 WarnFailure(result, attempts: 1);
                 return Task.CompletedTask;
             case not 200:
+                WarnFailure(result, attempts: 1);
                 return Task.CompletedTask;
         }
 
