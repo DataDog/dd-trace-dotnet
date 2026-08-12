@@ -900,6 +900,16 @@ integration-tests-linux-x64-net10:
         include_all_test_frameworks=true
       fi
 
+      # GitLab's checkout borrows objects from a runner-local cache. That cache is
+      # outside the bind-mounted repository, so make the checkout self-contained
+      # before tests exercise Git metadata from inside the nested container.
+      alternates_file="$(git rev-parse --git-path objects/info/alternates)"
+      if [ -f "$alternates_file" ]; then
+        echo "Materializing Git objects for the integration-test container"
+        git repack -a -d
+        rm -f "$alternates_file"
+      fi
+
       # Azure publishes the universal loader/wrapper from linux-musl-x64 and
       # downloads it into the target runtime folder. Recreate that merge after
       # GitLab downloads the independent producer artifacts.
