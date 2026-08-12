@@ -93,11 +93,7 @@ public sealed class KestrelServerImplStartAsyncIntegration
         }
         catch (Exception ex)
         {
-            // Evaluating this property runs third-party code that can throw for reasons outside our
-            // control. The Azure Functions worker, for instance, builds its endpoints lazily from
-            // function metadata and rejects malformed route templates, so we are the first caller to
-            // trigger the failure. That is not a tracer defect, so warn instead of reporting an error
-            // to telemetry. Anything thrown by our own collection below is a defect and still errors.
+            // Evaluating this property runs third-party code, so a failure here isn't a tracer defect
             Log.Warning(ex, "API Security: Endpoints collection: Failed to evaluate the EndpointDataSource endpoints.");
             return;
         }
