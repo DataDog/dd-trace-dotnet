@@ -647,7 +647,7 @@ namespace Datadog.Trace.Propagators
 
             spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
-            spanContext.OtelTraceState = traceState.OtTraceState;
+            spanContext.OtelTraceState = OtelTraceStateHelpers.Normalize(traceState.OtTraceState);
             spanContext.LastParentId = traceState.LastParent;
 
             context = new PropagationContext(spanContext, baggage: null);

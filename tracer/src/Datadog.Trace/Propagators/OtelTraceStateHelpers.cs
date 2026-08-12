@@ -13,13 +13,13 @@ namespace Datadog.Trace.Propagators
     /// <summary>
     /// String-surgery helpers over the raw content of the W3C tracestate "ot=" list-member
     /// (OpenTelemetry consistent-probability-sampling sub-keys "rv"/"th"). The value is never
-    /// decoded into a typed struct: these two helpers are the only code that inspects or
+    /// decoded into a typed struct: these helpers are the only code that inspects or
     /// rewrites the "rv"/"th" sub-keys; every other sub-key (recognized or not) round-trips
     /// byte-for-byte through <see cref="SetRvTh"/> in its original order.
     /// </summary>
     internal static class OtelTraceStateHelpers
     {
-        private const int MaxRvHexDigits = 14;
+        private const int MaxHexDigits = 14;
 
         /// <summary>
         /// Finds the "rv" item in the raw "ot=" value (items separated by ';', key/value by ':')
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Propagators
                 if (colonIndex > 0 && colonIndex < item.Length - 1 && item.Slice(0, colonIndex).Equals("rv".AsSpan(), StringComparison.Ordinal))
                 {
                     var rvSlice = item.Slice(colonIndex + 1);
-                    return (rvSlice.Length != MaxRvHexDigits) ? null : TryParseLowercaseHex(rvSlice, out var rv) ? rv : null;
+                    return (rvSlice.Length != MaxHexDigits) ? null : TryParseLowercaseHex(rvSlice, out var rv) ? rv : null;
                 }
 
                 if (separatorIndex < 0)
@@ -56,6 +56,38 @@ namespace Datadog.Trace.Propagators
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Removes malformed "rv" and "th" items while preserving valid and unknown items.
+        /// Returns the original string when no rewrite is needed, and null when nothing remains.
+        /// </summary>
+        internal static string? Normalize(string? raw)
+        {
+            if (StringUtil.IsNullOrEmpty(raw))
+            {
+                return null;
+            }
+
+            var remaining = raw!.AsSpan();
+
+            while (true)
+            {
+                var separatorIndex = remaining.IndexOf(';');
+                var item = separatorIndex < 0 ? remaining : remaining.Slice(0, separatorIndex);
+
+                if (IsInvalidRvOrTh(item))
+                {
+                    return RemoveInvalidRvTh(raw);
+                }
+
+                if (separatorIndex < 0)
+                {
+                    return raw;
+                }
+
+                remaining = remaining.Slice(separatorIndex + 1);
+            }
         }
 
         /// <summary>
@@ -131,6 +163,65 @@ namespace Datadog.Trace.Propagators
             var hex = th.ToString("x14");
             var trimmed = hex.TrimEnd('0');
             return trimmed.Length == 0 ? "0" : trimmed;
+        }
+
+        private static string? RemoveInvalidRvTh(string raw)
+        {
+            var sb = StringBuilderCache.Acquire();
+
+            try
+            {
+                var remaining = raw.AsSpan();
+
+                while (true)
+                {
+                    var separatorIndex = remaining.IndexOf(';');
+                    var item = separatorIndex < 0 ? remaining : remaining.Slice(0, separatorIndex);
+
+                    if (!IsInvalidRvOrTh(item))
+                    {
+                        if (sb.Length > 0)
+                        {
+                            sb.Append(';');
+                        }
+
+                        sb.Append(item);
+                    }
+
+                    if (separatorIndex < 0)
+                    {
+                        break;
+                    }
+
+                    remaining = remaining.Slice(separatorIndex + 1);
+                }
+
+                return sb.Length == 0 ? null : sb.ToString();
+            }
+            finally
+            {
+                StringBuilderCache.Release(sb);
+            }
+        }
+
+        private static bool IsInvalidRvOrTh(ReadOnlySpan<char> item)
+        {
+            var colonIndex = item.IndexOf(':');
+            var key = colonIndex > 0 ? item.Slice(0, colonIndex) : item;
+
+            if (key.Equals("rv".AsSpan(), StringComparison.Ordinal))
+            {
+                var value = colonIndex > 0 ? item.Slice(colonIndex + 1) : default;
+                return value.Length != MaxHexDigits || !TryParseLowercaseHex(value, out _);
+            }
+
+            if (key.Equals("th".AsSpan(), StringComparison.Ordinal))
+            {
+                var value = colonIndex > 0 ? item.Slice(colonIndex + 1) : default;
+                return value.Length is < 1 or > MaxHexDigits || !TryParseLowercaseHex(value, out _);
+            }
+
+            return false;
         }
 
         private static bool TryParseLowercaseHex(ReadOnlySpan<char> value, out ulong result)

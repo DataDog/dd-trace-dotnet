@@ -291,6 +291,23 @@ namespace Datadog.Trace.Tests
             traceContext.OtelTraceState.Should().BeNull();
         }
 
+        [Theory]
+        [InlineData(SamplingMechanism.Manual)]
+        [InlineData(SamplingMechanism.Asm)]
+        public void SetSamplingPriority_NonProbabilityOverride_RemovesLocallyGeneratedRv(string mechanism)
+        {
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 1);
+            traceContext.SetSamplingPriority(
+                SamplingPriorityValues.UserKeep,
+                SamplingMechanism.LocalTraceSamplingRule,
+                rate: 0.1f,
+                sample: true);
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism);
+
+            traceContext.OtelTraceState.Should().BeNull();
+        }
+
         [Fact]
         public void SetSamplingPriority_RateLimiterDemotesKeep_StripsThButKeepsRv()
         {

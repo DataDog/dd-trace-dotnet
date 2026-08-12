@@ -39,6 +39,8 @@ namespace Datadog.Trace
 
         private IastRequestContext? _iastRequestContext;
         private AppSecRequestContext? _appSecRequestContext;
+        private string? _otelTraceState;
+        private bool _containsLocallyGeneratedOtelRandomValue;
 
         // Lazily created on the first feature-flag evaluation for this trace; null until then, so
         // traces that never evaluate a flag pay nothing. State dies with the TraceContext.
@@ -120,7 +122,15 @@ namespace Datadog.Trace
         /// <see cref="Propagators.OtelTraceStateHelpers"/> for the only code that inspects
         /// or rewrites its "rv"/"th" sub-keys.
         /// </summary>
-        internal string? OtelTraceState { get; set; }
+        internal string? OtelTraceState
+        {
+            get => _otelTraceState;
+            set
+            {
+                _otelTraceState = value;
+                _containsLocallyGeneratedOtelRandomValue = false;
+            }
+        }
 
         /// <summary> Gets the IAST context </summary>
         internal IastRequestContext? IastRequestContext => _iastRequestContext;
@@ -415,12 +425,14 @@ namespace Datadog.Trace
                     }
 
                     // Rate-limiter demotion removes th in the same rewrite.
-                    OtelTraceState = OtelTraceStateHelpers.SetRvTh(OtelTraceState, rv, didSample && SamplingPriorityValues.IsDrop(p) ? null : th);
+                    _otelTraceState = OtelTraceStateHelpers.SetRvTh(_otelTraceState, rv, didSample && SamplingPriorityValues.IsDrop(p) ? null : th);
+                    _containsLocallyGeneratedOtelRandomValue = true;
                 }
             }
             else if (mechanism is Sampling.SamplingMechanism.Manual or Sampling.SamplingMechanism.Asm)
             {
-                OtelTraceState = OtelTraceStateHelpers.SetRvTh(OtelTraceState, OtelTraceStateHelpers.ExtractRv(OtelTraceState), th: null);
+                var inheritedRv = _containsLocallyGeneratedOtelRandomValue ? null : OtelTraceStateHelpers.ExtractRv(_otelTraceState);
+                OtelTraceState = OtelTraceStateHelpers.SetRvTh(_otelTraceState, inheritedRv, th: null);
             }
 
             if (notifyDistributedTracer)
