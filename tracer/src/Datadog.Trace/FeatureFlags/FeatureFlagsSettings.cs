@@ -22,6 +22,7 @@ internal sealed class FeatureFlagsSettings
 {
     internal const string AgentlessSourceName = "agentless";
     internal const string RemoteConfigSourceName = "remote_config";
+    internal const string OfflineSourceName = "offline";
 
     internal const string DefaultSite = "datadoghq.com";
 
@@ -165,6 +166,9 @@ internal sealed class FeatureFlagsSettings
                     return FeatureFlagsSource.Agentless;
                 case RemoteConfigSourceName:
                     return FeatureFlagsSource.RemoteConfig;
+                case OfflineSourceName:
+                    // Reserved fail-closed sentinel: the provider is intentionally off, so no warning.
+                    return FeatureFlagsSource.Disabled;
                 default:
                     Log.Warning(
                         "Unsupported {SourceKey} value '{Source}'. Feature Flags are disabled.",

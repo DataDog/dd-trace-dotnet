@@ -37,8 +37,10 @@ public class FeatureFlagsSettingsTests
     [InlineData(null, null, "false", FeatureFlagsSource.Disabled)]
     // An unrecognised source fails closed rather than guessing a billed delivery path.
     [InlineData(null, "invalid", null, FeatureFlagsSource.Disabled)]
-    [InlineData(null, "offline", null, FeatureFlagsSource.Disabled)]
     [InlineData(null, "invalid", "true", FeatureFlagsSource.Disabled)]
+    // "offline" is a reserved, recognised fail-closed sentinel (not an unrecognised value).
+    [InlineData(null, "offline", null, FeatureFlagsSource.Disabled)]
+    [InlineData(null, "offline", "true", FeatureFlagsSource.Disabled)]
     public void ResolvesSource(string? enabled, string? source, string? legacyEnabled, object expected)
     {
         var expectedSource = (FeatureFlagsSource)expected;
