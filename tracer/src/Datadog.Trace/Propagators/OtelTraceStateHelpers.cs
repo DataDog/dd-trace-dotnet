@@ -43,7 +43,8 @@ namespace Datadog.Trace.Propagators
 
                 if (colonIndex > 0 && colonIndex < item.Length - 1 && item.Slice(0, colonIndex).Equals("rv".AsSpan(), StringComparison.Ordinal))
                 {
-                    return TryParseLowercaseHex(item.Slice(colonIndex + 1), MaxRvHexDigits, out var rv) ? rv : null;
+                    var rvSlice = item.Slice(colonIndex + 1);
+                    return (rvSlice.Length != MaxRvHexDigits) ? null : TryParseLowercaseHex(rvSlice, out var rv) ? rv : null;
                 }
 
                 if (separatorIndex < 0)
@@ -125,25 +126,18 @@ namespace Datadog.Trace.Propagators
 
         private static string FormatThresholdHex(ulong th)
         {
-            // Format as hex (up to 14 hex digits for a 56-bit value), then trim trailing zero nibbles.
+            // Format as 14 hex digits, then trim trailing zero nibbles.
             // A fully-zero threshold trims to the empty string; represent it as a single "0".
-            var hex = th.ToString("x");
+            var hex = th.ToString("x14");
             var trimmed = hex.TrimEnd('0');
             return trimmed.Length == 0 ? "0" : trimmed;
         }
 
-        private static bool TryParseLowercaseHex(ReadOnlySpan<char> value, int maxDigits, out ulong result)
+        private static bool TryParseLowercaseHex(ReadOnlySpan<char> value, out ulong result)
         {
             result = 0;
-
-            if (value.Length == 0 || value.Length > maxDigits)
+            foreach (var character in value)
             {
-                return false;
-            }
-
-            for (var index = 0; index < value.Length; index++)
-            {
-                var character = value[index];
                 int digit;
 
                 if (character is >= '0' and <= '9')
