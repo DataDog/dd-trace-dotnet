@@ -5,7 +5,7 @@
 
 // Unlike the other Azure Functions tests (which only run in the Windows-only
 // integration_tests_azure_functions stage), these run on Linux in the DockerTest group 2 job,
-// because they need the Service Bus/Event Hubs/Azurite emulators from docker-compose. That job
+// because they need messaging emulators managed by Testcontainers and docker-compose. That job
 // passes an explicit --filter, which bypasses the default (Category!=AzureFunctions) exclusion,
 // so the framework upper bound has to be expressed here instead. Keep it in sync with the
 // TargetFrameworks of Samples.AzureFunctions.V4Isolated.Messaging: Azure Functions doesn't
@@ -19,12 +19,12 @@ using System.Linq;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Azure.Messaging.EventHubs;
 using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Azure;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
@@ -48,21 +48,19 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
     private const string TestIdEnvironmentVariable = "DD_AZURE_FUNCTIONS_MESSAGING_TEST_ID";
     private const string TestModeEnvironmentVariable = "DD_AZURE_FUNCTIONS_MESSAGING_TEST_MODE";
     private const string EventGridFunctionsTopicEndpointEnvironmentVariable = "EVENTGRID_AZURE_FUNCTIONS_TOPIC_ENDPOINT";
-    private const string LocalServiceBusConnectionString = "Endpoint=sb://localhost:5672;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;";
-    private const string LocalEventHubsConnectionString = "Endpoint=sb://localhost:5673;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;";
-    private const string AzuriteAccountKey = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
+    private readonly AzureEventHubsFixture _eventHubsFixture;
+    private readonly AzureServiceBusFixture _serviceBusFixture;
 
-    public AzureFunctionsMessagingTriggerTests(ITestOutputHelper output)
+    public AzureFunctionsMessagingTriggerTests(ITestOutputHelper output, AzureEventHubsFixture eventHubsFixture, AzureServiceBusFixture serviceBusFixture)
         : base("AzureFunctions.V4Isolated.Messaging", output)
     {
+        _eventHubsFixture = eventHubsFixture;
+        _serviceBusFixture = serviceBusFixture;
         SetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME", "dotnet-isolated");
         SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         SetEnvironmentVariable("WEBSITE_SITE_NAME", nameof(AzureFunctionsMessagingTriggerTests));
-        SetEnvironmentVariable("ASB_CONNECTION_STRING", GetServiceBusConnectionString());
-        SetEnvironmentVariable("EVENTHUBS_CONNECTION_STRING", GetEventHubsConnectionString());
         SetEnvironmentVariable("EVENTGRID_TOPIC_ENDPOINT", GetEventGridTopicEndpoint());
         SetEnvironmentVariable("EVENTGRID_TOPIC_KEY", "test-key");
-        SetEnvironmentVariable("AzureWebJobsStorage", GetAzuriteConnectionString());
         // Exclude the Event Grid emulator endpoint from HTTP client tracing to avoid an extra http.request span.
         SetEnvironmentVariable(
             "DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS",
@@ -76,6 +74,7 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
     public async Task ServiceBusTrigger_SubmitsTrace()
     {
         Skip.If(EnvironmentHelper.IsAlpine(), "Azure Functions Core Tools are not installed in the Alpine integration test image.");
+        await ConfigureContainers(_eventHubsFixture, _serviceBusFixture);
 
         var testId = CreateTestId();
         SetEnvironmentVariable(TestModeEnvironmentVariable, "ServiceBus");
@@ -85,7 +84,7 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         SetEnvironmentVariable("AzureWebJobs.EventHubTrigger.Disabled", "true");
         SetEnvironmentVariable("AzureWebJobs.EventGridTrigger.Disabled", "true");
 
-        await using (var client = new ServiceBusClient(GetServiceBusConnectionString()))
+        await using (var client = new ServiceBusClient(_serviceBusFixture.ServiceBusConnectionString))
         await using (var receiver = client.CreateReceiver(ServiceBusQueueName))
         {
             await PurgeQueue(receiver);
@@ -117,6 +116,7 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
     public async Task EventHubTrigger_SubmitsTrace()
     {
         Skip.If(EnvironmentHelper.IsAlpine(), "Azure Functions Core Tools are not installed in the Alpine integration test image.");
+        await ConfigureContainers(_eventHubsFixture, _serviceBusFixture);
 
         var testId = CreateTestId();
         SetEnvironmentVariable(TestModeEnvironmentVariable, "EventHub");
@@ -165,6 +165,7 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
     public async Task EventGrid_SubmitsTrace(string mode, string route, string snapshotName)
     {
         Skip.If(EnvironmentHelper.IsAlpine(), "Azure Functions Core Tools are not installed in the Alpine integration test image.");
+        await ConfigureContainers(_eventHubsFixture, _serviceBusFixture);
 
         var testId = CreateTestId();
         SetEnvironmentVariable(TestModeEnvironmentVariable, mode);
@@ -196,25 +197,6 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
                               .UseFileName($"{nameof(AzureFunctionsMessagingTriggerTests)}.{snapshotName}")
                               .DisableRequireUniquePrefix();
         }
-    }
-
-    private static VerifySettings GetMessagingTriggerSettings()
-    {
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddSimpleScrubber("aas.environment.runtime: .NET Core", "aas.environment.runtime: .NET");
-        // Normalize emulator hostnames so snapshots are consistent across local and CI (Docker) environments
-        settings.AddSimpleScrubber("network.destination.name: azure-eventhubs-emulator", "network.destination.name: localhost");
-        settings.AddSimpleScrubber("network.destination.name: azureservicebus-emulator", "network.destination.name: localhost");
-        settings.AddSimpleScrubber("network.destination.name: azure-eventgrid-emulator", "network.destination.name: localhost");
-        settings.AddSimpleScrubber("server.address: azure-eventhubs-emulator", "server.address: localhost");
-        settings.AddSimpleScrubber("server.address: azureservicebus-emulator", "server.address: localhost");
-        settings.AddSimpleScrubber("server.address: azure-eventgrid-emulator", "server.address: localhost");
-        // SpanLinks contain raw 128-bit trace IDs and trace state that change between runs
-        settings.AddRegexScrubber(new Regex(@"TraceIdLow: \d+"), "TraceIdLow: 0");
-        settings.AddRegexScrubber(new Regex(@"TraceIdHigh: \d+"), "TraceIdHigh: 0");
-        settings.AddRegexScrubber(new Regex(@"TraceFlags: \d+"), "TraceFlags: 0");
-        settings.AddRegexScrubber(new Regex(@"TraceState: [^\r\n]+"), "TraceState: scrubbed");
-        return settings;
     }
 
     private static async Task SeedViaHttpAsync(string route)
@@ -266,46 +248,46 @@ public class AzureFunctionsMessagingTriggerTests : AzureFunctionsTests
         }
     }
 
-    private static async Task ResetEventHubCheckpointStore()
-    {
-        var container = new BlobContainerClient(GetAzuriteConnectionString(), "azure-webjobs-eventhub");
-        await container.CreateIfNotExistsAsync();
-
-        var prefix = $"{GetEventHubsCheckpointNamespace()}/{EventHubName}/{EventHubConsumerGroup}/";
-        await foreach (var blob in container.GetBlobsAsync(prefix: prefix))
-        {
-            await container.DeleteBlobIfExistsAsync(blob.Name);
-        }
-    }
-
-    private static string GetServiceBusConnectionString()
-        => Environment.GetEnvironmentVariable("ASB_CONNECTION_STRING") ?? LocalServiceBusConnectionString;
-
-    private static string GetEventHubsConnectionString()
-        => Environment.GetEnvironmentVariable("EVENTHUBS_CONNECTION_STRING") ?? LocalEventHubsConnectionString;
-
     private static string GetEventGridTopicEndpoint()
         => Environment.GetEnvironmentVariable(EventGridFunctionsTopicEndpointEnvironmentVariable)
         ?? "http://localhost:6500/samples-azure-functions-eventgrid-topic/api/events";
-
-    private static string GetAzuriteConnectionString()
-    {
-        var host = UseDockerHostnames() ? "azurite" : "127.0.0.1";
-        return $"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey={AzuriteAccountKey};BlobEndpoint=http://{host}:10000/devstoreaccount1;QueueEndpoint=http://{host}:10001/devstoreaccount1;TableEndpoint=http://{host}:10002/devstoreaccount1;";
-    }
-
-    private static bool UseDockerHostnames()
-        => (Environment.GetEnvironmentVariable("ASB_CONNECTION_STRING")?.Contains("azureservicebus-emulator", StringComparison.OrdinalIgnoreCase) ?? false)
-        || (Environment.GetEnvironmentVariable("EVENTHUBS_CONNECTION_STRING")?.Contains("azure-eventhubs-emulator", StringComparison.OrdinalIgnoreCase) ?? false);
-
-    private static string GetEventHubsCheckpointNamespace()
-        => EventHubsConnectionStringProperties.Parse(GetEventHubsConnectionString()).Endpoint.Host;
 
     private static string CreateTestId()
         => Guid.NewGuid().ToString("N");
 
     private static string CreateHostId(string testId)
         => "afmsg" + testId.Substring(0, 27);
+
+    private VerifySettings GetMessagingTriggerSettings()
+    {
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddSimpleScrubber("aas.environment.runtime: .NET Core", "aas.environment.runtime: .NET");
+        // Normalize emulator hostnames so snapshots are consistent across local and CI (Docker) environments
+        settings.AddSimpleScrubber($"network.destination.name: {_eventHubsFixture.EventHubsHostname}", "network.destination.name: localhost");
+        settings.AddSimpleScrubber($"network.destination.name: {_serviceBusFixture.ServiceBusHostname}", "network.destination.name: localhost");
+        settings.AddSimpleScrubber("network.destination.name: azure-eventgrid-emulator", "network.destination.name: localhost");
+        settings.AddSimpleScrubber($"server.address: {_eventHubsFixture.EventHubsHostname}", "server.address: localhost");
+        settings.AddSimpleScrubber($"server.address: {_serviceBusFixture.ServiceBusHostname}", "server.address: localhost");
+        settings.AddSimpleScrubber("server.address: azure-eventgrid-emulator", "server.address: localhost");
+        // SpanLinks contain raw 128-bit trace IDs and trace state that change between runs
+        settings.AddRegexScrubber(new Regex(@"TraceIdLow: \d+"), "TraceIdLow: 0");
+        settings.AddRegexScrubber(new Regex(@"TraceIdHigh: \d+"), "TraceIdHigh: 0");
+        settings.AddRegexScrubber(new Regex(@"TraceFlags: \d+"), "TraceFlags: 0");
+        settings.AddRegexScrubber(new Regex(@"TraceState: [^\r\n]+"), "TraceState: scrubbed");
+        return settings;
+    }
+
+    private async Task ResetEventHubCheckpointStore()
+    {
+        var container = new BlobContainerClient(_eventHubsFixture.AzuriteConnectionString, "azure-webjobs-eventhub");
+        await container.CreateIfNotExistsAsync();
+
+        var prefix = $"{_eventHubsFixture.EventHubsHostname}/{EventHubName}/{EventHubConsumerGroup}/";
+        await foreach (var blob in container.GetBlobsAsync(prefix: prefix))
+        {
+            await container.DeleteBlobIfExistsAsync(blob.Name);
+        }
+    }
 }
 
 #endif

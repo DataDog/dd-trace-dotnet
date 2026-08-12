@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -27,9 +28,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
     [Collection(AzureMessagingEmulatorTestsCollection.Name)]
     public class AzureServiceBusAPMTests : TracingIntegrationTest
     {
-        public AzureServiceBusAPMTests(ITestOutputHelper output)
+        private readonly AzureServiceBusFixture _serviceBusFixture;
+
+        public AzureServiceBusAPMTests(ITestOutputHelper output, AzureServiceBusFixture serviceBusFixture)
             : base("AzureServiceBus.APM", output)
         {
+            _serviceBusFixture = serviceBusFixture;
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
@@ -47,6 +51,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            await ConfigureContainers(_serviceBusFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
             SetEnvironmentVariable("ASB_TEST_MODE", "SendMessages");
@@ -87,6 +93,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            await ConfigureContainers(_serviceBusFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
             SetEnvironmentVariable("ASB_TEST_MODE", "ReceiveMessages");
@@ -122,6 +130,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            await ConfigureContainers(_serviceBusFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
             SetEnvironmentVariable("ASB_TEST_MODE", "ReceiveMessagesMultiple");
@@ -157,6 +167,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            await ConfigureContainers(_serviceBusFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED", "true");
@@ -218,6 +230,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            await ConfigureContainers(_serviceBusFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_AZURE_SERVICEBUS_BATCH_LINKS_ENABLED", "false");
@@ -268,6 +282,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            await ConfigureContainers(_serviceBusFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
             SetEnvironmentVariable("ASB_TEST_MODE", "ScheduleMessages");
@@ -312,6 +328,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            await ConfigureContainers(_serviceBusFixture);
+
             // Reproduces a ServiceBusProcessor consumer with the Azure activity source
             // enabled (AZURE_EXPERIMENTAL_ENABLE_ACTIVITY_SOURCE=true + DD_TRACE_OTEL_ENABLED=true).
             // The producer's send and the consumer's ServiceBusProcessor.ProcessMessage should end up
@@ -355,6 +373,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             [PackageVersionData(nameof(PackageVersions.AzureServiceBusAPM))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            await ConfigureContainers(_serviceBusFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
@@ -400,6 +420,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         [Trait("Category", "EndToEnd")]
         public async Task TestProcessorExtractionBehavior(string extractionBehavior)
         {
+            await ConfigureContainers(_serviceBusFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", "v1");
             SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
