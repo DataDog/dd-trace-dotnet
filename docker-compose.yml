@@ -27,22 +27,9 @@ services:
 
   mysql_arm64:
     image: mysql/mysql-server:8.0@sha256:d6c8301b7834c5b9c2b733b10b7e630f441af7bc917c74dba379f24eeeb6a313
-    environment:
-    - MYSQL_DATABASE=world
-    - MYSQL_ROOT_PASSWORD=mysqldb
-    - MYSQL_USER=mysqldb
-    - MYSQL_PASSWORD=mysqldb
-    ports:
-    - "3306"
 
   postgres_arm64:
     image: postgres:10.5-alpine@sha256:295a08ddd9efa1612c46033f0b96c3976f80f49c7ce29e05916b0af557806117
-    environment:
-    - POSTGRES_PASSWORD=postgres
-    - POSTGRES_USER=postgres
-    - POSTGRES_DB=postgres
-    ports:
-    - "5432"
 
   rabbitmq_arm64:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
@@ -53,14 +40,6 @@ services:
 
   servicestackredis_arm64:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
-
-  sqledge_arm64:
-    image: mcr.microsoft.com/azure-sql-edge:latest@sha256:902628a8be89e35dfb7895ca31d602974c7bafde4d583a0d0873844feb1c42cf
-    ports:
-    - "1433"
-    environment:
-    - ACCEPT_EULA=Y
-    - SA_PASSWORD=Strong!Passw0rd
 
   cosmosdb-emulator_arm64:
     image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:vnext-preview@sha256:54d7bc334494c50cea867c270880671a7db080626a9732832b34c0d69342f9b0
@@ -155,44 +134,15 @@ services:
 
   postgres:
     image: postgres:10.5-alpine@sha256:295a08ddd9efa1612c46033f0b96c3976f80f49c7ce29e05916b0af557806117
-    profiles: ["group1"]
-    environment:
-    - POSTGRES_PASSWORD=postgres
-    - POSTGRES_USER=postgres
-    - POSTGRES_DB=postgres
-    ports:
-    - "127.0.0.1:5432:5432"
 
   mysql:
     image: mysql/mysql-server:8.0@sha256:d6c8301b7834c5b9c2b733b10b7e630f441af7bc917c74dba379f24eeeb6a313
-    profiles: ["group1"]
-    environment:
-    - MYSQL_DATABASE=world
-    - MYSQL_ROOT_PASSWORD=mysqldb
-    - MYSQL_USER=mysqldb
-    - MYSQL_PASSWORD=mysqldb
-    ports:
-    - "127.0.0.1:3307:3306"
 
   mysql57:
     image: mysql/mysql-server:5.7@sha256:1178cdd375f758968cd834ac4057bae41307e64b7c69a9e145896e7b11f48064
-    profiles: ["group1"]
-    environment:
-    - MYSQL_DATABASE=world
-    - MYSQL_ROOT_PASSWORD=mysqldb
-    - MYSQL_USER=mysqldb
-    - MYSQL_PASSWORD=mysqldb
-    ports:
-    - "127.0.0.1:3407:3306"
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:latest@sha256:2cd0aec4a3bfc3cf9205bed3f7922f4c6208f7c767dc62edcee308d0fd7d56d0
-    profiles: ["group1"]
-    ports:
-    - "127.0.0.1:1433:1433"
-    environment:
-    - ACCEPT_EULA=Y
-    - SA_PASSWORD=Strong!Passw0rd
 
   sqledge:
     image: mcr.microsoft.com/azure-sql-edge:latest@sha256:902628a8be89e35dfb7895ca31d602974c7bafde4d583a0d0873844feb1c42cf
@@ -405,12 +355,6 @@ services:
       - ELASTICSEARCH7_HOST=elasticsearch7:9200
       - ELASTICSEARCH6_HOST=elasticsearch6:9200
       - ELASTICSEARCH5_HOST=elasticsearch5:9200
-      - SQLSERVER_CONNECTION_STRING=Server=sqlserver;User=sa;Password=Strong!Passw0rd;TrustServerCertificate=true
-      - POSTGRES_HOST=postgres
-      - MYSQL_HOST=mysql
-      - MYSQL_PORT=3306
-      - MYSQL57_HOST=mysql57
-      - MYSQL57_PORT=3306
       - RABBITMQ_HOST=rabbitmq
       - KAFKA_BROKER_HOST=kafka-broker:29092
       - AWS_SDK_HOST=localstack:4566
@@ -617,10 +561,6 @@ services:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
     profiles: ["group1"]
     depends_on:
-      - sqlserver
-      - postgres
-      - mysql
-      - mysql57
       - rabbitmq
       - kafka-broker
       - kafka-zookeeper
@@ -628,7 +568,7 @@ services:
       - test-agent
     environment:
       - TIMEOUT_LENGTH=120
-    command: sqlserver:1433 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
+    command: rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 couchbase:11210 test-agent:8126 test-agent:4317 test-agent:4318
 
   StartDependencies.Group2:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
@@ -683,10 +623,6 @@ services:
       - ELASTICSEARCH7_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH6_HOST=elasticsearch7_arm64:9200
       - ELASTICSEARCH5_HOST=elasticsearch7_arm64:9200
-      - SQLSERVER_CONNECTION_STRING=Server=sqledge_arm64;User=sa;Password=Strong!Passw0rd;TrustServerCertificate=true
-      - POSTGRES_HOST=postgres_arm64
-      - MYSQL_HOST=mysql_arm64
-      - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq_arm64
       - AWS_SDK_HOST=localstack_arm64:4566
       - COSMOSDB_ENDPOINT=https://cosmosdb-emulator_arm64:8081
@@ -720,10 +656,7 @@ services:
       - TEST_AGENT_HOST=test-agent
     depends_on:
       - elasticsearch7_arm64
-      - sqledge_arm64
       - mongo_arm64
-      - postgres_arm64
-      - mysql_arm64
       - rabbitmq_arm64
       - localstack_arm64
       - test-agent
@@ -733,17 +666,14 @@ services:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
     depends_on:
       - elasticsearch7_arm64
-      - sqledge_arm64
       - mongo_arm64
-      - postgres_arm64
-      - mysql_arm64
       - rabbitmq_arm64
       - localstack_arm64
       - test-agent
       - cosmosdb-emulator_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
+    command: elasticsearch7_arm64:9200 mongo_arm64:27017 rabbitmq_arm64:5672 localstack_arm64:4566 test-agent:8126 test-agent:4317 test-agent:4318 cosmosdb-emulator_arm64:8081
 
   IntegrationTests.ARM64.Debugger:
     build:
@@ -817,15 +747,12 @@ services:
     image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
     depends_on:
       - elasticsearch7_osx_arm64
-      - sqledge_osx_arm64
       - mongo_osx_arm64
-      - postgres_osx_arm64
-      - mysql_osx_arm64
       - rabbitmq_osx_arm64
       - localstack_osx_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: elasticsearch7_osx_arm64:9200 sqledge_osx_arm64:1433 mongo_osx_arm64:27017 postgres_osx_arm64:5432 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
+    command: elasticsearch7_osx_arm64:9200 mongo_osx_arm64:27017 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
 
   # OSX ARM64 dependencies
 
@@ -858,22 +785,9 @@ services:
 
   mysql_osx_arm64:
     image: mysql/mysql-server:8.0@sha256:d6c8301b7834c5b9c2b733b10b7e630f441af7bc917c74dba379f24eeeb6a313
-    environment:
-      - MYSQL_DATABASE=world
-      - MYSQL_ROOT_PASSWORD=mysqldb
-      - MYSQL_USER=mysqldb
-      - MYSQL_PASSWORD=mysqldb
-    ports:
-      - "3306:3306"
 
   postgres_osx_arm64:
     image: postgres:10.5-alpine@sha256:295a08ddd9efa1612c46033f0b96c3976f80f49c7ce29e05916b0af557806117
-    environment:
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=postgres
-    ports:
-      - "5432:5432"
 
   rabbitmq_osx_arm64:
     image: rabbitmq:3-management@sha256:e582c0bc7766f3342496d8485efb5a1df782b5ce3886ad017e2eaae442311f69
@@ -893,14 +807,6 @@ services:
 
   stackexchangeredis_osx_arm64-single:
     image: redis:4-alpine@sha256:aaf7c123077a5e45ab2328b5ef7e201b5720616efac498d55e65a7afbb96ae20
-
-  sqledge_osx_arm64:
-    image: mcr.microsoft.com/azure-sql-edge:latest@sha256:902628a8be89e35dfb7895ca31d602974c7bafde4d583a0d0873844feb1c42cf
-    ports:
-      - "1433:1433"
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=Strong!Passw0rd
 
   # keep syncronized image version with tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Containers\AerospikeFixture.cs
   aerospike:
