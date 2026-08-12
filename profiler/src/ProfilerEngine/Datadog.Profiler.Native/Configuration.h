@@ -90,6 +90,7 @@ public:
     std::chrono::milliseconds GetHeapSnapshotCheckInterval() const override;
     uint32_t GetHeapSnapshotMemoryPressureThreshold() const override;
     std::chrono::seconds GetTestHeapSnapshotInterval() const override;
+    std::chrono::milliseconds GetLibrariesInfoCacheStartTimeout() const override;
     uint32_t GetHeapHandleLimit() const override;
     bool UseManagedCodeCache() const override;
     bool IsMemoryFootprintEnabled() const override;
@@ -123,6 +124,7 @@ private:
     std::chrono::milliseconds ExtractHeapSnapshotCheckInterval() const;
     std::chrono::minutes GetDefaultHeapSnapshotInterval() const;
     std::chrono::seconds ExtractTestHeapSnapshotInterval() const;
+    std::chrono::milliseconds ExtractLibrariesInfoCacheStartTimeout() const;
     int32_t ExtractHeapHandleLimit() const;
     uint32_t ExtractReferenceTreeFormat() const;
 
@@ -140,6 +142,7 @@ private:
     static CpuProfilerType const DefaultCpuProfilerType;
     static std::chrono::minutes const DefaultDevHeapSnapshotInterval;
     static std::chrono::minutes const DefaultProdHeapSnapshotInterval;
+    static std::chrono::milliseconds const DefaultLibrariesInfoCacheStartTimeout;
 
     bool _isProfilingEnabled;
     bool _isCpuProfilingEnabled;
@@ -211,6 +214,7 @@ private:
     std::chrono::milliseconds _heapSnapshotCheckInterval;
     uint32_t _heapSnapshotMemoryPressureThreshold; // in % of used memory
     std::chrono::seconds _testHeapSnapshotInterval;
+    std::chrono::milliseconds _librariesInfoCacheStartTimeout;
     bool _useManagedCodeCache;
     bool _isMemoryFootprintEnabled;
     uint32_t _referenceTreeFormat;

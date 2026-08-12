@@ -13,6 +13,7 @@
 #include "shared/src/native-src/dd_memory_resource.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <link.h>
 #include <memory>
 #include <shared_mutex>
@@ -122,4 +123,7 @@ private:
     std::thread _worker;
     std::atomic<bool> _stopRequested;
     AutoResetEvent _event;
+    // How long StartImpl waits for the first cache population. Longer on slow/loaded
+    // machines (CI), where the default is not enough and the cache is silently skipped.
+    std::chrono::milliseconds _startTimeout;
 };
