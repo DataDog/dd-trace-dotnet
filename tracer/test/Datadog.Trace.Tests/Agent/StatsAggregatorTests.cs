@@ -547,6 +547,80 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public async Task Otlp_UnmeasuredChildSpan_ExcludedFromStats()
+        {
+// SEMCON-1093 FR04: only service-entry (top-level) or explicitly measured (_dd.measured=1) spans
+// should generate OTLP trace metrics — unmeasured child spans must be excluded.
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+
+            var parentSpan = CreateTopLevelSpan(start, "service");
+            parentSpan.OperationName = "web.request";
+            parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            // Non-top-level, non-measured child — must not produce a stats bucket
+            var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            childSpan.OperationName = "child.op";
+            childSpan.SetDuration(TimeSpan.FromMilliseconds(50));
+
+            aggregator.Add(parentSpan, childSpan);
+
+            var buffer = aggregator.CurrentBuffer;
+            buffer.Buckets.Should().HaveCount(1);
+            buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan));
+            buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(childSpan));
+        }
+
+        [Fact]
+        public async Task Otlp_MeasuredChildSpan_IncludedInStats()
+        {
+            // FR04: spans with _dd.measured=1 should be included in OTLP mode even when non-top-level.
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+
+            var parentSpan = CreateTopLevelSpan(start, "service");
+            parentSpan.OperationName = "web.request";
+            parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var measuredChild = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            measuredChild.OperationName = "measured.child";
+            measuredChild.SetTag(Tags.Measured, "1");
+            measuredChild.SetDuration(TimeSpan.FromMilliseconds(50));
+
+            aggregator.Add(parentSpan, measuredChild);
+
+            var buffer = aggregator.CurrentBuffer;
+            buffer.Buckets.Should().HaveCount(2);
+            buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan));
+            buffer.Buckets.Should().ContainKey(aggregator.BuildKey(measuredChild));
+        }
+
+        [Fact]
+        public async Task Otlp_SpanKindEligibleChildSpan_ExcludedFromStats()
+        {
+            // FR04: span-kind-eligible (client/server) is a Datadog stats concept; for OTLP only
+            // top-level and _dd.measured=1 spans are included — span kind alone is not enough.
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+
+            var parentSpan = CreateTopLevelSpan(start, "service");
+            parentSpan.OperationName = "web.request";
+            parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var clientChild = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            clientChild.OperationName = "http.client";
+            clientChild.SetTag(Tags.SpanKind, SpanKinds.Client);
+            clientChild.SetDuration(TimeSpan.FromMilliseconds(50));
+
+            aggregator.Add(parentSpan, clientChild);
+
+            var buffer = aggregator.CurrentBuffer;
+            buffer.Buckets.Should().HaveCount(1);
+            buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan));
+            buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(clientChild));
+        }
+
+        [Fact]
         public async Task ProcessTrace_WhenSampled_ReturnsAggregateAndExport()
         {
             var discoveryService = new StubDiscoveryService(obfuscationVersion: 1);

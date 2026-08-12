@@ -36,7 +36,7 @@ internal sealed class ApiSecurity
         _endpointsCollectionMessageLimit = securitySettings.ApiSecurityEndpointCollectionMessageLimit;
     }
 
-    public bool ShouldAnalyzeSchema(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, string? statusCode, IDictionary<string, object>? routeValues)
+    public bool ShouldAnalyzeSchema(bool lastWafCall, Span localRootSpan, IDictionary<string, object> args, int? statusCode, IDictionary<string, object>? routeValues)
     {
         try
         {
@@ -46,7 +46,7 @@ internal sealed class ApiSecurity
             {
                 var httpRouteTag = localRootSpan.GetTag(Tags.AspNetCoreEndpoint) ?? localRootSpan.GetTag(Tags.HttpRoute);
                 var httpMethod = localRootSpan.GetTag(Tags.HttpMethod);
-                statusCode ??= localRootSpan.GetTag(Tags.HttpStatusCode);
+                statusCode ??= localRootSpan.GetHttpStatusCode();
                 if (httpRouteTag == null || httpMethod == null || statusCode == null)
                 {
                     Log.Debug("Unsupported groupkey for api security {Route}, {Method}, {Status}", httpRouteTag, httpMethod, statusCode);
@@ -125,5 +125,5 @@ internal sealed class ApiSecurity
     public int GetEndpointsCollectionMessageLimit() => _endpointsCollectionMessageLimit;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int CombineHashes(string httpRouteTag, string httpMethod, string statusCode) => HashCode.Combine(httpRouteTag.GetHashCode(), httpMethod.GetHashCode(), statusCode.GetHashCode());
+    internal static int CombineHashes(string httpRouteTag, string httpMethod, int? statusCode) => HashCode.Combine(httpRouteTag.GetHashCode(), httpMethod.GetHashCode(), statusCode?.GetHashCode());
 }

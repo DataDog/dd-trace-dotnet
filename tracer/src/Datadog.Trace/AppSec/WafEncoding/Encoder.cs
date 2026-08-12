@@ -25,8 +25,19 @@ namespace Datadog.Trace.AppSec.WafEncoding
     internal sealed class Encoder : IEncoder
     {
         private const int MaxBytesForMaxStringLength = (WafConstants.MaxStringLength * 4) + 1;
+
+        /// <summary>
+        /// Stride of an array's buffer: an array points at contiguous <c>ddwaf_object</c>.
+        /// </summary>
+        private const int ObjectStructSize = DdwafObjectStruct.ObjectSize;
+
+        /// <summary>
+        /// Stride of a map's buffer: since libddwaf 2.x a map points at contiguous <c>ddwaf_object_kv</c>,
+        /// not at objects, because keys are no longer stored inside the object itself.
+        /// </summary>
+        private const int KvStructSize = DdwafObjectKvStruct.KvSize;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Encoder));
-        private static readonly int ObjectStructSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
         private static int _poolSize = 500;
 
         [ThreadStatic]
@@ -78,31 +89,31 @@ namespace Datadog.Trace.AppSec.WafEncoding
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        public IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
+        public IEncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, bool applySafetyLimits = true)
         {
             var context = new EncoderContext(applySafetyLimits, Pool, new List<IntPtr>());
-            var result = Encode(ref context, remainingDepth, key, o);
+            var result = Encode(ref context, remainingDepth, o);
             return new EncodeResult(context.Buffers, context.Pool, ref result, context.Truncated);
         }
 
         // -----------------------------------
-        internal DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true, UnmanagedMemoryPool? pool = null)
+        internal DdwafObjectStruct Encode<TInstance>(TInstance? o, List<IntPtr> argToFree, int remainingDepth = WafConstants.MaxContainerDepth, bool applySafetyLimits = true, UnmanagedMemoryPool? pool = null)
         {
             var context = new EncoderContext(applySafetyLimits, pool ?? Pool, argToFree);
-            return Encode(ref context, remainingDepth, key, o);
+            return Encode(ref context, remainingDepth, o);
         }
 
-        private static unsafe DdwafObjectStruct Encode<TInstance>(ref EncoderContext context, int remainingDepth, string? key, TInstance? o)
+        private static unsafe DdwafObjectStruct Encode<TInstance>(ref EncoderContext context, int remainingDepth, TInstance? o)
         {
             DdwafObjectStruct ddwafObjectStruct;
 
             switch (o)
             {
                 case string str:
-                    ddwafObjectStruct = GetStringObject(ref context, str);
+                    ddwafObjectStruct = GetStringObject(ref context, str, context.ApplySafetyLimits);
                     break;
                 case JValue jValue:
-                    ddwafObjectStruct = Encode(ref context, remainingDepth, key, jValue.Value);
+                    ddwafObjectStruct = Encode(ref context, remainingDepth, jValue.Value);
                     break;
                 case null:
                     ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_NULL };
@@ -120,21 +131,21 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED, IntValue = u };
                     break;
                 case decimal d:
-                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE, DoubleValue = (double)d };
+                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_FLOAT, DoubleValue = (double)d };
                     break;
                 case double d:
-                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE, DoubleValue = d };
+                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_FLOAT, DoubleValue = d };
                     break;
                 case float d:
-                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE, DoubleValue = d };
+                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_FLOAT, DoubleValue = d };
                     break;
                 case bool b:
-                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL, ByteValue = b ? (byte)1 : (byte)0 };
+                    ddwafObjectStruct = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL, BoolByte = b ? (byte)1 : (byte)0 };
                     break;
                 case IEnumerable<KeyValuePair<string, object>> objDict:
                 {
                     var collectionDict = objDict as ICollection<KeyValuePair<string, object>> ?? objDict.ToList();
-                    ddwafObjectStruct = ProcessKeyValuePairs(ref context, remainingDepth, key, collectionDict, collectionDict.Count, &GetKey1, &GetValue1);
+                    ddwafObjectStruct = ProcessKeyValuePairs(ref context, remainingDepth, collectionDict, collectionDict.Count, &GetKey1, &GetValue1);
                     static string GetKey1(KeyValuePair<string, object> item) => item.Key;
                     static object GetValue1(KeyValuePair<string, object> item) => item.Value;
                     break;
@@ -143,7 +154,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 case IEnumerable<KeyValuePair<string, bool>> objDict:
                 {
                     var collectionDict = objDict as ICollection<KeyValuePair<string, bool>> ?? objDict.ToList();
-                    ddwafObjectStruct = ProcessKeyValuePairs(ref context, remainingDepth, key, collectionDict, collectionDict.Count, &GetKey1, &GetValue1);
+                    ddwafObjectStruct = ProcessKeyValuePairs(ref context, remainingDepth, collectionDict, collectionDict.Count, &GetKey1, &GetValue1);
                     static string GetKey1(KeyValuePair<string, bool> item) => item.Key;
                     static object GetValue1(KeyValuePair<string, bool> item) => item.Value;
                     break;
@@ -152,7 +163,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 case IEnumerable<KeyValuePair<string, string>> objDict:
                 {
                     var collectionDict = objDict as ICollection<KeyValuePair<string, string>> ?? objDict.ToList();
-                    ddwafObjectStruct = ProcessKeyValuePairs(ref context, remainingDepth, key, collectionDict, collectionDict.Count, &GetKey2, &GetValue2);
+                    ddwafObjectStruct = ProcessKeyValuePairs(ref context, remainingDepth, collectionDict, collectionDict.Count, &GetKey2, &GetValue2);
                     static string GetKey2(KeyValuePair<string, string> item) => item.Key;
                     static object GetValue2(KeyValuePair<string, string> item) => item.Value;
                     break;
@@ -161,7 +172,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 case IEnumerable<KeyValuePair<string, JToken>> objDict:
                 {
                     var collectionDict = objDict as ICollection<KeyValuePair<string, JToken>> ?? objDict.ToList();
-                    ddwafObjectStruct = ProcessKeyValuePairs(ref context, remainingDepth, key, collectionDict, collectionDict.Count, &GetKey3, &GetValue3);
+                    ddwafObjectStruct = ProcessKeyValuePairs(ref context, remainingDepth, collectionDict, collectionDict.Count, &GetKey3, &GetValue3);
                     static string GetKey3(KeyValuePair<string, JToken> item) => item.Key;
                     static object GetValue3(KeyValuePair<string, JToken> item) => item.Value;
                     break;
@@ -171,7 +182,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 {
                     var collectionDict = objDict as ICollection<KeyValuePair<string, string[]>> ?? objDict.ToList();
                     var count = collectionDict.Count;
-                    ddwafObjectStruct = ProcessKeyValuePairs(ref context, remainingDepth, key, collectionDict, collectionDict.Count, &GetKey4, &GetValue4);
+                    ddwafObjectStruct = ProcessKeyValuePairs(ref context, remainingDepth, collectionDict, collectionDict.Count, &GetKey4, &GetValue4);
                     static string GetKey4(KeyValuePair<string, string[]> item) => item.Key;
                     static object GetValue4(KeyValuePair<string, string[]> item) => item.Value;
                     break;
@@ -180,7 +191,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 case IEnumerable<KeyValuePair<string, List<string>>> objDict:
                 {
                     var collectionDict = objDict as ICollection<KeyValuePair<string, List<string>>> ?? objDict.ToList();
-                    ddwafObjectStruct = ProcessKeyValuePairs(ref context, remainingDepth, key, collectionDict, collectionDict.Count, &GetKey5, &GetValue5);
+                    ddwafObjectStruct = ProcessKeyValuePairs(ref context, remainingDepth, collectionDict, collectionDict.Count, &GetKey5, &GetValue5);
                     static string GetKey5(KeyValuePair<string, List<string>> item) => item.Key;
                     static object GetValue5(KeyValuePair<string, List<string>> item) => item.Value;
                     break;
@@ -198,17 +209,29 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         Log.Warning("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
                     }
 
-                    ddwafObjectStruct = GetStringObject(ref context, string.Empty);
+                    ddwafObjectStruct = GetStringObject(ref context, string.Empty, context.ApplySafetyLimits);
                     break;
             }
 
-            if (!string.IsNullOrEmpty(key))
+            return ddwafObjectStruct;
+        }
+
+        /// <summary>
+        /// Caps a container's element count to what a <c>ddwaf_object</c> can address. Both the size and
+        /// the capacity of arrays and maps are 16 bit, and libddwaf does not guard against overflowing
+        /// them, so going over the limit would make it write past the end of the buffer.
+        /// </summary>
+        private static int ClampContainerCount(ref EncoderContext context, int count)
+        {
+            if (count <= DdwafObjectStruct.MaxContainerCapacity)
             {
-                ddwafObjectStruct.ParameterName = ConvertToUtf8(ref context, key!, false).Item1;
-                ddwafObjectStruct.ParameterNameLength = (ulong)key!.Length;
+                return count;
             }
 
-            return ddwafObjectStruct;
+            context.Truncated = true;
+            TelemetryFactory.Metrics.RecordCountInputTruncated(MetricTags.TruncationReason.ListOrMapTooLarge);
+            Log.Warning<int, int>("Container holds {Count} entries, more than the {MaxContainerCapacity} a WAF object can address, it will be truncated", count, DdwafObjectStruct.MaxContainerCapacity);
+            return DdwafObjectStruct.MaxContainerCapacity;
         }
 
         private static unsafe DdwafObjectStruct ProcessIEnumerable(ref EncoderContext context, int remainingDepth, IEnumerable enumerable)
@@ -240,6 +263,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 }
 
                 var childrenCount = !context.ApplySafetyLimits || count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
+                childrenCount = ClampContainerCount(ref context, childrenCount);
                 var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
                 var childrenData = childrenFromPool ? context.Pool.Rent() : Marshal.AllocCoTaskMem(ObjectStructSize * childrenCount);
 
@@ -275,8 +299,9 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         break;
                 }
 
-                ddwafObjectStruct.Array = childrenData;
-                ddwafObjectStruct.NbEntries = (ulong)childrenCount;
+                ddwafObjectStruct.Pointer = childrenData;
+                ddwafObjectStruct.Size = (ushort)childrenCount;
+                ddwafObjectStruct.Capacity = (ushort)childrenCount;
                 context.Buffers.Add(childrenData);
             }
             else
@@ -300,6 +325,8 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     }
                 }
 
+                childrenCount = ClampContainerCount(ref context, childrenCount);
+
                 if (childrenCount > 0)
                 {
                     var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
@@ -313,13 +340,14 @@ namespace Datadog.Trace.AppSec.WafEncoding
                             break;
                         }
 
-                        *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, null, val);
+                        *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, val);
                         itemData += ObjectStructSize;
                         idx++;
                     }
 
-                    ddwafObjectStruct.Array = childrenData;
-                    ddwafObjectStruct.NbEntries = (ulong)childrenCount;
+                    ddwafObjectStruct.Pointer = childrenData;
+                    ddwafObjectStruct.Size = (ushort)childrenCount;
+                    ddwafObjectStruct.Capacity = (ushort)childrenCount;
                     context.Buffers.Add(childrenData);
                 }
 #pragma warning restore CA1851 // Possible multiple enumeration of collections
@@ -334,7 +362,7 @@ namespace Datadog.Trace.AppSec.WafEncoding
             var itemData = childrenData;
             for (var idx = 0; idx < childrenCount; idx++)
             {
-                *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, null, lstInstance[idx]);
+                *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, lstInstance[idx]);
                 itemData += ObjectStructSize;
             }
         }
@@ -345,21 +373,15 @@ namespace Datadog.Trace.AppSec.WafEncoding
             var itemData = childrenData;
             for (var idx = 0; idx < childrenCount; idx++)
             {
-                *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, null, lstInstance[idx]);
+                *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, lstInstance[idx]);
                 itemData += ObjectStructSize;
             }
         }
 
-        private static unsafe DdwafObjectStruct ProcessKeyValuePairs<TKey, TValue>(ref EncoderContext context, int remainingDepth, string? key, IEnumerable<KeyValuePair<TKey, TValue>> enumerableDic, int count, delegate*<KeyValuePair<TKey, TValue>, string?> getKey, delegate*<KeyValuePair<TKey, TValue>, object?> getValue)
+        private static unsafe DdwafObjectStruct ProcessKeyValuePairs<TKey, TValue>(ref EncoderContext context, int remainingDepth, IEnumerable<KeyValuePair<TKey, TValue>> enumerableDic, int count, delegate*<KeyValuePair<TKey, TValue>, string?> getKey, delegate*<KeyValuePair<TKey, TValue>, object?> getValue)
             where TKey : notnull
         {
             var ddWafObjectMap = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP };
-            if (!string.IsNullOrEmpty(key))
-            {
-                var convertToUtf8 = ConvertToUtf8(ref context, key!, false);
-                ddWafObjectMap.ParameterName = convertToUtf8.Item1;
-                ddWafObjectMap.ParameterNameLength = (ulong)key!.Length;
-            }
 
             if (context.ApplySafetyLimits)
             {
@@ -403,8 +425,11 @@ namespace Datadog.Trace.AppSec.WafEncoding
             }
 
             var childrenCount = !context.ApplySafetyLimits || count < WafConstants.MaxContainerSize ? count : WafConstants.MaxContainerSize;
-            var childrenFromPool = ObjectStructSize * childrenCount < MaxBytesForMaxStringLength;
-            var childrenData = childrenFromPool ? context.Pool.Rent() : Marshal.AllocCoTaskMem(ObjectStructSize * childrenCount);
+            childrenCount = ClampContainerCount(ref context, childrenCount);
+
+            // a map's buffer is made of ddwaf_object_kv, not of ddwaf_object, hence the bigger stride
+            var childrenFromPool = KvStructSize * childrenCount < MaxBytesForMaxStringLength;
+            var childrenData = childrenFromPool ? context.Pool.Rent() : Marshal.AllocCoTaskMem(KvStructSize * childrenCount);
 
             if (enumerableDic is IDictionary iDic)
             {
@@ -497,14 +522,17 @@ namespace Datadog.Trace.AppSec.WafEncoding
                         continue;
                     }
 
-                    *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, elementKey, getValue(element));
-                    itemData += ObjectStructSize;
+                    var entry = (DdwafObjectKvStruct*)itemData;
+                    entry->Key = GetStringObject(ref context, elementKey!, false);
+                    entry->Value = Encode(ref context, remainingDepth, getValue(element));
+                    itemData += KvStructSize;
                 }
 #pragma warning restore CA1851 // Possible multiple enumeration of collections
             }
 
-            ddWafObjectMap.Array = childrenData;
-            ddWafObjectMap.NbEntries = (ulong)childrenCount;
+            ddWafObjectMap.Pointer = childrenData;
+            ddWafObjectMap.Size = (ushort)childrenCount;
+            ddWafObjectMap.Capacity = (ushort)childrenCount;
             context.Buffers.Add(childrenData);
             return ddWafObjectMap;
         }
@@ -532,16 +560,25 @@ namespace Datadog.Trace.AppSec.WafEncoding
                     continue;
                 }
 
-                *(DdwafObjectStruct*)itemData = Encode(ref context, remainingDepth, elementKey, getValue(element!));
-                itemData += ObjectStructSize;
+                var entry = (DdwafObjectKvStruct*)itemData;
+                entry->Key = GetStringObject(ref context, elementKey!, false);
+                entry->Value = Encode(ref context, remainingDepth, getValue(element!));
+                itemData += KvStructSize;
             }
         }
 
+        /// <summary>
+        /// Writes <paramref name="s"/> as UTF-8 into a buffer owned by the encoder.
+        /// </summary>
+        /// <param name="context">the encoding context, which owns the buffers</param>
+        /// <param name="s">the string to convert</param>
+        /// <param name="applySafety">whether to truncate to <see cref="WafConstants.MaxStringLength"/> so the string fits a pooled block</param>
+        /// <param name="writtenBytes">the number of bytes written, which is what libddwaf expects as the string length</param>
+        /// <returns>a pointer to the UTF-8 bytes</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static unsafe Tuple<IntPtr, int> ConvertToUtf8(ref EncoderContext context, string s, bool applySafety)
+        private static unsafe IntPtr ConvertToUtf8(ref EncoderContext context, string s, bool applySafety, out int writtenBytes)
         {
             IntPtr unmanagedMemory;
-            int writtenBytes;
             var length = s.Length;
             if (applySafety || length <= WafConstants.MaxStringLength)
             {
@@ -562,17 +599,21 @@ namespace Datadog.Trace.AppSec.WafEncoding
                 }
             }
 
+            // libddwaf 2.x never assumes NUL termination, but keeping it is free and makes the buffers
+            // safe to inspect with C string tooling while debugging
             Marshal.WriteByte(unmanagedMemory, writtenBytes, (byte)'\0');
             context.Buffers.Add(unmanagedMemory);
-            return new Tuple<IntPtr, int>(unmanagedMemory, length);
+            return unmanagedMemory;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static unsafe DdwafObjectStruct GetStringObject(ref EncoderContext context, string value)
+        private static unsafe DdwafObjectStruct GetStringObject(ref EncoderContext context, string value, bool applySafety)
         {
-            var convertToUtf8 = ConvertToUtf8(ref context, value, context.ApplySafetyLimits);
-            var ddWafObject = new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING, Array = convertToUtf8.Item1, NbEntries = (ulong)convertToUtf8.Item2 };
-            return ddWafObject;
+            var pointer = ConvertToUtf8(ref context, value, applySafety, out var writtenBytes);
+
+            // always a heap string, never a small string: the WAF gets alloc = NULL on evaluation so it
+            // never frees nor copies these buffers, and inlining short strings would only save pool churn
+            return new DdwafObjectStruct { Type = DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING, Pointer = pointer, StringLength = (uint)writtenBytes };
         }
 
         private static void FormatArgsInternal(object o, StringBuilder sb)

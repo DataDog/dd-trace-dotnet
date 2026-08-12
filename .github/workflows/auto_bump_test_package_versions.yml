@@ -28,9 +28,11 @@ jobs:
           policy: self.auto_bump_test_package_versions.create-pr
 
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
 
@@ -53,15 +55,13 @@ jobs:
 
       - name: Create Pull Request
         id: pr
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        uses: ./.github/actions/create-signed-pull-request
         with:
           token: ${{ steps.octo-sts.outputs.token }}
           branch: "bot/test-package-versions-bump"
           commit-message: "[Test Package Versions Bump]"
-          delete-branch: true
           base: master
           title: "[Test Package Versions Bump] Updating package versions "
-          milestone: "${{steps.rename.outputs.milestone}}"
           labels: "area:dependabot,area:test-apps,dependencies"
           body: |
             Updates the package versions for integration tests. See below for a summary of the changes.
@@ -70,7 +70,7 @@ jobs:
 
       - name: Send Slack notification about generating failure
         if: failure()
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           # This data can be any valid JSON from a previous step in the GitHub Action
           payload: |

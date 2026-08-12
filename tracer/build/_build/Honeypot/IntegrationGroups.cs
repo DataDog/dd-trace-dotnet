@@ -26,6 +26,7 @@ namespace Honeypot
             NugetPackages.Add("System", new string[] { });
             NugetPackages.Add("System.Diagnostics.Process", new string[] { });
             NugetPackages.Add("System.Runtime.Remoting", new string[] {  });
+            NugetPackages.Add("System.Runtime.Serialization", new string[] { });
             NugetPackages.Add("System.Security.Cryptography", new string[] { });
             NugetPackages.Add("System.Security.Cryptography.Primitives", new string[] { });
 
@@ -117,7 +118,7 @@ namespace Honeypot
             NugetPackages.Add("vstest.console.arm64", Array.Empty<string>());
             NugetPackages.Add("WebDriver", new[] { "Selenium.WebDriver" });
             NugetPackages.Add("Microsoft.AspNetCore.StaticFiles", new [] { "Microsoft.AspNetCore.StaticFiles" });
-            NugetPackages.Add("coverlet.core", Array.Empty<string>());
+            NugetPackages.Add("coverlet.core", new[] { "coverlet.collector" });
             NugetPackages.Add("Microsoft.AspNetCore.Session", new [] { "Microsoft.AspNetCore.Session" });
             NugetPackages.Add("Microsoft.TestPlatform.PlatformAbstractions", Array.Empty<string>());
             NugetPackages.Add("Microsoft.VisualStudio.TraceDataCollector", Array.Empty<string>());

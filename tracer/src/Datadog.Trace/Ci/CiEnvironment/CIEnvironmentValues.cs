@@ -80,6 +80,8 @@ internal abstract class CIEnvironmentValues
 
     public string? PipelineName { get; protected set; }
 
+    public string? PipelineDisplayName { get; protected set; }
+
     public string? PipelineNumber { get; protected set; }
 
     public string? PipelineUrl { get; protected set; }
@@ -405,6 +407,7 @@ internal abstract class CIEnvironmentValues
         SetTagIfNotNullOrEmpty(span, CommonTags.BuildSourceRoot, SourceRoot);
         SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineId, PipelineId);
         SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineName, PipelineName);
+        SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineDisplayName, PipelineDisplayName);
         SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineNumber, PipelineNumber);
         SetTagIfNotNullOrEmpty(span, CommonTags.CIPipelineUrl, PipelineUrl);
         SetTagIfNotNullOrEmpty(span, CommonTags.CIJobUrl, JobUrl);
@@ -447,6 +450,7 @@ internal abstract class CIEnvironmentValues
         Provider = null;
         PipelineId = null;
         PipelineName = null;
+        PipelineDisplayName = null;
         PipelineNumber = null;
         PipelineUrl = null;
         JobUrl = null;

@@ -61,18 +61,14 @@ namespace Datadog.Trace.Tests.Agent
             var spans = CreateTraceChunk(1);
             var result = buffer.TryWrite(spans, ref _temporaryBuffer);
 
-            result.Should().Be(SpanBuffer.WriteStatus.Full);
+            result.Should().Be(SpanBuffer.WriteStatus.Overflow);
             buffer.TraceCount.Should().Be(0);
-            buffer.IsFull.Should().BeTrue();
+            buffer.IsFull.Should().BeFalse();
 
             buffer.Lock();
             var innerBuffer = buffer.Data;
 
             innerBuffer.Array!.Skip(SpanBufferMessagePackSerializer.HeaderSizeConst).All(b => b == 0x0).Should().BeTrue("No data should have been written to the buffer");
-
-            buffer.Clear();
-
-            buffer.IsFull.Should().BeFalse();
         }
 
         [Fact]
@@ -83,7 +79,7 @@ namespace Datadog.Trace.Tests.Agent
 
             buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
             buffer.Lock();
-            buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Full);
+            buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Locked);
             buffer.Clear();
             buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
         }

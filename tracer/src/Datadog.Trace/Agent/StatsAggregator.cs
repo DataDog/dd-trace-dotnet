@@ -361,13 +361,6 @@ namespace Datadog.Trace.Agent
         [TestingAndPrivateOnly]
         internal StatsAggregationKey BuildKey(Span span, List<PeerTagKey> peerTagKeys, out PeerTagResults peerTagResults, out AdditionalTagResults additionalTagResults)
         {
-            var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
-
-            if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
-            {
-                httpStatusCode = 0;
-            }
-
             // Check gRPC status code tags in priority order per CSS v1.2.0 spec.
             // Stored as string to match the Go agent's wire format (GRPCStatusCode is a string field).
             // This preserves the distinction between "0" (gRPC OK) and "" (no gRPC status).
@@ -459,7 +452,7 @@ namespace Datadog.Trace.Agent
                 span.ServiceName,
                 span.OperationName,
                 span.Type,
-                httpStatusCode,
+                span.GetHttpStatusCode() ?? 0,
                 span.Context.Origin?.StartsWith("synthetics") == true,
                 spanKind,
                 _isOtlp ? span.Error : false,
@@ -728,9 +721,16 @@ namespace Datadog.Trace.Agent
             var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind));
             var isSpanKindEligible = spanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Consumer or SpanKinds.Producer;
 
-            if (!_isOtlp // If we are using OTLP, we include both top-level and non-top-level spans
-                && (!(span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
-                 || span.GetMetric(Tags.PartialSnapshot) >= 0))
+            // SEMCON-1093 FR04: OTLP span metrics only for service-entry (top-level) or explicitly measured spans.
+            // Non-OTLP: also includes span-kind-eligible spans, and excludes partial snapshots.
+            // Note: !(x >= 0) is intentionally used instead of x < 0 because GetMetric returns double?,
+            // and null < 0 is false while !(null >= 0) is true — we want null (unset) to pass through.
+            var isEligible = _isOtlp
+                ? span.IsTopLevel || span.GetMetric(Tags.Measured) == 1.0
+                : (span.IsTopLevel || isSpanKindEligible || span.GetMetric(Tags.Measured) == 1.0)
+                  && !(span.GetMetric(Tags.PartialSnapshot) >= 0);
+
+            if (!isEligible)
             {
                 return;
             }
