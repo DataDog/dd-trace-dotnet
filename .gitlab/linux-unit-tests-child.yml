@@ -90,7 +90,7 @@
       - artifacts/build_data/dumps
   id_tokens:
     DD_STS_OIDC_TOKEN:
-      aud: rapid-seceng-sit
+      aud: dd-sts
 
 .linux-unit-test-x64:
   extends: .linux-unit-test
