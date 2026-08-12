@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -19,7 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection(nameof(KafkaTestsCollection))]
+    [Collection(KafkaCollection.Name)]
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
     public class KafkaTests : TracingIntegrationTest
@@ -39,10 +40,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private const string ErrorProducerResourceName = "Produce Topic INVALID-TOPIC";
 
-        public KafkaTests(ITestOutputHelper output)
+        public KafkaTests(ITestOutputHelper output, KafkaFixture kafkaFixture)
             : base("Kafka", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(kafkaFixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
@@ -206,11 +208,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private string GetSuccessfulResourceName(string type, string topic)
         {
             return $"{type} Topic {topic}";
-        }
-
-        [CollectionDefinition(nameof(KafkaTestsCollection), DisableParallelization = true)]
-        public class KafkaTestsCollection
-        {
         }
     }
 }
