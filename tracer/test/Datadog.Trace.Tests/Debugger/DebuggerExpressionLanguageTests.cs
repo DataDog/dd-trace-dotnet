@@ -352,6 +352,7 @@ namespace Datadog.Trace.Tests.Debugger
             ExpressionEvaluationResult result = default;
             evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
 
+            result.EvaluationBudget.IsInitialized.Should().BeTrue();
             result.CaptureExpressionCount.Should().Be(4);
             result.CaptureExpressions.Should().HaveCountGreaterThanOrEqualTo(result.CaptureExpressionCount);
             result.CaptureExpressions[0].Name.Should().Be("inputValue");
@@ -2885,6 +2886,19 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void EvaluationBudget_DefaultIsUninitializedAndCreateInitializes()
+        {
+            EvaluationBudget budget = default;
+
+            budget.IsInitialized.Should().BeFalse();
+
+            budget = EvaluationBudget.Create(100);
+
+            budget.IsInitialized.Should().BeTrue();
+            budget.TimedOut.Should().BeFalse();
+        }
+
+        [Fact]
         public void EvaluationBudget_PauseExcludesPausedWallTime()
         {
             for (var attempt = 0; attempt < 3; attempt++)
@@ -2922,8 +2936,18 @@ namespace Datadog.Trace.Tests.Debugger
                 ],
                 maxEvaluationTimeInMilliseconds: 100);
 
-            var result = evaluator.Evaluate(scopeMembers, out var entry);
-            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers, entry);
+            ExpressionEvaluationResult result = default;
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                result = evaluator.Evaluate(scopeMembers, out var entry);
+                result.EvaluationBudget.IsInitialized.Should().BeTrue();
+                Thread.Sleep(250);
+                evaluator.EvaluateCaptureExpressions(ref result, scopeMembers, entry);
+                if (result.CaptureExpressionCount == 1)
+                {
+                    break;
+                }
+            }
 
             result.CaptureExpressionCount.Should().Be(1);
             result.CaptureExpressions.Should().ContainSingle().Which.Value.Should().Be("Hello world!");
@@ -2957,6 +2981,7 @@ namespace Datadog.Trace.Tests.Debugger
             result.HasConditionError.Should().BeTrue();
             result.Metric.Should().BeNull();
             result.CaptureExpressionCount.Should().Be(0);
+            result.EvaluationBudget.TimedOut.Should().BeTrue();
             result.Errors.Should().ContainSingle().Which.Message.Should().Be(EvaluationTimeBudgetExceededException.ErrorMessage);
         }
 

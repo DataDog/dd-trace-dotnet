@@ -166,25 +166,24 @@ internal sealed class ProbeExpressionEvaluator
         entry = GetCacheEntry(scopeMembers);
         var compiled = entry.GetOrCompile(this, scopeMembers);
 
-        ExpressionEvaluationResult result = default;
-        var budget = CreateBudget();
-        EvaluateTemplates(ref result, scopeMembers, compiled.Templates, ref budget);
-        if (!budget.TimedOut)
+        var result = new ExpressionEvaluationResult { EvaluationBudget = CreateBudget() };
+        EvaluateTemplates(ref result, scopeMembers, compiled.Templates);
+        if (!result.EvaluationBudget.TimedOut)
         {
-            EvaluateCondition(ref result, scopeMembers, compiled.Condition, ref budget);
+            EvaluateCondition(ref result, scopeMembers, compiled.Condition);
         }
 
-        if (!budget.TimedOut)
+        if (!result.EvaluationBudget.TimedOut)
         {
-            EvaluateMetric(ref result, scopeMembers, compiled.Metric, ref budget);
+            EvaluateMetric(ref result, scopeMembers, compiled.Metric);
         }
 
-        if (!budget.TimedOut)
+        if (!result.EvaluationBudget.TimedOut)
         {
-            EvaluateSpanDecorations(ref result, scopeMembers, compiled.Decorations, ref budget);
+            EvaluateSpanDecorations(ref result, scopeMembers, compiled.Decorations);
         }
 
-        if (budget.TimedOut && Condition is not null && result.Condition is null)
+        if (result.EvaluationBudget.TimedOut && Condition is not null && result.Condition is null)
         {
             result.Condition = true;
             result.HasConditionError = true;
@@ -192,10 +191,9 @@ internal sealed class ProbeExpressionEvaluator
 
         if (CaptureExpressions is not null)
         {
-            budget.Pause();
+            result.EvaluationBudget.Pause();
         }
 
-        result.EvaluationBudget = budget;
         return result;
     }
 
@@ -211,17 +209,20 @@ internal sealed class ProbeExpressionEvaluator
             return;
         }
 
-        if (result.EvaluationBudget is { TimedOut: true })
+        if (result.EvaluationBudget.TimedOut)
         {
             return;
         }
 
         entry ??= GetCacheEntry(scopeMembers);
         var compiledExpressions = entry.GetOrCompileCaptureExpressions(this, scopeMembers);
-        var budget = result.EvaluationBudget ?? CreateBudget();
-        budget.Resume();
-        EvaluateCaptureExpressionsCore(ref result, scopeMembers, compiledExpressions, CaptureExpressions, ref budget);
-        result.EvaluationBudget = budget;
+        if (!result.EvaluationBudget.IsInitialized)
+        {
+            result.EvaluationBudget = CreateBudget();
+        }
+
+        result.EvaluationBudget.Resume();
+        EvaluateCaptureExpressionsCore(ref result, scopeMembers, compiledExpressions, CaptureExpressions);
     }
 
     private ProbeExpressionsCacheEntry GetCacheEntry(MethodScopeMembers scopeMembers)
@@ -241,7 +242,7 @@ internal sealed class ProbeExpressionEvaluator
         return bucket.GetOrAdd(scopeMembers, memberCount);
     }
 
-    private void EvaluateTemplates(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<string>[]? compiledExpressions, ref EvaluationBudget budget)
+    private void EvaluateTemplates(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<string>[]? compiledExpressions)
     {
         var resultBuilder = StringBuilderCache.Acquire();
         try
@@ -278,7 +279,7 @@ internal sealed class ProbeExpressionEvaluator
                             continue;
                         }
 
-                        resultBuilder.Append(compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref budget));
+                        resultBuilder.Append(compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget));
                         if (compiledExpression.Errors is { } errors)
                         {
                             (result.Errors ??= new List<EvaluationError>()).AddRange(errors);
@@ -292,7 +293,7 @@ internal sealed class ProbeExpressionEvaluator
                 catch (Exception e)
                 {
                     HandleException(ref result, compiledExpressions[i], e);
-                    if (budget.TimedOut)
+                    if (result.EvaluationBudget.TimedOut)
                     {
                         break;
                     }
@@ -312,7 +313,7 @@ internal sealed class ProbeExpressionEvaluator
         }
     }
 
-    private void EvaluateCondition(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<bool>? cached, ref EvaluationBudget budget)
+    private void EvaluateCondition(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<bool>? cached)
     {
         if (Condition == null)
         {
@@ -333,7 +334,7 @@ internal sealed class ProbeExpressionEvaluator
                 return;
             }
 
-            var condition = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref budget);
+            var condition = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
             result.Condition = condition;
             if (compiledExpression.Errors != null)
             {
@@ -349,7 +350,7 @@ internal sealed class ProbeExpressionEvaluator
         }
     }
 
-    private void EvaluateMetric(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<double>? cached, ref EvaluationBudget budget)
+    private void EvaluateMetric(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<double>? cached)
     {
         if (Metric == null)
         {
@@ -370,7 +371,7 @@ internal sealed class ProbeExpressionEvaluator
                 return;
             }
 
-            var metric = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref budget);
+            var metric = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
             result.Metric = metric;
             if (compiledExpression.Errors != null)
             {
@@ -383,7 +384,7 @@ internal sealed class ProbeExpressionEvaluator
         }
     }
 
-    private void EvaluateSpanDecorations(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]? compiledDecorations, ref EvaluationBudget budget)
+    private void EvaluateSpanDecorations(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, KeyValuePair<CompiledExpression<bool>, KeyValuePair<string?, CompiledExpression<string>[]>[]>[]? compiledDecorations)
     {
         if (SpanDecorations == null)
         {
@@ -412,7 +413,7 @@ internal sealed class ProbeExpressionEvaluator
                             continue;
                         }
 
-                        var when = current.Key.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref budget);
+                        var when = current.Key.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
                         if (current.Key.Errors is { } whenErrors)
                         {
                             if (Log.IsEnabled(LogEventLevel.Debug))
@@ -439,7 +440,7 @@ internal sealed class ProbeExpressionEvaluator
                 catch (Exception e)
                 {
                     HandleException(ref result, current.Key, e);
-                    if (budget.TimedOut)
+                    if (result.EvaluationBudget.TimedOut)
                     {
                         break;
                     }
@@ -474,7 +475,7 @@ internal sealed class ProbeExpressionEvaluator
                                         continue;
                                     }
 
-                                    var value = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref budget);
+                                    var value = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
                                     resultBuilder.Append(value);
                                     if (compiledExpression.Errors != null)
                                     {
@@ -495,7 +496,7 @@ internal sealed class ProbeExpressionEvaluator
                                     errors.AddRange(compiledExpression.Errors);
                                 }
 
-                                if (budget.TimedOut)
+                                if (result.EvaluationBudget.TimedOut)
                                 {
                                     HandleException(ref result, compiledExpression, e);
                                     break;
@@ -518,13 +519,13 @@ internal sealed class ProbeExpressionEvaluator
                         StringBuilderCache.Release(resultBuilder);
                     }
 
-                    if (budget.TimedOut)
+                    if (result.EvaluationBudget.TimedOut)
                     {
                         break;
                     }
                 }
 
-                if (budget.TimedOut)
+                if (result.EvaluationBudget.TimedOut)
                 {
                     break;
                 }
@@ -542,7 +543,7 @@ internal sealed class ProbeExpressionEvaluator
         }
     }
 
-    private void EvaluateCaptureExpressionsCore(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<object>[]? compiledExpressions, CaptureExpressionDefinition[] captureExpressions, ref EvaluationBudget budget)
+    private void EvaluateCaptureExpressionsCore(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<object>[]? compiledExpressions, CaptureExpressionDefinition[] captureExpressions)
     {
         if (compiledExpressions == null)
         {
@@ -570,7 +571,7 @@ internal sealed class ProbeExpressionEvaluator
                     continue;
                 }
 
-                var value = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref budget);
+                var value = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
                 if (value is UndefinedValue)
                 {
                     if (compiledExpression.Errors != null)
@@ -597,7 +598,7 @@ internal sealed class ProbeExpressionEvaluator
             catch (Exception e)
             {
                 HandleException(ref result, compiledExpression, e);
-                if (budget.TimedOut)
+                if (result.EvaluationBudget.TimedOut)
                 {
                     break;
                 }

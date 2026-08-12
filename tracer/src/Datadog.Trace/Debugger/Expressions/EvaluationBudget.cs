@@ -21,17 +21,26 @@ internal struct EvaluationBudget
     // Reusing one field keeps this hot-path struct compact.
     private long _deadlineOrRemainingStopwatchTicks;
     private int _operationsUntilTimeCheck;
-    private bool _isPaused;
+    private EvaluationBudgetState _state;
 
     private EvaluationBudget(long deadlineTimestamp)
     {
         _deadlineOrRemainingStopwatchTicks = deadlineTimestamp;
         _operationsUntilTimeCheck = OperationsBeforeTimeCheck;
-        _isPaused = false;
-        TimedOut = false;
+        _state = EvaluationBudgetState.Running;
     }
 
-    internal bool TimedOut { get; private set; }
+    private enum EvaluationBudgetState : byte
+    {
+        Uninitialized,
+        Running,
+        Paused,
+        TimedOut
+    }
+
+    internal bool IsInitialized => _state != EvaluationBudgetState.Uninitialized;
+
+    internal bool TimedOut => _state == EvaluationBudgetState.TimedOut;
 
     internal static EvaluationBudget Create(int maxEvaluationTimeInMilliseconds)
     {
@@ -61,7 +70,6 @@ internal struct EvaluationBudget
         return (long)(milliseconds * StopwatchTicksPerMillisecond);
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
     [DoesNotReturn]
     private static void ThrowTimedOut()
     {
@@ -71,9 +79,9 @@ internal struct EvaluationBudget
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void ThrowIfExceeded()
     {
-        if (TimedOut)
+        if (_state != EvaluationBudgetState.Running)
         {
-            ThrowTimedOut();
+            MarkTimedOutAndThrow();
         }
 
         if (--_operationsUntilTimeCheck > 0)
@@ -89,22 +97,20 @@ internal struct EvaluationBudget
         ThrowIfTimeExceeded();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void Pause()
     {
-        if (_isPaused || TimedOut)
+        if (_state != EvaluationBudgetState.Running)
         {
             return;
         }
 
         _deadlineOrRemainingStopwatchTicks -= Stopwatch.GetTimestamp();
-        _isPaused = true;
+        _state = EvaluationBudgetState.Paused;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void Resume()
     {
-        if (!_isPaused || TimedOut)
+        if (_state != EvaluationBudgetState.Paused)
         {
             return;
         }
@@ -117,7 +123,7 @@ internal struct EvaluationBudget
                 : long.MaxValue - now <= remainingStopwatchTicks
                     ? long.MaxValue
                     : now + remainingStopwatchTicks;
-        _isPaused = false;
+        _state = EvaluationBudgetState.Running;
     }
 
     internal TimeSpan GetRemainingTimeout()
@@ -136,15 +142,19 @@ internal struct EvaluationBudget
 
     internal void MarkTimedOut()
     {
-        TimedOut = true;
+        _state = EvaluationBudgetState.TimedOut;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private void ThrowIfTimeExceeded()
     {
-        Debug.Assert(!_isPaused, "The evaluation budget must be resumed before checking its deadline.");
+        if (_state != EvaluationBudgetState.Running)
+        {
+            MarkTimedOutAndThrow();
+        }
+
         _operationsUntilTimeCheck = OperationsBeforeTimeCheck;
-        if (TimedOut || Stopwatch.GetTimestamp() >= _deadlineOrRemainingStopwatchTicks)
+        if (Stopwatch.GetTimestamp() >= _deadlineOrRemainingStopwatchTicks)
         {
             MarkTimedOutAndThrow();
         }
@@ -153,7 +163,7 @@ internal struct EvaluationBudget
     [DoesNotReturn]
     private void MarkTimedOutAndThrow()
     {
-        TimedOut = true;
+        _state = EvaluationBudgetState.TimedOut;
         ThrowTimedOut();
     }
 }

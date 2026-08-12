@@ -9,12 +9,8 @@ using System;
 
 namespace Datadog.Trace.Debugger.Expressions;
 
-internal sealed class EvaluationTimeBudgetExceededException : Exception
-{
-    internal const string ErrorMessage = "Expression evaluation timed out";
-
-    public EvaluationTimeBudgetExceededException()
-internal sealed class EvaluationTimeBudgetExceededException() : Exception(ErrorMessage)
+internal sealed class EvaluationTimeBudgetExceededException(Exception? innerException = null)
+    : Exception(ErrorMessage, innerException)
 {
     internal const string ErrorMessage = "Expression evaluation timed out";
 }
