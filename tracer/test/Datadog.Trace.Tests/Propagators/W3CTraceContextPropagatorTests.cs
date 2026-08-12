@@ -914,11 +914,10 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        [InlineData("th:zz;rv:ef284ace7a91e1")]  // malformed th, well-formed rv
-        [InlineData("th:e6666666666668;rv:zz")]  // well-formed th, malformed rv
-        [InlineData("th:zz;rv:zz")]              // both malformed
-        [InlineData("unknownkey:whatever")]      // unrecognized sub-key entirely
-        public void Continuation_MalformedOrUnknownOtContent_RoundTripsByteForByte(string malformedOtelTraceState)
+        [InlineData("th:zz;rv:ef284ace7a91e1", "rv:ef284ace7a91e1")]
+        [InlineData("th:e6666666666668;rv:zz", "th:e6666666666668")]
+        [InlineData("th:zz;rv:zz", null)]
+        public void Continuation_RemovesMalformedKnownOtSubkeys(string inboundOtelTraceState, string expectedOtelTraceState)
         {
             var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
 
@@ -926,12 +925,41 @@ namespace Datadog.Trace.Tests.Propagators
                    .Returns(new[] { "00-00000000000000000000000000000001-0000000000000001-01" });
 
             headers.Setup(h => h.GetValues("tracestate"))
-                   .Returns(new[] { $"dd=s:1,ot={malformedOtelTraceState}" });
+                   .Returns(new[] { $"dd=s:1,ot={inboundOtelTraceState}" });
 
             var result = W3CPropagator.Extract(headers.Object);
 
+            result.SpanContext!.OtelTraceState.Should().Be(expectedOtelTraceState);
+
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(result.SpanContext!);
-            tracestate.Should().Contain($"ot={malformedOtelTraceState}");
+            if (expectedOtelTraceState is null)
+            {
+                tracestate.Should().NotContain("ot=");
+            }
+            else
+            {
+                tracestate.Should().Contain($"ot={expectedOtelTraceState}");
+            }
+        }
+
+        [Fact]
+        public void Continuation_UnknownOtContent_RoundTripsByteForByte()
+        {
+            const string UnknownOtelTraceState = "unknownkey:whatever";
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-00000000000000000000000000000001-0000000000000001-01" });
+
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { $"dd=s:1,ot={UnknownOtelTraceState}" });
+
+            var result = W3CPropagator.Extract(headers.Object);
+
+            result.SpanContext!.OtelTraceState.Should().Be(UnknownOtelTraceState);
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(result.SpanContext);
+            tracestate.Should().Contain($"ot={UnknownOtelTraceState}");
         }
 
         [Fact]

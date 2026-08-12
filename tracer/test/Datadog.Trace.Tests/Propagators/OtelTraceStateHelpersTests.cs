@@ -30,6 +30,33 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
+        [InlineData(null, null)]
+        [InlineData("", null)]
+        [InlineData("rv:ef284ace7a91e1", "rv:ef284ace7a91e1")]
+        [InlineData("th:0", "th:0")]
+        [InlineData("th:e6666666666668", "th:e6666666666668")]
+        [InlineData("unknownkey:whatever", "unknownkey:whatever")]
+        [InlineData("rv:zz;th:zz", null)]
+        [InlineData("rv:ef284ace7a91e1;th:zz", "rv:ef284ace7a91e1")]
+        [InlineData("rv:zz;th:e6666666666668", "th:e6666666666668")]
+        [InlineData("foo:bar;rv:zz;th:e6666666666668;baz:qux", "foo:bar;th:e6666666666668;baz:qux")]
+        [InlineData("rv:EF284ACE7A91E1;foo:bar", "foo:bar")]
+        [InlineData("th:123456789abcdef;foo:bar", "foo:bar")]
+        [InlineData("rv:;th;foo:bar", "foo:bar")]
+        public void Normalize_RemovesOnlyMalformedRvAndTh(string? raw, string? expected)
+        {
+            OtelTraceStateHelpers.Normalize(raw).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("rv:ef284ace7a91e1;th:e6666666666668")]
+        [InlineData("unknownkey:whatever")]
+        public void Normalize_ValidContentReturnsOriginalInstance(string raw)
+        {
+            OtelTraceStateHelpers.Normalize(raw).Should().BeSameAs(raw);
+        }
+
+        [Theory]
         // no rv, no th, no other items -> null
         [InlineData(null, null, null, null)]
         [InlineData("", null, null, null)]
