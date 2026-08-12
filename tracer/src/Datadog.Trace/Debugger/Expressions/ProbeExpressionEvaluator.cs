@@ -168,7 +168,6 @@ internal sealed class ProbeExpressionEvaluator
 
         ExpressionEvaluationResult result = default;
         var budget = CreateBudget();
-        result.HasEvaluationBudget = true;
         EvaluateTemplates(ref result, scopeMembers, compiled.Templates, ref budget);
         if (!budget.TimedOut)
         {
@@ -212,16 +211,15 @@ internal sealed class ProbeExpressionEvaluator
             return;
         }
 
-        if (result.HasEvaluationBudget && result.EvaluationBudget.TimedOut)
+        if (result.EvaluationBudget is { TimedOut: true })
         {
             return;
         }
 
         entry ??= GetCacheEntry(scopeMembers);
         var compiledExpressions = entry.GetOrCompileCaptureExpressions(this, scopeMembers);
-        var budget = result.HasEvaluationBudget ? result.EvaluationBudget : CreateBudget();
+        var budget = result.EvaluationBudget ?? CreateBudget();
         budget.Resume();
-        result.HasEvaluationBudget = true;
         EvaluateCaptureExpressionsCore(ref result, scopeMembers, compiledExpressions, CaptureExpressions, ref budget);
         result.EvaluationBudget = budget;
     }
