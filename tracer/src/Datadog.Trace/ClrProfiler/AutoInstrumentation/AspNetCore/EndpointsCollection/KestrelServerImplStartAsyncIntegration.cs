@@ -8,6 +8,7 @@
 #if !NETFRAMEWORK
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using Datadog.Trace.AppSec;
@@ -57,12 +58,7 @@ public sealed class KestrelServerImplStartAsyncIntegration
         }
         catch (Exception ex)
         {
-            // Reading EndpointDataSource.Endpoints runs third-party code that can throw for reasons
-            // outside our control (e.g. the Azure Functions worker builds its endpoints lazily and
-            // rejects a malformed route template). Endpoints collection is best-effort, so a failure
-            // here degrades the feature without affecting the application: warn rather than report
-            // an error to telemetry.
-            Log.Warning(ex, "API Security: Failed to collect endpoints.");
+            Log.Error(ex, "API Security: Failed to collect endpoints.");
         }
 
         return CallTargetState.GetDefault();
@@ -89,7 +85,24 @@ public sealed class KestrelServerImplStartAsyncIntegration
             return;
         }
 
-        AppSec.EndpointsCollection.CollectEndpoints(endpointDataSource.Endpoints);
+        IReadOnlyList<object> endpoints;
+
+        try
+        {
+            endpoints = endpointDataSource.Endpoints;
+        }
+        catch (Exception ex)
+        {
+            // Evaluating this property runs third-party code that can throw for reasons outside our
+            // control. The Azure Functions worker, for instance, builds its endpoints lazily from
+            // function metadata and rejects malformed route templates, so we are the first caller to
+            // trigger the failure. That is not a tracer defect, so warn instead of reporting an error
+            // to telemetry. Anything thrown by our own collection below is a defect and still errors.
+            Log.Warning(ex, "API Security: Endpoints collection: Failed to evaluate the EndpointDataSource endpoints.");
+            return;
+        }
+
+        AppSec.EndpointsCollection.CollectEndpoints(endpoints);
     }
 }
 
