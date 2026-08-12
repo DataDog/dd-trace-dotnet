@@ -116,7 +116,7 @@ namespace Datadog.Trace.Propagators
                     }
                 }
 
-                return sb.Length == 0 ? null : StringBuilderCache.GetStringAndRelease(sb);
+                return sb.Length == 0 ? null : sb.ToString();
             }
             finally
             {
