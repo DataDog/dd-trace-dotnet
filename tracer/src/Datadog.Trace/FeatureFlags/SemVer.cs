@@ -25,7 +25,7 @@ internal static class SemVer
     {
         result = default;
 
-        if (string.IsNullOrEmpty(version))
+        if (StringUtil.IsNullOrEmpty(version))
         {
             return false;
         }
