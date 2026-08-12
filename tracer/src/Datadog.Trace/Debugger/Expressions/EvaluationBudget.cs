@@ -40,6 +40,8 @@ internal struct EvaluationBudget
 
     internal bool IsInitialized => _state != EvaluationBudgetState.Uninitialized;
 
+    internal bool IsPaused => _state == EvaluationBudgetState.Paused;
+
     internal bool TimedOut => _state == EvaluationBudgetState.TimedOut;
 
     internal static EvaluationBudget Create(int maxEvaluationTimeInMilliseconds)

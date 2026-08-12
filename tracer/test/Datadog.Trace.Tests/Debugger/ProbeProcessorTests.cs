@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tests.Debugger;
 
 public class ProbeProcessorTests
 {
-    private const int DefaultMaxEvaluationTimeInMilliseconds = DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds;
+    private const int TestMaxEvaluationTimeInMilliseconds = 30_000;
 
     private const string InvalidConditionJson = @"{
     ""gt"": [
@@ -199,7 +199,7 @@ public class ProbeProcessorTests
         Assert.True(ProcessEntryStart(processor, firstSnapshotCreator, in probeData, method));
         Assert.True(ProcessEntryEnd(processor, firstSnapshotCreator, in probeData, method));
 
-        processor.UpdateProbeProcessor(CreateConditionalLogProbe("probe-id", UpdatedInvalidConditionJson, captureSnapshot: false), DefaultMaxEvaluationTimeInMilliseconds);
+        processor.UpdateProbeProcessor(CreateConditionalLogProbe("probe-id", UpdatedInvalidConditionJson, captureSnapshot: false), TestMaxEvaluationTimeInMilliseconds);
 
         var secondSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
         Assert.True(ProcessEntryStart(processor, secondSnapshotCreator, in probeData, method));
@@ -275,7 +275,7 @@ public class ProbeProcessorTests
         var snapshotCreator = CreateSnapshotCreator(processor, in probeData);
         var method = typeof(SampleTarget).GetMethod(nameof(SampleTarget.ExecuteWithValue))!;
 
-        processor.UpdateProbeProcessor(CreateVersionedCaptureExpressionProbe("probe-id", version: 2, captureName: "missingValue"), DefaultMaxEvaluationTimeInMilliseconds);
+        processor.UpdateProbeProcessor(CreateVersionedCaptureExpressionProbe("probe-id", version: 2, captureName: "missingValue"), TestMaxEvaluationTimeInMilliseconds);
 
         Assert.True(ProcessExitStart(processor, snapshotCreator, in probeData, method));
         Assert.True(ProcessLogArg(processor, snapshotCreator, in probeData, method, "inputValue", "testValue"));
@@ -454,12 +454,12 @@ public class ProbeProcessorTests
 
     private static ProbeProcessor CreateProbeProcessor(ProbeDefinition probe)
     {
-        return new ProbeProcessor(probe, DefaultMaxEvaluationTimeInMilliseconds);
+        return new ProbeProcessor(probe, TestMaxEvaluationTimeInMilliseconds);
     }
 
     private static ProbeProcessor CreateProbeProcessor(ProbeDefinition probe, IDebuggerGlobalRateLimiter globalRateLimiter)
     {
-        return new ProbeProcessor(probe, DefaultMaxEvaluationTimeInMilliseconds, globalRateLimiter);
+        return new ProbeProcessor(probe, TestMaxEvaluationTimeInMilliseconds, globalRateLimiter);
     }
 
     private static LogProbe CreateLogProbe(string probeId, bool captureSnapshot)

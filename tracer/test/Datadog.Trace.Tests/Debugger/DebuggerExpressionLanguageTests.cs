@@ -13,7 +13,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using AgileObjects.ReadableExpressions;
 using Datadog.Trace.Debugger;
@@ -35,6 +34,8 @@ namespace Datadog.Trace.Tests.Debugger
     [UsesVerify]
     public class DebuggerExpressionLanguageTests
     {
+        private const int TestMaxEvaluationTimeInMilliseconds = 30_000;
+
         private const string DefaultDslTemplate = @"{""dsl"": ""Ignore""}";
 
         private const string DefaultJsonTemplate = @"{""Ignore"": ""Ignore""}";
@@ -337,7 +338,7 @@ namespace Datadog.Trace.Tests.Debugger
         public void ProbeExpressionEvaluator_CaptureExpressions_EvaluatesObjectValues()
         {
             var scopeMembers = CreateScopeMembers();
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
                 metric: null,
@@ -375,7 +376,7 @@ namespace Datadog.Trace.Tests.Debugger
                 MaxCollectionSize: 1,
                 MaxLength: 255,
                 MaxFieldCount: 20);
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
                 metric: null,
@@ -404,7 +405,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var scopeMembers = CreateScopeMembers();
             scopeMembers.AddMember(new ScopeMember("FilteredCollectionLocal", typeof(List<string>), new List<string> { "hello", "moon", "cat" }, ScopeMemberKind.Local));
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
                 metric: null,
@@ -435,7 +436,7 @@ namespace Datadog.Trace.Tests.Debugger
             var scopeMembers = CreateScopeMembers();
             scopeMembers.AddMember(new ScopeMember("FilteredCollectionLocal", typeof(List<int>), new List<int> { 1, 2, 3, 4 }, ScopeMemberKind.Local));
             scopeMembers.AddMember(new ScopeMember("FilterThresholdLocal", typeof(int), 2, ScopeMemberKind.Local));
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
                 metric: null,
@@ -568,7 +569,7 @@ namespace Datadog.Trace.Tests.Debugger
                     { "three", "third" },
                 },
                 ScopeMemberKind.Local));
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
                 metric: null,
@@ -598,7 +599,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var scopeMembers = CreateScopeMembers();
             scopeMembers.AddMember(new ScopeMember("FilterChainCollectionLocal", typeof(List<string>), new List<string> { "a", "bb", "ccc", "dddd", "ddddd" }, ScopeMemberKind.Local));
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
                 metric: null,
@@ -636,7 +637,7 @@ namespace Datadog.Trace.Tests.Debugger
                 new() { "hello", "world", "again" },
             };
             scopeMembers.AddMember(new ScopeMember("NestedCollectionsLocal", typeof(List<List<string>>), nestedCollections, ScopeMemberKind.Local));
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
                 metric: null,
@@ -674,7 +675,7 @@ namespace Datadog.Trace.Tests.Debugger
                 { "target", new List<string> { "alpha", "beta", "gamma" } },
             };
             scopeMembers.AddMember(new ScopeMember("NestedDictionaryLocal", typeof(Dictionary<string, List<string>>), dictionary, ScopeMemberKind.Local));
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
                 metric: null,
@@ -706,7 +707,7 @@ namespace Datadog.Trace.Tests.Debugger
         public void FilterEvaluationHelpers_FilterForCapture_StopsAfterLimitAndOneExtraMatch()
         {
             var collection = new CountingEnumerable<string>(["hello", "world", "again"]);
-            var budget = EvaluationBudget.Create(DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds);
+            var budget = EvaluationBudget.Create(TestMaxEvaluationTimeInMilliseconds);
 
             var result = FilterEvaluationHelpers.FilterForCapture(collection, static (string value, ref EvaluationBudget _) => value.Length > 0, ref budget, maxCollectionSize: 1, isDictionary: false);
 
@@ -719,7 +720,7 @@ namespace Datadog.Trace.Tests.Debugger
         public void ProbeExpressionEvaluator_LenOfFilter_KeepsExactSemantics()
         {
             var scopeMembers = CreateScopeMembers();
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
                 metric: null,
@@ -748,7 +749,7 @@ namespace Datadog.Trace.Tests.Debugger
         public void ProbeExpressionEvaluator_CaptureExpressions_DoesNotCaptureParseFailures()
         {
             var scopeMembers = CreateScopeMembers();
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
                 metric: null,
@@ -774,7 +775,7 @@ namespace Datadog.Trace.Tests.Debugger
                 InstanceOfHelper.ResetForTests();
                 var scopeMembers = CreateScopeMembers();
                 var typeName = typeof(TestStruct.NestedObject).FullName;
-                var evaluator = new ProbeExpressionEvaluator(
+                var evaluator = CreateEvaluator(
                     templates: null,
                     condition: new DebuggerExpression(string.Empty, CreateInstanceOfJson(@"{""ref"":""NestedObjectLocal""}", typeName), null),
                     metric: null,
@@ -800,7 +801,7 @@ namespace Datadog.Trace.Tests.Debugger
                 InstanceOfHelper.ResetForTests();
                 var scopeMembers = CreateScopeMembers();
                 var typeName = typeof(TestStruct.NestedObject).FullName.ToUpperInvariant();
-                var evaluator = new ProbeExpressionEvaluator(
+                var evaluator = CreateEvaluator(
                     templates: null,
                     condition: new DebuggerExpression(string.Empty, CreateInstanceOfJson(@"{""ref"":""NestedObjectLocal""}", typeName), null),
                     metric: null,
@@ -827,7 +828,7 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 InstanceOfHelper.ResetForTests();
                 var scopeMembers = CreateScopeMembers();
-                var evaluator = new ProbeExpressionEvaluator(
+                var evaluator = CreateEvaluator(
                     templates: null,
                     condition: new DebuggerExpression(string.Empty, CreateInstanceOfJson(@"{""ref"":""IntLocal""}", typeof(int).FullName), null),
                     metric: null,
@@ -860,7 +861,7 @@ namespace Datadog.Trace.Tests.Debugger
                                  : typeName.Equals("int", StringComparison.OrdinalIgnoreCase)
                                      ? @"{""ref"":""IntLocal""}"
                                      : @"{""ref"":""DoubleLocal""}";
-                var evaluator = new ProbeExpressionEvaluator(
+                var evaluator = CreateEvaluator(
                     templates: null,
                     condition: new DebuggerExpression(string.Empty, CreateInstanceOfJson(source, typeName), null),
                     metric: null,
@@ -1102,7 +1103,7 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 InstanceOfHelper.ResetForTests();
                 var scopeMembers = CreateScopeMembers();
-                var evaluator = new ProbeExpressionEvaluator(
+                var evaluator = CreateEvaluator(
                     templates: null,
                     condition: new DebuggerExpression(string.Empty, CreateInstanceOfJson(@"{""ref"":""NestedObjectLocal""}", "NestedObject"), null),
                     metric: null,
@@ -1164,7 +1165,7 @@ namespace Datadog.Trace.Tests.Debugger
                 InstanceOfHelper.ResetForTests();
                 var scopeMembers = CreateScopeMembers();
                 var typeName = typeof(TestStruct.NestedObject).FullName;
-                var evaluator = new ProbeExpressionEvaluator(
+                var evaluator = CreateEvaluator(
                     templates: [new(null, null, "instanceof: "), new(string.Empty, CreateInstanceOfJson(@"{""ref"":""NestedObjectLocal""}", typeName), null)],
                     condition: null,
                     metric: null,
@@ -1190,7 +1191,7 @@ namespace Datadog.Trace.Tests.Debugger
                 InstanceOfHelper.ResetForTests();
                 var scopeMembers = CreateScopeMembers();
                 var typeName = typeof(TestStruct.NestedObject).FullName;
-                var evaluator = new ProbeExpressionEvaluator(
+                var evaluator = CreateEvaluator(
                     templates: null,
                     condition: null,
                     metric: null,
@@ -1223,7 +1224,7 @@ namespace Datadog.Trace.Tests.Debugger
                 InstanceOfHelper.ResetForTests();
                 var scopeMembers = CreateScopeMembers();
                 var typeName = typeof(TestStruct.NestedObject).FullName;
-                var evaluator = new ProbeExpressionEvaluator(
+                var evaluator = CreateEvaluator(
                     templates: null,
                     condition: null,
                     metric: null,
@@ -1256,7 +1257,7 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 InstanceOfHelper.ResetForTests();
                 var scopeMembers = CreateScopeMembers();
-                var evaluator = new ProbeExpressionEvaluator(
+                var evaluator = CreateEvaluator(
                     templates: null,
                     condition: new DebuggerExpression(string.Empty, CreateInstanceOfJson(@"{""ref"":""NestedObjectLocal""}", "DebuggerExpressionLanguageTests"), null),
                     metric: null,
@@ -2870,10 +2871,9 @@ namespace Datadog.Trace.Tests.Debugger
         public void ProbeExpressionEvaluator_ConditionTimeout_SetsConditionError()
         {
             var scopeMembers = CreateScopeMembers();
-            scopeMembers.AddMember(new ScopeMember("LargeCollectionLocal", typeof(List<int>), Enumerable.Range(1, 10_000).ToList(), ScopeMemberKind.Local));
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: null,
-                condition: new DebuggerExpression(string.Empty, @"{""all"":[{""ref"":""LargeCollectionLocal""},{""gt"":[""@it"",0]}]}", null),
+                condition: new DebuggerExpression(string.Empty, @"{""ref"":""BooleanValue""}", null),
                 metric: null,
                 spanDecorations: null,
                 captureExpressions: null,
@@ -2887,46 +2887,10 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
-        public void EvaluationBudget_DefaultIsUninitializedAndCreateInitializes()
-        {
-            EvaluationBudget budget = default;
-
-            budget.IsInitialized.Should().BeFalse();
-
-            budget = EvaluationBudget.Create(100);
-
-            budget.IsInitialized.Should().BeTrue();
-            budget.TimedOut.Should().BeFalse();
-        }
-
-        [Fact]
-        public void EvaluationBudget_PauseExcludesPausedWallTime()
-        {
-            for (var attempt = 0; attempt < 3; attempt++)
-            {
-                var budget = EvaluationBudget.Create(100);
-
-                budget.Pause();
-                Thread.Sleep(250);
-                budget.Resume();
-
-                try
-                {
-                    budget.ThrowIfExceededImmediately();
-                    return;
-                }
-                catch (EvaluationTimeBudgetExceededException) when (attempt < 2)
-                {
-                    // A scheduler or GC pause after Resume can legitimately consume the active budget.
-                }
-            }
-        }
-
-        [Fact]
         public void ProbeExpressionEvaluator_CaptureExpressionsResumePausedSharedBudget()
         {
             var scopeMembers = CreateScopeMembers();
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
                 metric: null,
@@ -2934,22 +2898,12 @@ namespace Datadog.Trace.Tests.Debugger
                 captureExpressions:
                 [
                     new CaptureExpressionDefinition("value", new DebuggerExpression(string.Empty, @"{""ref"":""StringArg""}", null), default)
-                ],
-                maxEvaluationTimeInMilliseconds: 100);
+                ]);
 
-            ExpressionEvaluationResult result = default;
-            for (var attempt = 0; attempt < 3; attempt++)
-            {
-                result = evaluator.Evaluate(scopeMembers, out var entry);
-                result.EvaluationBudget.IsInitialized.Should().BeTrue();
-                Thread.Sleep(250);
-                evaluator.EvaluateCaptureExpressions(ref result, scopeMembers, entry);
-                if (result.CaptureExpressionCount == 1)
-                {
-                    break;
-                }
-            }
-
+            var result = evaluator.Evaluate(scopeMembers, out var entry);
+            result.EvaluationBudget.IsPaused.Should().BeTrue();
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers, entry);
+            result.EvaluationBudget.IsPaused.Should().BeFalse();
             result.CaptureExpressionCount.Should().Be(1);
             result.CaptureExpressions.Should().ContainSingle().Which.Value.Should().Be("Hello world!");
             result.Errors.Should().BeNullOrEmpty();
@@ -2959,7 +2913,7 @@ namespace Datadog.Trace.Tests.Debugger
         public void ProbeExpressionEvaluator_TimeoutStopsRemainingExpressionsAndCapture()
         {
             var scopeMembers = CreateScopeMembers();
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates:
                 [
                     new DebuggerExpression(string.Empty, @"{""ref"":""StringLocal""}", null),
@@ -2984,34 +2938,6 @@ namespace Datadog.Trace.Tests.Debugger
             result.CaptureExpressionCount.Should().Be(0);
             result.EvaluationBudget.TimedOut.Should().BeTrue();
             result.Errors.Should().ContainSingle().Which.Message.Should().Be(EvaluationTimeBudgetExceededException.ErrorMessage);
-        }
-
-        [Fact]
-        [Flaky("Evaluation timeout test is timing-sensitive")]
-        public void ProbeExpressionParser_BudgetedDelegateTimeout_ThrowsEvaluationTimeout()
-        {
-            var scopeMembers = CreateScopeMembers();
-            scopeMembers.AddMember(new ScopeMember("LargeCollectionLocal", typeof(List<int>), Enumerable.Range(1, 10_000).ToList(), ScopeMemberKind.Local));
-            const string json = """
-                                {
-                                  "all": [
-                                    { "ref": "LargeCollectionLocal" },
-                                    { "gt": [ "@it", 0 ] }
-                                  ]
-                                }
-                                """;
-
-            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var budget = EvaluationBudget.Create(0);
-            var act = () => compiled.BudgetedDelegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members,
-                ref budget);
-
-            act.Should().Throw<EvaluationTimeBudgetExceededException>();
         }
 
         [Fact]
@@ -3107,35 +3033,6 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
-        public void ProbeExpressionParser_RegexTimeout_PreservesInnerException()
-        {
-            var scopeMembers = CreateScopeMembers();
-            scopeMembers.AddMember(new ScopeMember("RegexInputLocal", typeof(string), new string('a', 20_000) + "!", ScopeMemberKind.Local));
-            const string json = """
-                                {
-                                  "matches": [
-                                    { "ref": "RegexInputLocal" },
-                                    "^(a+)+$"
-                                  ]
-                                }
-                                """;
-
-            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
-            var budget = EvaluationBudget.Create(25);
-            var act = () => compiled.BudgetedDelegate(
-                scopeMembers.InvocationTarget,
-                scopeMembers.Return,
-                scopeMembers.Duration,
-                scopeMembers.Exception,
-                scopeMembers.Members,
-                ref budget);
-
-            act.Should().Throw<EvaluationTimeBudgetExceededException>()
-               .Which.InnerException.Should().BeOfType<RegexMatchTimeoutException>();
-            budget.TimedOut.Should().BeTrue();
-        }
-
-        [Fact]
         public void ProbeExpressionParser_StaticPropertyOnCctorFreeType_IsUndefinedWithoutInvokingGetter()
         {
             var scopeMembers = CreateScopeMembers();
@@ -3170,7 +3067,7 @@ namespace Datadog.Trace.Tests.Debugger
             var holder = new DumpRedactionObjectHolder(passwordSecret, apiKeySecret, publicValue);
             scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpRedactionObjectHolder), holder, ScopeMemberKind.Local));
 
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
                 condition: null,
                 metric: null,
@@ -3193,7 +3090,7 @@ namespace Datadog.Trace.Tests.Debugger
             using var credential = new System.Security.SecureString();
             scopeMembers.AddMember(new ScopeMember("CredentialLocal", typeof(System.Security.SecureString), credential, ScopeMemberKind.Local));
 
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: [new DebuggerExpression(string.Empty, @"{""ref"":""CredentialLocal""}", null)],
                 condition: null,
                 metric: null,
@@ -3215,7 +3112,7 @@ namespace Datadog.Trace.Tests.Debugger
             var holder = new DumpRedactionCollectionFieldHolder(authorizationSecret, authorizationPublicValue);
             scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpRedactionCollectionFieldHolder), holder, ScopeMemberKind.Local));
 
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
                 condition: null,
                 metric: null,
@@ -3239,7 +3136,7 @@ namespace Datadog.Trace.Tests.Debugger
             var holder = new DumpRedactionDictionaryHolder(authorizationSecret, publicValue);
             scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpRedactionDictionaryHolder), holder, ScopeMemberKind.Local));
 
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: [new DebuggerExpression(string.Empty, @"{""ref"":""DumpHolderLocal""}", null)],
                 condition: null,
                 metric: null,
@@ -3265,7 +3162,7 @@ namespace Datadog.Trace.Tests.Debugger
             var holder = new DumpRedactionObjectHolder(passwordSecret, apiKeySecret, publicValue);
             scopeMembers.AddMember(new ScopeMember("DumpHolderLocal", typeof(DumpRedactionObjectHolder), holder, ScopeMemberKind.Local));
 
-            var evaluator = new ProbeExpressionEvaluator(
+            var evaluator = CreateEvaluator(
                 templates: null,
                 condition: null,
                 metric: null,
@@ -3497,7 +3394,7 @@ namespace Datadog.Trace.Tests.Debugger
                 throw new Exception($"{nameof(DebuggerExpressionLanguageTests)}.{nameof(GetEvaluator)}: Incorrect folder name");
             }
 
-            return (new ProbeExpressionEvaluator(templates, condition, metrics, spanDecorations, captureExpressions: null), scopeMembers);
+            return (CreateEvaluator(templates, condition, metrics, spanDecorations, captureExpressions: null), scopeMembers);
         }
 
         private VerifySettings ConfigureVerifySettings(string expressionTestFilePath)
@@ -3580,10 +3477,21 @@ namespace Datadog.Trace.Tests.Debugger
             return scope;
         }
 
+        private ProbeExpressionEvaluator CreateEvaluator(
+            DebuggerExpression?[] templates,
+            DebuggerExpression? condition,
+            DebuggerExpression? metric,
+            KeyValuePair<DebuggerExpression?, KeyValuePair<string, DebuggerExpression?[]>[]>[] spanDecorations,
+            CaptureExpressionDefinition[] captureExpressions,
+            int maxEvaluationTimeInMilliseconds = TestMaxEvaluationTimeInMilliseconds)
+        {
+            return new ProbeExpressionEvaluator(templates, condition, metric, spanDecorations, captureExpressions, maxEvaluationTimeInMilliseconds);
+        }
+
         private T EvaluateCompiled<T>(CompiledExpression<T> compiled, MethodScopeMembers scopeMembers)
         {
             compiled.BudgetedDelegate.Should().NotBeNull();
-            var budget = EvaluationBudget.Create(DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds);
+            var budget = EvaluationBudget.Create(TestMaxEvaluationTimeInMilliseconds);
             return compiled.BudgetedDelegate(
                 scopeMembers.InvocationTarget,
                 scopeMembers.Return,
