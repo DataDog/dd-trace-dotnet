@@ -347,6 +347,11 @@ public abstract class TestingFrameworkEvpTest : TestHelper
     {
         ClearCIEnvironmentVariables();
         var current = GitInfo.GetCurrent();
+
+        // These tests simulate Azure Pipelines. Do not let the outer GitLab job override
+        // the mocked provider in the sample process.
+        SetEnvironmentVariable(PlatformKeys.Ci.GitLab.Name, string.Empty);
+
         var ciDictionaryValues = new Dictionary<string, string>
         {
             [PlatformKeys.Ci.Azure.TFBuild] = "1",
