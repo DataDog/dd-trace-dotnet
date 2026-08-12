@@ -94,6 +94,33 @@ public class OtlpTracesJsonSerializerTests
     }
 
     [Theory]
+    [InlineData("rv:ef284ace7a91e1;th:e6666666666666")]
+    [InlineData("rv:ef284ace7a91e1")]
+    [InlineData("rv:ef284ace7a91e1;th:e6666666666666;future:value")]
+    public void WriteSpan_WithOtelTraceState_EmitsTraceState(string otelTraceState)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = otelTraceState;
+
+        var json = WriteSpan(ddSpan, openTelemetrySemanticsEnabled: false);
+
+        json["traceState"]!.Value<string>().Should().Be($"ot={otelTraceState}");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void WriteSpan_WithoutOtelTraceState_OmitsTraceState(string? otelTraceState)
+    {
+        var ddSpan = CreateSpan();
+        ddSpan.Context.OtelTraceState = otelTraceState;
+
+        var json = WriteSpan(ddSpan, openTelemetrySemanticsEnabled: false);
+
+        json["traceState"].Should().BeNull();
+    }
+
+    [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public void WriteSpan_ErrorSpanWithoutOtelStatusCodeTag_EmitsErrorStatus(bool openTelemetrySemanticsEnabled)
