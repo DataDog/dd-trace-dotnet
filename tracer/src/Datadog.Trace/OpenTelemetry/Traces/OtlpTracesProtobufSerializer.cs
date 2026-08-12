@@ -443,6 +443,13 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         // span_id (field 2, LEN, 8 bytes)
         writePosition = WriteSpanIdField(bytes, writePosition, Span_Span_Id, spanModel.Span.SpanId);
 
+        // trace_state (field 3, string)
+        var otelTraceState = spanModel.Span.Context.OtelTraceState;
+        if (!StringUtil.IsNullOrEmpty(otelTraceState))
+        {
+            writePosition = ProtobufSerializer.WriteStringWithTag(bytes, writePosition, Span_Trace_State, "ot=" + otelTraceState);
+        }
+
         // parent_span_id (field 4, LEN, 8 bytes) — only if parent exists and is non-zero
         if (spanModel.Span.Context.ParentId is ulong parentId && parentId > 0)
         {
