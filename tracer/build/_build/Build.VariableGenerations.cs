@@ -75,6 +75,13 @@ partial class Build : NukeBuild
                     isArm64: false,
                     includeAllFrameworks: IncludeAllTestFrameworks)));
 
+    Target GenerateGitlabLinuxIntegrationTestsPipeline
+        => _ => _
+           .Unlisted()
+           .Executes(() => WriteGitlabLinuxIntegrationTestsPipeline(
+                GetLinuxX64IntegrationTestPlatformMatrix(IncludeAllTestFrameworks)
+                   .Where(x => x.BaseImage == "debian")));
+
     void WriteGitlabWindowsUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
     {
         var yaml = new StringBuilder(
@@ -189,6 +196,77 @@ partial class Build : NukeBuild
         var outputPath = outputDirectory / "macos-unit-tests.yml";
         File.WriteAllText(outputPath, yaml.ToString());
         Logger.Information("Generated GitLab macOS unit-test child pipeline at {Path}", outputPath);
+    }
+
+    void WriteGitlabLinuxIntegrationTestsPipeline(
+        IEnumerable<(TargetFramework Framework, string BaseImage, string ArtifactSuffix)> configurations)
+    {
+        var yaml = new StringBuilder(
+            """
+            include:
+              - local: .gitlab/linux-integration-tests-child.yml
+
+            stages:
+              - build
+              - test
+
+            """);
+
+        foreach (var (framework, baseImage, artifactSuffix) in configurations)
+        {
+            var sampleJob = $"build-samples-multi-version:{framework}";
+            yaml.AppendLine($"\"{sampleJob}\":");
+            yaml.AppendLine("  extends: .windows-integration-sample-build");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+            yaml.AppendLine($"\"integration-tests-linux-x64:{framework}\":");
+            yaml.AppendLine("  extends: .linux-integration-test-x64");
+            yaml.AppendLine("  needs:");
+            yaml.AppendLine($"    - job: \"{sampleJob}\"");
+            yaml.AppendLine("      artifacts: true");
+            AppendParentArtifactNeed("build-linux-tracer-x64");
+            AppendParentArtifactNeed("build-linux-profiler-x64");
+            AppendParentArtifactNeed("build-linux-universal-x64");
+            AppendParentArtifactNeed("build-samples-standalone");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+            yaml.AppendLine($"    BASE_IMAGE: \"{baseImage}\"");
+            yaml.AppendLine($"    ARTIFACT_SUFFIX: \"{artifactSuffix}\"");
+
+            void AppendParentArtifactNeed(string job)
+            {
+                yaml.AppendLine("    - pipeline: \"$PARENT_PIPELINE_ID\"");
+                yaml.AppendLine($"      job: \"{job}\"");
+                yaml.AppendLine("      artifacts: true");
+            }
+        }
+
+        var outputDirectory = RootDirectory / ".gitlab" / "generated";
+        Directory.CreateDirectory(outputDirectory);
+        var outputPath = outputDirectory / "linux-integration-tests.yml";
+        File.WriteAllText(outputPath, yaml.ToString());
+        Logger.Information("Generated GitLab Linux integration-test child pipeline at {Path}", outputPath);
+    }
+
+    IEnumerable<(TargetFramework Framework, string BaseImage, string ArtifactSuffix)> GetLinuxX64IntegrationTestPlatformMatrix(
+        bool includeAllFrameworks)
+    {
+        var baseImages = new[]
+        {
+            (BaseImage: "debian", ArtifactSuffix: "linux-x64"),
+            (BaseImage: "alpine", ArtifactSuffix: "linux-musl-x64"),
+        };
+
+        foreach (var framework in GetTestingFrameworks(
+                     PlatformFamily.Linux,
+                     isArm64: false,
+                     includeAllFrameworks: includeAllFrameworks))
+        {
+            foreach (var (baseImage, artifactSuffix) in baseImages)
+            {
+                yield return (framework, baseImage, artifactSuffix);
+            }
+        }
     }
 
     Target GenerateVariables
@@ -514,36 +592,26 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsLinuxMatrix(bool dockerTest)
             {
-                var baseImages = new []
-                {
-                    (baseImage: "debian", artifactSuffix: "linux-x64"),
-                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
-                };
-
-                var targetFrameworks = GetTestingFrameworks(PlatformFamily.Linux);
-
                 var matrix = new Dictionary<string, object>();
-                foreach (var framework in targetFrameworks)
+                foreach (var (framework, baseImage, artifactSuffix) in GetLinuxX64IntegrationTestPlatformMatrix(
+                             IncludeAllTestFrameworks || RequiresThoroughTesting()))
                 {
-                    foreach (var (baseImage, artifactSuffix) in baseImages)
+                    if (dockerTest)
                     {
-                        if (dockerTest)
+                        var dockerGroups = new[] { 1, 2 };
+                        foreach (var dockerGroup in dockerGroups)
                         {
-                            var dockerGroups = new[] { 1, 2 };
-                            foreach (var dockerGroup in dockerGroups)
-                            {
-                                matrix.Add($"{baseImage}_{framework}_group{dockerGroup}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, dockerGroup = dockerGroup });
-                            }
+                            matrix.Add($"{baseImage}_{framework}_group{dockerGroup}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, dockerGroup = dockerGroup });
                         }
-                        else
+                    }
+                    else
+                    {
+                        var areas = new[] { TracerArea, AsmArea };
+                        foreach (var area in areas)
                         {
-                            var areas = new[] { TracerArea, AsmArea };
-                            foreach (var area in areas)
+                            if (ShouldBeIncluded(area))
                             {
-                                if (ShouldBeIncluded(area))
-                                {
-                                    matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
-                                }
+                                matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
                             }
                         }
                     }
