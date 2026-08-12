@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Debugger.Expressions;
@@ -149,7 +150,7 @@ internal struct EvaluationBudget
         }
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
+    [DoesNotReturn]
     private void MarkTimedOutAndThrow()
     {
         TimedOut = true;
