@@ -10,6 +10,7 @@
 
 #include "AllocationsProvider.h"
 #include "ApplicationStore.h"
+#include "EngineActiveGuard.h"
 #include "EventPipeEventsManager.h"
 #include "ExceptionsProvider.h"
 #include "IAppDomainStore.h"
@@ -50,6 +51,7 @@
 
 #include <atomic>
 #include <memory>
+#include <shared_mutex>
 #include <vector>
 
 class ContentionProvider;
@@ -245,6 +247,12 @@ private :
     inline static bool _isNet46OrGreater = false;
     std::shared_ptr<IMetricsSender> _metricsSender;
     std::atomic<bool> _isInitialized{false}; // pay attention to keeping ProfilerEngineStatus::IsProfilerEngiveActive in sync with this!
+
+    // Guards ICorProfilerCallback methods (see EngineActiveGuard.h) against DisposeInternal()
+    // concurrently tearing down the service pointers below. _isShutdown must only ever be
+    // read/written while holding this mutex (shared or exclusive) - never as a bare flag check.
+    mutable std::shared_mutex _engineLifetimeMutex;
+    bool _isShutdown = false;
 
     // The pointer here are observable pointer which means that they are used only to access the data.
     // Their lifetime is managed by the _services vector.
