@@ -615,8 +615,8 @@ void CorProfilerCallback::InitializeServices()
     auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
-    // Shared by StackSamplerLoopManager and StackSamplerLoop (registered separately below), so it's
-    // constructed here rather than by either of them.
+    // Stack frames collector is shared by StackSamplerLoopManager and StackSamplerLoop
+    //  (registered separately below), so it's constructed here rather than by either of them.
     _callstackProvider = CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize));
     _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
         _pCorProfilerInfo, _pConfiguration.get(), &_callstackProvider, _metricsRegistry);
@@ -629,11 +629,6 @@ void CorProfilerCallback::InitializeServices()
         _pStackFramesCollector.get(),
         _metricsRegistry);
 
-    // StackSamplerLoop is registered as its own independent service (rather than being privately
-    // owned and started/stopped by StackSamplerLoopManager) so that StartServices()/StopServices()'s
-    // existing, already-correct forward/reverse-order machinery governs its lifecycle directly:
-    // it starts after the manager's watcher thread is confirmed running, and stops before the
-    // manager (and before ManagedThreadList/CodeHotspotsThreadList, both registered earlier above).
     _pStackSamplerLoop = RegisterService<StackSamplerLoop>(
         _pCorProfilerInfo,
         _pConfiguration.get(),
