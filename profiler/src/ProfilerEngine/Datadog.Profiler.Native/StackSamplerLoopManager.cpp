@@ -92,7 +92,7 @@ bool StackSamplerLoopManager::StartImpl()
     if (_pStackSamplerLoop == nullptr)
     {
         Log::Error("StackSamplerLoopManager::StartImpl - StackSamplerLoop was not wired in "
-                   "(SetStackSamplerLoop() must be called before Start()). This is a bug.");
+                   "(SetStackSamplerLoop() must be called before Start()).");
         return false;
     }
 

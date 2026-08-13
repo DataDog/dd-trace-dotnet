@@ -94,9 +94,6 @@ public:
     void NotifyCollectionEnd() override;
     void NotifyIterationFinished() override;
 
-    // Wires in the independently-registered StackSamplerLoop service this manager monitors.
-    // Must be called once, before Start(), after both services are constructed - see
-    // CorProfilerCallback::InitializeServices(). StartImpl() defends against this being skipped.
     void SetStackSamplerLoop(StackSamplerLoop* pStackSamplerLoop);
 
 private:

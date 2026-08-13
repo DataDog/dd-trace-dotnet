@@ -647,10 +647,6 @@ void CorProfilerCallback::InitializeServices()
         _pCpuTimeProvider,
         _metricsRegistry);
 
-    // Completes the wiring: StackSamplerLoop needed StackSamplerLoopManager to already exist (just
-    // passed above), but the manager needs StackSamplerLoop back (for its Windows deadlock-progress
-    // check) and that couldn't be constructor-injected the other way around, since StackSamplerLoop
-    // didn't exist yet when the manager was constructed.
     _pStackSamplerLoopManager->SetStackSamplerLoop(_pStackSamplerLoop);
 
 #ifdef ARM64
