@@ -14,10 +14,6 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'DataDog/llm-validation-platform'
-    # Pin to an immutable released tag (not a mutable branch): this ref selects which copy of the template
-    # GitLab merges in, and the matching LLMVAL_PLATFORM_REF override below pins the ref whose run.sh + CLI
-    # actually execute in this pipeline. Keep the two identical; bump both together to adopt a new release.
-    # (Variables don't expand inside `include:` here — see the touchpoint note below — so this is a literal.)
     ref: v0.1.0
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
@@ -45,11 +41,6 @@ variables:
   SLS_CI_BRANCH: main
   WINDOWS_BUILD_IMAGE_BASE: "registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build"
 
-# Pin the LLM Validation gate to a released tag (supply chain). The template above is git-cloned and its CLI is
-# built and EXECUTED in this pipeline, so pinning the `include: ref:` alone is not enough — LLMVAL_PLATFORM_REF
-# is the ref that actually runs. It MUST match the include ref above; bump both together to adopt a new release.
-# This is a job-level override (not a top-level variable) on purpose: the template sets LLMVAL_PLATFORM_REF as a
-# job-level default, and in GitLab a job-level variable beats a global one — so a top-level override wouldn't win.
 "llm validation":
   variables:
     LLMVAL_PLATFORM_REF: "v0.1.0"
