@@ -106,9 +106,15 @@ public partial class FeatureFlagsEvaluatorTests
     [Fact]
     public void RegexConformanceFixtureShape()
     {
-        var cases = ReadRegexConformanceFixture().Cases!;
+        var fixture = ReadRegexConformanceFixture();
+        var cases = fixture.Cases!;
 
-        Assert.NotEmpty(cases);
+        Assert.Equal("datadog.ffe.targeting-regex-conformance/v1", fixture.Schema);
+        Assert.Equal(1, fixture.SchemaVersion);
+        Assert.Equal("targeting-regex-v1", fixture.ContractVersion);
+        Assert.Equal(75, cases.Count);
+        Assert.Equal(75, cases.Select(testCase => testCase.Id).Distinct().Count());
+        Assert.Equal(66, cases.Count(testCase => testCase.ExpectedCompile.HasValue));
     }
 
     [Theory]
@@ -330,6 +336,12 @@ public partial class FeatureFlagsEvaluatorTests
 
     public class RegexConformanceFixture
     {
+        public string? Schema { get; set; }
+
+        public int SchemaVersion { get; set; }
+
+        public string? ContractVersion { get; set; }
+
         public List<RegexConformanceCase>? Cases { get; set; }
     }
 
