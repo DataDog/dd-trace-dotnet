@@ -73,6 +73,18 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         catch { }
     }
 
+    /// <summary>
+    /// Starts flag configuration delivery and waits for the first configuration, so that a ready
+    /// provider can actually resolve flags. It returns normally when the wait times out instead of
+    /// throwing: slow delivery is transient, and initialization commonly runs at startup, where an
+    /// exception would take the application down.
+    /// </summary>
+    /// <param name="context"> Evaluation context </param>
+    /// <param name="cancellationToken"> Async cancellation token </param>
+    /// <returns> A task that completes when initialization is complete </returns>
+    public override Task InitializeAsync(EvaluationContext context, CancellationToken cancellationToken = default)
+        => FeatureFlagsSdk.InitializeAsync(cancellationToken);
+
     /// <summary> Gets provider metadata </summary>
     /// <returns> Returns provider metadata </returns>
     public override Metadata? GetMetadata() => _metadata;

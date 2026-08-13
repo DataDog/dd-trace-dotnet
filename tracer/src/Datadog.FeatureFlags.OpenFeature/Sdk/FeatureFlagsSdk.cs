@@ -32,6 +32,16 @@ internal static class FeatureFlagsSdk
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal static bool IsSpanEnrichmentEnabled() => false;
 
+    /// <summary>
+    /// Activates flag configuration delivery and waits for the first configuration to arrive.
+    /// Delivery only starts here, because requesting configuration is billable and installing the
+    /// tracer alone must not do it.
+    /// </summary>
+    /// <param name="cancellationToken"> Cancellation token supplied by OpenFeature </param>
+    /// <returns> A task that completes once configuration has arrived, or the initialization timeout has elapsed </returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
     /// <summary> Installs an event handler to be fired when a new config has been received </summary>
     /// <param name="onNewConfig"> Action to be called when the event is fired </param>
     [MethodImpl(MethodImplOptions.NoInlining)]
