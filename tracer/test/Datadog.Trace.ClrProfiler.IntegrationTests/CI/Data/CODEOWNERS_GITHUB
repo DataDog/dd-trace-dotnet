@@ -52,3 +52,6 @@ apps/ @octocat
 # subdirectory, as its owners are left empty.
 /apps/ @octocat
 /apps/github
+
+# A globstar between slashes matches zero or more directories.
+/globstar/**/target @globstar-owner

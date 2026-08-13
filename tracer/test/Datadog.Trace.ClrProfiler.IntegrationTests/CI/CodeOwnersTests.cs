@@ -51,6 +51,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         // New GitHub quirks
         [InlineData("/x/logs/error.txt", "[\"@octo-org/octocats\"]")] // **/logs pattern
         [InlineData("docs/getting-started.md", "[\"docs@example.com\"]")] // docs/* pattern
+        [InlineData("/globstar/target", "[\"@globstar-owner\"]")]
+        [InlineData("/globstar/one/target", "[\"@globstar-owner\"]")]
+        [InlineData("/globstar/one/two/target", "[\"@globstar-owner\"]")]
         public void CheckGithubCodeOwners(string value, string expected)
         {
             var match = _githubCodeOwners.Match(value);

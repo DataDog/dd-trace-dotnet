@@ -140,6 +140,9 @@ namespace Datadog.Trace.Ci
             // Escape regex metachars first.
             var rx = Regex.Escape(pattern);
 
+            // A globstar surrounded by slashes matches zero or more directories.
+            rx = rx.Replace("/\\*\\*/", "/(?:[^/]+/)*");
+
             // Temporary sentinel for ** that we restore after dealing with single *.
             rx = rx.Replace("\\*\\*", "§§DOUBLESTAR§§");
             rx = rx.Replace("\\*", "[^/]*"); // single‑level wildcard
