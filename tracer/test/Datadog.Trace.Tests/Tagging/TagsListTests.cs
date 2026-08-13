@@ -145,6 +145,118 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
+        public void StronglyTypedStatusCodeAliasesCanBeReadAndWrittenByEitherName()
+        {
+            var tags = new WebTags();
+
+            tags.SetTag(Tags.HttpStatusCode, "200");
+            tags.GetTag(Tags.HttpResponseStatusCode).Should().Be("200");
+
+            tags.SetTag(Tags.HttpResponseStatusCode, "201");
+            tags.GetTag(Tags.HttpStatusCode).Should().Be("201");
+        }
+
+        [Theory]
+        [InlineData(false, Tags.HttpStatusCode)]
+        [InlineData(true, Tags.HttpResponseStatusCode)]
+        public void StronglyTypedStatusCodeAliasEnumeratesSelectedName(bool openTelemetrySemanticsEnabled, string expectedKey)
+        {
+            var tags = new WebTags { HttpStatusCode = 202 };
+
+            var snapshot = GetTagsSnapshot(tags, openTelemetrySemanticsEnabled);
+
+            snapshot
+               .Where(x => x.Key == Tags.HttpStatusCode || x.Key == Tags.HttpResponseStatusCode)
+               .Should()
+               .ContainSingle()
+               .Which
+               .Should()
+               .Be(new KeyValuePair<string, string>(expectedKey, "202"));
+        }
+
+        [Fact]
+        public void StronglyTypedStatusCodeAliasCanBeClearedByEitherName()
+        {
+            var tags = new WebTags();
+
+            tags.SetTag(Tags.HttpStatusCode, "203");
+            tags.SetTag(Tags.HttpResponseStatusCode, null);
+            tags.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            tags.GetTag(Tags.HttpResponseStatusCode).Should().BeNull();
+
+            tags.SetTag(Tags.HttpResponseStatusCode, "204");
+            tags.SetTag(Tags.HttpStatusCode, null);
+            tags.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            tags.GetTag(Tags.HttpResponseStatusCode).Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(false, Tags.HttpMethod, Tags.HttpUrl, Tags.OutHost)]
+        [InlineData(true, Tags.HttpRequestMethod, Tags.UrlFull, Tags.ServerAddress)]
+        public void HttpClientTagAliasesEnumerateSelectedNames(bool openTelemetrySemanticsEnabled, string methodKey, string urlKey, string hostKey)
+        {
+            const string url = "http://localhost/api";
+            var tags = new HttpTags { HttpMethod = "GET", HttpUrl = url, Host = "localhost" };
+
+            var snapshot = GetTagsSnapshot(tags, openTelemetrySemanticsEnabled);
+
+            snapshot.Should().Contain(
+            [
+                new KeyValuePair<string, string>(methodKey, "GET"),
+                new KeyValuePair<string, string>(urlKey, url),
+                new KeyValuePair<string, string>(hostKey, "localhost"),
+            ]);
+
+            // the aliases are mutually exclusive, so only one name is reported for each concept
+            var aliases = new[] { Tags.HttpMethod, Tags.HttpRequestMethod, Tags.HttpUrl, Tags.UrlFull, Tags.OutHost, Tags.ServerAddress };
+            snapshot.Select(x => x.Key)
+                    .Where(aliases.Contains)
+                    .Should()
+                    .BeEquivalentTo(new[] { methodKey, urlKey, hostKey });
+        }
+
+        [Fact]
+        public void HttpClientTagAliasesCanBeReadAndWrittenByEitherName()
+        {
+            var tags = new HttpTags();
+
+            tags.SetTag(Tags.HttpMethod, "GET");
+            tags.GetTag(Tags.HttpRequestMethod).Should().Be("GET");
+            tags.SetTag(Tags.HttpRequestMethod, "POST");
+            tags.GetTag(Tags.HttpMethod).Should().Be("POST");
+            tags.HttpMethod.Should().Be("POST");
+
+            tags.SetTag(Tags.HttpUrl, "http://localhost/1");
+            tags.GetTag(Tags.UrlFull).Should().Be("http://localhost/1");
+            tags.SetTag(Tags.UrlFull, "http://localhost/2");
+            tags.GetTag(Tags.HttpUrl).Should().Be("http://localhost/2");
+            tags.HttpUrl.Should().Be("http://localhost/2");
+
+            tags.SetTag(Tags.OutHost, "host1");
+            tags.GetTag(Tags.ServerAddress).Should().Be("host1");
+            tags.SetTag(Tags.ServerAddress, "host2");
+            tags.GetTag(Tags.OutHost).Should().Be("host2");
+            tags.Host.Should().Be("host2");
+        }
+
+        [Fact]
+        public void ServerPortIsOnlyReportedWhenSet()
+        {
+            var tags = new HttpTags();
+
+            GetTagsSnapshot(tags, openTelemetrySemanticsEnabled: true)
+               .Select(x => x.Key)
+               .Should()
+               .NotContain(Tags.ServerPort);
+
+            tags.ServerPort = 8080;
+
+            GetTagsSnapshot(tags, openTelemetrySemanticsEnabled: true)
+               .Should()
+               .Contain(new KeyValuePair<string, string>(Tags.ServerPort, "8080"));
+        }
+
+        [Fact]
         public void GetTag_GetMetric_ReturnUpdatedValues()
         {
             var tags = new TagsList();
@@ -465,11 +577,11 @@ namespace Datadog.Trace.Tests.Tagging
             }
         }
 
-        private static List<KeyValuePair<string, string>> GetTagsSnapshot(TagsList tags)
+        private static List<KeyValuePair<string, string>> GetTagsSnapshot(TagsList tags, bool openTelemetrySemanticsEnabled = false)
         {
             var result = new List<KeyValuePair<string, string>>();
             var processor = new TagCollectorProcessor(result);
-            tags.EnumerateTags(ref processor);
+            tags.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
             return result;
         }
 

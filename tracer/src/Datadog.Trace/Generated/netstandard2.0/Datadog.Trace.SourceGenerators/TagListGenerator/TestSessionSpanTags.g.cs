@@ -357,7 +357,7 @@ namespace Datadog.Trace.Ci.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (Command is not null)
             {
@@ -589,7 +589,7 @@ namespace Datadog.Trace.Ci.Tagging
                 processor.Process(new TagItem<string>("git.commit.head.message", GitHeadCommitMessage, GitHeadCommitMessageBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

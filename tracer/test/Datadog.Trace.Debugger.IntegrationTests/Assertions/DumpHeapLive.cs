@@ -45,7 +45,7 @@ internal static class DumpHeapLive
 
         output?.WriteLine("Snapshot complete, analyzing heap...");
         var heap = target.ClrVersions[0].CreateRuntime().Heap;
-        var considered = new ObjectSet(heap);
+        var considered = new HashSet<ulong>();
         var eval = new Stack<ulong>();
 
         var rootCount = 0;

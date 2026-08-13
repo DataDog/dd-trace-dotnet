@@ -87,20 +87,20 @@ internal static class OtlpMapper
                tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
     }
 
-    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit, bool openTelemetrySemanticsEnabled)
+    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit)
     {
         return EmitAttributesFromSpan(
             in spanModel,
             limit,
-            openTelemetrySemanticsEnabled,
             ref writeKeyValue,
             static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue));
     }
 
-    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, bool openTelemetrySemanticsEnabled, ref TState state, KeyValueWriter<TState> writeKeyValue)
+    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, ref TState state, KeyValueWriter<TState> writeKeyValue)
     {
         int count = 0;
         int droppedAttributesCount = 0;
+        bool openTelemetrySemanticsEnabled = spanModel.Span.OpenTelemetrySemanticsEnabled;
 
         if (!openTelemetrySemanticsEnabled)
         {
@@ -251,7 +251,7 @@ internal static class OtlpMapper
         }
 
         var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
-        spanModel.Span.Tags.EnumerateTags(ref tagWriter);
+        spanModel.Span.Tags.EnumerateTags(ref tagWriter, openTelemetrySemanticsEnabled);
         count = tagWriter.Count;
         droppedAttributesCount += tagWriter.DroppedCount;
         state = tagWriter.State;

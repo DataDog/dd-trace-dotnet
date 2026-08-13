@@ -18,20 +18,48 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; }
 
-        [Tag(Trace.Tags.HttpMethod)]
+        [Tag(Trace.Tags.HttpMethod, OtelName = Trace.Tags.HttpRequestMethod)]
         public string HttpMethod { get; set; }
 
-        [Tag(Trace.Tags.HttpUrl)]
+        /// <summary>
+        /// Gets or sets the original HTTP method, when it differs from the value reported
+        /// in <see cref="HttpMethod"/>. This is an OpenTelemetry-only concept, so it is only
+        /// set when OpenTelemetry semantics are enabled.
+        /// </summary>
+        [Tag(Trace.Tags.HttpRequestMethodOriginal)]
+        public string HttpRequestMethodOriginal { get; set; }
+
+        /// <summary>
+        /// Gets or sets the request URL. Serialized as "http.url" with Datadog semantics
+        /// and as "url.full" with OpenTelemetry semantics.
+        /// </summary>
+        [Tag(Trace.Tags.HttpUrl, OtelName = Trace.Tags.UrlFull)]
         public string HttpUrl { get; set; }
 
         [Tag(HttpClientHandlerTypeKey)]
         public string HttpClientHandlerType { get; set; }
 
-        [Tag(Trace.Tags.HttpStatusCode)]
+        [Tag(Trace.Tags.HttpStatusCode, OtelName = Trace.Tags.HttpResponseStatusCode)]
         public int? HttpStatusCode { get; set; }
 
-        [Tag(Trace.Tags.OutHost)]
+        [Tag(Trace.Tags.OutHost, OtelName = Trace.Tags.ServerAddress)]
         public string Host { get; set; }
+
+        /// <summary>
+        /// Gets or sets the port of the remote server. We have never reported a port for
+        /// HTTP client spans with Datadog semantics, so this is only set when OpenTelemetry
+        /// semantics are enabled.
+        /// </summary>
+        [Tag(Trace.Tags.ServerPort)]
+        public int? ServerPort { get; set; }
+
+        /// <summary>
+        /// Gets or sets the version of the protocol negotiated with the remote server, as
+        /// reported by the response. This is an OpenTelemetry-only concept, so it is only
+        /// set when OpenTelemetry semantics are enabled.
+        /// </summary>
+        [Tag(Trace.Tags.NetworkProtocolVersion)]
+        public string NetworkProtocolVersion { get; set; }
     }
 
     internal sealed partial class HttpV1Tags : HttpTags
@@ -55,6 +83,8 @@ namespace Datadog.Trace.Tagging
         {
             get
             {
+                // Do not update this when OpenTelemetry semantics are enabled
+                // since OpenTelemetry semantics supercedes V1Tags
                 return _peerServiceOverride is not null
                         ? "peer.service"
                         : "out.host";

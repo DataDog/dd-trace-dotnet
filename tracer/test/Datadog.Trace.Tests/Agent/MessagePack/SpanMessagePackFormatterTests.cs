@@ -90,7 +90,7 @@ public class SpanMessagePackFormatterTests
             actual.ParentId.Should().Be(expected.Context.ParentId);
 
             var tagsProcessor = new TagsProcessor(actual.Tags);
-            expected.Tags.EnumerateTags(ref tagsProcessor);
+            expected.Tags.EnumerateTags(ref tagsProcessor, expected.OpenTelemetrySemanticsEnabled);
 
             // runtime-id and language are added during serialization
             if (actual.ParentId == null)
