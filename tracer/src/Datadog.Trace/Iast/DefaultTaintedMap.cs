@@ -26,6 +26,10 @@ internal sealed class DefaultTaintedMap : ITaintedMap
     private const int PurgeMask = PurgeCount - 1;
     // Map containing the tainted objects
     private ConcurrentDictionary<int, ITaintedObject> _map;
+    // Same instance as _map. ConcurrentDictionary implements ICollection<KeyValuePair<,>>.Remove as an
+    // atomic compare-and-remove, which is the only portable way of getting that behaviour on net461
+    // and netstandard2.0 (TryRemove(KeyValuePair<,>) only exists from netcoreapp2.0 onwards).
+    private ICollection<KeyValuePair<int, ITaintedObject>> _mapAsCollection;
     // Bitmask for fast modulo with table length.
     private int _lengthMask;
     // Flag to ensure we do not run multiple purges concurrently.
@@ -39,6 +43,7 @@ internal sealed class DefaultTaintedMap : ITaintedMap
     public DefaultTaintedMap()
     {
         _map = new ConcurrentDictionary<int, ITaintedObject>();
+        _mapAsCollection = _map;
         _lengthMask = DefaultCapacity - 1;
         _flatModeThreshold = DefaultFlatModeThresold;
     }
@@ -100,26 +105,44 @@ internal sealed class DefaultTaintedMap : ITaintedMap
 
         var index = Index(entry.PositiveHashCode);
 
-        if (!IsFlat)
+        if (IsFlat)
+        {
+            // If we flipped to flat mode:
+            // - Always override elements ignoring chaining.
+            // - Stop updating the estimated size.
+            _map[index] = entry;
+        }
+        else
         {
             // By default, add the new entry to the head of the chain.
             // We do not control duplicate entries.
-            _map.TryGetValue(index, out var existingValue);
-            entry.Next = existingValue;
-
-            // If there are two callers calling Put on the same map and the objects have the same index and we are not flat,
-            // then one of the ITaintedObjects could potentially be lost because of racing conditions.
-            // We assume that the corresponding lock mechanism benefits would not compensate the performance loss.
+            // The head is published with a compare-and-swap and retried on conflict: a plain
+            // read-modify-write here silently dropped entries whenever two callers hit the same
+            // index concurrently, which is the common case on a request served by several threads
+            // (async continuations), not a rare one.
+            while (true)
+            {
+                if (_map.TryGetValue(index, out var existingValue))
+                {
+                    entry.Next = existingValue;
+                    if (_map.TryUpdate(index, entry, existingValue))
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    entry.Next = null;
+                    if (_map.TryAdd(index, entry))
+                    {
+                        break;
+                    }
+                }
+            }
 
             // We only count the entries if we are not in flat mode
             Interlocked.Increment(ref _entriesCount);
         }
-
-        // If we flipped to flat mode:
-        // - Always override elements ignoring chaining.
-        // - Stop updating the estimated size.
-
-        _map[index] = entry;
 
         if ((entry.PositiveHashCode & PurgeMask) == 0)
         {
@@ -171,49 +194,61 @@ internal sealed class DefaultTaintedMap : ITaintedMap
     private int RemoveDeadKeys()
     {
         var removed = 0;
-        List<int> deadKeys = new();
-        ITaintedObject? previous;
 
         foreach (var key in _map.Keys.ToArray())
         {
-            var current = _map[key];
-            previous = null;
+            if (!_map.TryGetValue(key, out var current))
+            {
+                // Removed by a concurrent Clear().
+                continue;
+            }
+
+            ITaintedObject? previous = null;
 
             while (current is not null)
             {
-                if (!current.IsAlive)
+                var next = current.Next;
+
+                if (current.IsAlive)
                 {
-                    if (previous is null)
+                    previous = current;
+                }
+                else if (previous is not null)
+                {
+                    // Unlinking a node in the middle of the chain only ever moves `Next` forward, so a
+                    // concurrent Get() walking this chain can neither loop nor go backwards. Dead nodes it
+                    // still reaches have a null Value, so they simply never match.
+                    previous.Next = next;
+                    removed++;
+                }
+                else if (next is null)
+                {
+                    // The whole chain is dead, so the key can go. Compare-and-remove: a plain TryRemove
+                    // would also delete an entry that a concurrent Put() published on this key in the
+                    // meantime.
+                    if (_mapAsCollection.Remove(new KeyValuePair<int, ITaintedObject>(key, current)))
                     {
-                        // We can delete the map key
-                        if (current.Next is null)
-                        {
-                            deadKeys.Add(key);
-                        }
-                        else
-                        {
-                            _map[key] = current.Next;
-                        }
-                    }
-                    else
-                    {
-                        previous.Next = current.Next;
+                        removed++;
                     }
 
-                    current = current.Next;
+                    // Either we removed the dead chain, or a concurrent Put() replaced the head with a
+                    // live entry that already chains the rest. Nothing left to do on this key.
+                    break;
+                }
+                else if (_map.TryUpdate(key, next, current))
+                {
+                    // Dropped the dead head, `previous` stays null because `next` is the new head.
                     removed++;
                 }
                 else
                 {
-                    previous = current;
-                    current = current.Next;
+                    // A concurrent Put() replaced the head; its chain still contains the dead nodes,
+                    // so the next purge picks them up.
+                    break;
                 }
-            }
-        }
 
-        foreach (var key in deadKeys)
-        {
-            _map.TryRemove(key, out _);
+                current = next;
+            }
         }
 
         return removed;
