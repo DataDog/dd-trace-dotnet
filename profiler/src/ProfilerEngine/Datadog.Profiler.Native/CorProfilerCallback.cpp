@@ -52,6 +52,8 @@
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
 #include "SsiManager.h"
+#include "StackFramesCollectorBase.h"
+#include "StackSamplerLoop.h"
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
@@ -613,18 +615,42 @@ void CorProfilerCallback::InitializeServices()
     auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
+    // Shared by StackSamplerLoopManager and StackSamplerLoop (registered separately below), so it's
+    // constructed here rather than by either of them.
+    _callstackProvider = CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize));
+    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
+        _pCorProfilerInfo, _pConfiguration.get(), &_callstackProvider, _metricsRegistry);
+
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
-        _pConfiguration.get(),
         _metricsSender,
         _pClrLifetime.get(),
+        _pThreadsCpuManager,
+        _pStackFramesCollector.get(),
+        _metricsRegistry);
+
+    // StackSamplerLoop is registered as its own independent service (rather than being privately
+    // owned and started/stopped by StackSamplerLoopManager) so that StartServices()/StopServices()'s
+    // existing, already-correct forward/reverse-order machinery governs its lifecycle directly:
+    // it starts after the manager's watcher thread is confirmed running, and stops before the
+    // manager (and before ManagedThreadList/CodeHotspotsThreadList, both registered earlier above).
+    _pStackSamplerLoop = RegisterService<StackSamplerLoop>(
+        _pCorProfilerInfo,
+        _pConfiguration.get(),
+        _pStackFramesCollector.get(),
+        _pStackSamplerLoopManager,
         _pThreadsCpuManager,
         _pManagedThreadList,
         _pCodeHotspotsThreadList,
         _pWallTimeProvider,
         _pCpuTimeProvider,
-        _metricsRegistry,
-        CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)));
+        _metricsRegistry);
+
+    // Completes the wiring: StackSamplerLoop needed StackSamplerLoopManager to already exist (just
+    // passed above), but the manager needs StackSamplerLoop back (for its Windows deadlock-progress
+    // check) and that couldn't be constructor-injected the other way around, since StackSamplerLoop
+    // didn't exist yet when the manager was constructed.
+    _pStackSamplerLoopManager->SetStackSamplerLoop(_pStackSamplerLoop);
 
 #ifdef ARM64
     if (Log::IsDebugEnabled())
@@ -972,6 +998,7 @@ bool CorProfilerCallback::DisposeServices()
 
     _pThreadsCpuManager = nullptr;
     _pStackSamplerLoopManager = nullptr;
+    _pStackSamplerLoop = nullptr;
     _pManagedThreadList = nullptr;
     _pNativeThreadList = nullptr;
     _pCodeHotspotsThreadList = nullptr;
@@ -1819,6 +1846,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 
     // A final .pprof should be generated before exiting
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
+    // (StopServices() will also call Stop() on both of these again later, in the correct reverse-of-
+    // registration order; both are one-shot services, so those later calls are guaranteed no-ops.)
+    _pStackSamplerLoop->Stop();
     _pStackSamplerLoopManager->Stop();
 
 

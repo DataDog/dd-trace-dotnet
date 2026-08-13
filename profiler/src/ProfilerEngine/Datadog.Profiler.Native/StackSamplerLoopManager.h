@@ -3,8 +3,11 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <thread>
 #include <unordered_map>
 
@@ -13,7 +16,6 @@
 #include "corprof.h"
 // end
 
-#include "CallstackProvider.h"
 #include "CounterMetric.h"
 #include "ICollector.h"
 #include "IMetricsSender.h"
@@ -25,8 +27,6 @@
 #include "RawCpuSample.h"
 #include "RawWallTimeSample.h"
 #include "StackSamplerLoop.h"
-#include "MetricsRegistry.h"
-#include "CounterMetric.h"
 #include "ServiceBase.h"
 
 // forward declaration
@@ -78,16 +78,11 @@ class StackSamplerLoopManager
 public:
     StackSamplerLoopManager(
         ICorProfilerInfo4* pCorProfilerInfo,
-        IConfiguration* pConfiguration,
         std::shared_ptr<IMetricsSender> metricsSender,
         IClrLifetime const* clrLifetime,
         IThreadsCpuManager* pThreadsCpuManager,
-        IManagedThreadList* pManagedThreadList,
-        IManagedThreadList* pCodeHotspotThreadList,
-        ICollector<RawWallTimeSample>* pWallTimeCollector,
-        ICollector<RawCpuSample>* pCpuTimeCollector,
-        MetricsRegistry& metricsRegistry,
-        CallstackProvider callstackProvider);
+        StackFramesCollectorBase* pStackFramesCollector,
+        MetricsRegistry& metricsRegistry);
 
     ~StackSamplerLoopManager() override;
 
@@ -99,15 +94,18 @@ public:
     void NotifyCollectionEnd() override;
     void NotifyIterationFinished() override;
 
+    // Wires in the independently-registered StackSamplerLoop service this manager monitors.
+    // Must be called once, before Start(), after both services are constructed - see
+    // CorProfilerCallback::InitializeServices(). StartImpl() defends against this being skipped.
+    void SetStackSamplerLoop(StackSamplerLoop* pStackSamplerLoop);
+
 private:
     StackSamplerLoopManager() = delete;
 
     inline bool GetUpdateIsThreadSafeForStackSampleCollection(ManagedThreadInfo* pThreadInfo, bool* pIsStatusChanged);
     static inline bool ShouldCollectThread(std::uint64_t threadAggPeriodDeadlockCount, std::uint64_t globalAggPeriodDeadlockCount) ;
 
-    void InitializeSampler();
-
-    void RunWatcherAndSampler();
+    bool RunWatcher();
     void ShutdownWatcher();
 
     void WatcherLoop();
@@ -202,19 +200,24 @@ private:
 private:
     const char* _serviceName = "StackSamplerLoopManager";
     ICorProfilerInfo4* _pCorProfilerInfo;
-    IConfiguration* _pConfiguration = nullptr;
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
-    IManagedThreadList* _pManagedThreadList = nullptr;
-    IManagedThreadList* _pCodeHotspotsThreadList = nullptr;
-    ICollector<RawWallTimeSample>* _pWallTimeCollector = nullptr;
-    ICollector<RawCpuSample>* _pCpuTimeCollector = nullptr;
 
-    std::unique_ptr<StackSamplerLoop> _pStackSamplerLoop;
-    std::unique_ptr<StackFramesCollectorBase> _pStackFramesCollector;
+    // Non-owning: both are independently-registered IServices; lifetime is managed by
+    // CorProfilerCallback::_services. See SetStackSamplerLoop().
+    StackFramesCollectorBase* _pStackFramesCollector = nullptr;
+    StackSamplerLoop* _pStackSamplerLoop = nullptr;
     std::uint8_t _deadlockInterventionInProgress;
 
     std::unique_ptr<std::thread> _pWatcherThread;
-    bool _isWatcherShutdownRequested;
+    std::atomic<bool> _isWatcherShutdownRequested;
+
+    // One-shot "the watcher thread is actually running" handshake: RunWatcher() blocks on this
+    // so that StartImpl() cannot return until the watcher is up, preserving the invariant that
+    // the deadlock watchdog exists before StackSamplerLoop::Start() is called (by
+    // CorProfilerCallback::StartServices(), right after this manager's own Start() returns).
+    std::mutex _watcherReadyLock;
+    std::condition_variable _watcherReadySignal;
+    bool _isWatcherReady = false;
 
     std::mutex _watcherActivityLock;
 
@@ -241,6 +244,4 @@ private:
     std::unique_ptr<Statistics> _currentStatistics;
     MetricsRegistry& _metricsRegistry;
     std::shared_ptr<CounterMetric> _deadlockCountMetric;
-
-    CallstackProvider _callstackProvider;
 };
