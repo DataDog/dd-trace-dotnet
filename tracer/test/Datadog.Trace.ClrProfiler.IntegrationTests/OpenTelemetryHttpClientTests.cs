@@ -30,6 +30,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OpenTelemetryHttpClientTests : TracingIntegrationTest
     {
+        private readonly OtlpTestAgentSession _otlpSession = new();
+
         public OpenTelemetryHttpClientTests(ITestOutputHelper output)
             : base("OpenTelemetry.HttpClient", output)
         {
@@ -48,20 +50,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetInstrumentationVerification();
 
             var names = OtlpFieldNames.For(isJson: false);
-            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "127.0.0.1";
 
-            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
+            await _otlpSession.ClearSessionAsync();
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
-
-            // OTEL_TRACES_EXPORTER=otlp is what makes the Datadog SDK emit OTLP instead of msgpack.
-            // Everything else is left at its default dd-trace-dotnet value.
-            SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "otlp");
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:4318");
+            ConfigureOtlpExport(_otlpSession);
 
             var applicationStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
@@ -70,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
 
-            var tracesRequests = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/traces");
+            var tracesRequests = await _otlpSession.WaitForTracesAsync();
             tracesRequests.Should().NotBeNullOrEmpty();
 
             // NormalizeSpans overwrites startTimeUnixNano with a fixed placeholder, so capture the

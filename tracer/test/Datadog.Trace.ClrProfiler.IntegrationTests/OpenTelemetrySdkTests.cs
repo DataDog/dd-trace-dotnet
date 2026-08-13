@@ -82,6 +82,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
         private readonly Regex _exceptionStacktraceOtlpRegex = new(@"string_value"": ""System.ArgumentException: Example argument exception.*""");
         private readonly Regex _exceptionStacktraceOtlpJsonRegex = new(@"stringValue"": ""System.ArgumentException: Example argument exception.*""");
+        private readonly OtlpTestAgentSession _otlpSession = new();
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
             : base("OpenTelemetrySdk", output)
@@ -257,10 +258,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD{(openTelemetrySemanticsEnabled ? "_OtelSemantics" : string.Empty)}";
 
-            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "127.0.0.1";
-            var otlpPort = protocol == "grpc" ? 4317 : 4318;
-
-            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
+            await _otlpSession.ClearSessionAsync();
 
             // This is the key configuration that is set differently from previous test cases:
             // OTEL_TRACES_EXPORTER=otlp enables the DD SDK to emit traces (and trace stats) via OTLP
@@ -275,11 +273,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
             if (useAgentHostBackup)
             {
-                SetEnvironmentVariable("DD_AGENT_HOST", testAgentHost);
+                SetEnvironmentVariable("DD_AGENT_HOST", _otlpSession.TestAgentHost);
             }
             else
             {
-                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
+                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", _otlpSession.GetExporterEndpoint(protocol));
             }
 
             var applicationStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
@@ -300,7 +298,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // between process exit and the data appearing in the test-agent. Poll with
                 // retries to avoid a race, matching the pattern used by SubmitsOtlpMetrics
                 // and SubmitsOtlpLogs.
-                var tracesRequests = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/traces");
+                var tracesRequests = await _otlpSession.WaitForTracesAsync();
 
                 tracesRequests.Should().NotBeNullOrEmpty();
 
@@ -359,10 +357,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             snapshotName = otelMetricsEnabled.Equals("true") ? $"{snapshotName}_OTEL" : $"{snapshotName}_DD";
 
-            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
-            var otlpPort = protocol == "grpc" ? 4317 : 4318;
-
-            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
+            await _otlpSession.ClearSessionAsync();
 
             SetEnvironmentVariable("DD_ENV", string.Empty);
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
@@ -376,11 +371,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             if (useAgentHostBackup)
             {
-                SetEnvironmentVariable("DD_AGENT_HOST", testAgentHost);
+                SetEnvironmentVariable("DD_AGENT_HOST", _otlpSession.TestAgentHost);
             }
             else
             {
-                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
+                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", _otlpSession.GetExporterEndpoint(protocol));
             }
 
             // Up until Sdk version 1.6.0 Otel didn't support reading from the env var
@@ -396,7 +391,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
-                var metricsData = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/metrics");
+                var metricsData = await _otlpSession.WaitForMetricsAsync();
                 metricsData.Should().NotBeNullOrEmpty();
 
                 foreach (var attribute in metricsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
@@ -440,22 +435,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task SubmitsOtlpRuntimeMetrics()
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
 
-            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
+            await _otlpSession.ClearSessionAsync();
 
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "true");
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
             SetEnvironmentVariable("DD_METRICS_OTEL_METER_NAMES", "NoneExistingMeter");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:4318");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", _otlpSession.GetExporterEndpoint("http/protobuf"));
             SetEnvironmentVariable("OTEL_METRIC_EXPORT_INTERVAL", "60000");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE", "delta");
 
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
             using (await RunSampleAndWaitForExit(agent))
             {
-                var metricsData = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/metrics");
+                var metricsData = await _otlpSession.WaitForMetricsAsync();
                 metricsData.Should().NotBeNullOrEmpty();
 
                 // Deduplicate metrics across multiple export intervals, keeping one per metric name
@@ -526,10 +520,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _ => throw new SkipException($"Skipping test due to irrelevant runtime and OTel versions mix: .NET {runtimeMajor} & Otel v{parsedVersion}")
             };
 
-            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
-            var otlpPort = protocol == "grpc" ? 4317 : 4318;
-
-            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
+            await _otlpSession.ClearSessionAsync();
 
             SetEnvironmentVariable("DD_ENV", "testing");
             SetEnvironmentVariable("DD_SERVICE", "OtlpLogsService");
@@ -544,11 +535,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             if (useAgentHostBackup)
             {
-                SetEnvironmentVariable("DD_AGENT_HOST", testAgentHost);
+                SetEnvironmentVariable("DD_AGENT_HOST", _otlpSession.TestAgentHost);
             }
             else
             {
-                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:{otlpPort}");
+                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", _otlpSession.GetExporterEndpoint(protocol));
             }
 
             var startTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
@@ -566,7 +557,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var endTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
-                var logsData = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/logs");
+                var logsData = await _otlpSession.WaitForLogsAsync();
                 logsData.Should().NotBeNullOrEmpty();
                 logsData.SelectTokens("$..log_records[*]").Should().AllSatisfy(logRecord =>
                 {
