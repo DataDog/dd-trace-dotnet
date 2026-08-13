@@ -765,7 +765,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "00-11111111111111110000000000000001-000000003ade68b1-01" });
             headers.Setup(h => h.GetValues("tracestate"))
-                   .Returns(new[] { "dd=s:2;o:rum;p:0123456789abcdef;t.tid:1111111111111111,foo=1" });
+                   .Returns(new[] { "dd=s:2;o:rum;p:0123456789abcdef;t.tid:1111111111111111,ot=rv:ef284ace7a91e1;th:e6666666666668,foo=1" });
             headers.Setup(h => h.GetValues("x-datadog-trace-id"))
                    .Returns(new[] { "1" });
             headers.Setup(h => h.GetValues("x-datadog-parent-id"))
@@ -809,6 +809,7 @@ namespace Datadog.Trace.Tests.Propagators
                       },
                       opts => opts.ExcludingMissingMembers());
 
+            result.SpanContext!.OtelTraceState.Should().Be(!extractFirst || w3CHeaderFirst ? "rv:ef284ace7a91e1;th:e6666666666668" : null);
             result.Baggage.Should().BeNull();
             result.Links.Should().BeNullOrEmpty();
         }
