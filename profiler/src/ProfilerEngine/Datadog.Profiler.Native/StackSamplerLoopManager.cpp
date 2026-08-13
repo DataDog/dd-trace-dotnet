@@ -26,25 +26,15 @@ const std::chrono::nanoseconds StackSamplerLoopManager::StatisticAggregationPeri
 
 StackSamplerLoopManager::StackSamplerLoopManager(
     ICorProfilerInfo4* pCorProfilerInfo,
-    IConfiguration* pConfiguration,
     std::shared_ptr<IMetricsSender> metricsSender,
     IClrLifetime const* clrLifetime,
     IThreadsCpuManager* pThreadsCpuManager,
-    IManagedThreadList* pManagedThreadList,
-    IManagedThreadList* pCodeHotspotThreadList,
-    ICollector<RawWallTimeSample>* pWallTimeCollector,
-    ICollector<RawCpuSample>* pCpuTimeCollector,
-    MetricsRegistry& metricsRegistry,
-    CallstackProvider callstackProvider
+    StackFramesCollectorBase* pStackFramesCollector,
+    MetricsRegistry& metricsRegistry
     ) :
     _pCorProfilerInfo{pCorProfilerInfo},
-    _pConfiguration{pConfiguration},
     _pThreadsCpuManager{pThreadsCpuManager},
-    _pManagedThreadList{pManagedThreadList},
-    _pCodeHotspotsThreadList{pCodeHotspotThreadList},
-    _pWallTimeCollector{pWallTimeCollector},
-    _pCpuTimeCollector{pCpuTimeCollector},
-    _pStackFramesCollector{nullptr},
+    _pStackFramesCollector{pStackFramesCollector},
     _pStackSamplerLoop{nullptr},
     _deadlockInterventionInProgress{0},
     _pWatcherThread{nullptr},
@@ -59,12 +49,9 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _totalDeadlockDetectionsCount{0},
     _metricsSender{metricsSender},
     _statisticsReadyToSend{nullptr},
-    _metricsRegistry{metricsRegistry},
-    _callstackProvider{std::move(callstackProvider)}
+    _metricsRegistry{metricsRegistry}
 {
     _pCorProfilerInfo->AddRef();
-    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
-        _pCorProfilerInfo, pConfiguration, &_callstackProvider, _metricsRegistry);
 
     _currentStatistics = std::make_unique<Statistics>();
     _statisticCollectionStartNs = OpSysTools::GetHighPrecisionNanoseconds();
@@ -90,45 +77,45 @@ const char* StackSamplerLoopManager::GetName()
     return _serviceName;
 }
 
+void StackSamplerLoopManager::SetStackSamplerLoop(StackSamplerLoop* pStackSamplerLoop)
+{
+    _pStackSamplerLoop = pStackSamplerLoop;
+}
+
 bool StackSamplerLoopManager::StartImpl()
 {
-    InitializeSampler();
-    RunWatcherAndSampler();
+    if (_pStackSamplerLoop == nullptr)
+    {
+        Log::Error("StackSamplerLoopManager::StartImpl - StackSamplerLoop was not wired in "
+                   "(SetStackSamplerLoop() must be called before Start()). This is a bug.");
+        return false;
+    }
 
-    return true;
+    return RunWatcher();
 }
 
 bool StackSamplerLoopManager::StopImpl()
 {
-    _pStackSamplerLoop->Stop();
-
     ShutdownWatcher();
 
     return true;
 }
 
-void StackSamplerLoopManager::InitializeSampler()
-{
-    _pStackSamplerLoop = std::make_unique<StackSamplerLoop>(
-        _pCorProfilerInfo,
-        _pConfiguration,
-        _pStackFramesCollector.get(),
-        this,
-        _pThreadsCpuManager,
-        _pManagedThreadList,
-        _pCodeHotspotsThreadList,
-        _pWallTimeCollector,
-        _pCpuTimeCollector,
-        _metricsRegistry);
-}
-
-void StackSamplerLoopManager::RunWatcherAndSampler()
+bool StackSamplerLoopManager::RunWatcher()
 {
     _pWatcherThread = std::make_unique<std::thread>([this]
         {
             OpSysTools::SetNativeThreadName(WatcherThreadName);
             WatcherLoop();
         });
+
+    // Block until WatcherLoop() has actually started running (its first action), so that by the
+    // time Start() returns, the deadlock watchdog is guaranteed to be up. This preserves the
+    // ordering PR #6134 established (the watcher must exist before the sampler's first sample),
+    // now enforced here instead of by starting the sampler from inside the watcher thread.
+    std::unique_lock<std::mutex> lock(_watcherReadyLock);
+    _watcherReadySignal.wait(lock, [this] { return _isWatcherReady; });
+    return true;
 }
 
 void StackSamplerLoopManager::ShutdownWatcher()
@@ -146,8 +133,11 @@ void StackSamplerLoopManager::WatcherLoop()
     Log::Info("StackSamplerLoopManager::WatcherLoop started.");
     _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), WatcherThreadName);
 
-    // Start the sampler loop only when the watcher is ready
-    _pStackSamplerLoop->Start();
+    {
+        std::lock_guard<std::mutex> lock(_watcherReadyLock);
+        _isWatcherReady = true;
+    }
+    _watcherReadySignal.notify_all();
 
     while (false == _isWatcherShutdownRequested)
     {
