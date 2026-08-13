@@ -8,7 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.FeatureFlags.Rcm;
@@ -22,40 +24,163 @@ namespace Datadog.Trace.FeatureFlags
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
 
-        private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
-        private readonly ISubscription _rcmSubscription;
-        private readonly FfeProduct _ffeProduct;
+        private readonly FeatureFlagsSettings _settings;
         private readonly ExposureApi _exposureApi;
         private readonly bool _spanEnrichmentEnabled;
+        private readonly IRcmSubscriptionManager? _rcmSubscriptionManager;
+        private readonly ISubscription? _rcmSubscription;
+        private readonly TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private Action? _onNewConfigEventHander;
         private FeatureFlagsEvaluator? _evaluator;
+        private AgentlessConfigurationSource? _agentlessSource;
+        private int _activated;
+        private int _disposed;
+        private bool _deliveryStarted;
 
         internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
         {
-            Log.Debug("FeatureFlagsModule ENABLED");
+            _settings = settings.FeatureFlags;
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
-            _rcmSubscriptionManager = rcmSubscriptionManager;
             _exposureApi = new ExposureApi(settings);
-            _ffeProduct = new FfeProduct(UpdateRemoteConfig);
-            _rcmSubscription = new Subscription(_ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
-            _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription!);
-            _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
+
+            Log.Debug<FeatureFlagsSource>("FeatureFlagsModule ENABLED with source {Source}", _settings.Source);
+
+            if (_settings.Source == FeatureFlagsSource.RemoteConfig)
+            {
+                if (!settings.IsRemoteConfigurationAvailable)
+                {
+                    // Selecting Remote Configuration explicitly and then falling back to the agentless
+                    // endpoint would start billed requests the customer did not ask for, so the source
+                    // stays selected and simply never delivers.
+                    Log.Warning(
+                        "Feature Flags are configured to use the Remote Configuration source, but Remote Configuration is not available. No flag configuration will be received.");
+                }
+
+                // Subscribing advertises the FFE capability and starts a billed Remote Configuration
+                // subscription, so it only happens when Remote Configuration is the selected source.
+                // The subscription keeps the product alive, so it needs no field of its own.
+                var ffeProduct = new FfeProduct(configs => ApplyConfigurations(configs));
+                _rcmSubscriptionManager = rcmSubscriptionManager;
+                _rcmSubscription = new Subscription(ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
+                _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription!);
+                _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
+            }
         }
+
+        /// <summary>
+        /// Gets a task that completes once configuration has been applied for the first time.
+        /// </summary>
+        internal Task FirstConfigReceived => _firstConfigReceived.Task;
+
+        internal FeatureFlagsSettings Settings => _settings;
 
         public static FeatureFlagsModule? Create(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
         {
-            if (settings.IsFlaggingProviderEnabled)
+            if (!settings.FeatureFlags.Enabled)
             {
-                return new FeatureFlagsModule(settings, rcmSubscriptionManager);
+                return null;
             }
 
-            return null;
+            return new FeatureFlagsModule(settings, rcmSubscriptionManager);
         }
 
         public void Dispose()
         {
+            if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
+            {
+                return;
+            }
+
+            if (_rcmSubscriptionManager is not null && _rcmSubscription is not null)
+            {
+                _rcmSubscriptionManager.Unsubscribe(_rcmSubscription);
+            }
+
+            Interlocked.Exchange(ref _agentlessSource, null)?.Dispose();
             _exposureApi.Dispose();
+        }
+
+        /// <summary>
+        /// Signals that application code initialized the provider. Configuration is only requested
+        /// from this point on, because those requests are billable. Idempotent.
+        /// </summary>
+        internal void Activate()
+        {
+            if (Interlocked.CompareExchange(ref _activated, 1, 0) != 0)
+            {
+                return;
+            }
+
+            switch (_settings.Source)
+            {
+                case FeatureFlagsSource.RemoteConfig:
+                    // Remote Configuration delivery is driven by the Agent, so the subscription set up
+                    // in the constructor is all that is needed; activation only marks intent.
+                    _deliveryStarted = true;
+                    Log.Debug("FeatureFlagsModule::Activate -> Remote Configuration source is already subscribed");
+                    break;
+                case FeatureFlagsSource.Agentless:
+                    // Polling is billable, so it starts here rather than at construction.
+                    var source = AgentlessConfigurationSource.Create(_settings, ApplyConfiguration);
+                    if (source is null)
+                    {
+                        break;
+                    }
+
+                    Interlocked.Exchange(ref _agentlessSource, source);
+                    if (Volatile.Read(ref _disposed) == 1)
+                    {
+                        // Disposed while we were creating it.
+                        Interlocked.Exchange(ref _agentlessSource, null)?.Dispose();
+                        break;
+                    }
+
+                    source.Start();
+                    _deliveryStarted = true;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Activates delivery and waits for the first configuration, so that a provider reported as
+        /// ready can resolve flags. Never throws on timeout: delivery being slow is transient, while
+        /// initialization typically runs at application startup where an exception is fatal.
+        /// </summary>
+        internal async Task InitializeAsync(CancellationToken cancellationToken)
+        {
+            Activate();
+
+            if (_firstConfigReceived.Task.IsCompleted)
+            {
+                return;
+            }
+
+            // When activation could not start any delivery source (for example, agentless without
+            // an API key), waiting would only delay startup for a configuration that will never
+            // arrive. The provider stays not-ready, which is the correct state.
+            if (!_deliveryStarted)
+            {
+                return;
+            }
+
+            using var timeoutCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var timeout = Task.Delay(_settings.InitializationTimeout, timeoutCancellation.Token);
+            var completed = await Task.WhenAny(_firstConfigReceived.Task, timeout).ConfigureAwait(false);
+
+            // Stop the timer, otherwise it holds a callback for the whole initialization timeout.
+            timeoutCancellation.Cancel();
+
+            if (completed != timeout)
+            {
+                return;
+            }
+
+            // Evaluations keep returning the caller's default with PROVIDER_NOT_READY until
+            // configuration lands, which promotes the provider then.
+            Log.Warning<double>(
+                "Feature Flags configuration did not arrive within {TimeoutMs}ms. Evaluations use their default values until it does.",
+                _settings.InitializationTimeout.TotalMilliseconds);
         }
 
         internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)
@@ -76,28 +201,42 @@ namespace Datadog.Trace.FeatureFlags
             return evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes));
         }
 
-        private void UpdateRemoteConfig(List<KeyValuePair<string, ServerConfiguration>> list)
+        internal bool ApplyConfiguration(ServerConfiguration configuration)
         {
-            Log.Debug<int>("FeatureFlagsModule::UpdateRemoteConfig -> New config received. {Count}", list.Count);
             try
             {
-                // Feed configs to the rules evaluator
+                Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, configuration, _spanEnrichmentEnabled));
+                _firstConfigReceived.TrySetResult(true);
+                _onNewConfigEventHander?.Invoke();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "FeatureFlagsModule::ApplyConfiguration -> Error applying configuration");
+                return false;
+            }
+        }
+
+        private void ApplyConfigurations(List<KeyValuePair<string, ServerConfiguration>> list)
+        {
+            Log.Debug<int>("FeatureFlagsModule::ApplyConfigurations -> New config received. {Count}", list.Count);
+            try
+            {
                 if (list.Count > 0)
                 {
                     var selectedConfig = MergeConfigs(list);
-                    Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, selectedConfig, _spanEnrichmentEnabled));
+                    ApplyConfiguration(selectedConfig);
                 }
                 else
                 {
                     // RC reset: clear evaluator so Evaluate() returns PROVIDER_NOT_READY
                     Interlocked.Exchange(ref _evaluator, null);
+                    _onNewConfigEventHander?.Invoke();
                 }
-
-                _onNewConfigEventHander?.Invoke();
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "FeatureFlagsModule::UpdateRemoteConfig -> Error processing new config");
+                Log.Warning(ex, "FeatureFlagsModule::ApplyConfigurations -> Error processing new config");
             }
 
             static ServerConfiguration MergeConfigs(List<KeyValuePair<string, ServerConfiguration>> list)
