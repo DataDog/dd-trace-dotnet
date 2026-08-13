@@ -3,19 +3,49 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
 
 namespace Datadog.Trace.Tests.PlatformHelpers
 {
+    [Collection(nameof(EnvironmentVariablesTestCollection))]
+    [EnvironmentRestorer(ConfigurationKeys.Hostname)]
     public class HostMetadataTests
     {
         [Fact]
         public void CanGetHostMetadata()
         {
             HostMetadata.Instance.Hostname.Should().NotBeNullOrEmpty();
+        }
+
+        [Fact]
+        public void ConfiguredHostnameTakesPrecedence()
+        {
+            // Initialize the singleton before mutating process state so this test cannot affect other consumers.
+            _ = HostMetadata.Instance;
+            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Hostname, "configured-host");
+
+            HostMetadata.GetHostInternal().Should().Be("configured-host");
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void MachineNameIsUsedWhenConfiguredHostnameIsEmpty(string configuredHostname)
+        {
+            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Hostname, configuredHostname);
+            var machineName = EnvironmentHelpers.GetMachineName();
+            var expected = StringUtil.IsNullOrEmpty(machineName)
+                               ? EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.ComputerNameKey)
+                               : machineName;
+
+            HostMetadata.GetHostInternal().Should().Be(expected);
         }
 
         [Theory]
