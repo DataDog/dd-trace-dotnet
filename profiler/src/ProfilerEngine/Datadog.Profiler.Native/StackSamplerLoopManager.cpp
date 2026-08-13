@@ -14,6 +14,9 @@ constexpr std::chrono::milliseconds DeadlockDetectionInterval = 1s;
 constexpr std::chrono::milliseconds MaxExpectedStackSampleCollectionDurationMs = 500ms;
 constexpr std::chrono::nanoseconds CollectionDurationThresholdNs = std::chrono::nanoseconds(MaxExpectedStackSampleCollectionDurationMs);
 
+// Make sure the Watcher thread does not hang Start() forever.
+constexpr std::chrono::seconds WatcherStartupTimeout = 2s;
+
 #ifdef NDEBUG
 constexpr std::chrono::milliseconds StatsAggregationPeriodMs = 30000ms;
 #else
@@ -64,6 +67,14 @@ StackSamplerLoopManager::~StackSamplerLoopManager()
     // Just in case it was not called explicitely
     Stop();
 
+    // If Start() timed out waiting for the watcher thread (see RunWatcher()) but the thread was
+    // nonetheless successfully created, Stop()'s one-shot guard above is a no-op (this service's
+    // state never reached Started), so ShutdownWatcher() would otherwise never run - leaving
+    // _pWatcherThread joinable here, which would call std::terminate() when it is destroyed right
+    // after this destructor returns. Calling it unconditionally is a safe no-op if Stop() already
+    // handled it (ShutdownWatcher() resets _pWatcherThread to null after a successful join).
+    ShutdownWatcher();
+
     ICorProfilerInfo4* pCorProfilerInfo = _pCorProfilerInfo;
     if (pCorProfilerInfo != nullptr)
     {
@@ -103,19 +114,33 @@ bool StackSamplerLoopManager::StopImpl()
 
 bool StackSamplerLoopManager::RunWatcher()
 {
-    _pWatcherThread = std::make_unique<std::thread>([this]
-        {
-            OpSysTools::SetNativeThreadName(WatcherThreadName);
-            WatcherLoop();
-        });
+    std::promise<void> watcherReadyPromise;
+    std::future<void> watcherReadyFuture = watcherReadyPromise.get_future();
 
-    // Block until WatcherLoop() has actually started running (its first action), so that by the
-    // time Start() returns, the deadlock watchdog is guaranteed to be up. This preserves the
-    // ordering PR #6134 established (the watcher must exist before the sampler's first sample),
-    // now enforced here instead of by starting the sampler from inside the watcher thread.
-    std::unique_lock<std::mutex> lock(_watcherReadyLock);
-    _watcherReadySignal.wait(lock, [this] { return _isWatcherReady; });
-    return true;
+    try
+    {
+        _pWatcherThread = std::make_unique<std::thread>(
+            [this, promise = std::move(watcherReadyPromise)]() mutable
+            {
+                OpSysTools::SetNativeThreadName(WatcherThreadName);
+                WatcherLoop(std::move(promise));
+            });
+    }
+    catch (const std::exception& ex)
+    {
+        Log::Error("StackSamplerLoopManager::RunWatcher - Failed to create the watcher thread: ", ex.what());
+        return false;
+    }
+
+    // Wait for the watcher thread to be ready before returning
+    if (watcherReadyFuture.wait_for(WatcherStartupTimeout) == std::future_status::ready)
+    {
+        return true;
+    }
+
+    Log::Error("StackSamplerLoopManager::RunWatcher - Timed out after ", WatcherStartupTimeout.count(),
+               " seconds waiting for the watcher thread to start.");
+    return false;
 }
 
 void StackSamplerLoopManager::ShutdownWatcher()
@@ -124,20 +149,23 @@ void StackSamplerLoopManager::ShutdownWatcher()
     {
         _isWatcherShutdownRequested = true;
 
-        _pWatcherThread->join();
+        try
+        {
+            _pWatcherThread->join();
+            _pWatcherThread.reset();
+        }
+        catch (const std::exception&)
+        {
+        }
     }
 }
 
-void StackSamplerLoopManager::WatcherLoop()
+void StackSamplerLoopManager::WatcherLoop(std::promise<void> watcherReadyPromise)
 {
     Log::Info("StackSamplerLoopManager::WatcherLoop started.");
     _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), WatcherThreadName);
 
-    {
-        std::lock_guard<std::mutex> lock(_watcherReadyLock);
-        _isWatcherReady = true;
-    }
-    _watcherReadySignal.notify_all();
+    watcherReadyPromise.set_value();
 
     while (false == _isWatcherShutdownRequested)
     {
