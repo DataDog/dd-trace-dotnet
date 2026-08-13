@@ -9,6 +9,7 @@
 #endif
 
 #include <atomic>
+#include <future>
 #include <memory>
 #include <unordered_map>
 
@@ -97,7 +98,7 @@ private:
     std::shared_ptr<MeanMaxMetric> _cpuDurationMetric;
 
 private:
-    void MainLoop();
+    void MainLoop(std::promise<void> loopReadyPromise);
     void MainLoopIteration();
     void CpuProfilingIteration();
     void WalltimeProfilingIteration();
