@@ -307,6 +307,62 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void SerializeJson_ResourceIncludesProcessTags()
+        {
+            var buffer = CreateBuffer();
+            AddHit(buffer);
+
+            var processTagValues = GetResourceArrayAttribute(SerializeToJson(buffer), "datadog.process_tags");
+
+            processTagValues.Should().NotBeEmpty();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Serialize_EmitsAllAdditionalMetricTags(bool useJson)
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey();
+            var additionalMetricTags = new List<byte[]>
+            {
+                Encoding.UTF8.GetBytes("team:payments"),
+                Encoding.UTF8.GetBytes("datadog.custom:value"),
+            };
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = useJson ? GetDataPointAttributes(SerializeToJson(buffer)) : GetProtobufDataPointAttributes(buffer);
+
+            attrs.Should().ContainKey("team").WhoseValue.Should().Be("payments");
+            attrs.Should().ContainKey("datadog.custom").WhoseValue.Should().Be("value");
+        }
+
+        [Fact]
+        public void SerializeJson_PeerTags_EmittedAsCombinedArrayValue()
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey();
+            var peerTags = new List<byte[]>
+            {
+                Encoding.UTF8.GetBytes("peer.service:downstream"),
+                Encoding.UTF8.GetBytes("net.peer.name:downstream.example.com"),
+            };
+            buffer.Buckets.Add(key, new StatsBucket(key, peerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var peerTagValues = GetDataPointArrayAttribute(SerializeToJson(buffer), "datadog.peer_tags");
+
+            peerTagValues.Should().Equal("peer.service:downstream", "net.peer.name:downstream.example.com");
+        }
+
+        [Fact]
+        public void SerializeJson_PeerTags_AbsentWhenEmpty()
+        {
+            var attrs = GetDataPointAttributes(SerializeToJson(CreateBufferWithOneHit()));
+
+            attrs.Should().NotContainKey("datadog.peer_tags");
+        }
+
+        [Fact]
         public void SerializeJson_AggregationTemporalityIsDelta()
         {
             var json = SerializeToJson(CreateBufferWithOneHit());
@@ -636,6 +692,49 @@ namespace Datadog.Trace.Tests.Agent
                 var key = attr["key"]!.Value<string>()!;
                 var value = attr["value"]!["stringValue"]?.Value<string>() ?? string.Empty;
                 result[key] = value;
+            }
+
+            return result;
+        }
+
+        private static List<string> GetDataPointArrayAttribute(JObject json, string key)
+        {
+            var dp = json.SelectToken("$.resourceMetrics[0].scopeMetrics[0].metrics[0].histogram.dataPoints[0]") as JObject;
+            return GetArrayAttribute(dp?.SelectToken("$.attributes"), key);
+        }
+
+        private static List<string> GetResourceArrayAttribute(JObject json, string key)
+        {
+            return GetArrayAttribute(json.SelectToken("$.resourceMetrics[0].resource.attributes"), key);
+        }
+
+        private static List<string> GetArrayAttribute(JToken? attrs, string key)
+        {
+            var result = new List<string>();
+            if (attrs == null)
+            {
+                return result;
+            }
+
+            foreach (var attr in attrs)
+            {
+                if (attr["key"]!.Value<string>() != key)
+                {
+                    continue;
+                }
+
+                var values = attr["value"]!["arrayValue"]?["values"];
+                if (values == null)
+                {
+                    return result;
+                }
+
+                foreach (var value in values)
+                {
+                    result.Add(value["stringValue"]!.Value<string>()!);
+                }
+
+                return result;
             }
 
             return result;
