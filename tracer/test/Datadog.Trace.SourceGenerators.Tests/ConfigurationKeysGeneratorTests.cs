@@ -311,6 +311,29 @@ public class ConfigurationKeysGeneratorTests
     }
 
     [Fact]
+    public void ReportsParseErrorForInvalidSensitiveValue()
+    {
+        const string invalidYaml = """
+                                   version: '2'
+                                   supportedConfigurations:
+                                     DD_API_KEY:
+                                     - implementation: A
+                                       scope: managed
+                                       sensitive: definitely
+                                       documentation: API key used to authenticate with Datadog.
+                                   """;
+
+        var (diagnostics, outputs) = TestHelpers.GetGeneratedTrees<ConfigurationKeysGenerator>(
+            [],
+            [],
+            [("supported-configurations.yaml", invalidYaml)],
+            assertOutput: false);
+
+        diagnostics.Should().ContainSingle(diagnostic => diagnostic.Id == "DDSG0007");
+        outputs.Should().BeEmpty();
+    }
+
+    [Fact]
     public void SortsEntriesAlphabeticallyByEnvironmentVariable()
     {
         const string supportedConfigYaml = """

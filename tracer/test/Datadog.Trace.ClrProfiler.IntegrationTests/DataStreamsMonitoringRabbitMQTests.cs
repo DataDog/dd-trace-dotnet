@@ -89,6 +89,12 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
             }
         }
 
-        return points.OrderBy(s => s.Hash).ThenBy(s => s.TimestampType).ToList();
+        // Stats points are aggregated by hash within 10-second buckets. If the sample crosses a
+        // bucket boundary, the same pathway can appear more than once in the collected payloads.
+        return points.GroupBy(s => new { s.Hash, s.ParentHash, s.TimestampType })
+                     .Select(g => g.First())
+                     .OrderBy(s => s.Hash)
+                     .ThenBy(s => s.TimestampType)
+                     .ToList();
     }
 }

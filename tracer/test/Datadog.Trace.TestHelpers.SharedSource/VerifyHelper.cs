@@ -32,6 +32,9 @@ namespace Datadog.Trace.TestHelpers
             // bytes differ slightly depending on platform
             (new(@"http.response.headers.content-length\: 2\d{3}", RegOptions), "http.response.headers.content-length: 2xxx"),
             (new(@"127.0.0.1\:\d+", RegOptions), "localhost:00000"),
+            // tests bind a dynamic port, so server.port changes between runs. The optional ".0"
+            // covers the spans that record the port as a metric rather than as a string tag
+            (new(@"server\.port: \d+(\.0)?", RegOptions), "server.port: 00000"),
             (new(@"_dd.tracer_kr: \d\.\d+", RegOptions), "_dd.tracer_kr: 1.0"),
             (new(@"process_id: \d+\.0", RegOptions), "process_id: 0"),
             (new(@"http.client_ip: (.)*(?=,)", RegOptions), "http.client_ip: 127.0.0.1"),

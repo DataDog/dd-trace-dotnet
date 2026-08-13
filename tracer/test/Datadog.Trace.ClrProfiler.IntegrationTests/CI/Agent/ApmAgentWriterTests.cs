@@ -15,7 +15,7 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 {
-    public class ApmAgentWriterTests
+    public class ApmAgentWriterTests : IAsyncLifetime
     {
         private readonly ApmAgentWriter _ciAgentWriter;
         private readonly Configuration.TracerSettings _settings;
@@ -30,6 +30,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             _api = new Mock<IApi>();
             _ciAgentWriter = new ApmAgentWriter(_api.Object, TestStatsdManager.NoOp);
         }
+
+        public Task InitializeAsync() => Task.CompletedTask;
+
+        // FlushAndCloseAsync is idempotent, so tests that already close the writer themselves
+        // are unaffected.
+        public Task DisposeAsync() => _ciAgentWriter.FlushAndCloseAsync();
 
         [Fact]
         public async Task WriteTrace_2Traces_SendToApi()
