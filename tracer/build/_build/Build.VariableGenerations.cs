@@ -81,6 +81,15 @@ partial class Build : NukeBuild
            .Executes(() => WriteGitlabLinuxIntegrationTestsPipeline(
                 GetLinuxX64IntegrationTestPlatformMatrix(IncludeAllTestFrameworks)));
 
+    Target GenerateGitlabWindowsIntegrationTestsPipeline
+        => _ => _
+           .Unlisted()
+           .Executes(() => WriteGitlabWindowsIntegrationTestsPipeline(
+                GetTestingFrameworks(
+                    PlatformFamily.Windows,
+                    isArm64: false,
+                    includeAllFrameworks: IncludeAllTestFrameworks)));
+
     void WriteGitlabWindowsUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
     {
         var yaml = new StringBuilder(
@@ -106,6 +115,33 @@ partial class Build : NukeBuild
         var outputPath = outputDirectory / "windows-unit-tests.yml";
         File.WriteAllText(outputPath, yaml.ToString());
         Logger.Information("Generated GitLab Windows unit-test child pipeline at {Path}", outputPath);
+    }
+
+    void WriteGitlabWindowsIntegrationTestsPipeline(IEnumerable<TargetFramework> frameworks)
+    {
+        var yaml = new StringBuilder(
+            """
+            include:
+              - local: .gitlab/windows-integration-tests-child.yml
+
+            stages:
+              - test
+
+            """);
+
+        foreach (var framework in frameworks)
+        {
+            yaml.AppendLine($"\"integration-tests-windows-x64:{framework}\":");
+            yaml.AppendLine("  extends: .windows-integration-test-x64");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+        }
+
+        var outputDirectory = RootDirectory / ".gitlab" / "generated";
+        Directory.CreateDirectory(outputDirectory);
+        var outputPath = outputDirectory / "windows-integration-tests.yml";
+        File.WriteAllText(outputPath, yaml.ToString());
+        Logger.Information("Generated GitLab Windows integration-test child pipeline at {Path}", outputPath);
     }
 
     void WriteGitlabLinuxUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)

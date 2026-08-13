@@ -30,7 +30,7 @@ variables:
     options:
       - "false"
       - "true"
-    description: "Run unit tests against all supported target frameworks."
+    description: "Run generated unit and integration tests against all supported target frameworks."
   perform_comprehensive_testing:
     value: "false"
     options:
@@ -157,7 +157,7 @@ generate-unit-tests-pipelines:
                            -or [bool]$hasIntegrationChanges `
                            -or $snapshotChangeCount -gt 100
 
-      Write-Output "Generating unit-test and Linux integration-test child pipelines (target=$targetBranch, includeAll=$includeAllFrameworks)"
+      Write-Output "Generating unit-test and integration-test child pipelines (target=$targetBranch, includeAll=$includeAllFrameworks)"
       docker run --rm -m 20480M `
         -v "$(Get-Location):c:\mnt" `
         -e CI=true `
@@ -173,7 +173,7 @@ generate-unit-tests-pipelines:
         --entrypoint cmd.exe `
         $env:WINDOWS_BUILD_IMAGE `
         /d /s /c `
-        "c:\entrypoint.bat GenerateGitlabWindowsUnitTestsPipeline GenerateGitlabLinuxUnitTestsPipeline GenerateGitlabLinuxArm64UnitTestsPipeline GenerateGitlabMacosUnitTestsPipeline GenerateGitlabLinuxIntegrationTestsPipeline --IncludeAllTestFrameworks $includeAllFrameworks"
+        "c:\entrypoint.bat GenerateGitlabWindowsUnitTestsPipeline GenerateGitlabLinuxUnitTestsPipeline GenerateGitlabLinuxArm64UnitTestsPipeline GenerateGitlabMacosUnitTestsPipeline GenerateGitlabLinuxIntegrationTestsPipeline GenerateGitlabWindowsIntegrationTestsPipeline --IncludeAllTestFrameworks $includeAllFrameworks"
       if ($LASTEXITCODE -ne 0) {
         throw "GitLab child-pipeline generation exited with code $LASTEXITCODE"
       }
@@ -185,6 +185,7 @@ generate-unit-tests-pipelines:
       - .gitlab/generated/linux-arm64-unit-tests.yml
       - .gitlab/generated/macos-unit-tests.yml
       - .gitlab/generated/linux-integration-tests.yml
+      - .gitlab/generated/windows-integration-tests.yml
   id_tokens:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
@@ -783,6 +784,27 @@ unit-tests-windows:
   trigger:
     include:
       - artifact: .gitlab/generated/windows-unit-tests.yml
+        job: generate-unit-tests-pipelines
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+integration-tests-windows-x64:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: test
+  needs:
+    - job: build
+      artifacts: false
+    - job: build-samples-standalone
+      artifacts: false
+    - job: generate-unit-tests-pipelines
+      artifacts: false
+  trigger:
+    include:
+      - artifact: .gitlab/generated/windows-integration-tests.yml
         job: generate-unit-tests-pipelines
     strategy: depend
   variables:

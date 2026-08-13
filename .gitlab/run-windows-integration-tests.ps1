@@ -1,0 +1,104 @@
+$ErrorActionPreference = 'Stop'
+
+$hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+    throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+}
+
+$windowsBuildImage = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+docker manifest inspect $windowsBuildImage | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "Windows build image not found at $windowsBuildImage"
+}
+
+New-Item -ItemType Directory -Force artifacts/build_data/infra_logs | Out-Null
+
+if (-not $env:DD_LOGGER_DD_API_KEY) {
+    if (-not $env:DD_STS_OIDC_TOKEN) {
+        throw 'DD_STS_OIDC_TOKEN is unavailable'
+    }
+
+    $response = Invoke-RestMethod `
+        -Uri 'https://dd-sts.us1.ddbuild.io/sts/datadog/exchange?policy=apm-sdks-api-key' `
+        -Headers @{ Authorization = "Bearer $env:DD_STS_OIDC_TOKEN" }
+    if (-not $response.api_key) {
+        throw 'The dd-sts response did not contain an API key'
+    }
+
+    $env:DD_LOGGER_DD_API_KEY = $response.api_key
+    Write-Output 'CI Visibility API key configured using dd-sts'
+}
+
+# This first slice mirrors Azure's ordinary Windows Tracer integration tests,
+# but deliberately excludes Docker dependencies, regression tests, IIS, Azure
+# Functions, ASM, and the x86 matrix dimension.
+$testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)'
+
+$commonDockerArguments = @(
+    '--rm',
+    '-m', '20480M',
+    '-v', "$(Get-Location):c:\mnt",
+    '-e', 'CI_JOB_ID',
+    '-e', 'CI=true',
+    '-e', 'WINDOWS_BUILDER=true',
+    '-e', 'AWS_NETWORKING=true',
+    '-e', 'NUGET_CERT_REVOCATION_MODE=offline',
+    '-e', 'NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true',
+    '-e', 'DD_LOGGER_ENABLED=true',
+    '-e', 'DD_LOGGER_DD_API_KEY',
+    '-e', 'DD_LOGGER_DD_SERVICE=dd-trace-dotnet',
+    '-e', 'DD_LOGGER_DD_TRACE_LOG_PATH=c:\mnt\artifacts\build_data\infra_logs\integration-ci-visibility.log',
+    '-e', "DD_LOGGER_DD_TAGS=test.configuration.job:$env:CI_JOB_NAME",
+    '-e', "Filter=$testFilter",
+    '-e', 'Area=Tracer',
+    '-e', 'IncludeTestsRequiringDocker=false',
+    '-e', 'IncludeAllTestFrameworks=true',
+    '-e', 'TargetPlatform=x64',
+    '-e', 'enable_crash_dumps=true',
+    '-e', "SourceRevisionId=$env:CI_COMMIT_SHA",
+    '-e', 'RepositoryUrl=https://github.com/DataDog/dd-trace-dotnet.git',
+    '-e', 'GITLAB_CI',
+    '-e', 'CI_PROJECT_URL',
+    '-e', 'CI_PIPELINE_ID',
+    '-e', 'CI_REPOSITORY_URL',
+    '-e', 'CI_COMMIT_SHA',
+    '-e', 'CI_COMMIT_BRANCH',
+    '-e', 'CI_COMMIT_TAG',
+    '-e', 'CI_COMMIT_REF_NAME',
+    '-e', 'CI_PROJECT_DIR=c:\mnt',
+    '-e', 'CI_PROJECT_PATH',
+    '-e', 'CI_PROJECT_NAME',
+    '-e', 'CI_PIPELINE_IID',
+    '-e', 'CI_PIPELINE_URL',
+    '-e', 'CI_JOB_URL',
+    '-e', 'CI_JOB_NAME',
+    '-e', 'CI_JOB_NAME_SLUG',
+    '-e', 'CI_JOB_STAGE',
+    '-e', 'CI_COMMIT_MESSAGE',
+    '-e', 'CI_COMMIT_AUTHOR',
+    '-e', 'CI_COMMIT_TIMESTAMP',
+    '-e', 'CI_RUNNER_ID',
+    '-e', 'CI_RUNNER_TAGS',
+    '-e', 'CI_MERGE_REQUEST_SOURCE_BRANCH_SHA',
+    '-e', 'CI_MERGE_REQUEST_TARGET_BRANCH_SHA',
+    '-e', 'CI_MERGE_REQUEST_DIFF_BASE_SHA',
+    '-e', 'CI_MERGE_REQUEST_TARGET_BRANCH_NAME',
+    '-e', 'CI_MERGE_REQUEST_IID'
+)
+
+Write-Output "Building and running non-Docker Windows x64 Tracer integration tests for $env:FRAMEWORK"
+$testCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK && c:\entrypoint.bat CompileTrimmingSamples BuildIntegrationTests RunIntegrationTests --framework $env:FRAMEWORK --TargetPlatform x64 --IncludeAllTestFrameworks true --IncludeTestsRequiringDocker false --NugetPackageDirectory c:\mnt\packages"
+
+& docker @commonDockerArguments --entrypoint cmd.exe $windowsBuildImage /d /s /c $testCommand
+$testExitCode = $LASTEXITCODE
+
+& docker @commonDockerArguments $windowsBuildImage CheckBuildLogsForErrors --NugetPackageDirectory c:\mnt\packages
+$logCheckExitCode = $LASTEXITCODE
+
+if ($testExitCode -ne 0) {
+    throw "Windows integration tests for $env:FRAMEWORK exited with code $testExitCode"
+}
+
+if ($logCheckExitCode -ne 0) {
+    throw "Build-log validation exited with code $logCheckExitCode"
+}
