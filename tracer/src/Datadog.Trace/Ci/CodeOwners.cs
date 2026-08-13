@@ -146,10 +146,8 @@ namespace Datadog.Trace.Ci
             // A leading globstar followed by a slash also matches at the repository root.
             rx = rx.Replace("\\*\\*/", "(?:.*/)?");
 
-            // Temporary sentinel for ** that we restore after dealing with single *.
-            rx = rx.Replace("\\*\\*", "§§DOUBLESTAR§§");
+            rx = rx.Replace("\\*\\*", ".*"); // multi-level wildcard
             rx = rx.Replace("\\*", "[^/]*"); // single‑level wildcard
-            rx = rx.Replace("§§DOUBLESTAR§§", ".*"); // multi‑level wildcard
             rx = rx.Replace("\\?", "."); // single char
 
             if (pattern.EndsWith("/"))
