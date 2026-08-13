@@ -40,6 +40,10 @@ namespace Datadog.Trace.FeatureFlags
             _onExposureEvent = onExposureEvent;
             _config = config;
             _spanEnrichmentEnabled = spanEnrichmentEnabled;
+
+            // Eagerly validate the config: pre-parse SemVer comparands and
+            // identify flags with invalid configuration before any evaluation.
+            _config?.Validate();
             if (_config is null)
             {
                 Log.Debug("Creating Evaluator without config");
@@ -80,6 +84,23 @@ namespace Datadog.Trace.FeatureFlags
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "FLAG_NOT_FOUND"
+                        });
+                }
+
+                // Check if the flag was marked invalid during config validation
+                // (e.g., invalid SemVer comparand). Return PARSE_ERROR before
+                // attempting evaluation.
+                if (config.InvalidFlags is not null && config.InvalidFlags.TryGetValue(flagKey, out var validationError))
+                {
+                    return new Evaluation(
+                        flagKey,
+                        defaultValue,
+                        EvaluationReason.Error,
+                        error: "PARSE_ERROR",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "PARSE_ERROR",
+                            ["message"] = validationError
                         });
                 }
 
@@ -302,6 +323,13 @@ namespace Datadog.Trace.FeatureFlags
                     return CompareNumber(attributeValue, condition.Value, (a, b) => a <= b);
                 case ConditionOperator.LT:
                     return CompareNumber(attributeValue, condition.Value, (a, b) => a < b);
+                case ConditionOperator.SEMVER_EQ:
+                case ConditionOperator.SEMVER_NEQ:
+                case ConditionOperator.SEMVER_LT:
+                case ConditionOperator.SEMVER_LTE:
+                case ConditionOperator.SEMVER_GT:
+                case ConditionOperator.SEMVER_GTE:
+                    return EvaluateSemverCondition(attributeValue, condition, condition.Operator.Value);
                 default:
                     throw new FormatException($"Unknown condition operator {condition.Operator.ToString()}");
             }
@@ -369,6 +397,41 @@ namespace Datadog.Trace.FeatureFlags
             var a = ParseDouble(attributeValue);
             var b = ParseDouble(conditionValue);
             return comparator(a, b);
+        }
+
+        private static bool EvaluateSemverCondition(object attributeValue, ConditionConfiguration condition, ConditionOperator operatorValue)
+        {
+            if (attributeValue is not string attribute)
+            {
+                return false;
+            }
+
+            // Comparand was pre-parsed during config validation. If null, the
+            // flag should have been marked invalid and this method should not
+            // be reached. Return false as a safety net.
+            var comparand = condition.SemverComparand;
+            if (comparand is null)
+            {
+                return false;
+            }
+
+            if (!SemVer.TryParse(attribute, out var parsedAttribute))
+            {
+                return false;
+            }
+
+            var ordering = SemVer.Compare(parsedAttribute, comparand.Value);
+
+            return operatorValue switch
+            {
+                ConditionOperator.SEMVER_EQ => ordering == 0,
+                ConditionOperator.SEMVER_NEQ => ordering != 0,
+                ConditionOperator.SEMVER_LT => ordering < 0,
+                ConditionOperator.SEMVER_LTE => ordering <= 0,
+                ConditionOperator.SEMVER_GT => ordering > 0,
+                ConditionOperator.SEMVER_GTE => ordering >= 0,
+                _ => false,
+            };
         }
 
         private static bool MatchesShard(Shard shard, string? targetingKey)

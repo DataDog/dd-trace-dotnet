@@ -15,12 +15,43 @@ namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 internal sealed class ConditionConfiguration
 {
     private Regex? _regex;
+    private ParsedSemVer? _semverComparand;
 
     public ConditionOperator? Operator { get; set; }
 
     public string? Attribute { get; set; }
 
     public object? Value { get; set; }
+
+    /// <summary>
+    /// Gets the validated, parsed SemVer condition value for SEMVER_* operators.
+    /// Populated eagerly during config validation by <see cref="TryPreparseSemverComparand"/>.
+    /// Null if the comparand is invalid or the operator is not a SEMVER_* operator.
+    /// </summary>
+    internal ParsedSemVer? SemverComparand => _semverComparand;
+
+    /// <summary>
+    /// Eagerly parses the SemVer comparand for SEMVER_* operators.
+    /// Called during config validation, not during evaluation.
+    /// Returns true if the comparand is valid or the operator is not a SEMVER_* operator.
+    /// Returns false if the operator is a SEMVER_* operator and the comparand is invalid.
+    /// </summary>
+    internal bool TryPreparseSemverComparand()
+    {
+        if (Operator is ConditionOperator.SEMVER_EQ or ConditionOperator.SEMVER_NEQ or ConditionOperator.SEMVER_LT
+            or ConditionOperator.SEMVER_LTE or ConditionOperator.SEMVER_GT or ConditionOperator.SEMVER_GTE)
+        {
+            if (Value is string comparand && SemVer.TryParse(comparand, out var parsed))
+            {
+                _semverComparand = parsed;
+                return true;
+            }
+
+            return false;
+        }
+
+        return true;
+    }
 
     internal bool MatchesRegex(object attributeValue)
     {

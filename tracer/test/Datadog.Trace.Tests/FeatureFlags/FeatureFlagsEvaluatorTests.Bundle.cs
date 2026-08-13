@@ -49,7 +49,18 @@ public partial class FeatureFlagsEvaluatorTests
         }
 
         AssertEqual(testCase.Result.Value, result.Value);
-        AssertEqual(testCase.Result.Variant, result.Variant);
+
+        // Check variant only when the test case specifies one (some shared fixtures omit it)
+        if (testCase.Result.Variant is not null)
+        {
+            AssertEqual(testCase.Result.Variant, result.Variant);
+        }
+
+        // Check reason when the test case specifies one
+        if (testCase.Result.Reason is not null)
+        {
+            Assert.Equal(ParseReason(testCase.Result.Reason), result.Reason);
+        }
 
         Assert.NotNull(description);
 
@@ -76,6 +87,19 @@ public partial class FeatureFlagsEvaluatorTests
             }
         }
     }
+
+    private static EvaluationReason ParseReason(string reason) => reason switch
+    {
+        "DEFAULT" => EvaluationReason.Default,
+        "STATIC" => EvaluationReason.Static,
+        "TARGETING_MATCH" => EvaluationReason.TargetingMatch,
+        "SPLIT" => EvaluationReason.Split,
+        "DISABLED" => EvaluationReason.Disabled,
+        "CACHED" => EvaluationReason.Cached,
+        "UNKNOWN" => EvaluationReason.Unknown,
+        "ERROR" => EvaluationReason.Error,
+        _ => throw new ArgumentException($"Unknown evaluation reason: {reason}"),
+    };
 
     private static Trace.FeatureFlags.ValueType GetVariationType(string? variationType)
     {
@@ -179,7 +203,11 @@ public partial class FeatureFlagsEvaluatorTests
         {
             public object? Value { get; set; }
 
-            public EvaluationReason Reason { get; set; }
+            /// <summary>
+            /// Expected reason as a SCREAMING_SNAKE_CASE string (e.g. "TARGETING_MATCH", "DEFAULT", "ERROR").
+            /// Null when the test case does not assert on the reason.
+            /// </summary>
+            public string? Reason { get; set; }
 
             public string? Variant { get; set; }
 
