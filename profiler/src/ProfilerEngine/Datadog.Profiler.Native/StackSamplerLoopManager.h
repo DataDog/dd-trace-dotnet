@@ -5,7 +5,7 @@
 
 #include <atomic>
 #include <chrono>
-#include <condition_variable>
+#include <future>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -108,7 +108,7 @@ private:
     bool RunWatcher();
     void ShutdownWatcher();
 
-    void WatcherLoop();
+    void WatcherLoop(std::promise<void> watcherReadyPromise);
     void WatcherLoopIteration();
     void PerformDeadlockIntervention(const std::chrono::nanoseconds& ongoingStackSampleCollectionDurationNs);
     void LogDeadlockIntervention(
@@ -210,14 +210,6 @@ private:
 
     std::unique_ptr<std::thread> _pWatcherThread;
     std::atomic<bool> _isWatcherShutdownRequested;
-
-    // One-shot "the watcher thread is actually running" handshake: RunWatcher() blocks on this
-    // so that StartImpl() cannot return until the watcher is up, preserving the invariant that
-    // the deadlock watchdog exists before StackSamplerLoop::Start() is called (by
-    // CorProfilerCallback::StartServices(), right after this manager's own Start() returns).
-    std::mutex _watcherReadyLock;
-    std::condition_variable _watcherReadySignal;
-    bool _isWatcherReady = false;
 
     std::mutex _watcherActivityLock;
 
