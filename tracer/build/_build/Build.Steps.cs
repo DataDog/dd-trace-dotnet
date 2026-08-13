@@ -1994,11 +1994,15 @@ partial class Build
             {
                 // filter out fleet installer tests unless we're on netframework and x64
                 var parallelJobs = ParallelIntegrationTests
+                   .Where(project => !IsGitlab || project.GetTargetFrameworks().Contains(Framework))
                    .Where(project => project.Name switch
                     {
                         Projects.FleetInstallerTests => Framework == TargetFramework.NET48 && TargetPlatform == MSBuildTargetPlatform.x64,
                         _ => true,
                     });
+
+                var clrProfilerIntegrationTests = ClrProfilerIntegrationTests
+                                                  .Where(project => !IsGitlab || project.GetTargetFrameworks().Contains(Framework));
 
                 DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
@@ -2040,7 +2044,7 @@ partial class Build
                     .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
-                    .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
+                    .CombineWith(clrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
                         .SetProjectFile(project)));
@@ -2297,8 +2301,15 @@ partial class Build
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
+            var project = Solution.GetProject(Projects.DdDotnetIntegrationTests);
+            if (IsGitlab && !project.GetTargetFrameworks().Contains(Framework))
+            {
+                Logger.Information("Skipping {Project} because it does not target {Framework}", project.Name, Framework);
+                return;
+            }
+
             DotnetBuild(
-                Solution.GetProject(Projects.DdDotnetIntegrationTests),
+                project,
                 framework: IsGitlab ? Framework : null,
                 noRestore: false);
         });
