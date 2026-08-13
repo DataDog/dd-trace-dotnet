@@ -18,6 +18,8 @@
       if ($LASTEXITCODE -ne 0) {
         throw "Windows build image not found at $env:WINDOWS_BUILD_IMAGE"
       }
+
+      .gitlab/materialize-git-objects.ps1
   script:
     - .gitlab/build-multi-version-samples.ps1
   artifacts:
