@@ -387,6 +387,13 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        internal void ConfigureOtlpExport(OtlpTestAgentSession otlpSession, string protocol = "http/protobuf")
+        {
+            SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "otlp");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", otlpSession.GetExporterEndpoint(protocol));
+        }
+
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
         {
             var spanLookup = new Dictionary<T, int>();
