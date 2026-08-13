@@ -1052,14 +1052,14 @@ void CorProfilerCallback::DisposeInternal()
         }
 
         {
-            // _isShutdown must be set to true before this lock releases, not after - see
+            // _isServicesShutdown must be set to true before this lock releases, not after - see
             // EngineActiveGuard.h. From this point on, no EngineActiveGuard can ever report
             // IsActive() again (the mutex's own synchronizes-with guarantee ensures every future
-            // lock acquisition, on any thread, observes _isShutdown == true), so no guarded
+            // lock acquisition, on any thread, observes _isServicesShutdown == true), so no guarded
             // ICorProfilerCallback method can race DisposeServices() below, or run after it and
             // find already-destroyed service pointers.
             std::unique_lock<std::shared_mutex> exclusiveLock(_engineLifetimeMutex);
-            _isShutdown = true;
+            _isServicesShutdown = true;
             DisposeServices();
         }
 
@@ -2010,7 +2010,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationFinished(AppDoma
     // Previously unguarded entirely (unlike its siblings below, which at least had the racy
     // _isInitialized check) - _pRuntimeIdStore is a _services-managed pointer DisposeServices()
     // can free concurrently. See EngineActiveGuard.h.
-    EngineActiveGuard engineGuard(_engineLifetimeMutex, _isShutdown);
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
     if (!engineGuard.IsActive())
     {
         return S_OK;
@@ -2064,7 +2064,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadStarted(ModuleID module
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
-    EngineActiveGuard engineGuard(_engineLifetimeMutex, _isShutdown);
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
     if (!engineGuard.IsActive())
     {
         return S_OK;
@@ -2173,7 +2173,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
 {
     Log::Debug("Callback invoked: ThreadCreated(threadId=0x", std::hex, threadId, std::dec, ")");
 
-    EngineActiveGuard engineGuard(_engineLifetimeMutex, _isShutdown);
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
     if (!engineGuard.IsActive())
     {
         return S_OK;
@@ -2227,7 +2227,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
 {
     Log::Debug("Callback invoked: ThreadDestroyed(threadId=0x", std::hex, threadId, std::dec, ")");
 
-    EngineActiveGuard engineGuard(_engineLifetimeMutex, _isShutdown);
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
     if (!engineGuard.IsActive())
     {
         return S_OK;
@@ -2276,7 +2276,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 {
     Log::Debug("Callback invoked: ThreadAssignedToOSThread(managedThreadId=0x", std::hex, managedThreadId, ", osThreadId=", std::dec, osThreadId, ")");
 
-    EngineActiveGuard engineGuard(_engineLifetimeMutex, _isShutdown);
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
     if (!engineGuard.IsActive())
     {
         return S_OK;
@@ -2387,7 +2387,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID threadId, ULONG cchName, WCHAR name[])
 {
-    EngineActiveGuard engineGuard(_engineLifetimeMutex, _isShutdown);
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
     if (!engineGuard.IsActive())
     {
         return S_OK;
@@ -2524,7 +2524,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RootReferences(ULONG cRootRefs, O
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownObjectId)
 {
-    EngineActiveGuard engineGuard(_engineLifetimeMutex, _isShutdown);
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
     if (!engineGuard.IsActive())
     {
         return S_OK;
