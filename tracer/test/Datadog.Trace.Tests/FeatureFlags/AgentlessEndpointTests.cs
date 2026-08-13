@@ -79,8 +79,8 @@ public class AgentlessEndpointTests
 
     [Theory]
     [InlineData("ftp://flags.example.com", "The configured Feature Flags agentless URL must use HTTP or HTTPS")]
-    [InlineData("not a url", "The configured Feature Flags agentless URL is not a valid absolute URL")]
-    [InlineData("  https://flags.example.com  ", "The configured Feature Flags agentless URL is not a valid URL")] // internal whitespace
+    [InlineData("notaurl", "The configured Feature Flags agentless URL is not a valid absolute URL")]
+    [InlineData("https://flags.example.com bad", "The configured Feature Flags agentless URL is not a valid URL")] // internal whitespace
     public void RejectsInvalidBaseUrl(string baseUrl, string expectedError)
     {
         AgentlessEndpoint.TryCreate("datadoghq.com", env: null, baseUrl: baseUrl, out var endpoint, out var error)
