@@ -69,6 +69,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [InlineData("abc/one/two/file", "[\"@abc-owner\"]")]
         [InlineData("abc", "[\"@global-owner1\",\"@global-owner2\"]")]
         [InlineData("abcd/file", "[\"@global-owner1\",\"@global-owner2\"]")]
+        // An embedded **/ must not receive leading-globstar semantics
+        [InlineData("prefixtarget", "[\"@global-owner1\",\"@global-owner2\"]")]
         public void CheckGithubCodeOwners(string value, string expected)
         {
             var match = _githubCodeOwners.Match(value);

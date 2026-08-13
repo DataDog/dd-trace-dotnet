@@ -62,3 +62,6 @@ apps/ @octocat
 
 # A trailing globstar matches everything inside the directory.
 abc/** @abc-owner
+
+# Consecutive stars outside a globstar position are not a leading globstar.
+prefix**/target @embedded-star-owner

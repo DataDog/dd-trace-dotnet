@@ -141,10 +141,14 @@ namespace Datadog.Trace.Ci
             var rx = Regex.Escape(pattern);
 
             // A globstar surrounded by slashes matches zero or more directories.
-            rx = rx.Replace("/\\*\\*/", "/(?:.*/)?");
+            rx = rx.Replace("/\\*\\*/", "/(?:[^/]+/)*");
 
             // A leading globstar followed by a slash also matches at the repository root.
-            rx = rx.Replace("\\*\\*/", "(?:.*/)?");
+            const string leadingGlobstar = "\\*\\*/";
+            if (rx.StartsWith(leadingGlobstar, StringComparison.Ordinal))
+            {
+                rx = "(?:[^/]+/)*" + rx.Substring(leadingGlobstar.Length);
+            }
 
             rx = rx.Replace("\\*\\*", ".*"); // multi-level wildcard
             rx = rx.Replace("\\*", "[^/]*"); // single‑level wildcard
