@@ -15,6 +15,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.OpenTelemetry.Traces;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -47,9 +48,12 @@ namespace Datadog.Trace.Agent
 
         private readonly bool _apmTracingEnabled;
 
+        private readonly bool _backgroundFlushEnabled;
+
         /// <summary>
         /// The currently active buffer.
-        /// Note: Thread-safetiness in this class relies on the fact that only the serialization thread can change the active buffer
+        /// Note: Thread-safetiness in this class relies on the fact that only the serialization thread can change the active buffer.
+        /// <see cref="FlushBuffers"/> runs on other threads, so cross-thread accesses use <see cref="Volatile"/>.
         /// </summary>
         private SpanBuffer _activeBuffer;
 
@@ -64,12 +68,14 @@ namespace Datadog.Trace.Agent
         private long _droppedP0Spans;
 
         private long _droppedTracesBufferFull;
+        private long _droppedTracesBufferFullAndLocked;
+        private long _droppedTracesBuffersLocked;
         private long _droppedTracesTooLarge;
 
         private bool _traceMetricsEnabled;
 
         public AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, TracerSettings settings)
-            : this(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabled, initialTracerMetricsEnabled: settings.Manager.InitialMutableSettings.TracerMetricsEnabled, openTelemetrySemanticsEnabled: settings.OtelSemanticsEnabled)
+            : this(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize, batchInterval: settings.TraceBatchInterval, apmTracingEnabled: settings.ApmTracingEnabled, initialTracerMetricsEnabled: settings.Manager.InitialMutableSettings.TracerMetricsEnabled)
         {
             settings.Manager.SubscribeToChanges(changes =>
             {
@@ -82,12 +88,22 @@ namespace Datadog.Trace.Agent
             });
         }
 
-        public AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool apmTracingEnabled = true, bool initialTracerMetricsEnabled = false, bool openTelemetrySemanticsEnabled = false)
-        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval, apmTracingEnabled, initialTracerMetricsEnabled, openTelemetrySemanticsEnabled)
+        public AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool apmTracingEnabled = true, bool initialTracerMetricsEnabled = false)
+        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush: true, maxBufferSize, batchInterval, apmTracingEnabled, initialTracerMetricsEnabled)
         {
         }
 
-        internal AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval, bool apmTracingEnabled, bool initialTracerMetricsEnabled, bool openTelemetrySemanticsEnabled)
+        // Passing automaticFlush: false stops the flush loop performing flushes nobody asked
+        // for, so that buffer and drop-counter state stays stable for assertions. Both loops still
+        // run, and flushes a caller is awaiting are unaffected. Production always passes true.
+        [TestingOnly]
+        internal AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, bool automaticFlush, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100, bool apmTracingEnabled = true, bool initialTracerMetricsEnabled = false)
+        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval, apmTracingEnabled, initialTracerMetricsEnabled)
+        {
+        }
+
+        [TestingAndPrivateOnly]
+        internal AgentWriter(IApi api, IStatsAggregator? statsAggregator, IStatsdManager statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval, bool apmTracingEnabled, bool initialTracerMetricsEnabled)
         {
             _statsAggregator = statsAggregator ?? new NullStatsAggregator();
 
@@ -95,11 +111,12 @@ namespace Datadog.Trace.Agent
             _statsd = statsd;
             _batchInterval = batchInterval;
             _traceKeepRateCalculator = traceKeepRateCalculator;
+            _backgroundFlushEnabled = automaticFlush;
 
             ISpanBufferSerializer CreateSpanSerializer() => api.TracesEncoding switch
             {
-                TracesEncoding.OtlpJson => new OtlpTracesJsonSerializer(openTelemetrySemanticsEnabled),
-                TracesEncoding.OtlpProtobuf => new OtlpTracesProtobufSerializer(openTelemetrySemanticsEnabled),
+                TracesEncoding.OtlpJson => new OtlpTracesJsonSerializer(),
+                TracesEncoding.OtlpProtobuf => new OtlpTracesProtobufSerializer(),
                 _ => new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance),
             };
 
@@ -114,29 +131,44 @@ namespace Datadog.Trace.Agent
             _traceMetricsEnabled = initialTracerMetricsEnabled;
             _statsd.SetRequired(StatsdConsumer.AgentWriter, initialTracerMetricsEnabled);
 
-            _serializationTask = automaticFlush
-                                     ? Task.Factory.StartNew(SerializeTracesLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)
-                                     : Task.CompletedTask;
+            // Assign before starting the loops: the serialization thread can reach RequestFlush(),
+            // and the flush loop reads these, so they must be initialized first.
+            _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
+
+            _serializationTask = Task.Factory.StartNew(SerializeTracesLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             _serializationTask.ContinueWith(t => Log.Error(t.Exception, "Error in serialization task"), TaskContinuationOptions.OnlyOnFaulted);
 
-            _flushTask = automaticFlush ? Task.Run(FlushBuffersTaskLoopAsync) : Task.CompletedTask;
+            _flushTask = Task.Run(FlushBuffersTaskLoopAsync);
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in flush task"), TaskContinuationOptions.OnlyOnFaulted);
-
-            _backBufferFlushTask = _frontBufferFlushTask = Task.CompletedTask;
         }
 
-        internal event Action? Flushed;
+        private enum TraceDropReason
+        {
+            TraceTooLarge,
+            BuffersFull,
+            BufferFullAndLocked,
+            BuffersLocked,
+        }
 
+        [TestingOnly]
         internal SpanBuffer ActiveBuffer => _activeBuffer;
 
+        [TestingOnly]
         internal SpanBuffer FrontBuffer => _frontBuffer;
 
+        [TestingOnly]
         internal SpanBuffer BackBuffer => _backBuffer;
 
-        // For tests only
+        [TestingOnly]
         internal long DroppedTracesBufferFull => Volatile.Read(ref _droppedTracesBufferFull);
 
-        // For tests only
+        [TestingOnly]
+        internal long DroppedTracesBufferFullAndLocked => Volatile.Read(ref _droppedTracesBufferFullAndLocked);
+
+        [TestingOnly]
+        internal long DroppedTracesBuffersLocked => Volatile.Read(ref _droppedTracesBuffersLocked);
+
+        [TestingOnly]
         internal long DroppedTracesTooLarge => Volatile.Read(ref _droppedTracesTooLarge);
 
         public bool CanComputeStats => _apmTracingEnabled && _statsAggregator.CanComputeStats == true;
@@ -153,17 +185,17 @@ namespace Datadog.Trace.Agent
 
             if (_serializationTask.IsCompleted)
             {
-                // Serialization thread is not running, serialize the trace in the current thread
-                SerializeTrace(trace);
+                // The serialization loop has stopped, so nothing will ever dequeue this trace.
+                // Drop it rather than retaining it in the queue for the lifetime of the process.
+                DropTrace(trace.Count, TraceDropReason.BuffersFull);
+                return;
             }
-            else
-            {
-                _pendingTraces.Enqueue(new WorkItem(in trace));
 
-                if (!_serializationMutex.IsSet)
-                {
-                    _serializationMutex.Set();
-                }
+            _pendingTraces.Enqueue(new WorkItem(in trace));
+
+            if (!_serializationMutex.IsSet)
+            {
+                _serializationMutex.Set();
             }
 
             if (Volatile.Read(ref _traceMetricsEnabled))
@@ -248,6 +280,7 @@ namespace Datadog.Trace.Agent
             await FlushBuffers(true).ConfigureAwait(false);
         }
 
+        [TestingAndPrivateOnly]
         internal void WriteWatermark(Action watermark, bool wakeUpThread = true)
         {
             _pendingTraces.Enqueue(new WorkItem(watermark));
@@ -260,7 +293,7 @@ namespace Datadog.Trace.Agent
 
         private void RequestFlush()
         {
-            _forceFlush.TrySetResult(default);
+            Volatile.Read(ref _forceFlush).TrySetResult(default);
         }
 
         private async Task FlushBuffersTaskLoopAsync()
@@ -277,18 +310,20 @@ namespace Datadog.Trace.Agent
 
                 if (_forceFlush.Task.IsCompleted)
                 {
-                    _forceFlush = new TaskCompletionSource<bool>(TaskOptions);
-                    tasks[1] = _forceFlush.Task;
+                    var forceFlush = new TaskCompletionSource<bool>(TaskOptions);
+                    Volatile.Write(ref _forceFlush, forceFlush);
+                    tasks[1] = forceFlush.Task;
                 }
 
-                await FlushBuffers().ConfigureAwait(false);
+                if (_backgroundFlushEnabled)
+                {
+                    await FlushBuffers().ConfigureAwait(false);
+                }
 
                 if (_serializationTask.IsCompleted)
                 {
                     return;
                 }
-
-                Flushed?.Invoke();
             }
         }
 
@@ -354,22 +389,22 @@ namespace Datadog.Trace.Agent
                     }
 
                     var droppedTracesTooLarge = Interlocked.Exchange(ref _droppedTracesTooLarge, 0);
-
-                    if (droppedTracesTooLarge > 0)
-                    {
-                        Log.Warning<long, int>(
-                            "{Count} traces were dropped because their serialized size exceeded the trace buffer limit of {MaxBufferSize} bytes since the last flush operation.",
-                            droppedTracesTooLarge,
-                            _frontBuffer.MaxBufferSize);
-                    }
-
                     var droppedTracesBufferFull = Interlocked.Exchange(ref _droppedTracesBufferFull, 0);
+                    var droppedTracesBufferFullAndLocked = Interlocked.Exchange(ref _droppedTracesBufferFullAndLocked, 0);
+                    var droppedTracesBuffersLocked = Interlocked.Exchange(ref _droppedTracesBuffersLocked, 0);
 
-                    if (droppedTracesBufferFull > 0)
+                    if (droppedTracesTooLarge > 0 || droppedTracesBufferFull > 0 || droppedTracesBufferFullAndLocked > 0 || droppedTracesBuffersLocked > 0)
                     {
-                        Log.Warning<long>(
-                            "{Count} traces were dropped because both trace buffers were full or unavailable since the last flush operation.",
-                            droppedTracesBufferFull);
+                        Log.Warning(
+                            "Traces were dropped since the last flush operation: {TooLargeCount} exceeded the trace buffer limit of {MaxBufferSize} bytes, {BuffersFullCount} found both buffers full, {BufferFullAndLockedCount} found one buffer full and the other unavailable while being flushed, and {BuffersLockedCount} found both buffers unavailable while being flushed.",
+                            new object?[]
+                            {
+                                droppedTracesTooLarge,
+                                _frontBuffer.MaxBufferSize,
+                                droppedTracesBufferFull,
+                                droppedTracesBufferFullAndLocked,
+                                droppedTracesBuffersLocked,
+                            });
                     }
 
                     if (buffer.TraceCount > 0)
@@ -419,26 +454,22 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        /// <summary>
+        /// Serializes a trace chunk into the active buffer. Not thread safe: it mutates
+        /// <see cref="_temporaryBuffer"/> and swaps <see cref="_activeBuffer"/>, so it must only
+        /// ever be called from <see cref="SerializeTracesLoop"/>.
+        /// </summary>
         private void SerializeTrace(in SpanCollection spans)
         {
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
             SpanBuffer? SwapBuffers()
             {
-                if (_activeBuffer == _frontBuffer)
+                var alternateBuffer = _activeBuffer == _frontBuffer ? _backBuffer : _frontBuffer;
+
+                if (!alternateBuffer.IsFull)
                 {
-                    if (!_backBuffer.IsFull)
-                    {
-                        Volatile.Write(ref _activeBuffer, _backBuffer);
-                        return _activeBuffer;
-                    }
-                }
-                else
-                {
-                    if (!_frontBuffer.IsFull)
-                    {
-                        Volatile.Write(ref _activeBuffer, _frontBuffer);
-                        return _activeBuffer;
-                    }
+                    Volatile.Write(ref _activeBuffer, alternateBuffer);
+                    return alternateBuffer;
                 }
 
                 return null;
@@ -530,6 +561,7 @@ namespace Datadog.Trace.Agent
             var buffer = _activeBuffer;
 
             var writeStatus = buffer.TryWrite(in chunk, ref _temporaryBuffer, chunkSamplingPriority);
+            var lockedBufferCount = writeStatus == SpanBuffer.WriteStatus.Locked ? 1 : 0;
 
             if (writeStatus == SpanBuffer.WriteStatus.Success)
             {
@@ -540,7 +572,7 @@ namespace Datadog.Trace.Agent
             if (writeStatus == SpanBuffer.WriteStatus.Overflow)
             {
                 // The trace is too big for the buffer, no point in trying again
-                DropTrace(chunk.Count, MetricTags.DropReason.TraceTooLarge);
+                DropTrace(chunk.Count, TraceDropReason.TraceTooLarge);
                 return;
             }
 
@@ -563,33 +595,57 @@ namespace Datadog.Trace.Agent
                 if (writeStatus == SpanBuffer.WriteStatus.Overflow)
                 {
                     // The trace is too big for the buffer
-                    DropTrace(chunk.Count, MetricTags.DropReason.TraceTooLarge);
+                    DropTrace(chunk.Count, TraceDropReason.TraceTooLarge);
                     return;
+                }
+
+                if (writeStatus == SpanBuffer.WriteStatus.Locked)
+                {
+                    lockedBufferCount++;
                 }
             }
 
-            // All the buffers are full :( drop the trace
-            DropTrace(chunk.Count, MetricTags.DropReason.OverfullBuffer);
+            // Both buffers are full or at least one is locked, so drop the trace
+            var dropReason = lockedBufferCount switch
+            {
+                0 => TraceDropReason.BuffersFull,
+                1 => TraceDropReason.BufferFullAndLocked,
+                _ => TraceDropReason.BuffersLocked,
+            };
+
+            DropTrace(chunk.Count, dropReason);
         }
 
-        private void DropTrace(int count, MetricTags.DropReason dropReason)
+        private void DropTrace(int count, TraceDropReason dropReason)
         {
+            MetricTags.DropReason metricDropReason;
+
             switch (dropReason)
             {
-                case MetricTags.DropReason.OverfullBuffer:
+                case TraceDropReason.BuffersFull:
                     Interlocked.Increment(ref _droppedTracesBufferFull);
+                    metricDropReason = MetricTags.DropReason.OverfullBuffer;
                     break;
-                case MetricTags.DropReason.TraceTooLarge:
+                case TraceDropReason.BufferFullAndLocked:
+                    Interlocked.Increment(ref _droppedTracesBufferFullAndLocked);
+                    metricDropReason = MetricTags.DropReason.BufferLocked;
+                    break;
+                case TraceDropReason.BuffersLocked:
+                    Interlocked.Increment(ref _droppedTracesBuffersLocked);
+                    metricDropReason = MetricTags.DropReason.BufferLocked;
+                    break;
+                case TraceDropReason.TraceTooLarge:
                     Interlocked.Increment(ref _droppedTracesTooLarge);
+                    metricDropReason = MetricTags.DropReason.TraceTooLarge;
                     break;
                 default:
                     ThrowHelper.ThrowArgumentOutOfRangeException(nameof(dropReason), dropReason, "Unexpected trace drop reason");
-                    break;
+                    return;
             }
 
             _traceKeepRateCalculator.IncrementDrops(1);
-            TelemetryFactory.Metrics.RecordCountSpanDropped(dropReason, count);
-            TelemetryFactory.Metrics.RecordCountTraceChunkDropped(dropReason);
+            TelemetryFactory.Metrics.RecordCountSpanDropped(metricDropReason, count);
+            TelemetryFactory.Metrics.RecordCountTraceChunkDropped(metricDropReason);
 
             if (Volatile.Read(ref _traceMetricsEnabled))
             {

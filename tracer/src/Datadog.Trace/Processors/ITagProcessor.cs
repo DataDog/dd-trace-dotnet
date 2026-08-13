@@ -9,6 +9,8 @@ namespace Datadog.Trace.Processors
     {
         void ProcessMeta(ref string key, ref string value);
 
+        void ProcessMeta(ref string key, ref int value);
+
         void ProcessMetric(ref string key, ref double value);
     }
 }

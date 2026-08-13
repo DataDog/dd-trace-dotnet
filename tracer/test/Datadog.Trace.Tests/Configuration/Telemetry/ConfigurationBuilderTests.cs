@@ -26,6 +26,115 @@ public class ConfigurationBuilderTests
         IConfigurationSource GetSource(IDictionary<string, object> collection);
     }
 
+    public class RedactedStringTests
+    {
+        [Fact]
+        public void AsRedactedStringRedactsUnexpectedObjectTypes()
+        {
+            const string key = "key";
+            var telemetry = new ConfigurationTelemetry();
+            var source = new DictionaryObjectConfigurationSource(
+                new Dictionary<string, object> { [key] = new SensitiveValue() });
+
+            _ = new ConfigurationBuilder(source, telemetry)
+               .WithKeys(key)
+               .AsRedactedString();
+
+            telemetry.GetQueueForTesting()
+                     .Should()
+                     .ContainSingle(
+                          x => x.Key == key
+                            && x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted
+                            && x.StringValue == null);
+        }
+
+        private sealed class SensitiveValue
+        {
+            public override string ToString() => "secret";
+        }
+    }
+
+    public class RedactedDictionaryTests
+    {
+        [Fact]
+        public void AsRedactedDictionaryResultRedactsTelemetryForAllSourceShapes()
+        {
+            const string key = "key";
+            const string value = "header=secret";
+            var compositeSource = new CompositeConfigurationSource();
+            compositeSource.Add(new DictionaryObjectConfigurationSource(new Dictionary<string, object> { [key] = 42 }));
+            compositeSource.Add(new DictionaryConfigurationSource(new Dictionary<string, string> { [key] = value }));
+            var sources = new IConfigurationSource[]
+            {
+                new DictionaryConfigurationSource(new Dictionary<string, string> { [key] = value }),
+                new DictionaryObjectConfigurationSource(
+                    new Dictionary<string, object>
+                    {
+                        [key] = new Dictionary<string, string> { ["header"] = "secret" }
+                    }),
+                new JsonConfigurationSource($@"{{""{key}"":""{value}""}}", ConfigurationOrigins.Code),
+                new JsonConfigurationSource($@"{{""{key}"":{{""header"":""secret""}}}}", ConfigurationOrigins.Code),
+                compositeSource,
+            };
+
+            foreach (var source in sources)
+            {
+                var telemetry = new ConfigurationTelemetry();
+
+                var result = new ConfigurationBuilder(source, telemetry)
+                            .WithKeys(key)
+                            .AsRedactedDictionaryResult(separator: '=');
+
+                result.ConfigurationResult.Result.Should().Contain("header", "secret");
+                telemetry.GetQueueForTesting()
+                         .Where(x => x.Key == key)
+                         .Should()
+                         .NotBeEmpty()
+                         .And.OnlyContain(
+                              x => x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted
+                                && x.StringValue == null);
+            }
+        }
+
+        [Fact]
+        public void AsRedactedDictionaryResultPassesRecordValueToConfigurationSource()
+        {
+            const string key = "key";
+            var source = new RecordingConfigurationSource();
+            var telemetry = new ConfigurationTelemetry();
+
+            var result = new ConfigurationBuilder(source, telemetry)
+                        .WithKeys(key)
+                        .AsRedactedDictionaryResult(separator: '=');
+
+            result.ConfigurationResult.Result.Should().Contain("header", "secret");
+            source.Telemetry.Should().BeSameAs(telemetry);
+            telemetry.GetQueueForTesting()
+                     .Should()
+                     .ContainSingle(x => x.Key == key && x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted);
+        }
+
+        [Fact]
+        public void AsRedactedDictionaryResultRedactsJsonConversionErrors()
+        {
+            const string key = "key";
+            var source = new JsonConfigurationSource("""{"key":[42]}""", ConfigurationOrigins.Code);
+            var telemetry = new ConfigurationTelemetry();
+
+            _ = new ConfigurationBuilder(source, telemetry)
+               .WithKeys(key)
+               .AsRedactedDictionaryResult(separator: '=');
+
+            telemetry.GetQueueForTesting()
+                     .Should()
+                     .ContainSingle(
+                          x => x.Key == key
+                            && x.Type == ConfigurationTelemetry.ConfigurationTelemetryEntryType.Redacted
+                            && x.StringValue == null
+                            && x.Error == TelemetryErrorCode.JsonStringError);
+        }
+    }
+
     public class NameValueCollectionTests
     {
         public class Factory : IConfigurationSourceFactory
@@ -1252,5 +1361,63 @@ public class ConfigurationBuilderTests
                 && ((Error is null && other.Error is null)
                  || (Error?.GetType() == other.Error?.GetType()));
         }
+    }
+
+    private sealed class RecordingConfigurationSource : IConfigurationSource
+    {
+        public IConfigurationTelemetry Telemetry { get; private set; }
+
+        public ConfigurationOrigins Origin => ConfigurationOrigins.Code;
+
+        public ConfigurationResult<string> GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool> validator, bool recordValue)
+            => ConfigurationResult<string>.NotFound();
+
+        public ConfigurationResult<int> GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool> validator)
+            => ConfigurationResult<int>.NotFound();
+
+        public ConfigurationResult<double> GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool> validator)
+            => ConfigurationResult<double>.NotFound();
+
+        public ConfigurationResult<bool> GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool> validator)
+            => ConfigurationResult<bool>.NotFound();
+
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool> validator)
+            => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
+
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(
+            string key,
+            IConfigurationTelemetry telemetry,
+            Func<IDictionary<string, string>, bool> validator,
+            bool allowOptionalMappings,
+            char separator)
+            => GetDictionary(key, telemetry, validator, allowOptionalMappings, separator, recordValue: true);
+
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(
+            string key,
+            IConfigurationTelemetry telemetry,
+            Func<IDictionary<string, string>, bool> validator,
+            bool allowOptionalMappings,
+            char separator,
+            bool recordValue)
+        {
+            Telemetry = telemetry;
+            telemetry.Record(key, "header=secret", recordValue, Origin);
+            return ConfigurationResult<IDictionary<string, string>>.Valid(new Dictionary<string, string> { ["header"] = "secret" }, "header=secret");
+        }
+
+        public ConfigurationResult<IDictionary<string, string>> GetDictionary(
+            string key,
+            IConfigurationTelemetry telemetry,
+            Func<IDictionary<string, string>, bool> validator,
+            Func<string, IDictionary<string, string>> parser)
+            => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, separator: ':');
+
+        public ConfigurationResult<T> GetAs<T>(
+            string key,
+            IConfigurationTelemetry telemetry,
+            Func<string, ParsingResult<T>> converter,
+            Func<T, bool> validator,
+            bool recordValue)
+            => ConfigurationResult<T>.NotFound();
     }
 }

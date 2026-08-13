@@ -39,14 +39,11 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: "Configure Git Credentials"
-        run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-
-      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
 
@@ -61,9 +58,16 @@ jobs:
         id: versions
         run: .\tracer\build.ps1 OutputCurrentVersionToGitHub
 
+      - name: "Stage version bump"
+        run: git add .
+
       - name: "Push hotfix branch"
-        run: |
-          git checkout -b hotfix/${{ steps.versions.outputs.full_version }}
-          git add .
-          git commit -m "[Version Bump] ${{steps.versions.outputs.full_version}}"
-          git push origin -u hotfix/${{ steps.versions.outputs.full_version }}
+        uses: DataDog/commit-headless@2801f6e08acb3a69b6c4d7b0d5deef27c1a15bc7 # action/v3.3.1
+        with:
+          command: commit
+          branch: hotfix/${{ steps.versions.outputs.full_version }}
+          message: "[Version Bump] ${{steps.versions.outputs.full_version}}"
+          # Keeps whoever dispatched the workflow as a Co-authored-by trailer.
+          author: "${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>"
+          head-sha: ${{ github.sha }}
+          create-branch: true
