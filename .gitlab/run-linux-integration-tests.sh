@@ -21,10 +21,13 @@ if [ -f "$alternates_file" ]; then
 fi
 
 # Azure publishes the universal loader/wrapper from linux-musl-x64 and
-# downloads it into the target runtime folder. Recreate that merge after
-# GitLab downloads the independent producer artifacts.
-mkdir -p artifacts/monitoring-home/linux-x64 artifacts/build_data/infra_logs
-cp -a artifacts/monitoring-home/linux-musl-x64/. artifacts/monitoring-home/linux-x64/
+# downloads it into the target runtime folder. Recreate that merge for the
+# glibc job after GitLab downloads the independent producer artifacts. The
+# Alpine job already uses linux-musl-x64 as its target folder.
+mkdir -p "artifacts/monitoring-home/${ARTIFACT_SUFFIX}" artifacts/build_data/infra_logs
+if [ "$ARTIFACT_SUFFIX" != "linux-musl-x64" ]; then
+  cp -a artifacts/monitoring-home/linux-musl-x64/. "artifacts/monitoring-home/${ARTIFACT_SUFFIX}/"
+fi
 
 echo "Building ${BASE_IMAGE} integration-test image for ${FRAMEWORK}"
 docker build \

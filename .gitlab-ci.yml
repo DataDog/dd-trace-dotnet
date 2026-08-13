@@ -818,7 +818,11 @@ integration-tests-linux-x64:
   needs:
     - job: build-linux-tracer-x64
       artifacts: false
+    - job: build-linux-tracer-x64-musl
+      artifacts: false
     - job: build-linux-profiler-x64
+      artifacts: false
+    - job: build-linux-profiler-x64-musl
       artifacts: false
     - job: build-linux-universal-x64
       artifacts: false

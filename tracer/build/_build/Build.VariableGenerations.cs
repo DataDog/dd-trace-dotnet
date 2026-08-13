@@ -79,8 +79,7 @@ partial class Build : NukeBuild
         => _ => _
            .Unlisted()
            .Executes(() => WriteGitlabLinuxIntegrationTestsPipeline(
-                GetLinuxX64IntegrationTestPlatformMatrix(IncludeAllTestFrameworks)
-                   .Where(x => x.BaseImage == "debian")));
+                GetLinuxX64IntegrationTestPlatformMatrix(IncludeAllTestFrameworks)));
 
     void WriteGitlabWindowsUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
     {
@@ -201,6 +200,7 @@ partial class Build : NukeBuild
     void WriteGitlabLinuxIntegrationTestsPipeline(
         IEnumerable<(TargetFramework Framework, string BaseImage, string ArtifactSuffix)> configurations)
     {
+        var configurationList = configurations.ToList();
         var yaml = new StringBuilder(
             """
             include:
@@ -212,20 +212,26 @@ partial class Build : NukeBuild
 
             """);
 
-        foreach (var (framework, baseImage, artifactSuffix) in configurations)
+        foreach (var framework in configurationList.Select(x => x.Framework).Distinct())
         {
             var sampleJob = $"build-samples-multi-version:{framework}";
             yaml.AppendLine($"\"{sampleJob}\":");
             yaml.AppendLine("  extends: .windows-integration-sample-build");
             yaml.AppendLine("  variables:");
             yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
-            yaml.AppendLine($"\"integration-tests-linux-x64:{framework}\":");
+        }
+
+        foreach (var (framework, baseImage, artifactSuffix) in configurationList)
+        {
+            var sampleJob = $"build-samples-multi-version:{framework}";
+            yaml.AppendLine($"\"integration-tests-{artifactSuffix}:{framework}\":");
             yaml.AppendLine("  extends: .linux-integration-test-x64");
             yaml.AppendLine("  needs:");
             yaml.AppendLine($"    - job: \"{sampleJob}\"");
             yaml.AppendLine("      artifacts: true");
-            AppendParentArtifactNeed("build-linux-tracer-x64");
-            AppendParentArtifactNeed("build-linux-profiler-x64");
+            var producerSuffix = baseImage == "alpine" ? "-musl" : string.Empty;
+            AppendParentArtifactNeed($"build-linux-tracer-x64{producerSuffix}");
+            AppendParentArtifactNeed($"build-linux-profiler-x64{producerSuffix}");
             AppendParentArtifactNeed("build-linux-universal-x64");
             AppendParentArtifactNeed("build-samples-standalone");
             yaml.AppendLine("  variables:");
