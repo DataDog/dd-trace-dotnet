@@ -2064,9 +2064,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadStarted(ModuleID module
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_engineLifetimeMutex, _isShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2524,9 +2524,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RootReferences(ULONG cRootRefs, O
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownObjectId)
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_engineLifetimeMutex, _isShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
