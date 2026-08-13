@@ -70,7 +70,9 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
-                if (config.Flags is null || !config.Flags.TryGetValue(flagKey, out var flag))
+                Flag? flag = null;
+                var lookupResult = config.Flags?.Find(flagKey, out flag) ?? FlagLookupResult.NotFound;
+                if (lookupResult == FlagLookupResult.NotFound)
                 {
                     return new Evaluation(
                         flagKey,
@@ -83,12 +85,17 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
-                if (flag is null)
+                if (lookupResult == FlagLookupResult.Invalid || flag is null)
                 {
                     return new Evaluation(
                         flagKey,
                         defaultValue,
-                        EvaluationReason.Default);
+                        EvaluationReason.Error,
+                        error: "PARSE_ERROR",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "PARSE_ERROR"
+                        });
                 }
 
                 if (flag.Enabled != true)
@@ -316,6 +323,18 @@ namespace Datadog.Trace.FeatureFlags
                     return CompareNumber(attributeValue, condition.Value, (a, b) => a <= b);
                 case ConditionOperator.LT:
                     return CompareNumber(attributeValue, condition.Value, (a, b) => a < b);
+                case ConditionOperator.SEMVER_EQ:
+                    return CompareSemanticVersion(attributeValue, condition.Value, result => result == 0);
+                case ConditionOperator.SEMVER_NEQ:
+                    return CompareSemanticVersion(attributeValue, condition.Value, result => result != 0);
+                case ConditionOperator.SEMVER_LT:
+                    return CompareSemanticVersion(attributeValue, condition.Value, result => result < 0);
+                case ConditionOperator.SEMVER_LTE:
+                    return CompareSemanticVersion(attributeValue, condition.Value, result => result <= 0);
+                case ConditionOperator.SEMVER_GT:
+                    return CompareSemanticVersion(attributeValue, condition.Value, result => result > 0);
+                case ConditionOperator.SEMVER_GTE:
+                    return CompareSemanticVersion(attributeValue, condition.Value, result => result >= 0);
                 default:
                     throw new FormatException($"Unknown condition operator {condition.Operator.ToString()}");
             }
@@ -383,6 +402,15 @@ namespace Datadog.Trace.FeatureFlags
             var a = ParseDouble(attributeValue);
             var b = ParseDouble(conditionValue);
             return comparator(a, b);
+        }
+
+        private static bool CompareSemanticVersion(object attributeValue, object? conditionValue, Func<int, bool> comparator)
+        {
+            return attributeValue is string attributeText
+                && conditionValue is string conditionText
+                && SemanticVersion.TryParse(attributeText, out var attributeVersion)
+                && SemanticVersion.TryParse(conditionText, out var conditionVersion)
+                && comparator(attributeVersion.CompareTo(conditionVersion));
         }
 
         private static bool MatchesShard(Shard shard, string? targetingKey)

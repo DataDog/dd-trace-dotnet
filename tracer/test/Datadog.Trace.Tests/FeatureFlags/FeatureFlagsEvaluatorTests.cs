@@ -119,9 +119,70 @@ public partial class FeatureFlagsEvaluatorTests
     }
 
     [Fact]
+    public void EvaluateDistinguishesInvalidAndMissingFlags()
+    {
+        const string json = """
+                            {
+                              "flags": {
+                                "invalid-flag": {
+                                  "enabled": true,
+                                  "variationType": "STRING",
+                                  "allocations": "not-an-array"
+                                },
+                                "valid-flag": {
+                                  "enabled": true,
+                                  "variationType": "STRING"
+                                }
+                              }
+                            }
+                            """;
+        var config = JsonConvert.DeserializeObject<ServerConfiguration>(json)!;
+        var evaluator = new FeatureFlagsEvaluator(null, config);
+        var ctx = new EvaluationContext("target");
+
+        var invalid = evaluator.Evaluate("invalid-flag", ValueType.String, "default", ctx);
+        var missing = evaluator.Evaluate("missing-flag", ValueType.String, "default", ctx);
+        var valid = evaluator.Evaluate("valid-flag", ValueType.String, "default", ctx);
+
+        Assert.Equal(EvaluationReason.Error, invalid.Reason);
+        Assert.Equal("PARSE_ERROR", invalid.Error);
+        Assert.Equal("PARSE_ERROR", invalid.FlagMetadata?["errorCode"]);
+        Assert.Equal(EvaluationReason.Error, missing.Reason);
+        Assert.Equal("FLAG_NOT_FOUND", missing.Error);
+        Assert.Equal(EvaluationReason.Default, valid.Reason);
+    }
+
+    [Fact]
+    public void MergeReplacesFlagParsingState()
+    {
+        var originalFlag = new Flag();
+        var replacementFlag = new Flag();
+        var flags = new FlagCollection { ["flag"] = originalFlag };
+        var invalidFlags = JsonConvert.DeserializeObject<ServerConfiguration>("""
+                                                                              {
+                                                                                "flags": {
+                                                                                  "flag": {
+                                                                                    "allocations": "not-an-array"
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                              """)!.Flags!;
+
+        flags.Merge(invalidFlags);
+        Assert.Equal(FlagLookupResult.Invalid, flags.Find("flag", out var invalid));
+        Assert.Null(invalid);
+
+        flags.Merge(new FlagCollection { ["flag"] = replacementFlag });
+        Assert.Equal(FlagLookupResult.Found, flags.Find("flag", out var valid));
+        Assert.Same(replacementFlag, valid);
+        Assert.Equal(FlagLookupResult.NotFound, flags.Find("missing", out var missing));
+        Assert.Null(missing);
+    }
+
+    [Fact]
     public void EvaluateFlagWithTypeMismatchReturnsTypeMismatchError()
     {
-        var flags = new Dictionary<string, Flag?>
+        var flags = new FlagCollection
         {
             ["null-allocation"] = new Flag { Key = "target", Enabled = true, VariationType = ValueType.String },
             ["empty-allocation"] = new Flag { Key = "target", Enabled = true, VariationType = ValueType.String, Allocations = new List<Allocation>() },
@@ -199,7 +260,7 @@ public partial class FeatureFlagsEvaluatorTests
     [Fact]
     public void EvaluateExposureFlagLogsExposureEvent()
     {
-        var flags = new Dictionary<string, Flag?>
+        var flags = new FlagCollection
         {
             ["exposure-flag"] = FeatureFlagsHelpers.CreateExposureFlag()
         };
@@ -232,7 +293,7 @@ public partial class FeatureFlagsEvaluatorTests
     public void EvaluateTimeBasedFlagWithVariousIso8601DateFormats(string startAt, string endAt)
     {
         var flag = CreateTimeBasedFlagWithDates("iso8601-flag", startAt, endAt);
-        var flags = new Dictionary<string, Flag?> { ["iso8601-flag"] = flag };
+        var flags = new FlagCollection { ["iso8601-flag"] = flag };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
@@ -252,7 +313,7 @@ public partial class FeatureFlagsEvaluatorTests
     public void EvaluateTimeBasedFlagWithExpiredMicrosecondDatesReturnsDefault(string startAt, string endAt)
     {
         var flag = CreateTimeBasedFlagWithDates("expired-flag", startAt, endAt);
-        var flags = new Dictionary<string, Flag?> { ["expired-flag"] = flag };
+        var flags = new FlagCollection { ["expired-flag"] = flag };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
@@ -274,7 +335,7 @@ public partial class FeatureFlagsEvaluatorTests
         // This test documents this behavior - since dates come from our controlled backend,
         // accepting broader formats is acceptable.
         var flag = CreateTimeBasedFlagWithDates("non-standard-flag", startAt, endAt);
-        var flags = new Dictionary<string, Flag?> { ["non-standard-flag"] = flag };
+        var flags = new FlagCollection { ["non-standard-flag"] = flag };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
@@ -300,7 +361,7 @@ public partial class FeatureFlagsEvaluatorTests
     public void EvaluateTimeBasedFlagWithInvalidDateReturnsParseError(string startAt, string endAt)
     {
         var flag = CreateTimeBasedFlagWithDates("invalid-flag", startAt, endAt);
-        var flags = new Dictionary<string, Flag?> { ["invalid-flag"] = flag };
+        var flags = new FlagCollection { ["invalid-flag"] = flag };
 
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-123");
@@ -332,7 +393,7 @@ public partial class FeatureFlagsEvaluatorTests
         var alloc = new Allocation { Key = "static-alloc", Rules = null, Splits = splits, DoLog = false };
         var flag = new Flag { Key = "static-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
 
-        var flags = new Dictionary<string, Flag?> { ["static-flag"] = flag };
+        var flags = new FlagCollection { ["static-flag"] = flag };
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("any-user");
 
@@ -368,7 +429,7 @@ public partial class FeatureFlagsEvaluatorTests
         var alloc = new Allocation { Key = "split-alloc", Rules = null, Splits = splits, DoLog = false };
         var flag = new Flag { Key = "split-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
 
-        var flags = new Dictionary<string, Flag?> { ["split-flag"] = flag };
+        var flags = new FlagCollection { ["split-flag"] = flag };
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
         var ctx = new EvaluationContext("user-in-bucket");
 

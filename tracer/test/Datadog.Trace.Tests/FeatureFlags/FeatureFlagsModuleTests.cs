@@ -37,7 +37,7 @@ public class FeatureFlagsModuleTests
         // First, send a valid config so evaluator is created
         var configJson = JsonConvert.SerializeObject(new ServerConfiguration
         {
-            Flags = new Dictionary<string, Flag?>
+            Flags = new FlagCollection
             {
                 ["test-flag"] = new Flag { Key = "test-flag", Enabled = true, VariationType = FeatureFlagsValueType.Boolean }
             }

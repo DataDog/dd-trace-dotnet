@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
@@ -19,8 +18,8 @@ internal sealed class ServerConfiguration
 
     public Environment? Environment { get; set; }
 
-    [JsonConverter(typeof(FlagDictionaryJsonConverter))]
-    public Dictionary<string, Flag?>? Flags { get; set; }
+    [JsonConverter(typeof(FlagCollectionJsonConverter))]
+    public FlagCollection? Flags { get; set; }
 
     internal void Merge(ServerConfiguration other)
     {
@@ -41,15 +40,12 @@ internal sealed class ServerConfiguration
 
         if (Flags is null)
         {
-            Flags = new Dictionary<string, Flag?>();
+            Flags = new FlagCollection();
         }
 
         if (other.Flags is not null)
         {
-            foreach (var pair in other.Flags)
-            {
-                Flags[pair.Key] = pair.Value;
-            }
+            Flags.Merge(other.Flags);
         }
     }
 }

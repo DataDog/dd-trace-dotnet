@@ -665,6 +665,229 @@
         }
       ]
     },
+    "semver-comparison-test": {
+      "key": "semver-comparison-test",
+      "enabled": true,
+      "variationType": "STRING",
+      "variations": {
+        "legacy": {
+          "key": "legacy",
+          "value": "legacy"
+        },
+        "stable": {
+          "key": "stable",
+          "value": "stable"
+        },
+        "beta": {
+          "key": "beta",
+          "value": "beta"
+        },
+        "launch": {
+          "key": "launch",
+          "value": "launch"
+        },
+        "future": {
+          "key": "future",
+          "value": "future"
+        },
+        "maximum": {
+          "key": "maximum",
+          "value": "maximum"
+        }
+      },
+      "allocations": [
+        {
+          "key": "maximum-version",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "app_version",
+                  "operator": "SEMVER_EQ",
+                  "value": "9007199254740991.9007199254740991.9007199254740991"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "maximum",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "legacy-versions",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "app_version",
+                  "operator": "SEMVER_LTE",
+                  "value": "1.2.3-alpha.4"
+                }
+              ]
+            },
+            {
+              "conditions": [
+                {
+                  "attribute": "app_version",
+                  "operator": "SEMVER_GT",
+                  "value": "1.2.3-alpha.4"
+                },
+                {
+                  "attribute": "app_version",
+                  "operator": "SEMVER_LT",
+                  "value": "2.3.4"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "legacy",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "stable-versions",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "app_version",
+                  "operator": "SEMVER_GTE",
+                  "value": "2.3.4"
+                },
+                {
+                  "attribute": "app_version",
+                  "operator": "SEMVER_LT",
+                  "value": "3.4.5-beta.2"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "stable",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "beta-versions",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "app_version",
+                  "operator": "SEMVER_GTE",
+                  "value": "3.4.5-beta.2"
+                },
+                {
+                  "attribute": "app_version",
+                  "operator": "SEMVER_LT",
+                  "value": "4.5.6-rc.1"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "beta",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "launch-version",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "app_version",
+                  "operator": "SEMVER_EQ",
+                  "value": "4.5.6-rc.1"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "launch",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "future-versions",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "app_version",
+                  "operator": "SEMVER_GT",
+                  "value": "4.5.6-rc.1"
+                },
+                {
+                  "attribute": "app_version",
+                  "operator": "SEMVER_NEQ",
+                  "value": "5.6.7"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "future",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        }
+      ]
+    },
+    "semver-invalid-comparand-test": {
+      "key": "semver-invalid-comparand-test",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "This flag deliberately uses an invalid configured SemVer comparand. SDKs must remove this flag without rejecting the full configuration.",
+      "variations": {
+        "matched": {
+          "key": "matched",
+          "value": "matched"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid-comparand",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "app_version",
+                  "operator": "SEMVER_EQ",
+                  "value": "18446744073709551616.0.0"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "matched",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        }
+      ]
+    },
     "start-and-end-date-test": {
       "key": "start-and-end-date-test",
       "enabled": true,
@@ -3462,7 +3685,7 @@
       "key": "operator-grease-flag",
       "enabled": true,
       "variationType": "STRING",
-      "comment": "This flag deliberately uses an unknown condition operator. SDKs must ignore this flag rather than falling through to the catch-all allocation or rejecting the whole config.",
+      "comment": "This flag deliberately uses an unknown condition operator. SDKs must remove this flag rather than falling through to the catch-all allocation or rejecting the whole config.",
       "variations": {
         "trap": {
           "key": "trap",
@@ -3508,11 +3731,240 @@
         }
       ]
     },
+    "invalid-regex-flag": {
+      "key": "invalid-regex-flag",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "This flag deliberately uses the invalid regex *@datadoghq.com. SDKs must remove this flag rather than falling through to a later allocation or rejecting the whole config.",
+      "variations": {
+        "invalid-regex-match": {
+          "key": "invalid-regex-match",
+          "value": "invalid-regex-match"
+        },
+        "catch-all": {
+          "key": "catch-all",
+          "value": "catch-all"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid-regex-allocation",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "email",
+                  "operator": "MATCHES",
+                  "value": "*@datadoghq.com"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "invalid-regex-match",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "invalid-regex-catch-all",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "catch-all",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        }
+      ]
+    },
+    "variant-type-mismatch-flag": {
+      "key": "variant-type-mismatch-flag",
+      "enabled": true,
+      "variationType": "INTEGER",
+      "comment": "This flag is intentionally invalid: one variation contains a string even though the flag declares INTEGER values. SDKs must remove this flag without rejecting the full configuration.",
+      "variations": {
+        "invalid": {
+          "key": "invalid",
+          "value": "not-an-integer"
+        },
+        "valid": {
+          "key": "valid",
+          "value": 0
+        }
+      },
+      "allocations": [
+        {
+          "key": "default-allocation",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "invalid",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        }
+      ]
+    },
+    "invalid-gt-condition-flag": {
+      "key": "invalid-gt-condition-flag",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "This flag deliberately gives GT a string operand. SDKs must remove this flag rather than falling through to the catch-all allocation.",
+      "variations": {
+        "trap": {
+          "key": "trap",
+          "value": "trap"
+        },
+        "catch-all": {
+          "key": "catch-all",
+          "value": "catch-all"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid-gt-allocation",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "age",
+                  "operator": "GT",
+                  "value": "not-a-number"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "trap",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "invalid-gt-catch-all",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "catch-all",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        }
+      ]
+    },
+    "invalid-one-of-condition-flag": {
+      "key": "invalid-one-of-condition-flag",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "This flag deliberately gives ONE_OF a scalar operand. SDKs must remove this flag rather than falling through to the catch-all allocation.",
+      "variations": {
+        "trap": {
+          "key": "trap",
+          "value": "trap"
+        },
+        "catch-all": {
+          "key": "catch-all",
+          "value": "catch-all"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid-one-of-allocation",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "role",
+                  "operator": "ONE_OF",
+                  "value": "admin"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "trap",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "invalid-one-of-catch-all",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "catch-all",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        }
+      ]
+    },
+    "invalid-is-null-condition-flag": {
+      "key": "invalid-is-null-condition-flag",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "This flag deliberately gives IS_NULL a non-boolean operand. SDKs must remove this flag rather than falling through to the catch-all allocation.",
+      "variations": {
+        "trap": {
+          "key": "trap",
+          "value": "trap"
+        },
+        "catch-all": {
+          "key": "catch-all",
+          "value": "catch-all"
+        }
+      },
+      "allocations": [
+        {
+          "key": "invalid-is-null-allocation",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "deleted_at",
+                  "operator": "IS_NULL",
+                  "value": "not-a-boolean"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "trap",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "invalid-is-null-catch-all",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "catch-all",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        }
+      ]
+    },
     "malformed-allocations-flag": {
       "key": "malformed-allocations-flag",
       "enabled": true,
       "variationType": "STRING",
-      "comment": "This flag is intentionally UFC-schema-invalid: allocations must be an array, but this fixture uses a string to verify per-flag parse error isolation.",
+      "comment": "This flag is intentionally UFC-schema-invalid: allocations must be an array. SDKs must remove this flag without rejecting the full configuration.",
       "variations": {
         "on": {
           "key": "on",
@@ -3549,7 +4001,7 @@
       "key": "overflow-total-shards-flag",
       "enabled": true,
       "variationType": "STRING",
-      "comment": "This flag is intentionally UFC-schema-invalid: split.shards[].totalShards must fit in an unsigned 32-bit integer. SDKs must ignore this flag rather than overflowing or poisoning the whole config.",
+      "comment": "This flag is intentionally UFC-schema-invalid: split.shards[].totalShards must fit in an unsigned 32-bit integer. SDKs must remove this flag rather than overflowing or poisoning the whole config.",
       "variations": {
         "trap": {
           "key": "trap",
@@ -3585,7 +4037,7 @@
       "key": "negative-shard-range-start-flag",
       "enabled": true,
       "variationType": "STRING",
-      "comment": "This flag is intentionally UFC-schema-invalid: split.shards[].ranges[].start must be an unsigned integer. SDKs must ignore this flag rather than treating a negative range as matching traffic.",
+      "comment": "This flag is intentionally UFC-schema-invalid: split.shards[].ranges[].start must be an unsigned integer. SDKs must remove this flag rather than treating a negative range as matching traffic.",
       "variations": {
         "trap": {
           "key": "trap",
@@ -3611,6 +4063,54 @@
                   ]
                 }
               ]
+            }
+          ],
+          "doLog": true
+        }
+      ]
+    },
+    "null-shard-range-flag": {
+      "key": "null-shard-range-flag",
+      "enabled": true,
+      "variationType": "STRING",
+      "comment": "This flag is intentionally UFC-schema-invalid: split.shards[].ranges[] contains null. SDKs must remove this flag rather than panicking or poisoning the whole config.",
+      "variations": {
+        "trap": {
+          "key": "trap",
+          "value": "trap"
+        },
+        "catch-all": {
+          "key": "catch-all",
+          "value": "catch-all"
+        }
+      },
+      "allocations": [
+        {
+          "key": "null-shard-range-allocation",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "trap",
+              "shards": [
+                {
+                  "salt": "null-shard-range-flag",
+                  "totalShards": 8192,
+                  "ranges": [
+                    null
+                  ]
+                }
+              ]
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "null-shard-range-catch-all",
+          "rules": [],
+          "splits": [
+            {
+              "variationKey": "catch-all",
+              "shards": []
             }
           ],
           "doLog": true
