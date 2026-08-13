@@ -111,10 +111,11 @@ public partial class FeatureFlagsEvaluatorTests
 
         Assert.Equal("datadog.ffe.targeting-regex-conformance/v1", fixture.Schema);
         Assert.Equal(1, fixture.SchemaVersion);
-        Assert.Equal("targeting-regex-v1", fixture.ContractVersion);
+        Assert.Equal("targeting-regex-v2", fixture.ContractVersion);
         Assert.Equal(75, cases.Count);
         Assert.Equal(75, cases.Select(testCase => testCase.Id).Distinct().Count());
-        Assert.Equal(66, cases.Count(testCase => testCase.ExpectedCompile.HasValue));
+        Assert.Equal(30, cases.Count(testCase => testCase.Contract == "accepted"));
+        Assert.Equal(45, cases.Count(testCase => testCase.Contract == "rejected"));
     }
 
     [Theory]
@@ -122,9 +123,9 @@ public partial class FeatureFlagsEvaluatorTests
     public void RegexConformance(RegexConformanceCase testCase)
     {
         Assert.NotNull(testCase.Id);
+        Assert.True(testCase.Contract is "accepted" or "rejected");
         Assert.NotNull(testCase.RawPattern);
         Assert.NotNull(testCase.Input);
-        Assert.NotNull(testCase.ExpectedCompile);
 
         // UFC supplies the raw pattern. ConditionConfiguration is the production normalization boundary
         // before System.Text.RegularExpressions.Regex compiles and evaluates it.
@@ -135,12 +136,13 @@ public partial class FeatureFlagsEvaluatorTests
 
         var result = evaluator.Evaluate("regex-conformance", Trace.FeatureFlags.ValueType.Boolean, false, context);
 
-        if (testCase.ExpectedCompile == false)
+        if (testCase.Contract == "rejected")
         {
-            Assert.Equal(EvaluationReason.Error, result.Reason);
-            Assert.Equal("PARSE_ERROR", result.Error);
             return;
         }
+
+        Assert.Equal(true, testCase.ExpectedCompile);
+        Assert.NotNull(testCase.ExpectedMatch);
 
         Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
         if (testCase.ExpectedMatch.HasValue)
@@ -235,10 +237,7 @@ public partial class FeatureFlagsEvaluatorTests
         var testData = new List<object[]>();
         foreach (var testCase in ReadRegexConformanceFixture().Cases!)
         {
-            if (testCase.ExpectedCompile.HasValue)
-            {
-                testData.Add([testCase]);
-            }
+            testData.Add([testCase]);
         }
 
         return testData;
@@ -347,6 +346,8 @@ public partial class FeatureFlagsEvaluatorTests
 
     public class RegexConformanceCase
     {
+        public string? Contract { get; set; }
+
         public string? Id { get; set; }
 
         public string? RawPattern { get; set; }
