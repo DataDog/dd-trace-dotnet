@@ -14,7 +14,7 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'DataDog/llm-validation-platform'
-    ref: v0.1.0
+    ref: bda782c7e9cb4fa1256d567a487ffce34c9d1cf0   # v0.1.0 (immutable SHA; a tag could be retargeted)
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
@@ -43,7 +43,7 @@ variables:
 
 "llm validation":
   variables:
-    LLMVAL_PLATFORM_REF: "v0.1.0"
+    LLMVAL_PLATFORM_REF: "bda782c7e9cb4fa1256d567a487ffce34c9d1cf0"   # v0.1.0 (must match include ref above)
 
 build-windows-ci-image:
   stage: build
