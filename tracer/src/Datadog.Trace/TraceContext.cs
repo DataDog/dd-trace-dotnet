@@ -391,7 +391,7 @@ namespace Datadog.Trace
                               or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
                               or Sampling.SamplingMechanism.RemoteUserSamplingRule)
                 {
-                    // format with up to 6 decimal digits, no trailing zeros (per RFC)
+                    // Format with up to 6 decimal digits and no trailing zeros.
                     Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("0.######", CultureInfo.InvariantCulture));
                 }
 
@@ -413,8 +413,7 @@ namespace Datadog.Trace
                     // clamp th into the valid 56-bit domain: rate=0.0f rounds up to 2^56, one bit out of range.
                     th = Math.Min(th, (1UL << 56) - 1);
 
-                    // 64<>56-bit imprecision clamp (design doc Decision 2 / RFC §7):
-                    // force agreement between the (rv, th) pair and DD's actual keep/drop decision.
+                    // Ensure (rv, th) agrees with DD's actual keep/drop decision.
                     if (didSample && rv < th)
                     {
                         rv = th;

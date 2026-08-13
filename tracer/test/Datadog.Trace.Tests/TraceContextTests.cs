@@ -222,7 +222,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SetSamplingPriority_RootProbabilityKeep_DerivesRvTh_MatchesRfcWorkedExample()
         {
-            // RFC worked example: trace_id_low64 = 0xfff972474538efff, rate = 0.1
+            // trace_id_low64 = 0xfff972474538efff, rate = 0.1
             // -> ot=rv:ef284ace7a91e1;th:e6666666666668
             var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
 
@@ -265,7 +265,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SetSamplingPriority_ImprecisionClamp_ForcesAgreementWithDdDecision()
         {
-            // RFC §3 example: trace_id_low64 = 0x03a93ee8b1999f00, rate = 0.1 disagrees pre-clamp
+            // trace_id_low64 = 0x03a93ee8b1999f00, rate = 0.1 disagrees before clamping
             var traceIdLower = 0x03a93ee8b1999f00UL;
             var sample = SamplingHelpers.SampleByRate(traceIdLower, 0.1);
             var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower);

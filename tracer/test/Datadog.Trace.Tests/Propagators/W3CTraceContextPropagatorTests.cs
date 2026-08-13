@@ -988,7 +988,7 @@ namespace Datadog.Trace.Tests.Propagators
         public void RootTrace_ProbabilityKeepAtKnownRate_EmitsRfcWorkedExampleOtelTraceState()
         {
             // Simulates a brand-new root trace (no incoming ot=) sampled at rate=0.1
-            // with trace_id_low64 = 0xfff972474538efff, matching the RFC's worked example.
+            // with trace_id_low64 = 0xfff972474538efff.
             var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
 
             traceContext.SetSamplingPriority(
