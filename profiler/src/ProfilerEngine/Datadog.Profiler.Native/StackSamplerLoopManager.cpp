@@ -114,6 +114,16 @@ bool StackSamplerLoopManager::StopImpl()
 
 bool StackSamplerLoopManager::RunWatcher()
 {
+    // StartImpl() returning false resets this service back to State::Init (see
+    // ServiceBase::Start()), and StartServices() happily calls Start() again on any service that
+    // isn't IsStarted() yet (e.g. from OnStartDelayedProfiling(), for SSI's deferred-start path).
+    // So a previous timed-out attempt's watcher thread can still be sitting in _pWatcherThread,
+    // unjoined, when we get here again. Clean it up first: overwriting _pWatcherThread below
+    // while it's still joinable would call std::terminate() in std::thread's destructor. This is
+    // a safe no-op on the common, non-retry path, where _pWatcherThread is still null.
+    ShutdownWatcher();
+    _isWatcherShutdownRequested = false;
+
     std::promise<void> watcherReadyPromise;
     std::future<void> watcherReadyFuture = watcherReadyPromise.get_future();
 
@@ -140,6 +150,17 @@ bool StackSamplerLoopManager::RunWatcher()
 
     Log::Error("StackSamplerLoopManager::RunWatcher - Timed out after ", WatcherStartupTimeout.count(),
                " seconds waiting for the watcher thread to start.");
+
+    // Request the (possibly just slow, not necessarily stuck) thread to shut down as soon as it
+    // does get scheduled, instead of leaving it running unsupervised: StartImpl() having failed
+    // means this service's state is back to Init, so ServiceBase::Stop()'s CAS guard will reject
+    // a Stop() call - StopImpl() (which would otherwise call ShutdownWatcher()) never runs until
+    // either a retried Start() reaches the cleanup above, or this manager is destroyed. Not
+    // joined right here, deliberately: join() could itself hang on a genuinely stuck thread,
+    // which would just move the unbounded-wait problem this timeout exists to avoid onto the
+    // caller of Start() instead.
+    _isWatcherShutdownRequested = true;
+
     return false;
 }
 
