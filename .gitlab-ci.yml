@@ -733,8 +733,6 @@ build:
         throw "Windows build image not found at $env:WINDOWS_BUILD_IMAGE"
       }
 
-      .gitlab/materialize-git-objects.ps1
-
 build-samples-standalone:
   extends: .windows-sample-build
   script:
