@@ -312,6 +312,7 @@ namespace Datadog.Trace.Activity
 
                 spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
                 spanContext.LastParentId = traceState.LastParent;
+                spanContext.OtelTraceState = OtelTraceStateHelpers.Normalize(traceState.OtTraceState);
                 spanContext.PropagatedTags = traceTags;
 
                 List<KeyValuePair<string, string>>? attributes = null;

@@ -132,4 +132,30 @@ public class ActivityTagsTests
             }
         }
     }
+
+    [Fact]
+    public async Task ActivityLink_PreservesOtelTraceState()
+    {
+        var traceId = new Mock<IActivityTraceId>();
+        traceId.Setup(x => x.TraceId).Returns("0af7651916cd43dd8448eb211c80319c");
+        var spanId = new Mock<IActivitySpanId>();
+        spanId.Setup(x => x.SpanId).Returns("00f067aa0ba902b7");
+        var context = new Mock<IActivityContext>();
+        context.Setup(x => x.TraceId).Returns(traceId.Object);
+        context.Setup(x => x.SpanId).Returns(spanId.Object);
+        context.Setup(x => x.TraceState).Returns("dd=s:1,ot=rv:ef284ace7a91e1;th:e6666666666668");
+        var link = new Mock<IActivityLink>();
+        link.Setup(x => x.Context).Returns(context.Object);
+
+        var activity = new Mock<IActivity5>();
+        activity.Setup(x => x.Kind).Returns(ActivityKind.Producer);
+        activity.Setup(x => x.Links).Returns(new object[] { link.Object });
+
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        using var span = tracer.StartSpan("operation", new OpenTelemetryTags());
+
+        OtlpHelpers.UpdateSpanFromActivity(activity.Object, span);
+
+        span.SpanLinks.Should().ContainSingle().Which.Context.OtelTraceState.Should().Be("rv:ef284ace7a91e1;th:e6666666666668");
+    }
 }
