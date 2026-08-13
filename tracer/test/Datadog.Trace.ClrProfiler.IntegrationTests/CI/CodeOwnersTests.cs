@@ -54,6 +54,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [InlineData("/globstar/target", "[\"@globstar-owner\"]")]
         [InlineData("/globstar/one/target", "[\"@globstar-owner\"]")]
         [InlineData("/globstar/one/two/target", "[\"@globstar-owner\"]")]
+        [InlineData("/globstar/one/not-target", "[\"@global-owner1\",\"@global-owner2\"]")]
+        // Leading globstar
+        [InlineData("foo", "[\"@foo-owner\"]")]
+        [InlineData("one/foo", "[\"@foo-owner\"]")]
+        [InlineData("one/two/foo", "[\"@foo-owner\"]")]
+        [InlineData("foo/bar", "[\"@foo-bar-owner\"]")]
+        [InlineData("one/foo/bar", "[\"@foo-bar-owner\"]")]
+        [InlineData("one/two/foo/bar", "[\"@foo-bar-owner\"]")]
+        [InlineData("foobar", "[\"@global-owner1\",\"@global-owner2\"]")]
+        // Trailing globstar
+        [InlineData("abc/file", "[\"@abc-owner\"]")]
+        [InlineData("abc/one/file", "[\"@abc-owner\"]")]
+        [InlineData("abc/one/two/file", "[\"@abc-owner\"]")]
+        [InlineData("abc", "[\"@global-owner1\",\"@global-owner2\"]")]
+        [InlineData("abcd/file", "[\"@global-owner1\",\"@global-owner2\"]")]
         public void CheckGithubCodeOwners(string value, string expected)
         {
             var match = _githubCodeOwners.Match(value);

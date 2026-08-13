@@ -141,7 +141,10 @@ namespace Datadog.Trace.Ci
             var rx = Regex.Escape(pattern);
 
             // A globstar surrounded by slashes matches zero or more directories.
-            rx = rx.Replace("/\\*\\*/", "/(?:[^/]+/)*");
+            rx = rx.Replace("/\\*\\*/", "/(?:.*/)?");
+
+            // A leading globstar followed by a slash also matches at the repository root.
+            rx = rx.Replace("\\*\\*/", "(?:.*/)?");
 
             // Temporary sentinel for ** that we restore after dealing with single *.
             rx = rx.Replace("\\*\\*", "§§DOUBLESTAR§§");
