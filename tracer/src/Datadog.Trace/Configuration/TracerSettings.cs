@@ -282,13 +282,6 @@ namespace Datadog.Trace.Configuration
                     validator: null,
                     converter: uriString => new Uri(uriString));
 
-            OtlpMetricsHeaders = config
-                            .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders)
-                            .AsDictionaryResult(separator: '=')
-                            .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
-                            .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
-                            .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
-
             OtlpMetricsTimeoutMs = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsTimeoutMs)
                             .AsInt32(defaultValue: 10_000);
@@ -334,7 +327,7 @@ namespace Datadog.Trace.Configuration
 
             OtlpLogsHeaders = config
                             .WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
-                            .AsDictionaryResult(separator: '=')
+                            .AsRedactedDictionaryResult(separator: '=')
                             .WithDefault(new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), "[]"))
                             .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
                             .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
@@ -818,6 +811,27 @@ namespace Datadog.Trace.Configuration
                 .WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled)
                 .AsBool(defaultValue: false);
 
+            if (OtelSemanticsEnabled)
+            {
+                // OpenTelemetry semantics mode already fully replaces Datadog attribute naming and values,
+                // so the V1 schema's Datadog-only attributes (e.g. peer.service) must not be layered on top.
+                if (MetadataSchemaVersion != SchemaVersion.V0)
+                {
+                    Log.Warning(
+                        $"{ConfigurationKeys.MetadataSchemaVersion} is set to a version other than v0, but {ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled} is enabled. Using v0 instead.");
+                    MetadataSchemaVersion = SchemaVersion.V0;
+                    telemetry.Record(ConfigurationKeys.MetadataSchemaVersion, "v0", recordValue: true, ConfigurationOrigins.Calculated);
+                }
+
+                if (PeerServiceTagsEnabled)
+                {
+                    Log.Warning(
+                        $"{ConfigurationKeys.PeerServiceDefaultsEnabled} is set to true, but {ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled} is enabled. Using false instead.");
+                    PeerServiceTagsEnabled = false;
+                    telemetry.Record(ConfigurationKeys.PeerServiceDefaultsEnabled, false, ConfigurationOrigins.Calculated);
+                }
+            }
+
             var disabledActivitySources = config.WithKeys(ConfigurationKeys.DisabledActivitySources).AsString();
 
             DisabledActivitySources = !string.IsNullOrEmpty(disabledActivitySources) ? TrimSplitString(disabledActivitySources, commaSeparator) : [];
@@ -959,14 +973,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint"/>
         internal Uri OtlpEndpoint { get; }
-
-        /// <summary>
-        /// Gets the OTLP headers for metrics export with fallback behavior.
-        /// Parsed from comma-separated key-value pairs (api-key=key,other=value).
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpMetricsHeaders"/>
-        /// <seealso cref="ConfigurationKeys.OpenTelemetry.ExporterOtlpHeaders"/>
-        internal IReadOnlyDictionary<string, string> OtlpMetricsHeaders { get; }
 
         /// <summary>
         /// Gets the OpenTelemetry metric export interval (in milliseconds) between export attempts.

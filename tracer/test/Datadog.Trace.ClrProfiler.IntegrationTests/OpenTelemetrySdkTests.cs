@@ -25,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
     [UsesVerify]
+    [Collection(nameof(TestAgentOtlpCollection))]
     public class OpenTelemetrySdkTests : TracingIntegrationTest
     {
         private static readonly string CustomServiceName = "CustomServiceName";

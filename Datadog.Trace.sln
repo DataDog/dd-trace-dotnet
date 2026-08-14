@@ -197,6 +197,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks.Trace", "tracer\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HttpMessageHandler", "tracer\test\test-applications\integrations\Samples.HttpMessageHandler\Samples.HttpMessageHandler.csproj", "{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OpenTelemetry.HttpClient", "tracer\test\test-applications\integrations\Samples.OpenTelemetry.HttpClient\Samples.OpenTelemetry.HttpClient.csproj", "{F70B8946-B02B-47B1-83EB-2258EB353C88}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.OpenTelemetry.WebRequest", "tracer\test\test-applications\integrations\Samples.OpenTelemetry.WebRequest\Samples.OpenTelemetry.WebRequest.csproj", "{8FE5DAF6-B489-4C5D-BB75-09B7E8D5BF64}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test-applications", "test-applications", "{9518425A-36A5-4B8F-B0B8-6137DB88441D}"
 	ProjectSection(SolutionItems) = preProject
 		tracer\test\test-applications\Directory.Build.props = tracer\test\test-applications\Directory.Build.props
@@ -855,6 +859,14 @@ Global
 		{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F70B8946-B02B-47B1-83EB-2258EB353C88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F70B8946-B02B-47B1-83EB-2258EB353C88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F70B8946-B02B-47B1-83EB-2258EB353C88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F70B8946-B02B-47B1-83EB-2258EB353C88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FE5DAF6-B489-4C5D-BB75-09B7E8D5BF64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FE5DAF6-B489-4C5D-BB75-09B7E8D5BF64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FE5DAF6-B489-4C5D-BB75-09B7E8D5BF64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FE5DAF6-B489-4C5D-BB75-09B7E8D5BF64}.Release|Any CPU.Build.0 = Release|Any CPU
 		{91E50134-0E55-4D22-B180-6967174FCE0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{91E50134-0E55-4D22-B180-6967174FCE0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91E50134-0E55-4D22-B180-6967174FCE0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1640,6 +1652,8 @@ Global
 		{C00D8070-A38A-4267-9730-E9985CAE77DF} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{B8D132F6-43E3-44D9-902C-78051DBAD01C} = {E5439139-6F94-44FA-9590-C32FCC1C7A93}
 		{2F3B6271-B9A3-48A3-9DB6-847F3EF41F0A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{F70B8946-B02B-47B1-83EB-2258EB353C88} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{8FE5DAF6-B489-4C5D-BB75-09B7E8D5BF64} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{9518425A-36A5-4B8F-B0B8-6137DB88441D} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{498A300E-D036-49B7-A43D-821D1CAF11A5} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{EFE48691-1FBA-41D5-9BFD-676771973F0C} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
