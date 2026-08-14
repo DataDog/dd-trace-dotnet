@@ -241,6 +241,10 @@ private:
     // traverser is created) while the class histogram continues to work.
     bool _gcDescDisabled = false;
 
+    // Transient platform capability signal, kept separate from _gcDescDisabled:
+    // Linux may retry signal-handler installation at the next dump.
+    bool _faultGuardUnavailable = false;
+
     // Consecutive dumps whose traversal was cut short by memory access faults.
     // A single bad dump is treated as transient; a run of them is not.
     static constexpr uint32_t MaxConsecutiveFaultyDumps = 3;

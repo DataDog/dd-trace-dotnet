@@ -10,14 +10,35 @@
 
 InlineVTCache::InlineVTCache(
     ICorProfilerInfo12* pCorProfilerInfo,
-    IFrameStore* pFrameStore,
     CoreLibModuleProvider* pCoreLibModuleProvider)
     :
     _pCorProfilerInfo(pCorProfilerInfo),
-    _pFrameStore(pFrameStore),
     _pCoreLibModuleProvider(pCoreLibModuleProvider)
 {
-    MemoryFaultGuard::EnsureInstalled();
+}
+
+InlineVTCache::InspectionStatus InlineVTCache::TryContainsGCPointers(
+    ClassID classID,
+    bool& containsPointers)
+{
+    containsPointers = false;
+    MemoryFaultGuard::RunResult result = MemoryFaultGuard::Run(
+        [&containsPointers, classID]
+        {
+            containsPointers = GCDesc::ContainsGCPointers(classID);
+        });
+
+    switch (result)
+    {
+        case MemoryFaultGuard::RunResult::Completed:
+            return InspectionStatus::Completed;
+        case MemoryFaultGuard::RunResult::Faulted:
+            return InspectionStatus::Faulted;
+        case MemoryFaultGuard::RunResult::Unavailable:
+            return InspectionStatus::GuardUnavailable;
+    }
+
+    return InspectionStatus::GuardUnavailable;
 }
 
 const InlineVTCache::InlineVTInfo* InlineVTCache::GetInlineVTInfo(ClassID classID)
@@ -52,8 +73,15 @@ const InlineVTCache::InlineVTInfo* InlineVTCache::GetInlineVTInfo(ClassID classI
     return nullptr;
 }
 
-const InlineVTCache::InlineVTInfo* InlineVTCache::GetOrBuildInlineVTInfo(ClassID classID)
+const InlineVTCache::InlineVTInfo* InlineVTCache::GetOrBuildInlineVTInfo(
+    ClassID classID,
+    InspectionStatus* pStatus)
 {
+    if (pStatus != nullptr)
+    {
+        *pStatus = InspectionStatus::Completed;
+    }
+
     if (classID == 0)
     {
         return nullptr;
@@ -68,8 +96,18 @@ const InlineVTCache::InlineVTInfo* InlineVTCache::GetOrBuildInlineVTInfo(ClassID
     {
         // BuildInlineVTInfo inspects the base types, so it can insert into _cache: it must be
         // called before emplace to avoid reentering it while it is being modified.
-        auto info = BuildInlineVTInfo(classID);
-        it = _cache.emplace(classID, std::move(info)).first;
+        BuildResult result = BuildInlineVTInfo(classID);
+        if (pStatus != nullptr)
+        {
+            *pStatus = result.status;
+        }
+
+        if (result.status != InspectionStatus::Completed)
+        {
+            return nullptr;
+        }
+
+        it = _cache.emplace(classID, std::move(result.info)).first;
     }
 
     return it->second.has_value() ? &it->second.value() : nullptr;
@@ -114,23 +152,34 @@ size_t InlineVTCache::ResolvePendingTypes()
     }
 
     size_t faultedCount = 0;
+    size_t unavailableCount = 0;
 
     for (ClassID classID : pendingClassIDs)
     {
         // Types without inline VTs are cached as "nothing to attribute" so they don't
         // come back in the queue at the next dump.
         //
-        // Guarded one type at a time so that a ClassID which died since the dump costs
-        // its own attribution instead of the process: this thread has no CLR frame to
-        // turn a fault into an exception. The whole inspection is guarded, not just the
-        // MethodTable read, because the metadata calls take the same stale pointer.
-        if (!MemoryFaultGuard::Run([this, classID] { GetOrBuildInlineVTInfo(classID); }))
+        // Raw MethodTable reads are guarded individually inside BuildInlineVTInfo so
+        // ComPtr/vector destructors and cache mutations never sit across a longjmp/SEH
+        // recovery boundary.
+        InspectionStatus status = InspectionStatus::Completed;
+        GetOrBuildInlineVTInfo(classID, &status);
+
+        if (status == InspectionStatus::Faulted)
         {
             faultedCount++;
 
             // Cached as "nothing to attribute" so the next dumps stop at the lookup
             // instead of faulting on this type again, dump after dump.
             _cache.insert_or_assign(classID, std::nullopt);
+        }
+        else if (status == InspectionStatus::GuardUnavailable)
+        {
+            unavailableCount++;
+
+            // Keep the placeholder and retry once fault recovery becomes available.
+            _cache.insert_or_assign(classID, std::nullopt);
+            _pendingClassIDs.insert(classID);
         }
     }
 
@@ -142,7 +191,13 @@ size_t InlineVTCache::ResolvePendingTypes()
                   "not be attributed in the reference tree.");
     }
 
-    return pendingClassIDs.size();
+    if (unavailableCount > 0)
+    {
+        Log::Warn("InlineVTCache: deferred ", unavailableCount, " type inspection(s) because "
+                  "memory fault recovery is unavailable.");
+    }
+
+    return pendingClassIDs.size() - unavailableCount;
 }
 
 ClassID InlineVTCache::ResolveClassIDFromToken(
@@ -226,7 +281,7 @@ bool InlineVTCache::TryGetTypeDefAndMetadata(
     return SUCCEEDED(hr) && pMetadataImport.Get() != nullptr;
 }
 
-std::optional<InlineVTCache::InlineVTInfo> InlineVTCache::BuildInlineVTInfo(ClassID classID)
+InlineVTCache::BuildResult InlineVTCache::BuildInlineVTInfo(ClassID classID)
 {
     ModuleID moduleID = 0;
     mdTypeDef typeDef = mdTokenNil;
@@ -234,24 +289,35 @@ std::optional<InlineVTCache::InlineVTInfo> InlineVTCache::BuildInlineVTInfo(Clas
     std::vector<ClassID> typeArgs;
     ComPtr<IMetaDataImport> pMetadataImport;
 
-    // Deliberately the first thing done with the type: GetClassIDInfo2 (called from here)
-    // is validated by the runtime and fails with an error code for a ClassID it no longer
-    // knows, where the MethodTable read below would fault on freed memory.
+    // Validate the type through profiling APIs before the raw MethodTable read below.
+    // Profiling APIs report invalid ClassIDs through HRESULT, while the raw read would
+    // fault on freed memory.
     if (!TryGetTypeDefAndMetadata(classID, moduleID, typeDef, pMetadataImport, &parentClassID, &typeArgs))
     {
-        return std::nullopt;
+        return {std::nullopt, InspectionStatus::Completed};
     }
 
-    if (!GCDesc::ContainsGCPointers(classID))
+    bool containsPointers = false;
+    InspectionStatus status = TryContainsGCPointers(classID, containsPointers);
+    if (status != InspectionStatus::Completed)
     {
-        return std::nullopt;
+        return {std::nullopt, status};
+    }
+
+    if (!containsPointers)
+    {
+        return {std::nullopt, InspectionStatus::Completed};
     }
 
     // Parent fields sit at lower offsets in the object layout, so collect them first.
-    std::vector<std::pair<ULONG, ClassID>> inlineVtFields;
+    std::vector<InlineVTField> inlineVtFields;
     if (parentClassID != 0)
     {
-        MergeParentInlineVTs(parentClassID, inlineVtFields);
+        status = MergeParentInlineVTs(parentClassID, inlineVtFields);
+        if (status != InspectionStatus::Completed)
+        {
+            return {std::nullopt, status};
+        }
     }
 
     ULONG fieldCount = 0;
@@ -273,11 +339,32 @@ std::optional<InlineVTCache::InlineVTInfo> InlineVTCache::BuildInlineVTInfo(Clas
                 fieldInfo.offset = fieldOffsets[i].ulOffset;
                 fieldInfo.fieldToken = fieldOffsets[i].ridOfField;
 
-                ResolveValueTypeField(fieldInfo, moduleID, pMetadataImport.Get(), typeArgs);
+                status = ResolveValueTypeField(fieldInfo, moduleID, pMetadataImport.Get(), typeArgs);
+                if (status != InspectionStatus::Completed)
+                {
+                    return {std::nullopt, status};
+                }
 
                 if (fieldInfo.isValueType && fieldInfo.valueTypeClassID != 0)
                 {
-                    inlineVtFields.emplace_back(fieldInfo.offset, fieldInfo.valueTypeClassID);
+                    // Keep profiling API calls outside MemoryFaultGuard: on Linux,
+                    // siglongjmp across CLR-owned frames could skip locks or cleanup.
+                    // This ClassID was just resolved by the runtime; invalidation is
+                    // reported through HRESULT.
+                    ULONG valueTypeFieldCount = 0;
+                    ULONG valueTypeSize = 0;
+                    HRESULT valueTypeLayoutHr = _pCorProfilerInfo->GetClassLayout(
+                        fieldInfo.valueTypeClassID,
+                        nullptr,
+                        0,
+                        &valueTypeFieldCount,
+                        &valueTypeSize);
+
+                    if (SUCCEEDED(valueTypeLayoutHr) && valueTypeSize != 0)
+                    {
+                        inlineVtFields.push_back(
+                            {fieldInfo.offset, fieldInfo.valueTypeClassID, valueTypeSize});
+                    }
                 }
             }
         }
@@ -285,15 +372,15 @@ std::optional<InlineVTCache::InlineVTInfo> InlineVTCache::BuildInlineVTInfo(Clas
 
     if (inlineVtFields.empty())
     {
-        return std::nullopt;
+        return {std::nullopt, InspectionStatus::Completed};
     }
 
     InlineVTInfo info;
     info.fields = std::move(inlineVtFields);
-    return info;
+    return {std::optional<InlineVTInfo>{std::move(info)}, InspectionStatus::Completed};
 }
 
-void InlineVTCache::ResolveValueTypeField(
+InlineVTCache::InspectionStatus InlineVTCache::ResolveValueTypeField(
     VTFieldInfo& fieldInfo,
     ModuleID moduleID,
     IMetaDataImport* pMetadataImport,
@@ -301,7 +388,7 @@ void InlineVTCache::ResolveValueTypeField(
 {
     if (pMetadataImport == nullptr || fieldInfo.fieldToken == 0)
     {
-        return;
+        return InspectionStatus::Completed;
     }
 
     PCCOR_SIGNATURE pSignature = nullptr;
@@ -314,7 +401,7 @@ void InlineVTCache::ResolveValueTypeField(
 
     if (FAILED(hr) || pSignature == nullptr || signatureSize < 2)
     {
-        return;
+        return InspectionStatus::Completed;
     }
 
     ULONG idx = 0;
@@ -322,7 +409,7 @@ void InlineVTCache::ResolveValueTypeField(
 
     if (idx >= signatureSize)
     {
-        return;
+        return InspectionStatus::Completed;
     }
 
     while (idx < signatureSize)
@@ -331,8 +418,11 @@ void InlineVTCache::ResolveValueTypeField(
         if (prefix == ELEMENT_TYPE_CMOD_OPT || prefix == ELEMENT_TYPE_CMOD_REQD)
         {
             idx++;
-            mdToken token;
-            idx += CorSigUncompressToken(&pSignature[idx], &token);
+            mdToken token = mdTokenNil;
+            if (!TryUncompressToken(pSignature, signatureSize, idx, token))
+            {
+                return InspectionStatus::Completed;
+            }
             continue;
         }
         if (prefix == ELEMENT_TYPE_PINNED || prefix == ELEMENT_TYPE_BYREF)
@@ -345,7 +435,7 @@ void InlineVTCache::ResolveValueTypeField(
 
     if (idx >= signatureSize)
     {
-        return;
+        return InspectionStatus::Completed;
     }
 
     CorElementType elementType = static_cast<CorElementType>(pSignature[idx]);
@@ -354,12 +444,16 @@ void InlineVTCache::ResolveValueTypeField(
     if (elementType == ELEMENT_TYPE_VAR)
     {
         idx++;
-        if (idx >= signatureSize || typeArgs.empty())
+        if (typeArgs.empty())
         {
-            return;
+            return InspectionStatus::Completed;
         }
-        ULONG varIndex;
-        CorSigUncompressData(&pSignature[idx], &varIndex);
+
+        ULONG varIndex = 0;
+        if (!TryUncompressData(pSignature, signatureSize, idx, varIndex))
+        {
+            return InspectionStatus::Completed;
+        }
 
         if (varIndex < static_cast<ULONG>(typeArgs.size()))
         {
@@ -373,12 +467,11 @@ void InlineVTCache::ResolveValueTypeField(
     else if (elementType == ELEMENT_TYPE_VALUETYPE)
     {
         idx++;
-        if (idx >= signatureSize)
+        mdToken vtToken = mdTokenNil;
+        if (!TryUncompressToken(pSignature, signatureSize, idx, vtToken))
         {
-            return;
+            return InspectionStatus::Completed;
         }
-        mdToken vtToken;
-        idx += CorSigUncompressToken(&pSignature[idx], &vtToken);
 
         valueTypeClassID = ResolveClassIDFromToken(moduleID, vtToken, 0, nullptr);
     }
@@ -386,10 +479,10 @@ void InlineVTCache::ResolveValueTypeField(
     {
         // only embedded generic structs are of interest here:
         // a field of generic reference type is a reference, not an inline value type
-        if ((idx + 1 >= signatureSize) ||
+        if ((signatureSize - idx < 2) ||
             (static_cast<CorElementType>(pSignature[idx + 1]) != ELEMENT_TYPE_VALUETYPE))
         {
-            return;
+            return InspectionStatus::Completed;
         }
 
         valueTypeClassID = ResolveGenericArgClassID(
@@ -398,16 +491,82 @@ void InlineVTCache::ResolveValueTypeField(
 
     if (valueTypeClassID == 0)
     {
-        return;
+        return InspectionStatus::Completed;
     }
 
-    if (!GCDesc::ContainsGCPointers(valueTypeClassID))
+    bool containsPointers = false;
+    InspectionStatus status = TryContainsGCPointers(valueTypeClassID, containsPointers);
+    if (status != InspectionStatus::Completed)
     {
-        return;
+        return status;
+    }
+
+    if (!containsPointers)
+    {
+        return InspectionStatus::Completed;
     }
 
     fieldInfo.isValueType = true;
     fieldInfo.valueTypeClassID = valueTypeClassID;
+    return InspectionStatus::Completed;
+}
+
+bool InlineVTCache::TryUncompressToken(
+    PCCOR_SIGNATURE pSignature,
+    ULONG signatureSize,
+    ULONG& idx,
+    mdToken& token)
+{
+    if (pSignature == nullptr || idx >= signatureSize)
+    {
+        return false;
+    }
+
+    uint32_t consumed = 0;
+    uint32_t remaining = static_cast<uint32_t>(signatureSize - idx);
+    HRESULT hr = CorSigUncompressToken(
+        &pSignature[idx],
+        remaining,
+        &token,
+        &consumed);
+
+    if (FAILED(hr) || consumed == 0 || consumed > remaining)
+    {
+        return false;
+    }
+
+    idx += consumed;
+    return true;
+}
+
+bool InlineVTCache::TryUncompressData(
+    PCCOR_SIGNATURE pSignature,
+    ULONG signatureSize,
+    ULONG& idx,
+    ULONG& value)
+{
+    if (pSignature == nullptr || idx >= signatureSize)
+    {
+        return false;
+    }
+
+    uint32_t decoded = 0;
+    uint32_t consumed = 0;
+    uint32_t remaining = static_cast<uint32_t>(signatureSize - idx);
+    HRESULT hr = CorSigUncompressData(
+        &pSignature[idx],
+        remaining,
+        &decoded,
+        &consumed);
+
+    if (FAILED(hr) || consumed == 0 || consumed > remaining)
+    {
+        return false;
+    }
+
+    value = static_cast<ULONG>(decoded);
+    idx += consumed;
+    return true;
 }
 
 ClassID InlineVTCache::ResolveGenericArgClassID(
@@ -426,7 +585,11 @@ ClassID InlineVTCache::ResolveGenericArgClassID(
     {
         idx++;
         ULONG varIndex = 0;
-        idx += CorSigUncompressData(&pSignature[idx], &varIndex);
+        if (!TryUncompressData(pSignature, signatureSize, idx, varIndex))
+        {
+            return 0;
+        }
+
         if (varIndex >= static_cast<ULONG>(typeArgs.size()) || typeArgs[varIndex] == 0)
         {
             return 0;
@@ -438,7 +601,10 @@ ClassID InlineVTCache::ResolveGenericArgClassID(
     {
         idx++;
         mdToken argToken = mdTokenNil;
-        idx += CorSigUncompressToken(&pSignature[idx], &argToken);
+        if (!TryUncompressToken(pSignature, signatureSize, idx, argToken))
+        {
+            return 0;
+        }
 
         return ResolveClassIDFromToken(moduleID, argToken, 0, nullptr);
     }
@@ -457,19 +623,18 @@ ClassID InlineVTCache::ResolveGenericArgClassID(
         }
 
         idx++;
-        if (idx >= signatureSize)
-        {
-            return 0;
-        }
         mdToken token = mdTokenNil;
-        idx += CorSigUncompressToken(&pSignature[idx], &token);
-
-        if (idx >= signatureSize)
+        if (!TryUncompressToken(pSignature, signatureSize, idx, token))
         {
             return 0;
         }
+
         ULONG nestedArgCount = 0;
-        idx += CorSigUncompressData(&pSignature[idx], &nestedArgCount);
+        if (!TryUncompressData(pSignature, signatureSize, idx, nestedArgCount) ||
+            nestedArgCount > signatureSize - idx)
+        {
+            return 0;
+        }
 
         std::vector<ClassID> nestedArgs;
         nestedArgs.reserve(nestedArgCount);
@@ -570,19 +735,26 @@ ClassID InlineVTCache::ResolvePrimitiveClassID(
     return classID;
 }
 
-void InlineVTCache::MergeParentInlineVTs(
+InlineVTCache::InspectionStatus InlineVTCache::MergeParentInlineVTs(
     ClassID parentClassID,
-    std::vector<std::pair<ULONG, ClassID>>& fields)
+    std::vector<InlineVTField>& fields)
 {
-    const InlineVTInfo* parentInfo = GetOrBuildInlineVTInfo(parentClassID);
+    InspectionStatus status = InspectionStatus::Completed;
+    const InlineVTInfo* parentInfo = GetOrBuildInlineVTInfo(parentClassID, &status);
+    if (status != InspectionStatus::Completed)
+    {
+        return status;
+    }
+
     if (parentInfo == nullptr)
     {
-        return;
+        return InspectionStatus::Completed;
     }
 
     fields.insert(fields.end(),
                   parentInfo->fields.begin(),
                   parentInfo->fields.end());
+    return InspectionStatus::Completed;
 }
 
 bool InlineVTCache::IsClassIDValueType(ClassID classID)
@@ -646,7 +818,7 @@ size_t InlineVTCache::GetMemorySize() const
         total += sizeof(ClassID) + sizeof(std::optional<InlineVTInfo>);
         if (opt.has_value())
         {
-            total += opt->fields.capacity() * sizeof(std::pair<ULONG, ClassID>);
+            total += opt->fields.capacity() * sizeof(InlineVTField);
         }
     }
 

@@ -3,6 +3,10 @@
 
 #pragma once
 
+#include "Log.h"
+
+#include <atomic>
+
 #ifdef _WINDOWS
 #include <Windows.h>
 #else
@@ -23,6 +27,22 @@
 // a later fault would jump into a dead frame.
 namespace MemoryFaultGuard
 {
+enum class RunResult
+{
+    Completed,
+    Faulted,
+    Unavailable
+};
+
+#ifdef DD_TEST
+inline std::atomic<bool> s_forceUnavailableForTests{false};
+
+inline void SetUnavailableForTests(bool unavailable)
+{
+    s_forceUnavailableForTests.store(unavailable, std::memory_order_release);
+}
+#endif
+
 #ifdef _WINDOWS
 namespace details
 {
@@ -113,31 +133,60 @@ inline bool FaultHandler(int /*signal*/, siginfo_t* /*info*/, void* /*context*/)
 } // namespace details
 #endif
 
-// Installs the SIGSEGV/SIGBUS handlers the Linux guard relies on; no-op on Windows,
-// where SEH needs no registration. Call it before the first guarded region, from every
-// component that uses the guard: only the first call does anything.
-inline void EnsureInstalled()
+// Installs the SIGSEGV/SIGBUS handlers the Linux guard relies on; always succeeds on
+// Windows, where SEH needs no registration. Failed Linux registrations are retried by
+// the next caller.
+inline bool EnsureInstalled()
 {
+#ifdef DD_TEST
+    if (s_forceUnavailableForTests.load(std::memory_order_acquire))
+    {
+        return false;
+    }
+#endif
+
 #ifndef _WINDOWS
-    static std::once_flag installed;
-    std::call_once(installed, [] {
-        auto* segv = ProfilerSignalManager::Get(SIGSEGV);
-        if (segv != nullptr)
-        {
-            segv->RegisterHandler(&details::FaultHandler);
-        }
-        auto* bus = ProfilerSignalManager::Get(SIGBUS);
-        if (bus != nullptr)
-        {
-            bus->RegisterHandler(&details::FaultHandler);
-        }
-    });
+    static std::atomic<bool> installed{false};
+    static std::mutex installLock;
+
+    if (installed.load(std::memory_order_acquire))
+    {
+        return true;
+    }
+
+    std::lock_guard lock(installLock);
+    if (installed.load(std::memory_order_relaxed))
+    {
+        return true;
+    }
+
+    auto* segv = ProfilerSignalManager::Get(SIGSEGV);
+    bool segvInstalled = segv != nullptr && segv->RegisterHandler(&details::FaultHandler);
+    if (!segvInstalled)
+    {
+        LogOnce(Error, "MemoryFaultGuard failed to register its SIGSEGV handler. "
+                       "Reference-chain traversal cannot safely recover from memory access faults.");
+    }
+
+    auto* bus = ProfilerSignalManager::Get(SIGBUS);
+    bool busInstalled = bus != nullptr && bus->RegisterHandler(&details::FaultHandler);
+    if (!busInstalled)
+    {
+        LogOnce(Error, "MemoryFaultGuard failed to register its SIGBUS handler. "
+                       "Reference-chain traversal cannot safely recover from memory access faults.");
+    }
+
+    bool success = segvInstalled && busInstalled;
+    installed.store(success, std::memory_order_release);
+    return success;
+#else
+    return true;
 #endif
 }
 
 // Runs body under the platform memory access fault guard: SEH on Windows, a
-// SIGSEGV/SIGBUS handler plus siglongjmp on Linux. Returns false when a fault was
-// recovered from, leaving the caller to decide what that means.
+// SIGSEGV/SIGBUS handler plus siglongjmp on Linux. The body is not invoked when the
+// Linux handlers are unavailable.
 //
 // C++ exceptions are deliberately NOT caught here: they are not memory faults, and the
 // callers do not treat them the same way.
@@ -148,8 +197,13 @@ inline void EnsureInstalled()
 // cannot be honoured, the caller must be able to live with leaking what the faulting
 // call stack held.
 template <typename TBody>
-bool Run(TBody&& body)
+RunResult Run(TBody&& body)
 {
+    if (!EnsureInstalled())
+    {
+        return RunResult::Unavailable;
+    }
+
     // This function must itself declare no local requiring C++ unwinding, on Windows
     // because MSVC rejects it in a function using __try, on Linux because siglongjmp
     // would skip it. (InGuardedRegionScope below is the one exception: it is there
@@ -162,20 +216,20 @@ bool Run(TBody&& body)
     }
     __except (details::MemoryFaultFilter(GetExceptionCode()))
     {
-        return false;
+        return RunResult::Faulted;
     }
 #else
     if (sigsetjmp(details::t_jmpBuf, 0) != 0)
     {
         details::UnblockFaultSignals();
         details::t_inGuardedRegion = 0;
-        return false;
+        return RunResult::Faulted;
     }
 
     details::InGuardedRegionScope guardScope;
     body();
 #endif
 
-    return true;
+    return RunResult::Completed;
 }
 } // namespace MemoryFaultGuard

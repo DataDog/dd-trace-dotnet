@@ -29,6 +29,14 @@ class IFrameStore;
 class ReferenceChainTraverser
 {
 public:
+    enum class TraversalStopReason
+    {
+        None,
+        FaultBudgetExhausted,
+        UnexpectedException,
+        FaultGuardUnavailable
+    };
+
     struct TraversalFrame
     {
         uintptr_t objectAddress;
@@ -67,10 +75,18 @@ public:
     // layout being wrong -- so it is tracked separately from IsGCDescTrusted().
     uint32_t GetFaultCount() const { return _faultCount; }
 
-    // True once memory access faults have exhausted the per-dump budget. When set,
-    // traversal stops for the rest of this dump only; the next dump gets a fresh
-    // traverser (and a fresh budget) unless the manager decides otherwise.
-    bool WasAbortedByFaults() const { return _faultBudgetExhausted; }
+    TraversalStopReason GetStopReason() const { return _stopReason; }
+
+    // True only when memory access faults exhausted the per-dump budget.
+    bool WasAbortedByFaults() const
+    {
+        return _stopReason == TraversalStopReason::FaultBudgetExhausted;
+    }
+
+    bool WasAbortedByException() const
+    {
+        return _stopReason == TraversalStopReason::UnexpectedException;
+    }
 
 #ifdef DD_TEST
     // Unit tests only: perform a guarded read of one byte from ptr using the same
@@ -89,7 +105,8 @@ private:
     void TraverseFromSingleRootCore(const RootInfo& root);
 
     // Runs body under MemoryFaultGuard and counts the faults it recovers from.
-    // Returns false when body faulted, in which case OnTraversalFault has already run.
+    // Returns false when the body faulted or fault recovery was unavailable; the
+    // corresponding traversal stop handler has already run.
     //
     // C++ exceptions are deliberately NOT caught: they propagate to
     // TraverseFromSingleRoot, the single place that decides what an unexpected
@@ -167,6 +184,10 @@ private:
 
     void OnTraversalFault();
 
+    // Fault recovery is unavailable. The guarded body was not executed, so stop the
+    // dump without counting this as a recovered memory access fault.
+    void OnFaultGuardUnavailable();
+
     // A C++ exception escaped the traversal. Unlike a memory access fault this is not
     // a data-level event, so it stops the dump instead of being counted and retried.
     void OnTraversalAborted();
@@ -225,5 +246,5 @@ private:
     // taken while the runtime is suspended. This never disables the reader itself.
     static constexpr uint32_t MaxFaultsPerDump = 16;
     uint32_t _faultCount = 0;
-    bool _faultBudgetExhausted = false;
+    TraversalStopReason _stopReason = TraversalStopReason::None;
 };

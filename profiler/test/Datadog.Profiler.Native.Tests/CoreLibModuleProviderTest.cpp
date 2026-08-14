@@ -75,18 +75,17 @@ TEST(CoreLibModuleProviderTest, ResolveTypeDoesNothingBeforeTheCoreLibraryIsLoad
     ASSERT_TRUE(profilerInfo.ResolvedTokens.empty());
 }
 
-TEST(CoreLibModuleProviderTest, TryGetMetadataFailsBeforeTheCoreLibraryIsLoaded)
+TEST(CoreLibModuleProviderTest, GetMetadataFailsBeforeTheCoreLibraryIsLoaded)
 {
     CoreLibMockProfilerInfo profilerInfo;
 
     CoreLibModuleProvider provider(&profilerInfo);
 
-    ComPtr<IMetaDataImport2> metadataImport;
-    ASSERT_FALSE(provider.TryGetMetadata(metadataImport.GetAddressOf()));
+    ASSERT_FALSE(provider.GetMetadata());
     ASSERT_TRUE(profilerInfo.MetadataRequests.empty());
 }
 
-TEST(CoreLibModuleProviderTest, ResolveTypeLooksUpTheCoreLibraryModule)
+TEST(CoreLibModuleProviderTest, ResolveTypeRetriesAfterMetadataFailure)
 {
     CoreLibMockProfilerInfo profilerInfo;
     profilerInfo.AddModule(CoreLibModuleId, WStr("System.Private.CoreLib"));
@@ -100,7 +99,8 @@ TEST(CoreLibModuleProviderTest, ResolveTypeLooksUpTheCoreLibraryModule)
     ASSERT_EQ(static_cast<size_t>(1), profilerInfo.MetadataRequests.size());
     ASSERT_EQ(CoreLibModuleId, profilerInfo.MetadataRequests[0]);
 
-    // the same type is not looked up twice
+    // A failed lookup is not cached: metadata may become available later.
     ASSERT_EQ(static_cast<ClassID>(0), provider.ResolveTypeInCoreLib(WStr("System.Int32")));
-    ASSERT_EQ(static_cast<size_t>(1), profilerInfo.MetadataRequests.size());
+    ASSERT_EQ(static_cast<size_t>(2), profilerInfo.MetadataRequests.size());
+    ASSERT_EQ(CoreLibModuleId, profilerInfo.MetadataRequests[1]);
 }

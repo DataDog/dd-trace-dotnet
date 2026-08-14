@@ -11,6 +11,7 @@
 #include "VisitedObjectSet.h"
 #include "IFrameStore.h"
 #include "GCDescReader.h"
+#include "MemoryFaultGuard.h"
 
 #include <cstdint>
 #include <cstring>
@@ -134,6 +135,23 @@ public:
 
 private:
     std::unordered_map<uintptr_t, std::pair<ClassID, SIZE_T>> _objects;
+};
+
+class LayoutCountingGraphMockProfiler : public GraphMockProfiler
+{
+public:
+    HRESULT STDMETHODCALLTYPE GetClassLayout(
+        ClassID,
+        COR_FIELD_OFFSET[],
+        ULONG,
+        ULONG*,
+        ULONG*) override
+    {
+        GetClassLayoutCallCount++;
+        return E_FAIL;
+    }
+
+    size_t GetClassLayoutCallCount = 0;
 };
 
 // Throws from a profiling API call made deep inside the guarded traversal. Stands in for
@@ -334,17 +352,97 @@ TEST(ReferenceChainTraverserFaultTest, ExceptionEscapingTheGuardAbortsTheDumpWit
     ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
     NullFrameStore frameStore;
     TypeReferenceTree tree;
-    InlineVTCache vtCache(pInfo, &frameStore, nullptr);
+    InlineVTCache vtCache(pInfo, nullptr);
     ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
 
     EXPECT_NO_THROW(traverser.TraverseFromSingleRoot(graph.GetRoot()));
 
-    EXPECT_TRUE(traverser.WasAbortedByFaults());
+    EXPECT_FALSE(traverser.WasAbortedByFaults());
+    EXPECT_TRUE(traverser.WasAbortedByException());
+    EXPECT_EQ(
+        traverser.GetStopReason(),
+        ReferenceChainTraverser::TraversalStopReason::UnexpectedException);
     EXPECT_EQ(traverser.GetFaultCount(), 0u);
     EXPECT_TRUE(traverser.IsGCDescTrusted());
 }
 
 #if defined(DD_TEST)
+
+namespace
+{
+class ScopedUnavailableFaultGuard
+{
+public:
+    ScopedUnavailableFaultGuard()
+    {
+        MemoryFaultGuard::SetUnavailableForTests(true);
+    }
+
+    ~ScopedUnavailableFaultGuard()
+    {
+        MemoryFaultGuard::SetUnavailableForTests(false);
+    }
+};
+} // namespace
+
+TEST(ReferenceChainTraverserFaultTest, UnavailableFaultGuardStopsWithoutExecutingTheRead)
+{
+    ScopedUnavailableFaultGuard unavailable;
+
+    TraversalFaultMockProfiler profiler;
+    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
+    NullFrameStore frameStore;
+    TypeReferenceTree tree;
+    InlineVTCache vtCache(pInfo, nullptr);
+    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+
+    traverser.Test_FaultReadUnderGuard(nullptr);
+
+    EXPECT_EQ(traverser.GetFaultCount(), 0u);
+    EXPECT_FALSE(traverser.WasAbortedByFaults());
+    EXPECT_EQ(
+        traverser.GetStopReason(),
+        ReferenceChainTraverser::TraversalStopReason::FaultGuardUnavailable);
+}
+
+TEST(ReferenceChainTraverserFaultTest, CachedInlineValueTypeSizeAvoidsTraversalLayoutCalls)
+{
+    alignas(64) std::uint8_t rootMt[4096]{};
+    alignas(64) std::uint8_t valueTypeMt[4096]{};
+    alignas(64) std::uint8_t childMt[4096]{};
+    alignas(8) std::uint8_t rootObj[64]{};
+    alignas(8) std::uint8_t childObj[16]{};
+
+    ClassID rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), 1, 64);
+    ClassID valueTypeClass = BuildFakeMethodTableWithRefs(valueTypeMt, sizeof(valueTypeMt), 1, sizeof(void*));
+    ClassID childClass = BuildFakeMethodTableNoPointers(childMt, sizeof(childMt));
+    uintptr_t childAddress = reinterpret_cast<uintptr_t>(childObj);
+    *reinterpret_cast<uintptr_t*>(rootObj) = childAddress;
+
+    LayoutCountingGraphMockProfiler profiler;
+    profiler.AddObject(childAddress, childClass, sizeof(childObj));
+
+    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
+    NullFrameStore frameStore;
+    TypeReferenceTree tree;
+    InlineVTCache vtCache(pInfo, nullptr);
+    InlineVTCache::InlineVTInfo valueTypes;
+    valueTypes.fields.push_back({0, valueTypeClass, static_cast<ULONG>(sizeof(void*))});
+    vtCache.SetInlineVTInfoForTests(rootClass, std::move(valueTypes));
+
+    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    RootInfo root(reinterpret_cast<uintptr_t>(rootObj), RootCategory::Stack, rootClass, sizeof(rootObj));
+    traverser.TraverseFromSingleRoot(root);
+
+    EXPECT_EQ(profiler.GetClassLayoutCallCount, 0u);
+
+    RootKey key{rootClass, RootCategory::Stack};
+    auto rootIt = tree._roots.find(key);
+    ASSERT_NE(rootIt, tree._roots.end());
+    const TypeTreeNode* valueTypeNode = rootIt->second->node.GetChild(valueTypeClass);
+    ASSERT_NE(valueTypeNode, nullptr);
+    ASSERT_NE(valueTypeNode->GetChild(childClass), nullptr);
+}
 
 // The guard only recovers from memory access faults, so a C++ exception must pass straight
 // through it. On Windows that means the SEH filter no longer swallows exception code
@@ -359,7 +457,7 @@ TEST(ReferenceChainTraverserFaultTest, ExceptionUnderGuardPropagatesAndLeavesThe
     ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
     NullFrameStore frameStore;
     TypeReferenceTree tree;
-    InlineVTCache vtCache(pInfo, &frameStore, nullptr);
+    InlineVTCache vtCache(pInfo, nullptr);
     ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
 
     EXPECT_THROW(traverser.Test_ThrowUnderGuard(), std::runtime_error);
@@ -385,7 +483,7 @@ TEST(ReferenceChainTraverserFaultTest, TestFaultReadUnderGuardIncrementsFaultCou
     ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
     NullFrameStore frameStore;
     TypeReferenceTree tree;
-    InlineVTCache vtCache(pInfo, &frameStore, nullptr);
+    InlineVTCache vtCache(pInfo, nullptr);
     ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
 
     ASSERT_TRUE(traverser.IsGCDescTrusted());
@@ -413,7 +511,7 @@ TEST(ReferenceChainTraverserFaultTest, TraverseFromSingleRootFaultKeepsGCDescTru
     ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
     NullFrameStore frameStore;
     TypeReferenceTree tree;
-    InlineVTCache vtCache(pInfo, &frameStore, nullptr);
+    InlineVTCache vtCache(pInfo, nullptr);
     ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
 
     RootInfo root(reinterpret_cast<uintptr_t>(badPage), RootCategory::Stack, fakeClass, 64);
@@ -471,7 +569,7 @@ TEST(ReferenceChainTraverserFaultTest, TraversalResumesAfterFault)
     ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
     NullFrameStore frameStore;
     TypeReferenceTree tree;
-    InlineVTCache vtCache(pInfo, &frameStore, nullptr);
+    InlineVTCache vtCache(pInfo, nullptr);
     ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
 
     RootInfo root(reinterpret_cast<uintptr_t>(rootObj), RootCategory::Stack, rootClass, 64);
@@ -505,7 +603,7 @@ TEST(ReferenceChainTraverserFaultTest, FaultBudgetStopsDumpWithoutDistrustingGCD
     ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
     NullFrameStore frameStore;
     TypeReferenceTree tree;
-    InlineVTCache vtCache(pInfo, &frameStore, nullptr);
+    InlineVTCache vtCache(pInfo, nullptr);
     ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
 
     // Drive enough faults to exhaust the per-dump budget (MaxFaultsPerDump == 16).
@@ -537,7 +635,7 @@ TEST(ReferenceChainTraverserFaultTest, SelfTestFailureStillDisablesPermanently)
     ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
     NullFrameStore frameStore;
     TypeReferenceTree tree;
-    InlineVTCache vtCache(pInfo, &frameStore, nullptr);
+    InlineVTCache vtCache(pInfo, nullptr);
     ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
 
     ASSERT_TRUE(traverser.IsGCDescTrusted());

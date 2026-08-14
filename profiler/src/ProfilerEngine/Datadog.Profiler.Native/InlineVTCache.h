@@ -5,7 +5,6 @@
 
 #include "cor.h"
 #include "corprof.h"
-#include "IFrameStore.h"
 #include "GCDescReader.h"
 
 #include "shared/src/native-src/com_ptr.h"
@@ -14,6 +13,7 @@
 #include <optional>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 struct COR_FIELD_OFFSET;
@@ -47,14 +47,20 @@ struct VTFieldInfo
 class InlineVTCache
 {
 public:
+    struct InlineVTField
+    {
+        ULONG offset = 0;
+        ClassID classID = 0;
+        ULONG size = 0;
+    };
+
     struct InlineVTInfo
     {
-        std::vector<std::pair<ULONG, ClassID>> fields;
+        std::vector<InlineVTField> fields;
     };
 
     InlineVTCache(
         ICorProfilerInfo12* pCorProfilerInfo,
-        IFrameStore* pFrameStore,
         CoreLibModuleProvider* pCoreLibModuleProvider);
 
     // Returns non-null only for types with inline VT fields containing GC refs.
@@ -131,11 +137,29 @@ public:
     }
 
 private:
-    std::optional<InlineVTInfo> BuildInlineVTInfo(ClassID classID);
+    enum class InspectionStatus
+    {
+        Completed,
+        Faulted,
+        GuardUnavailable
+    };
+
+    struct BuildResult
+    {
+        std::optional<InlineVTInfo> info;
+        InspectionStatus status = InspectionStatus::Completed;
+    };
+
+    BuildResult BuildInlineVTInfo(ClassID classID);
 
     // Same as GetInlineVTInfo but inspects the type when it is not cached yet.
     // Only callable outside of the heap dump GC (see ResolvePendingTypes).
-    const InlineVTInfo* GetOrBuildInlineVTInfo(ClassID classID);
+    const InlineVTInfo* GetOrBuildInlineVTInfo(
+        ClassID classID,
+        InspectionStatus* pStatus = nullptr);
+
+    // Fault-guarded raw MethodTable read. The guarded body owns no RAII object.
+    static InspectionStatus TryContainsGCPointers(ClassID classID, bool& containsPointers);
 
     // Get the type definition of the given type and the metadata of the module defining it.
     // The parent class and the generic arguments are also returned when asked for.
@@ -153,14 +177,15 @@ private:
     //  - ELEMENT_TYPE_VAR (generic type parameters, e.g. AsyncStateMachineBox<T>)
     //  - ELEMENT_TYPE_VALUETYPE (non-generic embedded structs)
     //  - ELEMENT_TYPE_GENERICINST with ELEMENT_TYPE_VALUETYPE base (generic VTs)
-    void ResolveValueTypeField(
+    InspectionStatus ResolveValueTypeField(
         VTFieldInfo& fieldInfo,
         ModuleID moduleID,
         IMetaDataImport* pMetadataImport,
         const std::vector<ClassID>& typeArgs);
 
-    void MergeParentInlineVTs(ClassID parentClassID,
-                              std::vector<std::pair<ULONG, ClassID>>& fields);
+    InspectionStatus MergeParentInlineVTs(
+        ClassID parentClassID,
+        std::vector<InlineVTField>& fields);
 
     // Check whether a ClassID resolves to a value type (as opposed to a reference type).
     // Uses the GCDesc::ContainsGCPointers flag and metadata inspection.
@@ -180,6 +205,19 @@ private:
 #ifdef DD_TEST
 public:
 #endif
+    // Bounds-checked signature helpers. Public in tests to exercise malformed blobs.
+    static bool TryUncompressToken(
+        PCCOR_SIGNATURE pSignature,
+        ULONG signatureSize,
+        ULONG& idx,
+        mdToken& token);
+
+    static bool TryUncompressData(
+        PCCOR_SIGNATURE pSignature,
+        ULONG signatureSize,
+        ULONG& idx,
+        ULONG& value);
+
     // The single place where a signature token is handed to the runtime.
     // Only mdTypeDef tokens are accepted: GetClassFromTokenAndTypeArgs expects a type
     // DEFINED in the given module and triggers a failing type load (raising the CLR
@@ -200,10 +238,16 @@ public:
         IMetaDataImport* pMetadataImport);
 
 #ifdef DD_TEST
+    void SetInlineVTInfoForTests(ClassID classID, InlineVTInfo info)
+    {
+        _cache.insert_or_assign(classID, std::move(info));
+    }
+#endif
+
+#ifdef DD_TEST
 private:
 #endif
     ICorProfilerInfo12* _pCorProfilerInfo;
-    IFrameStore* _pFrameStore;
     CoreLibModuleProvider* _pCoreLibModuleProvider;
 
     // Cache: ClassID -> optional<InlineVTInfo>.

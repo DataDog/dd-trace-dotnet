@@ -40,9 +40,10 @@ public:
     // Returns 0 until the core library has been loaded.
     ModuleID GetModuleId() const;
 
-    // Lazily opens the core library metadata. The returned interface is AddRef'ed.
-    // Returns false when the core library is not loaded yet or metadata is unavailable.
-    bool TryGetMetadata(IMetaDataImport2** ppMetadataImport);
+    // Lazily opens the core library metadata. The returned ComPtr owns an AddRef.
+    // Returns an empty ComPtr when the core library is not loaded yet or metadata
+    // is unavailable.
+    ComPtr<IMetaDataImport2> GetMetadata();
 
     // Resolves a type defined in the core library (e.g. WStr("System.Int32")) to its ClassID.
     // Returns 0 when the core library is not loaded yet or when the type cannot be resolved.

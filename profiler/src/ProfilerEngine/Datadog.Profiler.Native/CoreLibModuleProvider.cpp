@@ -7,6 +7,8 @@
 #include "HResultConverter.h"
 #include "Log.h"
 
+#include <utility>
+
 CoreLibModuleProvider::CoreLibModuleProvider(ICorProfilerInfo4* pCorProfilerInfo) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _moduleId{0}
@@ -48,24 +50,16 @@ ModuleID CoreLibModuleProvider::GetModuleId() const
     return _moduleId.load(std::memory_order_acquire);
 }
 
-bool CoreLibModuleProvider::TryGetMetadata(IMetaDataImport2** ppMetadataImport)
+ComPtr<IMetaDataImport2> CoreLibModuleProvider::GetMetadata()
 {
-    if (ppMetadataImport == nullptr)
-    {
-        return false;
-    }
-
-    *ppMetadataImport = nullptr;
-
     std::lock_guard<std::mutex> lock(_lock);
 
     if (GetMetadataNoLock() == nullptr)
     {
-        return false;
+        return {};
     }
 
-    _pMetadataImport.CopyTo(ppMetadataImport);
-    return true;
+    return _pMetadataImport;
 }
 
 ClassID CoreLibModuleProvider::ResolveTypeInCoreLib(const WCHAR* fullTypeName)
@@ -92,8 +86,10 @@ ClassID CoreLibModuleProvider::ResolveTypeInCoreLib(const WCHAR* fullTypeName)
 
     ClassID classId = ResolveTypeNoLock(moduleId, fullTypeName);
 
-    // Failures are cached too: a type missing from the core library will never show up later.
-    _resolvedTypes[typeName] = classId;
+    if (classId != 0)
+    {
+        _resolvedTypes.emplace(std::move(typeName), classId);
+    }
 
     return classId;
 }

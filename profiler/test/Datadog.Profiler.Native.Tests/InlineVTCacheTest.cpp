@@ -26,12 +26,11 @@ constexpr mdToken TypeDefToken = 0x02000005;  // mdtTypeDef
 constexpr mdToken TypeRefToken = 0x010000b8;  // mdtTypeRef: the one that used to crash
 constexpr mdToken TypeSpecToken = 0x1b000001; // mdtTypeSpec
 
-// InlineVTCache only needs the ICorProfilerInfo4 part of the interface for these tests
-// and never dereferences the frame store.
+// InlineVTCache only needs the ICorProfilerInfo4 part of the interface for these tests.
 InlineVTCache CreateCache(CoreLibMockProfilerInfo& profilerInfo, CoreLibModuleProvider* pProvider)
 {
     auto* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profilerInfo));
-    return InlineVTCache(pInfo, nullptr, pProvider);
+    return InlineVTCache(pInfo, pProvider);
 }
 
 // A ClassID is the address of the MethodTable of the type: the cache reads its first DWORD to
@@ -105,6 +104,58 @@ TEST(InlineVTCacheTest, FailedTypeDefResolutionReturnsNoClass)
     auto cache = CreateCache(profilerInfo, nullptr);
 
     ASSERT_EQ(static_cast<ClassID>(0), cache.ResolveClassIDFromToken(ApplicationModuleId, TypeDefToken, 0, nullptr));
+}
+
+TEST(InlineVTCacheTest, BoundedSignatureHelpersDecodeValidValues)
+{
+    constexpr COR_SIGNATURE tokenSignature[] = {0x14}; // TypeDef rid 5
+    ULONG tokenIdx = 0;
+    mdToken token = mdTokenNil;
+
+    ASSERT_TRUE(InlineVTCache::TryUncompressToken(
+        tokenSignature,
+        static_cast<ULONG>(sizeof(tokenSignature)),
+        tokenIdx,
+        token));
+    ASSERT_EQ(TypeDefToken, token);
+    ASSERT_EQ(static_cast<ULONG>(1), tokenIdx);
+
+    constexpr COR_SIGNATURE dataSignature[] = {0x7f};
+    ULONG dataIdx = 0;
+    ULONG data = 0;
+
+    ASSERT_TRUE(InlineVTCache::TryUncompressData(
+        dataSignature,
+        static_cast<ULONG>(sizeof(dataSignature)),
+        dataIdx,
+        data));
+    ASSERT_EQ(static_cast<ULONG>(0x7f), data);
+    ASSERT_EQ(static_cast<ULONG>(1), dataIdx);
+}
+
+TEST(InlineVTCacheTest, BoundedSignatureHelpersRejectTruncatedValues)
+{
+    constexpr COR_SIGNATURE truncatedTwoByte[] = {0x80};
+    ULONG tokenIdx = 0;
+    mdToken token = mdTokenNil;
+
+    ASSERT_FALSE(InlineVTCache::TryUncompressToken(
+        truncatedTwoByte,
+        static_cast<ULONG>(sizeof(truncatedTwoByte)),
+        tokenIdx,
+        token));
+    ASSERT_EQ(static_cast<ULONG>(0), tokenIdx);
+
+    constexpr COR_SIGNATURE truncatedFourByte[] = {0xc0, 0x00};
+    ULONG dataIdx = 0;
+    ULONG data = 0;
+
+    ASSERT_FALSE(InlineVTCache::TryUncompressData(
+        truncatedFourByte,
+        static_cast<ULONG>(sizeof(truncatedFourByte)),
+        dataIdx,
+        data));
+    ASSERT_EQ(static_cast<ULONG>(0), dataIdx);
 }
 
 TEST(InlineVTCacheTest, PrimitiveTypeIsResolvedInTheCoreLibraryModule)

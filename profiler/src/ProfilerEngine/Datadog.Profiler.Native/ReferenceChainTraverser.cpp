@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "ReferenceChainTraverser.h"
+#include "IFrameStore.h"
 #include "Log.h"
 #include "MemoryFaultGuard.h"
 #include "OpSysTools.h"
@@ -24,18 +25,26 @@ ReferenceChainTraverser::ReferenceChainTraverser(
       _objectsTraversed(0),
       _rootsProcessed(0)
 {
-    MemoryFaultGuard::EnsureInstalled();
 }
 
 template <typename TBody>
 bool ReferenceChainTraverser::RunGuarded(TBody&& body)
 {
-    if (MemoryFaultGuard::Run(std::forward<TBody>(body)))
+    MemoryFaultGuard::RunResult result = MemoryFaultGuard::Run(std::forward<TBody>(body));
+    if (result == MemoryFaultGuard::RunResult::Completed)
     {
         return true;
     }
 
-    OnTraversalFault();
+    if (result == MemoryFaultGuard::RunResult::Faulted)
+    {
+        OnTraversalFault();
+    }
+    else
+    {
+        OnFaultGuardUnavailable();
+    }
+
     return false;
 }
 
@@ -63,7 +72,7 @@ void ReferenceChainTraverser::TraverseFromSingleRootCore(const RootInfo& root)
     // If the GCDesc reader failed its self-test, skip all GCDesc-based traversal
     // (permanent). If faults have exhausted the per-dump budget, skip the rest of
     // this dump (transient). The class histogram does not depend on this path.
-    if (!_gcDescTrusted || _faultBudgetExhausted)
+    if (!_gcDescTrusted || _stopReason != TraversalStopReason::None)
     {
         return;
     }
@@ -83,7 +92,9 @@ void ReferenceChainTraverser::TraverseFromSingleRootCore(const RootInfo& root)
     // faulting frame has already been popped (the drain pops before it scans), so
     // re-entering picks up at the next unscanned frame. We only lose the remaining
     // references of the single object that faulted, not the whole root subgraph.
-    while (!_traversalStack.empty() && _gcDescTrusted && !_faultBudgetExhausted)
+    while (!_traversalStack.empty() &&
+           _gcDescTrusted &&
+           _stopReason == TraversalStopReason::None)
     {
         uint32_t faultsBeforeDrain = _faultCount;
         uint64_t objectsBeforeDrain = _objectsTraversed;
@@ -144,7 +155,7 @@ void ReferenceChainTraverser::OnTraversalFault()
     _faultCount++;
     if (_faultCount >= MaxFaultsPerDump)
     {
-        _faultBudgetExhausted = true;
+        _stopReason = TraversalStopReason::FaultBudgetExhausted;
     }
 
     // The interrupted insert may have written an address into the visited set
@@ -158,12 +169,23 @@ void ReferenceChainTraverser::OnTraversalFault()
             "See the per-dump fault count in the traversal statistics.");
 }
 
+void ReferenceChainTraverser::OnFaultGuardUnavailable()
+{
+    _stopReason = TraversalStopReason::FaultGuardUnavailable;
+    _visited.MarkPossiblyInconsistent();
+
+    LogOnce(Error,
+            "Reference-chain traversal cannot start because memory fault recovery is unavailable. "
+            "Traversal is skipped for the rest of this heap snapshot. "
+            "The class histogram is unaffected.");
+}
+
 void ReferenceChainTraverser::OnTraversalAborted()
 {
     // Something threw rather than faulted, so retrying makes no sense: stop traversing
     // for the rest of this dump. As with a fault, this says nothing about whether the
     // GCDesc/MethodTable layout model is correct, so _gcDescTrusted stays untouched.
-    _faultBudgetExhausted = true;
+    _stopReason = TraversalStopReason::UnexpectedException;
 
     // The traversal was interrupted at an arbitrary point, so the visited set may hold
     // an address whose bucket was never recorded in _dirtyIndices.
@@ -193,7 +215,7 @@ void ReferenceChainTraverser::LogPendingSelfTestFailure()
 #ifdef DD_TEST
 void ReferenceChainTraverser::Test_FaultReadUnderGuard(const volatile void* ptr)
 {
-    if (!_gcDescTrusted || _faultBudgetExhausted)
+    if (!_gcDescTrusted || _stopReason != TraversalStopReason::None)
     {
         return;
     }
@@ -217,12 +239,28 @@ void ReferenceChainTraverser::LogStats() const
 
     auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(_totalTraversalDuration).count();
 
+    const char* stopDescription = "";
+    switch (_stopReason)
+    {
+        case TraversalStopReason::FaultBudgetExhausted:
+            stopDescription = " (fault budget exhausted; traversal aborted for this dump)";
+            break;
+        case TraversalStopReason::UnexpectedException:
+            stopDescription = " (unexpected exception; traversal aborted for this dump)";
+            break;
+        case TraversalStopReason::FaultGuardUnavailable:
+            stopDescription = " (memory fault recovery unavailable; traversal aborted for this dump)";
+            break;
+        case TraversalStopReason::None:
+            break;
+    }
+
     Log::Debug("Reference chain traversal completed in ", durationMs, "ms: ",
               _rootsProcessed, " roots, ",
               _objectsTraversed, " objects traversed, ",
               "stack high watermark: ", _traversalStackHighWatermark, ", ",
               "memory access faults: ", _faultCount,
-              (_faultBudgetExhausted ? " (fault budget exhausted; traversal aborted for this dump)" : ""));
+              stopDescription);
 
     Log::Debug("  VisitedObjectSet: ",
               _visited.Size(), " current / ",
@@ -500,7 +538,7 @@ void ReferenceChainTraverser::AddInlineValueTypeInstances(TypeTreeNode* currentN
 {
     for (const auto& field : vtInfo.fields)
     {
-        ClassID vtClassID = field.second;
+        ClassID vtClassID = field.classID;
         TypeTreeNode* vtNode = currentNode->GetOrCreateChild(vtClassID);
         vtNode->AddInstance(0);
 
@@ -519,25 +557,22 @@ ReferenceChainTraverser::InlineVTOwner ReferenceChainTraverser::GetInlineValueTy
     const InlineVTCache::InlineVTInfo& vtInfo,
     ULONG baseOffset)
 {
-    for (const auto& [vtOffset, vtClassID] : vtInfo.fields)
+    for (const auto& field : vtInfo.fields)
     {
-        ULONG vtStart = baseOffset + vtOffset;
-        ULONG fieldCount = 0;
-        ULONG vtSize = 0;
-        HRESULT hr = _pCorProfilerInfo->GetClassLayout(vtClassID, nullptr, 0, &fieldCount, &vtSize);
-        if (FAILED(hr) || vtSize == 0)
+        ULONG vtStart = baseOffset + field.offset;
+        if (vtStart < baseOffset)
         {
             continue;
         }
 
-        if (refOffset < vtStart || refOffset >= vtStart + vtSize)
+        if (refOffset < vtStart || refOffset - vtStart >= field.size)
         {
             continue;
         }
 
-        TypeTreeNode* vtNode = currentNode->GetOrCreateChild(vtClassID);
+        TypeTreeNode* vtNode = currentNode->GetOrCreateChild(field.classID);
 
-        const InlineVTCache::InlineVTInfo* nestedInfo = _inlineVTCache.GetInlineVTInfo(vtClassID);
+        const InlineVTCache::InlineVTInfo* nestedInfo = _inlineVTCache.GetInlineVTInfo(field.classID);
         if (nestedInfo != nullptr)
         {
             return GetInlineValueTypeOwner(vtNode, depth + 1, refOffset, *nestedInfo, vtStart);

@@ -12,7 +12,6 @@
 #include "RawSampleTransformer.h"
 #include "ScopeFinalizer.h"
 #include "SampleValueTypeProvider.h"
-#include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
 
@@ -208,9 +207,8 @@ std::list<UpscalingInfo> ExceptionsProvider::GetInfos()
 bool ExceptionsProvider::LoadExceptionMetadata()
 {
     // This is the first observed exception, lazy-load the exception metadata
-    ComPtr<IMetaDataImport2> metadataImportMscorlib;
-
-    if (!_pCoreLibModuleProvider->TryGetMetadata(metadataImportMscorlib.GetAddressOf()))
+    auto metadataImportMscorlib = _pCoreLibModuleProvider->GetMetadata();
+    if (!metadataImportMscorlib)
     {
         Log::Warn("Failed to get the core library metadata: exception types will not be resolved");
         return false;
