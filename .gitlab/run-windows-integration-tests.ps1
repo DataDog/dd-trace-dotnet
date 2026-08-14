@@ -30,9 +30,9 @@ if (-not $env:DD_LOGGER_DD_API_KEY) {
 }
 
 # This first slice mirrors Azure's ordinary Windows Tracer integration tests,
-# but deliberately excludes Docker dependencies, regression tests, IIS, Azure
-# Functions, ASM, and the x86 matrix dimension.
-$testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)'
+# but deliberately excludes Docker dependencies, regression tests, IIS/IIS
+# Express, Azure Functions, ASM, and the x86 matrix dimension.
+$testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(IISExpress!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)'
 
 $commonDockerArguments = @(
     '--rm',
