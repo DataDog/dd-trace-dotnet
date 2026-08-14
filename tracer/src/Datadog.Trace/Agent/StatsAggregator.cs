@@ -40,10 +40,6 @@ namespace Datadog.Trace.Agent
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsAggregator>();
         private static readonly List<byte[]> EmptyTags = [];
         private static readonly List<byte[]> BlockedByTracerSentinelList = ["tracer_blocked_value"u8.ToArray()];
-        private static readonly List<string> EmptyOtlpPeerTags = [];
-        private static readonly List<string> BlockedOtlpPeerTags = [BlockedByTracerSentinel];
-        private static readonly List<KeyValuePair<string, string>> EmptyOtlpAdditionalTags = [];
-        private static readonly List<KeyValuePair<string, string>> BlockedOtlpAdditionalTags = [new(BlockedByTracerSentinel, string.Empty)];
 
         private static readonly StatsAggregationKey OverflowKey = new(
             resource: BlockedByTracerSentinel,
@@ -124,10 +120,7 @@ namespace Datadog.Trace.Agent
 
             // StatsAdditionalTags is already deduplicated, sorted, and capped.
             // Pre-encode the UTF-8 key prefixes so BuildKey can hash without per-call string encoding.
-            var additionalTagNames = _isOtlp
-                                         ? settings.StatsAdditionalTags.Where(static tag => !IsBuiltInOtlpDataPointAttribute(tag)).ToArray()
-                                         : settings.StatsAdditionalTags;
-            var additionalTagCount = additionalTagNames.Length;
+            var additionalTagCount = settings.StatsAdditionalTags.Length;
             if (additionalTagCount == 0)
             {
                 _additionalTagKeys = [];
@@ -137,7 +130,7 @@ namespace Datadog.Trace.Agent
                 _additionalTagKeys = new AdditionalTagKey[additionalTagCount];
                 for (var i = 0; i < additionalTagCount; i++)
                 {
-                    _additionalTagKeys[i] = new AdditionalTagKey(additionalTagNames[i]);
+                    _additionalTagKeys[i] = new AdditionalTagKey(settings.StatsAdditionalTags[i]);
                 }
             }
 
@@ -559,34 +552,6 @@ namespace Datadog.Trace.Agent
             return result;
         }
 
-        private static List<string> GetOtlpPeerTags(Span span, List<PeerTagKey> peerTagKeys, in PeerTagResults results)
-        {
-            if (results.BaseService is not null)
-            {
-                return [string.Concat(Tags.BaseService, ":", results.BaseService)];
-            }
-
-            if (results.PeerTagCount == 0)
-            {
-                return EmptyOtlpPeerTags;
-            }
-
-            var result = new List<string>(results.PeerTagCount);
-            foreach (var peerTag in peerTagKeys)
-            {
-                var tagValue = span.GetTag(peerTag.Name);
-                if (string.IsNullOrEmpty(tagValue))
-                {
-                    continue;
-                }
-
-                tagValue = IpAddressObfuscationUtil.QuantizePeerIpAddresses(tagValue);
-                result.Add(string.Concat(peerTag.Name, ":", tagValue));
-            }
-
-            return result;
-        }
-
         /// <summary>
         /// Builds a "key:value" UTF-8 byte array by reusing the pre-encoded <paramref name="utf8KeyPrefix"/>
         /// (e.g. "tagKey:") and encoding only <paramref name="tagValue"/> directly into the destination
@@ -603,23 +568,6 @@ namespace Datadog.Trace.Agent
 
             return encoded;
         }
-
-        private static bool IsBuiltInOtlpDataPointAttribute(string key)
-            => key is "service.name"
-                   or "status.code"
-                   or "span.kind"
-                   or "span.name"
-                   or "http.request.method"
-                   or "http.response.status_code"
-                   or "http.route"
-                   or "rpc.response.status_code"
-                   or "datadog.operation.name"
-                   or "datadog.span.type"
-                   or "datadog.span.top_level"
-                   or "datadog.is_trace_root"
-                   or "datadog.origin"
-                   or "datadog.svc_src"
-                   or "datadog.peer_tags";
 
         /// <summary>
         /// Computes the FNV-64 hash of the span-derived additional tags present on the span, in the
@@ -696,28 +644,6 @@ namespace Datadog.Trace.Agent
                 {
                     result.Add(EncodeKeyValue(tagKey.Utf8Prefix, tagValue));
                 }
-            }
-
-            return result;
-        }
-
-        private List<KeyValuePair<string, string>> GetOtlpAdditionalTags(Span span, in AdditionalTagResults results)
-        {
-            if (results.TagCount == 0)
-            {
-                return EmptyOtlpAdditionalTags;
-            }
-
-            var result = new List<KeyValuePair<string, string>>(results.TagCount);
-            foreach (var tagKey in _additionalTagKeys)
-            {
-                var tagValue = span.GetTag(tagKey.Name);
-                if (string.IsNullOrEmpty(tagValue))
-                {
-                    continue;
-                }
-
-                result.Add(new(tagKey.Name, tagValue.Length > AdditionalTagMaxValueLength ? BlockedByTracerSentinel : tagValue));
             }
 
             return result;
@@ -835,27 +761,17 @@ namespace Datadog.Trace.Agent
 
                 if (bucket is null)
                 {
-                    if (_isOtlp)
-                    {
-                        var peerTags = (key.CardinalityLimitedFields & StatsCardinalityLimitedFields.PeerTags) == StatsCardinalityLimitedFields.PeerTags
-                                           ? BlockedOtlpPeerTags
-                                           : GetOtlpPeerTags(span, peerTagKeys, in peerTagResults);
-                        var additionalTags = (key.CardinalityLimitedFields & StatsCardinalityLimitedFields.AdditionalMetricTags) == StatsCardinalityLimitedFields.AdditionalMetricTags
-                                                 ? BlockedOtlpAdditionalTags
-                                                 : GetOtlpAdditionalTags(span, in additionalTagResults);
-                        bucket = new StatsBucket(key, new StatsBucket.OtlpTags(peerTags, additionalTags));
-                    }
-                    else
-                    {
-                        var peerTags = (key.CardinalityLimitedFields & StatsCardinalityLimitedFields.PeerTags) == StatsCardinalityLimitedFields.PeerTags
-                                           ? BlockedByTracerSentinelList
-                                           : GetEncodedPeerTags(span, peerTagKeys, in peerTagResults);
-                        var additionalTags = (key.CardinalityLimitedFields & StatsCardinalityLimitedFields.AdditionalMetricTags) == StatsCardinalityLimitedFields.AdditionalMetricTags
-                                                 ? BlockedByTracerSentinelList
-                                                 : GetEncodedAdditionalTags(span, in additionalTagResults);
-                        bucket = new StatsBucket(key, peerTags, additionalTags);
-                    }
+                    // Cold path: encode the peer tags and span-derived primary tags for storage in the new bucket.
+                    // The overflow row carries no peer/additional tags; folded fields encode empty/masked.
+                    var encodedPeerTags = (key.CardinalityLimitedFields & StatsCardinalityLimitedFields.PeerTags) == StatsCardinalityLimitedFields.PeerTags
+                                              ? BlockedByTracerSentinelList
+                                              : GetEncodedPeerTags(span, peerTagKeys, in peerTagResults);
 
+                    var encodedAdditionalTags = (key.CardinalityLimitedFields & StatsCardinalityLimitedFields.AdditionalMetricTags) == StatsCardinalityLimitedFields.AdditionalMetricTags
+                                                    ? BlockedByTracerSentinelList
+                                                    : GetEncodedAdditionalTags(span, in additionalTagResults);
+
+                    bucket = new StatsBucket(key, encodedPeerTags, encodedAdditionalTags);
                     buffer.Buckets.Add(key, bucket);
                 }
             }

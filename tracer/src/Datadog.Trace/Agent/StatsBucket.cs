@@ -12,31 +12,13 @@ namespace Datadog.Trace.Agent
 {
     internal sealed class StatsBucket
     {
-        private static readonly List<byte[]> EmptyEncodedTags = [];
-        private static readonly OtlpTags EmptyOtlpTags = new([], []);
-
         public StatsBucket(StatsAggregationKey key, List<byte[]> peerTags, List<byte[]> additionalMetricTags)
-            : this(key, peerTags, additionalMetricTags, EmptyOtlpTags)
-        {
-        }
-
-        public StatsBucket(StatsAggregationKey key, OtlpTags tags)
-            : this(key, EmptyEncodedTags, EmptyEncodedTags, tags)
-        {
-        }
-
-        private StatsBucket(
-            StatsAggregationKey key,
-            List<byte[]> peerTags,
-            List<byte[]> additionalMetricTags,
-            OtlpTags otlpTags)
         {
             Key = key;
             OkSummary = CreateSketch();
             ErrorSummary = CreateSketch();
             PeerTags = peerTags;
             AdditionalMetricTags = additionalMetricTags;
-            Otlp = otlpTags;
         }
 
         public StatsAggregationKey Key { get; }
@@ -64,8 +46,6 @@ namespace Datadog.Trace.Agent
 
         public List<byte[]> AdditionalMetricTags { get; }
 
-        public OtlpTags Otlp { get; }
-
         public void Clear()
         {
             Hits = 0;
@@ -87,9 +67,5 @@ namespace Datadog.Trace.Agent
                 new CollapsingLowestDenseStore(2048),
                 new CollapsingLowestDenseStore(2048));
         }
-
-        internal sealed record OtlpTags(
-            List<string> PeerTags,
-            List<KeyValuePair<string, string>> AdditionalMetricTags);
     }
 }
