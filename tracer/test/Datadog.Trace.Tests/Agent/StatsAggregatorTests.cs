@@ -1400,6 +1400,25 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public async Task OtlpAdditionalTags_StoreSourceValuesAndIgnoreBuiltInAttributes()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region,span.kind"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: true);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag("region", "us-east-1");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+
+            aggregator.Add(span);
+
+            aggregator.CurrentBuffer.Buckets.Should().ContainSingle();
+            var bucket = aggregator.CurrentBuffer.Buckets.Values.Single();
+            bucket.AdditionalMetricTags.Should().BeEmpty();
+            bucket.Otlp.AdditionalMetricTags.Should().HaveCount(1);
+            bucket.Otlp.AdditionalMetricTags[0].Should().Be(new KeyValuePair<string, string>("region", "us-east-1"));
+        }
+
+        [Fact]
         public async Task AdditionalTags_MissingTagBucketsSeparatelyFromPresent()
         {
             var start = DateTimeOffset.UtcNow;

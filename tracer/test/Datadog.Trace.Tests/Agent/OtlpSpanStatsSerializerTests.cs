@@ -325,15 +325,14 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey();
-            var additionalMetricTags = new List<byte[]>
+            var additionalMetricTags = new List<KeyValuePair<string, string>>
             {
-                Encoding.UTF8.GetBytes("team:payments"),
-                Encoding.UTF8.GetBytes("datadog.custom:value"),
-                Encoding.UTF8.GetBytes("endpoint:https://example.com:443"),
-                Encoding.UTF8.GetBytes("span.kind:custom"),
-                Encoding.UTF8.GetBytes(StatsAggregator.BlockedByTracerSentinel),
+                new("team", "payments"),
+                new("datadog.custom", "value"),
+                new("endpoint", "https://example.com:443"),
+                new(StatsAggregator.BlockedByTracerSentinel, string.Empty),
             };
-            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, new StatsBucket.OtlpTags([], additionalMetricTags)) { Hits = 1, Duration = 5_000_000 });
 
             var attrs = useJson ? GetDataPointAttributes(SerializeToJson(buffer)) : GetProtobufDataPointAttributes(buffer);
 
@@ -349,12 +348,12 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = CreateBuffer();
             var key = CreateKey();
-            var peerTags = new List<byte[]>
+            var peerTags = new List<string>
             {
-                Encoding.UTF8.GetBytes("peer.service:downstream"),
-                Encoding.UTF8.GetBytes("net.peer.name:downstream.example.com"),
+                "peer.service:downstream",
+                "net.peer.name:downstream.example.com",
             };
-            buffer.Buckets.Add(key, new StatsBucket(key, peerTags, []) { Hits = 1, Duration = 5_000_000 });
+            buffer.Buckets.Add(key, new StatsBucket(key, new StatsBucket.OtlpTags(peerTags, [])) { Hits = 1, Duration = 5_000_000 });
 
             var peerTagValues = SerializeToJson(buffer)
                                .SelectTokens("$..attributes[?(@.key == 'datadog.peer_tags')].value.arrayValue.values[*].stringValue")

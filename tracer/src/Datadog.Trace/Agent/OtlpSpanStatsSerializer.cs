@@ -261,17 +261,14 @@ namespace Datadog.Trace.Agent
                 WriteStringKvJson(writer, "datadog.svc_src", key.ServiceSource);
             }
 
-            if (bucket.PeerTags.Count > 0)
+            if (bucket.Otlp.PeerTags.Count > 0)
             {
-                WriteStringArrayKvJson(writer, "datadog.peer_tags", DecodePeerTags(bucket.PeerTags));
+                WriteStringArrayKvJson(writer, "datadog.peer_tags", bucket.Otlp.PeerTags);
             }
 
-            foreach (var tag in bucket.AdditionalMetricTags)
+            foreach (var tag in bucket.Otlp.AdditionalMetricTags)
             {
-                if (TryDecodeAdditionalMetricTag(tag, out var tagKey, out var tagValue))
-                {
-                    WriteStringKvJson(writer, tagKey, tagValue);
-                }
+                WriteStringKvJson(writer, tag.Key, tag.Value);
             }
 
             writer.WriteEndArray();
@@ -558,17 +555,14 @@ namespace Datadog.Trace.Agent
                 WriteAttribute(writer, "datadog.svc_src", key.ServiceSource, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            if (bucket.PeerTags.Count > 0)
+            if (bucket.Otlp.PeerTags.Count > 0)
             {
-                WriteStringArrayAttribute(writer, "datadog.peer_tags", DecodePeerTags(bucket.PeerTags), FieldNumbers.HistogramDataPointAttributes);
+                WriteStringArrayAttribute(writer, "datadog.peer_tags", bucket.Otlp.PeerTags, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            foreach (var tag in bucket.AdditionalMetricTags)
+            foreach (var tag in bucket.Otlp.AdditionalMetricTags)
             {
-                if (TryDecodeAdditionalMetricTag(tag, out var tagKey, out var tagValue))
-                {
-                    WriteAttribute(writer, tagKey, tagValue, FieldNumbers.HistogramDataPointAttributes);
-                }
+                WriteAttribute(writer, tag.Key, tag.Value, FieldNumbers.HistogramDataPointAttributes);
             }
 
             WriteTag(writer, FieldNumbers.HistogramDataPointStartTimeUnixNano, WireTypeFixed64);
@@ -730,49 +724,6 @@ namespace Datadog.Trace.Agent
             }
 
             return null;
-        }
-
-        private static bool TryDecodeAdditionalMetricTag(byte[] encodedTag, out string key, out string value)
-        {
-            var separatorIndex = Array.IndexOf(encodedTag, (byte)':');
-            if (separatorIndex <= 0)
-            {
-                key = EncodingHelpers.Utf8NoBom.GetString(encodedTag);
-                value = string.Empty;
-                return separatorIndex < 0 && key == StatsAggregator.BlockedByTracerSentinel;
-            }
-
-            key = EncodingHelpers.Utf8NoBom.GetString(encodedTag, 0, separatorIndex);
-            value = EncodingHelpers.Utf8NoBom.GetString(encodedTag, separatorIndex + 1, encodedTag.Length - separatorIndex - 1);
-            return !IsBuiltInDataPointAttribute(key);
-        }
-
-        private static bool IsBuiltInDataPointAttribute(string key)
-            => key is "service.name"
-                   or "status.code"
-                   or "span.kind"
-                   or "span.name"
-                   or "http.request.method"
-                   or "http.response.status_code"
-                   or "http.route"
-                   or "rpc.response.status_code"
-                   or "datadog.operation.name"
-                   or "datadog.span.type"
-                   or "datadog.span.top_level"
-                   or "datadog.is_trace_root"
-                   or "datadog.origin"
-                   or "datadog.svc_src"
-                   or "datadog.peer_tags";
-
-        private static List<string> DecodePeerTags(List<byte[]> peerTags)
-        {
-            var decoded = new List<string>(peerTags.Count);
-            foreach (var peerTag in peerTags)
-            {
-                decoded.Add(EncodingHelpers.Utf8NoBom.GetString(peerTag));
-            }
-
-            return decoded;
         }
 
         private static void WriteAttribute(BinaryWriter writer, string key, string value, int fieldNumber = FieldNumbers.Attributes)
