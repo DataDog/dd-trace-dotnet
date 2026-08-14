@@ -15,8 +15,7 @@ namespace Datadog.Trace.Security.Unit.Tests.Iast.Tainted;
 
 public class DefaultTaintedMapConcurrencyTests
 {
-    // A bucket index whose hash does not trigger an implicit Purge() from Put()
-    // ((hash & PurgeMask) != 0), so that Put/Put races can be tested in isolation.
+    // Odd, so Put() never triggers an implicit Purge() ((hash & PurgeMask) != 0).
     private const int NonPurgingHash = 1;
 
     [Fact]
@@ -64,9 +63,8 @@ public class DefaultTaintedMapConcurrencyTests
     [Fact]
     public void GivenATaintedObjectMap_WhenPurgingWhileInsertingOnTheSameBuckets_LiveEntriesAreNotLost()
     {
-        // Every dead entry is alone in its bucket, so RemoveDeadKeys() collects all of these keys
-        // as "dead keys" and only removes them in a second pass. A live entry inserted on one of
-        // those buckets in between is silently deleted by that second pass.
+        // Each dead entry is alone in its bucket, so every key becomes removable and the window
+        // between "marked dead" and "removed" spans the whole map.
         const int buckets = 2048;
         const int iterations = 10;
 
@@ -77,7 +75,6 @@ public class DefaultTaintedMapConcurrencyTests
 
             for (var i = 0; i < buckets; i++)
             {
-                // Odd hashes only, so that no Put triggers an implicit Purge().
                 var hash = (i * 2) + 1;
 
                 // Insert alive and then invalidate, mimicking a collected WeakReference target.
@@ -214,10 +211,7 @@ public class DefaultTaintedMapConcurrencyTests
         Task.WaitAll(tasks);
     }
 
-    /// <summary>
-    /// Value with a controlled hash code, so that entries can be forced into a chosen bucket.
-    /// Equality stays reference-based, which is what DefaultTaintedMap.Get relies on.
-    /// </summary>
+    // Controlled hash code, to force entries into a chosen bucket. Equality stays reference-based.
     private class HashedValue
     {
         private readonly int _hash;
@@ -232,9 +226,7 @@ public class DefaultTaintedMapConcurrencyTests
         public override int GetHashCode() => _hash;
     }
 
-    /// <summary>
-    /// ITaintedObject with deterministic liveness, so purging does not depend on the GC.
-    /// </summary>
+    // Deterministic liveness, so purging does not depend on the GC.
     private class TestTaintedObject : ITaintedObject
     {
         private readonly HashedValue _value;
@@ -254,7 +246,7 @@ public class DefaultTaintedMapConcurrencyTests
 
         public ITaintedObject Next { get; set; }
 
-        /// <summary>Gets the value, regardless of liveness, for lookups from the test.</summary>
+        // The value regardless of liveness, for lookups from the test.
         public object Key => _value;
 
         public void Invalidate() => _isAlive = false;
