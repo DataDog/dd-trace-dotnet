@@ -763,12 +763,6 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
-#pragma warning disable 618 // superseded, but still honoured so existing adopters keep their source
-            var flaggingProviderEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled).AsBool();
-#pragma warning restore 618
-            var featureFlagsEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsEnabled).AsBool();
-            var configuredSource = config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource).AsString();
-
             FeatureFlags = new FeatureFlagsSettings(source, telemetry);
 
             IsSpanEnrichmentEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled)

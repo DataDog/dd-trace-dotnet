@@ -33,6 +33,7 @@ public class FeatureFlagsModuleTests
         var rcmManager = new MockRcmSubscriptionManager();
         var settings = CreateSettings();
         var module = new FeatureFlagsModule(settings, rcmManager);
+        module.Activate();
 
         var callbackInvoked = false;
         module.RegisterOnNewConfigEventHandler(() => callbackInvoked = true);
@@ -96,7 +97,7 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
-    public void Create_WithRemoteConfigSource_SubscribesAndAdvertisesCapability()
+    public void Create_WithRemoteConfigSource_DoesNotSubscribeUntilActivated()
     {
         var rcmManager = new MockRcmSubscriptionManager();
         var settings = CreateSettings((ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config"));
@@ -104,6 +105,13 @@ public class FeatureFlagsModuleTests
         using var module = FeatureFlagsModule.Create(settings, rcmManager);
 
         module.Should().NotBeNull();
+
+        // Subscription is deferred to Activate() so merely enabling Feature Flags does not start
+        // a billed RC subscription.
+        rcmManager.HasAnySubscription.Should().BeFalse();
+
+        module!.Activate();
+
         rcmManager.HasAnySubscription.Should().BeTrue();
         rcmManager.ProductKeys.Should().Contain(RcmProducts.FfeFlags);
     }
