@@ -15,6 +15,8 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMinimalApisTestsCallTarget : OtlpAspNetCoreMinimalApisTests
     {
@@ -24,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetWithFeatureFlag : OtlpAspNetCoreMinimalApisTests
     {
@@ -33,6 +37,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetSingleSpan : OtlpAspNetCoreMinimalApisTests
     {
@@ -42,6 +48,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetWithOpenTelemetrySemantics : OtlpAspNetCoreMinimalApisTests
     {
@@ -51,6 +59,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetWithFeatureFlagWithOpenTelemetrySemantics : OtlpAspNetCoreMinimalApisTests
     {
@@ -60,6 +70,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetSingleSpanWithOpenTelemetrySemantics : OtlpAspNetCoreMinimalApisTests
     {

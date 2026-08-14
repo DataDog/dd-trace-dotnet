@@ -14,6 +14,8 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc21TestsWithoutFeatureFlag : OtlpAspNetCoreMvc21Tests
     {
@@ -23,6 +25,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc21TestsWithFeatureFlag : OtlpAspNetCoreMvc21Tests
     {
@@ -32,6 +36,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc21TestsWithoutFeatureFlagWithOpenTelemetrySemantics : OtlpAspNetCoreMvc21Tests
     {
@@ -41,6 +47,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc21TestsWithFeatureFlagWithOpenTelemetrySemantics : OtlpAspNetCoreMvc21Tests
     {
