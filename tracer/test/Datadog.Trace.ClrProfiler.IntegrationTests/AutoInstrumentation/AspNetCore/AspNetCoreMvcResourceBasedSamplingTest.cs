@@ -32,6 +32,7 @@ public class AspNetCoreMvc21ResourceBasedSamplingTests : AspNetCoreMvcResourceBa
 // Note that ASP.NET Core 2.1 does not support in-process hosting
 
 [Collection("IisTests")]
+[Trait("IISExpress", "True")]
 public class AspNetCoreIisMvc21MvcResourceBasedSamplingTests : AspNetCoreIisMvcResourceBasedSamplingTestBase
 {
     public AspNetCoreIisMvc21MvcResourceBasedSamplingTests(IisFixture fixture, ITestOutputHelper output)
@@ -49,6 +50,7 @@ public class AspNetCoreMvc30ResourceBasedSamplingTests : AspNetCoreMvcResourceBa
 }
 
 [Collection("IisTests")]
+[Trait("IISExpress", "True")]
 public class AspNetCoreIisMvc30MvcResourceBasedSamplingInProcessTests : AspNetCoreIisMvcResourceBasedSamplingTestBase
 {
     public AspNetCoreIisMvc30MvcResourceBasedSamplingInProcessTests(IisFixture fixture, ITestOutputHelper output)
@@ -58,6 +60,7 @@ public class AspNetCoreIisMvc30MvcResourceBasedSamplingInProcessTests : AspNetCo
 }
 
 [Collection("IisTests")]
+[Trait("IISExpress", "True")]
 public class AspNetCoreIisMvc30MvcResourceBasedSamplingOutOfProcessTests : AspNetCoreIisMvcResourceBasedSamplingTestBase
 {
     public AspNetCoreIisMvc30MvcResourceBasedSamplingOutOfProcessTests(IisFixture fixture, ITestOutputHelper output)
@@ -75,6 +78,7 @@ public class AspNetCoreMvc31ResourceBasedSamplingTests : AspNetCoreMvcResourceBa
 }
 
 [Collection("IisTests")]
+[Trait("IISExpress", "True")]
 public class AspNetCoreIisMvc31MvcResourceBasedSamplingInProcessTests : AspNetCoreIisMvcResourceBasedSamplingTestBase
 {
     public AspNetCoreIisMvc31MvcResourceBasedSamplingInProcessTests(IisFixture fixture, ITestOutputHelper output)
@@ -84,6 +88,7 @@ public class AspNetCoreIisMvc31MvcResourceBasedSamplingInProcessTests : AspNetCo
 }
 
 [Collection("IisTests")]
+[Trait("IISExpress", "True")]
 public class AspNetCoreIisMvc31MvcResourceBasedSamplingOutOfProcessTests : AspNetCoreIisMvcResourceBasedSamplingTestBase
 {
     public AspNetCoreIisMvc31MvcResourceBasedSamplingOutOfProcessTests(IisFixture fixture, ITestOutputHelper output)
@@ -101,6 +106,7 @@ public class AspNetCoreMvc31ResourceBasedSamplingSingleSpanTests : AspNetCoreMvc
 }
 
 [Collection("IisTests")]
+[Trait("IISExpress", "True")]
 public class AspNetCoreIisMvc31MvcResourceBasedSamplingInProcessSingleSpanTests : AspNetCoreIisMvcResourceBasedSamplingTestBase
 {
     public AspNetCoreIisMvc31MvcResourceBasedSamplingInProcessSingleSpanTests(IisFixture fixture, ITestOutputHelper output)
@@ -110,6 +116,7 @@ public class AspNetCoreIisMvc31MvcResourceBasedSamplingInProcessSingleSpanTests 
 }
 
 [Collection("IisTests")]
+[Trait("IISExpress", "True")]
 public class AspNetCoreIisMvc31MvcResourceBasedSamplingOutOfProcessSingleSpanTests : AspNetCoreIisMvcResourceBasedSamplingTestBase
 {
     public AspNetCoreIisMvc31MvcResourceBasedSamplingOutOfProcessSingleSpanTests(IisFixture fixture, ITestOutputHelper output)

@@ -19,6 +19,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsQueryString : AspNetMvc5QueryStringTests
     {
         public AspNetMvc5TestsQueryString(IisFixture iisFixture, ITestOutputHelper output)
@@ -28,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc5TestsQueryStringDisabled : AspNetMvc5QueryStringTests
     {
         public AspNetMvc5TestsQueryStringDisabled(IisFixture iisFixture, ITestOutputHelper output)
