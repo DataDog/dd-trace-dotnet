@@ -5,8 +5,10 @@
 
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
@@ -14,8 +16,30 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 
-public class AppSecContextTests
+public class AppSecContextTests : WafLibraryRequiredTest
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData(SpanTypes.Web)]
+    [InlineData(SpanTypes.Custom)]
+    public async Task GivenAWafContext_WhenTheLocalRootSpanCloses_ThenItIsDisposed(string spanType)
+    {
+        var settings = TracerSettings.Create(new Dictionary<string, object>());
+        await using var tracer = TracerHelper.Create(settings);
+        using var security = new AppSec.Security(waf: CreateWaf().Waf);
+
+        AppSecRequestContext appSecContext;
+        using (var rootTestScope = (Scope)tracer.StartActive("test.trace"))
+        {
+            rootTestScope.Span.Type = spanType;
+            appSecContext = rootTestScope.Span.Context.TraceContext.AppSecRequestContext;
+            appSecContext.GetOrCreateAdditiveContext(security).Should().NotBeNull();
+        }
+
+        // once disposed the additive context is never handed out again, whatever the span type was
+        appSecContext.GetOrCreateAdditiveContext(security).Should().BeNull();
+    }
+
     [InlineData(-2, -2, -1, 0, -2, -1)]
     [InlineData(2, -2, -1, 1, null, -1)]
     [InlineData(2, 2, 1, 2, null, null)]

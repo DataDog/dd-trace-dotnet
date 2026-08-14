@@ -206,12 +206,14 @@ namespace Datadog.Trace
                         }
                     }
 
-                    if (_appSecRequestContext is not null)
-                    {
-                        _appSecRequestContext.CloseWebSpan(span);
-                        _appSecRequestContext.DisposeAdditiveContext();
-                    }
+                    _appSecRequestContext?.CloseWebSpan(span);
                 }
+
+                // A WAF context can be created on any local root span, not just a web one (the user
+                // events SDKs and the ASP.NET Core Identity integrations don't check the span type),
+                // and it holds native memory that is only released when it is disposed. The trace is
+                // over once its local root span closes, so nothing will need the context after this.
+                _appSecRequestContext?.DisposeAdditiveContext();
             }
 
             if (span.ServiceName is not null &&
