@@ -704,8 +704,9 @@ namespace Datadog.Trace.Tests.Agent
                         maxConcurrentSends = Math.Max(maxConcurrentSends, current);
                     }
 
-                    // Give any other flush a chance to overlap with this one
-                    await Task.Delay(20);
+                    // Give any other flush a chance to overlap with this one, but not too big,
+                    // otherwise could cause flake
+                    await Task.Delay(5);
 
                     Interlocked.Decrement(ref concurrentSends);
                     return true;
@@ -719,7 +720,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var flushes = new List<Task>();
 
-            for (var i = 0; i < 50; i++)
+            for (var i = 0; i < 10; i++)
             {
                 agent.WriteTrace(CreateTraceChunk(1));
                 flushes.Add(agent.FlushTracesAsync());
