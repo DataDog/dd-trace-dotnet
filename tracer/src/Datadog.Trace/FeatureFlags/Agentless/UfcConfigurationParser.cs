@@ -53,6 +53,7 @@ internal static class UfcConfigurationParser
 
         if (payload is not JObject
          || payload["data"] is not JObject data
+         || data["type"]?.Type != JTokenType.String
          || data["type"]?.Value<string>() != ResourceType)
         {
             error = "Expected a JSON:API Universal Flag Configuration resource";
