@@ -52,9 +52,7 @@
       "description": "Count of Dynamic Instrumentation high-memory-pressure episodes, incremented once on exit and tagged by duration bucket (`bucket:lt_1s`, `bucket:1_5s`, `bucket:5_30s`, or `bucket:gte_30s`). Range buckets are lower-bound inclusive and upper-bound exclusive, so `bucket:1_5s` means 1s <= duration < 5s",
       "send_to_user": false,
       "user_tags": []
-    }
-  },
-  "debugger": {
+    },
     "events.skipped": {
       "tags": [
         "reason",

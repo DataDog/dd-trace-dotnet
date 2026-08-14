@@ -16,5 +16,4 @@ internal static class MetricNamespaceConstants
     public const string Iast = "iast";
     public const string CIVisibility = "civisibility";
     public const string LiveDebugger = "live_debugger";
-    public const string Debugger = "debugger";
 }
