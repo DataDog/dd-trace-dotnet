@@ -65,8 +65,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public async Task GitBranchBasedImpactDetection(string packageVersion)
         {
-            Skip.If(EnvironmentHelper.IsAlpine(), AlpineDetachedHeadSkipReason);
-
             await SubmitTestsUsingGitBranch(packageVersion, 2, TestIsModified);
         }
 
