@@ -16,20 +16,13 @@ public class TestSuite(ITestOutputHelper output) : IDisposable
     {
         const int maxAttempts = 3;
         var delay = TimeSpan.FromSeconds(5);
-        var options = new ChromeOptions();
-        if (string.Equals(Environment.GetEnvironmentVariable("SAMPLES_SELENIUM_HEADLESS"), "true", StringComparison.OrdinalIgnoreCase))
-        {
-            options.AddArgument("--headless=new");
-            options.AddArgument("--no-sandbox");
-            options.AddArgument("--disable-gpu");
-        }
 
         for (var attempt = 1; attempt <= maxAttempts; attempt++)
         {
             WebDriver driver = null;
             try
             {
-                driver = new ChromeDriver(options);
+                driver = new ChromeDriver();
                 return driver;
             }
             catch (Exception ex) when (ex is InvalidOperationException or WebDriverException)
