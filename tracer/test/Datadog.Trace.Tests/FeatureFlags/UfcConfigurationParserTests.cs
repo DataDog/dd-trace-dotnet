@@ -60,6 +60,10 @@ public class UfcConfigurationParserTests
     [InlineData("""{ "meta": {} }""")]
     // data is not an object
     [InlineData("""{ "data": "string" }""")]
+    // data.type is not a string (object)
+    [InlineData("""{ "data": { "type": { "nested": true }, "attributes": { "format": "SERVER", "createdAt": "x", "environment": { "name": "prod" }, "flags": {} } } }""")]
+    // data.type is not a string (array)
+    [InlineData("""{ "data": { "type": [1, 2], "attributes": { "format": "SERVER", "createdAt": "x", "environment": { "name": "prod" }, "flags": {} } } }""")]
     public void RejectsInvalidEnvelope(string body)
     {
         UfcConfigurationParser.TryParse(body, out var configuration, out var error).Should().BeFalse();

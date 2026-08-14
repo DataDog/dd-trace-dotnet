@@ -225,7 +225,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             }
             catch (Exception ex)
             {
-                Log.Debug(ex, "Feature Flags agentless poll failed unexpectedly");
+                Log.Error(ex, "Feature Flags agentless poll failed unexpectedly");
             }
 
             // Fixed delay after completion, so polls never overlap.
@@ -375,13 +375,13 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         switch (result.StatusCode)
         {
             case 401 or 403:
-                Log.Warning<int>("Feature Flags agentless endpoint returned HTTP {StatusCode}; verify endpoint authentication", result.StatusCode!.Value);
+                Log.Error<int>("Feature Flags agentless endpoint returned HTTP {StatusCode}; verify endpoint authentication", result.StatusCode!.Value);
                 break;
             case not null:
-                Log.Warning<int, int>("Feature Flags agentless endpoint returned HTTP {StatusCode} after {Attempts} attempts", result.StatusCode.Value, attempts);
+                Log.Error<int, int>("Feature Flags agentless endpoint returned HTTP {StatusCode} after {Attempts} attempts", result.StatusCode.Value, attempts);
                 break;
             default:
-                Log.Warning<int>(result.Error, "Feature Flags agentless request failed after {Attempts} attempts", attempts);
+                Log.Error<int>(result.Error, "Feature Flags agentless request failed after {Attempts} attempts", attempts);
                 break;
         }
     }
