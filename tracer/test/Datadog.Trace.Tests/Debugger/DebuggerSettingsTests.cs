@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests.Debugger
         public void MaxEvaluationTime_HasExpectedValue(string value, int expected)
         {
             var settings = new DebuggerSettings(
-                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.InternalDynamicInstrumentationMaxEvaluationTimeInMilliseconds, value }, }),
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.EvaluationTimeoutMs, value }, }),
                 NullConfigurationTelemetry.Instance);
 
             settings.MaxEvaluationTimeInMilliseconds.Should().Be(expected);

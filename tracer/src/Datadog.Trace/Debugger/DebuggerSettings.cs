@@ -59,7 +59,7 @@ namespace Datadog.Trace.Debugger
                                                 .Value;
 
             MaxEvaluationTimeInMilliseconds = config
-                                             .WithKeys(ConfigurationKeys.Debugger.InternalDynamicInstrumentationMaxEvaluationTimeInMilliseconds)
+                                             .WithKeys(ConfigurationKeys.Debugger.EvaluationTimeoutMs)
                                              .AsInt32(
                                                   DefaultMaxEvaluationTimeInMilliseconds,
                                                   evaluationTimeThreshold => evaluationTimeThreshold is >= MinAllowedEvaluationTimeInMilliseconds and <= MaxAllowedEvaluationTimeInMilliseconds)

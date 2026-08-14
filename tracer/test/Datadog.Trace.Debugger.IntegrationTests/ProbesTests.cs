@@ -79,7 +79,7 @@ public class ProbesTests : TestHelper
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
         SetServiceVersion("1.0.0");
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.InternalDynamicInstrumentationMaxEvaluationTimeInMilliseconds, TestMaxEvaluationTimeInMilliseconds);
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.EvaluationTimeoutMs, TestMaxEvaluationTimeInMilliseconds);
     }
 
     public static IEnumerable<object[]> UdsMemberData =>
