@@ -158,6 +158,9 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
     {
         try
         {
+            // Isolate the Git command cache from earlier test processes that may have
+            // inspected the repository before this test modifies the sample source.
+            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, Guid.NewGuid().ToString("n"));
             ModifyFile();
 
             var tests = new List<MockCIVisibilityTest>();
