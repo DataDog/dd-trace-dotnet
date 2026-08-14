@@ -20,6 +20,15 @@ if [ -f "$alternates_file" ]; then
   rm -f "$alternates_file"
 fi
 
+# GitLab checks out the pipeline commit with a detached HEAD, while Azure's
+# clone step checks out the target branch. Some CI Visibility integration tests
+# exercise branch-based Git diffs, so reproduce Azure's branch checkout before
+# mounting the repository in the test container.
+if [ -n "${CI_COMMIT_REF_NAME:-}" ] && [ -z "$(git branch --show-current)" ]; then
+  echo "Attaching the integration-test checkout to ${CI_COMMIT_REF_NAME}"
+  git checkout -B "$CI_COMMIT_REF_NAME" "$CI_COMMIT_SHA"
+fi
+
 # Azure publishes the universal loader/wrapper from linux-musl-x64 and
 # downloads it into the target runtime folder. Recreate that merge for the
 # glibc job after GitLab downloads the independent producer artifacts. The

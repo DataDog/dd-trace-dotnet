@@ -31,8 +31,10 @@ if (-not $env:DD_LOGGER_DD_API_KEY) {
 
 # This first slice mirrors Azure's ordinary Windows Tracer integration tests,
 # but deliberately excludes Docker dependencies, regression tests, IIS/IIS
-# Express, Azure Functions, ASM, and the x86 matrix dimension.
-$testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(IISExpress!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)'
+# Express, Azure Functions, ASM, and the x86 matrix dimension. LocalDB and MSMQ
+# are also excluded because they are installed on the Azure VM but unavailable
+# in the GitLab Windows build container.
+$testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(IISExpress!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)&(RequiresLocalDb!=True)&(RequiresMsmq!=True)'
 
 $commonDockerArguments = @(
     '--rm',
@@ -55,6 +57,7 @@ $commonDockerArguments = @(
     '-e', 'IncludeAllTestFrameworks=true',
     '-e', 'TargetPlatform=x64',
     '-e', 'enable_crash_dumps=true',
+    '-e', 'SAMPLES_SELENIUM_HEADLESS=true',
     '-e', "SourceRevisionId=$env:CI_COMMIT_SHA",
     '-e', 'RepositoryUrl=https://github.com/DataDog/dd-trace-dotnet.git',
     '-e', 'GITLAB_CI',
@@ -87,7 +90,7 @@ $commonDockerArguments = @(
 )
 
 Write-Output "Building and running non-Docker Windows x64 Tracer integration tests for $env:FRAMEWORK"
-$testCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK && c:\entrypoint.bat CompileTrimmingSamples BuildIntegrationTests RunIntegrationTests --framework $env:FRAMEWORK --TargetPlatform x64 --IncludeAllTestFrameworks true --IncludeTestsRequiringDocker false --NugetPackageDirectory c:\mnt\packages"
+$testCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK -IncludeAspNetCore && c:\entrypoint.bat CompileTrimmingSamples BuildIntegrationTests RunIntegrationTests --framework $env:FRAMEWORK --TargetPlatform x64 --IncludeAllTestFrameworks true --IncludeTestsRequiringDocker false --NugetPackageDirectory c:\mnt\packages"
 
 & docker run @commonDockerArguments --entrypoint cmd.exe $windowsBuildImage /d /s /c $testCommand
 $testExitCode = $LASTEXITCODE
