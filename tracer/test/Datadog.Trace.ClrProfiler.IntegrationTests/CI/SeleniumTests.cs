@@ -46,6 +46,7 @@ public class SeleniumTests : TestingFrameworkEvpTest
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
+    [Trait("RequiresChrome", "True")]
     public async Task Injection(string packageVersion)
     {
         SkipOn.Platform(SkipOn.PlatformValue.Linux);
