@@ -72,13 +72,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public async Task GitBranchBasedImpactDetection(string packageVersion)
         {
-            Skip.If(EnvironmentHelper.IsAlpine(), AlpineDetachedHeadSkipReason);
-
             // Check for Git availability
             Skip.IfNot(gitAvailable, "Git not available or not properly configured in current environment");
 
             var testBranchName = $"test-impact-detection-{Guid.NewGuid():N}";
             var originalBranch = string.Empty;
+            var originalCommit = string.Empty;
 
             try
             {
@@ -87,6 +86,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 currentBranchOutput.ExitCode.Should().Be(0, "Failed to get current branch");
                 originalBranch = currentBranchOutput.Output.Trim();
                 Output.WriteLine($"Original branch: {originalBranch}");
+
+                var originalCommitOutput = RunGitCommand("rev-parse HEAD");
+                originalCommitOutput.ExitCode.Should().Be(0, "Failed to get current commit");
+                originalCommit = originalCommitOutput.Output.Trim();
 
                 // Create and checkout a new test branch
                 var createBranchOutput = RunGitCommand($"checkout -b {testBranchName}");
@@ -99,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 var addOutput = RunGitCommand($"add {GetTestFile()}");
                 addOutput.ExitCode.Should().Be(0, $"Failed to stage changes: {addOutput.Error}");
 
-                var commitOutput = RunGitCommand($"commit -m \"Test modifications for impact detection test\"");
+                var commitOutput = RunGitCommand("-c user.name=DatadogCI -c user.email=ci@datadoghq.com commit -m \"Test modifications for impact detection test\"");
                 commitOutput.ExitCode.Should().Be(0, $"Failed to commit changes: {commitOutput.Error}");
 
                 // Enable impact detection
@@ -119,14 +122,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 {
                     Output.WriteLine("Starting cleanup");
 
-                    RestoreFile();
-                    RunGitCommand("stash");
+                    // Discard only this test's staged and working-tree changes. Do not stash
+                    // unrelated files from a developer's checkout.
+                    RunGitCommand($"reset HEAD -- {GetTestFile()}");
+                    RunGitCommand($"checkout -- {GetTestFile()}");
 
-                    // Switch back to original branch
+                    // Switch back to the original branch, or restore the original detached HEAD.
                     if (!string.IsNullOrEmpty(originalBranch))
                     {
                         var output = RunGitCommand($"checkout {originalBranch}");
                         output.ExitCode.Should().Be(0, $"Failed to checkout changes: {output.Error}");
+                    }
+                    else if (!string.IsNullOrEmpty(originalCommit))
+                    {
+                        var output = RunGitCommand($"checkout --detach {originalCommit}");
+                        output.ExitCode.Should().Be(0, $"Failed to restore detached HEAD: {output.Error}");
                     }
 
                     // Delete the test branch
