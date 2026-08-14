@@ -582,8 +582,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (otelSemanticsEnabled)
                 {
                     // The OTel span name must be "{method} {http.route}", so use the route verbatim
-                    // instead of the Datadog simplified route pattern.
-                    resourceName = $"{HttpSemanticConventions.GetResourceName(tags.HttpMethod)} {normalizedRoute}";
+                    // instead of the Datadog simplified route pattern. If there's no route, fall back
+                    // to the method-only resource name instead of appending a null route.
+                    resourceName = normalizedRoute is not null
+                                       ? $"{HttpSemanticConventions.GetResourceName(tags.HttpMethod)} {normalizedRoute}"
+                                       : HttpSemanticConventions.GetResourceName(tags.HttpMethod);
                 }
                 else
                 {
