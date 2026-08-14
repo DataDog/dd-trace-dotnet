@@ -14,6 +14,8 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc31TestsCallTarget : OtlpAspNetCoreMvc31Tests
     {
@@ -23,6 +25,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc31TestsCallTargetWithFeatureFlag : OtlpAspNetCoreMvc31Tests
     {
@@ -32,6 +36,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc31TestsCallTargetWithOpenTelemetrySemantics : OtlpAspNetCoreMvc31Tests
     {
@@ -41,6 +47,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc31TestsCallTargetWithFeatureFlagWithOpenTelemetrySemantics : OtlpAspNetCoreMvc31Tests
     {
@@ -51,6 +59,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
 #if NET6_0_OR_GREATER
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc31TestsCallTargetSingleSpan : OtlpAspNetCoreMvc31Tests
     {
@@ -60,6 +70,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
+    [Trait("RequiresDockerDependency", "true")]
+    [Trait("DockerGroup", "1")]
     [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc31TestsCallTargetSingleSpanWithOpenTelemetrySemantics : OtlpAspNetCoreMvc31Tests
     {
