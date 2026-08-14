@@ -2,7 +2,9 @@ param (
     [Parameter(Mandatory=$true)]
     [string]$Framework,
 
-    [string]$InstallDir = 'C:\Program Files\dotnet'
+    [string]$InstallDir = 'C:\Program Files\dotnet',
+
+    [switch]$IncludeAspNetCore
 )
 
 $ErrorActionPreference = 'Stop'
@@ -38,6 +40,17 @@ try {
     $runtimePattern = "^Microsoft\.NETCore\.App $([regex]::Escape($channel))\."
     if ($LASTEXITCODE -ne 0 -or -not ($installedRuntimes -match $runtimePattern)) {
         throw "Failed to install the .NET $channel runtime"
+    }
+
+    if ($IncludeAspNetCore) {
+        Write-Host "Installing the ASP.NET Core $channel x64 runtime for $Framework..."
+        & $installScript -Architecture x64 -Runtime aspnetcore -Channel $channel -InstallDir $InstallDir -NoPath
+
+        $installedRuntimes = & (Join-Path $InstallDir 'dotnet.exe') --list-runtimes
+        $aspNetCorePattern = "^Microsoft\.AspNetCore\.App $([regex]::Escape($channel))\."
+        if ($LASTEXITCODE -ne 0 -or -not ($installedRuntimes -match $aspNetCorePattern)) {
+            throw "Failed to install the ASP.NET Core $channel runtime"
+        }
     }
 }
 finally {
