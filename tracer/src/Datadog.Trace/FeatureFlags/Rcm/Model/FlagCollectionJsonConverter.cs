@@ -137,6 +137,11 @@ internal sealed class FlagCollectionJsonConverter : JsonConverter<FlagCollection
 
     private static bool HasValidOperand(ConditionConfiguration condition)
     {
+        if (condition.Operator is ConditionOperator.MATCHES or ConditionOperator.NOT_MATCHES)
+        {
+            return condition.HasValidRegex();
+        }
+
         if (condition.Operator is ConditionOperator.ONE_OF or ConditionOperator.NOT_ONE_OF)
         {
             return condition.Value is JArray;

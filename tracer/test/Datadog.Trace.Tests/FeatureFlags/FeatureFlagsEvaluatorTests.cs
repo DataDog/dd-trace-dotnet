@@ -153,6 +153,65 @@ public partial class FeatureFlagsEvaluatorTests
     }
 
     [Fact]
+    public void InvalidRegexIsRejectedWithoutEvaluatingItsCondition()
+    {
+        const string json = """
+                            {
+                              "flags": {
+                                "invalid-regex": {
+                                  "key": "invalid-regex",
+                                  "enabled": true,
+                                  "variationType": "STRING",
+                                  "variations": {
+                                    "targeted": { "key": "targeted", "value": "targeted" },
+                                    "catch-all": { "key": "catch-all", "value": "catch-all" }
+                                  },
+                                  "allocations": [
+                                    {
+                                      "key": "invalid-regex-allocation",
+                                      "rules": [
+                                        {
+                                          "conditions": [
+                                            { "attribute": "email", "operator": "MATCHES", "value": "*@example.com" }
+                                          ]
+                                        }
+                                      ],
+                                      "splits": [{ "variationKey": "targeted", "shards": [] }]
+                                    },
+                                    {
+                                      "key": "catch-all-allocation",
+                                      "rules": [],
+                                      "splits": [{ "variationKey": "catch-all", "shards": [] }]
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                            """;
+        var config = JsonConvert.DeserializeObject<ServerConfiguration>(json)!;
+        var evaluator = new FeatureFlagsEvaluator(null, config);
+
+        var result = evaluator.Evaluate("invalid-regex", ValueType.String, "default", new EvaluationContext("target"));
+
+        Assert.Equal("default", result.Value);
+        Assert.Equal(EvaluationReason.Error, result.Reason);
+        Assert.Equal("PARSE_ERROR", result.Error);
+    }
+
+    [Fact]
+    public void PosixAlnumUsesAsciiSemantics()
+    {
+        var condition = new ConditionConfiguration
+        {
+            Operator = ConditionOperator.MATCHES,
+            Value = "^[[:alnum:]]+$",
+        };
+
+        Assert.True(condition.MatchesRegex("abc123"));
+        Assert.False(condition.MatchesRegex("mañana"));
+    }
+
+    [Fact]
     public void MergeReplacesFlagParsingState()
     {
         var originalFlag = new Flag();
