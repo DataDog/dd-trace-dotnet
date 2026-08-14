@@ -2,13 +2,43 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "InlineVTCache.h"
+#include "CoreLibModuleProvider.h"
 #include "Log.h"
+#include "MemoryFaultGuard.h"
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
-InlineVTCache::InlineVTCache(ICorProfilerInfo12* pCorProfilerInfo, IFrameStore* pFrameStore)
-    : _pCorProfilerInfo(pCorProfilerInfo), _pFrameStore(pFrameStore)
+InlineVTCache::InlineVTCache(
+    ICorProfilerInfo12* pCorProfilerInfo,
+    CoreLibModuleProvider* pCoreLibModuleProvider)
+    :
+    _pCorProfilerInfo(pCorProfilerInfo),
+    _pCoreLibModuleProvider(pCoreLibModuleProvider)
 {
+}
+
+InlineVTCache::InspectionStatus InlineVTCache::TryContainsGCPointers(
+    ClassID classID,
+    bool& containsPointers)
+{
+    containsPointers = false;
+    MemoryFaultGuard::RunResult result = MemoryFaultGuard::Run(
+        [&containsPointers, classID]
+        {
+            containsPointers = GCDesc::ContainsGCPointers(classID);
+        });
+
+    switch (result)
+    {
+        case MemoryFaultGuard::RunResult::Completed:
+            return InspectionStatus::Completed;
+        case MemoryFaultGuard::RunResult::Faulted:
+            return InspectionStatus::Faulted;
+        case MemoryFaultGuard::RunResult::Unavailable:
+            return InspectionStatus::GuardUnavailable;
+    }
+
+    return InspectionStatus::GuardUnavailable;
 }
 
 const InlineVTCache::InlineVTInfo* InlineVTCache::GetInlineVTInfo(ClassID classID)
@@ -30,62 +60,270 @@ const InlineVTCache::InlineVTInfo* InlineVTCache::GetInlineVTInfo(ClassID classI
         return it->second.has_value() ? &it->second.value() : nullptr;
     }
 
-    auto info = BuildInlineVTInfo(classID);
-    auto [insertedIt, _] = _cache.emplace(classID, std::move(info));
-    return insertedIt->second.has_value() ? &insertedIt->second.value() : nullptr;
+    // Inspecting the type here would mean resolving its fields types while the runtime is
+    // suspended for the dump: this is done later, once the dump is over.
+    _pendingClassIDs.insert(classID);
+
+    // Record a "nothing to attribute" placeholder so the remaining objects of this type
+    // stop at the cache lookup above instead of probing the queue again, once per object,
+    // while the runtime is suspended. ResolvePendingTypes drops it before inspecting the
+    // type for real.
+    _cache.emplace(classID, std::nullopt);
+
+    return nullptr;
 }
 
-std::optional<InlineVTCache::InlineVTInfo> InlineVTCache::BuildInlineVTInfo(ClassID classID)
+const InlineVTCache::InlineVTInfo* InlineVTCache::GetOrBuildInlineVTInfo(
+    ClassID classID,
+    InspectionStatus* pStatus)
 {
-    if (!GCDesc::ContainsGCPointers(classID))
+    if (pStatus != nullptr)
     {
-        return std::nullopt;
+        *pStatus = InspectionStatus::Completed;
     }
 
+    if (classID == 0)
+    {
+        return nullptr;
+    }
+
+    // Unlike GetInlineVTInfo, this runs after the dump, on a ClassID that may have died
+    // in the meantime: reading its MethodTable to skip the types without GC pointers
+    // early is exactly what must not be done before the runtime has vouched for it.
+    // BuildInlineVTInfo does that check once the type has been validated.
+    auto it = _cache.find(classID);
+    if (it == _cache.end())
+    {
+        // BuildInlineVTInfo inspects the base types, so it can insert into _cache: it must be
+        // called before emplace to avoid reentering it while it is being modified.
+        BuildResult result = BuildInlineVTInfo(classID);
+        if (pStatus != nullptr)
+        {
+            *pStatus = result.status;
+        }
+
+        if (result.status != InspectionStatus::Completed)
+        {
+            return nullptr;
+        }
+
+        it = _cache.emplace(classID, std::move(result.info)).first;
+    }
+
+    return it->second.has_value() ? &it->second.value() : nullptr;
+}
+
+bool InlineVTCache::DropCacheIfModuleUnloaded()
+{
+    if (!_moduleUnloaded.exchange(false, std::memory_order_acq_rel))
+    {
+        return false;
+    }
+
+    Clear();
+    return true;
+}
+
+size_t InlineVTCache::ResolvePendingTypes()
+{
+    // A module unloaded since the last dump: the queued ClassIDs may be dangling and
+    // there is no way to tell which ones, so none of them gets inspected.
+    if (DropCacheIfModuleUnloaded())
+    {
+        return 0;
+    }
+
+    if (_pendingClassIDs.empty())
+    {
+        return 0;
+    }
+
+    // Inspecting a type also inspects its base types, which adds entries to _cache:
+    // iterate over a copy of the queue instead of the queue itself.
+    std::unordered_set<ClassID> pendingClassIDs;
+    pendingClassIDs.swap(_pendingClassIDs);
+
+    // Drop the placeholders GetInlineVTInfo left behind before inspecting anything: a
+    // type inspected below can pull in a base type that is queued too, and it must see
+    // that base type rebuilt rather than its "nothing to attribute" placeholder.
+    for (ClassID classID : pendingClassIDs)
+    {
+        _cache.erase(classID);
+    }
+
+    size_t faultedCount = 0;
+    size_t unavailableCount = 0;
+
+    for (ClassID classID : pendingClassIDs)
+    {
+        // Types without inline VTs are cached as "nothing to attribute" so they don't
+        // come back in the queue at the next dump.
+        //
+        // Raw MethodTable reads are guarded individually inside BuildInlineVTInfo so
+        // ComPtr/vector destructors and cache mutations never sit across a longjmp/SEH
+        // recovery boundary.
+        InspectionStatus status = InspectionStatus::Completed;
+        GetOrBuildInlineVTInfo(classID, &status);
+
+        if (status == InspectionStatus::Faulted)
+        {
+            faultedCount++;
+
+            // Cached as "nothing to attribute" so the next dumps stop at the lookup
+            // instead of faulting on this type again, dump after dump.
+            _cache.insert_or_assign(classID, std::nullopt);
+        }
+        else if (status == InspectionStatus::GuardUnavailable)
+        {
+            unavailableCount++;
+
+            // Keep the placeholder and retry once fault recovery becomes available.
+            _cache.insert_or_assign(classID, std::nullopt);
+            _pendingClassIDs.insert(classID);
+        }
+    }
+
+    // Logged after the loop: a Log call inside the guard would keep its lock on a fault.
+    if (faultedCount > 0)
+    {
+        Log::Warn("InlineVTCache: ", faultedCount, " type(s) could not be inspected because "
+                  "their description was no longer readable. Their inline value types will "
+                  "not be attributed in the reference tree.");
+    }
+
+    if (unavailableCount > 0)
+    {
+        Log::Warn("InlineVTCache: deferred ", unavailableCount, " type inspection(s) because "
+                  "memory fault recovery is unavailable.");
+    }
+
+    return pendingClassIDs.size() - unavailableCount;
+}
+
+ClassID InlineVTCache::ResolveClassIDFromToken(
+    ModuleID moduleID,
+    mdToken token,
+    ULONG32 typeArgCount,
+    ClassID* pTypeArgs)
+{
+    // GetClassFromTokenAndTypeArgs may trigger a type load, so it can only be called outside
+    // of the dump GC (see ResolvePendingTypes).
+    //
+    // A TypeRef or a TypeSpec does not identify a type defined in moduleID: the runtime would
+    // start a type load that always fails, so don't even ask.
+    if (TypeFromToken(token) != mdtTypeDef)
+    {
+        return 0;
+    }
+
+    ClassID classID = 0;
+    HRESULT hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(
+        moduleID, token, typeArgCount, pTypeArgs, &classID);
+
+    return SUCCEEDED(hr) ? classID : 0;
+}
+
+bool InlineVTCache::TryGetTypeDefAndMetadata(
+    ClassID classID,
+    ModuleID& moduleID,
+    mdTypeDef& typeDef,
+    ComPtr<IMetaDataImport>& pMetadataImport,
+    ClassID* pParentClassID,
+    std::vector<ClassID>* pTypeArgs)
+{
+    moduleID = 0;
+    typeDef = mdTokenNil;
+
+    if (classID == 0)
+    {
+        return false;
+    }
+
+    // arrays are not described by a type definition
     CorElementType elementType;
     ClassID elementClassID;
     ULONG rank = 0;
     if (_pCorProfilerInfo->IsArrayClass(classID, &elementType, &elementClassID, &rank) == S_OK)
     {
-        return std::nullopt;
+        return false;
     }
 
-    ModuleID moduleID;
-    mdTypeDef typeDef;
-    ClassID parentClassID;
-    ULONG32 numTypeArgs = 0;
-
+    ClassID parentClassID = 0;
+    ULONG32 typeArgCount = 0;
     HRESULT hr = _pCorProfilerInfo->GetClassIDInfo2(
-        classID, &moduleID, &typeDef, &parentClassID, 0, &numTypeArgs, nullptr);
+        classID, &moduleID, &typeDef, &parentClassID, 0, &typeArgCount, nullptr);
 
     if (FAILED(hr) || moduleID == 0)
     {
-        return std::nullopt;
+        return false;
     }
 
-    std::vector<ClassID> typeArgs;
-    if (numTypeArgs > 0)
+    if (pParentClassID != nullptr)
     {
-        typeArgs.resize(numTypeArgs);
+        *pParentClassID = parentClassID;
+    }
+
+    if (pTypeArgs != nullptr && typeArgCount > 0)
+    {
+        pTypeArgs->resize(typeArgCount);
         hr = _pCorProfilerInfo->GetClassIDInfo2(
-            classID, nullptr, nullptr, nullptr, numTypeArgs, &numTypeArgs, typeArgs.data());
+            classID, nullptr, nullptr, nullptr, typeArgCount, &typeArgCount, pTypeArgs->data());
         if (FAILED(hr))
         {
-            typeArgs.clear();
+            pTypeArgs->clear();
+        }
+    }
+
+    hr = _pCorProfilerInfo->GetModuleMetaData(
+        moduleID, ofRead, IID_IMetaDataImport,
+        reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()));
+
+    return SUCCEEDED(hr) && pMetadataImport.Get() != nullptr;
+}
+
+InlineVTCache::BuildResult InlineVTCache::BuildInlineVTInfo(ClassID classID)
+{
+    ModuleID moduleID = 0;
+    mdTypeDef typeDef = mdTokenNil;
+    ClassID parentClassID = 0;
+    std::vector<ClassID> typeArgs;
+    ComPtr<IMetaDataImport> pMetadataImport;
+
+    // Validate the type through profiling APIs before the raw MethodTable read below.
+    // Profiling APIs report invalid ClassIDs through HRESULT, while the raw read would
+    // fault on freed memory.
+    if (!TryGetTypeDefAndMetadata(classID, moduleID, typeDef, pMetadataImport, &parentClassID, &typeArgs))
+    {
+        return {std::nullopt, InspectionStatus::Completed};
+    }
+
+    bool containsPointers = false;
+    InspectionStatus status = TryContainsGCPointers(classID, containsPointers);
+    if (status != InspectionStatus::Completed)
+    {
+        return {std::nullopt, status};
+    }
+
+    if (!containsPointers)
+    {
+        return {std::nullopt, InspectionStatus::Completed};
+    }
+
+    // Parent fields sit at lower offsets in the object layout, so collect them first.
+    std::vector<InlineVTField> inlineVtFields;
+    if (parentClassID != 0)
+    {
+        status = MergeParentInlineVTs(parentClassID, inlineVtFields);
+        if (status != InspectionStatus::Completed)
+        {
+            return {std::nullopt, status};
         }
     }
 
     ULONG fieldCount = 0;
     ULONG classSize = 0;
-    hr = _pCorProfilerInfo->GetClassLayout(
+    HRESULT hr = _pCorProfilerInfo->GetClassLayout(
         classID, nullptr, 0, &fieldCount, &classSize);
-
-    // Parent fields sit at lower offsets in the object layout, so collect them first.
-    std::vector<std::pair<ULONG, ClassID>> inlineVtFields;
-    if (parentClassID != 0)
-    {
-        MergeParentInlineVTs(parentClassID, inlineVtFields);
-    }
 
     if (SUCCEEDED(hr) && fieldCount > 0)
     {
@@ -95,26 +333,37 @@ std::optional<InlineVTCache::InlineVTInfo> InlineVTCache::BuildInlineVTInfo(Clas
 
         if (SUCCEEDED(hr))
         {
-            ComPtr<IMetaDataImport> pMetadataImport;
-            hr = _pCorProfilerInfo->GetModuleMetaData(
-                moduleID, ofRead, IID_IMetaDataImport,
-                reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()));
-
-            if (SUCCEEDED(hr) && pMetadataImport.Get() != nullptr)
+            for (ULONG i = 0; i < fieldCount; i++)
             {
-                for (ULONG i = 0; i < fieldCount; i++)
+                VTFieldInfo fieldInfo;
+                fieldInfo.offset = fieldOffsets[i].ulOffset;
+                fieldInfo.fieldToken = fieldOffsets[i].ridOfField;
+
+                status = ResolveValueTypeField(fieldInfo, moduleID, pMetadataImport.Get(), typeArgs);
+                if (status != InspectionStatus::Completed)
                 {
-                    ULONG fieldOffset = fieldOffsets[i].ulOffset;
+                    return {std::nullopt, status};
+                }
 
-                    VTFieldInfo fieldInfo;
-                    fieldInfo.offset = fieldOffset;
-                    fieldInfo.fieldToken = fieldOffsets[i].ridOfField;
+                if (fieldInfo.isValueType && fieldInfo.valueTypeClassID != 0)
+                {
+                    // Keep profiling API calls outside MemoryFaultGuard: on Linux,
+                    // siglongjmp across CLR-owned frames could skip locks or cleanup.
+                    // This ClassID was just resolved by the runtime; invalidation is
+                    // reported through HRESULT.
+                    ULONG valueTypeFieldCount = 0;
+                    ULONG valueTypeSize = 0;
+                    HRESULT valueTypeLayoutHr = _pCorProfilerInfo->GetClassLayout(
+                        fieldInfo.valueTypeClassID,
+                        nullptr,
+                        0,
+                        &valueTypeFieldCount,
+                        &valueTypeSize);
 
-                    ResolveValueTypeField(fieldInfo, moduleID, pMetadataImport.Get(), typeArgs);
-
-                    if (fieldInfo.isValueType && fieldInfo.valueTypeClassID != 0)
+                    if (SUCCEEDED(valueTypeLayoutHr) && valueTypeSize != 0)
                     {
-                        inlineVtFields.emplace_back(fieldInfo.offset, fieldInfo.valueTypeClassID);
+                        inlineVtFields.push_back(
+                            {fieldInfo.offset, fieldInfo.valueTypeClassID, valueTypeSize});
                     }
                 }
             }
@@ -123,15 +372,15 @@ std::optional<InlineVTCache::InlineVTInfo> InlineVTCache::BuildInlineVTInfo(Clas
 
     if (inlineVtFields.empty())
     {
-        return std::nullopt;
+        return {std::nullopt, InspectionStatus::Completed};
     }
 
     InlineVTInfo info;
     info.fields = std::move(inlineVtFields);
-    return info;
+    return {std::optional<InlineVTInfo>{std::move(info)}, InspectionStatus::Completed};
 }
 
-void InlineVTCache::ResolveValueTypeField(
+InlineVTCache::InspectionStatus InlineVTCache::ResolveValueTypeField(
     VTFieldInfo& fieldInfo,
     ModuleID moduleID,
     IMetaDataImport* pMetadataImport,
@@ -139,7 +388,7 @@ void InlineVTCache::ResolveValueTypeField(
 {
     if (pMetadataImport == nullptr || fieldInfo.fieldToken == 0)
     {
-        return;
+        return InspectionStatus::Completed;
     }
 
     PCCOR_SIGNATURE pSignature = nullptr;
@@ -152,7 +401,7 @@ void InlineVTCache::ResolveValueTypeField(
 
     if (FAILED(hr) || pSignature == nullptr || signatureSize < 2)
     {
-        return;
+        return InspectionStatus::Completed;
     }
 
     ULONG idx = 0;
@@ -160,7 +409,7 @@ void InlineVTCache::ResolveValueTypeField(
 
     if (idx >= signatureSize)
     {
-        return;
+        return InspectionStatus::Completed;
     }
 
     while (idx < signatureSize)
@@ -169,8 +418,11 @@ void InlineVTCache::ResolveValueTypeField(
         if (prefix == ELEMENT_TYPE_CMOD_OPT || prefix == ELEMENT_TYPE_CMOD_REQD)
         {
             idx++;
-            mdToken token;
-            idx += CorSigUncompressToken(&pSignature[idx], &token);
+            mdToken token = mdTokenNil;
+            if (!TryUncompressToken(pSignature, signatureSize, idx, token))
+            {
+                return InspectionStatus::Completed;
+            }
             continue;
         }
         if (prefix == ELEMENT_TYPE_PINNED || prefix == ELEMENT_TYPE_BYREF)
@@ -183,7 +435,7 @@ void InlineVTCache::ResolveValueTypeField(
 
     if (idx >= signatureSize)
     {
-        return;
+        return InspectionStatus::Completed;
     }
 
     CorElementType elementType = static_cast<CorElementType>(pSignature[idx]);
@@ -192,12 +444,16 @@ void InlineVTCache::ResolveValueTypeField(
     if (elementType == ELEMENT_TYPE_VAR)
     {
         idx++;
-        if (idx >= signatureSize || typeArgs.empty())
+        if (typeArgs.empty())
         {
-            return;
+            return InspectionStatus::Completed;
         }
-        ULONG varIndex;
-        CorSigUncompressData(&pSignature[idx], &varIndex);
+
+        ULONG varIndex = 0;
+        if (!TryUncompressData(pSignature, signatureSize, idx, varIndex))
+        {
+            return InspectionStatus::Completed;
+        }
 
         if (varIndex < static_cast<ULONG>(typeArgs.size()))
         {
@@ -211,86 +467,106 @@ void InlineVTCache::ResolveValueTypeField(
     else if (elementType == ELEMENT_TYPE_VALUETYPE)
     {
         idx++;
-        if (idx >= signatureSize)
+        mdToken vtToken = mdTokenNil;
+        if (!TryUncompressToken(pSignature, signatureSize, idx, vtToken))
         {
-            return;
+            return InspectionStatus::Completed;
         }
-        mdToken vtToken;
-        idx += CorSigUncompressToken(&pSignature[idx], &vtToken);
 
-        hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(
-            moduleID, vtToken, 0, nullptr, &valueTypeClassID);
-        if (FAILED(hr))
-        {
-            valueTypeClassID = 0;
-        }
+        valueTypeClassID = ResolveClassIDFromToken(moduleID, vtToken, 0, nullptr);
     }
     else if (elementType == ELEMENT_TYPE_GENERICINST)
     {
-        idx++;
-        if (idx >= signatureSize)
+        // only embedded generic structs are of interest here:
+        // a field of generic reference type is a reference, not an inline value type
+        if ((signatureSize - idx < 2) ||
+            (static_cast<CorElementType>(pSignature[idx + 1]) != ELEMENT_TYPE_VALUETYPE))
         {
-            return;
-        }
-        CorElementType genericBase = static_cast<CorElementType>(pSignature[idx]);
-        if (genericBase != ELEMENT_TYPE_VALUETYPE)
-        {
-            return;
+            return InspectionStatus::Completed;
         }
 
-        idx++;
-        if (idx >= signatureSize)
-        {
-            return;
-        }
-        mdToken vtToken;
-        idx += CorSigUncompressToken(&pSignature[idx], &vtToken);
-
-        if (idx >= signatureSize)
-        {
-            return;
-        }
-        ULONG genericArgCount;
-        idx += CorSigUncompressData(&pSignature[idx], &genericArgCount);
-
-        std::vector<ClassID> genericArgs;
-        genericArgs.reserve(genericArgCount);
-        for (ULONG argIndex = 0; argIndex < genericArgCount && idx < signatureSize; argIndex++)
-        {
-            ClassID argClassID = ResolveGenericArgClassID(
-                pSignature, signatureSize, idx, moduleID, pMetadataImport, typeArgs);
-            if (argClassID == 0)
-            {
-                return;
-            }
-            genericArgs.push_back(argClassID);
-        }
-
-        if (genericArgs.size() != genericArgCount)
-        {
-            return;
-        }
-
-        hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(
-            moduleID, vtToken, genericArgCount, genericArgs.data(), &valueTypeClassID);
-        if (FAILED(hr))
-        {
-            valueTypeClassID = 0;
-        }
+        valueTypeClassID = ResolveGenericArgClassID(
+            pSignature, signatureSize, idx, moduleID, pMetadataImport, typeArgs);
     }
 
     if (valueTypeClassID == 0)
     {
-        return;
+        return InspectionStatus::Completed;
     }
 
-    if (!GCDesc::ContainsGCPointers(valueTypeClassID))
+    bool containsPointers = false;
+    InspectionStatus status = TryContainsGCPointers(valueTypeClassID, containsPointers);
+    if (status != InspectionStatus::Completed)
     {
-        return;
+        return status;
+    }
+
+    if (!containsPointers)
+    {
+        return InspectionStatus::Completed;
     }
 
     fieldInfo.isValueType = true;
     fieldInfo.valueTypeClassID = valueTypeClassID;
+    return InspectionStatus::Completed;
+}
+
+bool InlineVTCache::TryUncompressToken(
+    PCCOR_SIGNATURE pSignature,
+    ULONG signatureSize,
+    ULONG& idx,
+    mdToken& token)
+{
+    if (pSignature == nullptr || idx >= signatureSize)
+    {
+        return false;
+    }
+
+    uint32_t consumed = 0;
+    uint32_t remaining = static_cast<uint32_t>(signatureSize - idx);
+    HRESULT hr = CorSigUncompressToken(
+        &pSignature[idx],
+        remaining,
+        &token,
+        &consumed);
+
+    if (FAILED(hr) || consumed == 0 || consumed > remaining)
+    {
+        return false;
+    }
+
+    idx += consumed;
+    return true;
+}
+
+bool InlineVTCache::TryUncompressData(
+    PCCOR_SIGNATURE pSignature,
+    ULONG signatureSize,
+    ULONG& idx,
+    ULONG& value)
+{
+    if (pSignature == nullptr || idx >= signatureSize)
+    {
+        return false;
+    }
+
+    uint32_t decoded = 0;
+    uint32_t consumed = 0;
+    uint32_t remaining = static_cast<uint32_t>(signatureSize - idx);
+    HRESULT hr = CorSigUncompressData(
+        &pSignature[idx],
+        remaining,
+        &decoded,
+        &consumed);
+
+    if (FAILED(hr) || consumed == 0 || consumed > remaining)
+    {
+        return false;
+    }
+
+    value = static_cast<ULONG>(decoded);
+    idx += consumed;
+    return true;
 }
 
 ClassID InlineVTCache::ResolveGenericArgClassID(
@@ -309,7 +585,11 @@ ClassID InlineVTCache::ResolveGenericArgClassID(
     {
         idx++;
         ULONG varIndex = 0;
-        idx += CorSigUncompressData(&pSignature[idx], &varIndex);
+        if (!TryUncompressData(pSignature, signatureSize, idx, varIndex))
+        {
+            return 0;
+        }
+
         if (varIndex >= static_cast<ULONG>(typeArgs.size()) || typeArgs[varIndex] == 0)
         {
             return 0;
@@ -321,12 +601,12 @@ ClassID InlineVTCache::ResolveGenericArgClassID(
     {
         idx++;
         mdToken argToken = mdTokenNil;
-        idx += CorSigUncompressToken(&pSignature[idx], &argToken);
+        if (!TryUncompressToken(pSignature, signatureSize, idx, argToken))
+        {
+            return 0;
+        }
 
-        ClassID argClassID = 0;
-        HRESULT hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(
-            moduleID, argToken, 0, nullptr, &argClassID);
-        return SUCCEEDED(hr) ? argClassID : 0;
+        return ResolveClassIDFromToken(moduleID, argToken, 0, nullptr);
     }
 
     if (argType == ELEMENT_TYPE_GENERICINST)
@@ -343,19 +623,18 @@ ClassID InlineVTCache::ResolveGenericArgClassID(
         }
 
         idx++;
-        if (idx >= signatureSize)
-        {
-            return 0;
-        }
         mdToken token = mdTokenNil;
-        idx += CorSigUncompressToken(&pSignature[idx], &token);
-
-        if (idx >= signatureSize)
+        if (!TryUncompressToken(pSignature, signatureSize, idx, token))
         {
             return 0;
         }
+
         ULONG nestedArgCount = 0;
-        idx += CorSigUncompressData(&pSignature[idx], &nestedArgCount);
+        if (!TryUncompressData(pSignature, signatureSize, idx, nestedArgCount) ||
+            nestedArgCount > signatureSize - idx)
+        {
+            return 0;
+        }
 
         std::vector<ClassID> nestedArgs;
         nestedArgs.reserve(nestedArgCount);
@@ -375,10 +654,7 @@ ClassID InlineVTCache::ResolveGenericArgClassID(
             return 0;
         }
 
-        ClassID result = 0;
-        HRESULT hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(
-            moduleID, token, nestedArgCount, nestedArgs.data(), &result);
-        return SUCCEEDED(hr) ? result : 0;
+        return ResolveClassIDFromToken(moduleID, token, nestedArgCount, nestedArgs.data());
     }
 
     // Primitive / well-known types (single-byte element types with no trailing token).
@@ -433,103 +709,68 @@ ClassID InlineVTCache::ResolvePrimitiveClassID(
         return 0;
     }
 
-    mdToken token = mdTokenNil;
+    ClassID classID = 0;
 
-    // Try TypeDef first (works when the module IS the core library).
-    HRESULT hr = pMetadataImport->FindTypeDefByName(typeName, mdTokenNil, &token);
-    if (FAILED(hr))
+    // Fast path: the module defines the type (i.e. it IS the core library).
+    mdTypeDef typeDef = mdTokenNil;
+    if ((pMetadataImport != nullptr) &&
+        SUCCEEDED(pMetadataImport->FindTypeDefByName(typeName, mdTokenNil, &typeDef)))
     {
-        // Enumerate assembly refs and try FindTypeRef for each.
-        ComPtr<IMetaDataAssemblyImport> pAsmImport;
-        hr = pMetadataImport->QueryInterface(
-            IID_IMetaDataAssemblyImport,
-            reinterpret_cast<void**>(pAsmImport.GetAddressOf()));
-        if (FAILED(hr) || pAsmImport.Get() == nullptr)
-        {
-            return 0;
-        }
-
-        HCORENUM hEnum = nullptr;
-        mdAssemblyRef asmRefs[32];
-        ULONG count = 0;
-        while (SUCCEEDED(pAsmImport->EnumAssemblyRefs(&hEnum, asmRefs, 32, &count)) && count > 0)
-        {
-            for (ULONG i = 0; i < count; i++)
-            {
-                hr = pMetadataImport->FindTypeRef(asmRefs[i], typeName, &token);
-                if (SUCCEEDED(hr))
-                {
-                    pAsmImport->CloseEnum(hEnum);
-                    goto resolved;
-                }
-            }
-        }
-        pAsmImport->CloseEnum(hEnum);
-        return 0;
+        classID = ResolveClassIDFromToken(moduleID, typeDef, 0, nullptr);
     }
 
-resolved:
-    ClassID classID = 0;
-    hr = _pCorProfilerInfo->GetClassFromTokenAndTypeArgs(moduleID, token, 0, nullptr, &classID);
-    if (SUCCEEDED(hr) && classID != 0)
+    if (classID == 0 && _pCoreLibModuleProvider != nullptr)
+    {
+        // Primitives are defined in the core library: it is the only module able to resolve them.
+        // Looking for a TypeRef in the current module instead would give a token that the runtime
+        // refuses (it expects a TypeDef of the module it is given).
+        classID = _pCoreLibModuleProvider->ResolveTypeInCoreLib(typeName);
+    }
+
+    if (classID != 0)
     {
         _primitiveClassIDs[elementType] = classID;
     }
+
     return classID;
 }
 
-void InlineVTCache::MergeParentInlineVTs(
+InlineVTCache::InspectionStatus InlineVTCache::MergeParentInlineVTs(
     ClassID parentClassID,
-    std::vector<std::pair<ULONG, ClassID>>& fields)
+    std::vector<InlineVTField>& fields)
 {
-    const InlineVTInfo* parentInfo = GetInlineVTInfo(parentClassID);
+    InspectionStatus status = InspectionStatus::Completed;
+    const InlineVTInfo* parentInfo = GetOrBuildInlineVTInfo(parentClassID, &status);
+    if (status != InspectionStatus::Completed)
+    {
+        return status;
+    }
+
     if (parentInfo == nullptr)
     {
-        return;
+        return InspectionStatus::Completed;
     }
 
     fields.insert(fields.end(),
                   parentInfo->fields.begin(),
                   parentInfo->fields.end());
+    return InspectionStatus::Completed;
 }
 
 bool InlineVTCache::IsClassIDValueType(ClassID classID)
 {
-    if (classID == 0)
-    {
-        return false;
-    }
-
-    CorElementType et;
-    ClassID elemID;
-    ULONG rank;
-    if (_pCorProfilerInfo->IsArrayClass(classID, &et, &elemID, &rank) == S_OK)
-    {
-        return false;
-    }
-
-    ModuleID moduleID;
-    mdTypeDef typeDef;
-    HRESULT hr = _pCorProfilerInfo->GetClassIDInfo2(
-        classID, &moduleID, &typeDef, nullptr, 0, nullptr, nullptr);
-    if (FAILED(hr))
-    {
-        return false;
-    }
-
+    ModuleID moduleID = 0;
+    mdTypeDef typeDef = mdTokenNil;
     ComPtr<IMetaDataImport> pMetadataImport;
-    hr = _pCorProfilerInfo->GetModuleMetaData(
-        moduleID, ofRead, IID_IMetaDataImport,
-        reinterpret_cast<IUnknown**>(pMetadataImport.GetAddressOf()));
 
-    if (FAILED(hr) || pMetadataImport.Get() == nullptr)
+    if (!TryGetTypeDefAndMetadata(classID, moduleID, typeDef, pMetadataImport))
     {
         return false;
     }
 
     DWORD flags = 0;
     mdToken extendsToken = mdTokenNil;
-    hr = pMetadataImport->GetTypeDefProps(
+    HRESULT hr = pMetadataImport->GetTypeDefProps(
         typeDef, nullptr, 0, nullptr, &flags, &extendsToken);
 
     if (FAILED(hr))
@@ -577,9 +818,12 @@ size_t InlineVTCache::GetMemorySize() const
         total += sizeof(ClassID) + sizeof(std::optional<InlineVTInfo>);
         if (opt.has_value())
         {
-            total += opt->fields.capacity() * sizeof(std::pair<ULONG, ClassID>);
+            total += opt->fields.capacity() * sizeof(InlineVTField);
         }
     }
+
+    total += _pendingClassIDs.bucket_count() * sizeof(void*);
+    total += _pendingClassIDs.size() * sizeof(ClassID);
 
     total += _primitiveClassIDs.bucket_count() * sizeof(void*);
     total += _primitiveClassIDs.size() * (sizeof(CorElementType) + sizeof(ClassID));
