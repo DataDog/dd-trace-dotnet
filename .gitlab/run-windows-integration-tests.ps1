@@ -89,10 +89,10 @@ $commonDockerArguments = @(
 Write-Output "Building and running non-Docker Windows x64 Tracer integration tests for $env:FRAMEWORK"
 $testCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK && c:\entrypoint.bat CompileTrimmingSamples BuildIntegrationTests RunIntegrationTests --framework $env:FRAMEWORK --TargetPlatform x64 --IncludeAllTestFrameworks true --IncludeTestsRequiringDocker false --NugetPackageDirectory c:\mnt\packages"
 
-& docker @commonDockerArguments --entrypoint cmd.exe $windowsBuildImage /d /s /c $testCommand
+& docker run @commonDockerArguments --entrypoint cmd.exe $windowsBuildImage /d /s /c $testCommand
 $testExitCode = $LASTEXITCODE
 
-& docker @commonDockerArguments $windowsBuildImage CheckBuildLogsForErrors --NugetPackageDirectory c:\mnt\packages
+& docker run @commonDockerArguments $windowsBuildImage CheckBuildLogsForErrors --NugetPackageDirectory c:\mnt\packages
 $logCheckExitCode = $LASTEXITCODE
 
 if ($testExitCode -ne 0) {
