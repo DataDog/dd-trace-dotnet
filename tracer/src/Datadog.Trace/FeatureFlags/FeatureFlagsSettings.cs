@@ -62,9 +62,10 @@ internal sealed class FeatureFlagsSettings
 
         Source = ResolveSource(enabled, configuredSource, legacyEnabled);
 
-        AgentlessBaseUrl = config
-                          .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl)
-                          .AsString(url => !StringUtil.IsNullOrEmpty(url?.Trim()));
+        var agentlessBaseUrl = config
+                                .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl)
+                                .AsRedactedString();
+        AgentlessBaseUrl = !StringUtil.IsNullOrEmpty(agentlessBaseUrl?.Trim()) ? agentlessBaseUrl : null;
 
         PollInterval = TimeSpan.FromSeconds(
             InRangeOrDefault(

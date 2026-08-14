@@ -104,6 +104,17 @@ public class AgentlessEndpointTests
         error.Should().Be("No Datadog site is configured");
     }
 
+    [Theory]
+    [InlineData("https://datadoghq.com")] // user accidentally includes the scheme
+    [InlineData("data dog hq.com")] // internal spaces
+    [InlineData("datadoghq.com:99999")] // invalid port
+    public void RejectsMalformedSiteWithoutThrowing(string site)
+    {
+        AgentlessEndpoint.TryCreate(site, env: null, baseUrl: null, out var endpoint, out var error)
+            .Should().BeFalse();
+        error.Should().Be("The configured Datadog site is not valid");
+    }
+
     [Fact]
     public void ErrorNeverContainsUrl()
     {

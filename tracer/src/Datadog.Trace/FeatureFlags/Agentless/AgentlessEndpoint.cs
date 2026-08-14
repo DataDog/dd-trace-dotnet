@@ -72,13 +72,25 @@ internal readonly struct AgentlessEndpoint
                 return false;
             }
 
-            var managed = new UriBuilder("https", ManagedHostPrefix + trimmedSite!.ToLowerInvariant()) { Path = DefaultPath };
-            if (!StringUtil.IsNullOrEmpty(env))
+            var managedHost = ManagedHostPrefix + trimmedSite!.ToLowerInvariant();
+            if (managedHost.Contains("://") || HasWhitespace(managedHost))
             {
-                managed.Query = "dd_env=" + Uri.EscapeDataString(env!);
+                error = "The configured Datadog site is not valid";
+                return false;
             }
 
-            endpoint = new AgentlessEndpoint(managed.Uri, isManaged: true);
+            if (!Uri.TryCreate($"https://{managedHost}{DefaultPath}", UriKind.Absolute, out var managedUri))
+            {
+                error = "The configured Datadog site is not valid";
+                return false;
+            }
+
+            if (!StringUtil.IsNullOrEmpty(env))
+            {
+                managedUri = new UriBuilder(managedUri) { Query = "dd_env=" + Uri.EscapeDataString(env!) }.Uri;
+            }
+
+            endpoint = new AgentlessEndpoint(managedUri, isManaged: true);
             return true;
         }
 
@@ -112,5 +124,18 @@ internal readonly struct AgentlessEndpoint
 
         endpoint = new AgentlessEndpoint(custom, isManaged: false);
         return true;
+    }
+
+    private static bool HasWhitespace(string value)
+    {
+        foreach (var c in value)
+        {
+            if (char.IsWhiteSpace(c))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
