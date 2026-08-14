@@ -227,14 +227,6 @@ namespace Datadog.Trace
                     spansToWrite = _spans;
                     _spans = default;
                     TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
-
-                    // A WAF context can be created on any local root span, not just a web one (the user
-                    // events SDKs and the ASP.NET Core Identity integrations don't check the span type),
-                    // and it holds native memory that is only released when it is disposed. Web traces
-                    // release it as soon as their local root span closes, above; for every other trace
-                    // this is the point where nothing can use it anymore. Disposing twice is a no-op.
-                    // This has to happen while holding the lock, or AddSpan could reopen the segment
-                    // in between and we would dispose the context of a span that is still running.
                     _appSecRequestContext?.DisposeAdditiveContext();
                 }
                 else if (TestOptimization.Instance.IsRunning && span.IsCiVisibilitySpan())
