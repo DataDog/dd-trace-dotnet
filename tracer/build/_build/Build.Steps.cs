@@ -1721,7 +1721,7 @@ partial class Build
                                    .Where(path => !((string)path).Contains(Projects.DdDotnetIntegrationTests));
             }
 
-            DotnetBuild(projects, framework: Framework, noRestore: IsWin);
+            DotnetBuild(projects, framework: Framework, noRestore: IsWin && !IsGitlab);
 
             IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
             IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.AppSecIntegrationTests);
