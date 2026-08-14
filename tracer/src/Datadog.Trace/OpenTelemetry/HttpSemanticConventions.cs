@@ -73,9 +73,10 @@ namespace Datadog.Trace.OpenTelemetry
 
         /// <summary>
         /// Gets the value to report in "server.address" for <paramref name="host"/>. Same as
-        /// <see cref="HttpRequestUtils.GetNormalizedHost"/>, except that the brackets
-        /// <see cref="Uri.Host"/> puts around IPv6 addresses (for example, "[::1]") are stripped, as
-        /// OpenTelemetry expects the address itself. The brackets are only kept in "url.full".
+        /// <see cref="HttpRequestUtils.GetNormalizedHost"/>, except that the brackets that
+        /// <see cref="Uri.Host"/> and ASP.NET Core's HostString.Host put around IPv6
+        /// addresses (for example, "[::1]") are stripped, as OpenTelemetry expects the address
+        /// itself. The brackets are only kept in "url.full".
         /// </summary>
         internal static string? GetServerAddress(string? host)
         {
@@ -148,7 +149,7 @@ namespace Datadog.Trace.OpenTelemetry
 
             if (!StringUtil.IsNullOrEmpty(host))
             {
-                tags.ServerAddress = host;
+                tags.ServerAddress = GetServerAddress(host);
 
                 // server.port is only set when server.address is set
                 tags.ServerPort = port;

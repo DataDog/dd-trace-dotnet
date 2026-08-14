@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.OpenTelemetry;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
 
@@ -106,6 +107,32 @@ public class HttpSemanticConventionsTests
     public void GetServerAddress_StripsIPv6Brackets(string host, string expected)
     {
         HttpSemanticConventions.GetServerAddress(host).Should().Be(expected);
+    }
+
+    [Theory]
+    // ASP.NET Core's HostString.Host wraps IPv6 addresses in brackets too, so
+    // SetHttpServerUrlTags (used for server spans) must strip them the same way
+    // GetServerAddress does for client spans
+    [InlineData("[::1]", "::1")]
+    [InlineData("[2001:db8::1]", "2001:db8::1")]
+
+    // Regular hostnames are unaffected
+    [InlineData("example.com", "example.com")]
+    public void SetHttpServerUrlTags_StripsIPv6BracketsFromServerAddress(string host, string expected)
+    {
+        var tags = new WebTags();
+
+        HttpSemanticConventions.SetHttpServerUrlTags(
+            tags,
+            scheme: "https",
+            host: host,
+            port: 443,
+            pathBase: null,
+            path: "/",
+            queryString: null,
+            queryStringManager: null);
+
+        tags.ServerAddress.Should().Be(expected);
     }
 
     [Theory]
