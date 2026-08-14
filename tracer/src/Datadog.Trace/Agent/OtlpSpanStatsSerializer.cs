@@ -268,11 +268,8 @@ namespace Datadog.Trace.Agent
 
             foreach (var tag in bucket.AdditionalMetricTags)
             {
-                var separatorIndex = FindEncodedTagSeparator(tag);
-                if (separatorIndex >= 0)
+                if (TryDecodeAdditionalMetricTag(tag, out var tagKey, out var tagValue))
                 {
-                    var tagKey = EncodingHelpers.Utf8NoBom.GetString(tag, 0, separatorIndex);
-                    var tagValue = EncodingHelpers.Utf8NoBom.GetString(tag, separatorIndex + 1, tag.Length - separatorIndex - 1);
                     WriteStringKvJson(writer, tagKey, tagValue);
                 }
             }
@@ -568,10 +565,9 @@ namespace Datadog.Trace.Agent
 
             foreach (var tag in bucket.AdditionalMetricTags)
             {
-                var separatorIndex = FindEncodedTagSeparator(tag);
-                if (separatorIndex >= 0)
+                if (TryDecodeAdditionalMetricTag(tag, out var tagKey, out var tagValue))
                 {
-                    WriteEncodedTagAttribute(writer, tag, separatorIndex, FieldNumbers.HistogramDataPointAttributes);
+                    WriteAttribute(writer, tagKey, tagValue, FieldNumbers.HistogramDataPointAttributes);
                 }
             }
 
@@ -736,11 +732,37 @@ namespace Datadog.Trace.Agent
             return null;
         }
 
-        private static int FindEncodedTagSeparator(byte[] encodedTag)
+        private static bool TryDecodeAdditionalMetricTag(byte[] encodedTag, out string key, out string value)
         {
-            // TODO: Preserve the cardinality-limit sentinel once its OTLP representation is defined.
-            return Array.IndexOf(encodedTag, (byte)':');
+            var separatorIndex = Array.IndexOf(encodedTag, (byte)':');
+            if (separatorIndex <= 0)
+            {
+                key = EncodingHelpers.Utf8NoBom.GetString(encodedTag);
+                value = string.Empty;
+                return separatorIndex < 0 && key == StatsAggregator.BlockedByTracerSentinel;
+            }
+
+            key = EncodingHelpers.Utf8NoBom.GetString(encodedTag, 0, separatorIndex);
+            value = EncodingHelpers.Utf8NoBom.GetString(encodedTag, separatorIndex + 1, encodedTag.Length - separatorIndex - 1);
+            return !IsBuiltInDataPointAttribute(key);
         }
+
+        private static bool IsBuiltInDataPointAttribute(string key)
+            => key is "service.name"
+                   or "status.code"
+                   or "span.kind"
+                   or "span.name"
+                   or "http.request.method"
+                   or "http.response.status_code"
+                   or "http.route"
+                   or "rpc.response.status_code"
+                   or "datadog.operation.name"
+                   or "datadog.span.type"
+                   or "datadog.span.top_level"
+                   or "datadog.is_trace_root"
+                   or "datadog.origin"
+                   or "datadog.svc_src"
+                   or "datadog.peer_tags";
 
         private static List<string> DecodePeerTags(List<byte[]> peerTags)
         {
@@ -756,14 +778,6 @@ namespace Datadog.Trace.Agent
         private static void WriteAttribute(BinaryWriter writer, string key, string value, int fieldNumber = FieldNumbers.Attributes)
         {
             var kv = SerializeKeyValue(key, value);
-            WriteTag(writer, fieldNumber, WireTypeLengthDelimited);
-            WriteVarInt(writer, kv.Length);
-            writer.Write(kv);
-        }
-
-        private static void WriteEncodedTagAttribute(BinaryWriter writer, byte[] encodedTag, int separatorIndex, int fieldNumber)
-        {
-            var kv = SerializeEncodedTagKeyValue(encodedTag, separatorIndex);
             WriteTag(writer, fieldNumber, WireTypeLengthDelimited);
             WriteVarInt(writer, kv.Length);
             writer.Write(kv);
@@ -795,27 +809,6 @@ namespace Datadog.Trace.Agent
             using var anyStream = new MemoryStream(32);
             using var anyWriter = new BinaryWriter(anyStream, Encoding.UTF8, leaveOpen: true);
             WriteStringField(anyWriter, AnyValueFieldNumbers.StringValue, value);
-            anyWriter.Flush();
-            var anyData = anyStream.ToArray();
-
-            WriteTag(writer, FieldNumbers.Value, WireTypeLengthDelimited);
-            WriteVarInt(writer, anyData.Length);
-            writer.Write(anyData);
-
-            writer.Flush();
-            return stream.ToArray();
-        }
-
-        private static byte[] SerializeEncodedTagKeyValue(byte[] encodedTag, int separatorIndex)
-        {
-            using var stream = new MemoryStream(encodedTag.Length + 8);
-            using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
-
-            WriteBytesField(writer, FieldNumbers.Key, encodedTag, 0, separatorIndex);
-
-            using var anyStream = new MemoryStream(encodedTag.Length - separatorIndex + 4);
-            using var anyWriter = new BinaryWriter(anyStream, Encoding.UTF8, leaveOpen: true);
-            WriteBytesField(anyWriter, AnyValueFieldNumbers.StringValue, encodedTag, separatorIndex + 1, encodedTag.Length - separatorIndex - 1);
             anyWriter.Flush();
             var anyData = anyStream.ToArray();
 
@@ -928,16 +921,6 @@ namespace Datadog.Trace.Agent
                 var bytes = Encoding.UTF8.GetBytes(value);
                 WriteVarInt(writer, bytes.Length);
                 writer.Write(bytes);
-            }
-        }
-
-        private static void WriteBytesField(BinaryWriter writer, int fieldNumber, byte[] value, int index, int count)
-        {
-            if (count > 0)
-            {
-                WriteTag(writer, fieldNumber, WireTypeLengthDelimited);
-                WriteVarInt(writer, count);
-                writer.Write(value, index, count);
             }
         }
 

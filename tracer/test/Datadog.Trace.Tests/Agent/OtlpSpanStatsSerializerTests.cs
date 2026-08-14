@@ -312,7 +312,8 @@ namespace Datadog.Trace.Tests.Agent
             var buffer = CreateBuffer();
             AddHit(buffer);
 
-            var processTagValues = GetResourceArrayAttribute(SerializeToJson(buffer), "datadog.process_tags");
+            var processTagValues = SerializeToJson(buffer)
+                                  .SelectTokens("$..attributes[?(@.key == 'datadog.process_tags')].value.arrayValue.values[*].stringValue");
 
             processTagValues.Should().NotBeEmpty();
         }
@@ -320,7 +321,7 @@ namespace Datadog.Trace.Tests.Agent
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
-        public void Serialize_EmitsAllAdditionalMetricTags(bool useJson)
+        public void Serialize_EmitsAdditionalMetricTags(bool useJson)
         {
             var buffer = CreateBuffer();
             var key = CreateKey();
@@ -328,6 +329,9 @@ namespace Datadog.Trace.Tests.Agent
             {
                 Encoding.UTF8.GetBytes("team:payments"),
                 Encoding.UTF8.GetBytes("datadog.custom:value"),
+                Encoding.UTF8.GetBytes("endpoint:https://example.com:443"),
+                Encoding.UTF8.GetBytes("span.kind:custom"),
+                Encoding.UTF8.GetBytes(StatsAggregator.BlockedByTracerSentinel),
             };
             buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
 
@@ -335,6 +339,9 @@ namespace Datadog.Trace.Tests.Agent
 
             attrs.Should().ContainKey("team").WhoseValue.Should().Be("payments");
             attrs.Should().ContainKey("datadog.custom").WhoseValue.Should().Be("value");
+            attrs.Should().ContainKey("endpoint").WhoseValue.Should().Be("https://example.com:443");
+            attrs.Should().ContainKey("span.kind").WhoseValue.Should().Be("SPAN_KIND_SERVER");
+            attrs.Should().ContainKey(StatsAggregator.BlockedByTracerSentinel).WhoseValue.Should().BeEmpty();
         }
 
         [Fact]
@@ -349,7 +356,9 @@ namespace Datadog.Trace.Tests.Agent
             };
             buffer.Buckets.Add(key, new StatsBucket(key, peerTags, []) { Hits = 1, Duration = 5_000_000 });
 
-            var peerTagValues = GetDataPointArrayAttribute(SerializeToJson(buffer), "datadog.peer_tags");
+            var peerTagValues = SerializeToJson(buffer)
+                               .SelectTokens("$..attributes[?(@.key == 'datadog.peer_tags')].value.arrayValue.values[*].stringValue")
+                               .Values<string>();
 
             peerTagValues.Should().Equal("peer.service:downstream", "net.peer.name:downstream.example.com");
         }
@@ -692,49 +701,6 @@ namespace Datadog.Trace.Tests.Agent
                 var key = attr["key"]!.Value<string>()!;
                 var value = attr["value"]!["stringValue"]?.Value<string>() ?? string.Empty;
                 result[key] = value;
-            }
-
-            return result;
-        }
-
-        private static List<string> GetDataPointArrayAttribute(JObject json, string key)
-        {
-            var dp = json.SelectToken("$.resourceMetrics[0].scopeMetrics[0].metrics[0].histogram.dataPoints[0]") as JObject;
-            return GetArrayAttribute(dp?.SelectToken("$.attributes"), key);
-        }
-
-        private static List<string> GetResourceArrayAttribute(JObject json, string key)
-        {
-            return GetArrayAttribute(json.SelectToken("$.resourceMetrics[0].resource.attributes"), key);
-        }
-
-        private static List<string> GetArrayAttribute(JToken? attrs, string key)
-        {
-            var result = new List<string>();
-            if (attrs == null)
-            {
-                return result;
-            }
-
-            foreach (var attr in attrs)
-            {
-                if (attr["key"]!.Value<string>() != key)
-                {
-                    continue;
-                }
-
-                var values = attr["value"]!["arrayValue"]?["values"];
-                if (values == null)
-                {
-                    return result;
-                }
-
-                foreach (var value in values)
-                {
-                    result.Add(value["stringValue"]!.Value<string>()!);
-                }
-
-                return result;
             }
 
             return result;
