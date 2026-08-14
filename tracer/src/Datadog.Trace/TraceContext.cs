@@ -184,7 +184,6 @@ namespace Datadog.Trace
             bool ShouldTriggerPartialFlush() => Tracer.Settings.PartialFlushEnabled && _spans.Count >= Tracer.Settings.PartialFlushMinSpans;
 
             SpanCollection spansToWrite = default;
-            var allSpansClosed = false;
 
             // Propagate the resource name to the profiler for root web spans
             if (span.IsRootSpan)
@@ -227,8 +226,16 @@ namespace Datadog.Trace
                 {
                     spansToWrite = _spans;
                     _spans = default;
-                    allSpansClosed = true;
                     TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
+
+                    // A WAF context can be created on any local root span, not just a web one (the user
+                    // events SDKs and the ASP.NET Core Identity integrations don't check the span type),
+                    // and it holds native memory that is only released when it is disposed. Web traces
+                    // release it as soon as their local root span closes, above; for every other trace
+                    // this is the point where nothing can use it anymore. Disposing twice is a no-op.
+                    // This has to happen while holding the lock, or AddSpan could reopen the segment
+                    // in between and we would dispose the context of a span that is still running.
+                    _appSecRequestContext?.DisposeAdditiveContext();
                 }
                 else if (TestOptimization.Instance.IsRunning && span.IsCiVisibilitySpan())
                 {
@@ -256,16 +263,6 @@ namespace Datadog.Trace
                     _spans = new SpanCollection(spansToWrite.Count);
                     TelemetryFactory.Metrics.RecordCountTracePartialFlush(MetricTags.PartialFlushReason.LargeTrace);
                 }
-            }
-
-            if (allSpansClosed)
-            {
-                // A WAF context can be created on any local root span, not just a web one (the user
-                // events SDKs and the ASP.NET Core Identity integrations don't check the span type),
-                // and it holds native memory that is only released when it is disposed. Web traces
-                // release it as soon as their local root span closes, above; for every other trace
-                // this is the point where nothing can use it anymore. Disposing twice is a no-op.
-                _appSecRequestContext?.DisposeAdditiveContext();
             }
 
             if (spansToWrite.Count > 0)
