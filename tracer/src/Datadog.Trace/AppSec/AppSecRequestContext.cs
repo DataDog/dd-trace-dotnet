@@ -174,24 +174,33 @@ internal partial class AppSecRequestContext
     /// </summary>
     internal void DisposeAdditiveContext()
     {
-        _context?.Dispose();
-        _isAdditiveContextDisposed = true;
+        // creation and disposal have to be mutually exclusive: without the lock a context being
+        // created here could be assigned right after this method has run, so it would never be
+        // disposed and its native memory would only be released by the finalizer
+        lock (_sync)
+        {
+            _context?.Dispose();
+            _isAdditiveContextDisposed = true;
+        }
     }
 
     internal IContext? GetOrCreateAdditiveContext(Security security)
     {
-        if (_isAdditiveContextDisposed)
+        lock (_sync)
         {
-            Log.Debug("Additive context was requested when already disposed");
-            return null;
-        }
+            if (_isAdditiveContextDisposed)
+            {
+                Log.Debug("Additive context was requested when already disposed");
+                return null;
+            }
 
-        if (_context is not null)
-        {
+            if (_context is not null)
+            {
+                return _context;
+            }
+
+            _context = security.CreateAdditiveContext();
             return _context;
         }
-
-        _context = security.CreateAdditiveContext();
-        return _context;
     }
 }
