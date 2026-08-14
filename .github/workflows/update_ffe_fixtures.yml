@@ -1,0 +1,77 @@
+name: Update FFE fixtures
+
+on:
+  schedule:
+    - cron: "0 0 * * 0" # Every Sunday at midnight UTC
+  workflow_dispatch:
+    inputs:
+      fixture_ref:
+        description: Branch, tag, or commit from DataDog/ffe-system-test-data
+        required: true
+        default: main
+        type: string
+
+concurrency:
+  group: update-ffe-fixtures
+  cancel-in-progress: false
+
+jobs:
+  update_ffe_fixtures:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Get dd-octo-sts token
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        id: octo-sts
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.update_ffe_fixtures.create-pr
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Update fixture snapshot
+        id: fixtures
+        env:
+          FFE_FIXTURE_REF: ${{ inputs.fixture_ref || 'main' }}
+        run: ./tracer/build.sh UpdateFfeFixtures --FfeFixtureRef "$FFE_FIXTURE_REF"
+
+      - name: Create Pull Request
+        if: steps.fixtures.outputs.changed == 'true'
+        uses: ./.github/actions/create-signed-pull-request
+        with:
+          token: ${{ steps.octo-sts.outputs.token }}
+          branch: bot/ffe-fixtures-update
+          commit-message: "test(ffe): update canonical fixtures"
+          base: master
+          title: "test(ffe): update canonical fixtures"
+          draft: true
+          labels: "area:tests,feature_flags"
+          body: |
+            ## Summary of changes
+
+            Updates the FFE tests to commit ${{ steps.fixtures.outputs.source_commit }}.
+
+            ## Reason for change
+
+            Keep dd-trace-dotnet synchronized with the canonical FFE evaluator fixtures. New fixtures may intentionally make unit tests fail when they expose evaluator bugs that must be addressed before this update is merged.
+
+            Canonical source: https://github.com/DataDog/ffe-system-test-data
+            Source commit: ${{ steps.fixtures.outputs.source_commit }}
+
+            ## Implementation details
+
+            - Refresh the checked-in FFE fixture snapshot from the canonical repository.
+            - Load ${{ steps.fixtures.outputs.fixture_count }} canonical JSON fixture cases.
+
+            ## Test coverage
+
+            The existing FFE unit tests run against the refreshed canonical fixtures.
+
+            ## Other details
+
+            Address evaluator failures in this update PR before merging it.
