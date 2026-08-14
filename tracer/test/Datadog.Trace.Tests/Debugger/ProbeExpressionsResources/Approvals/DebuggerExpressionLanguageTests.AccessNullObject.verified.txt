@@ -1,5 +1,5 @@
-Template:
-Segments: 
+﻿Template:
+Segments:
 
 {
     "getmember": [
@@ -9,8 +9,7 @@ Segments:
         "NestedString"
     ]
 }
-Expressions: 
-(
+Expressions: (
     scopeMember,
     scopeMember,
     scopeMember,
