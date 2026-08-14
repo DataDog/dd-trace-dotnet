@@ -25,7 +25,7 @@ namespace Datadog.Trace.FeatureFlags
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
 
         private readonly FeatureFlagsSettings _settings;
-        private readonly ExposureApi _exposureApi;
+        private readonly Lazy<ExposureApi> _exposureApi;
         private readonly bool _spanEnrichmentEnabled;
         private readonly IRcmSubscriptionManager? _rcmSubscriptionManager;
         private readonly ISubscription? _rcmSubscription;
@@ -42,7 +42,7 @@ namespace Datadog.Trace.FeatureFlags
         {
             _settings = settings.FeatureFlags;
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
-            _exposureApi = new ExposureApi(settings);
+            _exposureApi = new Lazy<ExposureApi>(() => new ExposureApi(settings));
 
             Log.Debug<FeatureFlagsSource>("FeatureFlagsModule ENABLED with source {Source}", _settings.Source);
 
@@ -98,7 +98,10 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             Interlocked.Exchange(ref _agentlessSource, null)?.Dispose();
-            _exposureApi.Dispose();
+            if (_exposureApi.IsValueCreated)
+            {
+                _exposureApi.Value.Dispose();
+            }
         }
 
         /// <summary>
@@ -258,7 +261,7 @@ namespace Datadog.Trace.FeatureFlags
 
         private void ReportExposure(in ExposureEvent exposure)
         {
-            _exposureApi?.SendExposure(exposure);
+            _exposureApi.Value.SendExposure(exposure);
         }
     }
 }

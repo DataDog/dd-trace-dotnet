@@ -127,7 +127,7 @@ public class FeatureFlagsModuleTests
 
         module!.ApplyConfiguration(new ServerConfiguration
         {
-            Flags = new Dictionary<string, Flag>
+            Flags = new FlagCollection
             {
                 ["test-flag"] = new Flag { Key = "test-flag", Enabled = true, VariationType = FeatureFlagsValueType.Boolean }
             }
