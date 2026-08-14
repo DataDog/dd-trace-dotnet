@@ -53,6 +53,7 @@
 
 ## integration tests for auto-instrumentations
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/                                                @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/DataStreamsMonitoring*                          @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/**/DataStreamsMonitoring*                       @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
 
 ### co-owned integrations tests

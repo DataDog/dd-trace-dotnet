@@ -63,8 +63,8 @@ namespace Benchmarks.Trace
 
             var noOpStatsd = new StatsdManager(settings, (_, _) => null);
             var noopApi = new NullApi();
-            _agentWriter = new AgentWriter(api, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false);
-            _agentWriterNoOpFlush = new AgentWriter(noopApi, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false);
+            _agentWriter = new AgentWriter(api, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false, batchInterval: 0);
+            _agentWriterNoOpFlush = new AgentWriter(noopApi, statsAggregator: null, statsd: noOpStatsd, automaticFlush: false, batchInterval: 0);
 
             // Warmup to reduce noise
             WriteAndFlushEnrichedTraces().GetAwaiter().GetResult();
@@ -73,7 +73,8 @@ namespace Benchmarks.Trace
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            _agentWriter.FlushAndCloseAsync();
+            _agentWriter.FlushAndCloseAsync().GetAwaiter().GetResult();
+            _agentWriterNoOpFlush.FlushAndCloseAsync().GetAwaiter().GetResult();
         }
 
         /// <summary>
