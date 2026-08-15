@@ -61,10 +61,16 @@ variables:
     LLMVAL_PLATFORM_REF: "4bb157a2cbb50ef608b9ec8e14b886e0cf838ca3"   # v0.1.4 (must match include ref above)
 
 build-windows-ci-image:
-  stage: build
+  stage: .pre
   timeout: 2h
   tags: ["windows-v2:2022"]
-  when: manual
+  rules:
+    - changes:
+        - .gitlab-ci.yml
+        - tracer/build/_build/docker/gitlab/**/*
+      when: on_success
+    - when: manual
+      allow_failure: true
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
