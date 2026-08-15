@@ -202,6 +202,13 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsHangfireV0(),
             };
 
+        public static Result IsMassTransit(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsMassTransitV1(),
+                _ => span.IsMassTransitV0(),
+            };
+
         public static Result IsHotChocolate(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {

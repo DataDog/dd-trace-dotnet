@@ -17,7 +17,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 80;
+    public const int Length = 81;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -109,6 +109,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict => nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict),
             Datadog.Trace.Configuration.IntegrationId.Hangfire => nameof(Datadog.Trace.Configuration.IntegrationId.Hangfire),
             Datadog.Trace.Configuration.IntegrationId.OpenFeature => nameof(Datadog.Trace.Configuration.IntegrationId.OpenFeature),
+            Datadog.Trace.Configuration.IntegrationId.MassTransit => nameof(Datadog.Trace.Configuration.IntegrationId.MassTransit),
             Datadog.Trace.Configuration.IntegrationId.ServerlessCompat => nameof(Datadog.Trace.Configuration.IntegrationId.ServerlessCompat),
             _ => value.ToString(),
         };
@@ -202,6 +203,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict,
             Datadog.Trace.Configuration.IntegrationId.Hangfire,
             Datadog.Trace.Configuration.IntegrationId.OpenFeature,
+            Datadog.Trace.Configuration.IntegrationId.MassTransit,
             Datadog.Trace.Configuration.IntegrationId.ServerlessCompat,
         };
 
@@ -295,6 +297,7 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict),
             nameof(Datadog.Trace.Configuration.IntegrationId.Hangfire),
             nameof(Datadog.Trace.Configuration.IntegrationId.OpenFeature),
+            nameof(Datadog.Trace.Configuration.IntegrationId.MassTransit),
             nameof(Datadog.Trace.Configuration.IntegrationId.ServerlessCompat),
         };
 }
