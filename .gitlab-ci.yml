@@ -52,10 +52,16 @@ variables:
   WINDOWS_BUILD_IMAGE_BASE: "registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build"
 
 build-windows-ci-image:
-  stage: build
+  stage: .pre
   timeout: 2h
   tags: ["windows-v2:2022"]
-  when: manual
+  rules:
+    - changes:
+        - .gitlab-ci.yml
+        - tracer/build/_build/docker/gitlab/**/*
+      when: on_success
+    - when: manual
+      allow_failure: true
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
