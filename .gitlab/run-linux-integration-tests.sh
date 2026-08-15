@@ -6,6 +6,8 @@ base_tester_image="dd-trace-dotnet/${BASE_IMAGE}-integration-base:${CI_JOB_ID}"
 tester_image="dd-trace-dotnet/${BASE_IMAGE}-tester:${DOTNET_SDK_VERSION}"
 include_minor_package_versions=false
 include_all_test_frameworks=true
+test_suite="${TEST_SUITE:-integration}"
+area="${AREA:-Tracer}"
 if [ "${perform_comprehensive_testing:-false}" = "true" ]; then
   include_minor_package_versions=true
 fi
@@ -79,83 +81,213 @@ if [ -z "${DD_LOGGER_DD_API_KEY:-}" ]; then
   echo "CI Visibility API key configured using dd-sts"
 fi
 
-echo "Building non-Docker Tracer integration tests for ${FRAMEWORK}"
-docker run --rm \
-  --cap-add=SYS_PTRACE \
-  --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
-  --env NugetPackageDirectory=/project/packages \
-  --env artifacts=/project/artifacts/output \
-  --env CI=true \
-  --env CI_JOB_ID \
-  --env DD_LOGGER_DD_API_KEY \
-  --env "IncludeAllTestFrameworks=${include_all_test_frameworks}" \
-  --env NUKE_TELEMETRY_OPTOUT=1 \
-  --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
-  "$tester_image" \
-  dotnet /build/bin/Debug/_build.dll \
-  BuildIntegrationTests CompileTrimmingSamples \
-  --framework "$FRAMEWORK" \
-  --IncludeTestsRequiringDocker false \
-  --TestAllPackageVersions true \
-  --IncludeMinorPackageVersions "$include_minor_package_versions" \
-  --NugetPackageDirectory /project/packages
+case "$test_suite" in
+  integration|docker)
+    include_docker=false
+    filter=""
+    if [ "$test_suite" = "docker" ]; then
+      include_docker=true
+      if [ -z "${DOCKER_GROUP:-}" ]; then
+        echo "DOCKER_GROUP is required for Docker integration tests" >&2
+        exit 1
+      fi
+      filter="DockerGroup=${DOCKER_GROUP}"
+    fi
 
-echo "Running non-Docker Tracer integration tests for ${FRAMEWORK}"
+    echo "Building ${test_suite} integration tests for ${FRAMEWORK} (area=${area}, filter=${filter})"
+    docker run --rm \
+      --cap-add=SYS_PTRACE \
+      --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
+      --env NugetPackageDirectory=/project/packages \
+      --env artifacts=/project/artifacts/output \
+      --env CI=true \
+      --env CI_JOB_ID \
+      --env DD_LOGGER_DD_API_KEY \
+      --env "IncludeAllTestFrameworks=${include_all_test_frameworks}" \
+      --env "Filter=${filter}" \
+      --env NUKE_TELEMETRY_OPTOUT=1 \
+      --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+      "$tester_image" \
+      dotnet /build/bin/Debug/_build.dll \
+      BuildIntegrationTests CompileTrimmingSamples \
+      --framework "$FRAMEWORK" \
+      --IncludeTestsRequiringDocker "$include_docker" \
+      --TestAllPackageVersions true \
+      --IncludeMinorPackageVersions "$include_minor_package_versions" \
+      --NugetPackageDirectory /project/packages
+    ;;
+  debugger)
+    optimize="${OPTIMIZE:-true}"
+    echo "Building Debugger integration tests for ${FRAMEWORK} (optimize=${optimize})"
+    docker run --rm \
+      --cap-add=SYS_PTRACE \
+      --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
+      --env NugetPackageDirectory=/project/packages \
+      --env artifacts=/project/artifacts/output \
+      --env CI=true \
+      --env CI_JOB_ID \
+      --env DD_LOGGER_DD_API_KEY \
+      --env NUKE_TELEMETRY_OPTOUT=1 \
+      --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+      "$tester_image" \
+      dotnet /build/bin/Debug/_build.dll \
+      BuildDebuggerIntegrationTests \
+      --framework "$FRAMEWORK" \
+      --targetplatform x64 \
+      --debugtype portable \
+      --optimize "$optimize" \
+      --TestAllPackageVersions true \
+      --IncludeMinorPackageVersions "$include_minor_package_versions" \
+      --NugetPackageDirectory /project/packages
+    ;;
+  *)
+    echo "Unknown Linux integration test suite '${test_suite}'" >&2
+    exit 1
+    ;;
+esac
+
+run_test_container()
+{
+  docker run --rm \
+    --cap-add=SYS_PTRACE \
+    --hostname integrationtests \
+    --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
+    --env NugetPackageDirectory=/project/packages \
+    --env artifacts=/project/artifacts/output \
+    --env baseImage="$BASE_IMAGE" \
+    --env framework="$FRAMEWORK" \
+    --env CodeCoverageEnabled=false \
+    --env IncludeTestsRequiringDocker=false \
+    --env IncludeAllTestFrameworks="$include_all_test_frameworks" \
+    --env TestAllPackageVersions=true \
+    --env IncludeMinorPackageVersions="$include_minor_package_versions" \
+    --env Area="$area" \
+    --env enable_crash_dumps=true \
+    --env Verify_DisableClipboard=true \
+    --env DiffEngine_Disabled=true \
+    --env CONTAINER_HOSTNAME=http://integrationtests \
+    --env CI=true \
+    --env DD_LOGGER_ENABLED=true \
+    --env DD_LOGGER_DD_API_KEY \
+    --env DD_LOGGER_DD_SERVICE=dd-trace-dotnet \
+    --env DD_LOGGER_DD_TRACE_LOG_PATH=/project/artifacts/build_data/infra_logs/integration-ci-visibility.log \
+    --env "DD_LOGGER_DD_TAGS=test.configuration.job:${CI_JOB_NAME}" \
+    --env GITLAB_CI \
+    --env CI_PROJECT_URL \
+    --env CI_PIPELINE_ID \
+    --env CI_JOB_ID \
+    --env CI_REPOSITORY_URL \
+    --env CI_COMMIT_SHA \
+    --env CI_COMMIT_BRANCH \
+    --env CI_COMMIT_TAG \
+    --env CI_COMMIT_REF_NAME \
+    --env CI_PROJECT_DIR=/project \
+    --env CI_PROJECT_PATH \
+    --env CI_PROJECT_NAME \
+    --env CI_PIPELINE_IID \
+    --env CI_PIPELINE_URL \
+    --env CI_JOB_URL \
+    --env CI_JOB_NAME \
+    --env CI_JOB_NAME_SLUG \
+    --env CI_JOB_STAGE \
+    --env CI_COMMIT_MESSAGE \
+    --env CI_COMMIT_AUTHOR \
+    --env CI_COMMIT_TIMESTAMP \
+    --env CI_RUNNER_ID \
+    --env CI_RUNNER_TAGS \
+    --env CI_MERGE_REQUEST_SOURCE_BRANCH_SHA \
+    --env CI_MERGE_REQUEST_TARGET_BRANCH_SHA \
+    --env CI_MERGE_REQUEST_DIFF_BASE_SHA \
+    --env CI_MERGE_REQUEST_TARGET_BRANCH_NAME \
+    --env CI_MERGE_REQUEST_IID \
+    "$tester_image" \
+    dotnet /build/bin/Debug/_build.dll "$@"
+}
+
 test_exit_code=0
-docker run --rm \
-  --cap-add=SYS_PTRACE \
-  --hostname integrationtests \
-  --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
-  --env NugetPackageDirectory=/project/packages \
-  --env artifacts=/project/artifacts/output \
-  --env baseImage="$BASE_IMAGE" \
-  --env framework="$FRAMEWORK" \
-  --env CodeCoverageEnabled=false \
-  --env IncludeTestsRequiringDocker=false \
-  --env IncludeAllTestFrameworks="$include_all_test_frameworks" \
-  --env TestAllPackageVersions=true \
-  --env IncludeMinorPackageVersions="$include_minor_package_versions" \
-  --env Area=Tracer \
-  --env enable_crash_dumps=true \
-  --env Verify_DisableClipboard=true \
-  --env DiffEngine_Disabled=true \
-  --env CONTAINER_HOSTNAME=http://integrationtests \
-  --env CI=true \
-  --env DD_LOGGER_ENABLED=true \
-  --env DD_LOGGER_DD_API_KEY \
-  --env DD_LOGGER_DD_SERVICE=dd-trace-dotnet \
-  --env DD_LOGGER_DD_TRACE_LOG_PATH=/project/artifacts/build_data/infra_logs/integration-ci-visibility.log \
-  --env "DD_LOGGER_DD_TAGS=test.configuration.job:${CI_JOB_NAME}" \
-  --env GITLAB_CI \
-  --env CI_PROJECT_URL \
-  --env CI_PIPELINE_ID \
-  --env CI_JOB_ID \
-  --env CI_REPOSITORY_URL \
-  --env CI_COMMIT_SHA \
-  --env CI_COMMIT_BRANCH \
-  --env CI_COMMIT_TAG \
-  --env CI_COMMIT_REF_NAME \
-  --env CI_PROJECT_DIR=/project \
-  --env CI_PROJECT_PATH \
-  --env CI_PROJECT_NAME \
-  --env CI_PIPELINE_IID \
-  --env CI_PIPELINE_URL \
-  --env CI_JOB_URL \
-  --env CI_JOB_NAME \
-  --env CI_JOB_NAME_SLUG \
-  --env CI_JOB_STAGE \
-  --env CI_COMMIT_MESSAGE \
-  --env CI_COMMIT_AUTHOR \
-  --env CI_COMMIT_TIMESTAMP \
-  --env CI_RUNNER_ID \
-  --env CI_RUNNER_TAGS \
-  --env CI_MERGE_REQUEST_SOURCE_BRANCH_SHA \
-  --env CI_MERGE_REQUEST_TARGET_BRANCH_SHA \
-  --env CI_MERGE_REQUEST_DIFF_BASE_SHA \
-  --env CI_MERGE_REQUEST_TARGET_BRANCH_NAME \
-  --env CI_MERGE_REQUEST_IID \
-  "$tester_image" \
-  dotnet /build/bin/Debug/_build.dll RunIntegrationTests || test_exit_code=$?
+case "$test_suite" in
+  integration)
+    echo "Running non-Docker ${area} integration tests for ${FRAMEWORK}"
+    run_test_container RunIntegrationTests || test_exit_code=$?
+    ;;
+  debugger)
+    echo "Running Debugger integration tests for ${FRAMEWORK}"
+    run_test_container RunDebuggerIntegrationTests \
+      --framework "$FRAMEWORK" \
+      --targetplatform x64 \
+      --debugtype portable \
+      --optimize "${OPTIMIZE:-true}" || test_exit_code=$?
+    ;;
+  docker)
+    echo "Installing Docker Compose for dependency-backed integration tests"
+    apk add --no-cache docker-cli-compose
+
+    compose_project="dd-trace-${CI_JOB_ID}-g${DOCKER_GROUP}"
+    cleanup_compose()
+    {
+      docker compose -p "$compose_project" logs || true
+      docker compose -p "$compose_project" down || true
+    }
+    trap cleanup_compose EXIT HUP INT TERM
+
+    export COMPOSE_PROFILES="group${DOCKER_GROUP}"
+    export baseImage="$BASE_IMAGE"
+    export framework="$FRAMEWORK"
+    export Filter="DockerGroup=${DOCKER_GROUP}"
+    export IncludeAllTestFrameworks="$include_all_test_frameworks"
+    export IncludeMinorPackageVersions="$include_minor_package_versions"
+    export TestAllPackageVersions=true
+    export DD_LOGGER_ENABLED=true
+    export DD_LOGGER_DD_SERVICE=dd-trace-dotnet
+    export DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
+    export DD_LOGGER_DD_TAGS="test.configuration.job:${CI_JOB_NAME}"
+
+    echo "Starting Docker dependency group ${DOCKER_GROUP}"
+    docker compose -p "$compose_project" run --rm "StartDependencies.Group${DOCKER_GROUP}"
+
+    echo "Running Docker dependency group ${DOCKER_GROUP} integration tests for ${FRAMEWORK}"
+    docker compose -p "$compose_project" run --rm \
+      -e IncludeTestsRequiringDocker=true \
+      -e IncludeAllTestFrameworks \
+      -e DD_LOGGER_ENABLED \
+      -e DD_LOGGER_DD_API_KEY \
+      -e DD_LOGGER_DD_SERVICE \
+      -e DD_LOGGER_DD_TRACE_LOG_DIRECTORY \
+      -e DD_LOGGER_DD_TAGS \
+      -e GITLAB_CI \
+      -e CI_PROJECT_URL \
+      -e CI_PIPELINE_ID \
+      -e CI_JOB_ID \
+      -e CI_REPOSITORY_URL \
+      -e CI_COMMIT_SHA \
+      -e CI_COMMIT_BRANCH \
+      -e CI_COMMIT_TAG \
+      -e CI_COMMIT_REF_NAME \
+      -e CI_PROJECT_DIR=/project \
+      -e CI_PROJECT_PATH \
+      -e CI_PROJECT_NAME \
+      -e CI_PIPELINE_IID \
+      -e CI_PIPELINE_URL \
+      -e CI_JOB_URL \
+      -e CI_JOB_NAME \
+      -e CI_JOB_NAME_SLUG \
+      -e CI_JOB_STAGE \
+      -e CI_COMMIT_MESSAGE \
+      -e CI_COMMIT_AUTHOR \
+      -e CI_COMMIT_TIMESTAMP \
+      -e CI_RUNNER_ID \
+      -e CI_RUNNER_TAGS \
+      -e CI_MERGE_REQUEST_SOURCE_BRANCH_SHA \
+      -e CI_MERGE_REQUEST_TARGET_BRANCH_SHA \
+      -e CI_MERGE_REQUEST_DIFF_BASE_SHA \
+      -e CI_MERGE_REQUEST_TARGET_BRANCH_NAME \
+      -e CI_MERGE_REQUEST_IID \
+      IntegrationTests || test_exit_code=$?
+
+    cleanup_compose
+    trap - EXIT HUP INT TERM
+    ;;
+esac
 
 log_check_exit_code=0
 docker run --rm \

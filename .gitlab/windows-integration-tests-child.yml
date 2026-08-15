@@ -17,13 +17,14 @@
   artifacts:
     when: always
     expire_in: 2 weeks
-    name: "integration-tests-windows-x64-$FRAMEWORK"
+    name: "integration-tests-windows-x64-$FRAMEWORK-$TEST_SUITE-$AREA$OPTIMIZE"
     paths:
       - artifacts/build_data/results
       - artifacts/build_data/logs
       - artifacts/build_data/infra_logs
       - artifacts/build_data/dumps
       - tracer/test/snapshots
+      - tracer/test/Datadog.Trace.Debugger.IntegrationTests/Approvals
   id_tokens:
     DD_STS_OIDC_TOKEN:
       aud: dd-sts
