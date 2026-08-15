@@ -5,7 +5,10 @@
 # docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:dotnet10 .
 # docker push datadog/dd-trace-dotnet-docker-build:dotnet10
 
-ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2022
+# The ASP.NET image is the .NET Framework runtime image with IIS enabled. The
+# GitLab build image also runs the full-IIS integration-test slice, matching
+# the IIS role available on Azure's Windows test workers.
+ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/aspnet:4.8-windowsservercore-ltsc2022
 FROM ${BASE_IMAGE}
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 

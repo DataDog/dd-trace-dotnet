@@ -29,12 +29,31 @@ if (-not $env:DD_LOGGER_DD_API_KEY) {
     Write-Output 'CI Visibility API key configured using dd-sts'
 }
 
-# This first slice mirrors Azure's ordinary Windows Tracer integration tests,
-# but deliberately excludes Docker dependencies, regression tests, IIS/IIS
-# Express, Azure Functions, ASM, and the x86 matrix dimension. LocalDB, MSMQ,
-# and Chrome are also excluded because they are available on the Azure VM but
-# unavailable in the GitLab Windows build container.
-$testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(IISExpress!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)&(RequiresLocalDb!=True)&(RequiresMsmq!=True)&(RequiresChrome!=True)'
+$testSuite = if ($env:TEST_SUITE) { $env:TEST_SUITE } else { 'integration' }
+$area = if ($env:AREA) { $env:AREA } else { $null }
+$testFilter = $null
+
+switch ($testSuite) {
+    'integration' {
+        # LocalDB, MSMQ, Chrome, IIS, and Docker dependencies are covered by
+        # dedicated jobs or remain unavailable in the Windows build container.
+        $testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(IISExpress!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)&(RequiresLocalDb!=True)&(RequiresMsmq!=True)&(RequiresChrome!=True)'
+        $nukeTargets = 'CompileTrimmingSamples BuildIntegrationTests RunIntegrationTests'
+        $nukeArguments = '--IncludeTestsRequiringDocker false'
+    }
+    'iis' {
+        $nukeTargets = 'BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests'
+        $nukeArguments = ''
+    }
+    'debugger' {
+        $optimize = if ($env:OPTIMIZE) { $env:OPTIMIZE } else { 'true' }
+        $nukeTargets = 'BuildDebuggerIntegrationTests RunDebuggerIntegrationTests'
+        $nukeArguments = "--DebugType portable --Optimize $optimize"
+    }
+    default {
+        throw "Unknown Windows integration test suite '$testSuite'"
+    }
+}
 
 $commonDockerArguments = @(
     '--rm',
@@ -51,8 +70,6 @@ $commonDockerArguments = @(
     '-e', 'DD_LOGGER_DD_SERVICE=dd-trace-dotnet',
     '-e', 'DD_LOGGER_DD_TRACE_LOG_PATH=c:\mnt\artifacts\build_data\infra_logs\integration-ci-visibility.log',
     '-e', "DD_LOGGER_DD_TAGS=test.configuration.job:$env:CI_JOB_NAME",
-    '-e', "Filter=$testFilter",
-    '-e', 'Area=Tracer',
     '-e', 'IncludeTestsRequiringDocker=false',
     '-e', 'IncludeAllTestFrameworks=true',
     '-e', 'TargetPlatform=x64',
@@ -88,8 +105,16 @@ $commonDockerArguments = @(
     '-e', 'CI_MERGE_REQUEST_IID'
 )
 
-Write-Output "Building and running non-Docker Windows x64 Tracer integration tests for $env:FRAMEWORK"
-$testCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK -IncludeAspNetCore && c:\entrypoint.bat CompileTrimmingSamples BuildIntegrationTests RunIntegrationTests --framework $env:FRAMEWORK --TargetPlatform x64 --IncludeAllTestFrameworks true --IncludeTestsRequiringDocker false --NugetPackageDirectory c:\mnt\packages"
+if ($testFilter) {
+    $commonDockerArguments += @('-e', "Filter=$testFilter")
+}
+
+if ($area) {
+    $commonDockerArguments += @('-e', "Area=$area")
+}
+
+Write-Output "Building and running Windows x64 $testSuite tests for $env:FRAMEWORK (area=$area)"
+$testCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK -IncludeAspNetCore && c:\entrypoint.bat $nukeTargets --framework $env:FRAMEWORK --TargetPlatform x64 --IncludeAllTestFrameworks true $nukeArguments --NugetPackageDirectory c:\mnt\packages"
 
 & docker run @commonDockerArguments --entrypoint cmd.exe $windowsBuildImage /d /s /c $testCommand
 $testExitCode = $LASTEXITCODE
@@ -98,7 +123,7 @@ $testExitCode = $LASTEXITCODE
 $logCheckExitCode = $LASTEXITCODE
 
 if ($testExitCode -ne 0) {
-    throw "Windows integration tests for $env:FRAMEWORK exited with code $testExitCode"
+    throw "Windows $testSuite tests for $env:FRAMEWORK exited with code $testExitCode"
 }
 
 if ($logCheckExitCode -ne 0) {

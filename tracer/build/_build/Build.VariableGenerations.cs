@@ -119,6 +119,7 @@ partial class Build : NukeBuild
 
     void WriteGitlabWindowsIntegrationTestsPipeline(IEnumerable<TargetFramework> frameworks)
     {
+        var frameworkList = frameworks.ToList();
         var yaml = new StringBuilder(
             """
             include:
@@ -129,12 +130,22 @@ partial class Build : NukeBuild
 
             """);
 
-        foreach (var framework in frameworks)
+        foreach (var framework in frameworkList)
         {
-            yaml.AppendLine($"\"integration-tests-windows-x64:{framework}\":");
-            yaml.AppendLine("  extends: .windows-integration-test-x64");
-            yaml.AppendLine("  variables:");
-            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+            AppendWindowsJob($"integration-tests-windows-x64:{framework}:tracer", framework, "integration", TracerArea);
+            AppendWindowsJob($"integration-tests-windows-x64:{framework}:asm", framework, "integration", AsmArea);
+
+            foreach (var optimize in new[] { true, false })
+            {
+                var optimization = optimize ? "optimized" : "unoptimized";
+                AppendWindowsJob($"integration-tests-windows-debugger-x64:{framework}:{optimization}", framework, "debugger", null, optimize);
+            }
+        }
+
+        if (frameworkList.Contains(TargetFramework.NET48))
+        {
+            AppendWindowsJob("integration-tests-windows-iis-x64:net48:tracer", TargetFramework.NET48, "iis", TracerArea);
+            AppendWindowsJob("integration-tests-windows-iis-x64:net48:asm", TargetFramework.NET48, "iis", AsmArea);
         }
 
         var outputDirectory = RootDirectory / ".gitlab" / "generated";
@@ -142,6 +153,24 @@ partial class Build : NukeBuild
         var outputPath = outputDirectory / "windows-integration-tests.yml";
         File.WriteAllText(outputPath, yaml.ToString());
         Logger.Information("Generated GitLab Windows integration-test child pipeline at {Path}", outputPath);
+
+        void AppendWindowsJob(string name, TargetFramework framework, string testSuite, string area, bool? optimize = null)
+        {
+            yaml.AppendLine($"\"{name}\":");
+            yaml.AppendLine("  extends: .windows-integration-test-x64");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+            yaml.AppendLine($"    TEST_SUITE: \"{testSuite}\"");
+            if (area is not null)
+            {
+                yaml.AppendLine($"    AREA: \"{area}\"");
+            }
+
+            if (optimize is not null)
+            {
+                yaml.AppendLine($"    OPTIMIZE: \"{optimize.Value.ToString().ToLowerInvariant()}\"");
+            }
+        }
     }
 
     void WriteGitlabLinuxUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
@@ -260,20 +289,53 @@ partial class Build : NukeBuild
         foreach (var (framework, baseImage, artifactSuffix) in configurationList)
         {
             var sampleJob = $"build-samples-multi-version:{framework}";
-            yaml.AppendLine($"\"integration-tests-{artifactSuffix}:{framework}\":");
-            yaml.AppendLine("  extends: .linux-integration-test-x64");
-            yaml.AppendLine("  needs:");
-            yaml.AppendLine($"    - job: \"{sampleJob}\"");
-            yaml.AppendLine("      artifacts: true");
             var producerSuffix = baseImage == "alpine" ? "-musl" : string.Empty;
-            AppendParentArtifactNeed($"build-linux-tracer-x64{producerSuffix}");
-            AppendParentArtifactNeed($"build-linux-profiler-x64{producerSuffix}");
-            AppendParentArtifactNeed("build-linux-universal-x64");
-            AppendParentArtifactNeed("build-samples-standalone");
-            yaml.AppendLine("  variables:");
-            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
-            yaml.AppendLine($"    BASE_IMAGE: \"{baseImage}\"");
-            yaml.AppendLine($"    ARTIFACT_SUFFIX: \"{artifactSuffix}\"");
+
+            AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:tracer", "integration", TracerArea);
+            AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:asm", "integration", AsmArea);
+
+            foreach (var dockerGroup in new[] { 1, 2 })
+            {
+                AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:docker-group-{dockerGroup}", "docker", dockerGroup: dockerGroup);
+            }
+
+            foreach (var optimize in new[] { true, false })
+            {
+                var optimization = optimize ? "optimized" : "unoptimized";
+                AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:debugger-{optimization}", "debugger", optimize: optimize);
+            }
+
+            void AppendLinuxJob(string name, string testSuite, string area = null, int? dockerGroup = null, bool? optimize = null)
+            {
+                yaml.AppendLine($"\"{name}\":");
+                yaml.AppendLine("  extends: .linux-integration-test-x64");
+                yaml.AppendLine("  needs:");
+                yaml.AppendLine($"    - job: \"{sampleJob}\"");
+                yaml.AppendLine("      artifacts: true");
+                AppendParentArtifactNeed($"build-linux-tracer-x64{producerSuffix}");
+                AppendParentArtifactNeed($"build-linux-profiler-x64{producerSuffix}");
+                AppendParentArtifactNeed("build-linux-universal-x64");
+                AppendParentArtifactNeed("build-samples-standalone");
+                yaml.AppendLine("  variables:");
+                yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+                yaml.AppendLine($"    BASE_IMAGE: \"{baseImage}\"");
+                yaml.AppendLine($"    ARTIFACT_SUFFIX: \"{artifactSuffix}\"");
+                yaml.AppendLine($"    TEST_SUITE: \"{testSuite}\"");
+                if (area is not null)
+                {
+                    yaml.AppendLine($"    AREA: \"{area}\"");
+                }
+
+                if (dockerGroup is not null)
+                {
+                    yaml.AppendLine($"    DOCKER_GROUP: \"{dockerGroup}\"");
+                }
+
+                if (optimize is not null)
+                {
+                    yaml.AppendLine($"    OPTIMIZE: \"{optimize.Value.ToString().ToLowerInvariant()}\"");
+                }
+            }
 
             void AppendParentArtifactNeed(string job)
             {
