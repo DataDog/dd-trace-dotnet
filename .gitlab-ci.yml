@@ -723,7 +723,6 @@ build:
   stage: build
   timeout: 60m
   tags: ["windows-v2:2022"]
-  needs: []
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
