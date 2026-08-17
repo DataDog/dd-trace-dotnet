@@ -67,8 +67,10 @@ RUN apk update \
     && rm nfpm_2.39.0_${apkArch}.apk
 
 
-# Install the .NET SDK
-RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
+# Install the .NET SDK. Validate the pinned download so an HTML outage response
+# cannot be executed, and fall back to Microsoft's official short URL.
+RUN { curl -fsSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh && sh -n dotnet-install.sh; } \
+    || { rm -f dotnet-install.sh; curl -fsSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh && sh -n dotnet-install.sh; } \
     && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm dotnet-install.sh \
@@ -91,7 +93,8 @@ WORKDIR /project
 FROM base AS tester
 
 # Install .NET Core runtimes using install script (don't install 2.1 on ARM64, because it's not available)
-RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
+RUN { curl -fsSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh && sh -n dotnet-install.sh; } \
+    || { rm -f dotnet-install.sh; curl -fsSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh && sh -n dotnet-install.sh; } \
     && chmod +x ./dotnet-install.sh \
     && { if [ "$(uname -m)" != "aarch64" ]; then \
         ./dotnet-install.sh --runtime aspnetcore --channel 2.1 --install-dir /usr/share/dotnet --no-path; \
