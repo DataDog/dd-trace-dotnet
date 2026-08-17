@@ -219,6 +219,13 @@ case "$test_suite" in
       --optimize "${OPTIMIZE:-true}" || test_exit_code=$?
     ;;
   docker)
+    if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then
+      echo "Installing Docker Compose"
+      apt-get update
+      apt-get install --yes --no-install-recommends docker-compose-plugin
+      rm -rf /var/lib/apt/lists/*
+    fi
+
     if docker compose version >/dev/null 2>&1; then
       compose()
       {
