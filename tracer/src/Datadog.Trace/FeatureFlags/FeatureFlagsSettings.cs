@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
@@ -47,7 +48,17 @@ internal sealed class FeatureFlagsSettings
 #pragma warning disable 618 // superseded, but still honoured so existing adopters keep their source
         var legacyEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled).AsBool();
 #pragma warning restore 618
-        var configuredSource = config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource).AsString();
+
+        // Use GetAsClass so the config framework records both the raw string and the resolved
+        // value in configuration telemetry. The converter maps recognised values to a
+        // SourceSelection record, returns Failure for unrecognised values (so the framework
+        // records the fallback), and returns Failure for null/empty (so "not set" also falls
+        // back to the default, which is null — meaning "not explicitly set").
+        var configuredSource = config
+            .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource)
+            .GetAsClass<SourceSelection>(
+                validator: null,
+                converter: ConvertSource);
 
         if (legacyEnabled is not null)
         {
@@ -65,25 +76,21 @@ internal sealed class FeatureFlagsSettings
         var agentlessBaseUrl = config
                                 .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl)
                                 .AsRedactedString();
-        AgentlessBaseUrl = !StringUtil.IsNullOrEmpty(agentlessBaseUrl?.Trim()) ? agentlessBaseUrl : null;
+        AgentlessBaseUrl = !StringUtil.IsNullOrWhiteSpace(agentlessBaseUrl) ? agentlessBaseUrl : null;
 
         PollInterval = TimeSpan.FromSeconds(
-            InRangeOrDefault(
-                config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessPollIntervalSeconds).AsInt32(),
-                ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessPollIntervalSeconds,
-                DefaultPollIntervalSeconds,
-                MaxPollIntervalSeconds));
+            config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessPollIntervalSeconds)
+                  .AsInt32(DefaultPollIntervalSeconds, v => v > 0 && v <= MaxPollIntervalSeconds)
+                  .Value);
 
         RequestTimeout = TimeSpan.FromSeconds(
-            InRangeOrDefault(
-                config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessRequestTimeoutSeconds).AsInt32(),
-                ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessRequestTimeoutSeconds,
-                DefaultRequestTimeoutSeconds,
-                maximumSeconds: null));
+            config.WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessRequestTimeoutSeconds)
+                  .AsInt32(DefaultRequestTimeoutSeconds, v => v > 0)
+                  .Value);
 
         Site = config
               .WithKeys(ConfigurationKeys.Site)
-              .AsString(DefaultSite, site => !StringUtil.IsNullOrEmpty(site?.Trim()));
+              .AsString(DefaultSite, site => !StringUtil.IsNullOrWhiteSpace(site));
 
         Env = config.WithKeys(ConfigurationKeys.Environment).AsString();
 
@@ -145,38 +152,50 @@ internal sealed class FeatureFlagsSettings
         => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
 
     /// <summary>
+    /// Converts a configuration source string to a <see cref="SourceSelection"/>.
+    /// Used as the converter for GetAsClass so the
+    /// config framework records both the raw string and the resolved value in telemetry.
+    /// </summary>
+    private static ParsingResult<SourceSelection> ConvertSource(string? value)
+    {
+        if (value is null)
+        {
+            return ParsingResult<SourceSelection>.Failure();
+        }
+
+        var normalized = value.Trim().ToLowerInvariant();
+        if (normalized.Length == 0)
+        {
+            return ParsingResult<SourceSelection>.Failure();
+        }
+
+        return normalized switch
+        {
+            AgentlessSourceName => ParsingResult<SourceSelection>.Success(new SourceSelection(FeatureFlagsSource.Agentless, isValid: true)),
+            RemoteConfigSourceName => ParsingResult<SourceSelection>.Success(new SourceSelection(FeatureFlagsSource.RemoteConfig, isValid: true)),
+            OfflineSourceName => ParsingResult<SourceSelection>.Success(new SourceSelection(FeatureFlagsSource.Disabled, isValid: true)),
+            _ => ParsingResult<SourceSelection>.Success(new SourceSelection(FeatureFlagsSource.Disabled, isValid: false)),
+        };
+    }
+
+    /// <summary>
     /// Resolves the delivery source. Shared across tracers, so the ordering is deliberate:
     /// the stable kill switch wins over everything, an explicit source wins over the legacy key
     /// (and fails closed when unrecognised), the legacy key grandfathers existing adopters onto
     /// Remote Configuration, and everything else defaults to agentless.
     /// </summary>
-    internal static FeatureFlagsSource ResolveSource(bool? enabled, string? configuredSource, bool? legacyEnabled)
+    private static FeatureFlagsSource ResolveSource(bool? enabled, SourceSelection? configuredSource, bool? legacyEnabled)
     {
-        var normalizedSource = NormalizeSource(configuredSource);
-
         if (enabled == false)
         {
             return FeatureFlagsSource.Disabled;
         }
 
-        if (normalizedSource is not null)
+        if (configuredSource is not null)
         {
-            switch (normalizedSource)
-            {
-                case AgentlessSourceName:
-                    return FeatureFlagsSource.Agentless;
-                case RemoteConfigSourceName:
-                    return FeatureFlagsSource.RemoteConfig;
-                case OfflineSourceName:
-                    // Reserved fail-closed sentinel: the provider is intentionally off, so no warning.
-                    return FeatureFlagsSource.Disabled;
-                default:
-                    Log.Warning(
-                        "Unsupported {SourceKey} value '{Source}'. Feature Flags are disabled.",
-                        ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource,
-                        normalizedSource);
-                    return FeatureFlagsSource.Disabled;
-            }
+            // "offline" is a reserved fail-closed sentinel: the provider is intentionally off.
+            // An invalid value also fails closed. Both are mapped to Disabled by the converter.
+            return configuredSource.Source;
         }
 
         // The legacy key only grandfathers adopters who have not migrated: an explicit new-key
@@ -188,42 +207,5 @@ internal sealed class FeatureFlagsSettings
         }
 
         return FeatureFlagsSource.Agentless;
-    }
-
-    /// <summary>
-    /// An empty or whitespace-only source is semantically unset, not an unrecognised value.
-    /// </summary>
-    private static string? NormalizeSource(string? configuredSource)
-    {
-        if (configuredSource is null)
-        {
-            return null;
-        }
-
-        var normalized = configuredSource.Trim().ToLowerInvariant();
-        return normalized.Length == 0 ? null : normalized;
-    }
-
-    internal static int InRangeOrDefault(int? configured, string key, int defaultSeconds, int? maximumSeconds)
-    {
-        if (configured is null)
-        {
-            return defaultSeconds;
-        }
-
-        var value = configured.Value;
-        if (value <= 0 || (maximumSeconds is { } maximum && value > maximum))
-        {
-            // A non-positive interval would turn polling into a tight loop against the endpoint,
-            // so an out-of-range value is rejected rather than honoured.
-            Log.Warning<string, int, int>(
-                "Invalid value {Key}={Value}. Using {Default} seconds instead.",
-                key,
-                value,
-                defaultSeconds);
-            return defaultSeconds;
-        }
-
-        return value;
     }
 }
