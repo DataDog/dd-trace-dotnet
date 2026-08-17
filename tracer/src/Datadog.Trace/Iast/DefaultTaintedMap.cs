@@ -195,7 +195,6 @@ internal sealed class DefaultTaintedMap : ITaintedMap
         {
             if (!_map.TryGetValue(key, out var current))
             {
-                // Removed by a concurrent Clear().
                 continue;
             }
 
