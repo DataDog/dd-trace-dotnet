@@ -35,6 +35,7 @@ namespace Datadog.Trace.Agent.Transports
 
         public void AddHeader(string name, string value)
         {
+            ApiKeyHttpTransportGuard.RejectLateApiKeyHeader(name);
             _headers.Add(name, value);
         }
 

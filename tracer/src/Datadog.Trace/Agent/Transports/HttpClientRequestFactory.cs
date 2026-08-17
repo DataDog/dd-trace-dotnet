@@ -20,13 +20,45 @@ namespace Datadog.Trace.Agent.Transports
     {
         private readonly HttpClient _client;
         private readonly HttpMessageHandler _handler;
+        private readonly HttpClientHandler _apiKeyProtectedHandler;
+        private readonly bool _disableProxyForPlaintextLoopback;
+        private readonly bool _hasApiKeyHeader;
         private readonly Uri _baseEndpoint;
 
-        public HttpClientRequestFactory(Uri baseEndpoint, KeyValuePair<string, string>[] defaultHeaders, HttpMessageHandler handler = null, TimeSpan? timeout = null)
+        public HttpClientRequestFactory(
+            Uri baseEndpoint,
+            KeyValuePair<string, string>[] defaultHeaders,
+            HttpMessageHandler handler = null,
+            TimeSpan? timeout = null,
+            DecompressionMethods automaticDecompression = DecompressionMethods.None)
         {
-            _handler = handler ?? new HttpClientHandler();
-            _client = new HttpClient(_handler);
             _baseEndpoint = baseEndpoint;
+            foreach (var pair in defaultHeaders)
+            {
+                if (string.Equals(pair.Key, ApiKeyHttpTransportGuard.ApiKeyHeaderName, StringComparison.OrdinalIgnoreCase))
+                {
+                    _hasApiKeyHeader = true;
+                }
+            }
+
+            if (_hasApiKeyHeader && handler is not null)
+            {
+                throw new ApiKeyHttpTransportException("Caller-provided HTTP handlers are not supported for protected DD-API-KEY transport.");
+            }
+
+            _handler = handler ?? new HttpClientHandler { AutomaticDecompression = automaticDecompression };
+            _disableProxyForPlaintextLoopback = _hasApiKeyHeader && ApiKeyHttpTransportGuard.IsPlaintextLoopback(baseEndpoint);
+            if (_hasApiKeyHeader)
+            {
+                _apiKeyProtectedHandler = (HttpClientHandler)_handler;
+                _apiKeyProtectedHandler.AllowAutoRedirect = false;
+                if (_disableProxyForPlaintextLoopback)
+                {
+                    _apiKeyProtectedHandler.UseProxy = false;
+                }
+            }
+
+            _client = new HttpClient(_handler);
             if (timeout.HasValue)
             {
                 _client.Timeout = timeout.Value;
@@ -54,11 +86,16 @@ namespace Datadog.Trace.Agent.Transports
 
         public IApiRequest Create(Uri endpoint)
         {
-            return new HttpClientRequest(_client, endpoint);
+            return new HttpClientRequest(_client, _apiKeyProtectedHandler, endpoint);
         }
 
         public void SetProxy(WebProxy proxy, NetworkCredential credential)
         {
+            if (_disableProxyForPlaintextLoopback)
+            {
+                return;
+            }
+
             if (_handler is HttpClientHandler handler)
             {
                 handler.Proxy = proxy;

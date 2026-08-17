@@ -6,9 +6,9 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
@@ -39,13 +39,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 return null;
             }
 
-            var apiFactory = DebuggerTransportStrategy.Get(
-                baseUri,
-                [
-                    ..AgentHttpHeaderNames.DefaultHeaders,
-                    new KeyValuePair<string, string>("DD-API-KEY", settings.AgentlessApiKey),
-                    new KeyValuePair<string, string>("DD-EVP-ORIGIN", "dd-trace-dotnet")
-                ]);
+            try
+            {
+                ApiKeyHttpTransportGuard.EnsureSafeEndpoint(baseUri);
+            }
+            catch (ApiKeyHttpTransportException ex)
+            {
+                Log.ErrorSkipTelemetry(ex, "Exception Replay agentless uploads enabled but the intake URL does not support safe API-key transport. Disabling Exception Replay.");
+                return null;
+            }
+
+            var apiFactory = DebuggerTransportStrategy.Get(baseUri, settings.AgentlessApiKey);
             return new ExceptionReplayTransportInfo(apiFactory, null, relativePath, isAgentless: true);
         }
 

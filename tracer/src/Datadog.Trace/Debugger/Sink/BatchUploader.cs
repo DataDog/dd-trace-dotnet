@@ -7,7 +7,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.Logging;
 
@@ -29,6 +31,7 @@ namespace Datadog.Trace.Debugger.Sink
         private readonly StringBuilder _sb;
 
         private byte[] _serializedPayloads = new byte[InitialPayloadSizeBytes];
+        private int _apiKeyTransportRejected;
 
         private BatchUploader(IBatchUploadApi api)
         {
@@ -43,11 +46,23 @@ namespace Datadog.Trace.Debugger.Sink
 
         public async Task Upload(IEnumerable<string> payloads)
         {
+            if (Volatile.Read(ref _apiKeyTransportRejected) != 0)
+            {
+                return;
+            }
+
             try
             {
                 foreach (var batch in GetBatches(payloads))
                 {
                     await _api.SendBatchAsync(batch).ConfigureAwait(false);
+                }
+            }
+            catch (ApiKeyHttpTransportException e)
+            {
+                if (Interlocked.Exchange(ref _apiKeyTransportRejected, 1) == 0)
+                {
+                    Log.Error(e, "Disabling debugger batch uploads because the API-key transport is unsafe.");
                 }
             }
             catch (Exception e)
