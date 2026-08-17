@@ -72,7 +72,7 @@ internal readonly struct AgentlessEndpoint
                 return false;
             }
 
-            var managedHost = ManagedHostPrefix + trimmedSite!.ToLowerInvariant();
+            var managedHost = ManagedHostPrefix + trimmedSite.ToLowerInvariant();
             if (managedHost.Contains("://") || HasWhitespace(managedHost))
             {
                 error = "The configured Datadog site is not valid";
@@ -95,7 +95,7 @@ internal readonly struct AgentlessEndpoint
         }
 
         // A URL with internal whitespace is malformed, and Uri parsing is lenient enough to accept it.
-        foreach (var character in configured!)
+        foreach (var character in configured)
         {
             if (char.IsWhiteSpace(character))
             {
