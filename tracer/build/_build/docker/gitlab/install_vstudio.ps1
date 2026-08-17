@@ -29,7 +29,6 @@ $VSPackages = @(
     "Microsoft.VisualStudio.Workload.NetCoreTools",
     "Microsoft.VisualStudio.Workload.NativeDesktop",
     "Microsoft.VisualStudio.Workload.WebBuildTools",
-    "Microsoft.VisualStudio.Component.IISExpress",
     "Microsoft.NetCore.Component.SDK",
     "Microsoft.Net.Component.4.7.TargetingPack",
     "Microsoft.Net.Component.4.5.TargetingPack",

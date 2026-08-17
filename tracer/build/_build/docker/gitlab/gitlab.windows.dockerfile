@@ -25,6 +25,14 @@ ENV VSBUILDTOOLS_VERSION="17.14.36310.24" \
 COPY install_vstudio.ps1 .
 RUN powershell -Command .\install_vstudio.ps1 -Version $ENV:VSBUILDTOOLS_VERSION -Sha256 $ENV:VSBUILDTOOLS_SHA256 -InstallRoot $ENV:VSBUILDTOOLS_INSTALL_ROOT $ENV:VSBUILDTOOLS_DOWNLOAD_URL
 
+# IIS Express is not included in the Visual Studio Build Tools workload.
+ENV IISEXPRESS_VERSION="10.0.2001" \
+    IISEXPRESS_SHA256="18304FE8A65E397C65FE77C6E73B0ACB1556E8ED7EC9C94678DD42FA7AC1671F" \
+    IISEXPRESS_DOWNLOAD_URL="https://download.microsoft.com/download/c/e/8/ce8d18f5-d4c0-45b5-b531-adecd637a1aa/iisexpress_amd64_en-US.msi"
+
+COPY install_iisexpress.ps1 .
+RUN powershell -Command .\install_iisexpress.ps1 -Version $ENV:IISEXPRESS_VERSION -Sha256 $ENV:IISEXPRESS_SHA256 -Url $ENV:IISEXPRESS_DOWNLOAD_URL
+
 # Install WIX
 ENV WIX_VERSION="3.11.2" \
     WIX_SHA256="32bb76c478fcb356671d4aaf006ad81ca93eea32c22a9401b168fc7471feccd2"

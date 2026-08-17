@@ -465,9 +465,8 @@ partial class Build : NukeBuild
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdTrace))
                 .When(!IsGitlab, settings => settings.EnableNoRestore())
-                // The runner does not target .NET Framework. Passing net48 here would override
-                // its TargetFrameworks and create an unsupported runner build.
-                .When(IsGitlab && Framework is not null && Framework != TargetFramework.NET48, settings => settings.SetFramework(Framework))
+                // Integration tests consume the runner's net8.0 artifact regardless of the test TFM.
+                .When(IsGitlab, settings => settings.SetFramework(TargetFramework.NET8_0))
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
