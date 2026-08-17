@@ -3199,6 +3199,7 @@ supportedConfigurations:
   - implementation: A
     scope: managed
     type: string
+    sensitive: true
     default: null
     product: FeatureFlags
     const_name: FeatureFlagsConfigurationSourceAgentlessBaseUrl
