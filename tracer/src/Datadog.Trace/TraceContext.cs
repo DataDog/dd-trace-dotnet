@@ -235,11 +235,7 @@ namespace Datadog.Trace
                         }
                     }
 
-                    if (_appSecRequestContext is not null)
-                    {
-                        _appSecRequestContext.CloseWebSpan(span);
-                        _appSecRequestContext.DisposeAdditiveContext();
-                    }
+                    _appSecRequestContext?.CloseWebSpan(span);
                 }
             }
 
@@ -248,6 +244,8 @@ namespace Datadog.Trace
             {
                 ExtraServicesProvider.Instance.AddService(span.ServiceName);
             }
+
+            var disposeAdditiveContext = span.IsRootSpan && span.Type == SpanTypes.Web;
 
             lock (_rootSpan!)
             {
@@ -259,8 +257,8 @@ namespace Datadog.Trace
                     spansToWrite = _spans;
                     _spans = default;
                     _segmentClosed = true;
+                    disposeAdditiveContext = true;
                     TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
-                    _appSecRequestContext?.DisposeAdditiveContext();
                 }
                 else if (TestOptimization.Instance.IsRunning && span.IsCiVisibilitySpan())
                 {
@@ -287,6 +285,11 @@ namespace Datadog.Trace
                     // Therefore, we bypass the resize logic and immediately allocate the array to its maximum size
                     _spans = new SpanCollection(spansToWrite.Count);
                     TelemetryFactory.Metrics.RecordCountTracePartialFlush(MetricTags.PartialFlushReason.LargeTrace);
+                }
+
+                if (disposeAdditiveContext)
+                {
+                    _appSecRequestContext?.DisposeAdditiveContext();
                 }
             }
 

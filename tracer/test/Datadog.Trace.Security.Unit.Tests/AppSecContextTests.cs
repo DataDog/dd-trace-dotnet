@@ -59,6 +59,24 @@ public class AppSecContextTests : WafLibraryRequiredTest
         appSecContext.GetOrCreateAdditiveContext(security).Should().BeNull();
     }
 
+    [Fact]
+    public async Task GivenAWafContextOnAWebSpan_WhenTheRootClosesBeforeItsChildren_ThenItIsDisposed()
+    {
+        var settings = TracerSettings.Create(new Dictionary<string, object>());
+        await using var tracer = TracerHelper.Create(settings);
+        using var security = new AppSec.Security(waf: CreateWaf().Waf);
+
+        var rootTestScope = (Scope)tracer.StartActive("test.trace");
+        rootTestScope.Span.Type = SpanTypes.Web;
+        using var childTestScope = (Scope)tracer.StartActive("test.child");
+        var appSecContext = rootTestScope.Span.Context.TraceContext.AppSecRequestContext;
+        appSecContext.GetOrCreateAdditiveContext(security).Should().NotBeNull();
+
+        rootTestScope.Dispose();
+
+        appSecContext.GetOrCreateAdditiveContext(security).Should().BeNull();
+    }
+
     [Theory]
     [InlineData(SpanTypes.Custom, true)]
     [InlineData(SpanTypes.Web, false)]
