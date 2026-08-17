@@ -51,7 +51,9 @@ partial class Build
         .Requires(() => MonitoringHomeDirectory != null)
         .Executes(() =>
         {
-            DotnetBuild(DebuggerIntegrationTests, framework: Framework);
+            // GitLab restores and builds in isolated containers, so the debugger
+            // test project may not have an assets file from an earlier build stage.
+            DotnetBuild(DebuggerIntegrationTests, framework: Framework, noRestore: !IsGitlab);
         });
 
     Target CompileDebuggerIntegrationTestsDependencies => _ => _

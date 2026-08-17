@@ -219,14 +219,26 @@ case "$test_suite" in
       --optimize "${OPTIMIZE:-true}" || test_exit_code=$?
     ;;
   docker)
-    echo "Installing Docker Compose for dependency-backed integration tests"
-    apk add --no-cache docker-cli-compose
+    if docker compose version >/dev/null 2>&1; then
+      compose()
+      {
+        docker compose "$@"
+      }
+    elif command -v docker-compose >/dev/null 2>&1; then
+      compose()
+      {
+        docker-compose "$@"
+      }
+    else
+      echo "Docker Compose is unavailable in the Docker runner image" >&2
+      exit 1
+    fi
 
     compose_project="dd-trace-${CI_JOB_ID}-g${DOCKER_GROUP}"
     cleanup_compose()
     {
-      docker compose -p "$compose_project" logs || true
-      docker compose -p "$compose_project" down || true
+      compose -p "$compose_project" logs || true
+      compose -p "$compose_project" down || true
     }
     trap cleanup_compose EXIT HUP INT TERM
 
@@ -243,10 +255,10 @@ case "$test_suite" in
     export DD_LOGGER_DD_TAGS="test.configuration.job:${CI_JOB_NAME}"
 
     echo "Starting Docker dependency group ${DOCKER_GROUP}"
-    docker compose -p "$compose_project" run --rm "StartDependencies.Group${DOCKER_GROUP}"
+    compose -p "$compose_project" run --rm "StartDependencies.Group${DOCKER_GROUP}"
 
     echo "Running Docker dependency group ${DOCKER_GROUP} integration tests for ${FRAMEWORK}"
-    docker compose -p "$compose_project" run --rm \
+    compose -p "$compose_project" run --rm \
       -e IncludeTestsRequiringDocker=true \
       -e IncludeAllTestFrameworks \
       -e DD_LOGGER_ENABLED \

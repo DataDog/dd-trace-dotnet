@@ -38,11 +38,18 @@ switch ($testSuite) {
         # LocalDB, MSMQ, Chrome, IIS, and Docker dependencies are covered by
         # dedicated jobs or remain unavailable in the Windows build container.
         $testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(IISExpress!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)&(RequiresLocalDb!=True)&(RequiresMsmq!=True)&(RequiresChrome!=True)'
+        if ($area -eq 'ASM') {
+            # These ASM tests do not declare their LocalDB/IIS requirements as
+            # traits, so keep them out of the dependency-free Windows slice.
+            $testFilter += '&(FullyQualifiedName!~IIS)&(FullyQualifiedName!=Datadog.Trace.Security.IntegrationTests.Iast.IastInstrumentationUnitTests.TestInstrumentedUnitTests)'
+        }
         $nukeTargets = 'CompileTrimmingSamples BuildIntegrationTests RunIntegrationTests'
         $nukeArguments = '--IncludeTestsRequiringDocker false'
     }
     'iis' {
-        $nukeTargets = 'BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests'
+        # The ASP.NET projects use packages.config. Restore them explicitly because
+        # GitLab jobs do not download Azure's pre-restored working-directory artifact.
+        $nukeTargets = 'Restore BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests'
         $nukeArguments = ''
     }
     'debugger' {
