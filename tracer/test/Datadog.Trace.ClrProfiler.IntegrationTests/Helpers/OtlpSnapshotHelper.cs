@@ -50,6 +50,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 
         private static readonly Regex SpanIdRegex = new(@"^([a-fA-F0-9]{16})$");
 
+        private static readonly Regex CodeOriginFrameLineOrColumnKeyRegex = new(@"^_dd\.code_origin\.frames\.\d+\.(line|column)$", RegexOptions.Compiled);
+
+        private static readonly Regex CodeOriginFrameFileKeyRegex = new(@"^_dd\.code_origin\.frames\.\d+\.file$", RegexOptions.Compiled);
+
         public static void AddProtobufToJsonScrubbers(VerifySettings settings)
         {
             foreach (var (from, to) in ProtobufToJsonFieldNameMappings)
@@ -186,6 +190,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             {
                 ((JObject)@event).Remove(timeUnixNanoKey);
                 ((JObject)@event).AddFirst(new JProperty(timeUnixNanoKey, "0"));
+            }
+        }
+
+        /// <summary>
+        /// Replaces the file/line/column of every <c>_dd.code_origin.frames.N.*</c> attribute with
+        /// fixed placeholders, since the source line/column shift whenever the instrumented sample
+        /// code changes, and the file path is checkout-dependent (absolute in CI, relative locally).
+        /// </summary>
+        /// <param name="tracesRequests">The captured OTLP requests.</param>
+        public static void NormalizeCodeOriginAttributes(JToken tracesRequests)
+        {
+            foreach (var attribute in tracesRequests.SelectTokens("$..attributes[*]"))
+            {
+                var key = attribute["key"]?.ToString();
+                if (key is null || attribute["value"] is not JObject value)
+                {
+                    continue;
+                }
+
+                if (CodeOriginFrameLineOrColumnKeyRegex.IsMatch(key))
+                {
+                    foreach (var property in value.Properties())
+                    {
+                        property.Value = "0";
+                    }
+                }
+                else if (CodeOriginFrameFileKeyRegex.IsMatch(key))
+                {
+                    foreach (var property in value.Properties())
+                    {
+                        property.Value = NormalizeCodeOriginFilePath(property.Value!.ToString());
+                    }
+                }
             }
         }
 
@@ -383,5 +420,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         private static string ToTraceId(byte[] bytes) => ToHexString(bytes, 16);
 
         private static string ToSpanId(byte[] bytes) => ToHexString(bytes, 8);
+
+        /// <summary>
+        /// Trims a code-origin file path down to the repo-relative portion starting at "tracer",
+        /// so absolute checkout paths (which differ between CI and local machines) don't break the
+        /// snapshot. Mirrors VerifyHelper.NormalizeCodeOriginFilePaths, but keeps forward slashes to
+        /// match how the rest of an OTLP payload's paths are rendered.
+        /// </summary>
+        private static string NormalizeCodeOriginFilePath(string path)
+        {
+            var normalized = path.Replace('\\', '/');
+            var tracerIndex = normalized.IndexOf("tracer/", StringComparison.OrdinalIgnoreCase);
+            return tracerIndex < 0 ? path : normalized.Substring(tracerIndex);
+        }
     }
 }
