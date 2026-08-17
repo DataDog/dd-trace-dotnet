@@ -73,8 +73,10 @@ RUN apk update \
 ENV IsAlpine=true \
     DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
 
-# Install the .NET SDK
-RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
+# Install the .NET SDK. Validate the pinned download so an HTML outage response
+# cannot be executed, and fall back to Microsoft's official short URL.
+RUN { curl -fsSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh && bash -n dotnet-install.sh; } \
+    || { rm -f dotnet-install.sh; curl -fsSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh && bash -n dotnet-install.sh; } \
     && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
