@@ -179,6 +179,6 @@ public class FeatureFlagsSettingsTests
             collection[key] = value;
         }
 
-        return new FeatureFlagsSettings(new NameValueConfigurationSource(collection), NullConfigurationTelemetry.Instance);
+        return new FeatureFlagsSettings(new NameValueConfigurationSource(collection), NullConfigurationTelemetry.Instance, site: null, env: null, apiKey: null);
     }
 }

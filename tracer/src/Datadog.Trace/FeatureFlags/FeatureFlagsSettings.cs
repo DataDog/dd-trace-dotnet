@@ -37,7 +37,7 @@ internal sealed class FeatureFlagsSettings
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsSettings));
 
-    public FeatureFlagsSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
+    public FeatureFlagsSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, string? site, string? env, string? apiKey)
     {
         source ??= NullConfigurationSource.Instance;
         var config = new ConfigurationBuilder(source, telemetry);
@@ -88,13 +88,9 @@ internal sealed class FeatureFlagsSettings
                   .AsInt32(DefaultRequestTimeoutSeconds, v => v > 0)
                   .Value);
 
-        Site = config
-              .WithKeys(ConfigurationKeys.Site)
-              .AsString(DefaultSite, site => !StringUtil.IsNullOrWhiteSpace(site));
-
-        Env = config.WithKeys(ConfigurationKeys.Environment).AsString();
-
-        ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+        Site = StringUtil.IsNullOrWhiteSpace(site) ? DefaultSite : site;
+        Env = env;
+        ApiKey = apiKey;
 
         var initializationTimeoutMs = config
                                      .WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderInitializationTimeoutMs)
@@ -149,7 +145,14 @@ internal sealed class FeatureFlagsSettings
     public TimeSpan InitializationTimeout { get; }
 
     public static FeatureFlagsSettings FromDefaultSource()
-        => new(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
+    {
+        var source = GlobalConfigurationSource.Instance;
+        var config = new ConfigurationBuilder(source, TelemetryFactory.Config);
+        var site = config.WithKeys(ConfigurationKeys.Site).AsString(DefaultSite, s => !StringUtil.IsNullOrWhiteSpace(s));
+        var env = config.WithKeys(ConfigurationKeys.Environment).AsString();
+        var apiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+        return new FeatureFlagsSettings(source, TelemetryFactory.Config, site, env, apiKey);
+    }
 
     /// <summary>
     /// Converts a configuration source string to a <see cref="SourceSelection"/>.
