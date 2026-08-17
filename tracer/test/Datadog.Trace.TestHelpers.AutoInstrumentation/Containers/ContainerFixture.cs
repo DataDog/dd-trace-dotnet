@@ -8,52 +8,124 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
+using Docker.DotNet;
+using DotNet.Testcontainers.Containers;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 
 public abstract class ContainerFixture : IAsyncLifetime
 {
-    private IReadOnlyDictionary<string, object>? _resources;
+    private const int MaxContainerStartAttempts = 3;
+    private static readonly TimeSpan ContainerStartRetryDelay = TimeSpan.FromSeconds(10);
+
+    private readonly Dictionary<string, object> _resources = new();
+    private readonly List<object> _resourcesForDisposal = [];
 
     public async Task InitializeAsync()
     {
-        _resources = await InitializeResources().ConfigureAwait(false);
+        try
+        {
+            await InitializeResources(RegisterResource).ConfigureAwait(false);
+        }
+        catch (Exception initializationException)
+        {
+            var disposalExceptions = await DisposeResourcesAsync().ConfigureAwait(false);
+            if (disposalExceptions is not null)
+            {
+                disposalExceptions.Insert(0, initializationException);
+                throw new AggregateException("Container fixture initialization failed and cleanup also encountered errors.", disposalExceptions);
+            }
+
+            throw;
+        }
     }
 
     public async Task DisposeAsync()
     {
-        if (_resources is null)
+        var disposalExceptions = await DisposeResourcesAsync().ConfigureAwait(false);
+        if (disposalExceptions is not null)
         {
-            return;
-        }
-
-        foreach (var resource in _resources.Values)
-        {
-            if (resource is IAsyncDisposable asyncDisposable)
-            {
-                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
-            }
-            else if (resource is IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
+            throw new AggregateException("One or more container fixture resources failed to dispose.", disposalExceptions);
         }
     }
 
     public virtual IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables() => Enumerable.Empty<KeyValuePair<string, string>>();
 
+    protected static async Task StartContainerAsync(IContainer container)
+    {
+        var attempt = 1;
+        while (true)
+        {
+            try
+            {
+                await container.StartAsync().ConfigureAwait(false);
+                return;
+            }
+            catch (DockerApiException exception) when (attempt < MaxContainerStartAttempts && IsTransientSystemdCgroupFailure(exception))
+            {
+                container.Logger.LogWarning(
+                    "Docker failed to start container {ContainerId} because its systemd cgroup request was interrupted. Retrying in {RetryDelaySeconds} seconds (attempt {NextAttempt}/{MaxAttempts}).",
+                    container.Id,
+                    ContainerStartRetryDelay.TotalSeconds,
+                    attempt + 1,
+                    MaxContainerStartAttempts);
+
+                attempt++;
+                await Task.Delay(ContainerStartRetryDelay).ConfigureAwait(false);
+            }
+        }
+    }
+
     protected abstract Task InitializeResources(Action<string, object> registerResource);
 
-    protected T GetResource<T>(string key) => (T)_resources![key];
+    protected T GetResource<T>(string key) => (T)_resources[key];
 
-    private async Task<IReadOnlyDictionary<string, object>> InitializeResources()
+    private static bool IsTransientSystemdCgroupFailure(DockerApiException exception)
     {
-        var resources = new Dictionary<string, object>();
+        var responseBody = exception.ResponseBody;
+        return exception.StatusCode == HttpStatusCode.InternalServerError
+            && responseBody is not null
+            && responseBody.IndexOf("unable to apply cgroup configuration", StringComparison.Ordinal) >= 0
+            && responseBody.IndexOf("Message recipient disconnected from message bus without replying", StringComparison.Ordinal) >= 0;
+    }
 
-        await InitializeResources(resources.Add).ConfigureAwait(false);
+    private void RegisterResource(string key, object resource)
+    {
+        _resources.Add(key, resource);
+        _resourcesForDisposal.Add(resource);
+    }
 
-        return resources;
+    private async Task<List<Exception>?> DisposeResourcesAsync()
+    {
+        List<Exception>? exceptions = null;
+
+        for (var i = _resourcesForDisposal.Count - 1; i >= 0; i--)
+        {
+            try
+            {
+                var resource = _resourcesForDisposal[i];
+                if (resource is IAsyncDisposable asyncDisposable)
+                {
+                    await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                }
+                else if (resource is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
+            catch (Exception exception)
+            {
+                exceptions ??= [];
+                exceptions.Add(exception);
+            }
+        }
+
+        _resources.Clear();
+        _resourcesForDisposal.Clear();
+        return exceptions;
     }
 }
