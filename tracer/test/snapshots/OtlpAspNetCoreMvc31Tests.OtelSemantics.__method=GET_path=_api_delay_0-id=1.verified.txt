@@ -73,13 +73,13 @@
                 {
                   "key": "_dd.code_origin.frames.0.column",
                   "value": {
-                    "stringValue": "9"
+                    "stringValue": "0"
                   }
                 },
                 {
                   "key": "_dd.code_origin.frames.0.file",
                   "value": {
-                    "stringValue": "{SolutionDirectory}tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/ApiController.cs"
+                    "stringValue": "tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/ApiController.cs"
                   }
                 },
                 {
@@ -91,7 +91,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.line",
                   "value": {
-                    "stringValue": "16"
+                    "stringValue": "0"
                   }
                 },
                 {
