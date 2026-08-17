@@ -52,3 +52,16 @@ apps/ @octocat
 # subdirectory, as its owners are left empty.
 /apps/ @octocat
 /apps/github
+
+# A globstar between slashes matches zero or more directories.
+/globstar/**/target @globstar-owner
+
+# A leading globstar matches at any depth, including the repository root.
+**/foo @foo-owner
+**/foo/bar @foo-bar-owner
+
+# A trailing globstar matches everything inside the directory.
+abc/** @abc-owner
+
+# Consecutive stars outside a globstar position are not a leading globstar.
+prefix**/target @embedded-star-owner
