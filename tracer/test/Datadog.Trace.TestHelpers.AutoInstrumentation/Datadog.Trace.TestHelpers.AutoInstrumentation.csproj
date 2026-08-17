@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="SharpPdb" Version="1.0.4" />
-    <PackageReference Include="Testcontainers" Version="3.6.0" />
+    <PackageReference Include="Testcontainers" Version="4.11.0" />
   </ItemGroup>
 
   <ItemGroup>
