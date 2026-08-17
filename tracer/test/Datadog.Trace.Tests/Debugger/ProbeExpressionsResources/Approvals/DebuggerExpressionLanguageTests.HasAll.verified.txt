@@ -49,7 +49,40 @@ Expression: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = CollectionLocal.All(@string => @string.Length > 3);
+    var $dd_el_result =
+    {
+        string @string;
+        var enumerable = (IEnumerable<string>)CollectionLocal;
+        var enumerator = enumerable.GetEnumerator();
+        var allResult = true;
+        try
+        {
+            while (true)
+            {
+                if (!enumerator.MoveNext())
+                {
+                    break;
+                }
+
+                @string = enumerator.Current;
+
+                if (!(@string.Length > 3))
+                {
+                    allResult = false;
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            if (enumerator != null)
+            {
+                enumerator.Dispose();
+            }
+        }
+
+        return allResult;
+    };
 
     return $dd_el_result;
 }

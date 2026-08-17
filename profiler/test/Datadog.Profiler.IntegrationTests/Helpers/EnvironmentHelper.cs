@@ -195,6 +195,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             // Linux ARM64: native profiler requires DD_INTERNAL_PROFILING_ENABLED_ARM64; align managed enablement.
             environmentVariables["DD_INTERNAL_PROFILING_ENABLED_ARM64"] = "1";
 
+            // Test machines are slow and loaded enough that the default 2s is not always enough to
+            // populate the libraries cache, and the profiler silently falls back to slower unwinding.
+            environmentVariables[EnvironmentVariables.LibrariesInfoCacheStartTimeout] = "10000";
+
             environmentVariables["DD_TRACE_ENABLED"] = "0";
 
             environmentVariables["DD_PROFILING_UPLOAD_PERIOD"] = profilingExportIntervalInSeconds.ToString();
@@ -371,7 +375,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             if (!IsRunningInCi())
             {
                 // native loader output folder
-                var binFolder = Path.Combine(GetSolutionDirectory(), "native-bin", "Datadog.Trace.ClrProfiler.Native", "bin");
+                var binFolder = Path.Combine(GetSolutionDirectory(), "artifacts", "native-bin", "Datadog.Trace.ClrProfiler.Native");
 
                 return GetOS() switch
                 {

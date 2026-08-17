@@ -14,6 +14,7 @@ using System.Net;
 using System.Runtime.Remoting.Channels;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.OpenTelemetry;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
 {
@@ -67,6 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
             if (state.Scope is not null && state.State is HttpWebResponse response)
             {
                 state.Scope.Span.SetHttpStatusCode((int)response.StatusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                HttpSemanticConventions.SetHttpClientResponseValues(state.Scope.Span, response.ProtocolVersion);
             }
 
             return CallTargetReturn.GetDefault();

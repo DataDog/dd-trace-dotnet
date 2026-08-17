@@ -54,6 +54,7 @@ supportedConfigurations:
   - implementation: A
     scope: managed, native
     type: string
+    sensitive: true
     default: null
     const_name: ApiKey
     documentation: Configuration key for setting the API key, used by the Agent.
@@ -830,6 +831,16 @@ supportedConfigurations:
     documentation: |-
       Configuration key for enabling or disabling Dynamic Instrumentation.
       Default value is false (disabled).
+  DD_DYNAMIC_INSTRUMENTATION_EVALUATION_TIMEOUT_MS:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '50'
+    product: Debugger
+    const_name: EvaluationTimeoutMs
+    documentation: |-
+      Configuration key for the maximum elapsed time, in milliseconds, allowed for evaluating probe expressions.
+      Values from <c>10</c> to <c>1000</c> are accepted. Default value is <c>50</c>.
   DD_DYNAMIC_INSTRUMENTATION_PROBE_FILE:
   - implementation: B
     scope: managed
@@ -1137,13 +1148,14 @@ supportedConfigurations:
     documentation: |-
       Overrides the hostname reported to Datadog. When set, replaces the auto-detected hostname.
   DD_HTTP_CLIENT_ERROR_STATUSES:
-  - implementation: A
+  - implementation: B
     scope: managed
     type: string
     default: 400-499
     const_name: DeprecatedHttpClientErrorStatusCodes
     documentation: |-
       Configuration key for the application's client http statuses to set spans as errors by.
+      When DD_TRACE_OTEL_SEMANTICS_ENABLED is true, the default is <c>400-599</c>.
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
   DD_HTTP_SERVER_ERROR_STATUSES:
   - implementation: A
@@ -1715,6 +1727,15 @@ supportedConfigurations:
     product: Profiler
     documentation: |-
       Minimum HTTP request duration in milliseconds required to record a request in profiles.
+  DD_INTERNAL_PROFILING_LIBRARIES_CACHE_START_TIMEOUT:
+  - implementation: A
+    scope: native
+    type: int
+    default: '2000'
+    product: Profiler
+    documentation: |-
+      Test-only override, in milliseconds, for how long the profiler waits for the libraries info cache
+      to be populated at startup. Longer values help on slow or heavily loaded machines.
   DD_INTERNAL_PROFILING_LONG_LIVED_THRESHOLD:
   - implementation: A
     scope: native
@@ -3069,7 +3090,7 @@ supportedConfigurations:
       Automatically apply header values as tags on traces.
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.HeaderTags"/>
   DD_TRACE_HTTP_CLIENT_ERROR_STATUSES:
-  - implementation: A
+  - implementation: C
     scope: managed
     type: string
     default: 400-499
@@ -3078,6 +3099,7 @@ supportedConfigurations:
     const_name: HttpClientErrorStatusCodes
     documentation: |-
       Configuration key for the application's client http statuses to set spans as errors by.
+      When DD_TRACE_OTEL_SEMANTICS_ENABLED is true, the default is <c>400-599</c>.
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.HttpClientErrorStatusCodes"/>
   DD_TRACE_HTTP_CLIENT_EXCLUDED_URL_SUBSTRINGS:
   - implementation: A
@@ -3661,6 +3683,7 @@ supportedConfigurations:
   - implementation: A
     scope: managed
     type: map
+    sensitive: true
     default: ''
     product: OpenTelemetry
     const_name: ExporterOtlpHeaders
@@ -3721,6 +3744,7 @@ supportedConfigurations:
   - implementation: C
     scope: managed
     type: map
+    sensitive: true
     default: null
     product: OpenTelemetry
     aliases:
@@ -3734,6 +3758,7 @@ supportedConfigurations:
   - implementation: B
     scope: managed
     type: map
+    sensitive: true
     default: null
     product: OpenTelemetry
     aliases:
@@ -3820,6 +3845,7 @@ supportedConfigurations:
   - implementation: B
     scope: managed
     type: map
+    sensitive: true
     default: null
     product: OpenTelemetry
     aliases:

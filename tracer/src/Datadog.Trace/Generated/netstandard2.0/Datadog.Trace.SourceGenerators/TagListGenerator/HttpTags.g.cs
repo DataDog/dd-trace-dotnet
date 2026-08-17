@@ -23,8 +23,17 @@ namespace Datadog.Trace.Tagging
         // HttpMethodBytes = MessagePack.Serialize("http.method");
         private static ReadOnlySpan<byte> HttpMethodBytes => [171, 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100];
 
+        // HttpMethodOtelBytes = MessagePack.Serialize("http.request.method");
+        private static ReadOnlySpan<byte> HttpMethodOtelBytes => [179, 104, 116, 116, 112, 46, 114, 101, 113, 117, 101, 115, 116, 46, 109, 101, 116, 104, 111, 100];
+
+        // HttpRequestMethodOriginalBytes = MessagePack.Serialize("http.request.method_original");
+        private static ReadOnlySpan<byte> HttpRequestMethodOriginalBytes => [188, 104, 116, 116, 112, 46, 114, 101, 113, 117, 101, 115, 116, 46, 109, 101, 116, 104, 111, 100, 95, 111, 114, 105, 103, 105, 110, 97, 108];
+
         // HttpUrlBytes = MessagePack.Serialize("http.url");
         private static ReadOnlySpan<byte> HttpUrlBytes => [168, 104, 116, 116, 112, 46, 117, 114, 108];
+
+        // HttpUrlOtelBytes = MessagePack.Serialize("url.full");
+        private static ReadOnlySpan<byte> HttpUrlOtelBytes => [168, 117, 114, 108, 46, 102, 117, 108, 108];
 
         // HttpClientHandlerTypeBytes = MessagePack.Serialize("http-client-handler-type");
         private static ReadOnlySpan<byte> HttpClientHandlerTypeBytes => [184, 104, 116, 116, 112, 45, 99, 108, 105, 101, 110, 116, 45, 104, 97, 110, 100, 108, 101, 114, 45, 116, 121, 112, 101];
@@ -32,8 +41,20 @@ namespace Datadog.Trace.Tagging
         // HttpStatusCodeBytes = MessagePack.Serialize("http.status_code");
         private static ReadOnlySpan<byte> HttpStatusCodeBytes => [176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
 
+        // HttpStatusCodeOtelBytes = MessagePack.Serialize("http.response.status_code");
+        private static ReadOnlySpan<byte> HttpStatusCodeOtelBytes => [185, 104, 116, 116, 112, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
+
         // HostBytes = MessagePack.Serialize("out.host");
         private static ReadOnlySpan<byte> HostBytes => [168, 111, 117, 116, 46, 104, 111, 115, 116];
+
+        // HostOtelBytes = MessagePack.Serialize("server.address");
+        private static ReadOnlySpan<byte> HostOtelBytes => [174, 115, 101, 114, 118, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115];
+
+        // ServerPortBytes = MessagePack.Serialize("server.port");
+        private static ReadOnlySpan<byte> ServerPortBytes => [171, 115, 101, 114, 118, 101, 114, 46, 112, 111, 114, 116];
+
+        // NetworkProtocolVersionBytes = MessagePack.Serialize("network.protocol.version");
+        private static ReadOnlySpan<byte> NetworkProtocolVersionBytes => [184, 110, 101, 116, 119, 111, 114, 107, 46, 112, 114, 111, 116, 111, 99, 111, 108, 46, 118, 101, 114, 115, 105, 111, 110];
 
         public override string? GetTag(string key)
         {
@@ -41,11 +62,14 @@ namespace Datadog.Trace.Tagging
             {
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
-                "http.method" => HttpMethod,
-                "http.url" => HttpUrl,
+                "http.method" or "http.request.method" => HttpMethod,
+                "http.request.method_original" => HttpRequestMethodOriginal,
+                "http.url" or "url.full" => HttpUrl,
                 "http-client-handler-type" => HttpClientHandlerType,
-                "http.status_code" => HttpStatusCode,
-                "out.host" => Host,
+                "http.status_code" or "http.response.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
+                "out.host" or "server.address" => Host,
+                "server.port" => ServerPort is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(ServerPort.Value),
+                "network.protocol.version" => NetworkProtocolVersion,
                 _ => base.GetTag(key),
             };
         }
@@ -57,20 +81,49 @@ namespace Datadog.Trace.Tagging
                 case "component": 
                     InstrumentationName = value;
                     break;
-                case "http.method": 
+                case "http.method":
+                case "http.request.method":
                     HttpMethod = value;
                     break;
-                case "http.url": 
+                case "http.request.method_original": 
+                    HttpRequestMethodOriginal = value;
+                    break;
+                case "http.url":
+                case "url.full":
                     HttpUrl = value;
                     break;
                 case "http-client-handler-type": 
                     HttpClientHandlerType = value;
                     break;
-                case "http.status_code": 
-                    HttpStatusCode = value;
+                case "http.status_code":
+                case "http.response.status_code":
+                    if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedHttpStatusCode))
+                    {
+                        HttpStatusCode = parsedHttpStatusCode;
+                    }
+                    else
+                    {
+                        HttpStatusCode = null;
+                    }
+
                     break;
-                case "out.host": 
+                case "out.host":
+                case "server.address":
                     Host = value;
+                    break;
+                case "server.port": 
+                    if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedServerPort))
+                    {
+                        ServerPort = parsedServerPort;
+                    }
+                    else
+                    {
+                        ServerPort = null;
+                    }
+
+                    break;
+                case "network.protocol.version": 
+                    NetworkProtocolVersion = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(HttpTags));
@@ -81,7 +134,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (SpanKind is not null)
             {
@@ -95,12 +148,31 @@ namespace Datadog.Trace.Tagging
 
             if (HttpMethod is not null)
             {
-                processor.Process(new TagItem<string>("http.method", HttpMethod, HttpMethodBytes));
+                if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<string>("http.request.method", HttpMethod, HttpMethodOtelBytes));
+                }
+                else
+                {
+                    processor.Process(new TagItem<string>("http.method", HttpMethod, HttpMethodBytes));
+                }
+            }
+
+            if (HttpRequestMethodOriginal is not null)
+            {
+                processor.Process(new TagItem<string>("http.request.method_original", HttpRequestMethodOriginal, HttpRequestMethodOriginalBytes));
             }
 
             if (HttpUrl is not null)
             {
-                processor.Process(new TagItem<string>("http.url", HttpUrl, HttpUrlBytes));
+                if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<string>("url.full", HttpUrl, HttpUrlOtelBytes));
+                }
+                else
+                {
+                    processor.Process(new TagItem<string>("http.url", HttpUrl, HttpUrlBytes));
+                }
             }
 
             if (HttpClientHandlerType is not null)
@@ -110,15 +182,39 @@ namespace Datadog.Trace.Tagging
 
             if (HttpStatusCode is not null)
             {
-                processor.Process(new TagItem<string>("http.status_code", HttpStatusCode, HttpStatusCodeBytes));
+                if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<int>("http.response.status_code", HttpStatusCode.Value, HttpStatusCodeOtelBytes));
+                }
+                else
+                {
+                    processor.Process(new TagItem<int>("http.status_code", HttpStatusCode.Value, HttpStatusCodeBytes));
+                }
             }
 
             if (Host is not null)
             {
-                processor.Process(new TagItem<string>("out.host", Host, HostBytes));
+                if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<string>("server.address", Host, HostOtelBytes));
+                }
+                else
+                {
+                    processor.Process(new TagItem<string>("out.host", Host, HostBytes));
+                }
             }
 
-            base.EnumerateTags(ref processor);
+            if (ServerPort is not null)
+            {
+                processor.Process(new TagItem<int>("server.port", ServerPort.Value, ServerPortBytes));
+            }
+
+            if (NetworkProtocolVersion is not null)
+            {
+                processor.Process(new TagItem<string>("network.protocol.version", NetworkProtocolVersion, NetworkProtocolVersionBytes));
+            }
+
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -144,6 +240,13 @@ namespace Datadog.Trace.Tagging
                   .Append(',');
             }
 
+            if (HttpRequestMethodOriginal is not null)
+            {
+                sb.Append("http.request.method_original (tag):")
+                  .Append(HttpRequestMethodOriginal)
+                  .Append(',');
+            }
+
             if (HttpUrl is not null)
             {
                 sb.Append("http.url (tag):")
@@ -161,7 +264,7 @@ namespace Datadog.Trace.Tagging
             if (HttpStatusCode is not null)
             {
                 sb.Append("http.status_code (tag):")
-                  .Append(HttpStatusCode)
+                  .Append(HttpStatusCode.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
                   .Append(',');
             }
 
@@ -169,6 +272,20 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("out.host (tag):")
                   .Append(Host)
+                  .Append(',');
+            }
+
+            if (ServerPort is not null)
+            {
+                sb.Append("server.port (tag):")
+                  .Append(ServerPort.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                  .Append(',');
+            }
+
+            if (NetworkProtocolVersion is not null)
+            {
+                sb.Append("network.protocol.version (tag):")
+                  .Append(NetworkProtocolVersion)
                   .Append(',');
             }
 

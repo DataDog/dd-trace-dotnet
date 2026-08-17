@@ -53,6 +53,88 @@
 
 
 
+
+## [Release 3.51.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.51.0)
+
+## Summary
+
+* [Tracer] Add support for Ocelot 25.x.x (#8984)
+* [Tracer] Add support for MySql.Data 26.x.x (#8985)
+* [Feature Flagging] APM feature-flag span enrichment (#8795)
+* [CI Visibility] Support MSTest 4.3.3 (#8979)
+* [CI Visibility] Implement bounded-memory global coverage implementation (#8926)
+* [AAP] Collect DataContract JSON response body schemas (#8706)
+
+## Changes
+
+### Tracer
+* [Tracer] Distinguish trace buffer drop reasons (#8931)
+* [Tracer] Update the TagsList infrastructure to store `int` properties on ITags implementations (#8941)
+* [OTLP] Exclude non-top-level, non-measured spans from OTLP trace metrics (#8947)
+* [Tracer] Update the TagsList infrastructure to allow a secondary OtelName (#8971)
+* [FFE] FFE APM feature-flag span enrichment (#8795)
+* [Tracer] Distinguish full and locked trace buffers (#8980)
+* [Tracer] Add support for Ocelot 25.x.x (#8984)
+* [OTLP Logs] Fix ArgumentOutOfRangeException serializing large log batches (pooled buffers) (#8862)
+* [Tracer] Add support for MySql.Data 26.x.x (#8985)
+
+### CI Visibility
+* [CI Visibility] Bound global coverage memory (#8926)
+* [CI Visibility] Add Buildkite pipeline display name tag (#8956)
+* [CI Visibility] Support MSTest 4.3.3 (#8979)
+
+### ASM
+* [AAP] Collect DataContract JSON response body schemas (#8706)
+* [AAP] Handle duplicate keys in ASM `DecodeMap` (#8951)
+* [AAP] Cap recursion depth in ObjectExtractor's list/dictionary paths (#8958)
+* [AAP] Migrate libddwaf to 2.0.1 (#8959)
+* [AppSec] Don't hold on to a recycled HttpContext (#8989)
+* [IAST] Add Class field to vulnerability Location and repurpose Path to source file (#8930)
+
+### Continuous Profiler
+* [Profiler] Add Reader/Writer Spinning mutex (#8904)
+* [Profiler] Cleanup generic method frame encoding and namespaceless types (#8961)
+
+### Fixes
+* fix(otlp): Emit a StatusCode.Error on OTLP spans when DD Span.Error field is set (#8954)
+* Fix broken IAST instrumentation of MySql.Data and Oracle (#8987)
+
+### Miscellaneous
+* Bump DatadogTestCollector and DatadogTestLogger to 0.0.55 (#8949)
+* ci: update one-pipeline to 1.1.0 (#8909)
+* feat(otel): Update HTTP span error handling when OTel Semantics mode Is enabled (#8940)
+* Exclude zero-version assemblies from dependency collection (#8965)
+* Bump the statsd default packet size (#8967)
+* Bump libdatadog to 2.1.0 (v38.0.0) (#8968)
+
+### Build / Test
+* Reduce verbosity of execution benchmark results comment (#8868)
+* [Test Package Versions Bump] Updating package versions (#8876)
+* [Tracing] Fix Hangfire baggage accumulation (#8900)
+* [CI] Speed up GitLab Windows build with parallel C++ compilation (#8925)
+* Mark Debugger MethodProbeTest_NamedPipes as Flaky (#8929)
+* [Smoke Tests] Collect crash dumps from Windows containers (#8937)
+* Attempt to delete Kinesis stream before running tests (#8939)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#8942)
+* Clean external warnings native (#8948)
+* [Tracer] Avoid Microsoft.Data.SqlClient transport flakes (#8950)
+* Make sure we pin the `dd-apm-test-agent` smoke test image (#8952)
+* [Test Package Versions Bump] Updating package versions (#8955)
+* Try to fix unit tests touching `[TracerRestorer]` (#8957)
+* Pre-install and initialize vcpkg in Windows GitLab (#8962)
+* Make bots sign their commits (#8963)
+* [Tracer] Fix Cosmos VNext query test flakiness (#8969)
+* Bump the gh-actions-packages group across 3 directories with 11 updates (#8977)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#8978)
+* Fix support for building StackExchange Redis sample in latest package version (#8982)
+* [Test Package Versions Bump] Updating package versions (#8996)
+
+### Data Streams Monitoring
+* Fix dsm throughput tests (#8981)
+
+
+[Changes since 3.50.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.50.0...v3.51.0)
+
 ## [Release 3.50.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.50.0)
 
 ## Summary

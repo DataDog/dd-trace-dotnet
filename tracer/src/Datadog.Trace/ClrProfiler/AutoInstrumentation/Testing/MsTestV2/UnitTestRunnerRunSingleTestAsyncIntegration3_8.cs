@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
     ParameterTypeNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement", "System.Collections.Generic.IDictionary`2[System.String,System.Object]", "Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger"],
     MinimumVersion = "4.2.1",
-    MaximumVersion = "4.*.*",
+    MaximumVersion = "4.3.2",
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -184,4 +184,33 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegration3_8
 
         return returnValue;
     }
+}
+
+/// <summary>
+/// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner.RunSingleTestAsync calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyNames = ["MSTestAdapter.PlatformServices"],
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
+    MethodName = "RunSingleTestAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestElement", "System.Collections.Generic.IDictionary`2[System.String,System.Object]", "System.Collections.Generic.IDictionary`2[System.String,System.Object]", "Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging.IMessageLogger"],
+    MinimumVersion = "4.3.3",
+    MaximumVersion = "4.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+// ReSharper disable once InconsistentNaming
+#pragma warning disable SA1402
+public static class UnitTestRunnerRunSingleTestAsyncIntegrationV4_3_3
+#pragma warning restore SA1402
+{
+    internal static CallTargetState OnMethodBegin<TTarget, TTestMethod, TMessageLogger>(TTarget instance, TTestMethod testMethod, IDictionary<string, object?> testContextProperties, IDictionary<string, object?> lifecycleContextProperties, TMessageLogger messageLogger)
+        => UnitTestRunnerRunSingleTestAsyncIntegration3_8.OnMethodBegin(instance, testMethod, testContextProperties, messageLogger);
+
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+        => UnitTestRunnerRunSingleTestAsyncIntegration3_8.OnMethodEnd(instance, returnValue, exception, in state);
+
+    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+        => UnitTestRunnerRunSingleTestAsyncIntegration3_8.OnAsyncMethodEnd(instance, returnValue, exception, in state);
 }

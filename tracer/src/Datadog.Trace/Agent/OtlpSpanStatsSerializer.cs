@@ -25,8 +25,9 @@ namespace Datadog.Trace.Agent
         private const int WireTypeFixed64 = 1;
         private const int WireTypeLengthDelimited = 2;
         private const int AggregationTemporalityDelta = 1;
-        private const long StatusCodeErrorProto = 2;
-        private const string StatusCodeErrorJson = "STATUS_CODE_ERROR";
+
+        private const string StatusCodeOkValue = "STATUS_CODE_OK";
+        private const string StatusCodeErrorValue = "STATUS_CODE_ERROR";
 
         private const string MetricUnit = "s";
 
@@ -57,7 +58,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        public static byte[]? Serialize(StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
+        public static byte[]? Serialize(StatsBuffer buffer, long bucketDurationNs)
         {
             if (!buffer.HasHits())
             {
@@ -67,7 +68,7 @@ namespace Datadog.Trace.Agent
             using var stream = new MemoryStream(1024);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
 
-            var resourceMetricsData = SerializeResourceMetrics(buffer, bucketDurationNs, otelSemanticsEnabled);
+            var resourceMetricsData = SerializeResourceMetrics(buffer, bucketDurationNs);
             WriteTag(writer, FieldNumbers.ResourceMetrics, WireTypeLengthDelimited);
             WriteVarInt(writer, resourceMetricsData.Length);
             writer.Write(resourceMetricsData);
@@ -76,7 +77,7 @@ namespace Datadog.Trace.Agent
             return stream.ToArray();
         }
 
-        public static byte[]? SerializeJson(StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
+        public static byte[]? SerializeJson(StatsBuffer buffer, long bucketDurationNs)
         {
             if (!buffer.HasHits())
             {
@@ -90,7 +91,7 @@ namespace Datadog.Trace.Agent
             writer.WriteStartObject();
             writer.WritePropertyName("resourceMetrics");
             writer.WriteStartArray();
-            WriteResourceMetricsJson(writer, buffer, bucketDurationNs, otelSemanticsEnabled);
+            WriteResourceMetricsJson(writer, buffer, bucketDurationNs);
             writer.WriteEndArray();
             writer.WriteEndObject();
 
@@ -99,22 +100,22 @@ namespace Datadog.Trace.Agent
             return memoryStream.ToArray();
         }
 
-        private static void WriteResourceMetricsJson(JsonTextWriter writer, StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
+        private static void WriteResourceMetricsJson(JsonTextWriter writer, StatsBuffer buffer, long bucketDurationNs)
         {
             writer.WriteStartObject();
 
             writer.WritePropertyName("resource");
-            WriteResourceJson(writer, buffer, otelSemanticsEnabled);
+            WriteResourceJson(writer, buffer);
 
             writer.WritePropertyName("scopeMetrics");
             writer.WriteStartArray();
-            WriteScopeMetricsJson(writer, buffer, bucketDurationNs, otelSemanticsEnabled);
+            WriteScopeMetricsJson(writer, buffer, bucketDurationNs);
             writer.WriteEndArray();
 
             writer.WriteEndObject();
         }
 
-        private static void WriteResourceJson(JsonTextWriter writer, StatsBuffer buffer, bool otelSemanticsEnabled)
+        private static void WriteResourceJson(JsonTextWriter writer, StatsBuffer buffer)
         {
             var details = buffer.Header.Details;
 
@@ -138,26 +139,23 @@ namespace Datadog.Trace.Agent
             WriteStringKvJson(writer, "telemetry.sdk.language", TracerConstants.Language);
             WriteStringKvJson(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
 
-            if (!otelSemanticsEnabled)
-            {
-                WriteStringKvJson(writer, "datadog.runtime_id", Tracer.RuntimeId);
-            }
+            WriteStringKvJson(writer, "datadog.runtime_id", Tracer.RuntimeId);
 
             writer.WriteEndArray();
             writer.WriteEndObject();
         }
 
-        private static void WriteScopeMetricsJson(JsonTextWriter writer, StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
+        private static void WriteScopeMetricsJson(JsonTextWriter writer, StatsBuffer buffer, long bucketDurationNs)
         {
             writer.WriteStartObject();
             writer.WritePropertyName("metrics");
             writer.WriteStartArray();
-            WriteMetricJson(writer, buffer, bucketDurationNs, otelSemanticsEnabled);
+            WriteMetricJson(writer, buffer, bucketDurationNs);
             writer.WriteEndArray();
             writer.WriteEndObject();
         }
 
-        private static void WriteMetricJson(JsonTextWriter writer, StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
+        private static void WriteMetricJson(JsonTextWriter writer, StatsBuffer buffer, long bucketDurationNs)
         {
             writer.WriteStartObject();
             writer.WritePropertyName("name");
@@ -165,15 +163,14 @@ namespace Datadog.Trace.Agent
             writer.WritePropertyName("unit");
             writer.WriteValue(MetricUnit);
             writer.WritePropertyName("histogram");
-            WriteHistogramJson(writer, buffer, bucketDurationNs, otelSemanticsEnabled);
+            WriteHistogramJson(writer, buffer, bucketDurationNs);
             writer.WriteEndObject();
         }
 
-        private static void WriteHistogramJson(JsonTextWriter writer, StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
+        private static void WriteHistogramJson(JsonTextWriter writer, StatsBuffer buffer, long bucketDurationNs)
         {
             var startTimeUnixNano = (ulong)buffer.Start;
             var endTimeUnixNano = (ulong)(buffer.Start + bucketDurationNs);
-            var defaultService = buffer.Header.Details.DefaultServiceName;
 
             writer.WriteStartObject();
             writer.WritePropertyName("aggregationTemporality");
@@ -189,7 +186,7 @@ namespace Datadog.Trace.Agent
                     continue;
                 }
 
-                WriteDataPointJson(writer, kvp.Key, bucket, startTimeUnixNano, endTimeUnixNano, otelSemanticsEnabled, defaultService);
+                WriteDataPointJson(writer, kvp.Key, bucket, startTimeUnixNano, endTimeUnixNano);
             }
 
             writer.WriteEndArray();
@@ -201,9 +198,7 @@ namespace Datadog.Trace.Agent
             StatsAggregationKey key,
             StatsBucket bucket,
             ulong startTimeUnixNano,
-            ulong endTimeUnixNano,
-            bool otelSemanticsEnabled,
-            string defaultServiceName)
+            ulong endTimeUnixNano)
         {
             writer.WriteStartObject();
 
@@ -211,15 +206,10 @@ namespace Datadog.Trace.Agent
             writer.WritePropertyName("attributes");
             writer.WriteStartArray();
 
-            if (!StringUtil.IsNullOrEmpty(key.Resource))
-            {
-                WriteStringKvJson(writer, "span.name", key.Resource);
-            }
-
-            if (!StringUtil.IsNullOrEmpty(key.SpanKind))
-            {
-                WriteStringKvJson(writer, "span.kind", key.SpanKind);
-            }
+            WriteStringKvJson(writer, "service.name", key.Service);
+            WriteStringKvJson(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue);
+            WriteStringKvJson(writer, "span.kind", CanonicalizeSpanKind(key.SpanKind));
+            WriteStringKvJson(writer, "span.name", key.Resource);
 
             if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
             {
@@ -242,34 +232,27 @@ namespace Datadog.Trace.Agent
                 WriteStringKvJson(writer, "rpc.response.status_code", grpcStatusName);
             }
 
-            if (key.IsError)
+            WriteStringKvJson(writer, "datadog.operation.name", key.OperationName);
+
+            if (!StringUtil.IsNullOrEmpty(key.Type))
             {
-                WriteStringKvJson(writer, "status.code", StatusCodeErrorJson);
+                WriteStringKvJson(writer, "datadog.span.type", key.Type);
             }
 
-            if (!StringUtil.IsNullOrEmpty(key.Service) && !string.Equals(key.Service, defaultServiceName, StringComparison.OrdinalIgnoreCase))
+            WriteBoolKvJson(writer, "datadog.span.top_level", key.IsTopLevel);
+            if (key.IsTraceRoot is { } isTraceRoot)
             {
-                WriteStringKvJson(writer, "service.name", key.Service);
+                WriteBoolKvJson(writer, "datadog.is_trace_root", isTraceRoot);
             }
 
-            if (!otelSemanticsEnabled)
+            if (key.IsSyntheticsRequest)
             {
-                if (!StringUtil.IsNullOrEmpty(key.OperationName))
-                {
-                    WriteStringKvJson(writer, "datadog.operation.name", key.OperationName);
-                }
+                WriteStringKvJson(writer, "datadog.origin", "synthetics");
+            }
 
-                if (!StringUtil.IsNullOrEmpty(key.Type))
-                {
-                    WriteStringKvJson(writer, "datadog.span.type", key.Type);
-                }
-
-                WriteBoolKvJson(writer, "datadog.span.top_level", key.IsTopLevel);
-
-                if (key.IsSyntheticsRequest)
-                {
-                    WriteStringKvJson(writer, "datadog.origin", "synthetics");
-                }
+            if (!StringUtil.IsNullOrEmpty(key.ServiceSource))
+            {
+                WriteStringKvJson(writer, "datadog.svc_src", key.ServiceSource);
             }
 
             writer.WriteEndArray();
@@ -360,17 +343,17 @@ namespace Datadog.Trace.Agent
             writer.WriteEndObject();
         }
 
-        private static byte[] SerializeResourceMetrics(StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
+        private static byte[] SerializeResourceMetrics(StatsBuffer buffer, long bucketDurationNs)
         {
             using var stream = new MemoryStream(512);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
 
-            var resourceData = SerializeResource(buffer, otelSemanticsEnabled);
+            var resourceData = SerializeResource(buffer);
             WriteTag(writer, FieldNumbers.Resource, WireTypeLengthDelimited);
             WriteVarInt(writer, resourceData.Length);
             writer.Write(resourceData);
 
-            var scopeMetricsData = SerializeScopeMetrics(buffer, bucketDurationNs, otelSemanticsEnabled);
+            var scopeMetricsData = SerializeScopeMetrics(buffer, bucketDurationNs);
             WriteTag(writer, FieldNumbers.ScopeMetrics, WireTypeLengthDelimited);
             WriteVarInt(writer, scopeMetricsData.Length);
             writer.Write(scopeMetricsData);
@@ -379,7 +362,7 @@ namespace Datadog.Trace.Agent
             return stream.ToArray();
         }
 
-        private static byte[] SerializeResource(StatsBuffer buffer, bool otelSemanticsEnabled)
+        private static byte[] SerializeResource(StatsBuffer buffer)
         {
             using var stream = new MemoryStream(256);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
@@ -402,21 +385,18 @@ namespace Datadog.Trace.Agent
             WriteAttribute(writer, "telemetry.sdk.language", TracerConstants.Language);
             WriteAttribute(writer, "telemetry.sdk.version", TracerConstants.AssemblyVersion);
 
-            if (!otelSemanticsEnabled)
-            {
-                WriteAttribute(writer, "datadog.runtime_id", Tracer.RuntimeId);
-            }
+            WriteAttribute(writer, "datadog.runtime_id", Tracer.RuntimeId);
 
             writer.Flush();
             return stream.ToArray();
         }
 
-        private static byte[] SerializeScopeMetrics(StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
+        private static byte[] SerializeScopeMetrics(StatsBuffer buffer, long bucketDurationNs)
         {
             using var stream = new MemoryStream(512);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
 
-            var metricData = SerializeMetric(buffer, bucketDurationNs, otelSemanticsEnabled);
+            var metricData = SerializeMetric(buffer, bucketDurationNs);
             WriteTag(writer, FieldNumbers.Metrics, WireTypeLengthDelimited);
             WriteVarInt(writer, metricData.Length);
             writer.Write(metricData);
@@ -425,7 +405,7 @@ namespace Datadog.Trace.Agent
             return stream.ToArray();
         }
 
-        private static byte[] SerializeMetric(StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
+        private static byte[] SerializeMetric(StatsBuffer buffer, long bucketDurationNs)
         {
             using var stream = new MemoryStream(512);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
@@ -433,7 +413,7 @@ namespace Datadog.Trace.Agent
             WriteStringField(writer, FieldNumbers.MetricName, MetricName);
             WriteStringField(writer, FieldNumbers.MetricUnit, MetricUnit);
 
-            var histogramData = SerializeHistogram(buffer, bucketDurationNs, otelSemanticsEnabled);
+            var histogramData = SerializeHistogram(buffer, bucketDurationNs);
             WriteTag(writer, FieldNumbers.Histogram, WireTypeLengthDelimited);
             WriteVarInt(writer, histogramData.Length);
             writer.Write(histogramData);
@@ -442,7 +422,7 @@ namespace Datadog.Trace.Agent
             return stream.ToArray();
         }
 
-        private static byte[] SerializeHistogram(StatsBuffer buffer, long bucketDurationNs, bool otelSemanticsEnabled)
+        private static byte[] SerializeHistogram(StatsBuffer buffer, long bucketDurationNs)
         {
             using var stream = new MemoryStream(512);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
@@ -458,7 +438,7 @@ namespace Datadog.Trace.Agent
                     continue;
                 }
 
-                var dataPointData = SerializeDataPoint(kvp.Key, bucket, startTimeUnixNano, endTimeUnixNano, otelSemanticsEnabled, buffer.Header.Details.DefaultServiceName);
+                var dataPointData = SerializeDataPoint(kvp.Key, bucket, startTimeUnixNano, endTimeUnixNano);
                 WriteTag(writer, FieldNumbers.DataPoints, WireTypeLengthDelimited);
                 WriteVarInt(writer, dataPointData.Length);
                 writer.Write(dataPointData);
@@ -475,22 +455,15 @@ namespace Datadog.Trace.Agent
             StatsAggregationKey key,
             StatsBucket bucket,
             ulong startTimeUnixNano,
-            ulong endTimeUnixNano,
-            bool otelSemanticsEnabled,
-            string defaultServiceName)
+            ulong endTimeUnixNano)
         {
             using var stream = new MemoryStream(256);
             using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
 
-            if (!StringUtil.IsNullOrEmpty(key.Resource))
-            {
-                WriteAttribute(writer, "span.name", key.Resource, FieldNumbers.HistogramDataPointAttributes);
-            }
-
-            if (!StringUtil.IsNullOrEmpty(key.SpanKind))
-            {
-                WriteAttribute(writer, "span.kind", key.SpanKind, FieldNumbers.HistogramDataPointAttributes);
-            }
+            WriteAttribute(writer, "service.name", key.Service, FieldNumbers.HistogramDataPointAttributes);
+            WriteAttribute(writer, "status.code", key.IsError ? StatusCodeErrorValue : StatusCodeOkValue, FieldNumbers.HistogramDataPointAttributes);
+            WriteAttribute(writer, "span.kind", CanonicalizeSpanKind(key.SpanKind), FieldNumbers.HistogramDataPointAttributes);
+            WriteAttribute(writer, "span.name", key.Resource, FieldNumbers.HistogramDataPointAttributes);
 
             if (!StringUtil.IsNullOrEmpty(key.HttpMethod))
             {
@@ -513,34 +486,27 @@ namespace Datadog.Trace.Agent
                 WriteAttribute(writer, "rpc.response.status_code", grpcStatusNameProto, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            if (key.IsError)
+            WriteAttribute(writer, "datadog.operation.name", key.OperationName, FieldNumbers.HistogramDataPointAttributes);
+
+            if (!StringUtil.IsNullOrEmpty(key.Type))
             {
-                WriteIntAttribute(writer, "status.code", StatusCodeErrorProto, FieldNumbers.HistogramDataPointAttributes);
+                WriteAttribute(writer, "datadog.span.type", key.Type, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            if (!StringUtil.IsNullOrEmpty(key.Service) && !string.Equals(key.Service, defaultServiceName, StringComparison.OrdinalIgnoreCase))
+            WriteBoolAttribute(writer, "datadog.span.top_level", key.IsTopLevel, FieldNumbers.HistogramDataPointAttributes);
+            if (key.IsTraceRoot is { } isTraceRoot)
             {
-                WriteAttribute(writer, "service.name", key.Service, FieldNumbers.HistogramDataPointAttributes);
+                WriteBoolAttribute(writer, "datadog.is_trace_root", isTraceRoot, FieldNumbers.HistogramDataPointAttributes);
             }
 
-            if (!otelSemanticsEnabled)
+            if (key.IsSyntheticsRequest)
             {
-                if (!StringUtil.IsNullOrEmpty(key.OperationName))
-                {
-                    WriteAttribute(writer, "datadog.operation.name", key.OperationName, FieldNumbers.HistogramDataPointAttributes);
-                }
+                WriteAttribute(writer, "datadog.origin", "synthetics", FieldNumbers.HistogramDataPointAttributes);
+            }
 
-                if (!StringUtil.IsNullOrEmpty(key.Type))
-                {
-                    WriteAttribute(writer, "datadog.span.type", key.Type, FieldNumbers.HistogramDataPointAttributes);
-                }
-
-                WriteBoolAttribute(writer, "datadog.span.top_level", key.IsTopLevel, FieldNumbers.HistogramDataPointAttributes);
-
-                if (key.IsSyntheticsRequest)
-                {
-                    WriteAttribute(writer, "datadog.origin", "synthetics", FieldNumbers.HistogramDataPointAttributes);
-                }
+            if (!StringUtil.IsNullOrEmpty(key.ServiceSource))
+            {
+                WriteAttribute(writer, "datadog.svc_src", key.ServiceSource, FieldNumbers.HistogramDataPointAttributes);
             }
 
             WriteTag(writer, FieldNumbers.HistogramDataPointStartTimeUnixNano, WireTypeFixed64);
@@ -634,6 +600,31 @@ namespace Datadog.Trace.Agent
             }
 
             return BoundsNs.Length; // overflow
+        }
+
+        private static string CanonicalizeSpanKind(string spanKind)
+        {
+            if (string.Equals(spanKind, SpanKinds.Client, StringComparison.OrdinalIgnoreCase))
+            {
+                return "SPAN_KIND_CLIENT";
+            }
+
+            if (string.Equals(spanKind, SpanKinds.Server, StringComparison.OrdinalIgnoreCase))
+            {
+                return "SPAN_KIND_SERVER";
+            }
+
+            if (string.Equals(spanKind, SpanKinds.Producer, StringComparison.OrdinalIgnoreCase))
+            {
+                return "SPAN_KIND_PRODUCER";
+            }
+
+            if (string.Equals(spanKind, SpanKinds.Consumer, StringComparison.OrdinalIgnoreCase))
+            {
+                return "SPAN_KIND_CONSUMER";
+            }
+
+            return "SPAN_KIND_INTERNAL";
         }
 
         private static string? NormalizeGrpcStatusName(string grpcStatusCode)

@@ -11,6 +11,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 
@@ -119,6 +120,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 if (responseMessage is System.Net.Http.HttpResponseMessage response)
                 {
                     var statusCode = (int)response.StatusCode;
+                    var protocolVersion = response.Version;
                     if (state.State is true)
                     {
                         RaspModule.OnDownstreamResponse(response, scope.Span.SpanId);
@@ -127,8 +129,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                 if (responseMessage.Instance is not null)
                 {
                     var statusCode = responseMessage.StatusCode;
+                    var protocolVersion = responseMessage.Version;
 #endif
                     scope.Span.SetHttpStatusCode(statusCode, false, Tracer.Instance.CurrentTraceSettings.Settings);
+                    HttpSemanticConventions.SetHttpClientResponseValues(scope.Span, protocolVersion);
                 }
 
                 if (exception != null)

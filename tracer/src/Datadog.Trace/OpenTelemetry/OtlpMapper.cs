@@ -87,20 +87,20 @@ internal static class OtlpMapper
                tagKey.Equals("service.version", StringComparison.OrdinalIgnoreCase);
     }
 
-    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit, bool openTelemetrySemanticsEnabled)
+    public static int EmitAttributesFromSpan(Action<KeyValue> writeKeyValue, in SpanModel spanModel, int limit)
     {
         return EmitAttributesFromSpan(
             in spanModel,
             limit,
-            openTelemetrySemanticsEnabled,
             ref writeKeyValue,
             static (ref Action<KeyValue> action, KeyValue keyValue) => action(keyValue));
     }
 
-    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, bool openTelemetrySemanticsEnabled, ref TState state, KeyValueWriter<TState> writeKeyValue)
+    public static int EmitAttributesFromSpan<TState>(in SpanModel spanModel, int limit, ref TState state, KeyValueWriter<TState> writeKeyValue)
     {
         int count = 0;
         int droppedAttributesCount = 0;
+        bool openTelemetrySemanticsEnabled = spanModel.Span.OpenTelemetrySemanticsEnabled;
 
         if (!openTelemetrySemanticsEnabled)
         {
@@ -251,7 +251,7 @@ internal static class OtlpMapper
         }
 
         var tagWriter = new TagWriter<TState>(state, writeKeyValue, tagProcessors, count, limit, openTelemetrySemanticsEnabled);
-        spanModel.Span.Tags.EnumerateTags(ref tagWriter);
+        spanModel.Span.Tags.EnumerateTags(ref tagWriter, openTelemetrySemanticsEnabled);
         count = tagWriter.Count;
         droppedAttributesCount += tagWriter.DroppedCount;
         state = tagWriter.State;
@@ -273,7 +273,7 @@ internal static class OtlpMapper
         return droppedAttributesCount;
     }
 
-    internal struct TagWriter<TState> : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>
+    internal struct TagWriter<TState> : IItemProcessor<string>, IItemProcessor<int>, IItemProcessor<double>, IItemProcessor<byte[]>
     {
         private readonly KeyValueWriter<TState> _writeKeyValue;
         private readonly ITagProcessor[]? _tagProcessors;
@@ -334,6 +334,32 @@ internal static class OtlpMapper
 
             if (Count < _limit)
             {
+                if (_tagProcessors is not null)
+                {
+                    for (var i = 0; i < _tagProcessors.Length; i++)
+                    {
+                        _tagProcessors[i]?.ProcessMeta(ref key, ref value);
+                    }
+                }
+
+                _writeKeyValue(ref State, new KeyValue(key, value));
+                Count++;
+            }
+            else
+            {
+                DroppedCount++;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Process(TagItem<int> item)
+        {
+            if (Count < _limit)
+            {
+                // We are using the original key since we're not serializing MessagePack
+                string key = item.Key;
+                int value = item.Value;
+
                 if (_tagProcessors is not null)
                 {
                     for (var i = 0; i < _tagProcessors.Length; i++)

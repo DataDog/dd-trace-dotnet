@@ -6,6 +6,7 @@
 using System;
 using System.Threading;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
@@ -41,7 +42,8 @@ namespace Datadog.Trace.Agent
         {
             Success = 0,
             Full = 1,
-            Overflow = 2
+            Overflow = 2,
+            Locked = 3
         }
 
         public ArraySegment<byte> Data
@@ -66,10 +68,10 @@ namespace Datadog.Trace.Agent
 
         internal int MaxBufferSize => _maxBufferSize;
 
-        // For tests only
+        [TestingOnly]
         internal bool IsLocked => _locked;
 
-        // For tests only
+        [TestingOnly]
         internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == _serializer.HeaderSize;
 
         public WriteStatus TryWrite(in SpanCollection spans, ref byte[] temporaryBuffer, int? samplingPriority = null)
@@ -82,8 +84,8 @@ namespace Datadog.Trace.Agent
 
                 if (!lockTaken || _locked)
                 {
-                    // A flush operation is in progress, consider this buffer full
-                    return WriteStatus.Full;
+                    // A flush operation is in progress
+                    return WriteStatus.Locked;
                 }
 
                 // since all we have is an array of spans, use the trace context from the first span

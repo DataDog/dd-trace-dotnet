@@ -35,6 +35,7 @@ namespace Datadog.Trace.Debugger.IntegrationTests;
 [UsesVerify]
 public class ProbesTests : TestHelper
 {
+    private const string TestMaxEvaluationTimeInMilliseconds = "1000";
     private const string AddedProbesInstrumentedLogEntry = "Dynamic Instrumentation.InstrumentProbes: Request to instrument added probes definitions completed.";
     private const string RemovedProbesInstrumentedLogEntry = "Dynamic Instrumentation.InstrumentProbes: Request to de-instrument probes definitions completed.";
 
@@ -78,6 +79,7 @@ public class ProbesTests : TestHelper
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
         SetServiceVersion("1.0.0");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.EvaluationTimeoutMs, TestMaxEvaluationTimeInMilliseconds);
     }
 
     public static IEnumerable<object[]> UdsMemberData =>
@@ -552,6 +554,7 @@ public class ProbesTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("Category", "LinuxUnsupported")]
     [Trait("RunOnWindows", "True")]
+    [Flaky("Named pipes is flaky", maxRetries: 3)]
     public async Task MethodProbeTest_NamedPipes()
     {
         if (!EnvironmentTools.IsWindows())
