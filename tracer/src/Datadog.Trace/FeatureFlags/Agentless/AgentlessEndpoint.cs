@@ -73,7 +73,11 @@ internal readonly struct AgentlessEndpoint
             }
 
             var managedHost = ManagedHostPrefix + trimmedSite.ToLowerInvariant();
-            if (managedHost.Contains("://") || HasWhitespace(managedHost))
+            // A site accidentally set to e.g. "https://datadoghq.com" would produce a host like
+            // "ufc-server.ff-cdn.https://datadoghq.com" which Uri.TryCreate accepts as valid
+            // (treating the "//" as a path separator). Catch it explicitly; whitespace and
+            // invalid ports are already rejected by TryCreate.
+            if (managedHost.Contains("://"))
             {
                 error = "The configured Datadog site is not valid";
                 return false;
@@ -124,18 +128,5 @@ internal readonly struct AgentlessEndpoint
 
         endpoint = new AgentlessEndpoint(custom, isManaged: false);
         return true;
-    }
-
-    private static bool HasWhitespace(string value)
-    {
-        foreach (var c in value)
-        {
-            if (char.IsWhiteSpace(c))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
