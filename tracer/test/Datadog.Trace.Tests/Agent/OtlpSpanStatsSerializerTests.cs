@@ -307,6 +307,71 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void SerializeJson_ResourceIncludesProcessTags()
+        {
+            var buffer = CreateBuffer();
+            AddHit(buffer);
+
+            var processTagValues = SerializeToJson(buffer)
+                                  .SelectTokens("$..attributes[?(@.key == 'datadog.process_tags')].value.arrayValue.values[*].stringValue");
+
+            processTagValues.Should().NotBeEmpty();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Serialize_EmitsAdditionalMetricTags(bool useJson)
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey();
+            var additionalMetricTags = new List<byte[]>
+            {
+                Encoding.UTF8.GetBytes("team:payments"),
+                Encoding.UTF8.GetBytes("datadog.custom:value"),
+                Encoding.UTF8.GetBytes("endpoint:https://example.com:443"),
+                Encoding.UTF8.GetBytes("span.kind:custom"),
+                Encoding.UTF8.GetBytes(StatsAggregator.BlockedByTracerSentinel),
+            };
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = useJson ? GetDataPointAttributes(SerializeToJson(buffer)) : GetProtobufDataPointAttributes(buffer);
+
+            attrs.Should().ContainKey("team").WhoseValue.Should().Be("payments");
+            attrs.Should().ContainKey("datadog.custom").WhoseValue.Should().Be("value");
+            attrs.Should().ContainKey("endpoint").WhoseValue.Should().Be("https://example.com:443");
+            attrs.Should().ContainKey("span.kind").WhoseValue.Should().Be("SPAN_KIND_SERVER");
+            attrs.Should().ContainKey(StatsAggregator.BlockedByTracerSentinel).WhoseValue.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void SerializeJson_PeerTags_EmittedAsCombinedArrayValue()
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey();
+            var peerTags = new List<byte[]>
+            {
+                Encoding.UTF8.GetBytes("peer.service:downstream"),
+                Encoding.UTF8.GetBytes("net.peer.name:downstream.example.com"),
+            };
+            buffer.Buckets.Add(key, new StatsBucket(key, peerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var peerTagValues = SerializeToJson(buffer)
+                               .SelectTokens("$..attributes[?(@.key == 'datadog.peer_tags')].value.arrayValue.values[*].stringValue")
+                               .Values<string>();
+
+            peerTagValues.Should().Equal("peer.service:downstream", "net.peer.name:downstream.example.com");
+        }
+
+        [Fact]
+        public void SerializeJson_PeerTags_AbsentWhenEmpty()
+        {
+            var attrs = GetDataPointAttributes(SerializeToJson(CreateBufferWithOneHit()));
+
+            attrs.Should().NotContainKey("datadog.peer_tags");
+        }
+
+        [Fact]
         public void SerializeJson_AggregationTemporalityIsDelta()
         {
             var json = SerializeToJson(CreateBufferWithOneHit());
