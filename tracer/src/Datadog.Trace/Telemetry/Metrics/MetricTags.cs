@@ -235,6 +235,64 @@ internal static class MetricTags
         [Description("bucket:gte_30s")] GreaterThanOrEqual30Seconds,
     }
 
+    internal enum DebuggerEventType
+    {
+        [Description("event_type:snapshot")] Snapshot = 0,
+        [Description("event_type:log")] Log = 1,
+        [Description("event_type:metric")] Metric = 2,
+        [Description("event_type:span")] Span = 3,
+    }
+
+    internal enum DebuggerCaptureEventType
+    {
+        [Description("event_type:snapshot")] Snapshot = 0,
+        [Description("event_type:log")] Log = 1,
+    }
+
+    internal enum DebuggerEventsSkippedReason
+    {
+        [Description("reason:rateLimitGlobal")] RateLimitGlobal = 0,
+        [Description("reason:rateLimitProbe")] RateLimitProbe = 1,
+
+        /// <summary>
+        /// The event was skipped because probe evaluation exceeded its time limit before capture began.
+        /// </summary>
+        [Description("reason:evaluationTimeout")] EvaluationTimeout = 2,
+    }
+
+    internal enum DebuggerEventsDroppedReason
+    {
+        /// <summary>
+        /// The captured event was discarded because the debugger upload queue was full.
+        /// </summary>
+        [Description("reason:queueFull")] QueueFull = 0,
+
+        /// <summary>
+        /// The captured event exceeded the 1 MB intake payload limit and was discarded.
+        /// </summary>
+        [Description("reason:payloadTooLarge")] PayloadTooLarge = 1,
+    }
+
+    internal enum DebuggerCaptureIncompleteReason
+    {
+        [Description("reason:runtimeError")] RuntimeError = 0,
+
+        /// <summary>
+        /// Capture exceeded its time limit, so the partial event was retained.
+        /// </summary>
+        [Description("reason:timeout")] Timeout = 1,
+        [Description("reason:depth")] Depth = 2,
+        [Description("reason:fieldCount")] FieldCount = 3,
+        [Description("reason:collectionSize")] CollectionSize = 4,
+        [Description("reason:stringLength")] StringLength = 5,
+
+        /// <summary>
+        /// The event exceeded the 1 MB intake payload limit, so capture was trimmed and the partial event was retained.
+        /// </summary>
+        [Description("reason:payloadTooLarge")] PayloadTooLarge = 6,
+        [Description("reason:other")] Other = 7,
+    }
+
     internal enum IntegrationName
     {
         // manual integration

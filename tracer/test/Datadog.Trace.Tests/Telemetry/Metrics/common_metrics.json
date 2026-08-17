@@ -52,6 +52,39 @@
       "description": "Count of Dynamic Instrumentation high-memory-pressure episodes, incremented once on exit and tagged by duration bucket (`bucket:lt_1s`, `bucket:1_5s`, `bucket:5_30s`, or `bucket:gte_30s`). Range buckets are lower-bound inclusive and upper-bound exclusive, so `bucket:1_5s` means 1s <= duration < 5s",
       "send_to_user": false,
       "user_tags": []
+    },
+    "events.skipped": {
+      "tags": [
+        "reason",
+        "event_type"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of debugger events skipped before capture, tagged by reason and event type",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "events.dropped": {
+      "tags": [
+        "reason",
+        "event_type"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of debugger events dropped after capture, tagged by reason and event type",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "capture.incomplete": {
+      "tags": [
+        "event_type",
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of incomplete debugger captures, tagged by event type and reason",
+      "send_to_user": false,
+      "user_tags": []
     }
   },
   "general": {
