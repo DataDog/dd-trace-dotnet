@@ -138,15 +138,20 @@ namespace Datadog.Trace
         {
             var created = new AppSecRequestContext();
 
-            if (Interlocked.CompareExchange(ref _appSecRequestContext, created, null) is null && _rootSpan is { } rootSpan)
+            if (_rootSpan is not { } rootSpan)
             {
-                lock (rootSpan)
+                Interlocked.CompareExchange(ref _appSecRequestContext, created, null);
+                return _appSecRequestContext!;
+            }
+
+            lock (rootSpan)
+            {
+                if (_segmentClosed || (rootSpan.Type == SpanTypes.Web && rootSpan.IsFinished))
                 {
-                    if (_segmentClosed)
-                    {
-                        created.DisposeAdditiveContext();
-                    }
+                    created.DisposeAdditiveContext();
                 }
+
+                Interlocked.CompareExchange(ref _appSecRequestContext, created, null);
             }
 
             return _appSecRequestContext!;

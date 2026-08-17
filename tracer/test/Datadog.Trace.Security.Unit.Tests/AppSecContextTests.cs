@@ -95,6 +95,24 @@ public class AppSecContextTests : WafLibraryRequiredTest
         traceContext.AppSecRequestContext.GetOrCreateAdditiveContext(security).Should().BeNull();
     }
 
+    [Fact]
+    public async Task GivenAFinishedWebSpan_WhenALateSpanUsesAppSecForTheFirstTime_ThenNoWafContextIsHandedOut()
+    {
+        var settings = TracerSettings.Create(new Dictionary<string, object>());
+        await using var tracer = TracerHelper.Create(settings);
+        using var security = new AppSec.Security(waf: CreateWaf().Waf);
+
+        var rootTestScope = (Scope)tracer.StartActive("test.trace");
+        rootTestScope.Span.Type = SpanTypes.Web;
+        var capturedParent = rootTestScope.Span.Context;
+        rootTestScope.Dispose();
+
+        using var lateTestScope = (Scope)tracer.StartActive("test.late", new SpanCreationSettings { Parent = capturedParent });
+        var appSecContext = lateTestScope.Span.Context.TraceContext.AppSecRequestContext;
+
+        appSecContext.GetOrCreateAdditiveContext(security).Should().BeNull();
+    }
+
     [InlineData(-2, -2, -1, 0, -2, -1)]
     [InlineData(2, -2, -1, 1, null, -1)]
     [InlineData(2, 2, 1, 2, null, null)]
