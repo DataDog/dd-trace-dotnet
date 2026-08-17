@@ -24,7 +24,7 @@ public abstract class ContainerFixture : IAsyncLifetime
     {
         try
         {
-            _resources = await ContainersRegistry.GetOrAdd(GetType(), InitializeResources);
+            _resources = await InitializeResources().ConfigureAwait(false);
         }
         catch (DockerApiException ex) when (IsTransientPlatformError(ex))
         {
@@ -32,8 +32,25 @@ public abstract class ContainerFixture : IAsyncLifetime
         }
     }
 
-    // Do not implement, the ContainersRegistry is responsible for disposing the containers
-    public Task DisposeAsync() => Task.CompletedTask;
+    public async Task DisposeAsync()
+    {
+        if (_resources is null)
+        {
+            return;
+        }
+
+        foreach (var resource in _resources.Values)
+        {
+            if (resource is IAsyncDisposable asyncDisposable)
+            {
+                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+            }
+            else if (resource is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
+    }
 
     public virtual IEnumerable<KeyValuePair<string, string>> GetEnvironmentVariables() => Enumerable.Empty<KeyValuePair<string, string>>();
 
