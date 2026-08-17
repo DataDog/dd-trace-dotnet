@@ -219,19 +219,17 @@ case "$test_suite" in
       --optimize "${OPTIMIZE:-true}" || test_exit_code=$?
     ;;
   docker)
-    if ! docker compose version >/dev/null 2>&1 && ! command -v docker-compose >/dev/null 2>&1; then
-      echo "Installing Docker Compose"
+    # The repository's dependency orchestration is also used by Azure with
+    # docker-compose v1. Keep the same implementation here: Compose v2 does
+    # not expose the postgres service alias to the Group1 dependency waiter.
+    if ! command -v docker-compose >/dev/null 2>&1; then
+      echo "Installing Docker Compose v1"
       apt-get update
-      apt-get install --yes --no-install-recommends docker-compose-plugin
+      apt-get install --yes --no-install-recommends docker-compose
       rm -rf /var/lib/apt/lists/*
     fi
 
-    if docker compose version >/dev/null 2>&1; then
-      compose()
-      {
-        docker compose "$@"
-      }
-    elif command -v docker-compose >/dev/null 2>&1; then
+    if command -v docker-compose >/dev/null 2>&1; then
       compose()
       {
         docker-compose "$@"
