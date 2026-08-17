@@ -40,7 +40,7 @@ internal readonly struct AgentlessEndpoint
     /// <summary>
     /// Gets a value indicating whether this is the endpoint derived from the site. The API key is
     /// only sent there: a custom endpoint reports its own authentication failure rather than
-    /// having the credential guessed onto it.
+    /// having the credential leaked to it.
     /// </summary>
     public bool IsManaged { get; }
 
@@ -91,7 +91,7 @@ internal readonly struct AgentlessEndpoint
 
             if (!StringUtil.IsNullOrEmpty(env))
             {
-                managedUri = new UriBuilder(managedUri) { Query = "dd_env=" + Uri.EscapeDataString(env!) }.Uri;
+                managedUri = new UriBuilder(managedUri) { Query = "dd_env=" + Uri.EscapeDataString(env) }.Uri;
             }
 
             endpoint = new AgentlessEndpoint(managedUri, isManaged: true);
