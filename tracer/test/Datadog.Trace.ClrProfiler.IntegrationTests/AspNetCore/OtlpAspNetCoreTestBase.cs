@@ -285,6 +285,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
             OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
+            OtlpSnapshotHelper.NormalizeCodeOriginAttributes(tracesRequests);
 
             foreach (var key in UnstableAttributeKeys)
             {
