@@ -36,7 +36,6 @@ public class AppSecContextTests : WafLibraryRequiredTest
             appSecContext.GetOrCreateAdditiveContext(security).Should().NotBeNull();
         }
 
-        // once disposed the additive context is never handed out again, whatever the span type was
         appSecContext.GetOrCreateAdditiveContext(security).Should().BeNull();
     }
 
@@ -54,11 +53,46 @@ public class AppSecContextTests : WafLibraryRequiredTest
 
         rootTestScope.Dispose();
 
-        // the trace isn't over, the still open child span can run the WAF
         appSecContext.GetOrCreateAdditiveContext(security).Should().NotBeNull();
 
         childTestScope.Dispose();
         appSecContext.GetOrCreateAdditiveContext(security).Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(SpanTypes.Custom, true)]
+    [InlineData(SpanTypes.Web, false)]
+    public async Task GivenAClosedTraceSegment_WhenALateSpanReopensIt_ThenOnlyANonWebTraceGetsANewWafContext(string spanType, bool expectedContext)
+    {
+        var settings = TracerSettings.Create(new Dictionary<string, object>());
+        await using var tracer = TracerHelper.Create(settings);
+        using var security = new AppSec.Security(waf: CreateWaf().Waf);
+
+        var rootTestScope = (Scope)tracer.StartActive("test.trace");
+        rootTestScope.Span.Type = spanType;
+        var capturedParent = rootTestScope.Span.Context;
+        var appSecContext = rootTestScope.Span.Context.TraceContext.AppSecRequestContext;
+        appSecContext.GetOrCreateAdditiveContext(security).Should().NotBeNull();
+
+        rootTestScope.Dispose();
+        appSecContext.GetOrCreateAdditiveContext(security).Should().BeNull();
+
+        using var lateTestScope = (Scope)tracer.StartActive("test.late", new SpanCreationSettings { Parent = capturedParent });
+        (appSecContext.GetOrCreateAdditiveContext(security) is not null).Should().Be(expectedContext);
+    }
+
+    [Fact]
+    public async Task GivenAClosedTraceSegment_WhenTheAppSecContextIsCreatedAfterwards_ThenNoWafContextIsHandedOut()
+    {
+        var settings = TracerSettings.Create(new Dictionary<string, object>());
+        await using var tracer = TracerHelper.Create(settings);
+        using var security = new AppSec.Security(waf: CreateWaf().Waf);
+
+        var rootTestScope = (Scope)tracer.StartActive("test.trace");
+        var traceContext = rootTestScope.Span.Context.TraceContext;
+        rootTestScope.Dispose();
+
+        traceContext.AppSecRequestContext.GetOrCreateAdditiveContext(security).Should().BeNull();
     }
 
     [InlineData(-2, -2, -1, 0, -2, -1)]

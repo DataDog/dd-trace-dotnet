@@ -36,6 +36,8 @@ namespace Datadog.Trace
         private SpanCollection _spans;
         private int _openSpans;
 
+        private bool _segmentClosed;
+
         private IastRequestContext? _iastRequestContext;
         private AppSecRequestContext? _appSecRequestContext;
 
@@ -46,6 +48,7 @@ namespace Datadog.Trace
         // _rootSpan was chosen in #4125 to be the lock that protects
         // * _spans
         // * _openSpans
+        // * _segmentClosed
         // although it's a nullable field, the _rootSpan must always be set before operations on
         // _spans take place, so it's okay to use it as a lock key
         // even though we need to override the nullable warnings in some places.
@@ -119,15 +122,7 @@ namespace Datadog.Trace
         internal AppSecRequestContext AppSecRequestContext
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                if (Volatile.Read(ref _appSecRequestContext) is null)
-                {
-                    Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
-                }
-
-                return _appSecRequestContext!;
-            }
+            get => Volatile.Read(ref _appSecRequestContext) ?? CreateAppSecRequestContext();
         }
 
         internal bool WafExecuted { get; set; }
@@ -137,6 +132,25 @@ namespace Datadog.Trace
 
         internal static TraceContext? GetTraceContext(in SpanCollection spans)
             => spans.FirstSpan?.Context.TraceContext;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private AppSecRequestContext CreateAppSecRequestContext()
+        {
+            var created = new AppSecRequestContext();
+
+            if (Interlocked.CompareExchange(ref _appSecRequestContext, created, null) is null && _rootSpan is { } rootSpan)
+            {
+                lock (rootSpan)
+                {
+                    if (_segmentClosed)
+                    {
+                        created.DisposeAdditiveContext();
+                    }
+                }
+            }
+
+            return _appSecRequestContext!;
+        }
 
         /// <summary>
         /// Gets the feature-flag span-enrichment state for this trace (created on first use), or null
@@ -176,6 +190,16 @@ namespace Datadog.Trace
             lock (_rootSpan)
             {
                 _openSpans++;
+
+                if (_openSpans == 1 && _segmentClosed)
+                {
+                    _segmentClosed = false;
+
+                    if (_rootSpan.Type != SpanTypes.Web)
+                    {
+                        _appSecRequestContext?.ReopenAdditiveContext();
+                    }
+                }
             }
         }
 
@@ -206,8 +230,11 @@ namespace Datadog.Trace
                         }
                     }
 
-                    _appSecRequestContext?.CloseWebSpan(span);
-                    _appSecRequestContext?.DisposeAdditiveContext();
+                    if (_appSecRequestContext is not null)
+                    {
+                        _appSecRequestContext.CloseWebSpan(span);
+                        _appSecRequestContext.DisposeAdditiveContext();
+                    }
                 }
             }
 
@@ -226,6 +253,7 @@ namespace Datadog.Trace
                 {
                     spansToWrite = _spans;
                     _spans = default;
+                    _segmentClosed = true;
                     TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
                     _appSecRequestContext?.DisposeAdditiveContext();
                 }

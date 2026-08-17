@@ -174,13 +174,19 @@ internal partial class AppSecRequestContext
     /// </summary>
     internal void DisposeAdditiveContext()
     {
-        // creation and disposal have to be mutually exclusive: without the lock a context being
-        // created here could be assigned right after this method has run, so it would never be
-        // disposed and its native memory would only be released by the finalizer
         lock (_sync)
         {
             _context?.Dispose();
             _isAdditiveContextDisposed = true;
+        }
+    }
+
+    internal void ReopenAdditiveContext()
+    {
+        lock (_sync)
+        {
+            _context = null;
+            _isAdditiveContextDisposed = false;
         }
     }
 
