@@ -31,7 +31,7 @@
 
 .linux-integration-test-x64:
   stage: test
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
+  image: registry.ddbuild.io/images/docker:27.3.1
   tags: ["docker-in-docker:amd64"]
   timeout: 90m
   variables:
