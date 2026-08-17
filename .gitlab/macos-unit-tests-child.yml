@@ -25,9 +25,16 @@
 
       dotnet_install_script="${TMPDIR:-/tmp}/dd-trace-dotnet-${CI_JOB_ID}-dotnet-install.sh"
       trap 'rm -f "$dotnet_install_script"' EXIT
-      curl --fail --silent --show-error --location --retry 5 \
-        --output "$dotnet_install_script" \
-        https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh
+      if ! curl --fail --silent --show-error --location --retry 5 \
+          --output "$dotnet_install_script" \
+          https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh \
+          || ! bash -n "$dotnet_install_script"; then
+        rm -f "$dotnet_install_script"
+        curl --fail --silent --show-error --location --retry 5 \
+          --output "$dotnet_install_script" \
+          https://dot.net/v1/dotnet-install.sh
+        bash -n "$dotnet_install_script"
+      fi
       bash "$dotnet_install_script" \
         --version "$DOTNET_SDK_VERSION" \
         --install-dir "$DOTNET_ROOT" \
