@@ -45,8 +45,7 @@ public class AerospikeFixture : ContainerFixture
                        .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(AerospikePort))
                        .Build();
 
-        await container.StartAsync();
-
         registerResource("container", container);
+        await StartContainerAsync(container).ConfigureAwait(false);
     }
 }
