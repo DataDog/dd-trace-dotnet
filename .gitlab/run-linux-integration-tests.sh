@@ -136,7 +136,7 @@ case "$test_suite" in
       dotnet /build/bin/Debug/_build.dll \
       BuildDebuggerIntegrationTests \
       --framework "$FRAMEWORK" \
-      --targetplatform x64 \
+      --targetplatform "$target_architecture" \
       --debugtype portable \
       --optimize "$optimize" \
       --TestAllPackageVersions true \
@@ -217,7 +217,7 @@ case "$test_suite" in
     echo "Running Debugger integration tests for ${FRAMEWORK}"
     run_test_container RunDebuggerIntegrationTests \
       --framework "$FRAMEWORK" \
-      --targetplatform x64 \
+      --targetplatform "$target_architecture" \
       --debugtype portable \
       --optimize "${OPTIMIZE:-true}" || test_exit_code=$?
     ;;

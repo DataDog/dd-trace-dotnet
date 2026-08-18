@@ -1767,6 +1767,7 @@ partial class Build
                                       .SetTargetPath(MsBuildProject)
                                       .SetTargets(target)
                                       .SetConfiguration(BuildConfiguration)
+                                      .SetTargetPlatformAnyCPU()
                                       .SetProperty("TargetFramework", framework.ToString())
                                       .SetProperty("BuildInParallel", "true")
                                       .SetProperty("CheckEolTargetFramework", "false")
