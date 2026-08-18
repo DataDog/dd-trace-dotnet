@@ -8,6 +8,8 @@
 #include <atlcomcli.h>
 #endif
 
+#include <atomic>
+#include <future>
 #include <memory>
 #include <unordered_map>
 
@@ -77,7 +79,7 @@ private:
 
     std::unique_ptr<std::thread> _pLoopThread;
     DWORD _loopThreadOsId;
-    volatile bool _shutdownRequested = false;
+    std::atomic<bool> _shutdownRequested = false;
     std::shared_ptr<ManagedThreadInfo> _targetThread;
     uint32_t _iteratorWallTime;
     uint32_t _iteratorCpuTime;
@@ -96,7 +98,7 @@ private:
     std::shared_ptr<MeanMaxMetric> _cpuDurationMetric;
 
 private:
-    void MainLoop();
+    void MainLoop(std::promise<void> loopReadyPromise);
     void MainLoopIteration();
     void CpuProfilingIteration();
     void WalltimeProfilingIteration();
