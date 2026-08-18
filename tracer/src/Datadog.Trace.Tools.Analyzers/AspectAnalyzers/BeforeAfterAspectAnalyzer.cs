@@ -26,7 +26,6 @@ public class BeforeAfterAspectAnalyzer : DiagnosticAnalyzer
     /// </summary>
     public const DiagnosticSeverity Severity = DiagnosticSeverity.Error;
 
-#pragma warning disable RS2008 // Enable analyzer release tracking for the analyzer project
     private static readonly DiagnosticDescriptor MissingTryCatchRule = new(
         Diagnostics.BeforeAfterAspectDiagnosticId,
         title: "Aspect is missing try-catch block",
@@ -35,7 +34,6 @@ public class BeforeAfterAspectAnalyzer : DiagnosticAnalyzer
         defaultSeverity: Severity,
         isEnabledByDefault: true,
         description: "[AspectMethodInsertBefore] and [AspectMethodInsertAfter] Aspects should guarantee safety if possible. Please wrap the aspect in a try-catch block.");
-#pragma warning restore RS2008
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(MissingTryCatchRule);
