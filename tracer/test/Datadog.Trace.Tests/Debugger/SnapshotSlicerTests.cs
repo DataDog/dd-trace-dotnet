@@ -12,6 +12,7 @@ using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.TestHelpers;
 using DatadogDebugger.Util;
 using Newtonsoft.Json.Linq;
+using VerifyTests;
 using VerifyXunit;
 using Xunit;
 
@@ -65,7 +66,9 @@ namespace Datadog.Trace.Tests.Debugger
             var modifiedSnapshot = Slice(slicer, snapshot);
 
             var captures = JObject.Parse(modifiedSnapshot).SelectToken("debugger.snapshot.captures");
-            await Verifier.Verify(captures);
+            var settings = new VerifySettings();
+            settings.DisableRequireUniquePrefix();
+            await Verifier.Verify(captures, settings);
         }
 
         [Fact]
@@ -77,7 +80,9 @@ namespace Datadog.Trace.Tests.Debugger
             var modifiedSnapshot = Slice(slicer, snapshot);
 
             var captures = JObject.Parse(modifiedSnapshot).SelectToken("debugger.snapshot.captures");
-            await Verifier.Verify(captures);
+            var settings = new VerifySettings();
+            settings.DisableRequireUniquePrefix();
+            await Verifier.Verify(captures, settings);
         }
 
         [Fact]
@@ -89,7 +94,9 @@ namespace Datadog.Trace.Tests.Debugger
             var modifiedSnapshot = Slice(slicer, snapshot);
 
             var captures = JObject.Parse(modifiedSnapshot).SelectToken("debugger.snapshot.captures");
-            await Verifier.Verify(captures);
+            var settings = new VerifySettings();
+            settings.DisableRequireUniquePrefix();
+            await Verifier.Verify(captures, settings);
         }
 
         private static string Slice(SnapshotSlicer slicer, string snapshot)

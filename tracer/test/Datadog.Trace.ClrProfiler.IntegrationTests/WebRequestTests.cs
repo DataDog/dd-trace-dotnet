@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
 
-            var allSpans = (await agent.WaitForSpansAsync(expectedAllSpansCount, assertExpectedCount: false)).OrderBy(s => s.Start).ToList();
+            var allSpans = (await agent.WaitForSpansAsync(expectedAllSpansCount, failOnTimeout: false)).OrderBy(s => s.Start).ToList();
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 #if NET9_0_OR_GREATER

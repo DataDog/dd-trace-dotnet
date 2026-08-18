@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                                   + 8 // Generic types
                                   + 1; // Toplevel Statement
 
-                var expectedSpans = requests * 2; // we manually instrument each request too
+                var expectedSpans = requests * 3; // HTTP, Lambda invocation, and manual instrumentation spans
 
                 var spans = (await agent.WaitForSpansAsync(expectedSpans, 15_000)).ToArray();
 

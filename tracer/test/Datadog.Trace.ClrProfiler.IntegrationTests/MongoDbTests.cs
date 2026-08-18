@@ -51,24 +51,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-mongodb" : EnvironmentHelper.FullSampleName;
+            var version = string.IsNullOrEmpty(packageVersion) ? null : new Version(packageVersion);
+            var snapshotSuffix = version switch
+            {
+                null => "2_7", // default is version 2.8.0
+                { Major: >= 3 } => "3_0", // The default JSON serialization changed in 3.0
+                { Major: 2, Minor: >= 15 } => "2_15", // A bunch of stuff was removed in 2.15.0
+                { Major: 2, Minor: >= 7 } => "2_7", // default is version 2.8.0
+                { Major: 2, Minor: >= 5 } => "2_5", // version 2.5 + 2.6 include additional info on queries compared to 2.2
+                { Major: 2, Minor: >= 2 } => "2_2",
+                _ => "PRE_2_2"
+            };
+            var expectedSpanCount = snapshotSuffix switch
+            {
+                "PRE_2_2" => 7,
+                "2_15" or "3_0" => 19,
+                _ => 23
+            };
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(3, 500);
-
-                var version = string.IsNullOrEmpty(packageVersion) ? null : new Version(packageVersion);
-                var snapshotSuffix = version switch
-                {
-                    null => "2_7", // default is version 2.8.0
-                    { Major: >= 3 } => "3_0", // The default JSON serialization changed in 3.0
-                    { Major: 2, Minor: >= 15 } => "2_15", // A bunch of stuff was removed in 2.15.0
-                    { Major: 2, Minor: >= 7 } => "2_7", // default is version 2.8.0
-                    { Major: 2, Minor: >= 5 } => "2_5", // version 2.5 + 2.6 include additional info on queries compared to 2.2
-                    { Major: 2, Minor: >= 2 } => "2_2",
-                    _ => "PRE_2_2"
-                };
+                // The MongoDB driver sends periodic monitors. Don't count them towards the
+                // snapshot span count, but keep the raw spans for the assertions below.
+                Func<MockSpan, bool> isAdminSpan = x => x.Resource is "buildInfo admin" or "getLastError admin";
+                agent.SpanFilters.Add(x => !isAdminSpan(x));
+                var nonAdminSpans = await agent.WaitForSpansAsync(expectedSpanCount);
+                var spans = agent.Spans;
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 // mongo stamps the current framework version, and OS so normalise those
@@ -88,13 +98,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // In 2.19, The explain query includes { "$expr" : true }, whereas in earlier versions it doesn't
                 settings.AddSimpleScrubber("{ \"$expr\" : true }", "{ }");
 
-                // The mongodb driver sends periodic monitors
                 var adminSpans = spans
-                                .Where(x => x.Resource is "buildInfo admin" or "getLastError admin")
+                                .Where(isAdminSpan)
                                 .ToList();
-                var nonAdminSpans = spans
-                                   .Where(x => !adminSpans.Contains(x))
-                                   .ToList();
                 var allMongoSpans = spans
                                     .Where(x => x.GetTag(Tags.InstrumentationName) == "MongoDb")
                                     .ToList();
