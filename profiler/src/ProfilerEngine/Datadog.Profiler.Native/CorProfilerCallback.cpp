@@ -1057,7 +1057,17 @@ void CorProfilerCallback::DisposeInternal()
             _pEtwEventsManager->Stop();
         }
 
-        DisposeServices();
+        {
+            // _isServicesShutdown must be set to true before this lock releases, not after - see
+            // EngineActiveGuard.h. From this point on, no EngineActiveGuard can ever report
+            // IsActive() again (the mutex's own synchronizes-with guarantee ensures every future
+            // lock acquisition, on any thread, observes _isServicesShutdown == true), so no guarded
+            // ICorProfilerCallback method can race DisposeServices() below, or run after it and
+            // find already-destroyed service pointers.
+            std::unique_lock<std::shared_mutex> exclusiveLock(_engineLifetimeMutex);
+            _isServicesShutdown = true;
+            DisposeServices();
+        }
 
         ICorProfilerInfo5* pCorProfilerInfo = _pCorProfilerInfo;
         if (pCorProfilerInfo != nullptr)
@@ -2012,6 +2022,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationStarted(AppDomai
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus)
 {
+    // Previously unguarded entirely (unlike its siblings below, which at least had the racy
+    // _isInitialized check) - _pRuntimeIdStore is a _services-managed pointer DisposeServices()
+    // can free concurrently. See EngineActiveGuard.h.
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
+    {
+        return S_OK;
+    }
+
     _pAppDomainStore->Register(appDomainId);
     if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation)
     {
@@ -2060,9 +2079,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadStarted(ModuleID module
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2182,9 +2201,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
 {
     Log::Debug("Callback invoked: ThreadCreated(threadId=0x", std::hex, threadId, std::dec, ")");
 
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2236,9 +2255,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
 {
     Log::Debug("Callback invoked: ThreadDestroyed(threadId=0x", std::hex, threadId, std::dec, ")");
 
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2285,9 +2304,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 {
     Log::Debug("Callback invoked: ThreadAssignedToOSThread(managedThreadId=0x", std::hex, managedThreadId, ", osThreadId=", std::dec, osThreadId, ")");
 
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2396,9 +2415,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID threadId, ULONG cchName, WCHAR name[])
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2533,9 +2552,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RootReferences(ULONG cRootRefs, O
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownObjectId)
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
