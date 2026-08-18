@@ -5,6 +5,10 @@ asprintf
 free
 getenv
 malloc
+memcpy
+mmap
+sigaddset
+sigismember
 strcasecmp
 strcmp
 strcpy
