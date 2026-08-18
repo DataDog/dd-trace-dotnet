@@ -20,14 +20,31 @@ public:
     static std::string Serialize(const TypeReferenceTree& tree, IFrameStore* pFrameStore);
 
 private:
+    // Type table state threaded through the whole walk. Bundled into one object because
+    // passing it as separate arguments meant several same-typed references side by side,
+    // where a transposition would still compile.
+    struct TypeTable
+    {
+        explicit TypeTable(IFrameStore* frameStore);
+
+        // Entries in index order, already escaped and comma separated.
+        std::string json;
+        uint32_t count = 0;
+
+        std::unordered_map<ClassID, uint32_t> typeToIndex;
+
+        // Receives the resolved name of the type being registered (see RegisterType).
+        std::string scratch;
+
+        IFrameStore* pFrameStore;
+    };
+
+    // Returns the type table index for the given type, appending its fully qualified
+    // name to the already escaped type table entries on first encounter.
+    static uint32_t RegisterType(TypeTable& types, ClassID typeID);
+
     // Single-pass tree walk: collects types lazily and emits JSON in one traversal.
-    static void OutputNode(
-        const TypeTreeNode& node,
-        std::unordered_map<ClassID, uint32_t>& typeToIndex,
-        std::vector<std::string_view>& typeTable,
-        uint32_t& nextIndex,
-        IFrameStore* pFrameStore,
-        std::string& out);
+    static void OutputNode(const TypeTreeNode& node, TypeTable& types, std::string& out);
 
     static const char* GetRootCategoryCode(RootCategory category);
 

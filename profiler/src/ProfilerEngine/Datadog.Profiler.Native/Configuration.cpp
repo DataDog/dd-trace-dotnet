@@ -35,6 +35,14 @@ CpuProfilerType const Configuration::DefaultCpuProfilerType =
 #endif
 std::chrono::minutes const Configuration::DefaultDevHeapSnapshotInterval = 1min;
 std::chrono::minutes const Configuration::DefaultProdHeapSnapshotInterval = 5min;
+std::chrono::milliseconds const Configuration::DefaultLibrariesInfoCacheStartTimeout =
+#if defined(DD_SANITIZERS)
+    // Sanitizers instrument every allocation and memory access, so populating the
+    // cache takes considerably longer than in a regular build.
+    10s;
+#else
+    2s;
+#endif
 
 Configuration::Configuration()
 {
@@ -128,6 +136,7 @@ Configuration::Configuration()
     _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
     _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 50);
     _testHeapSnapshotInterval = ExtractTestHeapSnapshotInterval();
+    _librariesInfoCacheStartTimeout = ExtractLibrariesInfoCacheStartTimeout();
     _heapHandleLimit = ExtractHeapHandleLimit();
     bool defaultUseManagedCodeCache =
     #if ARM64
@@ -947,6 +956,27 @@ std::chrono::seconds Configuration::ExtractTestHeapSnapshotInterval() const
 std::chrono::seconds Configuration::GetTestHeapSnapshotInterval() const
 {
     return _testHeapSnapshotInterval;
+}
+
+std::chrono::milliseconds Configuration::ExtractLibrariesInfoCacheStartTimeout() const
+{
+    // A negative value parses into a negative duration, and zero would make the wait
+    // return immediately, silently disabling the cache: neither is ever intended.
+    auto timeout = GetEnvironmentValue(EnvironmentVariables::LibrariesInfoCacheStartTimeout, DefaultLibrariesInfoCacheStartTimeout);
+    if (timeout <= 0ms)
+    {
+        Log::Warn("Configuration: ", EnvironmentVariables::LibrariesInfoCacheStartTimeout,
+                  " env var must be strictly positive but is set to '", timeout,
+                  "' - '", DefaultLibrariesInfoCacheStartTimeout, "' is used instead");
+        return DefaultLibrariesInfoCacheStartTimeout;
+    }
+
+    return timeout;
+}
+
+std::chrono::milliseconds Configuration::GetLibrariesInfoCacheStartTimeout() const
+{
+    return _librariesInfoCacheStartTimeout;
 }
 
 int32_t Configuration::ExtractHeapHandleLimit() const

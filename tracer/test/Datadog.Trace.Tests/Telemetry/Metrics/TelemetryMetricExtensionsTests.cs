@@ -19,6 +19,19 @@ namespace Datadog.Trace.Tests.Telemetry.Metrics;
 
 public class TelemetryMetricExtensionsTests
 {
+    private static readonly HashSet<string> DebuggerGuardrailCamelCaseTags =
+    [
+        "reason:rateLimitGlobal",
+        "reason:rateLimitProbe",
+        "reason:evaluationTimeout",
+        "reason:queueFull",
+        "reason:payloadTooLarge",
+        "reason:runtimeError",
+        "reason:fieldCount",
+        "reason:collectionSize",
+        "reason:stringLength",
+    ];
+
     public static IEnumerable<object[]> AllEnums
         => GetEnums<Count>().Select(x => new object[] { x, x.GetName() })
           .Concat(GetEnums<CountShared>().Select(x => new object[] { x, x.GetName() }))
@@ -87,7 +100,7 @@ public class TelemetryMetricExtensionsTests
     {
         foreach (var tag in GetEnums<PublicApiUsage>().Select(x => x.ToStringFast()))
         {
-            AssertValidTags(new[] { tag });
+            AssertValidTags(new[] { tag }, allowDebuggerGuardrailTags: false);
         }
     }
 
@@ -103,10 +116,11 @@ public class TelemetryMetricExtensionsTests
     public void MustHaveValidTagsForEveryMetric(Type collectorType, string enumType)
     {
         var keys = collectorType.GetMethod($"Get{enumType}Buffer", BindingFlags.Static | BindingFlags.NonPublic);
-        CheckTagsAreValid(keys);
+        var allowDebuggerGuardrailTags = collectorType == typeof(MetricsTelemetryCollector) && enumType == nameof(Count);
+        CheckTagsAreValid(keys, allowDebuggerGuardrailTags);
     }
 
-    private static void CheckTagsAreValid(MethodInfo getMetricKeys)
+    private static void CheckTagsAreValid(MethodInfo getMetricKeys, bool allowDebuggerGuardrailTags)
     {
         var values = (Array)getMetricKeys.Invoke(null, Array.Empty<object>());
         for (var i = 0; i < values.Length; i++)
@@ -118,15 +132,15 @@ public class TelemetryMetricExtensionsTests
                 continue;
             }
 
-            AssertValidTags(tags);
+            AssertValidTags(tags, allowDebuggerGuardrailTags);
         }
     }
 
-    private static void AssertValidTags(string[] tags)
+    private static void AssertValidTags(string[] tags, bool allowDebuggerGuardrailTags)
         => tags.Should()
-               .OnlyContain(x => x.ToLowerInvariant() == x, "should all be lowercase")
+               .OnlyContain(x => x.ToLowerInvariant() == x || (allowDebuggerGuardrailTags && DebuggerGuardrailCamelCaseTags.Contains(x)), "should use lowercase unless the debugger contract requires camelCase")
                .And.OnlyContain(x => x.Trim() == x, "should not have any whitespace")
-               .And.OnlyContain(x => TraceUtil.NormalizeTag(x) == x, "should match normalized version");
+               .And.OnlyContain(x => TraceUtil.NormalizeTag(x) == x || (allowDebuggerGuardrailTags && DebuggerGuardrailCamelCaseTags.Contains(x)), "should match the normalized version unless the debugger contract requires camelCase");
 
     private static IEnumerable<T> GetEnums<T>()
         => Enum.GetValues(typeof(T)).Cast<T>();

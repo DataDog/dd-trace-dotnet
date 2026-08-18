@@ -23,9 +23,9 @@ internal static class FeatureFlagsHelpers
     internal const long SimpleStringSerialId = 100;
     internal const long ExposureSerialId = 108;
 
-    internal static Dictionary<string, Flag> CreateAllFlags()
+    internal static FlagCollection CreateAllFlags()
     {
-        var flags = new Dictionary<string, Flag>
+        var flags = new FlagCollection
         {
             ["simple-string"] = CreateSimpleFlag("simple-string", ValueType.String, "test-value", "on", serialId: SimpleStringSerialId),
             ["rule-based-flag"] = CreateRuleBasedFlag(),

@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     PackageVersion.V1_0_414 => 184,
                     PackageVersion.V1_2_0 => 196,
-                    _ => 202,
+                    _ => 203,
                 };
 
                 var spans = await agent.WaitForSpansAsync(expectedCount);

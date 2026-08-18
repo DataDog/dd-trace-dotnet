@@ -53,6 +53,7 @@
 
 ## integration tests for auto-instrumentations
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/                                                @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/DataStreamsMonitoring*                          @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/**/DataStreamsMonitoring*                       @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
 
 ### co-owned integrations tests
@@ -172,9 +173,12 @@ Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 /tracer/build/_build/Build.ExplorationTests.cs @DataDog/debugger-dotnet @DataDog/tracing-dotnet @DataDog/profiling-dotnet
 
 ## Feature Flagging and Experimentation
+/docs/Datadog.FeatureFlags.OpenFeature/                                                   @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
+/tracer/src/Datadog.FeatureFlags.OpenFeature/                                            @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/FeatureFlags/                                                        @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace.Manual/FeatureFlags/                                                 @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ManualInstrumentation/FeatureFlags/  @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ManualInstrumentation/OpenFeature/   @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.Tests/FeatureFlags/                                                 @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/FeatureFlags/                          @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/Samples.FeatureFlags/                              @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet

@@ -21,11 +21,14 @@ namespace Datadog.Trace.Debugger
         public const string DebuggerMetricPrefix = "dynamic.instrumentation.metric.probe";
         public const int DefaultMaxDepthToSerialize = 3;
         public const int DefaultMaxSerializationTimeInMilliseconds = 200;
+        public const int DefaultMaxEvaluationTimeInMilliseconds = 50;
         public const int DefaultMaxNumberOfItemsInCollectionToCopy = 100;
         public const int DefaultMaxNumberOfFieldsToCopy = 20;
         public const int DefaultMaxStringLength = 1000;
         public const int DefaultMaxProbesPerType = 0;
 
+        private const int MinAllowedEvaluationTimeInMilliseconds = 10;
+        private const int MaxAllowedEvaluationTimeInMilliseconds = 1000;
         private const int DefaultUploadBatchSize = 100;
         public const int DefaultSymbolBatchSizeInBytes = 1 * 1024 * 1024; // 1 MB
         private const int DefaultDiagnosticsIntervalSeconds = 60 * 60; // 1 hour
@@ -54,6 +57,13 @@ namespace Datadog.Trace.Debugger
                                                      DefaultMaxSerializationTimeInMilliseconds,
                                                      serializationTimeThreshold => serializationTimeThreshold > 0)
                                                 .Value;
+
+            MaxEvaluationTimeInMilliseconds = config
+                                             .WithKeys(ConfigurationKeys.Debugger.EvaluationTimeoutMs)
+                                             .AsInt32(
+                                                  DefaultMaxEvaluationTimeInMilliseconds,
+                                                  evaluationTimeThreshold => evaluationTimeThreshold is >= MinAllowedEvaluationTimeInMilliseconds and <= MaxAllowedEvaluationTimeInMilliseconds)
+                                             .Value;
 
             UploadBatchSize = config
                              .WithKeys(ConfigurationKeys.Debugger.UploadBatchSize)
@@ -167,6 +177,8 @@ namespace Datadog.Trace.Debugger
         public bool SymbolDatabaseCompressionEnabled { get; }
 
         public int MaxSerializationTimeInMilliseconds { get; }
+
+        public int MaxEvaluationTimeInMilliseconds { get; }
 
         public int MaximumDepthOfMembersToCopy { get; }
 

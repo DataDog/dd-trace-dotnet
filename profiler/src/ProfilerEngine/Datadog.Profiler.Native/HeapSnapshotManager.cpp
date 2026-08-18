@@ -11,6 +11,7 @@
 #include "TypeReferenceTreeJsonSerializer.h"
 #include "TypeReferenceTreeBinarySerializer.h"
 #include "ReferenceChainTypes.h"
+#include "MemoryFaultGuard.h"
 
 #include "Log.h"
 
@@ -20,6 +21,7 @@ HeapSnapshotManager::HeapSnapshotManager(
     IConfiguration* pConfiguration,
     ICorProfilerInfo12* pCorProfilerInfo,
     IFrameStore* pFrameStore,
+    CoreLibModuleProvider* pCoreLibModuleProvider,
     IThreadsCpuManager* pThreadsCpuManager,
     MetricsRegistry& metricsRegistry,
     INativeThreadList* pNativeThreadList,
@@ -81,12 +83,16 @@ HeapSnapshotManager::HeapSnapshotManager(
         return static_cast<double>(_totalSize);
     });
 
+    _heapSnapshotTraversalFaultsMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_heapsnapshot_traversal_faults", [this]() {
+        return static_cast<double>(_lastTraversalFaultCount);
+    });
+
 
     _pCorProfilerInfo->AddRef();
 
     // Initialize reference tree and inline VT cache (persisted across dumps)
     _typeReferenceTree = std::make_unique<TypeReferenceTree>();
-    _pInlineVTCache = std::make_unique<InlineVTCache>(pCorProfilerInfo, pFrameStore);
+    _pInlineVTCache = std::make_unique<InlineVTCache>(pCorProfilerInfo, pCoreLibModuleProvider);
 }
 
 HeapSnapshotManager::~HeapSnapshotManager()
@@ -181,12 +187,41 @@ void HeapSnapshotManager::MainLoopIteration()
         // Note: GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods.
         // They fail with CORPROF_E_UNSUPPORTED_CALL_SEQUENCE from another thread, and crash the CLR after a GC.
         // --> Traversal is done during the OnBulkRoot* event handlers (see OnBulkRootEdges/OnBulkRootStaticVar).
+
+        // Conversely, looking for the inline value types of a type may load types: this is
+        // forbidden during the dump GC, so the traversal only queued the types it met. The
+        // session is now closed (i.e. no callback can run anymore) so they can be inspected
+        // here: their references will be attributed to the embedded structs starting with
+        // the next snapshot.
+        ResolvePendingInlineValueTypes();
     }
     else
     if (_shouldStartHeapDump.load())
     {
         _shouldStartHeapDump.store(false);
         StartGCDump();
+    }
+}
+
+void HeapSnapshotManager::ResolvePendingInlineValueTypes()
+{
+    if (_pInlineVTCache == nullptr)
+    {
+        return;
+    }
+
+    size_t inspectedCount = _pInlineVTCache->ResolvePendingTypes();
+    if (inspectedCount > 0)
+    {
+        Log::Debug("InlineVTCache: inspected ", inspectedCount, " type(s) met during the last snapshot.");
+    }
+}
+
+void HeapSnapshotManager::OnModuleUnloaded()
+{
+    if (_pInlineVTCache != nullptr)
+    {
+        _pInlineVTCache->OnModuleUnloaded();
     }
 }
 
@@ -331,6 +366,12 @@ void HeapSnapshotManager::OnBulkRootEdges(
     uint32_t count,
     GCBulkRootEdgeValue* pRoots)
 {
+    // This lock MUST stay above the reference-chain traversal below. The traverser
+    // recovers from memory access faults via SEH / siglongjmp, which unwinds WITHOUT
+    // running destructors. The fault guard lives entirely inside TraverseFromSingleRoot
+    // (below this lock), so recovery never skips this lock_guard's unlock. Never move
+    // the guard above this line or a fault would leave _histogramLock held and deadlock
+    // the GC.
     std::lock_guard lock(_histogramLock);
 
     Log::Debug("OnBulkRootEdges: index=", index, " count=", count);
@@ -624,6 +665,23 @@ void HeapSnapshotManager::StartGCDump()
 
     LogRuntimeVersionRangeOnce();
 
+    // The cache outlives a dump, so a module unloaded since the last one leaves it with
+    // ClassIDs pointing to freed MethodTables. Dropping them here, before any traversal
+    // can look one up, also avoids attributing a freshly loaded type to whatever used
+    // to live at the same address.
+    if (_pInlineVTCache != nullptr && _pInlineVTCache->DropCacheIfModuleUnloaded())
+    {
+        Log::Debug("InlineVTCache: cleared after a module unload.");
+    }
+
+    bool faultGuardAvailable = MemoryFaultGuard::EnsureInstalled();
+    if (!faultGuardAvailable && !_faultGuardUnavailable)
+    {
+        Log::Error("Reference-chain traversal is skipped for this heap snapshot because "
+                   "memory fault recovery is unavailable. Heap class histograms are unaffected.");
+    }
+    _faultGuardUnavailable = !faultGuardAvailable;
+
     // reset the class histogram and reference tree
     {
         std::lock_guard lock(_histogramLock);
@@ -636,7 +694,14 @@ void HeapSnapshotManager::StartGCDump()
         //
         // If the GCDesc reader previously failed its self-test, do not create the
         // traverser: the reference tree is skipped while the class histogram still runs.
-        if (_gcDescDisabled)
+        if (!faultGuardAvailable)
+        {
+            // A skipped dump breaks a streak of dumps that exhausted their fault
+            // budgets; otherwise non-consecutive failures could disable traversal.
+            _consecutiveFaultyDumps = 0;
+            _pReferenceChainTraverser.reset();
+        }
+        else if (_gcDescDisabled)
         {
             _pReferenceChainTraverser.reset();
         }
@@ -704,14 +769,65 @@ void HeapSnapshotManager::OnEndGCDump()
         Log::Debug("VisitedObjectSet high watermark for next dump: ", _visitedSetHighWatermark,
                    " buckets (peak entries this dump: ", peakEntries, ")");
 
-        // If the GCDesc reader failed its self-test during this dump, disable
-        // reference-chain traversal for all subsequent dumps. The class histogram
-        // is unaffected and continues to be produced.
+        _lastTraversalFaultCount = _pReferenceChainTraverser->GetFaultCount();
+
+        // Policy separating the permanent layout-level signal from transient
+        // traversal stop reasons:
+        //  1. Self-test failure is systemic (our MethodTable/GCDesc model is wrong)
+        //     -> disable permanently.
+        //  2. Faults that exhausted the budget are data-local -> tolerate a single
+        //     bad dump, but disable if it keeps happening dump after dump.
+        //  3. Unexpected exceptions or an unavailable fault guard abort only this dump
+        //     and do not count as fault-budget exhaustion.
+        //  4. Otherwise the dump was clean (or recovered from a few faults) -> reset
+        //     the consecutive-faulty-dump counter.
+        // In all cases the class histogram is unaffected and continues to be produced.
         if (!_pReferenceChainTraverser->IsGCDescTrusted())
         {
             _gcDescDisabled = true;
             Log::Warn("Reference-chain traversal has been disabled for the remainder of the process "
                       "because the GCDesc reader failed its self-test. Heap class histograms are unaffected.");
+        }
+        else if (_pReferenceChainTraverser->GetStopReason() ==
+                 ReferenceChainTraverser::TraversalStopReason::FaultBudgetExhausted)
+        {
+            _consecutiveFaultyDumps++;
+            Log::Warn("Reference-chain traversal was cut short by ", _lastTraversalFaultCount,
+                      " memory access fault(s) (", _consecutiveFaultyDumps,
+                      " consecutive dump(s)). The reference tree for this dump is partial.");
+
+            if (_consecutiveFaultyDumps >= MaxConsecutiveFaultyDumps)
+            {
+                _gcDescDisabled = true;
+                Log::Warn("Reference-chain traversal has been disabled for the remainder of the process "
+                          "after ", MaxConsecutiveFaultyDumps, " consecutive dumps hit the memory access "
+                          "fault budget. Heap class histograms are unaffected.");
+            }
+        }
+        else if (_pReferenceChainTraverser->GetStopReason() ==
+                 ReferenceChainTraverser::TraversalStopReason::UnexpectedException)
+        {
+            _consecutiveFaultyDumps = 0;
+            Log::Warn("Reference-chain traversal was cut short by an unexpected exception. "
+                      "The reference tree for this dump is partial. "
+                      "Heap class histograms are unaffected.");
+        }
+        else if (_pReferenceChainTraverser->GetStopReason() ==
+                 ReferenceChainTraverser::TraversalStopReason::FaultGuardUnavailable)
+        {
+            _consecutiveFaultyDumps = 0;
+            _faultGuardUnavailable = true;
+            Log::Error("Reference-chain traversal was cut short because memory fault recovery "
+                       "became unavailable. Heap class histograms are unaffected.");
+        }
+        else
+        {
+            if (_lastTraversalFaultCount > 0)
+            {
+                Log::Debug("Reference-chain traversal recovered from ", _lastTraversalFaultCount,
+                           " memory access fault(s) this dump.");
+            }
+            _consecutiveFaultyDumps = 0;
         }
     }
 

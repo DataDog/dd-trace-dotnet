@@ -56,6 +56,7 @@
 #include <vector>
 
 class ContentionProvider;
+class CoreLibModuleProvider;
 class IService;
 class IThreadsCpuManager;
 class IManagedThreadList;
@@ -294,6 +295,8 @@ private :
     bool _IsManagedConfigurationSet = false; // profiler can't start before this becomes true
     std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
+    // shared by the components that need to resolve types defined in the core library
+    std::unique_ptr<CoreLibModuleProvider> _pCoreLibModuleProvider = nullptr;
     std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;
     bool _isFrameworkVersionKnown = false;
     std::unique_ptr<IEnabledProfilers> _pEnabledProfilers = nullptr;

@@ -71,6 +71,7 @@
     <ClCompile Include="EEHeapReporterTest.cpp" />
     <ClCompile Include="InProcessMemoryReaderTest.cpp" />
     <ClCompile Include="MemoryBreakdownProviderTest.cpp" />
+    <ClCompile Include="CoreLibModuleProviderTest.cpp" />
     <ClCompile Include="CpuProfilerTypeTest.cpp" />
     <ClCompile Include="CpuSamplePRoviderTest.cpp" />
     <ClCompile Include="CrashReportingTest.cpp" />
@@ -84,6 +85,7 @@
     <ClCompile Include="FfiHelperTest.cpp" />
     <ClCompile Include="FrameStoreHelper.cpp" />
     <ClCompile Include="IMetricsSenderFactoryTest.cpp" />
+    <ClCompile Include="InlineVTCacheTest.cpp" />
     <ClCompile Include="LinkedListTest.cpp" />
     <ClCompile Include="ManagedThreadInfoTest.cpp" />
     <ClCompile Include="ProfileExporterTest.cpp" />
@@ -120,6 +122,7 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\IMetricsSenderFactory.cpp" />
     <ClInclude Include="AppDomainStoreHelper.h" />
     <ClInclude Include="EEHeapTestHelpers.h" />
+    <ClInclude Include="CoreLibMockProfilerInfo.h" />
     <ClInclude Include="EnvironmentHelper.h" />
     <ClInclude Include="FakeSamples.h" />
     <ClInclude Include="FrameStoreHelper.h" />

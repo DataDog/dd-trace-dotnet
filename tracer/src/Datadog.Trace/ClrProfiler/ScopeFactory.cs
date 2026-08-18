@@ -8,6 +8,7 @@ using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
@@ -109,8 +110,6 @@ namespace Datadog.Trace.ClrProfiler
                     return null;
                 }
 
-                string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
-
                 var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol(ClientSchema.Protocol.Http);
                 var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Client.GetServiceNameMetadata(ClientSchema.Component.Http);
                 tags = tracer.CurrentTraceSettings.Schema.Client.CreateHttpTags();
@@ -118,13 +117,22 @@ namespace Datadog.Trace.ClrProfiler
                 span = tracer.StartSpan(operationName, tags, serviceName: serviceName, serviceNameSource: serviceNameSource, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
 
                 span.Type = SpanTypes.Http;
-                span.ResourceName = $"{httpMethod} {resourceUrl}";
 
-                tags.HttpMethod = httpMethod?.ToUpperInvariant();
-                if (requestUri is not null)
+                if (span.OpenTelemetrySemanticsEnabled)
                 {
-                    tags.HttpUrl = HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);
-                    tags.Host = HttpRequestUtils.GetNormalizedHost(requestUri.Host);
+                    HttpSemanticConventions.SetHttpClientRequestValues(span, tags, httpMethod, requestUri, tracer.TracerManager.QueryStringManager);
+                }
+                else
+                {
+                    string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
+                    span.ResourceName = $"{httpMethod} {resourceUrl}";
+
+                    tags.HttpMethod = httpMethod?.ToUpperInvariant();
+                    if (requestUri is not null)
+                    {
+                        tags.HttpUrl = HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);
+                        tags.Host = HttpRequestUtils.GetNormalizedHost(requestUri.Host);
+                    }
                 }
 
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);

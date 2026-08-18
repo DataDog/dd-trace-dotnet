@@ -22,7 +22,6 @@ using HashCode = System.HashCode;
 [Generator]
 public class ConfigurationKeysGenerator : IIncrementalGenerator
 {
-    private const string SupportedConfigurationsFileName = "supported-configurations.yaml";
     private const string GeneratedClassName = "ConfigurationKeys";
     private const string Namespace = "Datadog.Trace.Configuration";
 
@@ -31,7 +30,7 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
     {
         // Single YAML pipeline - all data is now in supported-configurations.yaml
         var additionalText = context.AdditionalTextsProvider
-                                    .Where(static file => Path.GetFileName(file.Path).Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
+                                    .Where(static file => Path.GetFileName(file.Path).Equals(Constants.SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
                                     .WithTrackingName(TrackingNames.ConfigurationKeysAdditionalText);
 
         var yamlContent = additionalText

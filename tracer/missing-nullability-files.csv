@@ -232,7 +232,6 @@ src/Datadog.Trace/DataStreamsMonitoring/Transport/DataStreamsTransportStrategy.c
 src/Datadog.Trace/DataStreamsMonitoring/Utils/BinaryPrimitivesHelper.cs
 src/Datadog.Trace/Debugger/Configurations/Trie.cs
 src/Datadog.Trace/Debugger/Expressions/CaptureInfo.cs
-src/Datadog.Trace/Debugger/Expressions/CompiledExpression.cs
 src/Datadog.Trace/Debugger/Expressions/Enums.cs
 src/Datadog.Trace/Debugger/Expressions/MethodScopeMembers.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Binary.cs
@@ -240,7 +239,6 @@ src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Collection.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Dump.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.General.cs
-src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.String.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Unary.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParserHelper.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionsProcessor.cs

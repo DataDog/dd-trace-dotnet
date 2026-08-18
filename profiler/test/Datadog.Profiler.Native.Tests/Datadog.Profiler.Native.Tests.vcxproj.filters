@@ -226,6 +226,12 @@
     <ClCompile Include="CpuSampleProviderTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="CoreLibModuleProviderTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="InlineVTCacheTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="ReferenceChainTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
@@ -278,6 +284,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.h" />
     <ClInclude Include="FakeSamples.h">
+      <Filter>Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="CoreLibMockProfilerInfo.h">
       <Filter>Helpers</Filter>
     </ClInclude>
     <ClInclude Include="MockProfilerInfo.h">
