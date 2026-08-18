@@ -43,6 +43,11 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
+        /// <summary>
+        /// Decorates an HTTP server span using the Datadog HTTP semantics. Callers using OpenTelemetry
+        /// semantics must call <see cref="Datadog.Trace.OpenTelemetry.HttpSemanticConventions.SetHttpServerRequestValues"/>
+        /// instead: use exactly one of the two for a given span, never both.
+        /// </summary>
         internal static void DecorateWebServerSpan(
             this ISpan span,
             string resourceName,
@@ -50,8 +55,7 @@ namespace Datadog.Trace.ExtensionMethods
             string host,
             string httpUrl,
             string userAgent,
-            WebTags tags,
-            bool otelSemanticsEnabled = false)
+            WebTags tags)
         {
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
@@ -60,14 +64,8 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 tags.HttpMethod = method;
                 tags.HttpUserAgent = userAgent;
-
-                // OpenTelemetry has no equivalent of the following attributes: it splits the same information
-                // into url.scheme/url.path/url.query and server.address/server.port, which the caller sets.
-                if (!otelSemanticsEnabled)
-                {
-                    tags.HttpRequestHeadersHost = host;
-                    tags.HttpUrl = httpUrl;
-                }
+                tags.HttpRequestHeadersHost = host;
+                tags.HttpUrl = httpUrl;
             }
         }
 

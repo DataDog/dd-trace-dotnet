@@ -127,14 +127,6 @@ namespace Datadog.Trace.PlatformHelpers
         {
             var request = httpContext.Request;
             var otelSemanticsEnabled = tracer.Settings.OtelSemanticsEnabled;
-
-            // In OpenTelemetry semantics mode the host and the full URL are replaced by
-            // server.address/server.port and url.scheme/url.path/url.query, set below.
-            string host = otelSemanticsEnabled ? null : request.Host.Value;
-            string url = otelSemanticsEnabled ? null : request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
-            string httpMethod = otelSemanticsEnabled
-                                    ? HttpSemanticConventions.NormalizeRequestMethod(request.Method)
-                                    : request.Method?.ToUpperInvariant() ?? "UNKNOWN";
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
 
             resourceName ??= GetDefaultResourceName(request, otelSemanticsEnabled);
@@ -151,13 +143,15 @@ namespace Datadog.Trace.PlatformHelpers
             }
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
-            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags, otelSemanticsEnabled);
 
             if (otelSemanticsEnabled)
             {
-                tags.HttpRequestMethodOriginal = HttpSemanticConventions.GetRequestMethodOriginal(request.Method, httpMethod);
-                HttpSemanticConventions.SetHttpServerUrlTags(
+                HttpSemanticConventions.SetHttpServerRequestValues(
+                    scope.Span,
                     tags,
+                    resourceName: resourceName,
+                    originalMethod: request.Method,
+                    userAgent: userAgent,
                     scheme: request.Scheme,
                     host: request.Host.Host,
                     port: request.Host.Port,
@@ -165,6 +159,13 @@ namespace Datadog.Trace.PlatformHelpers
                     path: request.Path.ToUriComponent(),
                     queryString: RequestDataHelper.GetQueryString(request).Value,
                     queryStringManager: tracer.TracerManager.QueryStringManager);
+            }
+            else
+            {
+                var httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+                var host = request.Host.Value;
+                var url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
             }
 
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;

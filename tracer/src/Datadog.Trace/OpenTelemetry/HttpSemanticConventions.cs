@@ -72,6 +72,50 @@ namespace Datadog.Trace.OpenTelemetry
         }
 
         /// <summary>
+        /// Sets the span name and the request tags of an HTTP server span, using the OpenTelemetry
+        /// HTTP semantic conventions. This is the OpenTelemetry-semantics counterpart of
+        /// <see cref="ExtensionMethods.SpanExtensions.DecorateWebServerSpan"/>: callers must use
+        /// exactly one of the two for a given span, never both.
+        /// </summary>
+        /// <param name="span">The HTTP server span.</param>
+        /// <param name="tags">The tags of <paramref name="span"/>.</param>
+        /// <param name="resourceName">The resource name to assign to <paramref name="span"/>.</param>
+        /// <param name="originalMethod">The HTTP method as reported by the framework, before normalization.</param>
+        /// <param name="userAgent">The value of the "User-Agent" request header.</param>
+        /// <param name="scheme">The request scheme, e.g. <c>https</c>.</param>
+        /// <param name="host">The server host, without the port.</param>
+        /// <param name="port">The server port, if known.</param>
+        /// <param name="pathBase">The application path base, already URI-encoded.</param>
+        /// <param name="path">The request path, already URI-encoded.</param>
+        /// <param name="queryString">The raw query string, including the leading '?' if present.</param>
+        /// <param name="queryStringManager">Used to truncate and obfuscate the query string.</param>
+        internal static void SetHttpServerRequestValues(
+            Span span,
+            WebTags tags,
+            string? resourceName,
+            string? originalMethod,
+            string? userAgent,
+            string? scheme,
+            string? host,
+            int? port,
+            string? pathBase,
+            string? path,
+            string? queryString,
+            QueryStringManager? queryStringManager)
+        {
+            span.Type = SpanTypes.Web;
+            span.ResourceName = resourceName?.Trim();
+
+            var requestMethod = NormalizeRequestMethod(originalMethod);
+
+            tags.HttpMethod = requestMethod;
+            tags.HttpUserAgent = userAgent;
+            tags.HttpRequestMethodOriginal = GetRequestMethodOriginal(originalMethod, requestMethod);
+
+            SetHttpServerUrlTags(tags, scheme, host, port, pathBase, path, queryString, queryStringManager);
+        }
+
+        /// <summary>
         /// Gets the value to report in "server.address" for <paramref name="host"/>. Same as
         /// <see cref="HttpRequestUtils.GetNormalizedHost"/>, except that the brackets that
         /// <see cref="Uri.Host"/> and ASP.NET Core's HostString.Host put around IPv6
