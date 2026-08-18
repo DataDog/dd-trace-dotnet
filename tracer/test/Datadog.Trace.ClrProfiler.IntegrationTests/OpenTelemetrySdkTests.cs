@@ -258,7 +258,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD{(openTelemetrySemanticsEnabled ? "_OtelSemantics" : string.Empty)}";
 
-            await _otlpSession.ClearSessionAsync();
+            // Establishes this token as a real ddapm test-agent session, so that
+            // /test/session/traces only ever returns requests sent after this point.
+            await _otlpSession.StartSessionAsync();
 
             // This is the key configuration that is set differently from previous test cases:
             // OTEL_TRACES_EXPORTER=otlp enables the DD SDK to emit traces (and trace stats) via OTLP
@@ -357,7 +359,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             snapshotName = otelMetricsEnabled.Equals("true") ? $"{snapshotName}_OTEL" : $"{snapshotName}_DD";
 
-            await _otlpSession.ClearSessionAsync();
+            // Establishes this token as a real ddapm test-agent session, so that
+            // /test/session/traces only ever returns requests sent after this point.
+            await _otlpSession.StartSessionAsync();
 
             SetEnvironmentVariable("DD_ENV", string.Empty);
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
@@ -436,7 +440,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
-            await _otlpSession.ClearSessionAsync();
+            // Establishes this token as a real ddapm test-agent session, so that
+            // /test/session/traces only ever returns requests sent after this point.
+            await _otlpSession.StartSessionAsync();
 
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "true");
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
@@ -520,7 +526,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _ => throw new SkipException($"Skipping test due to irrelevant runtime and OTel versions mix: .NET {runtimeMajor} & Otel v{parsedVersion}")
             };
 
-            await _otlpSession.ClearSessionAsync();
+            // Establishes this token as a real ddapm test-agent session, so that
+            // /test/session/traces only ever returns requests sent after this point.
+            await _otlpSession.StartSessionAsync();
 
             SetEnvironmentVariable("DD_ENV", "testing");
             SetEnvironmentVariable("DD_SERVICE", "OtlpLogsService");

@@ -73,12 +73,22 @@ namespace Datadog.Trace.TestHelpers
         public OtlpTestAgentSession()
         {
             TestAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "127.0.0.1";
+            SessionToken = Guid.NewGuid().ToString();
             TracesUrl = GetSessionUrl("traces");
             MetricsUrl = GetSessionUrl("metrics");
             LogsUrl = GetSessionUrl("logs");
         }
 
         public string TestAgentHost { get; }
+
+        /// <summary>
+        /// Gets the token that scopes this instance's traffic to its own session on the ddapm
+        /// test-agent, via the <c>X-Datadog-Test-Session-Token</c> header, so that concurrent test
+        /// runs sharing one test-agent (e.g. across CI jobs pointed at the same container) don't see
+        /// each other's spans. The application under test must send this header on every request it
+        /// makes to the test-agent; see <see cref="TestHelper.ConfigureOtlpExport"/>.
+        /// </summary>
+        public string SessionToken { get; }
 
         /// <summary>
         /// Gets the test-agent endpoint this session's spans are read from.
@@ -129,7 +139,10 @@ namespace Datadog.Trace.TestHelpers
         {
             try
             {
-                await GetDataAsync(TracesUrl);
+                // Establishes this token as a real ddapm test-agent session, so that
+                // /test/session/traces only ever returns requests sent after this point.
+                await StartSessionAsync();
+                await GetDataAsync(TracesUrl, SessionToken);
                 IsAvailable = true;
             }
             catch (Exception ex)
@@ -139,6 +152,15 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return IsAvailable;
+        }
+
+        // Marks the start of this token's session.
+        public async Task StartSessionAsync()
+        {
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            httpClient.DefaultRequestHeaders.Add("X-Datadog-Test-Session-Token", SessionToken);
+            var response = await httpClient.GetAsync(GetSessionUrl("start"));
+            response.EnsureSuccessStatusCode();
         }
 
         /// <summary>
@@ -151,6 +173,7 @@ namespace Datadog.Trace.TestHelpers
         public async Task ClearSessionAsync()
         {
             using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+            httpClient.DefaultRequestHeaders.Add("X-Datadog-Test-Session-Token", SessionToken);
             var url = GetSessionUrl("clear");
 
             for (var attempt = 1; attempt <= MaxClearAttempts; attempt++)
@@ -182,7 +205,7 @@ namespace Datadog.Trace.TestHelpers
                 await ClearSessionAsync();
                 await Task.Delay(QuietPeriodMs);
 
-                var traces = await GetDataAsync(TracesUrl);
+                var traces = await GetDataAsync(TracesUrl, SessionToken);
                 if (!traces.HasValues)
                 {
                     return;
@@ -225,9 +248,10 @@ namespace Datadog.Trace.TestHelpers
         public Task<JToken> WaitForLogsAsync() => WaitForDataAsync(LogsUrl, data => data.HasValues);
 
         // Reads one of this session's endpoints, without waiting for anything to arrive.
-        private static async Task<JToken> GetDataAsync(string url)
+        private static async Task<JToken> GetDataAsync(string url, string sessionToken)
         {
             using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            httpClient.DefaultRequestHeaders.Add("X-Datadog-Test-Session-Token", sessionToken);
             var response = await httpClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
             var json = await response.Content.ReadAsStringAsync();
@@ -237,13 +261,13 @@ namespace Datadog.Trace.TestHelpers
         // Polls one of this session's endpoints until isComplete is satisfied or the timeout is
         // reached. On timeout the last response is returned rather than thrown on, so the caller's
         // assertion reports the actual payload.
-        private static async Task<JToken> WaitForDataAsync(string url, Func<JToken, bool> isComplete)
+        private async Task<JToken> WaitForDataAsync(string url, Func<JToken, bool> isComplete)
         {
             var deadline = DateTime.UtcNow.AddSeconds(WaitTimeoutSeconds);
 
             while (DateTime.UtcNow < deadline)
             {
-                var data = await GetDataAsync(url);
+                var data = await GetDataAsync(url, SessionToken);
 
                 if (isComplete(data))
                 {
@@ -254,7 +278,7 @@ namespace Datadog.Trace.TestHelpers
             }
 
             // Final attempt -- return whatever we get so the caller's assertion shows the actual value
-            return await GetDataAsync(url);
+            return await GetDataAsync(url, SessionToken);
         }
 
         private string GetSessionUrl(string kind) => $"http://{TestAgentHost}:{HttpPort}/test/session/{kind}";
