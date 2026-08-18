@@ -763,8 +763,6 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
-            FeatureFlags = new FeatureFlagsSettings(source, telemetry);
-
             IsSpanEnrichmentEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled)
                                                        .AsBool(false);
 
@@ -1494,11 +1492,6 @@ namespace Datadog.Trace.Configuration
         /// Gets the disabled ADO.NET Command Types that won't have spans generated for them.
         /// </summary>
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
-
-        /// <summary>
-        /// Gets the Feature Flags configuration, including which delivery source is selected.
-        /// </summary>
-        internal FeatureFlagsSettings FeatureFlags { get; }
 
         /// <summary>
         /// Gets a value indicating whether APM span enrichment is enabled; see <see cref="FeatureFlags"/>.
