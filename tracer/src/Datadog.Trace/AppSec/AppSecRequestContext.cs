@@ -165,6 +165,11 @@ internal sealed partial class AppSecRequestContext
 
 internal partial class AppSecRequestContext
 {
+    // dedicated lock: this state is disjoint from what _sync guards, and _sync is held
+    // during MessagePack/JSON serialization in CloseWebSpan, while DisposeAdditiveContext
+    // runs under the trace segment lock
+    private readonly object _contextSync = new();
+
     private bool _isAdditiveContextDisposed;
 
     private IContext? _context;
@@ -174,7 +179,7 @@ internal partial class AppSecRequestContext
     /// </summary>
     internal void DisposeAdditiveContext()
     {
-        lock (_sync)
+        lock (_contextSync)
         {
             _context?.Dispose();
             _isAdditiveContextDisposed = true;
@@ -183,7 +188,7 @@ internal partial class AppSecRequestContext
 
     internal void ReopenAdditiveContext()
     {
-        lock (_sync)
+        lock (_contextSync)
         {
             _context = null;
             _isAdditiveContextDisposed = false;
@@ -192,7 +197,7 @@ internal partial class AppSecRequestContext
 
     internal IContext? GetOrCreateAdditiveContext(Security security)
     {
-        lock (_sync)
+        lock (_contextSync)
         {
             if (_isAdditiveContextDisposed)
             {
