@@ -5665,6 +5665,7 @@ stages:
           parameters:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
+            shallowFetch: true
 
         - script: |
             if docker image inspect "$(runtimeImage)" > /dev/null 2>&1; then
