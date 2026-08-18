@@ -1807,6 +1807,10 @@ partial class Build
                   DotNetBuild(config => config.SetConfiguration(BuildConfiguration)
                                               .When(string.IsNullOrWhiteSpace(SampleName), x => x.SetProperty("Platform", "Any CPU"))
                                               .When(!string.IsNullOrWhiteSpace(SampleName), x => x.SetTargetPlatformAnyCPU())
+                                              // Project references outside the generated samples solution can otherwise
+                                              // retain the Windows producer's x64 PlatformTarget and produce
+                                              // architecture-specific managed assemblies in the shared artifacts.
+                                              .SetProperty("PlatformTarget", "AnyCPU")
                                               .SetProperty("BuildInParallel", "true")
                                               .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                                               .When(Framework is not null, x => x.SetFramework(Framework))
@@ -1922,6 +1926,7 @@ partial class Build
 
             DotNetPublish(config => config
                 .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
                 .SetRuntime(rid)
                 .SetFramework(Framework)
                 .CombineWith(projectsToPublish,
