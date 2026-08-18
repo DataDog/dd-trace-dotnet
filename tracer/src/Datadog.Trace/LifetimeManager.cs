@@ -92,7 +92,7 @@ namespace Datadog.Trace
             }
         }
 
-        public TimeSpan TaskTimeout { get; set; } = TimeSpan.FromSeconds(30);
+        public TimeSpan TaskTimeout { get; } = TimeSpan.FromSeconds(30);
 
         public void AddShutdownTask(Action<Exception?> action)
         {
