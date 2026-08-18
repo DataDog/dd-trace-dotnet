@@ -22,7 +22,7 @@ public class SnapshotSinkTests
     [Fact]
     public void CaptureIncompleteReasons_FitInBitset()
     {
-        foreach (MetricTags.DebuggerCaptureIncompleteReason reason in System.Enum.GetValues(typeof(MetricTags.DebuggerCaptureIncompleteReason)))
+        foreach (var reason in (MetricTags.DebuggerCaptureIncompleteReason[])Enum.GetValues(typeof(MetricTags.DebuggerCaptureIncompleteReason)))
         {
             Assert.InRange((int)reason, 0, (sizeof(uint) * 8) - 1);
         }
