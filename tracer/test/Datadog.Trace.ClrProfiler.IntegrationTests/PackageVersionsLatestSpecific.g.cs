@@ -1688,65 +1688,65 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET48
                 new object[] { "2.3.0" },
                 new object[] { "5.0.17" },
-                new object[] { "8.0.29" },
-                new object[] { "9.0.18" },
-                new object[] { "10.0.10" },
+                new object[] { "8.0.30" },
+                new object[] { "9.0.19" },
+                new object[] { "10.0.11" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "2.3.0" },
                 new object[] { "5.0.17" },
-                new object[] { "8.0.29" },
-                new object[] { "9.0.18" },
-                new object[] { "10.0.10" },
+                new object[] { "8.0.30" },
+                new object[] { "9.0.19" },
+                new object[] { "10.0.11" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "2.3.0" },
                 new object[] { "5.0.17" },
-                new object[] { "8.0.29" },
-                new object[] { "9.0.18" },
-                new object[] { "10.0.10" },
+                new object[] { "8.0.30" },
+                new object[] { "9.0.19" },
+                new object[] { "10.0.11" },
 #endif
 #if NET5_0
                 new object[] { "2.3.0" },
                 new object[] { "5.0.17" },
-                new object[] { "8.0.29" },
-                new object[] { "9.0.18" },
-                new object[] { "10.0.10" },
+                new object[] { "8.0.30" },
+                new object[] { "9.0.19" },
+                new object[] { "10.0.11" },
 #endif
 #if NET6_0
                 new object[] { "2.3.0" },
                 new object[] { "5.0.17" },
-                new object[] { "8.0.29" },
-                new object[] { "9.0.18" },
-                new object[] { "10.0.10" },
+                new object[] { "8.0.30" },
+                new object[] { "9.0.19" },
+                new object[] { "10.0.11" },
 #endif
 #if NET7_0
                 new object[] { "2.3.0" },
                 new object[] { "5.0.17" },
-                new object[] { "8.0.29" },
-                new object[] { "9.0.18" },
-                new object[] { "10.0.10" },
+                new object[] { "8.0.30" },
+                new object[] { "9.0.19" },
+                new object[] { "10.0.11" },
 #endif
 #if NET8_0
                 new object[] { "2.3.0" },
                 new object[] { "5.0.17" },
-                new object[] { "8.0.29" },
-                new object[] { "9.0.18" },
-                new object[] { "10.0.10" },
+                new object[] { "8.0.30" },
+                new object[] { "9.0.19" },
+                new object[] { "10.0.11" },
 #endif
 #if NET9_0
                 new object[] { "2.3.0" },
                 new object[] { "5.0.17" },
-                new object[] { "8.0.29" },
-                new object[] { "9.0.18" },
-                new object[] { "10.0.10" },
+                new object[] { "8.0.30" },
+                new object[] { "9.0.19" },
+                new object[] { "10.0.11" },
 #endif
 #if NET10_0
                 new object[] { "2.3.0" },
                 new object[] { "5.0.17" },
-                new object[] { "8.0.29" },
-                new object[] { "9.0.18" },
-                new object[] { "10.0.10" },
+                new object[] { "8.0.30" },
+                new object[] { "9.0.19" },
+                new object[] { "10.0.11" },
 #endif
 #endif
             };
