@@ -89,9 +89,59 @@
         "unicode-word-boundary": {
           "key": "unicode-word-boundary",
           "value": "unicode-word-boundary"
+        },
+        "comma-quantifier": {
+          "key": "comma-quantifier",
+          "value": "comma-quantifier"
+        },
+        "literal-whitespace": {
+          "key": "literal-whitespace",
+          "value": "literal-whitespace"
         }
       },
       "allocations": [
+        {
+          "key": "comma-quantifier",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "comma_regex_case",
+                  "operator": "MATCHES",
+                  "value": "a{1,3}"
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "comma-quantifier",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        },
+        {
+          "key": "literal-whitespace",
+          "rules": [
+            {
+              "conditions": [
+                {
+                  "attribute": "whitespace_regex_case",
+                  "operator": "MATCHES",
+                  "value": " exact "
+                }
+              ]
+            }
+          ],
+          "splits": [
+            {
+              "variationKey": "literal-whitespace",
+              "shards": []
+            }
+          ],
+          "doLog": true
+        },
         {
           "key": "capturing-groups",
           "rules": [
