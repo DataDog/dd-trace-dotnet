@@ -143,22 +143,16 @@ internal sealed partial class SecurityReporter
     {
         if (result is null)
         {
-            // The WAF was never run, so the request wasn't analysed. waf.error is reported by whoever
-            // failed to run it, as it needs to distinguish a real failure from a disposed WAF/context.
             return;
         }
 
         if (result.Timeout)
         {
-            // A timeout is explicitly not a WAF error
             metrics.RecordCountWafRequests(
                 result.Truncated ? MetricTags.WafAnalysis.WafTimeoutTruncated : MetricTags.WafAnalysis.WafTimeout);
         }
         else if (!isRasp && result.ReturnCode < WafReturnCode.Ok)
         {
-            // waf.requests and waf.error both describe non-RASP runs, so a failed RASP evaluation is
-            // classified below as if it had succeeded, exactly as it was before waf_error existed.
-            // RASP failures are reported separately by rasp.error.
             metrics.RecordCountWafRequests(
                 result.Truncated ? MetricTags.WafAnalysis.WafErrorTruncated : MetricTags.WafAnalysis.WafError);
             RecordWafError(metrics, result.ReturnCode);
@@ -182,8 +176,6 @@ internal sealed partial class SecurityReporter
 
     private static void RecordWafError(IMetricsTelemetryCollector metrics, WafReturnCode returnCode)
     {
-        // Unknown negative codes are skipped rather than mislabelled: a new ddwaf error code requires
-        // adding it to WafReturnCode and to MetricTags.WafError.
         switch (returnCode)
         {
             case WafReturnCode.ErrorInternal:

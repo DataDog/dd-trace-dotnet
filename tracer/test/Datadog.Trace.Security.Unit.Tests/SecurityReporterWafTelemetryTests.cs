@@ -20,7 +20,6 @@ namespace Datadog.Trace.Security.Unit.Tests;
 
 public class SecurityReporterWafTelemetryTests
 {
-    // WafReturnCode is internal, so the codes are passed as ints to keep the theory signatures public
     public static IEnumerable<object[]> ErrorCodes
         => new List<object[]>
         {
@@ -93,8 +92,6 @@ public class SecurityReporterWafTelemetryTests
 
     private static async Task<List<(string Name, string[] Tags)>> RecordAsync(IResult? result, bool isRasp)
     {
-        // A dedicated collector, rather than TelemetryFactory.Metrics, so that concurrently running
-        // tests can't leak their own WAF metrics into these assertions
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         SecurityReporter.RecordWafTelemetry(result, isRasp, collector);
         await collector.DisposeAsync();

@@ -110,11 +110,6 @@ internal sealed class Context : IContext
         }
     }
 
-    /// <summary>
-    /// Reports a WAF run that failed before ddwaf_run could be reached, so the error is ours rather
-    /// than the WAF's. Lifecycle failures (a disposed WAF or context) are deliberately not reported:
-    /// they aren't WAF errors, and counting them would drown the metric in shutdown races.
-    /// </summary>
     private static void RecordBindingError(bool isRasp)
     {
         if (!isRasp)

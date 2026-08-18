@@ -80,7 +80,6 @@ internal readonly partial struct SecurityCoordinator
         {
             if (result is null && !isRasp)
             {
-                // The WAF never ran, so this is our fault rather than ddwaf_run's
                 TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
             }
 
@@ -158,7 +157,6 @@ internal readonly partial struct SecurityCoordinator
         {
             if (result is null)
             {
-                // The WAF never ran, so this is our fault rather than ddwaf_run's
                 TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
             }
 

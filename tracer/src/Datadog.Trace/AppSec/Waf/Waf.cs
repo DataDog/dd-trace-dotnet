@@ -345,9 +345,6 @@ namespace Datadog.Trace.AppSec.Waf
             else
             {
                 Log.Warning("Context couldn't be created as we couldn't acquire a reader lock");
-
-                // Unlike the disposed cases above, this is lock contention on our side rather than a
-                // lifecycle event, so the request goes unanalysed because of the bindings
                 TelemetryFactory.Metrics.RecordCountWafError(Telemetry.Metrics.MetricTags.WafError.BindingError);
                 return null;
             }

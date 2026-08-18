@@ -412,18 +412,12 @@ internal static class MetricTags
         [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] RuleTriggeredTruncated,
         [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] RuleTriggeredAndBlockedTruncated,
         [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] WafTimeoutTruncated,
-        // WAF error (any negative ddwaf_run return code, excluding timeouts)
         [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:true")] WafError,
         [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:true")] WafErrorTruncated,
     }
 
-    /// <summary>
-    /// The ddwaf_run return code of a failed WAF call. -127 is reserved for errors that originate in
-    /// the bindings rather than in ddwaf_run itself.
-    /// </summary>
     public enum WafError
     {
-        // The generator splits on ; to add multiple tags
         // CAUTION: waf_version should aways be placed in first position
         [Description("waf_version;event_rules_version;waf_error:-127")] BindingError,
         [Description("waf_version;event_rules_version;waf_error:-3")] Internal,
