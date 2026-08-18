@@ -121,7 +121,7 @@ variables:
   DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
   NUKE_TELEMETRY_OPTOUT: 1
   # Include all test frameworks when (variable is set) OR ((running on master/release/hotfix) and (NOT scheduled build)),
-  IncludeAllTestFrameworks: $[or(eq(variables['run_all_test_frameworks'], 'true'), and(or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/')), not(eq(variables['Build.Reason'], 'Schedule'))))]
+  IncludeAllTestFrameworks: $[or(eq(variables['run_all_test_frameworks'], 'true'), and(or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/')), not(eq(variables['Build.Reason'], 'Schedule'))))]
   IntegrationTestSampleName:  $(TEST_SAMPLE_NAME)
   IntegrationTestFilter:  $(TEST_FILTER)
   DockerComposeProjectName: ddtrace-$(Build.BuildNumber)
@@ -154,7 +154,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.51.0
+  ToolVersion: 3.52.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1

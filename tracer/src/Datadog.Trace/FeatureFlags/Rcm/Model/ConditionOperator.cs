@@ -21,5 +21,11 @@ internal enum ConditionOperator
     NOT_MATCHES,
     ONE_OF,
     NOT_ONE_OF,
-    IS_NULL
+    IS_NULL,
+    SEMVER_EQ,
+    SEMVER_NEQ,
+    SEMVER_LT,
+    SEMVER_LTE,
+    SEMVER_GT,
+    SEMVER_GTE
 }

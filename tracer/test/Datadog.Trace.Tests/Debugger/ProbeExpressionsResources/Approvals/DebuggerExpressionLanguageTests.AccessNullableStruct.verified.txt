@@ -1,5 +1,5 @@
 Template:
-Segments: 
+Segments:
 
 {
     "getmember": [
@@ -9,8 +9,7 @@ Segments:
         "NullableNullValue"
     ]
 }
-Expressions: 
-(
+Expressions: (
     scopeMember,
     scopeMember,
     scopeMember,

@@ -88,6 +88,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _ => throw new InvalidOperationException("Unknown binding " + binding),
             };
 
+            if (useOtelClientInstrumentation)
+            {
+                expectedSpanCount += binding == "Custom" ? 7 : 13;
+            }
+
             using var telemetry = this.ConfigureTelemetry();
             int wcfPort = 8585;
 

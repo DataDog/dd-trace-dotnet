@@ -22,6 +22,7 @@
 #include "corprof.h"
 
 // forward declarations
+class CoreLibModuleProvider;
 class IThreadsCpuManager;
 class INativeThreadList;
 class IRuntimeInfo;
@@ -61,6 +62,7 @@ public:
         IConfiguration* pConfiguration,
         ICorProfilerInfo12* pProfilerInfo,
         IFrameStore* pFrameStore,
+        CoreLibModuleProvider* pCoreLibModuleProvider,
         IThreadsCpuManager* pThreadsCpuManager,
         MetricsRegistry& metricsRegistry,
         INativeThreadList* pNativeThreadList,
@@ -72,6 +74,10 @@ public:
 
     // used for debugging purpose
     std::string GetHeapSnapshotText();
+
+    // Called from ModuleUnloadStarted: the types met during a dump are inspected after it,
+    // so their ClassIDs must not be trusted once the module defining them is gone.
+    void OnModuleUnloaded();
 
     // Reference tree output (separate from histogram)
     std::vector<FileEntry> GetAndClearReferenceTreeContent() override;
@@ -159,6 +165,10 @@ private:
     void CleanupSession();
     void StartAsyncSnapshotIfNeeded();
 
+    // Inspects the types met during the last traversal: MUST NOT be called while a dump is
+    // in progress because it may load types (see InlineVTCache::ResolvePendingTypes).
+    void ResolvePendingInlineValueTypes();
+
     // Logs (once) the detected runtime type/version and whether it falls within
     // the range the GCDesc reader has been validated against. This is a soft
     // signal for diagnostics only; it never disables the feature.
@@ -185,6 +195,7 @@ private:
     std::shared_ptr<ProxyMetric> _heapSnapshotDurationMetric;
     std::shared_ptr<ProxyMetric> _heapSnapshotObjectCountMetric;
     std::shared_ptr<ProxyMetric> _heapSnapshotTotalSizeMetric;
+    std::shared_ptr<ProxyMetric> _heapSnapshotTraversalFaultsMetric;
 
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
@@ -224,10 +235,23 @@ private:
     std::unique_ptr<TypeReferenceTree> _typeReferenceTree;
     std::unique_ptr<ReferenceChainTraverser> _pReferenceChainTraverser;
 
-    // Set to true once the GCDesc reader fails its runtime self-test during a dump.
+    // Set to true once the GCDesc reader fails its runtime self-test during a dump,
+    // or once memory access faults exhaust the budget on several consecutive dumps.
     // When set, subsequent dumps skip reference-chain traversal entirely (no
     // traverser is created) while the class histogram continues to work.
     bool _gcDescDisabled = false;
+
+    // Transient platform capability signal, kept separate from _gcDescDisabled:
+    // Linux may retry signal-handler installation at the next dump.
+    bool _faultGuardUnavailable = false;
+
+    // Consecutive dumps whose traversal was cut short by memory access faults.
+    // A single bad dump is treated as transient; a run of them is not.
+    static constexpr uint32_t MaxConsecutiveFaultyDumps = 3;
+    uint32_t _consecutiveFaultyDumps = 0;
+
+    // Fault count from the most recent dump's traversal, surfaced as a metric.
+    uint32_t _lastTraversalFaultCount = 0;
 
     // Ensures the runtime version range diagnostic is logged at most once.
     bool _runtimeVersionLogged = false;

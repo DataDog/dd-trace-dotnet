@@ -149,7 +149,7 @@ public class TraceContextPropertyTests
     private ScopedTracer GetTracer()
     {
         var settings = new TracerSettings();
-        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        var agentWriter = AgentWriterHelper.CreateWithManualFlush(_testApi);
         return TracerHelper.Create(settings, agentWriter, null, null, null);
     }
 }

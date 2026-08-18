@@ -376,6 +376,7 @@
       <type fullname="System.Linq.Expressions.NewArrayExpression" />
       <type fullname="System.Linq.Expressions.NewExpression" />
       <type fullname="System.Linq.Expressions.ParameterExpression" />
+      <type fullname="System.Linq.Expressions.TryExpression" />
       <type fullname="System.Linq.Expressions.TypeBinaryExpression" />
       <type fullname="System.Linq.Expressions.UnaryExpression" />
       <type fullname="System.Runtime.CompilerServices.CallSite" />

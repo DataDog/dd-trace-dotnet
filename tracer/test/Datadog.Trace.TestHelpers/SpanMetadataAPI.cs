@@ -389,6 +389,7 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsWebRequest(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "otel" => span.IsHttpClientRequestOTel(),
                 "v1" => span.IsWebRequestV1(),
                 _ => span.IsWebRequestV0(),
             };
