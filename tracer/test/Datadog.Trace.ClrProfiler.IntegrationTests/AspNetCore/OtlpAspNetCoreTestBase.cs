@@ -56,8 +56,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             "network.peer.port",
         };
 
-        private readonly OtlpTestAgentSession _otlpSession = new();
-
         protected OtlpAspNetCoreTestBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames, bool openTelemetrySemanticsEnabled)
             : this(sampleName, fixture, output, enableRouteTemplateResourceNames ? AspNetCoreFeatureFlags.RouteTemplateResourceNames : AspNetCoreFeatureFlags.None, openTelemetrySemanticsEnabled)
         {
@@ -82,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             // OTEL_TRACES_EXPORTER=otlp is what makes the Datadog SDK emit OTLP instead of msgpack.
             // Everything else is left at its default dd-trace-dotnet value.
-            ConfigureOtlpExport(_otlpSession);
+            ConfigureOtlpExport(fixture.OtlpSession);
 
             Fixture = fixture;
             Fixture.SetOutput(output);
@@ -161,7 +159,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         public async Task InitializeAsync()
         {
-            if (!await _otlpSession.CheckAvailabilityAsync(Output))
+            if (!await Fixture.OtlpSession.CheckAvailabilityAsync(Output))
             {
                 // Don't pay for starting the sample app for a test that is about to skip.
                 return;
@@ -256,13 +254,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         private async Task<JToken> SendRequestAndCollectSpansAsync(string httpMethod, string path, int statusCode, int expectedSpanCount)
         {
-            Skip.IfNot(_otlpSession.IsAvailable, $"The ddapm test-agent is not reachable at {_otlpSession.TracesUrl}.");
+            Skip.IfNot(Fixture.OtlpSession.IsAvailable, $"The ddapm test-agent is not reachable at {Fixture.OtlpSession.TracesUrl}.");
 
             var names = OtlpFieldNames.For(isJson: false);
 
             // The application under test outlives each test case, so drop everything the previous
             // case and the warm-up request produced first.
-            await _otlpSession.ClearSessionWhenQuietAsync(Output);
+            await Fixture.OtlpSession.ClearSessionWhenQuietAsync(Output);
 
             // Captured before the request is sent, so it is a lower bound for every span the server
             // creates while handling it.
@@ -270,7 +268,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             await SendRequestAsync(httpMethod, path, (HttpStatusCode)statusCode);
 
-            var tracesRequests = await _otlpSession.WaitForSpansAsync(expectedSpanCount);
+            var tracesRequests = await Fixture.OtlpSession.WaitForSpansAsync(expectedSpanCount);
             tracesRequests.Should().NotBeNullOrEmpty();
             OtlpTestAgentSession.CountSpans(tracesRequests).Should().Be(expectedSpanCount);
 

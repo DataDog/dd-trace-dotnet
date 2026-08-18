@@ -51,7 +51,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var names = OtlpFieldNames.For(isJson: false);
 
-            await _otlpSession.ClearSessionAsync();
+            // Establishes this token as a real ddapm test-agent session, so that
+            // /test/session/traces only ever returns requests sent after this point.
+            await _otlpSession.StartSessionAsync();
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
