@@ -15,6 +15,7 @@ using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
@@ -888,6 +889,11 @@ namespace Datadog.Trace.Configuration
 
             Manager = new(source, this, telemetry, errorLog);
 
+            // Created after the manager so the environment can be taken from the initial mutable
+            // settings, which also honour the "env" entry of DD_TAGS. It is captured once, so a
+            // later dynamic-configuration change to "env" does not move the agentless endpoint.
+            FeatureFlags = new FeatureFlagsSettings(source, telemetry, Manager.InitialMutableSettings.Environment);
+
             // OTLP span metrics require OTLP trace export (see TracerManagerFactory.GetAgentWriter).
             // Force to false otherwise, even if explicitly requested.
             if (OtelTracesSpanMetricsEnabled && !Manager.InitialExporterSettings.IsOtlpTraceExport)
@@ -1499,6 +1505,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether APM span enrichment is enabled; see <see cref="IsFlaggingProviderEnabled"/>.
         /// </summary>
         internal bool IsSpanEnrichmentEnabled { get; }
+
+        /// <summary>
+        /// Gets the Feature Flags settings, which select where flag configuration is delivered from.
+        /// </summary>
+        internal FeatureFlagsSettings FeatureFlags { get; }
 
         /// <summary>
         /// Gets a value indicating whether partial flush is enabled

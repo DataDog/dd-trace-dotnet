@@ -149,6 +149,28 @@ public class FeatureFlagsSettingsTests
         settings.AgentlessBaseUrl.Should().Be(expected);
     }
 
+    [Fact]
+    public void ReadsSiteAndApiKeyFromTheConfigurationSource()
+    {
+        var settings = CreateSettings(
+            null,
+            null,
+            null,
+            (ConfigurationKeys.Site, "datadoghq.eu"),
+            (ConfigurationKeys.ApiKey, "an-api-key"));
+
+        settings.Site.Should().Be("datadoghq.eu");
+        settings.ApiKey.Should().Be("an-api-key");
+    }
+
+    [Theory]
+    // A blank site is rejected in favour of the default, so the managed endpoint stays resolvable.
+    [InlineData("")]
+    [InlineData("   ")]
+    public void FallsBackToTheDefaultSite(string configured)
+        => CreateSettings(null, null, null, (ConfigurationKeys.Site, configured))
+          .Site.Should().Be(FeatureFlagsSettings.DefaultSite);
+
     private static FeatureFlagsSettings CreateSettings(
         string? enabled,
         string? source,
@@ -179,6 +201,6 @@ public class FeatureFlagsSettingsTests
             collection[key] = value;
         }
 
-        return new FeatureFlagsSettings(new NameValueConfigurationSource(collection), NullConfigurationTelemetry.Instance, site: null, env: null, apiKey: null);
+        return new FeatureFlagsSettings(new NameValueConfigurationSource(collection), NullConfigurationTelemetry.Instance, env: null);
     }
 }

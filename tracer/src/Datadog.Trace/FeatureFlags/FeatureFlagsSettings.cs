@@ -10,7 +10,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.FeatureFlags;
@@ -37,7 +36,7 @@ internal sealed class FeatureFlagsSettings
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsSettings));
 
-    public FeatureFlagsSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, string? site, string? env, string? apiKey)
+    public FeatureFlagsSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, string? env)
     {
         source ??= NullConfigurationSource.Instance;
         var config = new ConfigurationBuilder(source, telemetry);
@@ -48,17 +47,6 @@ internal sealed class FeatureFlagsSettings
 #pragma warning disable 618 // superseded, but still honoured so existing adopters keep their source
         var legacyEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled).AsBool();
 #pragma warning restore 618
-
-        // Use GetAsClass so the config framework records both the raw string and the resolved
-        // value in configuration telemetry. The converter maps recognised values to a
-        // SourceSelection record, returns Failure for unrecognised values (so the framework
-        // records the fallback), and returns Failure for null/empty (so "not set" also falls
-        // back to the default, which is null — meaning "not explicitly set").
-        var configuredSource = config
-            .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource)
-            .GetAsClass<SourceSelection>(
-                validator: null,
-                converter: ConvertSource);
 
         if (legacyEnabled is not null)
         {
@@ -71,7 +59,26 @@ internal sealed class FeatureFlagsSettings
 #pragma warning restore 618
         }
 
-        Source = ResolveSource(enabled, configuredSource, legacyEnabled);
+        // The source is resolved in a single read so configuration telemetry reports the value we
+        // actually use. Shared across tracers, so the precedence is deliberate: the stable kill
+        // switch wins over everything (expressed as a validator that rejects any configured value),
+        // an explicit source wins over the legacy key, the legacy key grandfathers existing
+        // adopters onto Remote Configuration, and everything else defaults to agentless.
+        DefaultResult<FeatureFlagsSource> defaultSource = enabled switch
+        {
+            false => new(FeatureFlagsSource.Disabled, OfflineSourceName),
+            null when legacyEnabled is not null => legacyEnabled.Value
+                                                       ? new(FeatureFlagsSource.RemoteConfig, RemoteConfigSourceName)
+                                                       : new(FeatureFlagsSource.Disabled, OfflineSourceName),
+            _ => new(FeatureFlagsSource.Agentless, AgentlessSourceName),
+        };
+
+        Source = config
+                .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource)
+                .GetAs(
+                     defaultSource,
+                     validator: enabled == false ? static _ => false : static _ => true,
+                     converter: ConvertSource);
 
         var agentlessBaseUrl = config
                                 .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl)
@@ -88,9 +95,15 @@ internal sealed class FeatureFlagsSettings
                   .AsInt32(DefaultRequestTimeoutSeconds, v => v > 0)
                   .Value);
 
-        Site = StringUtil.IsNullOrWhiteSpace(site) ? DefaultSite : site;
+        // DD_SITE and DD_API_KEY are not extracted on TracerSettings, so they are read here as the
+        // other product settings do (TelemetrySettings, DirectLogSubmissionSettings). DD_ENV is
+        // passed in, because TracerSettings also honours the "env" entry of DD_TAGS and re-reading
+        // the key alone would disagree with the rest of the tracer.
+        Site = config
+              .WithKeys(ConfigurationKeys.Site)
+              .AsString(DefaultSite, static site => !StringUtil.IsNullOrWhiteSpace(site));
         Env = env;
-        ApiKey = apiKey;
+        ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
 
         var initializationTimeoutMs = config
                                      .WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderInitializationTimeoutMs)
@@ -144,71 +157,51 @@ internal sealed class FeatureFlagsSettings
     /// </summary>
     public TimeSpan InitializationTimeout { get; }
 
-    public static FeatureFlagsSettings FromDefaultSource()
+    /// <summary>
+    /// Converts a configured source name to a <see cref="FeatureFlagsSource"/>. A blank value is
+    /// treated as unset so the default applies, and an unrecognised one fails closed: it resolves
+    /// to <see cref="FeatureFlagsSource.Disabled"/> rather than falling back to a billed delivery
+    /// path, which is why it is reported as a successful conversion.
+    /// </summary>
+    private static ParsingResult<FeatureFlagsSource> ConvertSource(string? value)
     {
-        var source = GlobalConfigurationSource.Instance;
-        var config = new ConfigurationBuilder(source, TelemetryFactory.Config);
-        var site = config.WithKeys(ConfigurationKeys.Site).AsString(DefaultSite, s => !StringUtil.IsNullOrWhiteSpace(s));
-        var env = config.WithKeys(ConfigurationKeys.Environment).AsString();
-        var apiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
-        return new FeatureFlagsSettings(source, TelemetryFactory.Config, site, env, apiKey);
+        if (StringUtil.IsNullOrWhiteSpace(value))
+        {
+            return ParsingResult<FeatureFlagsSource>.Failure();
+        }
+
+        // Compared without allocating. A value with surrounding whitespace is trimmed only once the
+        // direct comparisons have failed, so the common path stays allocation-free.
+        if (TryMatch(value, out var source) || TryMatch(value.Trim(), out source))
+        {
+            return ParsingResult<FeatureFlagsSource>.Success(source);
+        }
+
+        return ParsingResult<FeatureFlagsSource>.Success(FeatureFlagsSource.Disabled);
     }
 
-    /// <summary>
-    /// Converts a configuration source string to a <see cref="SourceSelection"/>.
-    /// Used as the converter for GetAsClass so the
-    /// config framework records both the raw string and the resolved value in telemetry.
-    /// </summary>
-    private static ParsingResult<SourceSelection> ConvertSource(string? value)
+    private static bool TryMatch(string value, out FeatureFlagsSource source)
     {
-        if (value is null)
+        if (string.Equals(value, AgentlessSourceName, StringComparison.OrdinalIgnoreCase))
         {
-            return ParsingResult<SourceSelection>.Failure();
+            source = FeatureFlagsSource.Agentless;
+            return true;
         }
 
-        var normalized = value.Trim().ToLowerInvariant();
-        if (normalized.Length == 0)
+        if (string.Equals(value, RemoteConfigSourceName, StringComparison.OrdinalIgnoreCase))
         {
-            return ParsingResult<SourceSelection>.Failure();
+            source = FeatureFlagsSource.RemoteConfig;
+            return true;
         }
 
-        return normalized switch
+        // "offline" is a reserved fail-closed sentinel: the provider is intentionally off.
+        if (string.Equals(value, OfflineSourceName, StringComparison.OrdinalIgnoreCase))
         {
-            AgentlessSourceName => ParsingResult<SourceSelection>.Success(new SourceSelection(FeatureFlagsSource.Agentless, isValid: true)),
-            RemoteConfigSourceName => ParsingResult<SourceSelection>.Success(new SourceSelection(FeatureFlagsSource.RemoteConfig, isValid: true)),
-            OfflineSourceName => ParsingResult<SourceSelection>.Success(new SourceSelection(FeatureFlagsSource.Disabled, isValid: true)),
-            _ => ParsingResult<SourceSelection>.Success(new SourceSelection(FeatureFlagsSource.Disabled, isValid: false)),
-        };
-    }
-
-    /// <summary>
-    /// Resolves the delivery source. Shared across tracers, so the ordering is deliberate:
-    /// the stable kill switch wins over everything, an explicit source wins over the legacy key
-    /// (and fails closed when unrecognised), the legacy key grandfathers existing adopters onto
-    /// Remote Configuration, and everything else defaults to agentless.
-    /// </summary>
-    private static FeatureFlagsSource ResolveSource(bool? enabled, SourceSelection? configuredSource, bool? legacyEnabled)
-    {
-        if (enabled == false)
-        {
-            return FeatureFlagsSource.Disabled;
+            source = FeatureFlagsSource.Disabled;
+            return true;
         }
 
-        if (configuredSource is not null)
-        {
-            // "offline" is a reserved fail-closed sentinel: the provider is intentionally off.
-            // An invalid value also fails closed. Both are mapped to Disabled by the converter.
-            return configuredSource.Source;
-        }
-
-        // The legacy key only grandfathers adopters who have not migrated: an explicit new-key
-        // value (true or false) takes precedence, so the legacy key is consulted only when the
-        // new key was left unset.
-        if (enabled is null && legacyEnabled is not null)
-        {
-            return legacyEnabled.Value ? FeatureFlagsSource.RemoteConfig : FeatureFlagsSource.Disabled;
-        }
-
-        return FeatureFlagsSource.Agentless;
+        source = FeatureFlagsSource.Disabled;
+        return false;
     }
 }
