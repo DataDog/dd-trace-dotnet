@@ -23,9 +23,9 @@ struct AddressRegion;
 // Process-level, once-per-export sample provider that reconciles the OS address-space map with the
 // CLR native/managed heap snapshot (DAC/cDAC) into a single non-double-counted memory flamegraph.
 //
-// Two sample value types are produced: "committed" (Windows MEM_COMMIT; 0 on Linux) and "rss"
-// (Linux smaps Rss always; Windows working set only when its option is enabled). Frames are synthetic
-// (Process Memory -> group -> leaf); managed heap detail is split by generation (gen0/1/2/LOH/POH).
+// One "memory-breakdown" sample value type is produced: Windows exports MEM_COMMIT bytes and Linux
+// exports smaps Rss bytes. Frames are synthetic (Process Memory -> group -> leaf); managed heap detail
+// is split by generation (gen0/1/2/LOH/POH).
 class MemoryBreakdownProvider : public ISamplesProvider
 {
 public:
@@ -61,7 +61,6 @@ private:
         NativeHeapState state = NativeHeapState::None;
         int generation = -1;
         std::string moduleName; // image module leaf / mapped-file name
-        uint64_t clrViewCommitted = 0; // sum of ClrNativeHeapInfo.Committed (cross-check label)
         uint64_t committed = 0;
         uint64_t rss = 0;
         bool rssEstimated = false;
@@ -87,17 +86,13 @@ private:
     static std::string LeafKeyForOs(const AddressRegion& region, Source& outSource);
 
     IClrNativeHeapSnapshot* _pSnapshot;
-    std::vector<SampleValueTypeProvider::Offset> _valueOffsets;
-    size_t _committedOffset = 0;
-    size_t _rssOffset = 0;
+    SampleValueTypeProvider::Offset _memoryBreakdownOffset = 0;
 
     // Rebuilt every GetSamples(): backing store for dynamic (per-module) frame strings so the
     // string_views handed to FrameInfoView stay valid for the whole Export().
     std::deque<std::string> _frameStrings;
     std::map<std::string, LeafInfo> _leaves;
 
-    uint64_t _duration = 0;           // dotnet_memory_breakdown_duration (ms)
-    uint64_t _workingSetDuration = 0; // dotnet_memory_breakdown_workingset_duration (ms)
+    uint64_t _duration = 0; // dotnet_memory_breakdown_duration (ms)
     std::shared_ptr<ProxyMetric> _durationMetric;
-    std::shared_ptr<ProxyMetric> _workingSetDurationMetric;
 };

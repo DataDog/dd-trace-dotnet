@@ -483,11 +483,8 @@ RegionCategory CategorizeLinux(const std::string& path, const char* perms)
 
 } // namespace
 
-std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap(bool includeWorkingSet)
+std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap()
 {
-    // includeWorkingSet is effectively always on for Linux: smaps reports Rss per mapping for free.
-    (void)includeWorkingSet;
-
     std::vector<AddressRegion> regions;
 
     std::ifstream smaps("/proc/self/smaps");

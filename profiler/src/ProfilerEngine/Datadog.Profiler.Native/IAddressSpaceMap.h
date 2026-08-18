@@ -41,6 +41,6 @@ public:
     // (needed for the CLR card-table committed size on both platforms).
     virtual bool ProvidesCommitted() const = 0;
 
-    // Whether RSS was captured (Linux always; Windows only when the working-set option is on).
+    // Whether RSS is available as a per-sample value (true on Linux, false on Windows).
     virtual bool ProvidesRss() const = 0;
 };

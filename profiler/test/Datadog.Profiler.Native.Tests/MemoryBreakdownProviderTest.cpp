@@ -19,8 +19,7 @@
 
 namespace
 {
-constexpr size_t CommittedIndex = 0; // first (and only) provider registered -> offsets {0, 1}
-constexpr size_t RssIndex = 1;
+constexpr size_t MemoryBreakdownIndex = 0;
 
 AddressRegion Image(uintptr_t address, uint64_t size, const std::string& name, const std::string& protection)
 {
@@ -119,15 +118,15 @@ bool FrameContains(const std::shared_ptr<Sample>& s, std::string_view needle)
     return false;
 }
 
-int64_t Committed(const std::shared_ptr<Sample>& s)
+int64_t MemoryBreakdown(const std::shared_ptr<Sample>& s)
 {
-    return s->GetValues()[CommittedIndex];
+    return s->GetValues()[MemoryBreakdownIndex];
 }
 
 // Builds the standard scenario: a CLR module (3 protection runs) + an app module, a large private GC
-// region holding gen0 (x2 heaps), gen1, gen2, LOH, POH segments and a loader heap. Windows-like
-// (committed, no RSS).
-std::unique_ptr<AddressSpaceMap> BuildScenarioMap()
+// region holding gen0 (x2 heaps), gen1, gen2, LOH, POH segments and a loader heap. Committed and RSS
+// are equal by default so common assertions are platform-neutral.
+std::unique_ptr<AddressSpaceMap> BuildScenarioMap(bool differentRss = false)
 {
     std::vector<AddressRegion> regions{
         Image(0x1000, 0x1000, "clr.dll", "r-x"),
@@ -136,7 +135,13 @@ std::unique_ptr<AddressSpaceMap> BuildScenarioMap()
         Image(0x5000, 0x1000, "app.dll", "r-x"),
         Private(0x100000, 0x10000),
     };
-    return std::make_unique<AddressSpaceMap>(std::move(regions), /*committed*/ true, /*rss*/ false);
+
+    for (auto& region : regions)
+    {
+        region.Rss = differentRss ? region.Committed / 2 : region.Committed;
+    }
+
+    return std::make_unique<AddressSpaceMap>(std::move(regions), /*committed*/ true, /*rss*/ true);
 }
 
 std::vector<ClrNativeHeapInfo> BuildScenarioHeaps()
@@ -152,6 +157,21 @@ std::vector<ClrNativeHeapInfo> BuildScenarioHeaps()
     };
 }
 } // namespace
+
+TEST(MemoryBreakdownProviderTest, RegistersMemoryBreakdownSampleType)
+{
+    auto map = BuildScenarioMap();
+    FakeClrNativeHeapSnapshot snapshot(BuildScenarioHeaps(), /*available*/ true, "dac", map.get());
+
+    SampleValueTypeProvider valueTypeProvider;
+    MetricsRegistry registry;
+    MemoryBreakdownProvider provider(valueTypeProvider, &snapshot, registry);
+
+    auto const& valueTypes = valueTypeProvider.GetValueTypes();
+    ASSERT_EQ(valueTypes.size(), 1u);
+    EXPECT_EQ(valueTypes[MemoryBreakdownIndex].Name, "memory-breakdown");
+    EXPECT_EQ(valueTypes[MemoryBreakdownIndex].Unit, "bytes");
+}
 
 TEST(MemoryBreakdownProviderTest, ReconciliationDoesNotDoubleCount)
 {
@@ -170,9 +190,36 @@ TEST(MemoryBreakdownProviderTest, ReconciliationDoesNotDoubleCount)
     int64_t total = 0;
     for (const auto& s : samples)
     {
-        total += Committed(s);
+        total += MemoryBreakdown(s);
     }
     EXPECT_EQ(total, 0x14000);
+}
+
+TEST(MemoryBreakdownProviderTest, ExportsPlatformSpecificMetric)
+{
+    auto map = BuildScenarioMap(/*differentRss*/ true);
+    FakeClrNativeHeapSnapshot snapshot(BuildScenarioHeaps(), /*available*/ true, "dac", map.get());
+
+    SampleValueTypeProvider valueTypeProvider;
+    MetricsRegistry registry;
+    MemoryBreakdownProvider provider(valueTypeProvider, &snapshot, registry);
+
+    auto samples = Collect(provider.GetSamples().get());
+    ASSERT_FALSE(samples.empty());
+
+    int64_t total = 0;
+    for (const auto& sample : samples)
+    {
+        total += MemoryBreakdown(sample);
+    }
+
+#ifdef _WINDOWS
+    EXPECT_EQ(total, 0x14000);
+#elif defined(LINUX)
+    EXPECT_EQ(total, 0xa000);
+#else
+#error Unsupported platform
+#endif
 }
 
 TEST(MemoryBreakdownProviderTest, SameGenerationAcrossHeapsCollapsesIntoOneLeaf)
@@ -189,18 +236,18 @@ TEST(MemoryBreakdownProviderTest, SameGenerationAcrossHeapsCollapsesIntoOneLeaf)
 
     // The two gen0 segments (heap 0 and heap 1) must collapse into a single gen0 sample summing 0x2000.
     int gen0Count = 0;
-    int64_t gen0Committed = 0;
+    int64_t gen0Memory = 0;
     for (const auto& s : samples)
     {
         if (FrameContains(s, "fn:gen0 "))
         {
             gen0Count++;
-            gen0Committed += Committed(s);
+            gen0Memory += MemoryBreakdown(s);
             EXPECT_EQ(GetStringLabel(s, Sample::GarbageCollectionGenerationLabel), "0");
         }
     }
     EXPECT_EQ(gen0Count, 1);
-    EXPECT_EQ(gen0Committed, 0x2000);
+    EXPECT_EQ(gen0Memory, 0x2000);
 }
 
 TEST(MemoryBreakdownProviderTest, ManagedGenerationFramesAndLabels)
@@ -282,13 +329,13 @@ TEST(MemoryBreakdownProviderTest, ModuleProtectionRunsCollapseIntoOneSample)
     auto samples = Collect(provider.GetSamples().get());
 
     int clrModuleCount = 0;
-    int64_t clrModuleCommitted = 0;
+    int64_t clrModuleMemory = 0;
     for (const auto& s : samples)
     {
         if (GetStringLabel(s, "module") == "clr.dll")
         {
             clrModuleCount++;
-            clrModuleCommitted += Committed(s);
+            clrModuleMemory += MemoryBreakdown(s);
             EXPECT_EQ(GetStringLabel(s, "memory_source"), "image");
             // protection must never be surfaced as a sample label (would re-fragment the module).
             EXPECT_FALSE(HasLabel(s, "protection"));
@@ -297,7 +344,7 @@ TEST(MemoryBreakdownProviderTest, ModuleProtectionRunsCollapseIntoOneSample)
 
     // The 3 protection runs (r-x/r--/rw-) collapse into exactly one clr.dll sample of 0x3000.
     EXPECT_EQ(clrModuleCount, 1);
-    EXPECT_EQ(clrModuleCommitted, 0x3000);
+    EXPECT_EQ(clrModuleMemory, 0x3000);
 }
 
 TEST(MemoryBreakdownProviderTest, PrivateRemainderIsAttributedToPrivateLeaf)
@@ -312,19 +359,19 @@ TEST(MemoryBreakdownProviderTest, PrivateRemainderIsAttributedToPrivateLeaf)
     auto samples = Collect(provider.GetSamples().get());
 
     // Private region 0x10000 minus 7 CLR sub-regions (0x7000) => 0x9000 attributed to the private leaf.
-    int64_t privateCommitted = 0;
+    int64_t privateMemory = 0;
     for (const auto& s : samples)
     {
         if (GetStringLabel(s, "memory_source") == "private")
         {
-            privateCommitted += Committed(s);
+            privateMemory += MemoryBreakdown(s);
             EXPECT_TRUE(FrameContains(s, "fn:Native Heap / Private "));
         }
     }
-    EXPECT_EQ(privateCommitted, 0x9000);
+    EXPECT_EQ(privateMemory, 0x9000);
 }
 
-TEST(MemoryBreakdownProviderTest, EverySampleHasMemorySourceAndPid)
+TEST(MemoryBreakdownProviderTest, EverySampleHasMemorySourceWithoutAppDomainLabels)
 {
     auto map = BuildScenarioMap();
     FakeClrNativeHeapSnapshot snapshot(BuildScenarioHeaps(), /*available*/ true, "dac", map.get());
@@ -339,7 +386,8 @@ TEST(MemoryBreakdownProviderTest, EverySampleHasMemorySourceAndPid)
     for (const auto& s : samples)
     {
         EXPECT_FALSE(GetStringLabel(s, "memory_source").empty());
-        EXPECT_TRUE(HasLabel(s, Sample::ProcessIdLabel));
+        EXPECT_FALSE(HasLabel(s, Sample::ProcessIdLabel));
+        EXPECT_FALSE(HasLabel(s, Sample::AppDomainNameLabel));
     }
 }
 
@@ -367,18 +415,15 @@ TEST(MemoryBreakdownProviderTest, RegistersDurationMetrics)
     provider.GetSamples();
 
     bool foundDuration = false;
-    bool foundWorkingSet = false;
+    size_t metricCount = 0;
     for (const auto& [name, value] : registry.Collect())
     {
+        metricCount++;
         if (name == "dotnet_memory_breakdown_duration")
         {
             foundDuration = true;
         }
-        if (name == "dotnet_memory_breakdown_workingset_duration")
-        {
-            foundWorkingSet = true;
-        }
     }
     EXPECT_TRUE(foundDuration);
-    EXPECT_TRUE(foundWorkingSet);
+    EXPECT_EQ(metricCount, 1u);
 }

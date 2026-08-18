@@ -21,7 +21,7 @@ class IAddressSpaceMap;
 class ClrNativeHeapSnapshot : public IClrNativeHeapSnapshot
 {
 public:
-    ClrNativeHeapSnapshot(IRuntimeInfo* pRuntimeInfo, bool captureWorkingSet);
+    explicit ClrNativeHeapSnapshot(IRuntimeInfo* pRuntimeInfo);
     ~ClrNativeHeapSnapshot() override;
 
     const std::vector<ClrNativeHeapInfo>& GetSnapshot() override;
@@ -45,7 +45,6 @@ private:
     void EnsureBackend();
 
     IRuntimeInfo* _pRuntimeInfo;
-    bool _captureWorkingSet;
 
     std::mutex _lock;
     std::unique_ptr<IAddressSpaceMap> _map;             // captured once per export

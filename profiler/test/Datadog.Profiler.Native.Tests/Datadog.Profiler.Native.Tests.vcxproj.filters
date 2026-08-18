@@ -176,6 +176,9 @@
     <ClCompile Include="ExporterTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="FfiHelperTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
     <ClCompile Include="ErrorCodeTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>

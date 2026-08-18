@@ -608,9 +608,9 @@ void CorProfilerCallback::InitializeServices()
         }
     }
 
-    // The MemoryBreakdownProvider is created after Sample::ValuesCount is frozen below, so its two new
-    // value types (committed/rss) must be registered here to be counted and declared in the profile.
-    // Its constructor's GetOrRegister then returns these same offsets.
+    // The MemoryBreakdownProvider is created after Sample::ValuesCount is frozen below, so its
+    // memory-breakdown value type must be registered here to be counted and declared in the profile.
+    // Its constructor's GetOrRegister then returns the same offset.
     if (_pConfiguration->IsMemoryBreakdownEnabled())
     {
         valueTypeProvider.GetOrRegister(MemoryBreakdownProvider::SampleTypeDefinitions);
@@ -668,14 +668,10 @@ void CorProfilerCallback::InitializeServices()
     // The eeheap report (a from-scratch SOS !eeheap) and the memory-breakdown provider both consume the
     // CLR native/managed heap snapshot (cDAC for .NET 11+, DAC otherwise, mscordacwks DAC on .NET
     // Framework). Create the shared, per-export snapshot when either feature is enabled; it also owns
-    // the per-export OS address-space map. Working-set (RSS) capture is only worth its cost when the
-    // memory-breakdown provider is on AND its working-set option is enabled.
+    // the per-export OS address-space map.
     if (_pConfiguration->IsEEHeapEnabled() || _pConfiguration->IsMemoryBreakdownEnabled())
     {
-        const bool captureWorkingSet =
-            _pConfiguration->IsMemoryBreakdownEnabled() && _pConfiguration->IsMemoryBreakdownWorkingSetEnabled();
-
-        _clrNativeHeapSnapshot = std::make_unique<ClrNativeHeapSnapshot>(_pRuntimeInfo.get(), captureWorkingSet);
+        _clrNativeHeapSnapshot = std::make_unique<ClrNativeHeapSnapshot>(_pRuntimeInfo.get());
     }
 
     if (_pConfiguration->IsEEHeapEnabled())

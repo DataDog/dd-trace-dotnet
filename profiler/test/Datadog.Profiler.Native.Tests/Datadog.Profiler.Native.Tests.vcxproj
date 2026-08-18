@@ -81,6 +81,7 @@
     <ClCompile Include="EtwEventsManagerTest.cpp" />
     <ClCompile Include="ExporterTest.cpp" />
     <ClCompile Include="FakeSamples.cpp" />
+    <ClCompile Include="FfiHelperTest.cpp" />
     <ClCompile Include="FrameStoreHelper.cpp" />
     <ClCompile Include="IMetricsSenderFactoryTest.cpp" />
     <ClCompile Include="LinkedListTest.cpp" />

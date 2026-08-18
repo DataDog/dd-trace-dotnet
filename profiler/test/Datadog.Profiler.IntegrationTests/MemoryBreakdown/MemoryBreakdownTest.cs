@@ -16,11 +16,14 @@ namespace Datadog.Profiler.IntegrationTests.MemoryBreakdown
     {
         private const string Scenario = "--scenario 13";
 
+        private const string MemoryBreakdownSampleType = "memory-breakdown";
         private const string MemorySourceLabel = "memory_source";
         private const string RegionKindLabel = "region_kind";
         private const string RegionGroupLabel = "region_group";
         private const string ModuleLabel = "module";
         private const string GcGenerationLabel = "gc generation";
+        private const string AppDomainNameLabel = "appdomain name";
+        private const string AppDomainProcessIdLabel = "appdomain process id";
 
         private readonly ITestOutputHelper _output;
 
@@ -38,29 +41,15 @@ namespace Datadog.Profiler.IntegrationTests.MemoryBreakdown
                 return;
             }
 
-            var pprofDir = RunScenario(appName, framework, appAssembly, workingSet: false);
+            var pprofDir = RunScenario(appName, framework, appAssembly);
 
-            // On Windows the "committed" value type is populated (MEM_COMMIT).
-            AssertValueTypePresent(pprofDir, "committed");
-            CheckMemoryBreakdown(pprofDir, "committed");
+            // On Windows memory-breakdown contains MEM_COMMIT bytes.
+            AssertMemoryValueTypesDeclared(pprofDir);
+            AssertValueTypePopulated(pprofDir, MemoryBreakdownSampleType);
+            CheckMemoryBreakdown(pprofDir);
 
             // At least one CLR module and the app assembly must show up as image samples.
-            AssertModulePresent(pprofDir, "committed", m => m.Equals("coreclr.dll", StringComparison.OrdinalIgnoreCase) || m.Equals("clr.dll", StringComparison.OrdinalIgnoreCase));
-        }
-
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net8.0", "net10.0", "net11.0" })]
-        public void CheckMemoryBreakdownWorkingSetOnWindows(string appName, string framework, string appAssembly)
-        {
-            if (!EnvironmentHelper.IsRunningOnWindows())
-            {
-                return;
-            }
-
-            var pprofDir = RunScenario(appName, framework, appAssembly, workingSet: true);
-
-            // With the working-set option on, the "rss" value type is also populated on Windows.
-            AssertValueTypePresent(pprofDir, "rss");
-            CheckMemoryBreakdown(pprofDir, "rss");
+            AssertModulePresent(pprofDir, m => m.Equals("coreclr.dll", StringComparison.OrdinalIgnoreCase) || m.Equals("clr.dll", StringComparison.OrdinalIgnoreCase));
         }
 
         // .NET 6/8/10 go through the legacy DAC backend; .NET 11 exercises the cDAC backend.
@@ -72,24 +61,21 @@ namespace Datadog.Profiler.IntegrationTests.MemoryBreakdown
                 return;
             }
 
-            var pprofDir = RunScenario(appName, framework, appAssembly, workingSet: false);
+            var pprofDir = RunScenario(appName, framework, appAssembly);
 
-            // On Linux the "rss" value type is populated (from /proc/self/smaps).
-            AssertValueTypePresent(pprofDir, "rss");
-            CheckMemoryBreakdown(pprofDir, "rss");
+            // On Linux memory-breakdown contains RSS bytes from /proc/self/smaps.
+            AssertMemoryValueTypesDeclared(pprofDir);
+            AssertValueTypePopulated(pprofDir, MemoryBreakdownSampleType);
+            CheckMemoryBreakdown(pprofDir);
 
             // The CLR shared object must show up as an image sample.
-            AssertModulePresent(pprofDir, "rss", m => m.Equals("libcoreclr.so", StringComparison.OrdinalIgnoreCase));
+            AssertModulePresent(pprofDir, m => m.Equals("libcoreclr.so", StringComparison.OrdinalIgnoreCase));
         }
 
-        private string RunScenario(string appName, string framework, string appAssembly, bool workingSet)
+        private string RunScenario(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario);
             runner.Environment.SetVariable(EnvironmentVariables.MemoryBreakdownEnabled, "1");
-            if (workingSet)
-            {
-                runner.Environment.SetVariable(EnvironmentVariables.MemoryBreakdownWorkingSetEnabled, "1");
-            }
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
             runner.Run(agent);
@@ -98,21 +84,38 @@ namespace Datadog.Profiler.IntegrationTests.MemoryBreakdown
             return runner.Environment.PprofDir;
         }
 
-        private void AssertValueTypePresent(string pprofDir, string valueType)
+        private static void AssertMemoryValueTypesDeclared(string pprofDir)
         {
-            bool present = SamplesHelper.GetProfiles(pprofDir).Any(p => p.SampleType().Contains(valueType));
-            Assert.True(present, $"No profile declares the '{valueType}' sample value type");
+            AssertValueTypeDeclared(pprofDir, MemoryBreakdownSampleType, "bytes");
+            AssertValueTypeNotDeclared(pprofDir, "committed");
+            AssertValueTypeNotDeclared(pprofDir, "rss");
+        }
 
+        private static void AssertValueTypeDeclared(string pprofDir, string valueType, string unit)
+        {
+            bool present = SamplesHelper.GetProfiles(pprofDir)
+                                        .Any(p => p.SampleTypesWithUnits().Any(t => t.Type == valueType && t.Unit == unit));
+            Assert.True(present, $"No profile declares the '{valueType}/{unit}' sample value type");
+        }
+
+        private static void AssertValueTypeNotDeclared(string pprofDir, string valueType)
+        {
+            bool present = SamplesHelper.GetProfiles(pprofDir)
+                                        .Any(p => p.SampleTypesWithUnits().Any(t => t.Type == valueType));
+            Assert.False(present, $"A profile unexpectedly declares the legacy '{valueType}' sample value type");
+        }
+
+        private static void AssertValueTypePopulated(string pprofDir, string valueType)
+        {
             var samples = SamplesHelper.GetSamples(pprofDir, valueType).ToList();
             Assert.True(samples.Count > 0, $"No sample carries a non-zero '{valueType}' value");
         }
 
-        // Shared group/kind/generation assertions, run for both the committed (Windows) and rss (Linux)
-        // value types.
-        private void CheckMemoryBreakdown(string pprofDir, string valueType)
+        // Shared group/kind/generation assertions for the platform-specific memory value.
+        private void CheckMemoryBreakdown(string pprofDir)
         {
-            var samples = SamplesHelper.GetSamples(pprofDir, valueType).ToList();
-            Assert.True(samples.Count > 0, $"No '{valueType}' memory breakdown sample found");
+            var samples = SamplesHelper.GetSamples(pprofDir, MemoryBreakdownSampleType).ToList();
+            Assert.True(samples.Count > 0, $"No '{MemoryBreakdownSampleType}' sample found");
 
             var groupFunctions = new HashSet<string>();
             var memorySources = new HashSet<string>();
@@ -139,6 +142,7 @@ namespace Datadog.Profiler.IntegrationTests.MemoryBreakdown
 
                 // protection must never leak onto a sample (would re-fragment collapsed modules).
                 Assert.DoesNotContain(labels, l => l.Name == "protection");
+                Assert.DoesNotContain(labels, l => l.Name == AppDomainNameLabel || l.Name == AppDomainProcessIdLabel);
 
                 if (source == "managed")
                 {
@@ -184,22 +188,32 @@ namespace Datadog.Profiler.IntegrationTests.MemoryBreakdown
                 "No OS-attributed memory sample found");
         }
 
-        private void AssertModulePresent(string pprofDir, string valueType, Func<string, bool> predicate)
+        private void AssertModulePresent(string pprofDir, Func<string, bool> predicate)
         {
-            var samples = SamplesHelper.GetSamples(pprofDir, valueType).ToList();
+            var modules = new List<string>();
+            foreach (var profile in SamplesHelper.GetProfiles(pprofDir))
+            {
+                var sampleTypeIndex = Array.IndexOf(profile.SampleType(), MemoryBreakdownSampleType);
+                if (sampleTypeIndex == -1)
+                {
+                    continue;
+                }
 
-            var modules = samples
-                .Select(s => GetLabel(s.Labels, ModuleLabel))
-                .Where(m => !string.IsNullOrEmpty(m))
-                .ToList();
+                var profileModules = profile.Sample
+                                            .Where(s => s.Value[sampleTypeIndex] != 0)
+                                            .Select(s => GetLabel(s.Labels(profile).ToArray(), ModuleLabel))
+                                            .Where(m => !string.IsNullOrEmpty(m))
+                                            .ToList();
+                modules.AddRange(profileModules);
+
+                // Each module value must appear on exactly one sample per profile (protection runs collapsed).
+                foreach (var group in profileModules.GroupBy(m => m))
+                {
+                    Assert.True(group.Count() == 1, $"module '{group.Key}' appears on {group.Count()} samples in one profile (should be collapsed to one)");
+                }
+            }
 
             Assert.True(modules.Any(predicate), "No expected module was found among the image samples");
-
-            // Each module value must appear on exactly one sample (protection runs collapsed).
-            foreach (var group in modules.GroupBy(m => m))
-            {
-                Assert.True(group.Count() == 1, $"module '{group.Key}' appears on {group.Count()} samples (should be collapsed to one)");
-            }
         }
 
         private static string GetLabel(PprofHelper.Label[] labels, string name)

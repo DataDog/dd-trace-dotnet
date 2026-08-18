@@ -11,9 +11,8 @@
 #include "Log.h"
 #include "OsSpecificApi.h"
 
-ClrNativeHeapSnapshot::ClrNativeHeapSnapshot(IRuntimeInfo* pRuntimeInfo, bool captureWorkingSet) :
-    _pRuntimeInfo{pRuntimeInfo},
-    _captureWorkingSet{captureWorkingSet}
+ClrNativeHeapSnapshot::ClrNativeHeapSnapshot(IRuntimeInfo* pRuntimeInfo) :
+    _pRuntimeInfo{pRuntimeInfo}
 {
 }
 
@@ -48,7 +47,7 @@ void ClrNativeHeapSnapshot::EnsureAddressSpaceMap()
         return;
     }
     _mapCaptured = true;
-    _map = OsSpecificApi::CaptureAddressSpaceMap(_captureWorkingSet);
+    _map = OsSpecificApi::CaptureAddressSpaceMap();
 }
 
 void ClrNativeHeapSnapshot::EnsureBackend()

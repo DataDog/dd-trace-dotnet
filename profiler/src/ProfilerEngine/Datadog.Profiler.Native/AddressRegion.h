@@ -30,7 +30,7 @@ struct AddressRegion
     uintptr_t Address = 0;
     uint64_t Size = 0;      // reserved / virtual span of this run
     uint64_t Committed = 0; // Windows: Size when MEM_COMMIT else 0; Linux: accessible span (perms != ---p) else 0
-    uint64_t Rss = 0;       // Linux: smaps Rss; Windows: working-set bytes (only when captured), else 0
+    uint64_t Rss = 0;       // Linux: smaps Rss; always 0 on Windows
     RegionCategory Category = RegionCategory::Other;
     std::string ModuleName; // dll/so leaf name for Image; full path for MappedFile; empty otherwise
     std::string Protection; // "r-x", "rw-", ... (diagnostics only; never surfaced as a sample label)

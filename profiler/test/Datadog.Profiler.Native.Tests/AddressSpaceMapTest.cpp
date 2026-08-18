@@ -145,9 +145,18 @@ TEST(AddressSpaceMapTest, ProvidesFlagsReflectConstruction)
 
 TEST(AddressSpaceMapTest, CaptureCurrentProcessIsNonEmptyWithImageModules)
 {
-    auto map = OsSpecificApi::CaptureAddressSpaceMap(/*includeWorkingSet*/ false);
+    auto map = OsSpecificApi::CaptureAddressSpaceMap();
     ASSERT_NE(map, nullptr);
     ASSERT_TRUE(map->IsAvailable());
+#ifdef _WINDOWS
+    EXPECT_TRUE(map->ProvidesCommitted());
+    EXPECT_FALSE(map->ProvidesRss());
+#elif defined(LINUX)
+    EXPECT_FALSE(map->ProvidesCommitted());
+    EXPECT_TRUE(map->ProvidesRss());
+#else
+#error Unsupported platform
+#endif
 
     bool sawImageWithName = false;
     uint64_t totalCommitted = 0;

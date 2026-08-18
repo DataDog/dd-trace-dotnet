@@ -81,7 +81,6 @@ public:
     inline static const shared::WSTRING HeapSnapshotReferenceTreeFormat = WStr("DD_INTERNAL_PROFILING_HEAPSNAPSHOT_REFERENCE_TREE_FORMAT");
     inline static const shared::WSTRING EEHeapEnabled                   = WStr("DD_INTERNAL_PROFILING_EEHEAP_ENABLED");
     inline static const shared::WSTRING MemoryBreakdownEnabled          = WStr("DD_INTERNAL_PROFILING_MEMORY_BREAKDOWN_ENABLED");
-    inline static const shared::WSTRING MemoryBreakdownWorkingSetEnabled = WStr("DD_INTERNAL_PROFILING_MEMORY_BREAKDOWN_WORKINGSET_ENABLED");
     inline static const shared::WSTRING MemoryFootprintEnabled          = WStr("DD_INTERNAL_PROFILING_MEMORY_FOOTPRINT_ENABLED");
     inline static const shared::WSTRING EnableProfilerArchitectureArm64 = WStr("DD_INTERNAL_PROFILING_ENABLED_ARM64");
 

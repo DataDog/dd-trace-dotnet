@@ -25,7 +25,7 @@ uint64_t ProbeCommittedBytes(IMemoryReader& reader, uintptr_t base, uint64_t res
 //
 // When `map` is non-null the answer comes from it directly (no syscalls - the map was captured once
 // for the whole export). When `map` is null a map is captured on demand via
-// OsSpecificApi::CaptureAddressSpaceMap(false), preserving the previous standalone behavior (used by
+// OsSpecificApi::CaptureAddressSpaceMap(), preserving the previous standalone behavior (used by
 // tests and any caller without a shared map). In-process only; returns 0 when the region map cannot
 // be determined. The result is capped at reserved.
 uint64_t QueryCommittedBytes(const IAddressSpaceMap* map, uintptr_t base, uint64_t reserved);

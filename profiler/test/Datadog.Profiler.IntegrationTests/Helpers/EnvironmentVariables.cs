@@ -49,6 +49,5 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string MemoryFootprintEnabled = "DD_INTERNAL_PROFILING_MEMORY_FOOTPRINT_ENABLED";
         public const string EEHeapEnabled = "DD_INTERNAL_PROFILING_EEHEAP_ENABLED";
         public const string MemoryBreakdownEnabled = "DD_INTERNAL_PROFILING_MEMORY_BREAKDOWN_ENABLED";
-        public const string MemoryBreakdownWorkingSetEnabled = "DD_INTERNAL_PROFILING_MEMORY_BREAKDOWN_WORKINGSET_ENABLED";
     }
 }

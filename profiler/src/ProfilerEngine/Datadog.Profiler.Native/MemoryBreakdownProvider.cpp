@@ -18,8 +18,7 @@
 #include <cstdint>
 
 std::vector<SampleValueType> MemoryBreakdownProvider::SampleTypeDefinitions{
-    {"committed", "bytes", -1}, // Windows MEM_COMMIT; 0 on Linux
-    {"rss", "bytes", -1},       // Linux smaps Rss always; Windows working set only when enabled
+    {"memory-breakdown", "bytes", -1},
 };
 
 namespace
@@ -29,10 +28,11 @@ const std::string MemorySourceLabel = "memory_source";
 const std::string RegionKindLabel = "region_kind";
 const std::string RegionGroupLabel = "region_group";
 const std::string RegionStateLabel = "region_state";
-const std::string CommittedClrViewLabel = "committed_clr_view";
 const std::string ModuleLabel = "module";
 const std::string MappedFileLabel = "mapped_file";
+#ifdef LINUX
 const std::string RssEstimatedLabel = "rss_estimated";
+#endif
 
 // reused generation string values ("0".."4"), matching runtime/ClrMD generation numbers.
 const std::string GenerationValues[5] = {"0", "1", "2", "3", "4"};
@@ -44,7 +44,9 @@ const std::string SourceMappedFile = "mapped-file";
 const std::string SourcePrivate = "private";
 const std::string SourceStack = "stack";
 const std::string SourceReserved = "reserved";
+#ifdef LINUX
 const std::string TrueValue = "true";
+#endif
 
 // Portion of a uniform run's committed/rss attributable to `overlap` bytes.
 uint64_t SliceOf(uint64_t metric, uint64_t overlap, uint64_t runSize)
@@ -87,17 +89,12 @@ bool IsManagedGroup(NativeHeapGroup group)
 } // namespace
 
 MemoryBreakdownProvider::MemoryBreakdownProvider(SampleValueTypeProvider& valueTypeProvider, IClrNativeHeapSnapshot* pSnapshot, MetricsRegistry& metricsRegistry) :
-    _pSnapshot{pSnapshot},
-    _valueOffsets{valueTypeProvider.GetOrRegister(SampleTypeDefinitions)}
+    _pSnapshot{pSnapshot}
 {
-    _committedOffset = _valueOffsets[0];
-    _rssOffset = _valueOffsets[1];
+    _memoryBreakdownOffset = valueTypeProvider.GetOrRegister(SampleTypeDefinitions)[0];
 
     _durationMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_breakdown_duration", [this]() {
         return static_cast<double>(_duration);
-    });
-    _workingSetDurationMetric = metricsRegistry.GetOrRegister<ProxyMetric>("dotnet_memory_breakdown_workingset_duration", [this]() {
-        return static_cast<double>(_workingSetDuration);
     });
 }
 
@@ -252,7 +249,6 @@ void MemoryBreakdownProvider::AccumulateClrSlice(const ClrNativeHeapInfo& info, 
     leaf.generation = (info.Kind == NativeHeapKind::GCHeapSegment) ? info.Generation : leaf.generation;
     leaf.committed += committed;
     leaf.rss += rss;
-    leaf.clrViewCommitted += info.Committed;
     leaf.rssEstimated = leaf.rssEstimated || estimated;
 }
 
@@ -362,12 +358,7 @@ std::unique_ptr<SamplesEnumerator> MemoryBreakdownProvider::GetSamples()
 
     const auto start = OpSysTools::GetHighPrecisionTimestamp();
 
-    // The provider is the first consumer inside Export(), so this GetAddressSpaceMap() triggers the
-    // one-per-export OS walk (including QueryWorkingSetEx on Windows when enabled). Timing it before any
-    // other snapshot access (which would lazily capture the same map) gives the working-set cost proxy.
-    const auto wsStart = OpSysTools::GetHighPrecisionTimestamp();
     IAddressSpaceMap* map = _pSnapshot->GetAddressSpaceMap();
-    _workingSetDuration = static_cast<uint64_t>((OpSysTools::GetHighPrecisionTimestamp() - wsStart).count() / 1000000);
 
     if (map == nullptr || !map->IsAvailable() || !_pSnapshot->IsAvailable())
     {
@@ -383,27 +374,23 @@ std::unique_ptr<SamplesEnumerator> MemoryBreakdownProvider::GetSamples()
     const auto intervals = BuildDisjointClrIntervals(heaps);
     Reconcile(map->Regions(), intervals, map->ProvidesRss());
 
-    const bool providesCommitted = map->ProvidesCommitted();
-    const bool providesRss = map->ProvidesRss();
-    const int32_t pid = OpSysTools::GetProcId();
-
     for (const auto& [key, leaf] : _leaves)
     {
-        if (leaf.committed == 0 && leaf.rss == 0)
+#ifdef _WINDOWS
+        const auto memoryBreakdown = leaf.committed;
+#elif defined(LINUX)
+        const auto memoryBreakdown = leaf.rss;
+#else
+#error Unsupported platform
+#endif
+
+        if (memoryBreakdown == 0)
         {
             continue;
         }
 
         auto sample = std::make_shared<Sample>(std::chrono::nanoseconds(0), std::string_view{}, 8);
-
-        if (providesCommitted)
-        {
-            sample->AddValue(static_cast<int64_t>(leaf.committed), _committedOffset);
-        }
-        if (providesRss)
-        {
-            sample->AddValue(static_cast<int64_t>(leaf.rss), _rssOffset);
-        }
+        sample->AddValue(static_cast<int64_t>(memoryBreakdown), _memoryBreakdownOffset);
 
         // Frames: parent-first (root -> group -> leaf).
         sample->AddFrame({membreakdown::Module, membreakdown::Root, "", 0});
@@ -448,7 +435,6 @@ std::unique_ptr<SamplesEnumerator> MemoryBreakdownProvider::GetSamples()
                 }
                 sample->AddLabel(StringLabel{RegionKindLabel, ToString(leaf.kind)});
                 sample->AddLabel(StringLabel{RegionStateLabel, ToString(leaf.state)});
-                sample->AddLabel(NumericLabel{CommittedClrViewLabel, static_cast<int64_t>(leaf.clrViewCommitted)});
                 break;
             }
 
@@ -472,7 +458,6 @@ std::unique_ptr<SamplesEnumerator> MemoryBreakdownProvider::GetSamples()
                 sample->AddLabel(StringLabel{RegionGroupLabel, ToString(group)});
                 sample->AddLabel(StringLabel{RegionKindLabel, ToString(leaf.kind)});
                 sample->AddLabel(StringLabel{RegionStateLabel, ToString(leaf.state)});
-                sample->AddLabel(NumericLabel{CommittedClrViewLabel, static_cast<int64_t>(leaf.clrViewCommitted)});
                 break;
             }
 
@@ -524,12 +509,12 @@ std::unique_ptr<SamplesEnumerator> MemoryBreakdownProvider::GetSamples()
                 break;
         }
 
+#ifdef LINUX
         if (leaf.rssEstimated)
         {
             sample->AddLabel(StringLabel{RssEstimatedLabel, TrueValue});
         }
-
-        sample->SetPid(pid);
+#endif
 
         enumerator->_samples.push_back(std::move(sample));
     }

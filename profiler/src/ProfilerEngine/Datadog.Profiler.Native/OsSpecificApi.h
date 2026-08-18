@@ -62,10 +62,9 @@ namespace OsSpecificApi
     double GetProcessLifetime();
 
     // Enumerates and categorizes every OS region of the current process, filling each run's Committed
-    // (Windows MEM_COMMIT span / Linux accessible span) and, when includeWorkingSet, its Rss (Windows
-    // working set via QueryWorkingSetEx; on Linux smaps Rss is always populated regardless). Defined in
-    // the Windows and Linux projects (no #ifdef in common code). Never returns null.
-    std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap(bool includeWorkingSet);
+    // span and, on Linux, its Rss from smaps. Defined in the Windows and Linux projects (no #ifdef in
+    // common code). Never returns null.
+    std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap();
 
     // OS page size (OpSysTools::GetPageSize() throws on Windows). Defined per platform.
     size_t GetSystemPageSize();

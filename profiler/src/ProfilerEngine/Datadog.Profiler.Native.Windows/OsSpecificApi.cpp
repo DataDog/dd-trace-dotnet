@@ -436,54 +436,6 @@ std::string GetMappedModuleName(HANDLE hProcess, const void* address)
     return LeafNameUtf8(name, length);
 }
 
-// Fills the working set (resident) bytes of a single committed run via QueryWorkingSetEx.
-uint64_t QueryWorkingSet(HANDLE hProcess, uintptr_t base, uint64_t size, size_t pageSize)
-{
-    if (size == 0 || pageSize == 0)
-    {
-        return 0;
-    }
-
-    constexpr size_t BatchPages = 1024;
-    const uint64_t pages = size / pageSize;
-    uint64_t resident = 0;
-
-    std::vector<PSAPI_WORKING_SET_EX_INFORMATION> batch;
-    batch.reserve(BatchPages);
-
-    for (uint64_t first = 0; first < pages; first += BatchPages)
-    {
-        uint64_t count = pages - first;
-        if (count > BatchPages)
-        {
-            count = BatchPages;
-        }
-
-        batch.assign(static_cast<size_t>(count), PSAPI_WORKING_SET_EX_INFORMATION{});
-        for (uint64_t i = 0; i < count; ++i)
-        {
-            batch[static_cast<size_t>(i)].VirtualAddress =
-                reinterpret_cast<PVOID>(base + (first + i) * pageSize);
-        }
-
-        DWORD cb = static_cast<DWORD>(count * sizeof(PSAPI_WORKING_SET_EX_INFORMATION));
-        if (!::QueryWorkingSetEx(hProcess, batch.data(), cb))
-        {
-            continue; // best effort
-        }
-
-        for (uint64_t i = 0; i < count; ++i)
-        {
-            if (batch[static_cast<size_t>(i)].VirtualAttributes.Valid)
-            {
-                resident += pageSize;
-            }
-        }
-    }
-
-    return resident;
-}
-
 RegionCategory CategorizeWindows(const MEMORY_BASIC_INFORMATION& mbi)
 {
     if (mbi.State == MEM_FREE)
@@ -506,14 +458,13 @@ RegionCategory CategorizeWindows(const MEMORY_BASIC_INFORMATION& mbi)
 
 } // namespace
 
-std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap(bool includeWorkingSet)
+std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap()
 {
     std::vector<AddressRegion> regions;
 
     HANDLE hProcess = ::GetCurrentProcess();
     SYSTEM_INFO si{};
     GetSystemInfo(&si);
-    const size_t pageSize = si.dwPageSize != 0 ? static_cast<size_t>(si.dwPageSize) : 4096;
 
     uintptr_t addr = reinterpret_cast<uintptr_t>(si.lpMinimumApplicationAddress);
     const uintptr_t maxAddr = reinterpret_cast<uintptr_t>(si.lpMaximumApplicationAddress);
@@ -547,11 +498,6 @@ std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap(bool includeWorkingSet)
             region.ModuleName = GetMappedModuleName(hProcess, mbi.BaseAddress);
         }
 
-        if (includeWorkingSet && mbi.State == MEM_COMMIT)
-        {
-            region.Rss = QueryWorkingSet(hProcess, region.Address, region.Size, pageSize);
-        }
-
         regions.push_back(std::move(region));
 
         if (regionEnd <= addr)
@@ -561,7 +507,7 @@ std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap(bool includeWorkingSet)
         addr = regionEnd;
     }
 
-    return std::make_unique<AddressSpaceMap>(std::move(regions), /*providesCommitted*/ true, /*providesRss*/ includeWorkingSet);
+    return std::make_unique<AddressSpaceMap>(std::move(regions), /*providesCommitted*/ true, /*providesRss*/ false);
 }
 
 } // namespace OsSpecificApi

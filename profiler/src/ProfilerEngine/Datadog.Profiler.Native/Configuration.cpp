@@ -123,7 +123,6 @@ Configuration::Configuration()
     _isHeapSnapshotEnabled = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotEnabled, false);
     _isEEHeapEnabled = GetEnvironmentValue(EnvironmentVariables::EEHeapEnabled, false);
     _isMemoryBreakdownEnabled = GetEnvironmentValue(EnvironmentVariables::MemoryBreakdownEnabled, false);
-    _isMemoryBreakdownWorkingSetEnabled = GetEnvironmentValue(EnvironmentVariables::MemoryBreakdownWorkingSetEnabled, false);
     _isHeapSnapshotSkipTraversal = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotSkipTraversal, false);
     _heapSnapshotInterval = ExtractHeapSnapshotInterval();
     _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
@@ -876,11 +875,6 @@ bool Configuration::IsEEHeapEnabled() const
 bool Configuration::IsMemoryBreakdownEnabled() const
 {
     return _isMemoryBreakdownEnabled;
-}
-
-bool Configuration::IsMemoryBreakdownWorkingSetEnabled() const
-{
-    return _isMemoryBreakdownWorkingSetEnabled;
 }
 
 bool Configuration::IsHeapSnapshotSkipTraversal() const

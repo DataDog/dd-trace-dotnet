@@ -59,9 +59,9 @@ uint64_t QueryCommittedBytes(const IAddressSpaceMap* map, uintptr_t base, uint64
         return map->GetCommittedBytes(base, reserved);
     }
 
-    // No shared map: capture one on demand (committed only, no working set). This is the fallback used
-    // by standalone callers/tests; it produces the same numbers the previous per-call OS walk did.
-    auto captured = OsSpecificApi::CaptureAddressSpaceMap(false);
+    // No shared map: capture one on demand. This is the fallback used by standalone callers/tests; it
+    // produces the same numbers the previous per-call OS walk did.
+    auto captured = OsSpecificApi::CaptureAddressSpaceMap();
     return captured != nullptr ? captured->GetCommittedBytes(base, reserved) : 0;
 }
 
