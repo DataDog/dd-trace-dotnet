@@ -129,8 +129,8 @@ namespace Datadog.Trace.TestHelpers
 
                         if (responseCode == HttpStatusCode.OK)
                         {
-                            await Agent.WaitForSpansAsync(1, minDateTime: dateTime);
-                            serverReady = true;
+                            var spans = await Agent.WaitForSpansAsync(1, minDateTime: dateTime);
+                            serverReady = spans.Count > 0;
                         }
                     }
                     else
