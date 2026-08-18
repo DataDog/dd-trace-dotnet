@@ -18,6 +18,7 @@ using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Util;
@@ -115,6 +116,7 @@ public class DataStreamsWriterTests
     }
 
     [Fact]
+    [Flaky("This timing-dependent test can fail on saturated CI agents")]
     public async Task WhenSupported_WritesAStatsPointAfterDelay()
     {
         var bucketDurationMs = 100;
