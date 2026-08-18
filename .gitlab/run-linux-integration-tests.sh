@@ -220,8 +220,8 @@ case "$test_suite" in
     ;;
   docker)
     # The repository's dependency orchestration is also used by Azure with
-    # docker-compose v1. Keep the same implementation here: Compose v2 does
-    # not expose the postgres service alias to the Group1 dependency waiter.
+    # docker-compose v1. Keep the same implementation here; the GitLab runner's
+    # postgres alias issue is handled explicitly below.
     if ! command -v docker-compose >/dev/null 2>&1; then
       echo "Installing Docker Compose v1"
       apt-get update
@@ -259,11 +259,32 @@ case "$test_suite" in
     export DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
     export DD_LOGGER_DD_TAGS="test.configuration.job:${CI_JOB_NAME}"
 
+    postgres_host_argument=""
+    if [ "$DOCKER_GROUP" = "1" ]; then
+      # The GitLab Docker runner does not consistently publish the postgres
+      # service alias on the Compose network. Start it explicitly and provide
+      # a deterministic hosts entry to the waiter and integration-test containers.
+      compose -p "$compose_project" up -d postgres
+      postgres_container="$(compose -p "$compose_project" ps -q postgres)"
+      postgres_ip="$(docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$postgres_container")"
+      if [ -z "$postgres_ip" ]; then
+        echo "Could not determine the PostgreSQL container IP" >&2
+        exit 1
+      fi
+
+      postgres_host_argument="--add-host=postgres:${postgres_ip}"
+    fi
+
     echo "Starting Docker dependency group ${DOCKER_GROUP}"
-    compose -p "$compose_project" run --rm "StartDependencies.Group${DOCKER_GROUP}"
+    # Deliberately leave postgres_host_argument unquoted: it is either empty or
+    # one complete Compose argument.
+    # shellcheck disable=SC2086
+    compose -p "$compose_project" run --rm $postgres_host_argument "StartDependencies.Group${DOCKER_GROUP}"
 
     echo "Running Docker dependency group ${DOCKER_GROUP} integration tests for ${FRAMEWORK}"
+    # shellcheck disable=SC2086
     compose -p "$compose_project" run --rm \
+      $postgres_host_argument \
       -e IncludeTestsRequiringDocker=true \
       -e IncludeAllTestFrameworks \
       -e DD_LOGGER_ENABLED \
